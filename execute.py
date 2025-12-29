@@ -1921,6 +1921,700 @@ def run_verify(args):
         sys.exit(1)
 
 
+# =============================================================================
+# WORKSPACE COMMANDS
+# =============================================================================
+
+def run_workspace(args):
+    """
+    Workspace management commands.
+
+    Workspaces provide multi-repository context for code intelligence and
+    verification. They define relationships between repos that form a logical
+    product or system.
+    """
+    # Subcommand dispatch is handled by subparsers
+    pass
+
+
+def run_workspace_init(args):
+    """Initialize a new workspace or single-repo config."""
+    print()
+    print("=" * 60)
+    if getattr(args, 'single_repo', False):
+        print("WORKSPACE INIT (Single-Repo Mode)")
+    else:
+        print("WORKSPACE INIT")
+    print("=" * 60)
+
+    sys.path.insert(0, str(Path(__file__).parent / 'tools'))
+
+    try:
+        from workspace import init_workspace, init_single_repo
+    except ImportError as e:
+        print(f"\nError: Could not import workspace module: {e}")
+        sys.exit(1)
+
+    if getattr(args, 'single_repo', False):
+        # Single-repo mode - no workspace, just repo config
+        if not getattr(args, 'language', None):
+            print("\n❌ Error: --language is required for --single-repo mode")
+            sys.exit(1)
+
+        repo_dir = Path(args.path) if args.path else Path.cwd()
+
+        print(f"\n  Location: {repo_dir}")
+        print(f"  Name: {args.name}")
+        print(f"  Language: {args.language}")
+        print(f"  Type: {getattr(args, 'type', 'service') or 'service'}")
+
+        try:
+            result = init_single_repo(
+                repo_dir,
+                name=args.name,
+                language=args.language,
+                repo_type=getattr(args, 'type', 'service') or 'service',
+                force=args.force,
+            )
+
+            print(f"\n✅ Single-repo config initialized: {result}")
+            print()
+            print("Created:")
+            print(f"  .agentforge/")
+            print(f"  ├── repo.yaml")
+            print(f"  ├── contracts/")
+            print(f"  └── specs/")
+            print()
+            print("Next steps:")
+            print("  1. Add contracts to .agentforge/contracts/")
+            print("  2. Run verification: python execute.py verify")
+
+        except Exception as e:
+            print(f"\n❌ Failed to initialize: {e}")
+            sys.exit(1)
+    else:
+        # Full workspace mode
+        workspace_dir = Path(args.path) if args.path else Path.cwd()
+
+        print(f"\n  Location: {workspace_dir}")
+        print(f"  Name: {args.name}")
+
+        if args.description:
+            print(f"  Description: {args.description}")
+
+        try:
+            result = init_workspace(
+                workspace_dir,
+                name=args.name,
+                description=args.description,
+                force=args.force,
+            )
+
+            print(f"\n✅ Workspace initialized: {result}")
+            print()
+            print("Next steps:")
+            print("  1. Add repositories:")
+            print(f"     python execute.py workspace add-repo --name api --path ../my-api --type service --lang csharp")
+            print("  2. Validate workspace:")
+            print("     python execute.py workspace validate")
+
+        except Exception as e:
+            print(f"\n❌ Failed to initialize workspace: {e}")
+            sys.exit(1)
+
+
+def run_workspace_status(args):
+    """Show workspace status and configuration."""
+    print()
+    print("=" * 60)
+    print("WORKSPACE STATUS")
+    print("=" * 60)
+
+    sys.path.insert(0, str(Path(__file__).parent / 'tools'))
+
+    try:
+        from workspace import discover_workspace, format_workspace_status
+    except ImportError as e:
+        print(f"\nError: Could not import workspace module: {e}")
+        sys.exit(1)
+
+    # Discover workspace
+    workspace_arg = args.workspace if args.workspace else None
+    ctx = discover_workspace(workspace_arg=workspace_arg)
+
+    if not ctx.is_workspace_mode:
+        print("\n❌ No workspace found.")
+        print()
+        print("Discovery searched:")
+        print("  1. --workspace flag")
+        print("  2. AGENTFORGE_WORKSPACE env var")
+        print("  3. repo.yaml in current directory")
+        print("  4. workspace.yaml in current directory")
+        print("  5. agentforge/workspace.yaml subdirectory")
+        print()
+        print("Initialize with:")
+        print("  python execute.py workspace init --name my-workspace")
+        sys.exit(1)
+
+    print(f"\n  Workspace: {ctx.workspace_name}")
+    print(f"  Root: {ctx.workspace_dir}")
+    print(f"  Config: {ctx.workspace_path}")
+
+    if ctx.workspace_description:
+        print(f"  Description: {ctx.workspace_description}")
+
+    if ctx.workspace_version:
+        print(f"  Version: {ctx.workspace_version}")
+
+    print()
+    print("-" * 60)
+    print(f"REPOSITORIES ({len(ctx.repos)})")
+    print("-" * 60)
+
+    for repo in ctx.repos.values():
+        # Check if repo path exists
+        status = "✓" if repo.is_available else "✗ NOT FOUND"
+
+        print(f"\n  {repo.name} [{status}]")
+        print(f"    Path: {repo.path}")
+        print(f"    Type: {repo.type}")
+        print(f"    Language: {repo.language}")
+
+        if repo.framework:
+            print(f"    Framework: {repo.framework}")
+        if repo.lsp:
+            print(f"    LSP: {repo.lsp}")
+        if repo.layers:
+            print(f"    Layers: {', '.join(repo.layers)}")
+        if repo.tags:
+            print(f"    Tags: {', '.join(repo.tags)}")
+
+    # Show paths if configured
+    paths = ctx.workspace_config.get('paths', {})
+    if paths:
+        print()
+        print("-" * 60)
+        print("PATHS")
+        print("-" * 60)
+        for key, path in paths.items():
+            full_path = ctx.workspace_dir / path
+            exists = full_path.exists()
+            status = "✓" if exists else "✗"
+            print(f"  {key}: {path} [{status}]")
+
+    # Show defaults if configured
+    defaults = ctx.workspace_config.get('defaults', {})
+    if defaults:
+        print()
+        print("-" * 60)
+        print("DEFAULTS")
+        print("-" * 60)
+
+        context_defaults = defaults.get('context', {})
+        if context_defaults:
+            print("  Context:")
+            print(f"    Budget tokens: {context_defaults.get('budget_tokens', 6000)}")
+            provider = context_defaults.get('embedding_provider')
+            print(f"    Embedding provider: {provider or 'auto'}")
+
+        verify_defaults = defaults.get('verification', {})
+        if verify_defaults:
+            print("  Verification:")
+            print(f"    Fail fast: {verify_defaults.get('fail_fast', True)}")
+            print(f"    Profiles: {', '.join(verify_defaults.get('profiles', ['quick']))}")
+
+
+def run_workspace_add_repo(args):
+    """Add a repository to the workspace."""
+    print()
+    print("=" * 60)
+    print("WORKSPACE ADD-REPO")
+    print("=" * 60)
+
+    sys.path.insert(0, str(Path(__file__).parent / 'tools'))
+
+    try:
+        from workspace import discover_workspace, add_repo_to_workspace
+    except ImportError as e:
+        print(f"\nError: Could not import workspace module: {e}")
+        sys.exit(1)
+
+    # Discover workspace
+    workspace_arg = args.workspace if args.workspace else None
+    ctx = discover_workspace(workspace_arg=workspace_arg)
+
+    if not ctx.is_workspace_mode:
+        print("\n❌ No workspace found. Initialize first:")
+        print("  python execute.py workspace init --name my-workspace")
+        sys.exit(1)
+
+    print(f"\n  Workspace: {ctx.workspace_name}")
+    print(f"  Adding repo: {args.name}")
+    print(f"    Path: {args.path}")
+    print(f"    Type: {args.type}")
+    print(f"    Language: {args.language}")
+
+    layers = args.layers.split(',') if args.layers else None
+    tags = args.tags.split(',') if args.tags else None
+
+    if args.framework:
+        print(f"    Framework: {args.framework}")
+    if args.lsp:
+        print(f"    LSP: {args.lsp}")
+    if layers:
+        print(f"    Layers: {', '.join(layers)}")
+    if tags:
+        print(f"    Tags: {', '.join(tags)}")
+
+    try:
+        result = add_repo_to_workspace(
+            ctx,
+            name=args.name,
+            path=args.path,
+            repo_type=args.type,
+            language=args.language,
+            framework=args.framework,
+            lsp=args.lsp,
+            layers=layers,
+            tags=tags,
+        )
+        print(f"\n✅ Repository added: {args.name}")
+        print(f"   Updated: {ctx.workspace_path}")
+    except Exception as e:
+        print(f"\n❌ Failed to add repository: {e}")
+        sys.exit(1)
+
+
+def run_workspace_remove_repo(args):
+    """Remove a repository from the workspace."""
+    print()
+    print("=" * 60)
+    print("WORKSPACE REMOVE-REPO")
+    print("=" * 60)
+
+    sys.path.insert(0, str(Path(__file__).parent / 'tools'))
+
+    try:
+        from workspace import discover_workspace, remove_repo_from_workspace
+    except ImportError as e:
+        print(f"\nError: Could not import workspace module: {e}")
+        sys.exit(1)
+
+    # Discover workspace
+    workspace_arg = args.workspace if args.workspace else None
+    ctx = discover_workspace(workspace_arg=workspace_arg)
+
+    if not ctx.is_workspace_mode:
+        print("\n❌ No workspace found.")
+        sys.exit(1)
+
+    print(f"\n  Workspace: {ctx.workspace_name}")
+    print(f"  Removing repo: {args.name}")
+
+    # Check if repo exists
+    if args.name not in ctx.repos:
+        print(f"\n❌ Repository '{args.name}' not found in workspace.")
+        print("Available repos:", ', '.join(ctx.repos.keys()))
+        sys.exit(1)
+
+    # Remove repo
+    removed = remove_repo_from_workspace(ctx, args.name)
+    if removed:
+        print(f"\n✅ Repository removed: {args.name}")
+    else:
+        print(f"\n❌ Failed to remove repository: {args.name}")
+
+
+def run_workspace_link(args):
+    """Link a repository to a workspace."""
+    print()
+    print("=" * 60)
+    print("WORKSPACE LINK")
+    print("=" * 60)
+
+    sys.path.insert(0, str(Path(__file__).parent / 'tools'))
+
+    try:
+        from workspace import create_repo_link
+    except ImportError as e:
+        print(f"\nError: Could not import workspace module: {e}")
+        sys.exit(1)
+
+    repo_dir = Path(args.repo).resolve() if args.repo else Path.cwd().resolve()
+    workspace_path = Path(args.workspace).resolve()
+
+    if not workspace_path.exists():
+        print(f"\n❌ Workspace not found: {workspace_path}")
+        sys.exit(1)
+
+    print(f"\n  Repository: {repo_dir}")
+    print(f"  Linking to: {workspace_path}")
+
+    # Use workspace.py function to create the link
+    try:
+        repo_name = repo_dir.name.lower().replace('_', '-').replace(' ', '-')
+        repo_yaml_path = create_repo_link(repo_dir, workspace_path, repo_name)
+
+        print(f"\n✅ Linked repository to workspace")
+        print(f"   Created: {repo_yaml_path}")
+    except Exception as e:
+        print(f"\n❌ Failed to link repository: {e}")
+        sys.exit(1)
+
+
+def run_workspace_validate(args):
+    """Validate workspace configuration."""
+    print()
+    print("=" * 60)
+    print("WORKSPACE VALIDATE")
+    print("=" * 60)
+
+    sys.path.insert(0, str(Path(__file__).parent / 'tools'))
+
+    try:
+        from workspace import discover_workspace, validate_workspace
+    except ImportError as e:
+        print(f"\nError: Could not import workspace module: {e}")
+        sys.exit(1)
+
+    # Discover workspace
+    workspace_arg = args.workspace if args.workspace else None
+    ctx = discover_workspace(workspace_arg=workspace_arg)
+
+    if not ctx.is_workspace_mode:
+        print("\n❌ No workspace found.")
+        sys.exit(1)
+
+    print(f"\n  Workspace: {ctx.workspace_name}")
+    print(f"  Config: {ctx.workspace_path}")
+    print()
+    print("-" * 60)
+    print("VALIDATION")
+    print("-" * 60)
+
+    errors, warnings = validate_workspace(ctx)
+
+    if not errors:
+        print("\n✅ Workspace configuration is valid!")
+    else:
+        print("\n❌ Workspace has configuration errors:")
+        for error in errors:
+            print(f"   • {error}")
+
+    if warnings:
+        print("\n⚠️  Warnings:")
+        for warning in warnings:
+            print(f"   • {warning}")
+
+    if errors:
+        sys.exit(1)
+
+
+def run_workspace_list_repos(args):
+    """List repositories in workspace."""
+    print()
+    print("=" * 60)
+    print("WORKSPACE LIST-REPOS")
+    print("=" * 60)
+
+    sys.path.insert(0, str(Path(__file__).parent / 'tools'))
+
+    try:
+        from workspace import discover_workspace
+    except ImportError as e:
+        print(f"\nError: Could not import workspace module: {e}")
+        sys.exit(1)
+
+    # Discover workspace
+    workspace_arg = args.workspace if args.workspace else None
+    ctx = discover_workspace(workspace_arg=workspace_arg)
+
+    if not ctx.is_workspace_mode:
+        print("\n❌ No workspace found.")
+        sys.exit(1)
+
+    print(f"\n  Workspace: {ctx.workspace_name}")
+    print()
+
+    # Filter repos - ctx.repos is a dict, so convert to list of values
+    repos = list(ctx.repos.values())
+
+    if args.type:
+        repos = [r for r in repos if r.type == args.type]
+
+    if args.language:
+        repos = [r for r in repos if r.language == args.language]
+
+    if args.tag:
+        repos = [r for r in repos if args.tag in (r.tags or [])]
+
+    if args.format == 'json':
+        import json
+        output = [
+            {
+                'name': r.name,
+                'path': r.path,
+                'type': r.type,
+                'language': r.language,
+                'framework': r.framework,
+                'tags': r.tags,
+            }
+            for r in repos
+        ]
+        print(json.dumps(output, indent=2))
+    elif args.format == 'yaml':
+        output = [
+            {
+                'name': r.name,
+                'path': r.path,
+                'type': r.type,
+                'language': r.language,
+                'framework': r.framework,
+                'tags': r.tags,
+            }
+            for r in repos
+        ]
+        print(yaml.dump(output, default_flow_style=False))
+    else:
+        # Table format
+        print(f"{'NAME':<20} {'TYPE':<12} {'LANGUAGE':<12} {'PATH'}")
+        print("-" * 70)
+        for repo in repos:
+            print(f"{repo.name:<20} {repo.type:<12} {repo.language:<12} {repo.path}")
+
+    print()
+    print(f"Total: {len(repos)} repository(ies)")
+
+
+def run_workspace_unlink(args):
+    """Unlink current repo from workspace (convert to single-repo mode)."""
+    print()
+    print("=" * 60)
+    print("WORKSPACE UNLINK")
+    print("=" * 60)
+
+    sys.path.insert(0, str(Path(__file__).parent / 'tools'))
+
+    try:
+        from workspace import unlink_repo
+    except ImportError as e:
+        print(f"\nError: Could not import workspace module: {e}")
+        sys.exit(1)
+
+    repo_dir = Path.cwd()
+    print(f"\n  Repository: {repo_dir}")
+
+    try:
+        unlinked = unlink_repo(repo_dir)
+        if unlinked:
+            print("\n✅ Repository unlinked from workspace")
+            print("   Now in single-repo mode (workspace_ref: null)")
+        else:
+            print("\n⚠️  Repository is already in single-repo mode")
+    except Exception as e:
+        print(f"\n❌ Failed to unlink: {e}")
+        sys.exit(1)
+
+
+# =============================================================================
+# CONFIG COMMANDS
+# =============================================================================
+
+def run_config(args):
+    """Configuration management commands."""
+    # Subcommand dispatch is handled by subparsers
+    pass
+
+
+def run_config_init_global(args):
+    """Initialize global config at ~/.agentforge/"""
+    print()
+    print("=" * 60)
+    print("CONFIG INIT-GLOBAL")
+    print("=" * 60)
+
+    sys.path.insert(0, str(Path(__file__).parent / 'tools'))
+
+    try:
+        from workspace import init_global_config
+    except ImportError as e:
+        print(f"\nError: Could not import workspace module: {e}")
+        sys.exit(1)
+
+    print(f"\n  Location: ~/.agentforge/")
+
+    try:
+        result = init_global_config(force=getattr(args, 'force', False))
+
+        print(f"\n✅ Global config initialized: {result}")
+        print()
+        print("Created:")
+        print("  ~/.agentforge/")
+        print("  ├── config.yaml")
+        print("  ├── contracts/")
+        print("  └── workspaces/")
+        print()
+        print("Edit config.yaml to set your default preferences.")
+
+    except Exception as e:
+        print(f"\n❌ Failed to initialize: {e}")
+        sys.exit(1)
+
+
+def run_config_show(args):
+    """Show configuration at specified tier or effective."""
+    print()
+    print("=" * 60)
+    print("CONFIG SHOW")
+    print("=" * 60)
+
+    sys.path.insert(0, str(Path(__file__).parent / 'tools'))
+
+    try:
+        from workspace import discover_config, format_config_status
+    except ImportError as e:
+        print(f"\nError: Could not import workspace module: {e}")
+        sys.exit(1)
+
+    ctx = discover_config()
+
+    tier = getattr(args, 'tier', None)
+
+    if tier == 'global':
+        print("\nGlobal Configuration (~/.agentforge/config.yaml):")
+        print("-" * 50)
+        if ctx.global_config:
+            print(yaml.dump(ctx.global_config, default_flow_style=False))
+        else:
+            print("Not configured. Run: python execute.py config init-global")
+    elif tier == 'workspace':
+        print("\nWorkspace Configuration:")
+        print("-" * 50)
+        if ctx.workspace_config:
+            defaults = ctx.workspace_config.get('defaults', {})
+            if defaults:
+                print(yaml.dump(defaults, default_flow_style=False))
+            else:
+                print("No defaults configured in workspace")
+        else:
+            print("No workspace found")
+    elif tier == 'repo':
+        print("\nRepository Configuration:")
+        print("-" * 50)
+        if ctx.repo_config:
+            overrides = ctx.repo_config.get('overrides', {})
+            if overrides:
+                print(yaml.dump(overrides, default_flow_style=False))
+            else:
+                print("No overrides configured in repo")
+        else:
+            print("No repo config found")
+    else:
+        # Show full status
+        print(format_config_status(ctx))
+
+
+def run_config_set(args):
+    """Set a configuration value."""
+    print()
+    print("=" * 60)
+    print("CONFIG SET")
+    print("=" * 60)
+
+    sys.path.insert(0, str(Path(__file__).parent / 'tools'))
+
+    try:
+        from workspace import load_yaml_file
+    except ImportError as e:
+        print(f"\nError: Could not import workspace module: {e}")
+        sys.exit(1)
+
+    key = args.key
+    value = args.value
+
+    # Determine which config file to update
+    if getattr(args, 'set_global', False):
+        config_path = Path.home() / '.agentforge' / 'config.yaml'
+        tier = 'global'
+    elif getattr(args, 'set_workspace', False):
+        # Find workspace.yaml
+        from workspace import find_upward
+        ws_yaml = find_upward('workspace.yaml') or find_upward('agentforge/workspace.yaml')
+        if not ws_yaml:
+            print("\n❌ No workspace found")
+            sys.exit(1)
+        config_path = ws_yaml
+        tier = 'workspace'
+    else:
+        # Default to repo
+        config_path = Path.cwd() / '.agentforge' / 'repo.yaml'
+        tier = 'repo'
+
+    if not config_path.exists():
+        print(f"\n❌ Config file not found: {config_path}")
+        sys.exit(1)
+
+    print(f"\n  Tier: {tier}")
+    print(f"  File: {config_path}")
+    print(f"  Key: {key}")
+    print(f"  Value: {value}")
+
+    # Load config
+    with open(config_path) as f:
+        config = yaml.safe_load(f) or {}
+
+    # Parse value (try to convert to appropriate type)
+    try:
+        if value.lower() == 'true':
+            parsed_value = True
+        elif value.lower() == 'false':
+            parsed_value = False
+        elif value.lower() == 'null' or value.lower() == 'none':
+            parsed_value = None
+        elif value.isdigit():
+            parsed_value = int(value)
+        else:
+            try:
+                parsed_value = float(value)
+            except ValueError:
+                parsed_value = value
+    except AttributeError:
+        parsed_value = value
+
+    # Navigate to key (dot notation)
+    keys = key.split('.')
+    target = config
+
+    # For repo.yaml, settings go under 'overrides'
+    if tier == 'repo' and keys[0] != 'overrides':
+        if 'overrides' not in config:
+            config['overrides'] = {}
+        target = config['overrides']
+    elif tier == 'workspace' and keys[0] != 'defaults':
+        if 'defaults' not in config:
+            config['defaults'] = {}
+        target = config['defaults']
+    elif tier == 'global' and keys[0] != 'defaults':
+        if 'defaults' not in config:
+            config['defaults'] = {}
+        target = config['defaults']
+
+    # Navigate/create nested structure
+    for k in keys[:-1]:
+        if k not in target:
+            target[k] = {}
+        target = target[k]
+
+    # Set value
+    target[keys[-1]] = parsed_value
+
+    # Write back
+    with open(config_path, 'w') as f:
+        yaml.dump(config, f, default_flow_style=False, sort_keys=False)
+
+    print(f"\n✅ Configuration updated")
+
+
 def run_render_spec(args):
     """Render YAML specification to Markdown for human consumption."""
     print()
@@ -2275,6 +2969,21 @@ Examples:
 
   # Utilities
   python execute.py render-spec          # YAML → Markdown
+
+  # Workspace management (multi-repo support)
+  python execute.py workspace init --name my-project
+  python execute.py workspace init --single-repo --name my-tool --lang python  # Single-repo mode
+  python execute.py workspace add-repo --name api --path ../api --type service --lang csharp
+  python execute.py workspace status
+  python execute.py workspace list-repos --type service
+  python execute.py workspace validate
+  python execute.py workspace unlink   # Convert to single-repo
+
+  # Configuration management (three-tier)
+  python execute.py config init-global          # Initialize ~/.agentforge/
+  python execute.py config show                  # Show all tiers
+  python execute.py config show --tier global   # Show only global
+  python execute.py config set context.budget_tokens 8000 --global
 """
     )
     
@@ -2374,13 +3083,155 @@ Examples:
     render_parser.add_argument('--spec-file', default='outputs/specification.yaml')
     render_parser.add_argument('--output', '-o', default='outputs/specification.md')
     render_parser.set_defaults(func=run_render_spec)
-    
+
+    # WORKSPACE
+    workspace_parser = subparsers.add_parser('workspace', help='Workspace management')
+    workspace_parser.add_argument('--workspace', '-w',
+                                   help='Path to workspace.yaml (or use AGENTFORGE_WORKSPACE env)')
+    workspace_subparsers = workspace_parser.add_subparsers(dest='workspace_command',
+                                                            help='Workspace subcommand')
+
+    # workspace init
+    ws_init_parser = workspace_subparsers.add_parser('init', help='Initialize a new workspace or single-repo config')
+    ws_init_parser.add_argument('--name', '-n', required=True,
+                                help='Workspace/repo name (lowercase, alphanumeric, hyphens)')
+    ws_init_parser.add_argument('--path', '-p',
+                                help='Directory for workspace.yaml (default: current)')
+    ws_init_parser.add_argument('--description', '-d',
+                                help='Workspace description')
+    ws_init_parser.add_argument('--single-repo', action='store_true',
+                                help='Initialize for single-repo mode (no workspace)')
+    ws_init_parser.add_argument('--language', '--lang', '-l',
+                                choices=['csharp', 'typescript', 'python', 'java', 'go', 'rust'],
+                                help='Primary language (required for --single-repo)')
+    ws_init_parser.add_argument('--type', '-t',
+                                choices=['service', 'library', 'application', 'meta', 'tool'],
+                                default='service',
+                                help='Repository type (for --single-repo)')
+    ws_init_parser.add_argument('--force', action='store_true',
+                                help='Overwrite existing config')
+    ws_init_parser.set_defaults(func=run_workspace_init)
+
+    # workspace status
+    ws_status_parser = workspace_subparsers.add_parser('status', help='Show workspace status')
+    ws_status_parser.add_argument('--repo', '-r',
+                                  help='Start discovery from this repo directory')
+    ws_status_parser.set_defaults(func=run_workspace_status)
+
+    # workspace add-repo
+    ws_add_parser = workspace_subparsers.add_parser('add-repo', help='Add a repository to workspace')
+    ws_add_parser.add_argument('--name', '-n', required=True,
+                               help='Repository name (lowercase, alphanumeric, hyphens)')
+    ws_add_parser.add_argument('--path', '-p', required=True,
+                               help='Relative path to repository root')
+    ws_add_parser.add_argument('--type', '-t', required=True,
+                               choices=['service', 'library', 'application', 'meta'],
+                               help='Repository type')
+    ws_add_parser.add_argument('--language', '--lang', '-l', required=True,
+                               choices=['csharp', 'typescript', 'python', 'java', 'go', 'rust', 'yaml'],
+                               help='Primary programming language')
+    ws_add_parser.add_argument('--framework', '-f',
+                               help='Framework (e.g., aspnetcore, express, django)')
+    ws_add_parser.add_argument('--lsp',
+                               choices=['omnisharp', 'csharp-ls', 'typescript-language-server', 'pyright'],
+                               help='LSP server to use')
+    ws_add_parser.add_argument('--layers',
+                               help='Comma-separated architecture layers')
+    ws_add_parser.add_argument('--tags',
+                               help='Comma-separated tags')
+    ws_add_parser.set_defaults(func=run_workspace_add_repo)
+
+    # workspace remove-repo
+    ws_remove_parser = workspace_subparsers.add_parser('remove-repo', help='Remove a repository')
+    ws_remove_parser.add_argument('--name', '-n', required=True,
+                                  help='Repository name to remove')
+    ws_remove_parser.set_defaults(func=run_workspace_remove_repo)
+
+    # workspace link
+    ws_link_parser = workspace_subparsers.add_parser('link',
+                                                      help='Link a repo to a workspace')
+    ws_link_parser.add_argument('--workspace', '-w', required=True,
+                                help='Path to workspace.yaml')
+    ws_link_parser.add_argument('--repo', '-r',
+                                help='Repository directory (default: current)')
+    ws_link_parser.set_defaults(func=run_workspace_link)
+
+    # workspace validate
+    ws_validate_parser = workspace_subparsers.add_parser('validate',
+                                                          help='Validate workspace configuration')
+    ws_validate_parser.set_defaults(func=run_workspace_validate)
+
+    # workspace list-repos
+    ws_list_parser = workspace_subparsers.add_parser('list-repos', help='List repositories')
+    ws_list_parser.add_argument('--type', '-t',
+                                choices=['service', 'library', 'application', 'meta'],
+                                help='Filter by type')
+    ws_list_parser.add_argument('--language', '--lang', '-l',
+                                help='Filter by language')
+    ws_list_parser.add_argument('--tag',
+                                help='Filter by tag')
+    ws_list_parser.add_argument('--format', '-f',
+                                choices=['table', 'json', 'yaml'],
+                                default='table',
+                                help='Output format')
+    ws_list_parser.set_defaults(func=run_workspace_list_repos)
+
+    # workspace unlink
+    ws_unlink_parser = workspace_subparsers.add_parser('unlink',
+                                                        help='Unlink repo from workspace (convert to single-repo)')
+    ws_unlink_parser.set_defaults(func=run_workspace_unlink)
+
+    workspace_parser.set_defaults(func=run_workspace)
+
+    # CONFIG
+    config_parser = subparsers.add_parser('config', help='Configuration management')
+    config_subparsers = config_parser.add_subparsers(dest='config_command',
+                                                      help='Config subcommand')
+
+    # config init-global
+    cfg_init_parser = config_subparsers.add_parser('init-global',
+                                                    help='Initialize global config at ~/.agentforge/')
+    cfg_init_parser.add_argument('--force', action='store_true',
+                                  help='Overwrite existing config')
+    cfg_init_parser.set_defaults(func=run_config_init_global)
+
+    # config show
+    cfg_show_parser = config_subparsers.add_parser('show', help='Show configuration')
+    cfg_show_parser.add_argument('--tier',
+                                  choices=['global', 'workspace', 'repo', 'effective'],
+                                  help='Show specific tier (default: show all)')
+    cfg_show_parser.set_defaults(func=run_config_show)
+
+    # config set
+    cfg_set_parser = config_subparsers.add_parser('set', help='Set a configuration value')
+    cfg_set_parser.add_argument('key', help='Config key (dot notation, e.g., context.budget_tokens)')
+    cfg_set_parser.add_argument('value', help='Value to set')
+    cfg_set_parser.add_argument('--global', dest='set_global', action='store_true',
+                                 help='Set in global config')
+    cfg_set_parser.add_argument('--workspace', dest='set_workspace', action='store_true',
+                                 help='Set in workspace config')
+    cfg_set_parser.add_argument('--repo', dest='set_repo', action='store_true',
+                                 help='Set in repo config (default)')
+    cfg_set_parser.set_defaults(func=run_config_set)
+
+    config_parser.set_defaults(func=run_config)
+
     args = parser.parse_args()
-    
+
     if args.command is None:
         parser.print_help()
         sys.exit(1)
-    
+
+    # Handle workspace without subcommand
+    if args.command == 'workspace' and (not hasattr(args, 'workspace_command') or args.workspace_command is None):
+        workspace_parser.print_help()
+        sys.exit(1)
+
+    # Handle config without subcommand
+    if args.command == 'config' and (not hasattr(args, 'config_command') or args.config_command is None):
+        config_parser.print_help()
+        sys.exit(1)
+
     args.func(args)
 
 

@@ -1,0 +1,255 @@
+$schema: "http://json-schema.org/draft-07/schema#"
+$id: "https://agentforge.dev/schemas/repo.schema.yaml"
+title: "AgentForge Repository Configuration"
+description: |
+  Schema for repo.yaml - per-repository configuration that can override
+  workspace defaults and define repo-specific settings.
+
+type: object
+
+required:
+  - schema_version
+  - repo
+
+properties:
+  schema_version:
+    type: string
+    pattern: "^\\d+\\.\\d+$"
+    description: "Schema version for migration support (e.g., '1.0')"
+    examples: ["1.0"]
+
+  repo:
+    type: object
+    description: "Repository metadata"
+    required:
+      - name
+      - type
+      - language
+    properties:
+      name:
+        type: string
+        pattern: "^[a-z][a-z0-9-]*$"
+        description: "Repository identifier (lowercase, alphanumeric, hyphens)"
+        examples: ["api", "node-service", "controller-lib"]
+      type:
+        type: string
+        enum:
+          - service
+          - library
+          - application
+          - meta
+        description: |
+          Repository classification:
+          - service: Backend service or API
+          - library: Shared library/package
+          - application: Frontend or standalone app
+          - meta: Infrastructure, documentation, or workspace config
+      language:
+        type: string
+        enum:
+          - csharp
+          - typescript
+          - python
+          - java
+          - go
+          - rust
+          - yaml
+        description: "Primary programming language"
+      framework:
+        type: string
+        description: "Framework used (helps with pattern detection)"
+        examples: ["aspnetcore", "express", "react-native", "django"]
+      description:
+        type: string
+        description: "Human-readable description of the repository"
+      version:
+        type: string
+        description: "Repository version"
+        examples: ["1.0.0", "2.3.1"]
+
+  # LSP configuration for this repo
+  lsp:
+    type: object
+    description: "Language server configuration for this repository"
+    properties:
+      server:
+        type: string
+        enum:
+          - omnisharp
+          - csharp-ls
+          - typescript-language-server
+          - pyright
+        description: "LSP server to use for this repo"
+      solution_path:
+        type: string
+        description: "Path to .sln or .csproj file (for C# projects)"
+        examples: ["src/MyProject.sln", "MyProject.csproj"]
+      project_path:
+        type: string
+        description: "Path to project file or directory"
+      extra_args:
+        type: array
+        items:
+          type: string
+        description: "Additional arguments to pass to the LSP server"
+
+  # Architecture layers (for Clean Architecture projects)
+  layers:
+    type: array
+    items:
+      type: string
+    description: "Architecture layers present in this repository"
+    examples:
+      - ["Domain", "Application", "Infrastructure", "Api"]
+      - ["Core", "Services", "Web"]
+
+  # Layer path patterns (override defaults)
+  layer_patterns:
+    type: object
+    description: "Custom patterns for detecting architecture layers"
+    additionalProperties:
+      type: array
+      items:
+        type: string
+    examples:
+      - Domain: ["**/Domain/**", "**/Core/**"]
+        Application: ["**/Application/**", "**/Features/**"]
+        Infrastructure: ["**/Infrastructure/**", "**/Data/**"]
+        Presentation: ["**/Api/**", "**/Controllers/**"]
+
+  # Context retrieval settings (override workspace defaults)
+  context:
+    type: object
+    description: "Context retrieval settings for this repository"
+    properties:
+      budget_tokens:
+        type: integer
+        minimum: 1000
+        maximum: 50000
+        description: "Token budget for context retrieval"
+      embedding_provider:
+        type: string
+        enum:
+          - local
+          - openai
+          - voyage
+        nullable: true
+        description: "Embedding provider (null for workspace default)"
+      include_patterns:
+        type: array
+        items:
+          type: string
+        description: "Additional file patterns to include"
+        examples:
+          - ["**/*.cs", "**/*.razor"]
+      exclude_patterns:
+        type: array
+        items:
+          type: string
+        description: "Additional file patterns to exclude"
+        examples:
+          - ["**/Generated/**", "**/Migrations/**"]
+
+  # Verification settings (override workspace defaults)
+  verification:
+    type: object
+    description: "Verification settings for this repository"
+    properties:
+      fail_fast:
+        type: boolean
+        description: "Stop on first failure"
+      profiles:
+        type: array
+        items:
+          type: string
+        description: "Verification profiles to run"
+        examples:
+          - ["quick"]
+          - ["quick", "full"]
+      build_command:
+        type: string
+        description: "Custom build command"
+        examples: ["dotnet build", "npm run build", "cargo build"]
+      test_command:
+        type: string
+        description: "Custom test command"
+        examples: ["dotnet test", "npm test", "pytest"]
+      lint_command:
+        type: string
+        description: "Custom lint command"
+        examples: ["dotnet format --verify-no-changes", "npm run lint"]
+
+  # Workspace linking
+  workspace:
+    type: object
+    description: "Link this repo to a workspace"
+    properties:
+      path:
+        type: string
+        description: "Relative path to workspace.yaml"
+        examples: ["../agentforge/workspace.yaml", "../../meta/workspace.yaml"]
+      name:
+        type: string
+        description: "Expected workspace name (for validation)"
+
+  # Tags for filtering
+  tags:
+    type: array
+    items:
+      type: string
+    description: "Tags for filtering and grouping"
+    examples:
+      - ["backend", "primary"]
+      - ["frontend", "mobile"]
+
+additionalProperties: false
+
+examples:
+  - schema_version: "1.0"
+    repo:
+      name: api
+      type: service
+      language: csharp
+      framework: aspnetcore
+      description: "Main API service for XTConnect"
+    lsp:
+      server: omnisharp
+      solution_path: "src/XTConnect.Api.sln"
+    layers:
+      - Domain
+      - Application
+      - Infrastructure
+      - Api
+    context:
+      budget_tokens: 8000
+      exclude_patterns:
+        - "**/Migrations/**"
+    verification:
+      build_command: "dotnet build"
+      test_command: "dotnet test --no-build"
+    workspace:
+      path: "../agentforge/workspace.yaml"
+    tags:
+      - backend
+      - primary
+
+  - schema_version: "1.0"
+    repo:
+      name: mobile-app
+      type: application
+      language: typescript
+      framework: react-native
+      description: "Mobile application"
+    lsp:
+      server: typescript-language-server
+    context:
+      budget_tokens: 5000
+      include_patterns:
+        - "**/*.tsx"
+        - "**/*.ts"
+    verification:
+      build_command: "npm run build"
+      test_command: "npm test"
+    tags:
+      - frontend
+      - mobile

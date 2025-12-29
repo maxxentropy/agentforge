@@ -1,0 +1,18 @@
+schema_version: '1.0'
+workspace:
+  name: test-workspace
+  description: Test workspace for AgentForge
+  version: 1.0.0
+repos: []
+paths:
+  contracts: ./contracts
+  shared: ./shared
+  reports: ./reports
+defaults:
+  context:
+    budget_tokens: 6000
+    embedding_provider: null
+  verification:
+    fail_fast: true
+    profiles:
+    - quick

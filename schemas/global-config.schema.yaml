@@ -1,0 +1,111 @@
+$schema: "http://json-schema.org/draft-07/schema#"
+$id: "https://agentforge.dev/schemas/global-config.schema.yaml"
+title: "AgentForge Global Configuration"
+description: |
+  Schema for ~/.agentforge/config.yaml - developer preferences and defaults
+  that apply across all projects on this machine.
+
+type: object
+
+required:
+  - schema_version
+
+properties:
+  schema_version:
+    type: string
+    pattern: "^\\d+\\.\\d+$"
+    description: "Schema version for migration support (e.g., '1.0')"
+    examples: ["1.0"]
+
+  defaults:
+    type: object
+    description: "Default settings for all projects"
+    properties:
+      context:
+        type: object
+        description: "Context retrieval defaults"
+        properties:
+          budget_tokens:
+            type: integer
+            minimum: 1000
+            maximum: 100000
+            default: 6000
+            description: "Default token budget for context retrieval"
+          embedding_provider:
+            type: string
+            enum:
+              - local
+              - openai
+              - voyage
+            nullable: true
+            default: "local"
+            description: "Default embedding provider"
+
+      verification:
+        type: object
+        description: "Verification defaults"
+        properties:
+          fail_fast:
+            type: boolean
+            default: true
+            description: "Stop on first failure"
+          default_profile:
+            type: string
+            default: "quick"
+            description: "Default verification profile"
+
+      lsp:
+        type: object
+        description: "Language server preferences by language"
+        additionalProperties:
+          type: string
+        examples:
+          - csharp: omnisharp
+            typescript: typescript-language-server
+            python: pyright
+
+  contracts:
+    type: object
+    description: "Contract inheritance behavior"
+    properties:
+      merge_strategy:
+        type: string
+        enum:
+          - override
+          - extend
+          - strict
+        default: "extend"
+        description: |
+          How to handle contracts at different tiers:
+          - override: Most specific completely replaces less specific
+          - extend: Merge objects, more specific wins on conflicts
+          - strict: Must explicitly declare 'extends: parent'
+
+  workspaces:
+    type: object
+    description: "Workspace registry for quick switching"
+    additionalProperties:
+      type: string
+    examples:
+      - xtconnect: ~/source/projects/xtconnect-infrastructure/agentforge/workspace.yaml
+        agentforge: ~/source/tools/agentforge/.agentforge/repo.yaml
+
+additionalProperties: false
+
+examples:
+  - schema_version: "1.0"
+    defaults:
+      context:
+        budget_tokens: 6000
+        embedding_provider: local
+      verification:
+        fail_fast: true
+        default_profile: quick
+      lsp:
+        csharp: omnisharp
+        typescript: typescript-language-server
+        python: pyright
+    contracts:
+      merge_strategy: extend
+    workspaces:
+      xtconnect: ~/source/projects/xtconnect-infrastructure/agentforge/workspace.yaml

@@ -43,3 +43,6 @@ Thumbs.db
 .env
 *.pem
 credentials.json
+
+# AgentForge local overrides
+.agentforge/local_overrides.yaml

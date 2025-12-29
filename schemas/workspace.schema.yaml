@@ -1,0 +1,211 @@
+$schema: "http://json-schema.org/draft-07/schema#"
+$id: "https://agentforge.dev/schemas/workspace.schema.yaml"
+title: "AgentForge Workspace Configuration"
+description: |
+  Schema for workspace.yaml - defines a collection of related repositories
+  that form a logical product or system.
+
+type: object
+
+required:
+  - schema_version
+  - workspace
+  - repos
+
+properties:
+  schema_version:
+    type: string
+    pattern: "^\\d+\\.\\d+$"
+    description: "Schema version for migration support (e.g., '1.0')"
+    examples: ["1.0"]
+
+  workspace:
+    type: object
+    description: "Workspace metadata"
+    required:
+      - name
+    properties:
+      name:
+        type: string
+        pattern: "^[a-z][a-z0-9-]*$"
+        description: "Workspace identifier (lowercase, alphanumeric, hyphens)"
+        examples: ["xtconnect", "my-project"]
+      description:
+        type: string
+        description: "Human-readable description"
+        examples: ["XTConnect IoT Controller Platform"]
+      version:
+        type: string
+        description: "Workspace version for tracking changes"
+        examples: ["1.0.0"]
+
+  repos:
+    type: array
+    description: "List of repositories in this workspace"
+    items:
+      type: object
+      required:
+        - name
+        - path
+        - type
+        - language
+      properties:
+        name:
+          type: string
+          pattern: "^[a-z][a-z0-9-]*$"
+          description: "Repository identifier (lowercase, alphanumeric, hyphens)"
+          examples: ["api", "node-service", "controller-lib"]
+        path:
+          type: string
+          description: "Relative path from workspace.yaml to repo root"
+          examples: ["../../xtconnect-api", "../my-service"]
+        type:
+          type: string
+          enum:
+            - service
+            - library
+            - application
+            - meta
+          description: |
+            Repository classification:
+            - service: Backend service or API
+            - library: Shared library/package
+            - application: Frontend or standalone app
+            - meta: Infrastructure, documentation, or workspace config
+        language:
+          type: string
+          enum:
+            - csharp
+            - typescript
+            - python
+            - java
+            - go
+            - rust
+            - yaml
+          description: "Primary programming language"
+        framework:
+          type: string
+          description: "Framework used (helps with pattern detection)"
+          examples: ["aspnetcore", "express", "react-native", "django"]
+        lsp:
+          type: string
+          enum:
+            - omnisharp
+            - csharp-ls
+            - typescript-language-server
+            - pyright
+          description: "LSP server to use for this repo"
+        layers:
+          type: array
+          items:
+            type: string
+          description: "Architecture layers (for Clean Architecture projects)"
+          examples:
+            - ["Domain", "Application", "Infrastructure", "Api"]
+        tags:
+          type: array
+          items:
+            type: string
+          description: "Tags for filtering and grouping repos"
+          examples:
+            - ["backend", "primary"]
+            - ["frontend", "mobile"]
+
+  paths:
+    type: object
+    description: "Directory locations relative to workspace.yaml"
+    properties:
+      contracts:
+        type: string
+        description: "Path to shared contracts directory"
+        default: "./contracts"
+      shared:
+        type: string
+        description: "Path to shared artifacts directory"
+        default: "./shared"
+      reports:
+        type: string
+        description: "Path to reports directory"
+        default: "./reports"
+
+  defaults:
+    type: object
+    description: "Default settings for all repos (can be overridden per-repo)"
+    properties:
+      context:
+        type: object
+        description: "Context retrieval defaults"
+        properties:
+          budget_tokens:
+            type: integer
+            minimum: 1000
+            maximum: 50000
+            default: 6000
+            description: "Default token budget for context retrieval"
+          embedding_provider:
+            type: string
+            enum:
+              - local
+              - openai
+              - voyage
+            nullable: true
+            description: "Embedding provider (null for auto-select)"
+      verification:
+        type: object
+        description: "Verification defaults"
+        properties:
+          fail_fast:
+            type: boolean
+            default: true
+            description: "Stop on first failure"
+          profiles:
+            type: array
+            items:
+              type: string
+            default: ["quick"]
+            description: "Default verification profiles to run"
+
+additionalProperties: false
+
+examples:
+  - schema_version: "1.0"
+    workspace:
+      name: xtconnect
+      description: "XTConnect IoT Controller Platform"
+      version: "1.0.0"
+    repos:
+      - name: api
+        path: "../../xtconnect-api"
+        type: service
+        language: csharp
+        framework: aspnetcore
+        lsp: omnisharp
+        layers:
+          - Domain
+          - Application
+          - Infrastructure
+          - Api
+        tags:
+          - backend
+          - primary
+      - name: node-service
+        path: "../../xtconnect-node"
+        type: service
+        language: typescript
+        framework: express
+        lsp: typescript-language-server
+        tags:
+          - backend
+          - integration
+    paths:
+      contracts: "./contracts"
+      shared: "./shared"
+      reports: "./reports"
+    defaults:
+      context:
+        budget_tokens: 6000
+        embedding_provider: null
+      verification:
+        fail_fast: true
+        profiles:
+          - quick

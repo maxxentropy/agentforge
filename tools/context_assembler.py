@@ -269,117 +269,99 @@ class ContextAssembler:
         """Estimate token count (~4 chars per token)."""
         return len(text) // 4
 
-    def assemble(
+    def _process_vector_results(
+        self, vector_results: List[Any], file_data: Dict[str, Dict[str, Any]]
+    ) -> None:
+        """Process vector search results into file_data."""
+        if not vector_results:
+            return
+
+        for result in vector_results:
+            file_path = result.file_path
+            if file_path not in file_data:
+                file_data[file_path] = {
+                    "content": "",
+                    "score": 0.0,
+                    "symbols": [],
+                    "source": "vector",
+                }
+
+            # Use highest score for file
+            file_data[file_path]["score"] = max(
+                file_data[file_path]["score"],
+                result.score
+            )
+
+            # Accumulate content (avoiding duplicates)
+            if result.chunk not in file_data[file_path]["content"]:
+                if file_data[file_path]["content"]:
+                    file_data[file_path]["content"] += "\n\n// ...\n\n"
+                file_data[file_path]["content"] += result.chunk
+
+    def _process_lsp_symbols(
+        self, lsp_symbols: List[Any], query: str, file_data: Dict[str, Dict[str, Any]]
+    ) -> None:
+        """Process LSP symbols into file_data."""
+        if not lsp_symbols:
+            return
+
+        query_lower = query.lower()
+
+        for symbol in lsp_symbols:
+            file_path = symbol.location.file if hasattr(symbol, 'location') else None
+            if not file_path:
+                continue
+
+            # Normalize path
+            try:
+                if Path(file_path).is_absolute():
+                    file_path = str(Path(file_path).relative_to(self.project_path))
+            except ValueError:
+                pass
+
+            if file_path not in file_data:
+                file_data[file_path] = {
+                    "content": "",
+                    "score": 0.0,
+                    "symbols": [],
+                    "source": "lsp",
+                }
+
+            # Boost score for exact symbol matches
+            symbol_name = symbol.name.lower() if hasattr(symbol, 'name') else ""
+            if symbol_name in query_lower:
+                file_data[file_path]["score"] += 0.5
+
+            # Add symbol info
+            file_data[file_path]["symbols"].append(SymbolInfo(
+                name=symbol.name,
+                kind=symbol.kind,
+                file_path=file_path,
+                line=symbol.location.line if hasattr(symbol.location, 'line') else 0,
+            ))
+
+    def _apply_entry_point_boosts(
+        self, entry_points: List[str], file_data: Dict[str, Dict[str, Any]]
+    ) -> None:
+        """Boost scores for files matching entry points."""
+        if not entry_points:
+            return
+
+        for entry in entry_points:
+            entry_lower = entry.lower()
+            for file_path, data in file_data.items():
+                if entry_lower in file_path.lower():
+                    data["score"] += 1.0
+
+    def _build_file_contexts(
         self,
-        query: str,
-        lsp_symbols: List[Any] = None,
-        vector_results: List[Any] = None,
-        entry_points: List[str] = None,
-        budget_tokens: int = None,
-    ) -> CodeContext:
-        """
-        Assemble context from multiple sources.
-
-        Args:
-            query: Natural language query
-            lsp_symbols: Symbols from LSP adapter
-            vector_results: Results from vector search
-            entry_points: Specific symbols to include
-            budget_tokens: Maximum tokens to return
-
-        Returns:
-            Assembled CodeContext
-        """
-        budget = min(budget_tokens or self.default_budget, self.max_budget)
-
-        context = CodeContext()
-        context.retrieval_metadata = {
-            "query": query,
-            "budget_tokens": budget,
-            "lsp_results": len(lsp_symbols) if lsp_symbols else 0,
-            "vector_results": len(vector_results) if vector_results else 0,
-        }
-
-        # Collect all file contents and scores
-        file_data: Dict[str, Dict[str, Any]] = {}
-
-        # Process vector results (semantic relevance)
-        if vector_results:
-            for result in vector_results:
-                file_path = result.file_path
-                if file_path not in file_data:
-                    file_data[file_path] = {
-                        "content": "",
-                        "score": 0.0,
-                        "symbols": [],
-                        "source": "vector",
-                    }
-
-                # Use highest score for file
-                file_data[file_path]["score"] = max(
-                    file_data[file_path]["score"],
-                    result.score
-                )
-
-                # Accumulate content (avoiding duplicates)
-                if result.chunk not in file_data[file_path]["content"]:
-                    if file_data[file_path]["content"]:
-                        file_data[file_path]["content"] += "\n\n// ...\n\n"
-                    file_data[file_path]["content"] += result.chunk
-
-        # Process LSP symbols (structural accuracy)
-        if lsp_symbols:
-            for symbol in lsp_symbols:
-                file_path = symbol.location.file if hasattr(symbol, 'location') else None
-                if not file_path:
-                    continue
-
-                # Normalize path
-                try:
-                    if Path(file_path).is_absolute():
-                        file_path = str(Path(file_path).relative_to(self.project_path))
-                except ValueError:
-                    pass
-
-                if file_path not in file_data:
-                    file_data[file_path] = {
-                        "content": "",
-                        "score": 0.0,
-                        "symbols": [],
-                        "source": "lsp",
-                    }
-
-                # Boost score for exact symbol matches
-                query_lower = query.lower()
-                symbol_name = symbol.name.lower() if hasattr(symbol, 'name') else ""
-                if symbol_name in query_lower:
-                    file_data[file_path]["score"] += 0.5
-
-                # Add symbol info
-                file_data[file_path]["symbols"].append(SymbolInfo(
-                    name=symbol.name,
-                    kind=symbol.kind,
-                    file_path=file_path,
-                    line=symbol.location.line if hasattr(symbol.location, 'line') else 0,
-                ))
-
-        # Process entry points (explicit includes)
-        if entry_points:
-            for entry in entry_points:
-                for file_path, data in file_data.items():
-                    if entry.lower() in file_path.lower():
-                        data["score"] += 1.0
-
-        # Sort by score
-        sorted_files = sorted(
-            file_data.items(),
-            key=lambda x: x[1]["score"],
-            reverse=True
-        )
-
-        # Build file contexts within budget
+        sorted_files: List[tuple],
+        budget: int,
+        context: CodeContext
+    ) -> int:
+        """Build FileContext objects within token budget. Returns tokens used."""
         current_tokens = 0
-        seen_symbols = set()
+        seen_symbols: Set[str] = set()
 
         for file_path, data in sorted_files:
             content = data["content"]
@@ -430,7 +412,56 @@ class ContextAssembler:
             if current_tokens >= budget:
                 break
 
-        # Detect patterns
+        return current_tokens
+
+    def assemble(
+        self,
+        query: str,
+        lsp_symbols: List[Any] = None,
+        vector_results: List[Any] = None,
+        entry_points: List[str] = None,
+        budget_tokens: int = None,
+    ) -> CodeContext:
+        """
+        Assemble context from multiple sources.
+
+        Args:
+            query: Natural language query
+            lsp_symbols: Symbols from LSP adapter
+            vector_results: Results from vector search
+            entry_points: Specific symbols to include
+            budget_tokens: Maximum tokens to return
+
+        Returns:
+            Assembled CodeContext
+        """
+        budget = min(budget_tokens or self.default_budget, self.max_budget)
+
+        context = CodeContext()
+        context.retrieval_metadata = {
+            "query": query,
+            "budget_tokens": budget,
+            "lsp_results": len(lsp_symbols) if lsp_symbols else 0,
+            "vector_results": len(vector_results) if vector_results else 0,
+        }
+
+        # Phase 1: Collect file data from all sources
+        file_data: Dict[str, Dict[str, Any]] = {}
+        self._process_vector_results(vector_results, file_data)
+        self._process_lsp_symbols(lsp_symbols, query, file_data)
+        self._apply_entry_point_boosts(entry_points, file_data)
+
+        # Phase 2: Sort by relevance score
+        sorted_files = sorted(
+            file_data.items(),
+            key=lambda x: x[1]["score"],
+            reverse=True
+        )
+
+        # Phase 3: Build file contexts within budget
+        current_tokens = self._build_file_contexts(sorted_files, budget, context)
+
+        # Phase 4: Detect patterns and finalize
         context.patterns = self._detect_patterns(context)
         context.total_tokens = current_tokens
 
@@ -450,25 +481,80 @@ class ContextAssembler:
 
         return truncated + "\n// ... (truncated)"
 
+    # Pattern definitions for detection
+    _PATTERN_DEFS = [
+        {
+            "name": "Result<T> Pattern",
+            "description": "Methods return Result<T> instead of throwing exceptions",
+            "content_pattern": r"Result<\w+>|Result\.\w+\(",
+            "symbol_filter": lambda s: "Result" in s,
+            "confidence": 0.8,
+        },
+        {
+            "name": "Repository Pattern",
+            "description": "Data access abstracted through repository interfaces",
+            "symbol_filter": lambda s: "Repository" in s,
+            "confidence": 0.85,
+        },
+        {
+            "name": "Value Objects",
+            "description": "Immutable objects identified by their values",
+            "content_pattern": r":\s*ValueObject|record\s+struct|readonly\s+struct",
+            "confidence": 0.7,
+        },
+        {
+            "name": "Entity/Aggregate Pattern",
+            "description": "Domain entities with identity and lifecycle",
+            "content_pattern": r":\s*(?:Entity|AggregateRoot)|class\s+\w+\s*:\s*\w*Entity",
+            "symbol_filter": lambda s: bool(re.search(r"Entity$|Aggregate", s)),
+            "confidence": 0.8,
+        },
+        {
+            "name": "Mediator/Handler Pattern",
+            "description": "Request handlers via MediatR or similar",
+            "content_pattern": r"IRequestHandler|INotificationHandler",
+            "symbol_filter": lambda s: "Handler" in s,
+            "confidence": 0.85,
+        },
+        {
+            "name": "Specification Pattern",
+            "description": "Business rules encapsulated in specification objects",
+            "content_pattern": r"Specification<|ISpecification",
+            "symbol_filter": lambda s: "Specification" in s or "Spec" in s,
+            "confidence": 0.8,
+        },
+    ]
+
     def _detect_patterns(self, context: CodeContext) -> List[PatternMatch]:
         """Detect architectural patterns in the assembled context."""
-        patterns = []
-
-        # Collect all content and symbol names
         all_content = "\n".join(f.content for f in context.files)
         all_symbols = [s.name for s in context.symbols]
 
-        # Pattern: Result<T> / Result Pattern
-        if re.search(r"Result<\w+>|Result\.\w+\(", all_content):
-            examples = [s for s in all_symbols if "Result" in s][:3]
-            patterns.append(PatternMatch(
-                name="Result<T> Pattern",
-                description="Methods return Result<T> instead of throwing exceptions",
-                examples=examples,
-                confidence=0.8,
-            ))
+        patterns = []
 
-        # Pattern: CQRS Commands/Queries
+        # Check each pattern definition
+        for pdef in self._PATTERN_DEFS:
+            content_match = False
+            symbol_examples = []
+
+            # Check content pattern if defined
+            if "content_pattern" in pdef:
+                content_match = bool(re.search(pdef["content_pattern"], all_content))
+
+            # Check symbol filter if defined
+            if "symbol_filter" in pdef:
+                symbol_examples = [s for s in all_symbols if pdef["symbol_filter"](s)][:3]
+
+            # Pattern matches if content matches OR symbols found
+            if content_match or symbol_examples:
+                patterns.append(PatternMatch(
+                    name=pdef["name"],
+                    description=pdef["description"],
+                    examples=symbol_examples,
+                    confidence=pdef["confidence"],
+                ))
+
+        # Special case: CQRS (needs both commands and queries check)
         commands = [s for s in all_symbols if s.endswith("Command")]
         queries = [s for s in all_symbols if s.endswith("Query")]
         if commands or queries:
@@ -477,55 +563,6 @@ class ContextAssembler:
                 description="Commands and Queries are separate types",
                 examples=commands[:2] + queries[:2],
                 confidence=0.9,
-            ))
-
-        # Pattern: Repository Pattern
-        repos = [s for s in all_symbols if "Repository" in s]
-        if repos:
-            patterns.append(PatternMatch(
-                name="Repository Pattern",
-                description="Data access abstracted through repository interfaces",
-                examples=repos[:3],
-                confidence=0.85,
-            ))
-
-        # Pattern: Value Objects
-        if re.search(r":\s*ValueObject|record\s+struct|readonly\s+struct", all_content):
-            patterns.append(PatternMatch(
-                name="Value Objects",
-                description="Immutable objects identified by their values",
-                examples=[],
-                confidence=0.7,
-            ))
-
-        # Pattern: Entity/Aggregate
-        if re.search(r":\s*(?:Entity|AggregateRoot)|class\s+\w+\s*:\s*\w*Entity", all_content):
-            entities = [s for s in all_symbols if re.search(r"Entity$|Aggregate", s)]
-            patterns.append(PatternMatch(
-                name="Entity/Aggregate Pattern",
-                description="Domain entities with identity and lifecycle",
-                examples=entities[:3],
-                confidence=0.8,
-            ))
-
-        # Pattern: MediatR / Handler pattern
-        handlers = [s for s in all_symbols if "Handler" in s]
-        if handlers or re.search(r"IRequestHandler|INotificationHandler", all_content):
-            patterns.append(PatternMatch(
-                name="Mediator/Handler Pattern",
-                description="Request handlers via MediatR or similar",
-                examples=handlers[:3],
-                confidence=0.85,
-            ))
-
-        # Pattern: Specification Pattern
-        if re.search(r"Specification<|ISpecification", all_content):
-            specs = [s for s in all_symbols if "Specification" in s or "Spec" in s]
-            patterns.append(PatternMatch(
-                name="Specification Pattern",
-                description="Business rules encapsulated in specification objects",
-                examples=specs[:3],
-                confidence=0.8,
             ))
 
         return patterns

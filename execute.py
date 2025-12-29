@@ -29,30 +29,67 @@ sys.path.insert(0, str(Path(__file__).parent))
 from run_contract import ContractRunner
 
 
-def call_claude_code(system: str, user: str) -> str:
-    """
-    Call Claude Code CLI (uses your subscription, no API credits needed).
-    
-    This is the DEFAULT execution method.
-    Uses --output-format json and --append-system-prompt for structured output.
-    """
-    import tempfile
-    import json as json_module
-    
-    # The main prompt content
-    full_prompt = f"""{system}
+def _extract_text_from_content(content):
+    """Extract text from various content formats."""
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list) and len(content) > 0:
+        first = content[0]
+        if isinstance(first, dict):
+            return first.get('text', str(first))
+        return str(first)
+    return None
 
----
 
-{user}"""
-    
-    # Write prompt to temp file (handles large prompts better)
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.md', delete=False) as f:
-        f.write(full_prompt)
-        temp_path = f.name
-    
-    # System prompt enforcement for YAML-only output with readable formatting
-    yaml_enforcement = """CRITICAL: You are in YAML-only output mode.
+def _parse_claude_json_response(json_response, raw_stdout):
+    """Parse Claude CLI JSON response to extract text content."""
+    # If json_response is a string, return it directly
+    if isinstance(json_response, str):
+        return json_response
+
+    if not isinstance(json_response, dict):
+        return raw_stdout
+
+    # Try result.content[0].text (newer format)
+    if 'result' in json_response:
+        result_obj = json_response['result']
+        if isinstance(result_obj, str):
+            return result_obj
+        if isinstance(result_obj, dict):
+            text = _extract_text_from_content(result_obj.get('content', []))
+            if text:
+                return text
+
+    # Try messages array (conversation format)
+    if 'messages' in json_response:
+        for msg in reversed(json_response['messages']):
+            if isinstance(msg, dict) and msg.get('role') == 'assistant':
+                content = msg.get('content', [])
+                if isinstance(content, str):
+                    return content
+                if isinstance(content, list):
+                    for block in content:
+                        if isinstance(block, dict) and block.get('type') == 'text':
+                            return block.get('text', '')
+                        elif isinstance(block, str):
+                            return block
+
+    # Try direct text field
+    if 'text' in json_response:
+        return json_response['text']
+
+    # Try content directly
+    if 'content' in json_response:
+        text = _extract_text_from_content(json_response['content'])
+        if text:
+            return text
+
+    # Fallback - return raw stdout
+    return raw_stdout
+
+
+# YAML enforcement prompt for Claude CLI
+_YAML_ENFORCEMENT_PROMPT = """CRITICAL: You are in YAML-only output mode.
 
 OUTPUT RULES:
 - Output ONLY valid YAML, nothing else
@@ -75,112 +112,67 @@ EXAMPLE - GOOD (readable):
     This is a long description
     that spans multiple lines
     and is easy to read"""
-    
+
+
+def call_claude_code(system: str, user: str) -> str:
+    """
+    Call Claude Code CLI (uses your subscription, no API credits needed).
+
+    This is the DEFAULT execution method.
+    Uses --output-format json and --append-system-prompt for structured output.
+    """
+    import tempfile
+    import json as json_module
+
+    full_prompt = f"{system}\n\n---\n\n{user}"
+
+    # Write prompt to temp file (handles large prompts better)
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.md', delete=False) as f:
+        f.write(full_prompt)
+        temp_path = f.name
+
     try:
-        # Call claude CLI with:
-        # --output-format json: Get structured response wrapper
-        # --append-system-prompt: Enforce YAML-only output
         result = subprocess.run(
             [
                 'claude', '-p', f'@{temp_path}',
                 '--output-format', 'json',
-                '--append-system-prompt', yaml_enforcement
+                '--append-system-prompt', _YAML_ENFORCEMENT_PROMPT
             ],
             capture_output=True,
             text=True,
-            timeout=300,  # 5 minutes for complex prompts
-            env={**os.environ, 'NO_COLOR': '1'}  # Disable color codes in output
+            timeout=300,
+            env={**os.environ, 'NO_COLOR': '1'}
         )
-        
+
         if result.returncode != 0:
             print(f"Claude Code error (exit {result.returncode}):")
             print(result.stderr or result.stdout)
             sys.exit(1)
-        
-        # Parse the JSON wrapper to get the actual response
+
+        # Parse JSON response
         try:
             json_response = json_module.loads(result.stdout)
-            
-            # Debug: print structure if needed
-            # print(f"DEBUG: JSON keys: {json_response.keys() if isinstance(json_response, dict) else 'not a dict'}")
-            
-            # Handle different response structures
-            if isinstance(json_response, dict):
-                # Try result.content[0].text (newer format)
-                if 'result' in json_response:
-                    result_obj = json_response['result']
-                    if isinstance(result_obj, dict):
-                        content = result_obj.get('content', [])
-                        if content and len(content) > 0:
-                            first_content = content[0]
-                            if isinstance(first_content, dict):
-                                return first_content.get('text', str(first_content))
-                            return str(first_content)
-                    elif isinstance(result_obj, str):
-                        # result is directly a string
-                        return result_obj
-                
-                # Try messages array (conversation format)
-                if 'messages' in json_response:
-                    for msg in reversed(json_response['messages']):
-                        if isinstance(msg, dict) and msg.get('role') == 'assistant':
-                            content = msg.get('content', [])
-                            if isinstance(content, str):
-                                return content
-                            if isinstance(content, list):
-                                for block in content:
-                                    if isinstance(block, dict) and block.get('type') == 'text':
-                                        return block.get('text', '')
-                                    elif isinstance(block, str):
-                                        return block
-                
-                # Try direct text field
-                if 'text' in json_response:
-                    return json_response['text']
-                
-                # Try content directly
-                if 'content' in json_response:
-                    content = json_response['content']
-                    if isinstance(content, str):
-                        return content
-                    if isinstance(content, list) and len(content) > 0:
-                        first = content[0]
-                        if isinstance(first, dict):
-                            return first.get('text', str(first))
-                        return str(first)
-            
-            # If json_response is a string, return it
-            if isinstance(json_response, str):
-                return json_response
-            
-            # Last fallback - return raw stdout
-            return result.stdout
-            
+            return _parse_claude_json_response(json_response, result.stdout)
         except json_module.JSONDecodeError:
-            # If not JSON, return raw output
             return result.stdout
-        
+
     except FileNotFoundError:
         print("=" * 60)
         print("ERROR: 'claude' command not found")
         print("=" * 60)
-        print()
-        print("Claude Code CLI is not installed or not in PATH.")
-        print()
+        print("\nClaude Code CLI is not installed or not in PATH.\n")
         print("Options:")
         print("  1. Install Claude Code: npm install -g @anthropic-ai/claude-code")
-        print("     (Requires Node.js and Claude Pro/Team subscription)")
-        print()
+        print("     (Requires Node.js and Claude Pro/Team subscription)\n")
         print("  2. Use API mode instead:")
         print("     export ANTHROPIC_API_KEY=your_key")
-        print("     python execute.py intake --request '...' --use-api")
-        print()
+        print("     python execute.py intake --request '...' --use-api\n")
         sys.exit(1)
-        
+
     except subprocess.TimeoutExpired:
         print("Error: Claude Code timed out after 5 minutes")
         sys.exit(1)
-        
+
     finally:
         try:
             os.unlink(temp_path)
@@ -2775,6 +2767,72 @@ def run_contracts_show(args):
             print(f"    {status} {check.get('id')}: {check.get('name')} [{check.get('type')}]")
 
 
+def _build_contracts_output(results, all_passed, total_errors, total_warnings, total_exempted):
+    """Build structured output dict for contract results."""
+    output = {
+        'summary': {
+            'passed': all_passed,
+            'contracts_checked': len(results),
+            'errors': total_errors,
+            'warnings': total_warnings,
+            'exempted': total_exempted
+        },
+        'results': []
+    }
+    for result in results:
+        output['results'].append({
+            'contract': result.contract_name,
+            'type': result.contract_type,
+            'passed': result.passed,
+            'violations': [
+                {
+                    'check_id': r.check_id,
+                    'check_name': r.check_name,
+                    'severity': r.severity,
+                    'message': r.message,
+                    'file': r.file_path,
+                    'line': r.line_number,
+                    'exempted': r.exempted,
+                    'exemption_id': r.exemption_id
+                }
+                for r in result.check_results if not r.passed
+            ]
+        })
+    return output
+
+
+def _print_contracts_text(results, total_errors, total_warnings, total_exempted):
+    """Print contract results in text format."""
+    print(f"\n  Ran {len(results)} contracts\n")
+
+    for result in results:
+        status = '✓' if result.passed else '✗'
+        print(f"  {status} {result.contract_name} ({result.contract_type})")
+
+        for check_result in result.check_results:
+            if not check_result.passed:
+                if check_result.exempted:
+                    severity_icon = '🔓'
+                elif check_result.severity == 'error':
+                    severity_icon = '❌'
+                elif check_result.severity == 'warning':
+                    severity_icon = '⚠️'
+                else:
+                    severity_icon = 'ℹ️'
+
+                location = f"{check_result.file_path}:{check_result.line_number}" if check_result.file_path else ""
+                print(f"      {severity_icon} {check_result.check_name}: {check_result.message}")
+                if location:
+                    print(f"         at {location}")
+                if check_result.fix_hint:
+                    print(f"         fix: {check_result.fix_hint}")
+
+    print(f"\n  Summary:")
+    print(f"    Errors: {total_errors}")
+    print(f"    Warnings: {total_warnings}")
+    print(f"    Exempted: {total_exempted}")
+
+
 def run_contracts_check(args):
     """Run contract checks."""
     print()
@@ -2799,7 +2857,6 @@ def run_contracts_check(args):
 
     # Run checks
     if args.contract:
-        # Run specific contract
         registry = ContractRegistry(repo_root)
         contract = registry.get_contract(args.contract)
         if not contract:
@@ -2807,7 +2864,6 @@ def run_contracts_check(args):
             sys.exit(1)
         results = [run_contract(contract, repo_root, registry, file_paths)]
     else:
-        # Run all applicable contracts
         results = run_all_contracts(
             repo_root,
             language=args.language,
@@ -2821,93 +2877,15 @@ def run_contracts_check(args):
     total_exempted = sum(r.exempted_count for r in results)
     all_passed = all(r.passed for r in results)
 
+    # Output in requested format
     if args.format == 'text':
-        print(f"\n  Ran {len(results)} contracts\n")
-
-        for result in results:
-            status = '✓' if result.passed else '✗'
-            print(f"  {status} {result.contract_name} ({result.contract_type})")
-
-            for check_result in result.check_results:
-                if not check_result.passed:
-                    severity_icon = '❌' if check_result.severity == 'error' else '⚠️' if check_result.severity == 'warning' else 'ℹ️'
-                    if check_result.exempted:
-                        severity_icon = '🔓'
-                    location = f"{check_result.file_path}:{check_result.line_number}" if check_result.file_path else ""
-                    print(f"      {severity_icon} {check_result.check_name}: {check_result.message}")
-                    if location:
-                        print(f"         at {location}")
-                    if check_result.fix_hint:
-                        print(f"         fix: {check_result.fix_hint}")
-
-        print(f"\n  Summary:")
-        print(f"    Errors: {total_errors}")
-        print(f"    Warnings: {total_warnings}")
-        print(f"    Exempted: {total_exempted}")
-
+        _print_contracts_text(results, total_errors, total_warnings, total_exempted)
     elif args.format == 'yaml':
-        output = {
-            'summary': {
-                'passed': all_passed,
-                'contracts_checked': len(results),
-                'errors': total_errors,
-                'warnings': total_warnings,
-                'exempted': total_exempted
-            },
-            'results': []
-        }
-        for result in results:
-            output['results'].append({
-                'contract': result.contract_name,
-                'type': result.contract_type,
-                'passed': result.passed,
-                'violations': [
-                    {
-                        'check_id': r.check_id,
-                        'check_name': r.check_name,
-                        'severity': r.severity,
-                        'message': r.message,
-                        'file': r.file_path,
-                        'line': r.line_number,
-                        'exempted': r.exempted,
-                        'exemption_id': r.exemption_id
-                    }
-                    for r in result.check_results if not r.passed
-                ]
-            })
+        output = _build_contracts_output(results, all_passed, total_errors, total_warnings, total_exempted)
         print(yaml.dump(output, default_flow_style=False))
-
     elif args.format == 'json':
         import json
-        output = {
-            'summary': {
-                'passed': all_passed,
-                'contracts_checked': len(results),
-                'errors': total_errors,
-                'warnings': total_warnings,
-                'exempted': total_exempted
-            },
-            'results': []
-        }
-        for result in results:
-            output['results'].append({
-                'contract': result.contract_name,
-                'type': result.contract_type,
-                'passed': result.passed,
-                'violations': [
-                    {
-                        'check_id': r.check_id,
-                        'check_name': r.check_name,
-                        'severity': r.severity,
-                        'message': r.message,
-                        'file': r.file_path,
-                        'line': r.line_number,
-                        'exempted': r.exempted,
-                        'exemption_id': r.exemption_id
-                    }
-                    for r in result.check_results if not r.passed
-                ]
-            })
+        output = _build_contracts_output(results, all_passed, total_errors, total_warnings, total_exempted)
         print(json.dumps(output, indent=2))
 
     # Exit with error code if failed

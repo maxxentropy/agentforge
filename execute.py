@@ -51,79 +51,59 @@ from cli.commands.contracts import (
 )
 from cli.parser import build_parser
 
+# Handler mapping - maps parser defaults to command functions
+HANDLERS = {
+    'run_intake': run_intake, 'run_clarify': run_clarify, 'run_analyze': run_analyze,
+    'run_draft': run_draft, 'run_validate': run_validate, 'run_revise': run_revise,
+    'run_context': run_context, 'run_verify': run_verify, 'run_render_spec': run_render_spec,
+    'run_workspace': run_workspace, 'run_workspace_init': run_workspace_init,
+    'run_workspace_status': run_workspace_status, 'run_workspace_add_repo': run_workspace_add_repo,
+    'run_workspace_remove_repo': run_workspace_remove_repo, 'run_workspace_link': run_workspace_link,
+    'run_workspace_validate': run_workspace_validate, 'run_workspace_list_repos': run_workspace_list_repos,
+    'run_workspace_unlink': run_workspace_unlink, 'run_config': run_config,
+    'run_config_init_global': run_config_init_global, 'run_config_show': run_config_show,
+    'run_config_set': run_config_set, 'run_contracts': run_contracts,
+    'run_contracts_list': run_contracts_list, 'run_contracts_show': run_contracts_show,
+    'run_contracts_check': run_contracts_check, 'run_contracts_init': run_contracts_init,
+    'run_contracts_validate': run_contracts_validate, 'run_exemptions': run_exemptions,
+    'run_exemptions_list': run_exemptions_list, 'run_exemptions_add': run_exemptions_add,
+    'run_exemptions_audit': run_exemptions_audit,
+}
+
+# Commands that require subcommands
+SUBCOMMAND_REQUIRED = {
+    'workspace': 'workspace_command',
+    'config': 'config_command',
+    'contracts': 'contracts_command',
+    'exemptions': 'exemptions_command',
+}
+
+
+def _check_subcommand(args, command: str, attr: str, subparser) -> bool:
+    """Check if subcommand is required but missing. Returns True if should exit."""
+    if args.command != command:
+        return False
+    if not hasattr(args, attr) or getattr(args, attr) is None:
+        subparser.print_help()
+        return True
+    return False
+
 
 def main():
     """Main entry point."""
-    # Build handler mapping
-    handlers = {
-        # SPEC workflow
-        'run_intake': run_intake,
-        'run_clarify': run_clarify,
-        'run_analyze': run_analyze,
-        'run_draft': run_draft,
-        'run_validate': run_validate,
-        'run_revise': run_revise,
-        # Context and verify
-        'run_context': run_context,
-        'run_verify': run_verify,
-        'run_render_spec': run_render_spec,
-        # Workspace
-        'run_workspace': run_workspace,
-        'run_workspace_init': run_workspace_init,
-        'run_workspace_status': run_workspace_status,
-        'run_workspace_add_repo': run_workspace_add_repo,
-        'run_workspace_remove_repo': run_workspace_remove_repo,
-        'run_workspace_link': run_workspace_link,
-        'run_workspace_validate': run_workspace_validate,
-        'run_workspace_list_repos': run_workspace_list_repos,
-        'run_workspace_unlink': run_workspace_unlink,
-        # Config
-        'run_config': run_config,
-        'run_config_init_global': run_config_init_global,
-        'run_config_show': run_config_show,
-        'run_config_set': run_config_set,
-        # Contracts
-        'run_contracts': run_contracts,
-        'run_contracts_list': run_contracts_list,
-        'run_contracts_show': run_contracts_show,
-        'run_contracts_check': run_contracts_check,
-        'run_contracts_init': run_contracts_init,
-        'run_contracts_validate': run_contracts_validate,
-        # Exemptions
-        'run_exemptions': run_exemptions,
-        'run_exemptions_list': run_exemptions_list,
-        'run_exemptions_add': run_exemptions_add,
-        'run_exemptions_audit': run_exemptions_audit,
-    }
-
-    # Build parser
-    parser, ws_parser, cfg_parser, ct_parser, ex_parser = build_parser(handlers)
-
-    # Parse args
+    parser, ws_parser, cfg_parser, ct_parser, ex_parser = build_parser(HANDLERS)
     args = parser.parse_args()
 
     if args.command is None:
         parser.print_help()
         sys.exit(1)
 
-    # Handle subcommand-required commands
-    if args.command == 'workspace' and (not hasattr(args, 'workspace_command') or args.workspace_command is None):
-        ws_parser.print_help()
-        sys.exit(1)
+    # Check subcommand requirements
+    subparsers = {'workspace': ws_parser, 'config': cfg_parser, 'contracts': ct_parser, 'exemptions': ex_parser}
+    for cmd, attr in SUBCOMMAND_REQUIRED.items():
+        if _check_subcommand(args, cmd, attr, subparsers[cmd]):
+            sys.exit(1)
 
-    if args.command == 'config' and (not hasattr(args, 'config_command') or args.config_command is None):
-        cfg_parser.print_help()
-        sys.exit(1)
-
-    if args.command == 'contracts' and (not hasattr(args, 'contracts_command') or args.contracts_command is None):
-        ct_parser.print_help()
-        sys.exit(1)
-
-    if args.command == 'exemptions' and (not hasattr(args, 'exemptions_command') or args.exemptions_command is None):
-        ex_parser.print_help()
-        sys.exit(1)
-
-    # Execute command
     args.func(args)
 
 

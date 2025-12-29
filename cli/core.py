@@ -61,11 +61,36 @@ def _extract_text_from_content(content: Any) -> str | None:
     return None
 
 
+def _extract_from_messages(messages: list) -> str | None:
+    """Extract text from messages array (conversation format)."""
+    for msg in reversed(messages):
+        if not isinstance(msg, dict) or msg.get('role') != 'assistant':
+            continue
+        content = msg.get('content', [])
+        if isinstance(content, str):
+            return content
+        text = _extract_from_content_blocks(content)
+        if text:
+            return text
+    return None
+
+
+def _extract_from_content_blocks(content: list) -> str | None:
+    """Extract text from content blocks array."""
+    if not isinstance(content, list):
+        return None
+    for block in content:
+        if isinstance(block, str):
+            return block
+        if isinstance(block, dict) and block.get('type') == 'text':
+            return block.get('text', '')
+    return None
+
+
 def _parse_claude_json_response(json_response: Any, raw_stdout: str) -> str:
     """Parse Claude CLI JSON response to extract text content."""
     if isinstance(json_response, str):
         return json_response
-
     if not isinstance(json_response, dict):
         return raw_stdout
 
@@ -81,29 +106,18 @@ def _parse_claude_json_response(json_response: Any, raw_stdout: str) -> str:
 
     # Try messages array (conversation format)
     if 'messages' in json_response:
-        for msg in reversed(json_response['messages']):
-            if isinstance(msg, dict) and msg.get('role') == 'assistant':
-                content = msg.get('content', [])
-                if isinstance(content, str):
-                    return content
-                if isinstance(content, list):
-                    for block in content:
-                        if isinstance(block, dict) and block.get('type') == 'text':
-                            return block.get('text', '')
-                        elif isinstance(block, str):
-                            return block
+        text = _extract_from_messages(json_response['messages'])
+        if text:
+            return text
 
-    # Try direct text field
+    # Try direct text or content fields
     if 'text' in json_response:
         return json_response['text']
-
-    # Try content directly
     if 'content' in json_response:
         text = _extract_text_from_content(json_response['content'])
         if text:
             return text
 
-    # Fallback - return raw stdout
     return raw_stdout
 
 
@@ -215,46 +229,58 @@ def call_anthropic_api(
     return response.content[0].text
 
 
-def extract_yaml_from_response(response: str) -> str:
-    """Extract YAML content from a response that may include markdown or prose."""
-    # Try to find YAML in code blocks first
-    yaml_block_pattern = r'```ya?ml?\s*\n(.*?)```'
-    matches = re.findall(yaml_block_pattern, response, re.DOTALL | re.IGNORECASE)
-
+def _find_yaml_in_code_blocks(response: str) -> str | None:
+    """Find YAML content in markdown code blocks."""
+    # Try explicit YAML blocks first
+    yaml_pattern = r'```ya?ml?\s*\n(.*?)```'
+    matches = re.findall(yaml_pattern, response, re.DOTALL | re.IGNORECASE)
     if matches:
-        # Return the last YAML block (most likely to be the actual output)
         return matches[-1].strip()
 
-    # Try to find any code block
-    code_block_pattern = r'```\s*\n(.*?)```'
-    matches = re.findall(code_block_pattern, response, re.DOTALL)
+    # Try any code block that looks like YAML
+    code_pattern = r'```\s*\n(.*?)```'
+    for match in reversed(re.findall(code_pattern, response, re.DOTALL)):
+        if ':' in match and not match.strip().startswith('{'):
+            return match.strip()
+    return None
 
-    if matches:
-        # Check if any block looks like YAML
-        for match in reversed(matches):
-            if ':' in match and not match.strip().startswith('{'):
-                return match.strip()
 
-    # No code blocks - try to find YAML-like content
-    lines = response.split('\n')
+def _is_prose_line(line: str) -> bool:
+    """Check if a line is prose rather than YAML."""
+    prose_starts = ('**', 'Looking at', 'Let me', 'Here is', 'The ')
+    return line.startswith(prose_starts)
+
+
+def _extract_yaml_lines(response: str) -> str | None:
+    """Extract YAML-like lines from raw response."""
     yaml_lines = []
     in_yaml = False
 
-    for line in lines:
-        # YAML typically starts with a key: value or list item
+    for line in response.split('\n'):
         if re.match(r'^[a-z_]+:', line) or re.match(r'^- ', line):
             in_yaml = True
+        if not in_yaml:
+            continue
+        if _is_prose_line(line):
+            if yaml_lines:
+                break
+            continue
+        yaml_lines.append(line)
 
-        if in_yaml:
-            # Stop if we hit obvious prose
-            if line.startswith('**') or line.startswith('Looking at') or line.startswith('Let me'):
-                if yaml_lines:
-                    break
-                continue
-            yaml_lines.append(line)
+    return '\n'.join(yaml_lines).strip() if yaml_lines else None
 
-    if yaml_lines:
-        return '\n'.join(yaml_lines).strip()
+
+def extract_yaml_from_response(response: str) -> str:
+    """Extract YAML content from a response that may include markdown or prose."""
+    # Try code blocks first
+    result = _find_yaml_in_code_blocks(response)
+    if result:
+        return result
+
+    # Try extracting YAML-like lines
+    result = _extract_yaml_lines(response)
+    if result:
+        return result
 
     # Last resort: return as-is
     return response.strip()

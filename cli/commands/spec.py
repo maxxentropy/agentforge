@@ -125,6 +125,32 @@ def run_clarify(args):
         print("Next: python execute.py analyze")
 
 
+def _retrieve_context(project_path: str, intake_record: dict) -> str | None:
+    """Retrieve code context from project. Returns None on failure."""
+    print(f"\n  Retrieving context from: {project_path}")
+    try:
+        sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'tools'))
+        from context_retrieval import ContextRetriever
+
+        retriever = ContextRetriever(project_path)
+        query_parts = [intake_record.get('detected_intent', ''), intake_record.get('detected_scope', ''), intake_record.get('original_request', '')]
+        query = ' '.join(part for part in query_parts if part)
+        context = retriever.retrieve(query, budget_tokens=6000)
+
+        print(f"  Found {len(context.files)} relevant files")
+        print(f"  Found {len(context.symbols)} relevant symbols")
+        print(f"  Total tokens: {context.total_tokens}")
+
+        result = context.to_prompt_text()
+        retriever.shutdown()
+        return result
+    except ImportError as e:
+        print(f"  Warning: Context retrieval not available: {e}")
+    except Exception as e:
+        print(f"  Warning: Context retrieval failed: {e}")
+    return None
+
+
 def run_analyze(args):
     """Execute ANALYZE contract."""
     print()
@@ -132,10 +158,7 @@ def run_analyze(args):
     print("ANALYZE")
     print("=" * 60)
 
-    # Load required files
-    intake_path = Path(args.intake_file)
-    clarify_path = Path(args.clarification_file)
-
+    intake_path, clarify_path = Path(args.intake_file), Path(args.clarification_file)
     if not intake_path.exists():
         print(f"Error: {intake_path} not found")
         sys.exit(1)
@@ -148,51 +171,15 @@ def run_analyze(args):
     with open(clarify_path) as f:
         clarification_log = yaml.safe_load(f)
 
-    # Load architecture if exists
     arch_path = Path('config/architecture.yaml')
-    architecture_rules = ""
-    if arch_path.exists():
-        with open(arch_path) as f:
-            architecture_rules = f.read()
+    architecture_rules = arch_path.read_text() if arch_path.exists() else ""
 
-    # Get code context if project path provided
     code_context = args.code_context or "No code context provided."
-
     if args.project_path:
-        print(f"\n  Retrieving context from: {args.project_path}")
-        try:
-            sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'tools'))
-            from context_retrieval import ContextRetriever
-
-            retriever = ContextRetriever(args.project_path)
-
-            # Build query from intake record
-            query_parts = [
-                intake_record.get('detected_intent', ''),
-                intake_record.get('detected_scope', ''),
-                intake_record.get('original_request', ''),
-            ]
-            query = ' '.join(part for part in query_parts if part)
-
-            context = retriever.retrieve(query, budget_tokens=6000)
-
-            print(f"  Found {len(context.files)} relevant files")
-            print(f"  Found {len(context.symbols)} relevant symbols")
-            print(f"  Total tokens: {context.total_tokens}")
-
-            # Format for LLM consumption
-            code_context = context.to_prompt_text()
-
-            retriever.shutdown()
-
-        except ImportError as e:
-            print(f"  Warning: Context retrieval not available: {e}")
-        except Exception as e:
-            print(f"  Warning: Context retrieval failed: {e}")
+        code_context = _retrieve_context(args.project_path, intake_record) or code_context
 
     inputs = {
-        'intake_record': intake_record,
-        'clarification_log': clarification_log,
+        'intake_record': intake_record, 'clarification_log': clarification_log,
         'architecture_rules': architecture_rules or "No architecture rules configured.",
         'code_context': code_context,
     }
@@ -284,6 +271,37 @@ def run_draft(args):
         print("Try re-running the draft step.")
 
 
+def _load_spec_content(spec_path: Path) -> tuple:
+    """Load specification content and optional structured data."""
+    spec_content = spec_path.read_text()
+    specification_data = None
+
+    if spec_path.suffix in ['.yaml', '.yml']:
+        try:
+            specification_data = yaml.safe_load(spec_content)
+            print(f"  Spec format: YAML (structured)")
+        except yaml.YAMLError:
+            print(f"  Spec format: YAML (parse failed, using raw)")
+    else:
+        print(f"  Spec format: Markdown")
+
+    return spec_content, specification_data
+
+
+def _print_verdict(verdict: str):
+    """Print verdict message based on validation result."""
+    print("-" * 60)
+    print(f"VERDICT: {verdict.upper()}")
+    print("-" * 60)
+
+    messages = {
+        'approved': "\n✅ Specification approved! Ready for implementation.",
+        'approved_with_notes': "\n✅ Specification approved with conditions.\n   Address approval_conditions before implementation, or run:\n   python execute.py revise",
+        'needs_revision': "\n⚠️  Specification needs revision. Run:\n   python execute.py revise\n   Then re-validate: python execute.py validate",
+    }
+    print(messages.get(verdict, "\n❌ Specification rejected. Major rework needed.\n   Run: python execute.py revise"))
+
+
 def run_validate(args):
     """Execute VALIDATE contract."""
     print()
@@ -297,36 +315,17 @@ def run_validate(args):
         print("Run 'python execute.py draft' first")
         sys.exit(1)
 
-    # Load specification - handle both YAML and markdown
-    with open(spec_path) as f:
-        spec_content = f.read()
-
-    # If YAML, also load as structured data for better validation
-    specification_data = None
-    if spec_path.suffix in ['.yaml', '.yml']:
-        try:
-            specification_data = yaml.safe_load(spec_content)
-            print(f"  Spec format: YAML (structured)")
-        except yaml.YAMLError:
-            print(f"  Spec format: YAML (parse failed, using raw)")
-    else:
-        print(f"  Spec format: Markdown")
+    spec_content, specification_data = _load_spec_content(spec_path)
 
     with open(args.analysis_file) as f:
         analysis_report = yaml.safe_load(f)
 
     arch_path = Path('config/architecture.yaml')
-    architecture_rules = ""
-    if arch_path.exists():
-        with open(arch_path) as f:
-            architecture_rules = f.read()
+    architecture_rules = arch_path.read_text() if arch_path.exists() else ""
 
-    # Pass both raw content and structured data if available
     inputs = {
-        'specification': spec_content,
-        'specification_data': specification_data,  # Structured YAML if available
-        'analysis_report': analysis_report,
-        'architecture_rules': architecture_rules,
+        'specification': spec_content, 'specification_data': specification_data,
+        'analysis_report': analysis_report, 'architecture_rules': architecture_rules,
     }
 
     result = execute_contract('spec.validate.v1', inputs, args.use_api)
@@ -342,21 +341,4 @@ def run_validate(args):
     print("-" * 60)
     print(yaml.dump(result, default_flow_style=False, sort_keys=False))
 
-    verdict = result.get('overall_verdict', 'unknown')
-    print("-" * 60)
-    print(f"VERDICT: {verdict.upper()}")
-    print("-" * 60)
-
-    if verdict == 'approved':
-        print("\n✅ Specification approved! Ready for implementation.")
-    elif verdict == 'approved_with_notes':
-        print("\n✅ Specification approved with conditions.")
-        print("   Address approval_conditions before implementation, or run:")
-        print("   python execute.py revise")
-    elif verdict == 'needs_revision':
-        print("\n⚠️  Specification needs revision. Run:")
-        print("   python execute.py revise")
-        print("   Then re-validate: python execute.py validate")
-    else:
-        print("\n❌ Specification rejected. Major rework needed.")
-        print("   Run: python execute.py revise")
+    _print_verdict(result.get('overall_verdict', 'unknown'))

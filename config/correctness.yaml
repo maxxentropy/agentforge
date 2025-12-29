@@ -1,0 +1,329 @@
+# Correctness Verification Configuration
+# =======================================
+# Deterministic checks that replace LLM-based validation with actual verification.
+# "Correctness is Upstream" - verify with compilers/tests, not LLM judgment.
+#
+# Check Types:
+#   - command: Run shell command, check exit code
+#   - regex: Pattern matching on files (positive or negative match)
+#   - file_exists: Verify required files exist
+#   - import_check: Verify import/dependency rules
+#   - custom: Python function for complex checks
+
+version: "1.0"
+
+# Global settings
+settings:
+  # Stop on first blocking failure
+  fail_fast: false
+
+  # Timeout for command checks (seconds)
+  default_timeout: 300
+
+  # Working directory for commands (relative to project root)
+  working_dir: "."
+
+  # File patterns to include in regex/import checks
+  include_patterns:
+    - "**/*.cs"
+    - "**/*.csproj"
+
+  # File patterns to exclude
+  exclude_patterns:
+    - "**/bin/**"
+    - "**/obj/**"
+    - "**/node_modules/**"
+    - "**/.git/**"
+
+# =============================================================================
+# CHECK DEFINITIONS
+# =============================================================================
+checks:
+  # ---------------------------------------------------------------------------
+  # BUILD CHECKS - Does the code compile?
+  # ---------------------------------------------------------------------------
+  - id: compile_check
+    name: "Build Verification"
+    description: "Verify the solution/project compiles without errors"
+    type: command
+    command: "dotnet build {project_path} --no-restore --verbosity minimal"
+    working_dir: "{project_root}"
+    timeout: 120
+    severity: blocking
+    message: "Code must compile before proceeding"
+
+    # What to look for in output
+    success_indicators:
+      - "Build succeeded"
+    failure_indicators:
+      - "Build FAILED"
+      - "error CS"
+
+    # Parse output for structured errors
+    error_parser:
+      pattern: "(?P<file>[^(]+)\\((?P<line>\\d+),(?P<col>\\d+)\\): error (?P<code>\\w+): (?P<message>.+)"
+      fields: [file, line, col, code, message]
+
+  - id: restore_check
+    name: "NuGet Restore"
+    description: "Verify all NuGet packages can be restored"
+    type: command
+    command: "dotnet restore {project_path}"
+    working_dir: "{project_root}"
+    timeout: 120
+    severity: blocking
+    message: "All dependencies must be restorable"
+    run_before: [compile_check]  # Dependency ordering
+
+  # ---------------------------------------------------------------------------
+  # TEST CHECKS - Do the tests pass?
+  # ---------------------------------------------------------------------------
+  - id: test_check
+    name: "Test Verification"
+    description: "Run all tests and verify they pass"
+    type: command
+    command: "dotnet test {project_path} --no-build --verbosity normal"
+    working_dir: "{project_root}"
+    timeout: 300
+    severity: blocking
+    message: "All tests must pass"
+    depends_on: [compile_check]  # Only run if compile passes
+
+    success_indicators:
+      - "Passed!"
+      - "Test Run Successful"
+    failure_indicators:
+      - "Failed!"
+      - "Test Run Failed"
+
+    # Parse test results
+    result_parser:
+      pattern: "(?P<status>Passed|Failed)!\\s+-\\s+Failed:\\s+(?P<failed>\\d+),\\s+Passed:\\s+(?P<passed>\\d+)"
+      fields: [status, failed, passed]
+
+  - id: test_coverage_check
+    name: "Test Coverage"
+    description: "Verify minimum test coverage threshold"
+    type: command
+    command: "dotnet test {project_path} --collect:\"XPlat Code Coverage\" --results-directory ./coverage"
+    working_dir: "{project_root}"
+    timeout: 300
+    severity: advisory
+    message: "Test coverage should meet minimum threshold"
+    depends_on: [test_check]
+
+    # Coverage threshold (advisory, not blocking)
+    thresholds:
+      line_coverage: 70
+      branch_coverage: 60
+
+  # ---------------------------------------------------------------------------
+  # ARCHITECTURE CHECKS - Do architecture rules hold?
+  # ---------------------------------------------------------------------------
+  - id: no_public_fields
+    name: "No Public Fields"
+    description: "Use properties instead of public fields for encapsulation"
+    type: regex
+    pattern: "public\\s+(?!class|interface|enum|struct|delegate|event|override|virtual|abstract|static\\s+class)[a-zA-Z0-9_<>\\[\\],\\s]+\\s+[a-zA-Z0-9_]+\\s*;"
+    negative_match: true
+    file_patterns:
+      - "**/*.cs"
+    exclude_patterns:
+      - "**/*.Designer.cs"
+      - "**/Migrations/*.cs"
+    severity: required
+    message: "Use properties instead of public fields"
+    fix_suggestion: "Convert 'public Type field;' to 'public Type Field { get; set; }'"
+
+  - id: no_console_writeline
+    name: "No Console.WriteLine in Production"
+    description: "Use proper logging instead of Console.WriteLine"
+    type: regex
+    pattern: "Console\\.Write(Line)?\\s*\\("
+    negative_match: true
+    file_patterns:
+      - "src/**/*.cs"
+    exclude_patterns:
+      - "**/*Test*.cs"
+      - "**/Program.cs"
+      - "**/Startup.cs"
+    severity: advisory
+    message: "Use ILogger instead of Console.WriteLine"
+    fix_suggestion: "Replace Console.WriteLine with _logger.LogInformation()"
+
+  - id: layer_dependency_check
+    name: "Layer Dependency Rules"
+    description: "Verify Clean Architecture layer dependencies"
+    type: import_check
+    rules:
+      # Domain layer should not reference other layers
+      - source_pattern: "src/Domain/**/*.cs"
+        forbidden_imports:
+          - "Application"
+          - "Infrastructure"
+          - "WebApi"
+          - "Microsoft.EntityFrameworkCore"
+          - "Microsoft.AspNetCore"
+        message: "Domain layer must not depend on outer layers"
+
+      # Application layer should only reference Domain
+      - source_pattern: "src/Application/**/*.cs"
+        forbidden_imports:
+          - "Infrastructure"
+          - "WebApi"
+          - "Microsoft.EntityFrameworkCore"
+          - "Microsoft.AspNetCore.Mvc"
+        allowed_imports:
+          - "Domain"
+        message: "Application layer should only depend on Domain"
+
+      # Infrastructure can reference Application and Domain
+      - source_pattern: "src/Infrastructure/**/*.cs"
+        forbidden_imports:
+          - "WebApi"
+        message: "Infrastructure should not depend on WebApi"
+
+    severity: required
+    message: "Architecture layer dependencies violated"
+
+  - id: no_god_classes
+    name: "No God Classes"
+    description: "Classes should have focused responsibility (max methods)"
+    type: regex
+    pattern: "(?s)class\\s+\\w+[^{]*\\{(?:[^{}]|\\{[^{}]*\\})*\\}"
+    file_patterns:
+      - "**/*.cs"
+    severity: advisory
+    message: "Class may have too many responsibilities"
+
+    # Custom analysis (method count)
+    analyzer:
+      type: method_count
+      max_methods: 20
+      max_lines: 500
+
+  - id: async_naming
+    name: "Async Method Naming"
+    description: "Async methods should end with 'Async'"
+    type: regex
+    pattern: "async\\s+Task[<>\\w]*\\s+(?!\\w*Async)\\w+\\s*\\("
+    negative_match: true
+    file_patterns:
+      - "**/*.cs"
+    severity: advisory
+    message: "Async methods should be suffixed with 'Async'"
+    fix_suggestion: "Rename method to end with 'Async'"
+
+  # ---------------------------------------------------------------------------
+  # FILE STRUCTURE CHECKS
+  # ---------------------------------------------------------------------------
+  - id: required_files
+    name: "Required Files Exist"
+    description: "Verify required project files exist"
+    type: file_exists
+    files:
+      - path: "{project_path}"
+        message: "Project file must exist"
+      - path: "README.md"
+        message: "README.md should exist"
+        severity: advisory
+      - path: ".gitignore"
+        message: ".gitignore should exist"
+        severity: advisory
+    severity: blocking
+
+  - id: no_secrets
+    name: "No Hardcoded Secrets"
+    description: "Check for potential hardcoded secrets"
+    type: regex
+    patterns:
+      - name: "API Keys"
+        pattern: "['\"](?:api[_-]?key|apikey)['\"]\\s*[:=]\\s*['\"][a-zA-Z0-9]{20,}['\"]"
+      - name: "Connection Strings"
+        pattern: "['\"](?:password|pwd)['\"]\\s*[:=]\\s*['\"][^'\"]+['\"]"
+      - name: "Private Keys"
+        pattern: "-----BEGIN (?:RSA |EC )?PRIVATE KEY-----"
+    negative_match: true
+    file_patterns:
+      - "**/*.cs"
+      - "**/*.json"
+      - "**/*.yaml"
+      - "**/*.yml"
+    exclude_patterns:
+      - "**/*test*"
+      - "**/*mock*"
+      - "**/appsettings.Development.json"
+    severity: blocking
+    message: "Potential hardcoded secret detected"
+
+  # ---------------------------------------------------------------------------
+  # CUSTOM CHECKS (Python functions)
+  # ---------------------------------------------------------------------------
+  - id: specification_coverage
+    name: "Specification Coverage"
+    description: "Verify all spec requirements have corresponding tests"
+    type: custom
+    function: "verification_checks.spec_coverage_check"
+    parameters:
+      spec_file: "outputs/specification.yaml"
+      test_directory: "tests"
+      requirement_pattern: "FR-\\d+"
+    severity: advisory
+    message: "Not all requirements have corresponding tests"
+
+# =============================================================================
+# CHECK PROFILES
+# =============================================================================
+# Predefined sets of checks for different scenarios
+
+profiles:
+  # Quick sanity check
+  quick:
+    description: "Fast checks for local development"
+    checks:
+      - compile_check
+      - no_public_fields
+      - no_secrets
+    settings:
+      fail_fast: true
+
+  # Standard CI checks
+  ci:
+    description: "Standard CI/CD pipeline checks"
+    checks:
+      - restore_check
+      - compile_check
+      - test_check
+      - no_public_fields
+      - layer_dependency_check
+      - no_secrets
+    settings:
+      fail_fast: false
+
+  # Full verification
+  full:
+    description: "Complete verification suite"
+    checks: all
+    settings:
+      fail_fast: false
+
+  # Architecture focus
+  architecture:
+    description: "Architecture and design checks only"
+    checks:
+      - layer_dependency_check
+      - no_public_fields
+      - no_god_classes
+      - async_naming
+    settings:
+      fail_fast: false
+
+  # Pre-commit hook
+  precommit:
+    description: "Fast checks for pre-commit hook"
+    checks:
+      - no_secrets
+      - no_public_fields
+    settings:
+      fail_fast: true
+      timeout: 30

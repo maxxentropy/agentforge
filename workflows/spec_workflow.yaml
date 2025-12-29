@@ -1,0 +1,649 @@
+# SPEC Workflow Definition
+# Transform raw feature requests into complete, unambiguous specifications
+
+workflow:
+  name: SPEC
+  version: "1.0"
+  description: |
+    Transform a raw feature request into a complete, unambiguous specification
+    that can drive implementation. The spec should be detailed enough that
+    two different developers would produce substantially similar implementations.
+  
+  entry_state: INTAKE
+  terminal_states: [APPROVED, ABANDONED]
+  max_iterations: 10
+
+  context_retrieval:
+    enabled: true
+    strategy: hybrid_lsp_vector
+    base_budget_tokens: 6000
+
+# =============================================================================
+# STATE 1: INTAKE
+# =============================================================================
+states:
+  - name: INTAKE
+    role: requirements_analyst
+    
+    description: |
+      Capture the raw request and establish initial understanding.
+      Focus on LISTENING, not solving. Extract what the user wants
+      without imposing solutions.
+    
+    entry_conditions:
+      - "New task created"
+      - "OR returning from ABANDONED with restart flag"
+    
+    inputs:
+      user_provided:
+        - name: raw_request
+          type: text
+          required: true
+          description: "The user's original feature request in natural language"
+          
+        - name: related_files
+          type: file_list
+          required: false
+          description: "Files the user thinks are relevant"
+          
+        - name: priority
+          type: enum
+          values: [critical, high, medium, low]
+          required: false
+          default: medium
+          
+        - name: constraints
+          type: text
+          required: false
+          description: "Any known limitations or requirements"
+      
+      system_provided:
+        - name: project_context
+          source: "project_context.yaml"
+        - name: recent_changes
+          source: "git log --oneline -20"
+    
+    context_retrieval:
+      strategy: lightweight
+      operations:
+        - type: keyword_search
+          query: "{extracted_entities_from_raw_request}"
+          budget_tokens: 500
+    
+    agent_instructions: |
+      You are a Requirements Analyst. Your job is to LISTEN and UNDERSTAND,
+      not to solve or design.
+      
+      ## Your Task
+      
+      1. Read the user's request carefully
+      2. Identify the core intent (what do they actually want?)
+      3. Detect the scope (how big is this?)
+      4. Classify the request type
+      5. Note obvious questions that need answers
+      6. Identify which parts of the codebase might be affected
+      
+      ## Rules
+      
+      - Do NOT propose solutions
+      - Do NOT make assumptions about implementation
+      - DO ask yourself "what is unclear here?"
+      - DO identify ambiguous terms
+      - DO note implicit requirements
+      
+      ## Output Format
+      
+      Produce a YAML document matching the intake_record schema exactly.
+    
+    outputs:
+      - name: intake_record.yaml
+        schema_ref: "schemas/intake_record.schema.yaml"
+    
+    verification:
+      blocking:
+        - check: schema_validation
+          description: "Output matches intake_record schema"
+          
+        - check: required_fields_present
+          description: "All required fields have values"
+      
+      required:
+        - check: intent_is_specific
+          description: "Detected intent is a concrete statement"
+          type: llm
+          prompt: "Is this intent specific and actionable? '{detected_intent}'"
+          
+        - check: has_questions
+          description: "At least one clarifying question identified"
+          condition: "len(initial_questions) >= 1 if detected_scope != 'trivial'"
+      
+      advisory:
+        - check: entities_identified
+          description: "Key entities extracted from request"
+          
+        - check: no_solution_proposed
+          description: "Output doesn't include implementation details"
+      
+      human_confirmation:
+        prompt: |
+          I understood your request as: "{detected_intent}"
+          
+          Is this correct? (yes/no/clarify)
+    
+    transitions:
+      - to: CLARIFY
+        condition: "verification.all_blocking_pass AND human_confirmed"
+      - to: INTAKE
+        condition: "verification.blocking_failed OR human_rejected"
+      - to: ABANDONED
+        condition: "attempts >= 3 AND human_requests_abort"
+
+# =============================================================================
+# STATE 2: CLARIFY
+# =============================================================================
+  - name: CLARIFY
+    role: requirements_analyst
+    
+    description: |
+      Engage in structured dialogue to fill gaps and resolve ambiguities.
+      Use targeted questions derived from INTAKE.
+    
+    inputs:
+      from_previous_state:
+        - intake_record.yaml
+      system_provided:
+        - project_context.yaml
+        - domain_glossary.yaml
+      accumulated:
+        - clarification_history
+    
+    context_retrieval:
+      strategy: targeted
+      operations:
+        - type: lsp_lookup
+          targets: "{intake_record.key_entities}"
+          include_dependencies: true
+          budget_tokens: 1000
+        - type: vector_search
+          query: "{intake_record.detected_intent}"
+          budget_tokens: 500
+    
+    agent_instructions: |
+      You are a Requirements Analyst conducting a clarification interview.
+      
+      ## Your Task
+      
+      1. Ask questions ONE AT A TIME
+      2. Listen to answers and note implications
+      3. Track what's clarified vs. still unclear
+      4. Define scope boundaries explicitly
+      
+      ## Question Priority
+      
+      1. BLOCKING questions (cannot proceed without answer)
+      2. SCOPE questions (what's in vs. out)
+      3. BEHAVIOR questions (how should it work)
+      4. CONSTRAINT questions (limitations)
+      5. NICE-TO-KNOW questions (helpful but not critical)
+      
+      ## Rules
+      
+      - Ask ONE question at a time
+      - After each answer, state what you learned
+      - If user says "I don't know," make an assumption and document it
+      
+      ## When to Stop
+      
+      - All BLOCKING and SCOPE questions answered
+      - Remaining questions are NICE-TO-KNOW
+      - User says "that's enough detail"
+    
+    interaction_mode: conversational
+    max_questions_per_turn: 1
+    
+    outputs:
+      - name: clarification_log.yaml
+        schema_ref: "schemas/clarification_log.schema.yaml"
+    
+    verification:
+      blocking:
+        - check: blocking_questions_answered
+          description: "All blocking questions have answers"
+        - check: scope_defined
+          description: "in_scope and out_of_scope defined"
+      
+      required:
+        - check: no_unresolved_ambiguity
+          description: "No question words in scope items"
+        - check: assumptions_documented
+          description: "Unknown answers have documented assumptions"
+      
+      human_confirmation:
+        prompt: |
+          Here's what I understand:
+          
+          **In Scope:** {in_scope}
+          **Out of Scope:** {out_of_scope}
+          **Assumptions:** {assumptions}
+          
+          Is this correct?
+    
+    transitions:
+      - to: ANALYZE
+        condition: "verification.all_required_pass AND human_confirmed"
+      - to: CLARIFY
+        condition: "human_provides_more_info"
+      - to: INTAKE
+        condition: "scope_fundamentally_changed"
+      - to: ABANDONED
+        condition: "human_requests_abort"
+
+# =============================================================================
+# STATE 3: ANALYZE
+# =============================================================================
+  - name: ANALYZE
+    role: architect
+    
+    description: |
+      Deep dive into existing codebase to understand:
+      - What exists that we'll interact with
+      - What patterns we must follow
+      - What constraints apply
+      - What risks exist
+    
+    inputs:
+      from_previous_states:
+        - intake_record.yaml
+        - clarification_log.yaml
+      system_provided:
+        - project_context.yaml
+        - architecture.yaml
+    
+    context_retrieval:
+      strategy: comprehensive
+      budget_tokens: 6000
+      operations:
+        - type: lsp_symbol_lookup
+          targets: "{key_entities + domain_terms}"
+          include_dependencies: true
+          depth: 2
+          include_tests: true
+          budget_tokens: 2500
+        - type: vector_search
+          queries:
+            - "{scope_definition.in_scope}"
+            - "similar feature implementation"
+          budget_tokens: 1500
+        - type: lsp_references
+          targets: "{resolved_symbols}"
+          direction: both
+          budget_tokens: 1000
+        - type: vector_search
+          queries: "{domain_terms}"
+          filter: "file_type in ['md', 'yaml']"
+          budget_tokens: 500
+    
+    agent_instructions: |
+      You are a Software Architect analyzing a codebase.
+      
+      ## Analyze
+      
+      1. **Existing Components**: What code exists that we'll interact with?
+      2. **Patterns in Use**: What patterns does this codebase follow?
+      3. **Constraints**: What rules must we follow?
+      4. **Risks**: What could go wrong?
+      5. **Integration Points**: How will new code connect?
+      
+      ## Be Specific
+      
+      Don't say "uses repository pattern" — say "OrderRepository implements 
+      IOrderRepository with methods GetById, Save, Delete at src/Repos/OrderRepository.cs:15"
+    
+    outputs:
+      - name: analysis_report.yaml
+        schema_ref: "schemas/analysis_report.schema.yaml"
+    
+    verification:
+      blocking:
+        - check: primary_components_identified
+          description: "At least one primary component identified"
+        - check: patterns_documented
+          description: "At least one pattern identified"
+      
+      required:
+        - check: risks_assessed
+          description: "High-severity risks have mitigation strategies"
+        - check: architectural_compliance
+          description: "Approach doesn't violate architecture.yaml rules"
+      
+      llm_review:
+        - check: approach_feasibility
+          prompt: "Is this approach feasible given the constraints?"
+    
+    transitions:
+      - to: DRAFT
+        condition: "verification.all_required_pass"
+      - to: ANALYZE
+        condition: "llm_review.found_problems"
+      - to: CLARIFY
+        condition: "analysis_reveals_new_questions"
+
+# =============================================================================
+# STATE 4: DRAFT
+# =============================================================================
+  - name: DRAFT
+    role: specification_writer
+    
+    description: |
+      Produce the formal specification document.
+      Must be complete, unambiguous, testable, traceable.
+    
+    inputs:
+      from_previous_states:
+        - intake_record.yaml
+        - clarification_log.yaml
+        - analysis_report.yaml
+      system_provided:
+        - spec_template.md
+        - architecture.yaml
+    
+    context_retrieval:
+      strategy: selective
+      budget_tokens: 3000
+      operations:
+        - type: fetch_specific
+          files: "{analysis_report.existing_components.location.file}"
+          budget_tokens: 2000
+        - type: fetch_specific
+          files: "{analysis_report.patterns_discovered.examples.file}"
+          budget_tokens: 1000
+    
+    agent_instructions: |
+      You are a Technical Specification Writer.
+      
+      ## Quality Bar
+      
+      The spec must be detailed enough that:
+      1. Two developers would produce similar implementations
+      2. A tester could write tests from spec alone
+      3. A reviewer could verify correctness against spec
+      
+      ## Writing Rules
+      
+      1. **Be Specific**
+         - BAD: "validate the discount code"
+         - GOOD: "verify code exists in DiscountCodes table, not expired, has remaining uses > 0"
+      
+      2. **Use Precise Language**
+         - SHALL = mandatory
+         - SHOULD = recommended  
+         - MAY = optional
+         - Avoid: might, could, would
+      
+      3. **Include Examples** for every behavior
+      
+      4. **Acceptance Criteria** in Given/When/Then format
+      
+      5. **No Implementation Details** - describe WHAT, not HOW
+    
+    outputs:
+      - name: specification.md
+        template_ref: "templates/specification.md"
+      - name: interface_definitions/
+        description: "Generated interface code files"
+    
+    verification:
+      blocking:
+        - check: all_sections_present
+          description: "Every template section has content"
+        - check: interfaces_parseable
+          description: "Generated interfaces compile (via LSP diagnostics)"
+      
+      required:
+        - check: no_placeholder_text
+          description: "No TBD, TODO, FIXME, ???"
+          type: regex
+          pattern: "(TBD|TODO|FIXME|\\?\\?\\?)"
+          negative_match: true
+        - check: no_ambiguous_modals
+          description: "No vague language in requirements"
+          type: regex
+          pattern: "\\b(should|might|could|would|probably)\\b"
+          scope: requirements_section
+          negative_match: true
+        - check: requirements_have_criteria
+          description: "Every FR has acceptance criteria"
+        - check: no_contradictions
+          description: "Requirements don't conflict"
+          type: llm
+      
+      advisory:
+        - check: examples_provided
+        - check: measurable_nfrs
+        - check: error_cases_covered
+      
+      llm_review:
+        - check: specification_quality
+          prompt: "Is this spec specific enough to implement?"
+        - check: testability
+          prompt: "Can acceptance criteria be automated?"
+    
+    transitions:
+      - to: VALIDATE
+        condition: "verification.all_required_pass"
+      - to: DRAFT
+        condition: "verification.required_failed"
+      - to: ANALYZE
+        condition: "llm_review.found_major_gaps"
+
+# =============================================================================
+# STATE 5: VALIDATE
+# =============================================================================
+  - name: VALIDATE
+    role: reviewer
+    
+    description: |
+      Final quality gate. Comprehensive review for completeness,
+      consistency, and feasibility.
+    
+    inputs:
+      from_previous_states:
+        - specification.yaml
+        - analysis_report.yaml
+      system_provided:
+        - architecture.yaml
+        - validation_checklist.yaml
+    
+    validation_checklist:
+      completeness:
+        - id: C1
+          check: "All functional requirements have acceptance criteria"
+          severity: blocking
+        - id: C2
+          check: "All interfaces fully specified"
+          severity: blocking
+        - id: C3
+          check: "All entities have complete definitions"
+          severity: blocking
+        - id: C4
+          check: "All error scenarios documented"
+          severity: required
+        - id: C5
+          check: "All edge cases identified"
+          severity: advisory
+      
+      consistency:
+        - id: K1
+          check: "Interface names match entity names"
+          severity: required
+        - id: K2
+          check: "Data types consistent across spec"
+          severity: blocking
+        - id: K3
+          check: "Terminology consistent with glossary"
+          severity: required
+        - id: K4
+          check: "No contradictions between requirements"
+          severity: blocking
+      
+      feasibility:
+        - id: F1
+          check: "Required dependencies exist or will be created"
+          severity: blocking
+        - id: F2
+          check: "Performance requirements achievable"
+          severity: required
+        - id: F3
+          check: "No unavailable external systems required"
+          severity: blocking
+      
+      testability:
+        - id: T1
+          check: "All criteria in Given/When/Then format"
+          severity: blocking
+        - id: T2
+          check: "No subjective criteria"
+          severity: required
+        - id: T3
+          check: "Boundary values specified"
+          severity: required
+      
+      compliance:
+        - id: A1
+          check: "Interfaces in correct architectural layer"
+          severity: blocking
+        - id: A2
+          check: "No prohibited dependencies"
+          severity: blocking
+        - id: A3
+          check: "Follows established patterns"
+          severity: required
+    
+    outputs:
+      - name: validation_report.yaml
+        schema_ref: "schemas/validation_report.schema.yaml"
+    
+    verification:
+      blocking:
+        - check: no_blocking_failures
+          description: "No checklist items with severity:blocking failed"
+      
+      human_confirmation:
+        prompt: |
+          ## Validation Complete
+          
+          **Verdict:** {verdict}
+          
+          **Blocking Issues:** {blocking_issues}
+          **Warnings:** {warnings}
+          **Strengths:** {strengths}
+          
+          Proceed to implementation?
+    
+    transitions:
+      - to: APPROVED
+        condition: "verdict == 'approved' AND human_approves"
+      - to: REVISE
+        condition: "verdict in ['approved_with_notes', 'needs_revision']"
+      - to: CLARIFY
+        condition: "human_requests_discussion"
+      - to: ABANDONED
+        condition: "verdict == 'rejected' OR human_requests_abort"
+
+# =============================================================================
+# STATE 6: REVISE
+# =============================================================================
+  - name: REVISE
+    role: specification_reviser
+    
+    description: |
+      Address validation feedback with surgical edits.
+      Fix issues without breaking what already works.
+      Loop: REVISE → VALIDATE until approved.
+    
+    inputs:
+      from_previous_states:
+        - specification.yaml
+        - validation_report.yaml
+      user_provided:
+        - name: additional_guidance
+          type: text
+          required: false
+          description: "Human guidance on how to resolve specific issues"
+    
+    agent_instructions: |
+      You are a Specification Reviser. Your job is to address validation
+      feedback with targeted fixes.
+      
+      ## Priority
+      
+      1. BLOCKING ISSUES - Must fix. These prevent approval.
+      2. WARNINGS - Should fix unless you justify deferral.
+      3. APPROVAL CONDITIONS - Must satisfy for approved_with_notes.
+      4. RECOMMENDED IMPROVEMENTS - Apply if beneficial.
+      
+      ## Rules
+      
+      - Surgical edits only - don't rewrite passing sections
+      - Preserve document structure
+      - Document all changes in _revision_notes
+      - Keep what the validator praised
+      
+      ## Output
+      
+      Complete revised specification.yaml with _revision_notes section.
+    
+    outputs:
+      - name: specification.yaml
+        schema_ref: "schemas/specification.schema.yaml"
+        note: "Replaces previous version, backup saved as .bak"
+    
+    verification:
+      blocking:
+        - check: schema_validation
+          description: "Output matches specification schema"
+        - check: has_revision_notes
+          description: "_revision_notes section present"
+      
+      required:
+        - check: blocking_issues_addressed
+          description: "All blocking issues from validation addressed"
+    
+    transitions:
+      - to: VALIDATE
+        condition: "verification.all_blocking_pass"
+        note: "Re-run validation to check fixes"
+      - to: REVISE
+        condition: "verification.blocking_failed"
+      - to: ABANDONED
+        condition: "human_requests_abort"
+
+# =============================================================================
+# TERMINAL STATES
+# =============================================================================
+  - name: APPROVED
+    type: terminal
+    description: "Specification complete and approved"
+    
+    outputs:
+      - specification.md
+      - interface_definitions/
+      - validation_report.yaml
+      - spec_bundle.yaml
+    
+    actions:
+      - archive_artifacts
+      - create_implementation_task
+      - notify_stakeholders
+
+  - name: ABANDONED
+    type: terminal
+    description: "Specification work stopped"
+    
+    outputs:
+      - abandonment_record.yaml
+    
+    actions:
+      - archive_partial_work
+      - document_reason
+      - cleanup

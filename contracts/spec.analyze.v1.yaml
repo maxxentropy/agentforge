@@ -1,0 +1,642 @@
+# SPEC.ANALYZE Prompt Contract
+# Version: 1.0.0
+# Schema: prompt-contract.schema.yaml
+
+contract:
+  id: "spec.analyze.v1"
+  version: "1.0.0"
+  workflow: spec
+  state: analyze
+  description: |
+    Deep codebase analysis to understand existing components, patterns,
+    constraints, and risks before specification writing.
+
+role:
+  name: "Software Architect"
+  persona: |
+    You are an experienced Software Architect who examines codebases with
+    precision. You identify patterns, understand constraints, assess risks,
+    and recommend approaches that respect existing architecture.
+  goal: "Analyze codebase to understand context, patterns, constraints, and risks"
+  anti_goals:
+    - "Writing implementation code"
+    - "Ignoring existing patterns"
+    - "Proposing approaches that violate architecture rules"
+    - "Underestimating risks"
+
+inputs:
+  required:
+    - name: intake_record
+      type: object
+      description: "Output from INTAKE state"
+
+    - name: clarification_log
+      type: object
+      description: "Output from CLARIFY state"
+
+  context:
+    - name: project_context
+      source: project_context
+      required: true
+
+    - name: architecture_rules
+      source: architecture_rules
+      required: true
+      description: "Project architecture constraints (architecture.yaml)"
+
+    - name: code_context
+      source: hybrid_retrieval
+      required: true
+      budget_tokens: 6000
+      description: "Retrieved code from LSP + Vector search"
+
+output:
+  format: yaml
+  schema:
+    $schema: "http://json-schema.org/draft-07/schema#"
+    title: "AnalysisReport"
+    type: object
+    required:
+      - existing_components
+      - patterns_discovered
+      - constraints_discovered
+      - risks_identified
+      - recommended_approach
+    additionalProperties: false
+    
+    properties:
+      existing_components:
+        type: array
+        minItems: 1
+        items:
+          type: object
+          required:
+            - component_name
+            - component_type
+            - location
+            - relevance
+            - current_behavior
+            - will_be_modified
+          additionalProperties: false
+          properties:
+            component_name:
+              type: string
+            component_type:
+              type: string
+              enum: [class, interface, service, module, function, enum, record]
+            location:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                start_line:
+                  type: integer
+                end_line:
+                  type: integer
+            relevance:
+              type: string
+              enum: [primary, secondary, reference]
+            current_behavior:
+              type: string
+              minLength: 10
+            public_interface:
+              type: array
+              items:
+                type: object
+                required: [member_name, member_type, signature]
+                properties:
+                  member_name:
+                    type: string
+                  member_type:
+                    type: string
+                    enum: [method, property, event, field]
+                  signature:
+                    type: string
+            will_be_modified:
+              type: boolean
+            modification_type:
+              type: string
+              enum: [extend, wrap, replace, reference_only]
+      
+      patterns_discovered:
+        type: array
+        minItems: 1
+        items:
+          type: object
+          required:
+            - pattern_name
+            - description
+            - must_follow
+          additionalProperties: false
+          properties:
+            pattern_name:
+              type: string
+            description:
+              type: string
+            examples:
+              type: array
+              items:
+                type: object
+                required: [file]
+                properties:
+                  file:
+                    type: string
+                  line_range:
+                    type: string
+                  snippet:
+                    type: string
+                    maxLength: 500
+            must_follow:
+              type: boolean
+            rationale:
+              type: string
+      
+      constraints_discovered:
+        type: array
+        items:
+          type: object
+          required:
+            - constraint
+            - source
+            - impact
+            - severity
+          additionalProperties: false
+          properties:
+            constraint:
+              type: string
+            source:
+              type: string
+              enum: [code, documentation, architecture_yaml, inferred]
+            location:
+              type: string
+            impact:
+              type: string
+            severity:
+              type: string
+              enum: [hard, soft]
+      
+      risks_identified:
+        type: array
+        items:
+          type: object
+          required:
+            - risk
+            - category
+            - severity
+            - likelihood
+            - mitigation_strategy
+          additionalProperties: false
+          properties:
+            risk:
+              type: string
+            category:
+              type: string
+              enum: [breaking_change, performance, security, complexity, dependency, data_integrity]
+            severity:
+              type: string
+              enum: [high, medium, low]
+            likelihood:
+              type: string
+              enum: [high, medium, low]
+            affected_areas:
+              type: array
+              items:
+                type: string
+            mitigation_strategy:
+              type: string
+              minLength: 10
+            contingency:
+              type: string
+      
+      integration_points:
+        type: array
+        items:
+          type: object
+          required:
+            - integration_type
+            - component
+          additionalProperties: false
+          properties:
+            integration_type:
+              type: string
+              enum: [calls, called_by, implements, raises, subscribes, extends]
+            component:
+              type: string
+            interface_or_event:
+              type: string
+            notes:
+              type: string
+      
+      recommended_approach:
+        type: object
+        required:
+          - summary
+          - sequence_of_changes
+        additionalProperties: false
+        properties:
+          summary:
+            type: string
+            minLength: 20
+          new_components:
+            type: array
+            items:
+              type: object
+              required: [name, type, layer, responsibility]
+              properties:
+                name:
+                  type: string
+                type:
+                  type: string
+                layer:
+                  type: string
+                  enum: [domain, application, infrastructure, presentation]
+                responsibility:
+                  type: string
+          modified_components:
+            type: array
+            items:
+              type: object
+              required: [name, modification]
+              properties:
+                name:
+                  type: string
+                modification:
+                  type: string
+          sequence_of_changes:
+            type: array
+            minItems: 1
+            items:
+              type: object
+              required: [step, description, files_affected]
+              properties:
+                step:
+                  type: integer
+                  minimum: 1
+                description:
+                  type: string
+                files_affected:
+                  type: array
+                  items:
+                    type: string
+
+template:
+  system:
+    sections:
+      - name: role
+        content: |
+          # Role
+          
+          You are a Software Architect analyzing a codebase for a new feature.
+
+      - name: output_format
+        content: |
+          # Output Format
+          
+          You MUST output a YAML document matching this schema:
+          
+          ```yaml
+          existing_components:
+            - component_name: string
+              component_type: enum       # class | interface | service | module | function
+              location:
+                file: string
+                start_line: integer
+                end_line: integer
+              relevance: enum            # primary | secondary | reference
+              current_behavior: string
+              public_interface:
+                - member_name: string
+                  member_type: enum      # method | property | event
+                  signature: string
+              will_be_modified: boolean
+              modification_type: enum    # extend | wrap | replace | reference_only
+          
+          patterns_discovered:
+            - pattern_name: string
+              description: string
+              examples:
+                - file: string
+                  line_range: string
+                  snippet: string
+              must_follow: boolean
+              rationale: string
+          
+          constraints_discovered:
+            - constraint: string
+              source: enum               # code | documentation | architecture_yaml | inferred
+              location: string
+              impact: string
+              severity: enum             # hard | soft
+          
+          risks_identified:
+            - risk: string
+              category: enum             # breaking_change | performance | security | complexity | dependency
+              severity: enum             # high | medium | low
+              likelihood: enum           # high | medium | low
+              affected_areas: [string]
+              mitigation_strategy: string
+              contingency: string
+          
+          integration_points:
+            - integration_type: enum     # calls | called_by | implements | raises | subscribes
+              component: string
+              interface_or_event: string
+              notes: string
+          
+          recommended_approach:
+            summary: string
+            new_components:
+              - name: string
+                type: string
+                layer: string            # domain | application | infrastructure | presentation
+                responsibility: string
+            modified_components:
+              - name: string
+                modification: string
+            sequence_of_changes:
+              - step: integer
+                description: string
+                files_affected: [string]
+          ```
+
+      - name: rules
+        content: |
+          # Rules
+          
+          1. **BE SPECIFIC** - Include file paths, line numbers, exact signatures
+             - BAD: "Uses repository pattern"
+             - GOOD: "OrderRepository implements IOrderRepository at src/Infrastructure/Repositories/OrderRepository.cs:15-87"
+          
+          2. **IDENTIFY ALL PATTERNS** - Error handling, data access, validation, DI, naming
+          
+          3. **RESPECT ARCHITECTURE RULES** - Check architecture.yaml, don't violate
+          
+          4. **ASSESS RISKS HONESTLY** - Breaking changes, performance, security
+          
+          5. **HIGH-SEVERITY RISKS NEED MITIGATIONS** - Every high-severity risk must have mitigation_strategy
+
+      - name: example
+        content: |
+          # Example (abbreviated)
+          
+          ```yaml
+          existing_components:
+            - component_name: "Order"
+              component_type: class
+              location:
+                file: "src/Domain/Entities/Order.cs"
+                start_line: 12
+                end_line: 95
+              relevance: primary
+              current_behavior: "Represents a customer order with line items, calculates totals"
+              public_interface:
+                - member_name: "AddLineItem"
+                  member_type: method
+                  signature: "void AddLineItem(Product product, int quantity)"
+              will_be_modified: true
+              modification_type: extend
+          
+          patterns_discovered:
+            - pattern_name: "Result<T> for error handling"
+              description: "Application layer returns Result<T> instead of throwing exceptions"
+              examples:
+                - file: "src/Application/Services/PaymentService.cs"
+                  line_range: "34-45"
+                  snippet: "public async Task<Result<PaymentConfirmation>> ProcessPaymentAsync(...)"
+              must_follow: true
+              rationale: "Consistent error handling, explicit failure cases"
+          
+          constraints_discovered:
+            - constraint: "Domain entities cannot reference infrastructure"
+              source: architecture_yaml
+              location: "architecture.yaml:layers.domain"
+              impact: "Discount validation must be in Domain layer"
+              severity: hard
+          
+          risks_identified:
+            - risk: "Modifying Order.CalculateTotal may break existing displays"
+              category: breaking_change
+              severity: high
+              likelihood: medium
+              affected_areas:
+                - "src/Application/Queries/GetOrderSummaryQuery.cs"
+              mitigation_strategy: "Add new ApplyDiscount method instead of modifying CalculateTotal"
+              contingency: "Feature flag to toggle new behavior"
+          
+          recommended_approach:
+            summary: "Extend Order with discount capability, add DiscountCode value object, follow Result<T> pattern"
+            new_components:
+              - name: "DiscountCode"
+                type: "value object"
+                layer: domain
+                responsibility: "Represents validated discount code"
+            sequence_of_changes:
+              - step: 1
+                description: "Create DiscountCode value object in Domain"
+                files_affected:
+                  - "src/Domain/ValueObjects/DiscountCode.cs"
+          ```
+
+  user:
+    sections:
+      - name: intake
+        content: |
+          # Intake Record
+          
+          {intake_record}
+
+      - name: clarification
+        content: |
+          # Clarification Log
+          
+          {clarification_log}
+
+      - name: architecture
+        content: |
+          # Architecture Rules
+          
+          {architecture_rules}
+
+      - name: code
+        content: |
+          # Retrieved Code Context
+          
+          {code_context}
+
+      - name: project
+        content: |
+          # Project Context
+          
+          {project_context}
+
+      - name: instructions
+        content: |
+          # Task
+          
+          Analyze the codebase and produce a comprehensive analysis report.
+          Focus on: existing components, patterns, constraints, risks, integration points.
+          
+          Output YAML only, no additional text.
+
+examples:
+  valid:
+    - name: "Feature analysis"
+      description: "Analysis for adding discount codes"
+      inputs:
+        intake_record:
+          raw_request: "Add discount codes to orders"
+          detected_intent: "Apply discount codes to reduce order totals"
+          detected_scope: medium
+          detected_type: feature
+          key_entities:
+            - entity_name: "Order"
+              entity_type: class
+              confidence: 0.95
+          initial_questions: []
+        clarification_log:
+          questions_asked:
+            - question: "Can multiple codes apply?"
+              answer: "One code per order"
+          scope_definition:
+            in_scope:
+              - item: "Apply single discount code"
+                confirmed_by: user_explicit
+            out_of_scope: []
+            deferred: []
+        architecture_rules: "Domain cannot reference Infrastructure"
+        code_context: "class Order { public decimal Total { get; } }"
+        project_context: "E-commerce, Clean Architecture"
+      output:
+        existing_components:
+          - component_name: "Order"
+            component_type: class
+            location:
+              file: "src/Domain/Entities/Order.cs"
+              start_line: 12
+              end_line: 95
+            relevance: primary
+            current_behavior: "Represents order with line items and totals"
+            public_interface:
+              - member_name: "Total"
+                member_type: property
+                signature: "decimal Total { get; }"
+            will_be_modified: true
+            modification_type: extend
+        patterns_discovered:
+          - pattern_name: "Immutable value objects"
+            description: "Value objects use init-only properties"
+            must_follow: true
+            rationale: "Domain consistency"
+        constraints_discovered:
+          - constraint: "Domain cannot reference Infrastructure"
+            source: architecture_yaml
+            location: "architecture.yaml"
+            impact: "Discount lookup must be injected"
+            severity: hard
+        risks_identified:
+          - risk: "Breaking existing total calculations"
+            category: breaking_change
+            severity: high
+            likelihood: medium
+            affected_areas:
+              - "Order displays"
+            mitigation_strategy: "Add new ApplyDiscount method, keep CalculateTotal unchanged"
+            contingency: "Feature flag"
+        integration_points:
+          - integration_type: calls
+            component: "OrderService"
+            interface_or_event: "IDiscountRepository"
+            notes: "New dependency needed"
+        recommended_approach:
+          summary: "Extend Order with discount capability using value object pattern"
+          new_components:
+            - name: "DiscountCode"
+              type: "value object"
+              layer: domain
+              responsibility: "Validated discount code"
+          modified_components:
+            - name: "Order"
+              modification: "Add AppliedDiscount property and ApplyDiscount method"
+          sequence_of_changes:
+            - step: 1
+              description: "Create DiscountCode value object"
+              files_affected:
+                - "src/Domain/ValueObjects/DiscountCode.cs"
+            - step: 2
+              description: "Extend Order entity"
+              files_affected:
+                - "src/Domain/Entities/Order.cs"
+
+  invalid:
+    - name: "Missing components"
+      output:
+        existing_components: []
+        patterns_discovered: []
+        constraints_discovered: []
+        risks_identified: []
+        recommended_approach:
+          summary: "Just add it"
+          sequence_of_changes: []
+      problems:
+        - "existing_components is empty - must identify at least one"
+        - "patterns_discovered is empty - must identify at least one pattern"
+        - "recommended_approach.summary is too vague"
+        - "sequence_of_changes is empty"
+
+verification:
+  schema_validation: true
+  
+  checks:
+    - id: "C1"
+      name: "has_primary_component"
+      description: "Must identify at least one primary component"
+      type: custom
+      check: "any(c['relevance'] == 'primary' for c in existing_components)"
+      severity: blocking
+      message: "Must identify at least one primary component"
+
+    - id: "C2"
+      name: "has_patterns"
+      description: "Must identify at least one pattern"
+      type: count_min
+      target: "patterns_discovered"
+      value: 1
+      severity: required
+      message: "Must identify at least one pattern from the codebase"
+
+    - id: "R1"
+      name: "high_risks_have_mitigation"
+      description: "High-severity risks must have mitigation strategies"
+      type: custom
+      check: "all(len(r.get('mitigation_strategy', '')) >= 10 for r in risks_identified if r.get('severity') == 'high')"
+      severity: blocking
+      message: "High-severity risks must have substantial mitigation strategies"
+
+    - id: "A1"
+      name: "approach_has_steps"
+      description: "Recommended approach must have implementation steps"
+      type: count_min
+      target: "recommended_approach.sequence_of_changes"
+      value: 1
+      severity: required
+      message: "Recommended approach must include sequence of changes"
+
+    - id: "A2"
+      name: "approach_respects_architecture"
+      description: "Recommended approach should respect architecture rules"
+      type: llm
+      prompt: |
+        Architecture rules: {architecture_rules}
+        Recommended approach: {recommended_approach}
+        
+        Does the recommended approach respect the architecture rules? Answer 'yes' or 'no' with brief explanation.
+      expected: "yes"
+      severity: required
+      message: "Recommended approach may violate architecture rules"
+
+execution:
+  temperature: 0.0
+  max_tokens: 4000
+  estimated_cost_usd: 0.03
+  timeout_seconds: 120

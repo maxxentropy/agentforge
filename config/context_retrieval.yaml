@@ -1,0 +1,138 @@
+# Context Retrieval Configuration
+# Defines how code context is retrieved and indexed
+# Schema: config/context_retrieval.schema.yaml
+
+# LSP Language Server Configuration
+lsp:
+  servers:
+    csharp:
+      name: "OmniSharp"
+      command: "omnisharp"
+      args: ["-lsp"]
+      file_extensions: [".cs", ".csx"]
+      enabled: true
+      
+    python:
+      name: "Pyright"
+      command: "pyright-langserver"
+      args: ["--stdio"]
+      file_extensions: [".py", ".pyi"]
+      enabled: false
+      
+    typescript:
+      name: "TypeScript"
+      command: "typescript-language-server"
+      args: ["--stdio"]
+      file_extensions: [".ts", ".tsx", ".js", ".jsx"]
+      enabled: false
+
+  # LSP operations to use for context retrieval
+  operations:
+    document_symbols:
+      method: "textDocument/documentSymbol"
+      use_case: "Index file structure"
+      timeout_ms: 5000
+      
+    definition:
+      method: "textDocument/definition"
+      use_case: "Find where symbol is defined"
+      timeout_ms: 2000
+      
+    references:
+      method: "textDocument/references"
+      use_case: "Find all usages of symbol"
+      timeout_ms: 10000
+      
+    hover:
+      method: "textDocument/hover"
+      use_case: "Get type info and documentation"
+      timeout_ms: 2000
+
+# Vector Search Configuration
+vector:
+  enabled: true
+  
+  embedding:
+    model: "text-embedding-3-small"
+    dimensions: 1536
+    batch_size: 100
+    
+  index:
+    type: "hnsw"
+    metric: "cosine"
+    ef_construction: 200
+    m: 16
+    
+  chunking:
+    strategy: "ast_aware"  # ast_aware | sliding_window | semantic
+    
+    ast_aware:
+      # Chunk by code structure (functions, classes)
+      max_chunk_tokens: 500
+      min_chunk_tokens: 50
+      include_signature: true
+      include_docstring: true
+      
+    sliding_window:
+      # Fallback for non-parseable files
+      window_size_tokens: 400
+      overlap_tokens: 100
+
+# Hybrid Retrieval Configuration  
+retrieval:
+  # How to combine LSP and vector results
+  fusion:
+    strategy: "reciprocal_rank"  # reciprocal_rank | weighted | cascade
+    
+    reciprocal_rank:
+      k: 60  # RRF constant
+      
+    weights:
+      lsp: 0.6
+      vector: 0.4
+      
+  # Token budget management
+  budget:
+    default_tokens: 4000
+    max_tokens: 8000
+    
+    allocation:
+      primary_components: 0.50    # Components being modified
+      related_components: 0.25    # Components that interact
+      pattern_examples: 0.15      # Example code for patterns
+      documentation: 0.10         # Relevant docs
+
+# File Filtering
+filters:
+  include_patterns:
+    - "src/**/*.cs"
+    - "src/**/*.py"
+    - "tests/**/*.cs"
+    - "docs/**/*.md"
+    
+  exclude_patterns:
+    - "**/bin/**"
+    - "**/obj/**"
+    - "**/node_modules/**"
+    - "**/.git/**"
+    - "**/packages/**"
+    
+  exclude_files:
+    - "*.Designer.cs"
+    - "*.g.cs"
+    - "AssemblyInfo.cs"
+
+# Indexing Configuration
+indexing:
+  # Background indexing
+  watch_enabled: true
+  debounce_ms: 1000
+  
+  # Storage
+  storage:
+    structure_db: "agentforge_structure.db"  # SQLite
+    vector_index: "agentforge_vectors.idx"   # HNSW index
+    
+  # Incremental updates
+  incremental: true
+  full_reindex_on_error: false

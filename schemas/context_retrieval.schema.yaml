@@ -1,0 +1,256 @@
+# Context Retrieval Configuration Schema
+# Validates: config/context_retrieval.yaml
+
+$schema: "http://json-schema.org/draft-07/schema#"
+$id: "https://agentforge.dev/schemas/context_retrieval.schema.yaml"
+title: ContextRetrievalConfig
+description: Configuration for the hybrid LSP + vector context retrieval system
+
+type: object
+required:
+  - lsp
+  - retrieval
+additionalProperties: false
+
+properties:
+  lsp:
+    type: object
+    description: Language Server Protocol configuration
+    required:
+      - servers
+      - operations
+    additionalProperties: false
+    properties:
+      servers:
+        type: object
+        additionalProperties:
+          type: object
+          required:
+            - name
+            - command
+            - file_extensions
+            - enabled
+          properties:
+            name:
+              type: string
+            command:
+              type: string
+            args:
+              type: array
+              items:
+                type: string
+            file_extensions:
+              type: array
+              items:
+                type: string
+                pattern: "^\\.[a-z]+$"
+            enabled:
+              type: boolean
+              
+      operations:
+        type: object
+        additionalProperties:
+          type: object
+          required:
+            - method
+            - use_case
+          properties:
+            method:
+              type: string
+              pattern: "^(textDocument|workspace)/[a-zA-Z]+$"
+            use_case:
+              type: string
+            timeout_ms:
+              type: integer
+              minimum: 100
+              maximum: 60000
+              default: 5000
+
+  vector:
+    type: object
+    description: Vector search configuration
+    additionalProperties: false
+    properties:
+      enabled:
+        type: boolean
+        default: true
+        
+      embedding:
+        type: object
+        required:
+          - model
+          - dimensions
+        properties:
+          model:
+            type: string
+          dimensions:
+            type: integer
+            enum: [256, 512, 1024, 1536, 3072]
+          batch_size:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+            
+      index:
+        type: object
+        required:
+          - type
+          - metric
+        properties:
+          type:
+            type: string
+            enum: [hnsw, flat, ivf]
+          metric:
+            type: string
+            enum: [cosine, euclidean, dot_product]
+          ef_construction:
+            type: integer
+            minimum: 10
+            maximum: 500
+          m:
+            type: integer
+            minimum: 4
+            maximum: 64
+            
+      chunking:
+        type: object
+        required:
+          - strategy
+        properties:
+          strategy:
+            type: string
+            enum: [ast_aware, sliding_window, semantic]
+          ast_aware:
+            type: object
+            properties:
+              max_chunk_tokens:
+                type: integer
+                minimum: 100
+                maximum: 2000
+              min_chunk_tokens:
+                type: integer
+                minimum: 10
+                maximum: 500
+              include_signature:
+                type: boolean
+              include_docstring:
+                type: boolean
+          sliding_window:
+            type: object
+            properties:
+              window_size_tokens:
+                type: integer
+                minimum: 100
+                maximum: 2000
+              overlap_tokens:
+                type: integer
+                minimum: 0
+                maximum: 500
+
+  retrieval:
+    type: object
+    description: Hybrid retrieval configuration
+    required:
+      - fusion
+      - budget
+    additionalProperties: false
+    properties:
+      fusion:
+        type: object
+        required:
+          - strategy
+        properties:
+          strategy:
+            type: string
+            enum: [reciprocal_rank, weighted, cascade]
+          reciprocal_rank:
+            type: object
+            properties:
+              k:
+                type: integer
+                minimum: 1
+                maximum: 100
+          weights:
+            type: object
+            properties:
+              lsp:
+                type: number
+                minimum: 0
+                maximum: 1
+              vector:
+                type: number
+                minimum: 0
+                maximum: 1
+                
+      budget:
+        type: object
+        required:
+          - default_tokens
+        properties:
+          default_tokens:
+            type: integer
+            minimum: 500
+            maximum: 32000
+          max_tokens:
+            type: integer
+            minimum: 1000
+            maximum: 100000
+          allocation:
+            type: object
+            properties:
+              primary_components:
+                type: number
+                minimum: 0
+                maximum: 1
+              related_components:
+                type: number
+                minimum: 0
+                maximum: 1
+              pattern_examples:
+                type: number
+                minimum: 0
+                maximum: 1
+              documentation:
+                type: number
+                minimum: 0
+                maximum: 1
+
+  filters:
+    type: object
+    additionalProperties: false
+    properties:
+      include_patterns:
+        type: array
+        items:
+          type: string
+      exclude_patterns:
+        type: array
+        items:
+          type: string
+      exclude_files:
+        type: array
+        items:
+          type: string
+
+  indexing:
+    type: object
+    additionalProperties: false
+    properties:
+      watch_enabled:
+        type: boolean
+      debounce_ms:
+        type: integer
+        minimum: 100
+        maximum: 10000
+      storage:
+        type: object
+        properties:
+          structure_db:
+            type: string
+          vector_index:
+            type: string
+      incremental:
+        type: boolean
+      full_reindex_on_error:
+        type: boolean

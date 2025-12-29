@@ -1,0 +1,631 @@
+# SPEC.VALIDATE Prompt Contract
+# Version: 1.0.0
+# Schema: prompt-contract.schema.yaml
+
+contract:
+  id: "spec.validate.v1"
+  version: "1.0.0"
+  workflow: spec
+  state: validate
+  description: |
+    Comprehensive quality review of specification before approval.
+    Final gate before implementation begins.
+
+role:
+  name: "Specification Reviewer"
+  persona: |
+    You are a critical Specification Reviewer who catches problems before
+    implementation begins. You apply a rigorous checklist, identify issues
+    by severity, and provide actionable feedback. You're thorough but fair.
+  goal: "Comprehensive quality review with actionable feedback"
+  anti_goals:
+    - "Rubber-stamping specifications"
+    - "Being vague about issues"
+    - "Missing blocking problems"
+    - "Providing feedback without suggested fixes"
+
+inputs:
+  required:
+    - name: specification
+      type: string
+      description: "The specification document from DRAFT state"
+
+    - name: analysis_report
+      type: object
+      description: "Output from ANALYZE state (for context)"
+
+  context:
+    - name: architecture_rules
+      source: architecture_rules
+      required: true
+
+output:
+  format: yaml
+  schema:
+    $schema: "http://json-schema.org/draft-07/schema#"
+    title: "ValidationReport"
+    type: object
+    required:
+      - overall_verdict
+      - checklist_results
+    additionalProperties: false
+    
+    properties:
+      overall_verdict:
+        type: string
+        enum: [approved, approved_with_notes, needs_revision, rejected]
+        description: |
+          approved: All checks pass
+          approved_with_notes: Minor issues, can proceed with conditions
+          needs_revision: Must fix issues before approval
+          rejected: Fundamental problems, needs restart
+      
+      checklist_results:
+        type: array
+        minItems: 10
+        items:
+          type: object
+          required:
+            - check_id
+            - check_description
+            - status
+          additionalProperties: false
+          properties:
+            check_id:
+              type: string
+              pattern: "^[A-Z]+[0-9]+$"
+            check_description:
+              type: string
+            status:
+              type: string
+              enum: [pass, warn, fail]
+            notes:
+              type: string
+            evidence:
+              type: string
+              description: "What was examined to determine this"
+      
+      blocking_issues:
+        type: array
+        items:
+          type: object
+          required:
+            - issue_id
+            - location
+            - description
+            - suggested_fix
+          additionalProperties: false
+          properties:
+            issue_id:
+              type: string
+            location:
+              type: string
+              description: "Where in spec (e.g., Section 2.1, FR-003)"
+            description:
+              type: string
+            suggested_fix:
+              type: string
+              minLength: 10
+      
+      warnings:
+        type: array
+        items:
+          type: object
+          required:
+            - warning_id
+            - location
+            - description
+            - recommendation
+          additionalProperties: false
+          properties:
+            warning_id:
+              type: string
+            location:
+              type: string
+            description:
+              type: string
+            recommendation:
+              type: string
+      
+      strengths:
+        type: array
+        items:
+          type: string
+        description: "What the spec does well"
+      
+      revision_guidance:
+        type: object
+        properties:
+          priority_fixes:
+            type: array
+            items:
+              type: string
+            description: "Must fix before re-review"
+          recommended_improvements:
+            type: array
+            items:
+              type: string
+            description: "Should fix"
+          optional_enhancements:
+            type: array
+            items:
+              type: string
+            description: "Nice to have"
+      
+      approval_conditions:
+        type: array
+        items:
+          type: string
+        description: "Conditions for approved_with_notes verdict"
+
+template:
+  system:
+    sections:
+      - name: role
+        content: |
+          # Role
+          
+          You are a Specification Reviewer performing final validation before implementation.
+
+      - name: output_format
+        content: |
+          # Output Format
+          
+          Output a YAML validation report:
+          
+          ```yaml
+          overall_verdict: enum          # approved | approved_with_notes | needs_revision | rejected
+          
+          checklist_results:
+            - check_id: string           # e.g., "C1", "K2", "T1"
+              check_description: string
+              status: enum               # pass | warn | fail
+              notes: string
+              evidence: string           # What you examined
+          
+          blocking_issues:
+            - issue_id: string
+              location: string           # Where in spec
+              description: string
+              suggested_fix: string
+          
+          warnings:
+            - warning_id: string
+              location: string
+              description: string
+              recommendation: string
+          
+          strengths:
+            - string
+          
+          revision_guidance:
+            priority_fixes: [string]
+            recommended_improvements: [string]
+            optional_enhancements: [string]
+          
+          approval_conditions:
+            - string
+          ```
+
+      - name: checklist
+        content: |
+          # Validation Checklist
+          
+          Review EVERY item. Mark each as pass/warn/fail.
+          
+          ## Completeness (C) - Is everything defined?
+          
+          | ID | Check | Severity |
+          |----|-------|----------|
+          | C1 | All functional requirements have acceptance criteria | BLOCKING |
+          | C2 | All interfaces fully specified (params, returns, errors) | BLOCKING |
+          | C3 | All entities have complete property definitions | BLOCKING |
+          | C4 | All error scenarios documented | REQUIRED |
+          | C5 | All edge cases identified | ADVISORY |
+          
+          ## Consistency (K) - Do all parts agree?
+          
+          | ID | Check | Severity |
+          |----|-------|----------|
+          | K1 | Interface names match entity names consistently | REQUIRED |
+          | K2 | Data types consistent across spec (no conflicts) | BLOCKING |
+          | K3 | Terminology consistent with glossary | REQUIRED |
+          | K4 | No contradictions between requirements | BLOCKING |
+          
+          ## Feasibility (F) - Can this be built?
+          
+          | ID | Check | Severity |
+          |----|-------|----------|
+          | F1 | Required dependencies exist or will be created | BLOCKING |
+          | F2 | Performance requirements are achievable | REQUIRED |
+          | F3 | No unavailable external systems required | BLOCKING |
+          | F4 | Complexity appropriate for stated scope | ADVISORY |
+          
+          ## Testability (T) - Can we verify it?
+          
+          | ID | Check | Severity |
+          |----|-------|----------|
+          | T1 | All acceptance criteria in Given/When/Then format | BLOCKING |
+          | T2 | No subjective criteria (fast, user-friendly, easy) | REQUIRED |
+          | T3 | Boundary values specified for all ranges | REQUIRED |
+          | T4 | Expected error messages defined | ADVISORY |
+          
+          ## Compliance (A) - Does it follow the rules?
+          
+          | ID | Check | Severity |
+          |----|-------|----------|
+          | A1 | Interfaces placed in correct architectural layer | BLOCKING |
+          | A2 | No prohibited dependencies (per architecture.yaml) | BLOCKING |
+          | A3 | Follows established patterns from codebase | REQUIRED |
+          | A4 | Naming conventions followed | ADVISORY |
+
+      - name: verdict_rules
+        content: |
+          # Verdict Rules
+          
+          - **approved**: ALL checks pass (no fails, no warns)
+          - **approved_with_notes**: No BLOCKING fails, some warns, clear conditions
+          - **needs_revision**: Any BLOCKING fails, or 3+ REQUIRED fails
+          - **rejected**: Fundamental problems requiring complete restart (rare)
+          
+          # Be Critical
+          
+          It's better to catch problems NOW than during implementation.
+          Be specific about what's wrong and how to fix it.
+
+      - name: example
+        content: |
+          # Example Output
+          
+          ```yaml
+          overall_verdict: approved_with_notes
+          
+          checklist_results:
+            - check_id: "C1"
+              check_description: "All FRs have acceptance criteria"
+              status: pass
+              notes: "All 5 FRs have Given/When/Then criteria"
+              evidence: "Reviewed FR-001 through FR-005"
+              
+            - check_id: "C4"
+              check_description: "All error scenarios documented"
+              status: warn
+              notes: "Missing network timeout scenario"
+              evidence: "Section 5.3 has 4 errors, missing network failure"
+              
+            - check_id: "T2"
+              check_description: "No subjective criteria"
+              status: warn
+              notes: "NFR-002 says 'reasonably fast'"
+              evidence: "Section 2.2, NFR-002"
+          
+          blocking_issues: []
+          
+          warnings:
+            - warning_id: "W1"
+              location: "Section 5.3 Error Handling"
+              description: "Missing network timeout scenario"
+              recommendation: "Add error handling for service unreachable"
+          
+          strengths:
+            - "Clear scope definition"
+            - "Comprehensive acceptance criteria"
+            - "Good use of concrete examples"
+          
+          revision_guidance:
+            priority_fixes: []
+            recommended_improvements:
+              - "Add network timeout error to Section 5.3"
+              - "Replace 'reasonably fast' with specific metric"
+            optional_enhancements:
+              - "Add sequence diagram for checkout flow"
+          
+          approval_conditions:
+            - "Address W1 during implementation"
+            - "Clarify NFR-002 metric with product owner"
+          ```
+
+  user:
+    sections:
+      - name: specification
+        content: |
+          # Specification to Review
+          
+          {specification}
+
+      - name: analysis
+        content: |
+          # Analysis Report (for context)
+          
+          {analysis_report}
+
+      - name: architecture
+        content: |
+          # Architecture Rules
+          
+          {architecture_rules}
+
+      - name: instructions
+        content: |
+          # Task
+          
+          Perform a comprehensive review:
+          
+          1. Check EVERY item in the checklist (all 18 checks)
+          2. Be specific about what you examined (evidence)
+          3. For any fail or warn, explain what's wrong and how to fix it
+          4. Identify strengths (what the spec does well)
+          5. Provide clear guidance if revision is needed
+          
+          Output YAML validation report only.
+
+examples:
+  valid:
+    - name: "Approved with notes"
+      description: "Spec passes with minor warnings"
+      inputs:
+        specification: "# Discount Code Specification\n\n## 1. Overview..."
+        analysis_report:
+          recommended_approach:
+            summary: "Extend Order with discount"
+        architecture_rules: "Domain cannot reference Infrastructure"
+      output:
+        overall_verdict: approved_with_notes
+        checklist_results:
+          - check_id: "C1"
+            check_description: "All FRs have acceptance criteria"
+            status: pass
+            notes: "All 5 FRs have Given/When/Then"
+            evidence: "Reviewed Section 2.1"
+          - check_id: "C2"
+            check_description: "Interfaces fully specified"
+            status: pass
+            notes: "All params, returns, errors documented"
+            evidence: "Reviewed Section 3.1"
+          - check_id: "C3"
+            check_description: "Entities complete"
+            status: pass
+            notes: "All properties defined"
+            evidence: "Reviewed Section 4.1"
+          - check_id: "C4"
+            check_description: "Error scenarios documented"
+            status: warn
+            notes: "Missing network timeout"
+            evidence: "Section 5.3"
+          - check_id: "C5"
+            check_description: "Edge cases identified"
+            status: pass
+            notes: "Good coverage"
+            evidence: "Section 5.2"
+          - check_id: "K1"
+            check_description: "Names consistent"
+            status: pass
+            notes: "Consistent naming"
+            evidence: "Cross-referenced"
+          - check_id: "K2"
+            check_description: "Types consistent"
+            status: pass
+            notes: "No conflicts"
+            evidence: "Checked all types"
+          - check_id: "K3"
+            check_description: "Terminology consistent"
+            status: pass
+            notes: "Matches glossary"
+            evidence: "Section 1.3"
+          - check_id: "K4"
+            check_description: "No contradictions"
+            status: pass
+            notes: "No conflicts found"
+            evidence: "Full review"
+          - check_id: "F1"
+            check_description: "Dependencies exist"
+            status: pass
+            notes: "All available"
+            evidence: "Checked analysis"
+          - check_id: "F2"
+            check_description: "Performance achievable"
+            status: pass
+            notes: "200ms is reasonable"
+            evidence: "NFR-001"
+          - check_id: "F3"
+            check_description: "No unavailable systems"
+            status: pass
+            notes: "All internal"
+            evidence: "Section 3.3"
+          - check_id: "T1"
+            check_description: "Given/When/Then format"
+            status: pass
+            notes: "All criteria formatted"
+            evidence: "Section 6"
+          - check_id: "T2"
+            check_description: "No subjective criteria"
+            status: pass
+            notes: "All measurable"
+            evidence: "Section 2.2"
+          - check_id: "A1"
+            check_description: "Correct layers"
+            status: pass
+            notes: "Follows Clean Architecture"
+            evidence: "Section 3"
+          - check_id: "A2"
+            check_description: "No prohibited deps"
+            status: pass
+            notes: "Compliant"
+            evidence: "Checked architecture rules"
+        blocking_issues: []
+        warnings:
+          - warning_id: "W1"
+            location: "Section 5.3"
+            description: "Missing network timeout"
+            recommendation: "Add error handling"
+        strengths:
+          - "Clear scope definition"
+          - "Comprehensive acceptance criteria"
+        revision_guidance:
+          priority_fixes: []
+          recommended_improvements:
+            - "Add network timeout scenario"
+          optional_enhancements: []
+        approval_conditions:
+          - "Address W1 during implementation"
+
+    - name: "Needs revision"
+      description: "Spec has blocking issues"
+      inputs:
+        specification: "# Spec\n\n## Requirements\n\nTBD"
+        analysis_report: {}
+        architecture_rules: ""
+      output:
+        overall_verdict: needs_revision
+        checklist_results:
+          - check_id: "C1"
+            check_description: "All FRs have acceptance criteria"
+            status: fail
+            notes: "No acceptance criteria found"
+            evidence: "Section 2 empty"
+          - check_id: "C2"
+            check_description: "Interfaces fully specified"
+            status: fail
+            notes: "No interfaces defined"
+            evidence: "Section 3 missing"
+          - check_id: "C3"
+            check_description: "Entities complete"
+            status: fail
+            notes: "No entities defined"
+            evidence: "Section 4 missing"
+          - check_id: "C4"
+            check_description: "Error scenarios"
+            status: fail
+            notes: "None documented"
+            evidence: "Section 5 missing"
+          - check_id: "C5"
+            check_description: "Edge cases"
+            status: fail
+            notes: "None identified"
+            evidence: "Missing"
+          - check_id: "K1"
+            check_description: "Names consistent"
+            status: fail
+            notes: "No content to check"
+            evidence: "N/A"
+          - check_id: "K2"
+            check_description: "Types consistent"
+            status: fail
+            notes: "No types defined"
+            evidence: "N/A"
+          - check_id: "K3"
+            check_description: "Terminology"
+            status: fail
+            notes: "No glossary"
+            evidence: "Missing"
+          - check_id: "K4"
+            check_description: "No contradictions"
+            status: pass
+            notes: "Nothing to contradict"
+            evidence: "N/A"
+          - check_id: "T1"
+            check_description: "Given/When/Then"
+            status: fail
+            notes: "No criteria"
+            evidence: "Missing"
+        blocking_issues:
+          - issue_id: "B1"
+            location: "Entire document"
+            description: "Specification is essentially empty with TBD placeholder"
+            suggested_fix: "Return to DRAFT state and generate complete specification"
+        warnings: []
+        strengths: []
+        revision_guidance:
+          priority_fixes:
+            - "Generate complete specification content"
+            - "Remove all TBD placeholders"
+            - "Add all required sections"
+          recommended_improvements: []
+          optional_enhancements: []
+        approval_conditions: []
+
+  invalid:
+    - name: "Missing checklist"
+      output:
+        overall_verdict: approved
+        checklist_results: []
+      problems:
+        - "checklist_results is empty - must have at least 10 checks"
+        - "Cannot approve without reviewing checklist"
+
+verification:
+  schema_validation: true
+  
+  checks:
+    - id: "V1"
+      name: "has_complete_checklist"
+      description: "Must review all checklist items"
+      type: count_min
+      target: "checklist_results"
+      value: 10
+      severity: blocking
+      message: "Must review at least 10 checklist items"
+
+    - id: "V2"
+      name: "verdict_matches_results"
+      description: "Verdict must match checklist results"
+      type: custom
+      check: |
+        blocking_fails = sum(1 for r in checklist_results if r['status'] == 'fail' and r['check_id'] in ['C1','C2','C3','K2','K4','F1','F3','T1','A1','A2'])
+        if blocking_fails > 0:
+          return overall_verdict in ['needs_revision', 'rejected']
+        return True
+      severity: blocking
+      message: "Verdict must reflect blocking failures"
+
+    - id: "V3"
+      name: "blocking_issues_documented"
+      description: "All failures must have blocking issues"
+      type: custom
+      check: |
+        fail_count = sum(1 for r in checklist_results if r['status'] == 'fail')
+        return len(blocking_issues) >= fail_count or fail_count == 0
+      severity: required
+      message: "All failures should be documented as blocking issues"
+
+    - id: "V4"
+      name: "fixes_have_suggestions"
+      description: "Blocking issues must have suggested fixes"
+      type: custom
+      check: |
+        return all(len(issue.get('suggested_fix', '')) >= 10 for issue in blocking_issues)
+      severity: required
+      message: "Blocking issues must have substantial suggested fixes"
+
+  human_confirmation:
+    prompt: |
+      **Validation Complete**
+      
+      Verdict: {overall_verdict}
+      
+      Checks: {_pass_count} pass, {_warn_count} warn, {_fail_count} fail
+      Blocking Issues: {_blocking_count}
+      
+      {if overall_verdict == 'approved'}
+      Ready to proceed to implementation.
+      {endif}
+      
+      {if overall_verdict == 'approved_with_notes'}
+      Can proceed with these conditions:
+      {approval_conditions}
+      {endif}
+      
+      {if overall_verdict == 'needs_revision'}
+      Must address before approval:
+      {revision_guidance.priority_fixes}
+      {endif}
+    actions:
+      approve: "Mark specification as APPROVED"
+      reject: "Return to DRAFT for revision"
+      clarify: "Discuss specific issues"
+
+execution:
+  temperature: 0.0
+  max_tokens: 3000
+  estimated_cost_usd: 0.02
+  timeout_seconds: 120

@@ -1,0 +1,446 @@
+# Specification Document Schema
+# Validates the structured output from the DRAFT contract
+
+$schema: "http://json-schema.org/draft-07/schema#"
+$id: "https://agentforge.dev/schemas/specification.schema.yaml"
+title: Specification Document
+description: |
+  A structured, verifiable specification document that captures all requirements,
+  entities, and implementation details for a feature.
+
+type: object
+required:
+  - metadata
+  - overview
+  - requirements
+  - entities
+
+properties:
+  metadata:
+    type: object
+    required:
+      - version
+      - status
+      - feature_name
+      - created_date
+    properties:
+      version:
+        type: string
+        pattern: "^\\d+\\.\\d+(\\.\\d+)?$"
+        description: "Semantic version (e.g., 1.0, 1.0.0)"
+      status:
+        type: string
+        enum: [draft, review, approved, implemented]
+      feature_name:
+        type: string
+        minLength: 3
+        maxLength: 100
+      created_date:
+        type: string
+        format: date
+      author:
+        type: string
+      reviewers:
+        type: array
+        items:
+          type: string
+
+  overview:
+    type: object
+    required:
+      - purpose
+      - scope
+    properties:
+      purpose:
+        type: string
+        minLength: 20
+        description: "Clear statement of what this feature accomplishes"
+      background:
+        type: string
+        description: "Context and motivation for this feature"
+      scope:
+        type: object
+        required:
+          - includes
+        properties:
+          includes:
+            type: array
+            items:
+              type: string
+            minItems: 1
+            description: "What is covered by this specification"
+          excludes:
+            type: array
+            items:
+              type: string
+            description: "What is explicitly out of scope"
+      assumptions:
+        type: array
+        items:
+          type: string
+        description: "Assumptions made during specification"
+      constraints:
+        type: array
+        items:
+          type: string
+        description: "Technical or business constraints"
+
+  requirements:
+    type: object
+    required:
+      - functional
+    properties:
+      functional:
+        type: array
+        items:
+          $ref: "#/$defs/requirement"
+        minItems: 1
+      non_functional:
+        type: array
+        items:
+          $ref: "#/$defs/requirement"
+
+  entities:
+    type: array
+    items:
+      $ref: "#/$defs/entity"
+    minItems: 1
+    description: "Domain entities, value objects, and aggregates"
+
+  interfaces:
+    type: array
+    items:
+      $ref: "#/$defs/interface"
+    description: "API endpoints, commands, queries"
+
+  workflows:
+    type: array
+    items:
+      $ref: "#/$defs/workflow"
+    description: "Business processes and user flows"
+
+  error_handling:
+    type: array
+    items:
+      type: object
+      required:
+        - error_code
+        - condition
+        - response
+      properties:
+        error_code:
+          type: string
+        condition:
+          type: string
+        response:
+          type: string
+        user_message:
+          type: string
+
+  testing_notes:
+    type: object
+    properties:
+      unit_test_focus:
+        type: array
+        items:
+          type: string
+      integration_test_scenarios:
+        type: array
+        items:
+          type: string
+      edge_cases:
+        type: array
+        items:
+          type: string
+
+  open_questions:
+    type: array
+    items:
+      type: object
+      required:
+        - question
+      properties:
+        question:
+          type: string
+        context:
+          type: string
+        proposed_answer:
+          type: string
+        status:
+          type: string
+          enum: [open, resolved, deferred]
+
+  glossary:
+    type: array
+    items:
+      type: object
+      required:
+        - term
+        - definition
+      properties:
+        term:
+          type: string
+        definition:
+          type: string
+
+$defs:
+  requirement:
+    type: object
+    required:
+      - id
+      - title
+      - priority
+      - description
+    properties:
+      id:
+        type: string
+        pattern: "^(FR|NFR)-\\d{3}$"
+        description: "FR-001 for functional, NFR-001 for non-functional"
+      title:
+        type: string
+        maxLength: 100
+      priority:
+        type: string
+        enum: [must, should, could, wont]
+        description: "MoSCoW prioritization"
+      description:
+        type: string
+        minLength: 10
+      rationale:
+        type: string
+        description: "Why this requirement exists"
+      acceptance_criteria:
+        type: array
+        items:
+          $ref: "#/$defs/acceptance_criterion"
+        minItems: 1
+      dependencies:
+        type: array
+        items:
+          type: string
+        description: "IDs of requirements this depends on"
+
+  acceptance_criterion:
+    type: object
+    required:
+      - id
+      - given
+      - when
+      - then
+    properties:
+      id:
+        type: string
+        pattern: "^AC-\\d{3}$"
+      given:
+        type: string
+        description: "Precondition"
+      when:
+        type: string
+        description: "Action"
+      then:
+        type: string
+        description: "Expected outcome"
+      and_then:
+        type: array
+        items:
+          type: string
+        description: "Additional outcomes"
+
+  entity:
+    type: object
+    required:
+      - name
+      - layer
+      - type
+      - properties
+    properties:
+      name:
+        type: string
+        pattern: "^[A-Z][a-zA-Z0-9]*$"
+        description: "PascalCase entity name"
+      layer:
+        type: string
+        enum: [Domain, Application, Infrastructure, Presentation]
+      type:
+        type: string
+        enum: [entity, aggregate_root, value_object, enum, dto, command, query, event]
+      description:
+        type: string
+      properties:
+        type: array
+        items:
+          $ref: "#/$defs/property"
+        minItems: 1
+      methods:
+        type: array
+        items:
+          $ref: "#/$defs/method"
+      invariants:
+        type: array
+        items:
+          type: string
+        description: "Business rules that must always be true"
+      relationships:
+        type: array
+        items:
+          type: object
+          required:
+            - target
+            - type
+          properties:
+            target:
+              type: string
+            type:
+              type: string
+              enum: [has_one, has_many, belongs_to, many_to_many]
+            description:
+              type: string
+
+  property:
+    type: object
+    required:
+      - name
+      - type
+    properties:
+      name:
+        type: string
+      type:
+        type: string
+        description: "C# type (string, int, decimal, DateTime, etc.)"
+      nullable:
+        type: boolean
+        default: false
+      constraints:
+        type: array
+        items:
+          type: string
+        description: "Validation constraints"
+      default_value:
+        type: string
+      description:
+        type: string
+
+  method:
+    type: object
+    required:
+      - name
+      - returns
+    properties:
+      name:
+        type: string
+      returns:
+        type: string
+      parameters:
+        type: array
+        items:
+          type: object
+          required:
+            - name
+            - type
+          properties:
+            name:
+              type: string
+            type:
+              type: string
+      description:
+        type: string
+      throws:
+        type: array
+        items:
+          type: string
+
+  interface:
+    type: object
+    required:
+      - name
+      - type
+      - path
+    properties:
+      name:
+        type: string
+      type:
+        type: string
+        enum: [rest_endpoint, graphql, grpc, command, query, event_handler]
+      path:
+        type: string
+        description: "URL path for REST, or handler location"
+      method:
+        type: string
+        enum: [GET, POST, PUT, PATCH, DELETE]
+      request:
+        type: object
+        properties:
+          body:
+            type: string
+            description: "Reference to DTO or inline schema"
+          query_params:
+            type: array
+            items:
+              type: object
+              properties:
+                name:
+                  type: string
+                type:
+                  type: string
+                required:
+                  type: boolean
+      response:
+        type: object
+        properties:
+          success:
+            type: string
+            description: "Success response type"
+          error_codes:
+            type: array
+            items:
+              type: string
+      authorization:
+        type: string
+        description: "Required permissions or roles"
+
+  workflow:
+    type: object
+    required:
+      - name
+      - trigger
+      - steps
+    properties:
+      name:
+        type: string
+      description:
+        type: string
+      trigger:
+        type: string
+        description: "What initiates this workflow"
+      actors:
+        type: array
+        items:
+          type: string
+      steps:
+        type: array
+        items:
+          type: object
+          required:
+            - step
+            - action
+          properties:
+            step:
+              type: integer
+            action:
+              type: string
+            actor:
+              type: string
+            system_response:
+              type: string
+            alternatives:
+              type: array
+              items:
+                type: string
+      success_outcome:
+        type: string
+      failure_outcomes:
+        type: array
+        items:
+          type: string
+
+additionalProperties: false

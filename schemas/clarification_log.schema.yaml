@@ -1,0 +1,121 @@
+# Clarification Log Schema
+# Output of SPEC.CLARIFY state (when mode: complete)
+# Validates: outputs/clarification_log.yaml
+
+$schema: "http://json-schema.org/draft-07/schema#"
+$id: "https://agentforge.dev/schemas/clarification_log.schema.yaml"
+title: ClarificationLog
+description: Output of the CLARIFY state - refined understanding through dialogue
+
+type: object
+required:
+  - questions_asked
+  - scope_definition
+additionalProperties: false
+
+properties:
+  questions_asked:
+    type: array
+    description: Record of all Q&A exchanges
+    items:
+      type: object
+      required: [question, answer]
+      additionalProperties: false
+      properties:
+        question:
+          type: string
+          minLength: 10
+        answer:
+          type: string
+          minLength: 1
+        implications:
+          type: array
+          description: What this answer means for the design
+          items:
+            type: string
+            
+  assumptions_made:
+    type: array
+    description: Assumptions made when user didn't know or deferred
+    items:
+      type: object
+      required: [assumption, reason, confidence]
+      additionalProperties: false
+      properties:
+        assumption:
+          type: string
+        reason:
+          type: string
+          enum: [user_unknown, user_deferred, inferred_from_context]
+          description: |
+            - user_unknown: User said "I don't know"
+            - user_deferred: User said "decide later"
+            - inferred_from_context: Analyst made reasonable inference
+        confidence:
+          type: string
+          enum: [high, medium, low]
+        needs_validation:
+          type: boolean
+          default: false
+          description: Should this be validated during implementation?
+          
+  scope_definition:
+    type: object
+    description: Clear boundaries of what's included
+    required: [in_scope, out_of_scope]
+    additionalProperties: false
+    properties:
+      in_scope:
+        type: array
+        minItems: 1
+        items:
+          type: object
+          required: [item, confirmed_by]
+          additionalProperties: false
+          properties:
+            item:
+              type: string
+            confirmed_by:
+              type: string
+              enum: [user_explicit, user_implicit, analyst_proposed]
+              description: |
+                - user_explicit: User directly stated this
+                - user_implicit: User implied this
+                - analyst_proposed: Analyst suggested, user agreed
+                
+      out_of_scope:
+        type: array
+        items:
+          type: object
+          required: [item, reason]
+          additionalProperties: false
+          properties:
+            item:
+              type: string
+            reason:
+              type: string
+            deferred_to:
+              type: string
+              description: Future phase/version this is deferred to
+              
+      deferred:
+        type: array
+        description: Items needing decision but not blocking
+        items:
+          type: object
+          additionalProperties: false
+          properties:
+            item:
+              type: string
+            decision_needed_by:
+              type: string
+              description: When decision is needed
+            default_if_not_decided:
+              type: string
+              description: What to do if no decision is made
+              
+  domain_terms_defined:
+    type: object
+    description: Glossary of domain-specific terms
+    additionalProperties:
+      type: string

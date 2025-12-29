@@ -1,0 +1,117 @@
+# Validation Report Schema
+# Output of SPEC.VALIDATE state
+# Validates: outputs/validation_report.yaml
+
+$schema: "http://json-schema.org/draft-07/schema#"
+$id: "https://agentforge.dev/schemas/validation_report.schema.yaml"
+title: ValidationReport
+description: Output of the VALIDATE state - final quality assessment
+
+type: object
+required:
+  - overall_verdict
+  - checklist_results
+additionalProperties: false
+
+properties:
+  overall_verdict:
+    type: string
+    enum: [approved, approved_with_notes, needs_revision, rejected]
+    description: |
+      - approved: All checks pass, ready for implementation
+      - approved_with_notes: Minor issues, can proceed with conditions
+      - needs_revision: Blocking issues must be fixed
+      - rejected: Fundamental problems, needs restart
+    
+  checklist_results:
+    type: array
+    minItems: 10
+    description: Results of validation checklist
+    items:
+      type: object
+      required: [check_id, check_description, status]
+      additionalProperties: false
+      properties:
+        check_id:
+          type: string
+          pattern: "^[A-Z]+[0-9]+$"
+          description: Check identifier (e.g., C1, K2, T1)
+        check_description:
+          type: string
+        status:
+          type: string
+          enum: [pass, warn, fail]
+        notes:
+          type: string
+        evidence:
+          type: string
+          description: What was examined to determine this
+          
+  blocking_issues:
+    type: array
+    description: Issues that prevent approval
+    items:
+      type: object
+      required: [issue_id, location, description, suggested_fix]
+      additionalProperties: false
+      properties:
+        issue_id:
+          type: string
+        location:
+          type: string
+          description: Where in spec (e.g., Section 2.1, FR-003)
+        description:
+          type: string
+        suggested_fix:
+          type: string
+          minLength: 10
+          
+  warnings:
+    type: array
+    description: Issues that should be fixed but don't block
+    items:
+      type: object
+      required: [warning_id, description]
+      additionalProperties: false
+      properties:
+        warning_id:
+          type: string
+        location:
+          type: string
+        description:
+          type: string
+        recommendation:
+          type: string
+          
+  strengths:
+    type: array
+    description: What the spec does well
+    items:
+      type: string
+      
+  revision_guidance:
+    type: object
+    description: Guidance if not approved
+    additionalProperties: false
+    properties:
+      priority_fixes:
+        type: array
+        description: Must fix before re-review
+        items:
+          type: string
+      recommended_improvements:
+        type: array
+        description: Should fix
+        items:
+          type: string
+      optional_enhancements:
+        type: array
+        description: Nice to have
+        items:
+          type: string
+          
+  approval_conditions:
+    type: array
+    description: Conditions for approved_with_notes verdict
+    items:
+      type: string

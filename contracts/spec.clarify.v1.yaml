@@ -1,0 +1,509 @@
+# SPEC.CLARIFY Prompt Contract
+# Version: 1.0.0
+# Schema: prompt-contract.schema.yaml
+
+contract:
+  id: "spec.clarify.v1"
+  version: "1.0.0"
+  workflow: spec
+  state: clarify
+  description: |
+    Engage in structured dialogue to resolve ambiguities and define scope.
+    Ask one question at a time, track answers, and build to completion.
+
+role:
+  name: "Requirements Analyst"
+  persona: |
+    You are conducting a focused clarification interview. You ask precise,
+    specific questions one at a time. You track what's been clarified and
+    what remains unclear. You know when to stop.
+  goal: "Resolve ambiguities through structured Q&A dialogue"
+  anti_goals:
+    - "Asking multiple questions at once"
+    - "Asking vague open-ended questions"
+    - "Proposing solutions"
+    - "Continuing when clarification is complete"
+
+inputs:
+  required:
+    - name: intake_record
+      type: object
+      description: "Output from INTAKE state"
+      schema:
+        $ref: "schemas/intake_record.schema.yaml"
+
+    - name: conversation_history
+      type: array
+      description: "Previous Q&A exchanges in this clarification session"
+      schema:
+        type: array
+        items:
+          type: object
+          properties:
+            question:
+              type: string
+            answer:
+              type: string
+      examples:
+        - []
+        - - question: "Can multiple discount codes be applied to one order?"
+            answer: "One code per order for v1"
+
+  context:
+    - name: project_context
+      source: project_context
+      required: true
+
+    - name: entity_definitions
+      source: lsp_lookup
+      required: false
+      parameters:
+        symbols: "{intake_record.key_entities[].entity_name}"
+      budget_tokens: 1000
+
+output:
+  format: yaml
+  schema:
+    $schema: "http://json-schema.org/draft-07/schema#"
+    title: "ClarifyOutput"
+    type: object
+    required:
+      - mode
+    additionalProperties: false
+    
+    properties:
+      mode:
+        type: string
+        enum: [question, complete]
+        description: "Whether asking another question or clarification is complete"
+      
+      question:
+        type: object
+        description: "Present when mode=question"
+        required:
+          - text
+          - priority
+          - category
+          - why_asking
+        additionalProperties: false
+        properties:
+          text:
+            type: string
+            minLength: 15
+            description: "The specific question to ask"
+          priority:
+            type: string
+            enum: [blocking, important, nice_to_know]
+          category:
+            type: string
+            enum: [scope, behavior, constraint, technical]
+          why_asking:
+            type: string
+            description: "Why this question matters"
+          options:
+            type: array
+            items:
+              type: string
+            description: "Suggested answers for closed questions"
+      
+      clarification_log:
+        type: object
+        description: "Present when mode=complete"
+        required:
+          - questions_asked
+          - scope_definition
+        additionalProperties: false
+        properties:
+          questions_asked:
+            type: array
+            items:
+              type: object
+              required:
+                - question
+                - answer
+              properties:
+                question:
+                  type: string
+                answer:
+                  type: string
+                implications:
+                  type: array
+                  items:
+                    type: string
+          
+          assumptions_made:
+            type: array
+            items:
+              type: object
+              required:
+                - assumption
+                - reason
+                - confidence
+              properties:
+                assumption:
+                  type: string
+                reason:
+                  type: string
+                  enum: [user_unknown, user_deferred, inferred_from_context]
+                confidence:
+                  type: string
+                  enum: [high, medium, low]
+                needs_validation:
+                  type: boolean
+          
+          scope_definition:
+            type: object
+            required:
+              - in_scope
+              - out_of_scope
+            properties:
+              in_scope:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - item
+                    - confirmed_by
+                  properties:
+                    item:
+                      type: string
+                    confirmed_by:
+                      type: string
+                      enum: [user_explicit, user_implicit, analyst_proposed]
+              out_of_scope:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - item
+                    - reason
+                  properties:
+                    item:
+                      type: string
+                    reason:
+                      type: string
+                    deferred_to:
+                      type: string
+              deferred:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    item:
+                      type: string
+                    decision_needed_by:
+                      type: string
+                    default_if_not_decided:
+                      type: string
+          
+          domain_terms_defined:
+            type: object
+            additionalProperties:
+              type: string
+
+    # Conditional validation
+    if:
+      properties:
+        mode:
+          const: "question"
+    then:
+      required:
+        - mode
+        - question
+    else:
+      required:
+        - mode
+        - clarification_log
+
+template:
+  system:
+    sections:
+      - name: role
+        content: |
+          # Role
+          
+          You are a Requirements Analyst conducting a structured clarification interview.
+
+      - name: output_format
+        content: |
+          # Output Format
+          
+          You MUST output a YAML document with ONE of these structures:
+          
+          ## If asking a question:
+          ```yaml
+          mode: question
+          question:
+            text: string              # The question to ask
+            priority: enum            # blocking | important | nice_to_know
+            category: enum            # scope | behavior | constraint | technical
+            why_asking: string        # Brief explanation of why this matters
+            options:                  # Optional: suggested answers
+              - string
+          ```
+          
+          ## If clarification is complete:
+          ```yaml
+          mode: complete
+          clarification_log:
+            questions_asked: [...]
+            assumptions_made: [...]
+            scope_definition:
+              in_scope: [...]
+              out_of_scope: [...]
+              deferred: [...]
+            domain_terms_defined: {...}
+          ```
+
+      - name: rules
+        content: |
+          # Rules
+          
+          1. **ASK ONE QUESTION AT A TIME**
+          2. **PRIORITIZE**: blocking → scope → behavior → nice_to_know
+          3. **BE SPECIFIC**: Not "How should it work?" but "Should multiple codes stack?"
+          4. **HANDLE "I DON'T KNOW"**: Make assumption, document with confidence
+          5. **KNOW WHEN TO STOP**: All blocking answered + scope clear
+
+      - name: example_question
+        content: |
+          # Example: Asking a Question
+          ```yaml
+          mode: question
+          question:
+            text: "Can multiple discount codes be applied to a single order, or is it limited to one code per order?"
+            priority: blocking
+            category: behavior
+            why_asking: "This affects the data model and validation logic significantly"
+            options:
+              - "One code per order only"
+              - "Multiple codes, all discounts stack"
+              - "Multiple codes, best discount wins"
+          ```
+
+      - name: example_complete
+        content: |
+          # Example: Completing Clarification
+          ```yaml
+          mode: complete
+          clarification_log:
+            questions_asked:
+              - question: "Can multiple discount codes be applied to a single order?"
+                answer: "One code per order for v1"
+                implications:
+                  - "Simpler data model - single DiscountCode reference on Order"
+            assumptions_made:
+              - assumption: "Discount codes are case-insensitive"
+                reason: user_unknown
+                confidence: medium
+                needs_validation: true
+            scope_definition:
+              in_scope:
+                - item: "Apply single discount code to order at checkout"
+                  confirmed_by: user_explicit
+              out_of_scope:
+                - item: "Multiple codes per order"
+                  reason: "Explicitly deferred to v2"
+                  deferred_to: "Phase 2"
+              deferred: []
+            domain_terms_defined:
+              discount_code: "Alphanumeric string entered at checkout"
+          ```
+
+  user:
+    sections:
+      - name: intake
+        content: |
+          # Intake Record
+          
+          {intake_record}
+
+      - name: conversation
+        content: |
+          # Conversation History
+          
+          {conversation_history}
+
+      - name: context
+        condition: "entity_definitions"
+        content: |
+          # Code Context
+          
+          {entity_definitions}
+
+      - name: project
+        content: |
+          # Project Context
+          
+          {project_context}
+
+      - name: instructions
+        content: |
+          # Instructions
+          
+          Based on the intake record and conversation:
+          1. If this is the first question, ask the highest-priority BLOCKING question
+          2. If more critical questions remain, ask the next one
+          3. If clarification is complete, output mode: complete
+          
+          Output YAML only.
+
+examples:
+  valid:
+    - name: "First question"
+      description: "Start of clarification - ask first blocking question"
+      inputs:
+        intake_record:
+          raw_request: "Add discount codes to orders"
+          detected_intent: "User wants to apply discount codes to reduce order totals"
+          detected_scope: medium
+          detected_type: feature
+          key_entities:
+            - entity_name: "Order"
+              entity_type: class
+              confidence: 0.95
+          initial_questions:
+            - question: "Can multiple codes apply to one order?"
+              priority: blocking
+              category: behavior
+        conversation_history: []
+        project_context: "E-commerce with Clean Architecture"
+      output:
+        mode: question
+        question:
+          text: "Can multiple discount codes be applied to a single order, or is it limited to one code per order?"
+          priority: blocking
+          category: behavior
+          why_asking: "This affects the data model and validation logic significantly"
+          options:
+            - "One code per order only"
+            - "Multiple codes, all discounts stack"
+
+    - name: "Clarification complete"
+      description: "All questions answered, scope is clear"
+      inputs:
+        intake_record:
+          raw_request: "Add discount codes to orders"
+          detected_intent: "User wants to apply discount codes to reduce order totals"
+          detected_scope: medium
+          detected_type: feature
+          key_entities: []
+          initial_questions: []
+        conversation_history:
+          - question: "Can multiple codes apply to one order?"
+            answer: "One code per order for v1"
+          - question: "Should discounts apply before or after tax?"
+            answer: "Before tax"
+        project_context: "E-commerce"
+      output:
+        mode: complete
+        clarification_log:
+          questions_asked:
+            - question: "Can multiple codes apply to one order?"
+              answer: "One code per order for v1"
+              implications:
+                - "Single discount code field on Order"
+            - question: "Should discounts apply before or after tax?"
+              answer: "Before tax"
+              implications:
+                - "Discount applied to subtotal, then tax calculated"
+          assumptions_made:
+            - assumption: "Codes are case-insensitive"
+              reason: inferred_from_context
+              confidence: medium
+              needs_validation: true
+          scope_definition:
+            in_scope:
+              - item: "Apply single discount code at checkout"
+                confirmed_by: user_explicit
+            out_of_scope:
+              - item: "Multiple codes per order"
+                reason: "Deferred to v2"
+                deferred_to: "Phase 2"
+            deferred: []
+          domain_terms_defined:
+            discount_code: "Alphanumeric string entered by customer"
+
+  invalid:
+    - name: "Multiple questions"
+      output:
+        mode: question
+        question:
+          text: "Can multiple codes apply? And what discount types do we need? Also, should they expire?"
+          priority: blocking
+          category: behavior
+          why_asking: "Need to understand the requirements"
+      problems:
+        - "Asks 3 questions at once"
+        - "Rule violation: ASK ONE QUESTION AT A TIME"
+      correction: "Ask only the first, most important question"
+
+verification:
+  schema_validation: true
+  
+  checks:
+    - id: "M1"
+      name: "mode_valid"
+      type: field_equals
+      target: "mode"
+      value: ["question", "complete"]
+      severity: blocking
+      message: "mode must be 'question' or 'complete'"
+
+    - id: "Q1"
+      name: "question_is_specific"
+      type: conditional
+      condition: "mode == 'question'"
+      check: "len(question.text) >= 20"
+      severity: required
+      message: "Questions must be specific (at least 20 chars)"
+
+    - id: "Q2"
+      name: "question_not_vague"
+      type: regex_negative
+      target: "question.text"
+      pattern: "^(How should|What do you want|Can you explain|Tell me about)"
+      severity: advisory
+      message: "Question seems too vague/open-ended"
+
+    - id: "C1"
+      name: "complete_has_scope"
+      type: conditional
+      condition: "mode == 'complete'"
+      check: "len(clarification_log.scope_definition.in_scope) >= 1"
+      severity: blocking
+      message: "Complete mode must define at least one in_scope item"
+
+    - id: "C2"
+      name: "complete_has_questions"
+      type: conditional
+      condition: "mode == 'complete'"
+      check: "len(clarification_log.questions_asked) >= 1"
+      severity: required
+      message: "Should have asked at least one clarifying question"
+
+  human_confirmation:
+    prompt: |
+      {if mode == 'question'}
+      I'd like to ask: {question.text}
+      
+      Is this the right question to ask next?
+      {endif}
+      
+      {if mode == 'complete'}
+      Clarification complete. Scope defined:
+      
+      **In Scope:** {clarification_log.scope_definition.in_scope}
+      **Out of Scope:** {clarification_log.scope_definition.out_of_scope}
+      
+      Is this correct?
+      {endif}
+    actions:
+      approve: "Proceed with question or move to ANALYZE"
+      reject: "Re-generate with feedback"
+
+execution:
+  temperature: 0.0
+  max_tokens: 1500
+  estimated_cost_usd: 0.008
+  timeout_seconds: 60

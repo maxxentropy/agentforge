@@ -1,0 +1,201 @@
+# Revision Session Schema
+# Tracks issue resolution decisions for both human and autonomous modes
+
+$schema: "http://json-schema.org/draft-07/schema#"
+$id: "https://agentforge.dev/schemas/revision_session.schema.yaml"
+title: Revision Session
+description: |
+  A structured session tracking revision decisions. Works for both
+  interactive (human) and autonomous (agent) modes with handoff support.
+
+type: object
+required:
+  - session_id
+  - created_at
+  - spec_file
+  - validation_file
+  - status
+  - issues
+
+properties:
+  session_id:
+    type: string
+    description: "Unique session identifier"
+  
+  created_at:
+    type: string
+    format: date-time
+  
+  updated_at:
+    type: string
+    format: date-time
+  
+  spec_file:
+    type: string
+    description: "Path to specification being revised"
+  
+  spec_version:
+    type: string
+    description: "Version of spec when session started"
+  
+  validation_file:
+    type: string
+    description: "Path to validation report"
+  
+  validation_verdict:
+    type: string
+    enum: [approved, approved_with_notes, needs_revision, rejected]
+  
+  mode:
+    type: string
+    enum: [interactive, autonomous, paused_for_human]
+    description: |
+      interactive: Human making decisions
+      autonomous: Agent making decisions
+      paused_for_human: Agent requested human input
+  
+  status:
+    type: string
+    enum: [in_progress, pending_human, ready_to_apply, applied, cancelled]
+    description: |
+      in_progress: Decisions being made
+      pending_human: Waiting for human input on flagged issues
+      ready_to_apply: All decisions made, ready to apply
+      applied: Changes applied to spec
+      cancelled: Session abandoned
+  
+  issues:
+    type: array
+    items:
+      $ref: "#/$defs/issue"
+    minItems: 1
+  
+  summary:
+    type: object
+    properties:
+      total_issues:
+        type: integer
+      resolved:
+        type: integer
+      deferred:
+        type: integer
+      pending_human:
+        type: integer
+  
+  apply_log:
+    type: array
+    items:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        action:
+          type: string
+        result:
+          type: string
+
+$defs:
+  issue:
+    type: object
+    required:
+      - id
+      - type
+      - location
+      - description
+      - options
+    properties:
+      id:
+        type: string
+        description: "Issue ID (W1, B1, COND-1, etc.)"
+      
+      type:
+        type: string
+        enum: [BLOCKING, WARNING, CONDITION, IMPROVEMENT]
+      
+      location:
+        type: string
+        description: "Where in the spec this issue exists"
+      
+      description:
+        type: string
+        description: "What the problem is"
+      
+      recommendation:
+        type: string
+        description: "Suggested fix from validation"
+      
+      options:
+        type: array
+        items:
+          $ref: "#/$defs/option"
+        minItems: 2
+        description: "Available resolution options"
+      
+      decision:
+        $ref: "#/$defs/decision"
+        description: "The chosen resolution (null if not yet decided)"
+  
+  option:
+    type: object
+    required:
+      - id
+      - label
+    properties:
+      id:
+        type: string
+        description: "Option identifier (1, 2, skip, custom)"
+      
+      label:
+        type: string
+        description: "Human-readable option description"
+      
+      resolution:
+        type: string
+        description: "What change this option makes (null for custom)"
+      
+      confidence:
+        type: string
+        enum: [high, medium, low]
+        description: "Agent's confidence this is the right choice"
+      
+      rationale:
+        type: string
+        description: "Why this option exists or is recommended"
+  
+  decision:
+    type: object
+    required:
+      - selected_option
+      - decided_by
+    properties:
+      selected_option:
+        type: string
+        description: "ID of chosen option"
+      
+      decided_by:
+        type: string
+        enum: [human, agent]
+      
+      rationale:
+        type: string
+        description: "Why this option was chosen"
+      
+      custom_resolution:
+        type: string
+        description: "If custom option selected, the resolution text"
+      
+      requires_human:
+        type: boolean
+        default: false
+        description: "Agent flagged this for human review"
+      
+      human_prompt:
+        type: string
+        description: "If requires_human, why agent needs human input"
+      
+      timestamp:
+        type: string
+        format: date-time
+
+additionalProperties: false

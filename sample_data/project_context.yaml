@@ -1,0 +1,83 @@
+# Sample Project Context
+# Replace this with your actual project details
+
+project:
+  name: "E-Commerce Platform"
+  type: "Web Application"
+  language: "C#"
+  framework: ".NET 8"
+  architecture: "Clean Architecture"
+
+structure:
+  solution: "ECommerce.sln"
+  layers:
+    - name: Domain
+      path: "src/Domain"
+      responsibilities:
+        - Entities
+        - Value Objects
+        - Domain Events
+        - Domain Services
+        - Repository Interfaces
+      dependencies: []  # No dependencies
+    
+    - name: Application
+      path: "src/Application"
+      responsibilities:
+        - Commands & Queries (CQRS)
+        - DTOs
+        - Application Services
+        - Validators
+      dependencies:
+        - Domain
+    
+    - name: Infrastructure
+      path: "src/Infrastructure"
+      responsibilities:
+        - Repository Implementations
+        - External Services
+        - Database Context
+        - Migrations
+      dependencies:
+        - Domain
+        - Application
+    
+    - name: Api
+      path: "src/Api"
+      responsibilities:
+        - Controllers
+        - Middleware
+        - DI Configuration
+      dependencies:
+        - Application
+        - Infrastructure
+
+conventions:
+  error_handling: "Result<T> pattern - no exceptions for business logic"
+  validation: "FluentValidation in Application layer"
+  persistence: "Entity Framework Core with repository pattern"
+  testing: "xUnit with Moq, integration tests use TestContainers"
+  naming:
+    - "Interfaces prefixed with I (e.g., IOrderRepository)"
+    - "Commands suffixed with Command (e.g., CreateOrderCommand)"
+    - "Queries suffixed with Query (e.g., GetOrderByIdQuery)"
+
+key_entities:
+  - name: Order
+    path: "src/Domain/Entities/Order.cs"
+    description: "Aggregate root for customer orders"
+  
+  - name: Product
+    path: "src/Domain/Entities/Product.cs"
+    description: "Product catalog item"
+  
+  - name: Customer
+    path: "src/Domain/Entities/Customer.cs"
+    description: "Customer account"
+
+patterns_in_use:
+  - "CQRS (Command Query Responsibility Segregation)"
+  - "Repository Pattern"
+  - "Domain Events"
+  - "Result<T> for error handling"
+  - "MediatR for command/query dispatching"

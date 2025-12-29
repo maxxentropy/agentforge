@@ -1,0 +1,491 @@
+# Prompt Contract Schema
+# This schema defines the structure of machine-verifiable prompt contracts
+# All prompt contracts MUST validate against this schema
+
+$schema: "http://json-schema.org/draft-07/schema#"
+$id: "https://agentforge.dev/schemas/prompt-contract.schema.json"
+title: "PromptContract"
+description: "A formally verifiable prompt contract for AgentForge"
+
+type: object
+required:
+  - contract
+  - template
+  - output
+  - verification
+
+properties:
+  # ============================================================================
+  # CONTRACT IDENTITY
+  # ============================================================================
+  contract:
+    type: object
+    required:
+      - id
+      - version
+      - workflow
+      - state
+    properties:
+      id:
+        type: string
+        pattern: "^[a-z]+\\.[a-z]+\\.v[0-9]+$"
+        description: "Unique identifier: {workflow}.{state}.v{version}"
+        examples: ["spec.intake.v1", "tdflow.red.v1"]
+      
+      version:
+        type: string
+        pattern: "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        description: "Semantic version"
+        examples: ["1.0.0", "1.2.3"]
+      
+      workflow:
+        type: string
+        enum: [spec, tdflow, bugfix, refactor, document]
+        description: "Parent workflow"
+      
+      state:
+        type: string
+        description: "State within workflow"
+      
+      description:
+        type: string
+        description: "Human-readable description of this contract's purpose"
+      
+      supersedes:
+        type: string
+        description: "Previous contract ID this replaces (for migrations)"
+
+  # ============================================================================
+  # ROLE DEFINITION
+  # ============================================================================
+  role:
+    type: object
+    required:
+      - name
+      - persona
+      - goal
+    properties:
+      name:
+        type: string
+        description: "Role name"
+        examples: ["Requirements Analyst", "Software Architect", "Specification Writer"]
+      
+      persona:
+        type: string
+        description: "Detailed description of the role's perspective and expertise"
+      
+      goal:
+        type: string
+        description: "Primary objective of this prompt"
+      
+      anti_goals:
+        type: array
+        items:
+          type: string
+        description: "What this role should NOT do"
+
+  # ============================================================================
+  # INPUT SPECIFICATION
+  # ============================================================================
+  inputs:
+    type: object
+    properties:
+      required:
+        type: array
+        items:
+          $ref: "#/definitions/InputSpec"
+        description: "Inputs that MUST be provided"
+      
+      optional:
+        type: array
+        items:
+          $ref: "#/definitions/InputSpec"
+        description: "Inputs that MAY be provided"
+      
+      context:
+        type: array
+        items:
+          $ref: "#/definitions/ContextSpec"
+        description: "Context retrieved from external sources"
+
+  # ============================================================================
+  # OUTPUT SPECIFICATION
+  # ============================================================================
+  output:
+    type: object
+    required:
+      - format
+      - schema
+    properties:
+      format:
+        type: string
+        enum: [yaml, json, markdown, code, mixed]
+        description: "Output format"
+      
+      schema:
+        type: object
+        description: "JSON Schema for output validation (inline or $ref)"
+      
+      structure:
+        type: array
+        items:
+          type: string
+        description: "For markdown, required sections"
+
+  # ============================================================================
+  # PROMPT TEMPLATE
+  # ============================================================================
+  template:
+    type: object
+    required:
+      - system
+      - user
+    properties:
+      system:
+        type: object
+        required:
+          - sections
+        properties:
+          sections:
+            type: array
+            items:
+              $ref: "#/definitions/TemplateSection"
+            description: "Ordered sections of system message"
+      
+      user:
+        type: object
+        required:
+          - sections
+        properties:
+          sections:
+            type: array
+            items:
+              $ref: "#/definitions/TemplateSection"
+            description: "Ordered sections of user message"
+
+  # ============================================================================
+  # EXAMPLES
+  # ============================================================================
+  examples:
+    type: object
+    properties:
+      valid:
+        type: array
+        items:
+          $ref: "#/definitions/Example"
+        description: "Examples of correct input/output pairs"
+        minItems: 1
+      
+      invalid:
+        type: array
+        items:
+          $ref: "#/definitions/InvalidExample"
+        description: "Examples of incorrect outputs with explanations"
+
+  # ============================================================================
+  # VERIFICATION RULES
+  # ============================================================================
+  verification:
+    type: object
+    required:
+      - schema_validation
+    properties:
+      schema_validation:
+        type: boolean
+        description: "Whether to validate output against schema"
+        default: true
+      
+      checks:
+        type: array
+        items:
+          $ref: "#/definitions/VerificationCheck"
+        description: "Additional verification rules"
+      
+      human_confirmation:
+        $ref: "#/definitions/HumanConfirmation"
+        description: "Required human approval step"
+
+  # ============================================================================
+  # EXECUTION PARAMETERS
+  # ============================================================================
+  execution:
+    type: object
+    properties:
+      temperature:
+        type: number
+        minimum: 0
+        maximum: 2
+        default: 0
+        description: "LLM temperature (0 = deterministic)"
+      
+      max_tokens:
+        type: integer
+        minimum: 100
+        maximum: 100000
+        description: "Maximum output tokens"
+      
+      estimated_cost_usd:
+        type: number
+        minimum: 0
+        description: "Estimated API cost per execution"
+      
+      timeout_seconds:
+        type: integer
+        minimum: 10
+        default: 120
+        description: "Execution timeout"
+
+# ==============================================================================
+# DEFINITIONS (Reusable Components)
+# ==============================================================================
+definitions:
+  InputSpec:
+    type: object
+    required:
+      - name
+      - type
+    properties:
+      name:
+        type: string
+        pattern: "^[a-z_]+$"
+        description: "Variable name (snake_case)"
+      
+      type:
+        type: string
+        enum: [string, number, boolean, array, object, file, file_list]
+      
+      description:
+        type: string
+      
+      schema:
+        $ref: "http://json-schema.org/draft-07/schema#"
+        description: "For complex types, JSON Schema"
+      
+      default:
+        description: "Default value if not provided"
+      
+      examples:
+        type: array
+        description: "Example values"
+      
+      validation:
+        type: object
+        properties:
+          pattern:
+            type: string
+            description: "Regex pattern for strings"
+          min_length:
+            type: integer
+          max_length:
+            type: integer
+          min:
+            type: number
+          max:
+            type: number
+          enum:
+            type: array
+            description: "Allowed values"
+
+  ContextSpec:
+    type: object
+    required:
+      - name
+      - source
+    properties:
+      name:
+        type: string
+        pattern: "^[a-z_]+$"
+      
+      source:
+        type: string
+        enum:
+          - project_context
+          - architecture_rules
+          - lsp_lookup
+          - vector_search
+          - hybrid_retrieval
+          - fetch_specific
+          - git_log
+        description: "Where to retrieve context from"
+      
+      required:
+        type: boolean
+        default: false
+      
+      budget_tokens:
+        type: integer
+        description: "Maximum tokens for this context"
+      
+      parameters:
+        type: object
+        description: "Source-specific parameters"
+
+  TemplateSection:
+    type: object
+    required:
+      - name
+      - content
+    properties:
+      name:
+        type: string
+        description: "Section identifier"
+      
+      content:
+        type: string
+        description: "Template content with {variables}"
+      
+      required:
+        type: boolean
+        default: true
+        description: "Whether this section must be included"
+      
+      condition:
+        type: string
+        description: "Condition for including this section (e.g., 'conversation_history')"
+
+  Example:
+    type: object
+    required:
+      - name
+      - inputs
+      - output
+    properties:
+      name:
+        type: string
+        description: "Example name"
+      
+      description:
+        type: string
+        description: "What this example demonstrates"
+      
+      inputs:
+        type: object
+        description: "Input values for this example"
+      
+      output:
+        description: "Expected output (must validate against output.schema)"
+      
+      validates:
+        type: boolean
+        default: true
+        description: "Whether this output should pass schema validation"
+
+  InvalidExample:
+    type: object
+    required:
+      - name
+      - output
+      - problems
+    properties:
+      name:
+        type: string
+      
+      output:
+        description: "The incorrect output"
+      
+      problems:
+        type: array
+        items:
+          type: string
+        description: "What's wrong with this output"
+      
+      correction:
+        type: string
+        description: "How to fix it"
+
+  VerificationCheck:
+    type: object
+    required:
+      - id
+      - type
+    properties:
+      id:
+        type: string
+        pattern: "^[A-Z]+[0-9]*$"
+        description: "Check identifier (e.g., 'C1', 'K2')"
+      
+      name:
+        type: string
+      
+      description:
+        type: string
+      
+      type:
+        type: string
+        enum:
+          - schema          # JSON Schema validation
+          - regex           # Pattern matching
+          - regex_negative  # Pattern must NOT match
+          - field_exists    # Required field check
+          - field_equals    # Exact value match
+          - field_contains  # Substring check
+          - count_min       # Minimum array length
+          - count_max       # Maximum array length
+          - conditional     # If condition, then check
+          - custom          # Custom function
+          - llm             # LLM-based check
+      
+      severity:
+        type: string
+        enum: [blocking, required, advisory, informational]
+        default: required
+      
+      # Type-specific parameters
+      target:
+        type: string
+        description: "Field path to check (e.g., 'detected_intent', 'initial_questions[].priority')"
+      
+      pattern:
+        type: string
+        description: "For regex checks"
+      
+      value:
+        description: "For equals checks"
+      
+      condition:
+        type: string
+        description: "For conditional checks"
+      
+      check:
+        type: string
+        description: "For conditional/custom checks"
+      
+      prompt:
+        type: string
+        description: "For LLM checks"
+      
+      expected:
+        type: string
+        description: "For LLM checks, expected response"
+      
+      message:
+        type: string
+        description: "Error message if check fails"
+
+  HumanConfirmation:
+    type: object
+    required:
+      - prompt
+    properties:
+      prompt:
+        type: string
+        description: "Prompt to show user for confirmation"
+      
+      fields_to_confirm:
+        type: array
+        items:
+          type: string
+        description: "Specific fields user should review"
+      
+      actions:
+        type: object
+        properties:
+          approve:
+            type: string
+            description: "What happens on approval"
+          reject:
+            type: string
+            description: "What happens on rejection"
+          clarify:
+            type: string
+            description: "What happens if user wants clarification"

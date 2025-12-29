@@ -1,0 +1,182 @@
+# Project Architecture Rules
+# Defines the "physics" of your project - rules that code must follow
+# Schema: schemas/architecture.schema.yaml
+#
+# This file is analyzed during SPEC.ANALYZE to ensure recommendations
+# respect your architecture constraints.
+
+project:
+  name: "E-Commerce Platform"
+  type: "web-api"
+  framework: "dotnet"
+  version: "8.0"
+
+# Layer definitions (Clean Architecture)
+layers:
+  domain:
+    path: "src/Domain"
+    description: "Core business logic, entities, value objects"
+    allowed_dependencies: []  # No dependencies on other layers
+    
+  application:
+    path: "src/Application"
+    description: "Use cases, commands, queries, DTOs"
+    allowed_dependencies:
+      - domain
+      
+  infrastructure:
+    path: "src/Infrastructure"
+    description: "External concerns - database, APIs, file system"
+    allowed_dependencies:
+      - domain
+      - application
+      
+  presentation:
+    path: "src/Api"
+    description: "Controllers, middleware, API contracts"
+    allowed_dependencies:
+      - application
+      # Note: presentation should NOT depend on infrastructure directly
+      # Infrastructure is injected via DI
+
+# Dependency rules (violations are blocking)
+dependency_rules:
+  - id: "ARCH-001"
+    rule: "Domain layer cannot reference Infrastructure"
+    from_layer: domain
+    to_layer: infrastructure
+    allowed: false
+    severity: blocking
+    
+  - id: "ARCH-002"
+    rule: "Domain layer cannot reference Application"
+    from_layer: domain
+    to_layer: application
+    allowed: false
+    severity: blocking
+    
+  - id: "ARCH-003"
+    rule: "Application cannot reference Presentation"
+    from_layer: application
+    to_layer: presentation
+    allowed: false
+    severity: blocking
+    
+  - id: "ARCH-004"
+    rule: "Presentation cannot reference Infrastructure directly"
+    from_layer: presentation
+    to_layer: infrastructure
+    allowed: false
+    severity: warning  # Can be allowed for DI setup
+
+# Coding patterns (must follow)
+patterns:
+  error_handling:
+    name: "Result<T> Pattern"
+    description: "Use Result<T> instead of throwing exceptions for business logic"
+    applies_to:
+      - application
+    examples:
+      - "public async Task<Result<OrderDto>> GetOrderAsync(Guid id)"
+    anti_patterns:
+      - "throw new BusinessException"
+      - "throw new ValidationException"
+      
+  entities:
+    name: "Immutable Entities"
+    description: "Entity properties should use 'init' or private setters"
+    applies_to:
+      - domain
+    examples:
+      - "public string Name { get; init; }"
+      - "public decimal Total { get; private set; }"
+    anti_patterns:
+      - "public string Name { get; set; }"
+      
+  value_objects:
+    name: "Value Object Pattern"
+    description: "Value objects should be records or have value equality"
+    applies_to:
+      - domain
+    examples:
+      - "public record Money(decimal Amount, string Currency)"
+      
+  repositories:
+    name: "Repository Pattern"
+    description: "Data access through repository interfaces defined in Domain"
+    interface_location: domain
+    implementation_location: infrastructure
+    naming:
+      interface: "I{Entity}Repository"
+      implementation: "{Entity}Repository"
+      
+  cqrs:
+    name: "CQRS Pattern"
+    description: "Separate commands (writes) from queries (reads)"
+    applies_to:
+      - application
+    command_suffix: "Command"
+    query_suffix: "Query"
+    handler_suffix: "Handler"
+
+# Naming conventions
+naming:
+  namespaces:
+    root: "ECommerce"
+    pattern: "{root}.{layer}.{feature}"
+    
+  classes:
+    entities: "PascalCase, no suffix"
+    value_objects: "PascalCase, no suffix"
+    commands: "{Action}{Entity}Command"
+    queries: "Get{Entity}Query, Get{Entity}ListQuery"
+    handlers: "{Command/Query}Handler"
+    services: "I{Name}Service / {Name}Service"
+    repositories: "I{Entity}Repository / {Entity}Repository"
+    
+  files:
+    one_class_per_file: true
+    filename_matches_classname: true
+
+# Testing requirements
+testing:
+  required_coverage:
+    domain: 90
+    application: 80
+    infrastructure: 60
+    presentation: 50
+    
+  patterns:
+    unit_test_suffix: "Tests"
+    integration_test_suffix: "IntegrationTests"
+    test_naming: "{MethodName}_{Scenario}_{ExpectedResult}"
+
+# Code quality rules
+quality:
+  max_method_lines: 30
+  max_class_lines: 300
+  max_parameters: 5
+  max_cyclomatic_complexity: 10
+  
+  required_documentation:
+    public_apis: true
+    public_methods: true
+    complex_logic: true
+
+# Forbidden patterns (immediate rejection)
+forbidden:
+  - pattern: "public [a-zA-Z<>]+ [a-zA-Z]+;"
+    description: "No public fields - use properties"
+    severity: blocking
+    
+  - pattern: "DateTime\\.Now"
+    description: "Use IDateTimeProvider for testability"
+    severity: warning
+    
+  - pattern: "Thread\\.Sleep"
+    description: "Use async/await or IDelayProvider"
+    severity: warning
+    
+  - pattern: "Console\\.(Write|Read)"
+    description: "Use proper logging (ILogger)"
+    severity: warning

@@ -1,0 +1,186 @@
+# Execution Configuration Schema
+# Validates: config/execution.yaml
+
+$schema: "http://json-schema.org/draft-07/schema#"
+$id: "https://agentforge.dev/schemas/execution.schema.yaml"
+title: ExecutionConfig
+description: Configuration for prompt execution modes
+
+type: object
+required:
+  - default_mode
+additionalProperties: false
+
+properties:
+  default_mode:
+    type: string
+    enum: [human_in_loop, api_sequential, api_parallel]
+    description: Default execution mode
+
+  human_in_loop:
+    type: object
+    description: Human-in-loop execution settings
+    additionalProperties: false
+    properties:
+      prompt_output_dir:
+        type: string
+      response_input_dir:
+        type: string
+      prompt_filename_template:
+        type: string
+      response_filename_template:
+        type: string
+      instructions:
+        type: object
+        properties:
+          show_copy_hint:
+            type: boolean
+          show_expected_format:
+            type: boolean
+          show_validation_command:
+            type: boolean
+
+  api_sequential:
+    type: object
+    description: Sequential API execution settings
+    additionalProperties: false
+    properties:
+      provider:
+        type: string
+        enum: [anthropic, openai]
+      model:
+        type: string
+      requests_per_minute:
+        type: integer
+        minimum: 1
+        maximum: 1000
+      retry_on_rate_limit:
+        type: boolean
+      max_retries:
+        type: integer
+        minimum: 0
+        maximum: 10
+      retry_delay_seconds:
+        type: integer
+        minimum: 1
+        maximum: 60
+      timeout_seconds:
+        type: integer
+        minimum: 10
+        maximum: 600
+      track_costs:
+        type: boolean
+      cost_alert_threshold_usd:
+        type: number
+        minimum: 0
+
+  api_parallel:
+    type: object
+    description: Parallel API execution settings
+    additionalProperties: false
+    properties:
+      provider:
+        type: string
+        enum: [anthropic, openai]
+      model:
+        type: string
+      max_concurrent_requests:
+        type: integer
+        minimum: 1
+        maximum: 20
+      requests_per_minute:
+        type: integer
+        minimum: 1
+        maximum: 1000
+      batch_size:
+        type: integer
+        minimum: 1
+        maximum: 100
+      batch_timeout_seconds:
+        type: integer
+        minimum: 30
+        maximum: 1800
+
+  api:
+    type: object
+    description: Common API settings
+    additionalProperties: false
+    properties:
+      api_key_env:
+        type: string
+      base_url:
+        type: ["string", "null"]
+      defaults:
+        type: object
+        properties:
+          temperature:
+            type: number
+            minimum: 0
+            maximum: 2
+          max_tokens:
+            type: integer
+            minimum: 100
+            maximum: 100000
+      response:
+        type: object
+        properties:
+          retry_on_parse_error:
+            type: boolean
+          max_parse_retries:
+            type: integer
+            minimum: 0
+            maximum: 5
+          save_raw_responses:
+            type: boolean
+          raw_response_dir:
+            type: string
+
+  verification:
+    type: object
+    description: Output verification settings
+    additionalProperties: false
+    properties:
+      auto_verify:
+        type: boolean
+      on_failure:
+        type: string
+        enum: [retry, halt, continue_with_warning]
+      max_verification_retries:
+        type: integer
+        minimum: 0
+        maximum: 5
+      include_error_in_retry:
+        type: boolean
+
+  logging:
+    type: object
+    additionalProperties: false
+    properties:
+      level:
+        type: string
+        enum: [debug, info, warn, error]
+      console:
+        type: boolean
+      file:
+        type: string
+      log_prompts:
+        type: boolean
+      log_responses:
+        type: boolean
+      log_verification:
+        type: boolean
+      log_costs:
+        type: boolean
+
+  state:
+    type: object
+    additionalProperties: false
+    properties:
+      enabled:
+        type: boolean
+      state_dir:
+        type: string
+      auto_save:
+        type: boolean
+      save_after_each_step:
+        type: boolean

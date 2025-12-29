@@ -1,0 +1,87 @@
+# Assembled Prompt Schema
+# Validates: outputs/*_prompt.yaml
+# The assembled prompt artifact ready to send to Claude
+
+$schema: "http://json-schema.org/draft-07/schema#"
+$id: "https://agentforge.dev/schemas/assembled_prompt.schema.yaml"
+title: AssembledPrompt
+description: A fully assembled prompt ready for execution
+
+type: object
+required:
+  - contract_id
+  - contract_version
+  - generated_at
+  - inputs_provided
+  - prompt
+  - expected_output
+additionalProperties: false
+
+properties:
+  contract_id:
+    type: string
+    pattern: "^[a-z]+\\.[a-z]+\\.v[0-9]+$"
+    description: "Contract that generated this prompt (e.g., spec.intake.v1)"
+    
+  contract_version:
+    type: string
+    pattern: "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    description: "Semantic version of the contract"
+    
+  generated_at:
+    type: string
+    format: date-time
+    description: "When this prompt was assembled"
+    
+  inputs_provided:
+    type: object
+    description: "The inputs that were provided to assemble this prompt"
+    
+  prompt:
+    type: object
+    required:
+      - system
+      - user
+    additionalProperties: false
+    properties:
+      system:
+        type: string
+        minLength: 100
+        description: "System message (role, rules, format)"
+      user:
+        type: string
+        minLength: 10
+        description: "User message (inputs, context, task)"
+        
+  execution:
+    type: object
+    additionalProperties: false
+    properties:
+      temperature:
+        type: number
+        minimum: 0
+        maximum: 2
+        description: "LLM temperature setting"
+      max_tokens:
+        type: integer
+        minimum: 100
+        maximum: 100000
+        description: "Maximum output tokens"
+        
+  expected_output:
+    type: object
+    required:
+      - format
+    additionalProperties: false
+    properties:
+      format:
+        type: string
+        enum: [yaml, json, markdown, code]
+        description: "Expected output format"
+      schema_ref:
+        type: string
+        description: "Reference to output schema file"
+        
+  validation_command:
+    type: string
+    description: "Command to validate the output"

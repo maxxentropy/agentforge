@@ -1,0 +1,120 @@
+# Execution Configuration
+# Defines how prompts are executed (human-in-loop vs API)
+# Schema: schemas/execution.schema.yaml
+
+# Default execution mode
+default_mode: human_in_loop  # human_in_loop | api_sequential | api_parallel
+
+# Human-in-Loop Mode Configuration
+human_in_loop:
+  # Where to save generated prompts
+  prompt_output_dir: "outputs/prompts"
+  
+  # Where to save human responses
+  response_input_dir: "outputs/responses"
+  
+  # Prompt file naming
+  prompt_filename_template: "{contract_id}_{timestamp}_prompt.md"
+  response_filename_template: "{contract_id}_{timestamp}_response.yaml"
+  
+  # Instructions shown to user
+  instructions:
+    show_copy_hint: true
+    show_expected_format: true
+    show_validation_command: true
+
+# API Sequential Mode Configuration
+api_sequential:
+  # Anthropic API settings
+  provider: "anthropic"
+  model: "claude-sonnet-4-20250514"
+  
+  # Rate limiting
+  requests_per_minute: 50
+  retry_on_rate_limit: true
+  max_retries: 3
+  retry_delay_seconds: 5
+  
+  # Timeouts
+  timeout_seconds: 120
+  
+  # Cost tracking
+  track_costs: true
+  cost_alert_threshold_usd: 1.00  # Alert if single request exceeds this
+
+# API Parallel Mode Configuration  
+api_parallel:
+  # Same as sequential, plus:
+  provider: "anthropic"
+  model: "claude-sonnet-4-20250514"
+  
+  # Concurrency
+  max_concurrent_requests: 5
+  
+  # Rate limiting (shared across all concurrent requests)
+  requests_per_minute: 50
+  
+  # Batch settings
+  batch_size: 10
+  batch_timeout_seconds: 300
+
+# Common API Settings
+api:
+  # API key location (environment variable name)
+  api_key_env: "ANTHROPIC_API_KEY"
+  
+  # Base URL (for proxies or custom endpoints)
+  base_url: null  # null = use default
+  
+  # Default parameters (can be overridden by contracts)
+  defaults:
+    temperature: 0.0
+    max_tokens: 4096
+    
+  # Response handling
+  response:
+    # Retry on malformed output
+    retry_on_parse_error: true
+    max_parse_retries: 2
+    
+    # Save raw responses for debugging
+    save_raw_responses: true
+    raw_response_dir: "outputs/raw"
+
+# Verification Settings
+verification:
+  # Run verification after every execution
+  auto_verify: true
+  
+  # What to do on verification failure
+  on_failure: retry  # retry | halt | continue_with_warning
+  
+  # Maximum retries on verification failure
+  max_verification_retries: 2
+  
+  # Include verification errors in retry prompt
+  include_error_in_retry: true
+
+# Logging
+logging:
+  level: info  # debug | info | warn | error
+  
+  # Log destinations
+  console: true
+  file: "outputs/agentforge.log"
+  
+  # What to log
+  log_prompts: false      # Can be verbose
+  log_responses: false    # Can be verbose
+  log_verification: true
+  log_costs: true
+
+# State Persistence
+state:
+  # Save workflow state for resume
+  enabled: true
+  state_dir: "outputs/state"
+  
+  # Auto-save frequency
+  auto_save: true
+  save_after_each_step: true

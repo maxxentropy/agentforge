@@ -1,0 +1,128 @@
+# Intake Record Schema
+# Output of SPEC.INTAKE state
+# Validates: outputs/intake_record.yaml
+
+$schema: "http://json-schema.org/draft-07/schema#"
+$id: "https://agentforge.dev/schemas/intake_record.schema.yaml"
+title: IntakeRecord
+description: Output of the INTAKE state - initial understanding of user request
+
+type: object
+required:
+  - raw_request
+  - detected_intent
+  - detected_scope
+  - detected_type
+  - key_entities
+  - initial_questions
+additionalProperties: false
+
+properties:
+  raw_request:
+    type: string
+    minLength: 1
+    description: Verbatim user input, preserved exactly
+    
+  detected_intent:
+    type: string
+    minLength: 10
+    maxLength: 500
+    description: One sentence describing what the user actually wants (no implementation details)
+    
+  detected_scope:
+    type: string
+    enum: [trivial, small, medium, large, unclear]
+    description: |
+      Estimated effort level:
+      - trivial: < 1 hour, single file change
+      - small: < 1 day, few files
+      - medium: 1-3 days, multiple components
+      - large: > 3 days, architectural impact
+      - unclear: cannot determine without more info
+      
+  detected_type:
+    type: string
+    enum: [feature, bugfix, refactor, documentation, configuration, unknown]
+    description: Classification of request type
+    
+  key_entities:
+    type: array
+    description: Named things from the request that likely map to code
+    items:
+      type: object
+      required: [entity_name, entity_type, confidence]
+      additionalProperties: false
+      properties:
+        entity_name:
+          type: string
+          minLength: 1
+        entity_type:
+          type: string
+          enum: [class, interface, service, concept, unknown]
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+          
+  initial_questions:
+    type: array
+    description: Clarifying questions needed before proceeding
+    items:
+      type: object
+      required: [question, priority, category]
+      additionalProperties: false
+      properties:
+        question:
+          type: string
+          minLength: 10
+        priority:
+          type: string
+          enum: [blocking, important, nice_to_know]
+          description: |
+            - blocking: Cannot proceed without answer
+            - important: Significantly affects design
+            - nice_to_know: Would help but not essential
+        category:
+          type: string
+          enum: [scope, behavior, constraint, technical]
+          description: |
+            - scope: What's included vs excluded
+            - behavior: How it should work
+            - constraint: Limitations or requirements
+            - technical: Integration, APIs, data formats
+          
+  implicit_requirements:
+    type: array
+    description: Things not explicitly stated but probably expected
+    items:
+      type: object
+      required: [requirement, confidence]
+      additionalProperties: false
+      properties:
+        requirement:
+          type: string
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+          
+  affected_areas:
+    type: array
+    description: Parts of codebase likely touched
+    items:
+      type: object
+      required: [area, impact]
+      additionalProperties: false
+      properties:
+        area:
+          type: string
+          description: File path or component name
+        impact:
+          type: string
+          enum: [direct, indirect, unknown]
+          
+  red_flags:
+    type: array
+    description: Potential problems spotted early
+    items:
+      type: string

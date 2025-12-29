@@ -1,0 +1,618 @@
+# SPEC.INTAKE Prompt Contract
+# Version: 1.0.0
+# Schema: prompt-contract.schema.yaml
+#
+# This contract is machine-verifiable:
+# - Structure validates against prompt-contract.schema.yaml
+# - Examples validate against output.schema
+# - All template variables are typed and documented
+
+# ==============================================================================
+# CONTRACT IDENTITY
+# ==============================================================================
+contract:
+  id: "spec.intake.v1"
+  version: "1.0.0"
+  workflow: spec
+  state: intake
+  description: |
+    Capture and analyze a raw feature request, extracting intent, scope,
+    key entities, and clarifying questions WITHOUT proposing solutions.
+  supersedes: null  # First version
+
+# ==============================================================================
+# ROLE DEFINITION
+# ==============================================================================
+role:
+  name: "Requirements Analyst"
+  persona: |
+    You are an experienced Requirements Analyst who excels at understanding
+    what stakeholders truly need, not just what they say. You listen carefully,
+    identify ambiguities, and ask precise clarifying questions. You never
+    jump to solutions - your job is to understand the problem space.
+  goal: "Capture and understand the user's request without proposing solutions"
+  anti_goals:
+    - "Proposing implementation approaches"
+    - "Naming specific classes, services, or technical components"
+    - "Making assumptions about HOW to solve the problem"
+    - "Being vague about intent or scope"
+
+# ==============================================================================
+# INPUT SPECIFICATION
+# ==============================================================================
+inputs:
+  required:
+    - name: raw_request
+      type: string
+      description: "The user's original feature request in natural language"
+      validation:
+        min_length: 5
+        max_length: 10000
+      examples:
+        - "We need to add discount codes to our order system"
+        - "The checkout is too slow, can we speed it up?"
+        - "Add ability to export reports to PDF"
+
+  optional:
+    - name: related_files
+      type: file_list
+      description: "Files the user thinks are relevant to the request"
+      examples:
+        - ["src/Services/OrderService.cs", "docs/checkout-flow.md"]
+
+    - name: priority
+      type: string
+      description: "User-specified priority level"
+      validation:
+        enum: [critical, high, medium, low]
+      default: medium
+
+    - name: constraints
+      type: string
+      description: "Any known limitations or requirements"
+      examples:
+        - "Must not affect existing order totals"
+        - "Needs to work with legacy payment system"
+
+  context:
+    - name: project_context
+      source: project_context
+      required: true
+      description: "Project structure, architecture, conventions"
+
+    - name: recent_changes
+      source: git_log
+      required: false
+      parameters:
+        count: 20
+      description: "Recent git commits for context"
+
+# ==============================================================================
+# OUTPUT SPECIFICATION
+# ==============================================================================
+output:
+  format: yaml
+  schema:
+    $schema: "http://json-schema.org/draft-07/schema#"
+    title: "IntakeRecord"
+    type: object
+    required:
+      - raw_request
+      - detected_intent
+      - detected_scope
+      - detected_type
+      - key_entities
+      - initial_questions
+    additionalProperties: false
+    
+    properties:
+      raw_request:
+        type: string
+        minLength: 1
+        description: "Verbatim user input, preserved exactly"
+      
+      detected_intent:
+        type: string
+        minLength: 10
+        maxLength: 500
+        description: "One clear sentence describing what the user wants"
+      
+      detected_scope:
+        type: string
+        enum: [trivial, small, medium, large, unclear]
+        description: |
+          trivial: < 1 hour, single file
+          small: < 1 day, few files
+          medium: 1-3 days, multiple components
+          large: > 3 days, architectural impact
+          unclear: cannot determine
+      
+      detected_type:
+        type: string
+        enum: [feature, bugfix, refactor, documentation, configuration, unknown]
+      
+      key_entities:
+        type: array
+        items:
+          type: object
+          required: [entity_name, entity_type, confidence]
+          additionalProperties: false
+          properties:
+            entity_name:
+              type: string
+              minLength: 1
+            entity_type:
+              type: string
+              enum: [class, interface, service, concept, unknown]
+            confidence:
+              type: number
+              minimum: 0
+              maximum: 1
+      
+      initial_questions:
+        type: array
+        items:
+          type: object
+          required: [question, priority, category]
+          additionalProperties: false
+          properties:
+            question:
+              type: string
+              minLength: 10
+            priority:
+              type: string
+              enum: [blocking, important, nice_to_know]
+            category:
+              type: string
+              enum: [scope, behavior, constraint, technical]
+      
+      implicit_requirements:
+        type: array
+        items:
+          type: object
+          required: [requirement, confidence]
+          additionalProperties: false
+          properties:
+            requirement:
+              type: string
+            confidence:
+              type: number
+              minimum: 0
+              maximum: 1
+      
+      affected_areas:
+        type: array
+        items:
+          type: object
+          required: [area, impact]
+          additionalProperties: false
+          properties:
+            area:
+              type: string
+            impact:
+              type: string
+              enum: [direct, indirect, unknown]
+      
+      red_flags:
+        type: array
+        items:
+          type: string
+
+# ==============================================================================
+# PROMPT TEMPLATE
+# ==============================================================================
+template:
+  system:
+    sections:
+      - name: role
+        content: |
+          # Role
+          
+          You are a Requirements Analyst. Your job is to LISTEN and UNDERSTAND,
+          not to solve or design.
+
+      - name: output_format
+        content: |
+          # Output Format
+          
+          You MUST output a YAML document that exactly matches this schema:
+          
+          ```yaml
+          raw_request: string           # Verbatim user input (copy exactly)
+          detected_intent: string       # One clear sentence: what does the user want?
+          detected_scope: enum          # trivial | small | medium | large | unclear
+          detected_type: enum           # feature | bugfix | refactor | documentation | configuration | unknown
+          key_entities:                 # Named things that likely map to code
+            - entity_name: string
+              entity_type: enum         # class | interface | service | concept | unknown
+              confidence: float         # 0.0 to 1.0
+          initial_questions:            # Questions needed before proceeding
+            - question: string
+              priority: enum            # blocking | important | nice_to_know
+              category: enum            # scope | behavior | constraint | technical
+          implicit_requirements:        # Things not stated but probably expected
+            - requirement: string
+              confidence: float
+          affected_areas:               # Parts of codebase likely touched
+            - area: string
+              impact: enum              # direct | indirect | unknown
+          red_flags:                    # Potential problems spotted early
+            - string
+          ```
+
+      - name: rules
+        content: |
+          # Rules
+          
+          1. **DO NOT propose solutions or implementations**
+             - BAD: "User wants to add a DiscountService class"
+             - GOOD: "User wants to apply discount codes to reduce order totals"
+          
+          2. **BE SPECIFIC in detected_intent**
+             - BAD: "User wants to improve the system"
+             - GOOD: "User wants to apply promotional discount codes that reduce order totals at checkout"
+          
+          3. **IDENTIFY at least one question** unless scope is trivial
+             - Questions should be specific: "Can multiple codes apply to one order?"
+             - NOT vague: "How should it work?"
+          
+          4. **PRESERVE raw_request exactly** - copy verbatim, including typos
+          
+          5. **SCOPE DEFINITIONS**:
+             - trivial: < 1 hour, single file change
+             - small: < 1 day, few files
+             - medium: 1-3 days, multiple components
+             - large: > 3 days, architectural impact
+             - unclear: cannot determine without more info
+
+      - name: example
+        content: |
+          # Example
+          
+          Input: "We need to add discount codes to our order system"
+          
+          Output:
+          ```yaml
+          raw_request: "We need to add discount codes to our order system"
+          detected_intent: "User wants to apply promotional discount codes to reduce order totals at checkout"
+          detected_scope: medium
+          detected_type: feature
+          key_entities:
+            - entity_name: "Order"
+              entity_type: class
+              confidence: 0.95
+            - entity_name: "discount code"
+              entity_type: concept
+              confidence: 0.9
+          initial_questions:
+            - question: "Can multiple discount codes be applied to a single order?"
+              priority: blocking
+              category: behavior
+            - question: "Should discounts apply before or after tax calculation?"
+              priority: blocking
+              category: behavior
+            - question: "What types of discounts are needed (percentage, fixed amount, free shipping)?"
+              priority: important
+              category: scope
+          implicit_requirements:
+            - requirement: "Discount codes should be validated before applying"
+              confidence: 0.95
+            - requirement: "Invalid or expired codes should show user-friendly error messages"
+              confidence: 0.9
+          affected_areas:
+            - area: "Order entity/aggregate"
+              impact: direct
+            - area: "Checkout/order creation flow"
+              impact: direct
+          red_flags:
+            - "No mention of discount code storage or management UI - may be out of scope or forgotten"
+          ```
+
+  user:
+    sections:
+      - name: task
+        content: |
+          # Task
+          
+          Analyze the following feature request and produce an intake record.
+
+      - name: request
+        content: |
+          ## User Request
+          
+          {raw_request}
+
+      - name: related_files
+        required: false
+        condition: "related_files"
+        content: |
+          ## Related Files (user-specified)
+          
+          {related_files}
+
+      - name: constraints
+        required: false
+        condition: "constraints"
+        content: |
+          ## Known Constraints
+          
+          {constraints}
+
+      - name: priority
+        required: false
+        condition: "priority != 'medium'"
+        content: |
+          ## Priority
+          
+          {priority}
+
+      - name: context
+        content: |
+          ## Project Context
+          
+          {project_context}
+
+      - name: output_instruction
+        content: |
+          # Output
+          
+          Produce a YAML intake record following the schema exactly.
+          Do NOT include any text before or after the YAML.
+          Do NOT wrap in markdown code blocks.
+
+# ==============================================================================
+# EXAMPLES
+# ==============================================================================
+examples:
+  valid:
+    - name: "Feature request - discount codes"
+      description: "Standard feature request with clear entities"
+      inputs:
+        raw_request: "We need to add discount codes to our order system"
+        priority: medium
+        project_context: "E-commerce platform using Clean Architecture"
+      output:
+        raw_request: "We need to add discount codes to our order system"
+        detected_intent: "User wants to apply promotional discount codes to reduce order totals at checkout"
+        detected_scope: medium
+        detected_type: feature
+        key_entities:
+          - entity_name: "Order"
+            entity_type: class
+            confidence: 0.95
+          - entity_name: "discount code"
+            entity_type: concept
+            confidence: 0.9
+        initial_questions:
+          - question: "Can multiple discount codes be applied to a single order?"
+            priority: blocking
+            category: behavior
+          - question: "Should discounts apply before or after tax calculation?"
+            priority: blocking
+            category: behavior
+        implicit_requirements:
+          - requirement: "Discount codes should be validated before applying"
+            confidence: 0.95
+        affected_areas:
+          - area: "Order entity/aggregate"
+            impact: direct
+        red_flags:
+          - "No mention of discount code storage or management UI"
+
+    - name: "Bug fix request"
+      description: "Bug report that needs reproduction"
+      inputs:
+        raw_request: "Orders are showing wrong totals when tax is applied"
+        priority: critical
+        project_context: "E-commerce platform using Clean Architecture"
+      output:
+        raw_request: "Orders are showing wrong totals when tax is applied"
+        detected_intent: "User reports that order total calculations are incorrect when tax is included"
+        detected_scope: small
+        detected_type: bugfix
+        key_entities:
+          - entity_name: "Order"
+            entity_type: class
+            confidence: 0.95
+          - entity_name: "tax calculation"
+            entity_type: concept
+            confidence: 0.9
+        initial_questions:
+          - question: "Is the tax being applied twice, or not at all, or with wrong percentage?"
+            priority: blocking
+            category: behavior
+          - question: "Does this happen for all orders or only specific scenarios (e.g., multi-item orders)?"
+            priority: blocking
+            category: scope
+        implicit_requirements:
+          - requirement: "Need to preserve existing correct order totals while fixing bug"
+            confidence: 0.9
+        affected_areas:
+          - area: "Order.CalculateTotal"
+            impact: direct
+          - area: "TaxService"
+            impact: direct
+        red_flags:
+          - "Critical priority - may need hotfix path"
+
+    - name: "Trivial request"
+      description: "Simple change that needs no questions"
+      inputs:
+        raw_request: "Change the company name in the footer from 'Acme Inc' to 'Acme Corporation'"
+        project_context: "E-commerce platform"
+      output:
+        raw_request: "Change the company name in the footer from 'Acme Inc' to 'Acme Corporation'"
+        detected_intent: "User wants to update the company name displayed in the website footer"
+        detected_scope: trivial
+        detected_type: configuration
+        key_entities:
+          - entity_name: "footer"
+            entity_type: concept
+            confidence: 0.8
+        initial_questions: []
+        implicit_requirements: []
+        affected_areas:
+          - area: "Footer component/template"
+            impact: direct
+        red_flags: []
+
+  invalid:
+    - name: "Proposes implementation"
+      output:
+        raw_request: "We need to add discount codes to our order system"
+        detected_intent: "User wants to add a DiscountService class that validates codes"
+        detected_scope: medium
+        detected_type: feature
+        key_entities: []
+        initial_questions: []
+      problems:
+        - "detected_intent includes implementation detail (DiscountService class)"
+        - "INTAKE should not propose HOW to solve, only WHAT is needed"
+        - "Missing key_entities"
+        - "Missing initial_questions for non-trivial scope"
+      correction: "detected_intent should be: 'User wants to apply promotional discount codes to reduce order totals at checkout'"
+
+    - name: "Too vague"
+      output:
+        raw_request: "We need to add discount codes to our order system"
+        detected_intent: "User wants to improve the ordering system"
+        detected_scope: unclear
+        detected_type: feature
+        key_entities: []
+        initial_questions:
+          - question: "What do you want?"
+            priority: blocking
+            category: scope
+      problems:
+        - "detected_intent is too vague - doesn't mention discount codes"
+        - "Question is too vague - should be specific"
+        - "Missing key_entities - 'Order' and 'discount code' are clearly mentioned"
+      correction: "Intent should specifically mention discount codes and their purpose"
+
+    - name: "Missing raw_request preservation"
+      output:
+        raw_request: "Add discount codes to orders"
+        detected_intent: "User wants to apply discount codes to orders"
+        detected_scope: medium
+        detected_type: feature
+        key_entities: []
+        initial_questions: []
+      problems:
+        - "raw_request was modified (original: 'We need to add discount codes to our order system')"
+        - "raw_request must be preserved EXACTLY as provided"
+      correction: "raw_request: 'We need to add discount codes to our order system'"
+
+# ==============================================================================
+# VERIFICATION RULES
+# ==============================================================================
+verification:
+  schema_validation: true
+  
+  checks:
+    # Structural checks
+    - id: "S1"
+      name: "raw_request_preserved"
+      description: "raw_request must match input exactly"
+      type: field_equals
+      target: "raw_request"
+      value: "{inputs.raw_request}"
+      severity: blocking
+      message: "raw_request must be preserved exactly as provided"
+
+    - id: "S2"
+      name: "has_key_entities"
+      description: "Should identify at least one entity"
+      type: count_min
+      target: "key_entities"
+      value: 1
+      severity: advisory
+      message: "Consider identifying key entities from the request"
+
+    # Content quality checks
+    - id: "C1"
+      name: "intent_is_specific"
+      description: "detected_intent must be specific and actionable"
+      type: llm
+      prompt: |
+        Is this intent specific and actionable (not vague)?
+        Intent: "{detected_intent}"
+        Original request: "{raw_request}"
+        
+        Answer only 'yes' or 'no'.
+      expected: "yes"
+      severity: required
+      message: "detected_intent is too vague"
+
+    - id: "C2"
+      name: "no_implementation_in_intent"
+      description: "detected_intent should not include implementation details"
+      type: regex_negative
+      target: "detected_intent"
+      pattern: "\\b(class|service|controller|repository|interface|method|function|API|endpoint|database|table)\\b"
+      severity: required
+      message: "detected_intent should not include implementation details like class names or technical components"
+
+    - id: "C3"
+      name: "questions_if_not_trivial"
+      description: "Non-trivial requests should have clarifying questions"
+      type: conditional
+      condition: "detected_scope != 'trivial'"
+      check: "len(initial_questions) >= 1"
+      severity: required
+      message: "Non-trivial requests should have at least one clarifying question"
+
+    - id: "C4"
+      name: "questions_are_specific"
+      description: "Questions should be specific, not vague"
+      type: regex_negative
+      target: "initial_questions[].question"
+      pattern: "^(How should|What do you want|Can you explain|Tell me more)\\b"
+      severity: advisory
+      message: "Questions should be specific, not open-ended"
+
+    # Scope validation
+    - id: "SC1"
+      name: "scope_matches_complexity"
+      description: "Scope assessment should match apparent complexity"
+      type: llm
+      prompt: |
+        Request: "{raw_request}"
+        Assessed scope: {detected_scope}
+        
+        Does this scope assessment seem reasonable?
+        - trivial: < 1 hour, single file
+        - small: < 1 day, few files
+        - medium: 1-3 days, multiple components
+        - large: > 3 days, architectural impact
+        - unclear: cannot determine
+        
+        Answer 'reasonable' or 'questionable' with brief explanation.
+      expected: "reasonable"
+      severity: advisory
+      message: "Scope assessment may not match request complexity"
+
+  human_confirmation:
+    prompt: |
+      I understood your request as:
+      
+      **Intent:** {detected_intent}
+      **Scope:** {detected_scope}
+      **Type:** {detected_type}
+      
+      Is this correct?
+    fields_to_confirm:
+      - detected_intent
+      - detected_scope
+    actions:
+      approve: "Proceed to CLARIFY state"
+      reject: "Re-run INTAKE with feedback"
+      clarify: "User provides clarification, re-run INTAKE"
+
+# ==============================================================================
+# EXECUTION PARAMETERS
+# ==============================================================================
+execution:
+  temperature: 0.0
+  max_tokens: 2000
+  estimated_cost_usd: 0.01
+  timeout_seconds: 60

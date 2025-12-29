@@ -1,0 +1,243 @@
+# Analysis Report Schema
+# Output of SPEC.ANALYZE state
+# Validates: outputs/analysis_report.yaml
+
+$schema: "http://json-schema.org/draft-07/schema#"
+$id: "https://agentforge.dev/schemas/analysis_report.schema.yaml"
+title: AnalysisReport
+description: Output of the ANALYZE state - codebase analysis
+
+type: object
+required:
+  - existing_components
+  - patterns_discovered
+  - constraints_discovered
+  - risks_identified
+  - recommended_approach
+additionalProperties: false
+
+properties:
+  existing_components:
+    type: array
+    minItems: 1
+    description: Code components relevant to this feature
+    items:
+      type: object
+      required: 
+        - component_name
+        - component_type
+        - location
+        - relevance
+        - current_behavior
+        - will_be_modified
+      additionalProperties: false
+      properties:
+        component_name:
+          type: string
+        component_type:
+          type: string
+          enum: [class, interface, service, module, function, enum, record]
+        location:
+          type: object
+          required: [file]
+          additionalProperties: false
+          properties:
+            file:
+              type: string
+            start_line:
+              type: integer
+              minimum: 1
+            end_line:
+              type: integer
+              minimum: 1
+        relevance:
+          type: string
+          enum: [primary, secondary, reference]
+          description: |
+            - primary: Core component being modified
+            - secondary: Component that interacts with primary
+            - reference: Pattern/style reference only
+        current_behavior:
+          type: string
+          minLength: 10
+        public_interface:
+          type: array
+          items:
+            type: object
+            required: [member_name, member_type, signature]
+            additionalProperties: false
+            properties:
+              member_name:
+                type: string
+              member_type:
+                type: string
+                enum: [method, property, event, field]
+              signature:
+                type: string
+        will_be_modified:
+          type: boolean
+        modification_type:
+          type: string
+          enum: [extend, wrap, replace, reference_only]
+          
+  patterns_discovered:
+    type: array
+    minItems: 1
+    description: Coding patterns found in codebase that should be followed
+    items:
+      type: object
+      required: [pattern_name, description, must_follow]
+      additionalProperties: false
+      properties:
+        pattern_name:
+          type: string
+        description:
+          type: string
+        examples:
+          type: array
+          items:
+            type: object
+            required: [file]
+            additionalProperties: false
+            properties:
+              file:
+                type: string
+              line_range:
+                type: string
+              snippet:
+                type: string
+                maxLength: 500
+        must_follow:
+          type: boolean
+          description: Is this pattern mandatory?
+        rationale:
+          type: string
+          
+  constraints_discovered:
+    type: array
+    description: Limitations that affect implementation
+    items:
+      type: object
+      required: [constraint, source, impact, severity]
+      additionalProperties: false
+      properties:
+        constraint:
+          type: string
+        source:
+          type: string
+          enum: [code, documentation, architecture_yaml, inferred]
+        location:
+          type: string
+          description: Where constraint is defined
+        impact:
+          type: string
+          description: How this affects implementation
+        severity:
+          type: string
+          enum: [hard, soft]
+          description: |
+            - hard: Must not violate
+            - soft: Should avoid but negotiable
+          
+  risks_identified:
+    type: array
+    description: Potential problems with implementation
+    items:
+      type: object
+      required: [risk, category, severity, likelihood, mitigation_strategy]
+      additionalProperties: false
+      properties:
+        risk:
+          type: string
+        category:
+          type: string
+          enum: [breaking_change, performance, security, complexity, dependency, data_integrity]
+        severity:
+          type: string
+          enum: [high, medium, low]
+        likelihood:
+          type: string
+          enum: [high, medium, low]
+        affected_areas:
+          type: array
+          items:
+            type: string
+        mitigation_strategy:
+          type: string
+          minLength: 10
+          description: Required for high-severity risks
+        contingency:
+          type: string
+          description: Fallback if risk materializes
+          
+  integration_points:
+    type: array
+    description: How new code connects to existing code
+    items:
+      type: object
+      required: [integration_type, component]
+      additionalProperties: false
+      properties:
+        integration_type:
+          type: string
+          enum: [calls, called_by, implements, raises, subscribes, extends]
+        component:
+          type: string
+        interface_or_event:
+          type: string
+        notes:
+          type: string
+          
+  recommended_approach:
+    type: object
+    description: Suggested implementation strategy
+    required: [summary, sequence_of_changes]
+    additionalProperties: false
+    properties:
+      summary:
+        type: string
+        minLength: 20
+      new_components:
+        type: array
+        items:
+          type: object
+          required: [name, type, layer, responsibility]
+          additionalProperties: false
+          properties:
+            name:
+              type: string
+            type:
+              type: string
+            layer:
+              type: string
+              enum: [domain, application, infrastructure, presentation]
+            responsibility:
+              type: string
+      modified_components:
+        type: array
+        items:
+          type: object
+          required: [name, modification]
+          additionalProperties: false
+          properties:
+            name:
+              type: string
+            modification:
+              type: string
+      sequence_of_changes:
+        type: array
+        minItems: 1
+        items:
+          type: object
+          required: [step, description, files_affected]
+          additionalProperties: false
+          properties:
+            step:
+              type: integer
+              minimum: 1
+            description:
+              type: string
+            files_affected:
+              type: array
+              items:
+                type: string

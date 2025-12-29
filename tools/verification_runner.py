@@ -12,6 +12,7 @@ Check Types:
   - file_exists: Verify required files exist
   - import_check: Verify layer/import dependencies
   - custom: Python function for complex checks
+  - contracts: Run contract-based checks from the contracts module
 
 Usage:
     python tools/verification_runner.py --profile ci --project MyProject.csproj
@@ -23,6 +24,7 @@ import re
 import sys
 import yaml
 import glob
+import shlex
 import subprocess
 import importlib.util
 from pathlib import Path
@@ -291,6 +293,8 @@ class VerificationRunner:
                 result = self._run_import_check(check, settings)
             elif check_type == "custom":
                 result = self._run_custom_check(check, settings)
+            elif check_type == "contracts":
+                result = self._run_contracts_check(check, settings)
             else:
                 result = CheckResult(
                     check_id=check_id,
@@ -333,9 +337,17 @@ class VerificationRunner:
             working_dir = str(self.project_root / working_dir)
 
         try:
+            # Parse command string into list to avoid shell=True security risk
+            # If shell features are needed, use explicit shell invocation in config:
+            # command: "sh -c 'complex | command'"
+            if isinstance(command, str):
+                command_list = shlex.split(command)
+            else:
+                command_list = command
+
             result = subprocess.run(
-                command,
-                shell=True,
+                command_list,
+                shell=False,
                 capture_output=True,
                 text=True,
                 timeout=timeout,
@@ -670,6 +682,112 @@ class VerificationRunner:
                 status=CheckStatus.ERROR,
                 severity=severity,
                 message=f"Custom check failed: {str(e)}",
+                details=str(e),
+            )
+
+    def _run_contracts_check(self, check: Dict, settings: Dict) -> CheckResult:
+        """
+        Run contract-based checks using the contracts module.
+
+        This integrates the contract system with the verification runner,
+        allowing contracts to be run as part of verification profiles.
+
+        Config options:
+          - contract: Specific contract name to run (optional)
+          - language: Filter by language (optional)
+          - repo_type: Filter by repo type (optional)
+          - fail_on_warning: Treat warnings as failures (default: false)
+        """
+        check_id = check["id"]
+        check_name = check.get("name", check_id)
+        severity = Severity(check.get("severity", "required"))
+
+        try:
+            from contracts import ContractRegistry, run_contract, run_all_contracts
+
+            # Get config options
+            contract_name = check.get("contract")
+            language = check.get("language")
+            repo_type = check.get("repo_type")
+            fail_on_warning = check.get("fail_on_warning", False)
+
+            # Run contracts
+            if contract_name:
+                # Run specific contract
+                registry = ContractRegistry(self.project_root)
+                contract = registry.get_contract(contract_name)
+                if not contract:
+                    return CheckResult(
+                        check_id=check_id,
+                        check_name=check_name,
+                        status=CheckStatus.ERROR,
+                        severity=severity,
+                        message=f"Contract not found: {contract_name}",
+                    )
+                results = [run_contract(contract, self.project_root, registry)]
+            else:
+                # Run all applicable contracts
+                results = run_all_contracts(
+                    self.project_root,
+                    language=language,
+                    repo_type=repo_type
+                )
+
+            # Aggregate results
+            total_errors = sum(len(r.errors) for r in results)
+            total_warnings = sum(len(r.warnings) for r in results)
+            total_exempted = sum(r.exempted_count for r in results)
+            all_passed = all(r.passed for r in results)
+
+            # Determine pass/fail
+            if fail_on_warning:
+                passed = all_passed and total_warnings == 0
+            else:
+                passed = all_passed
+
+            # Build error details
+            errors = []
+            for result in results:
+                for check_result in result.check_results:
+                    if not check_result.passed and not check_result.exempted:
+                        errors.append({
+                            "contract": result.contract_name,
+                            "check": check_result.check_id,
+                            "severity": check_result.severity,
+                            "message": check_result.message,
+                            "file": check_result.file_path,
+                            "line": check_result.line_number,
+                        })
+
+            message = f"Ran {len(results)} contracts: {total_errors} errors, {total_warnings} warnings"
+            if total_exempted > 0:
+                message += f", {total_exempted} exempted"
+
+            return CheckResult(
+                check_id=check_id,
+                check_name=check_name,
+                status=CheckStatus.PASSED if passed else CheckStatus.FAILED,
+                severity=severity,
+                message=message,
+                errors=errors[:50],  # Limit to first 50
+                details=f"Contracts: {', '.join(r.contract_name for r in results)}",
+            )
+
+        except ImportError as e:
+            return CheckResult(
+                check_id=check_id,
+                check_name=check_name,
+                status=CheckStatus.ERROR,
+                severity=severity,
+                message=f"Could not import contracts module: {e}",
+            )
+        except Exception as e:
+            return CheckResult(
+                check_id=check_id,
+                check_name=check_name,
+                status=CheckStatus.ERROR,
+                severity=severity,
+                message=f"Contracts check failed: {str(e)}",
                 details=str(e),
             )
 

@@ -418,7 +418,7 @@ class VectorSearch:
     def _compute_project_hash(self) -> str:
         """Compute hash of project files for cache invalidation."""
         files = sorted(self._get_files())
-        hasher = hashlib.md5()
+        hasher = hashlib.sha256()
 
         for f in files:
             try:

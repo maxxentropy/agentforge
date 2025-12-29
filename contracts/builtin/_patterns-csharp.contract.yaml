@@ -1,0 +1,147 @@
+schema_version: "1.0"
+
+contract:
+  name: "_patterns-csharp"
+  type: patterns
+  description: |
+    C# specific code quality and pattern rules.
+    Uses LSP semantic analysis for accurate code checking.
+  version: "1.0.0"
+  enabled: true
+  extends: "_base"
+  applies_to:
+    languages:
+      - csharp
+  tags:
+    - builtin
+    - csharp
+    - dotnet
+
+checks:
+  # ===========================================================================
+  # LSP-based semantic checks (accurate, parser-based)
+  # ===========================================================================
+
+  - id: no-public-fields
+    name: "No Public Fields"
+    description: "Use properties instead of public fields for encapsulation"
+    type: lsp_query
+    severity: warning
+    config:
+      query: symbols
+      filter:
+        kind: field
+        visibility: public
+      exclude:
+        modifiers:
+          - "const"
+          - "static readonly"
+    fix_hint: "Convert to property: public Type Name { get; set; }"
+
+  - id: async-method-naming
+    name: "Async Method Naming"
+    description: "Async methods should have 'Async' suffix"
+    type: lsp_query
+    severity: warning
+    config:
+      query: symbols
+      filter:
+        kind: method
+        has_modifier:
+          - async
+      exclude:
+        name_pattern: ".*Async$"
+        containers:
+          - "Tests"
+          - "Test"
+    fix_hint: "Rename method to include 'Async' suffix"
+
+  - id: interface-naming
+    name: "Interface Naming"
+    description: "Interfaces should start with 'I'"
+    type: lsp_query
+    severity: warning
+    config:
+      query: symbols
+      filter:
+        kind: interface
+      exclude:
+        name_pattern: "^I[A-Z].*"
+    fix_hint: "Rename interface to start with 'I' (e.g., IMyInterface)"
+
+  # ===========================================================================
+  # Command-based checks (external tools)
+  # ===========================================================================
+
+  - id: dotnet-build
+    name: "Build Must Pass"
+    description: "Solution must compile without errors"
+    type: command
+    severity: error
+    enabled: false  # Enable per-repo - requires dotnet
+    config:
+      command: "dotnet"
+      args: ["build", "--no-restore"]
+      timeout: 300
+    fix_hint: "Fix compilation errors shown in build output"
+
+  - id: dotnet-format
+    name: "Code Formatting"
+    description: "Code must be properly formatted"
+    type: command
+    severity: warning
+    enabled: false  # Enable per-repo - requires dotnet format
+    config:
+      command: "dotnet"
+      args: ["format", "--verify-no-changes"]
+      timeout: 120
+    fix_hint: "Run 'dotnet format' to fix formatting issues"
+
+  # ===========================================================================
+  # File existence checks
+  # ===========================================================================
+
+  - id: require-editorconfig
+    name: "EditorConfig Required"
+    description: "C# projects should have .editorconfig for consistent formatting"
+    type: file_exists
+    severity: info
+    config:
+      required_files:
+        - ".editorconfig"
+    fix_hint: "Create an .editorconfig file with your team's coding standards"
+
+  # ===========================================================================
+  # Text pattern checks (appropriate for regex)
+  # ===========================================================================
+
+  - id: no-region-blocks
+    name: "No #region Blocks"
+    description: "#region blocks often hide code complexity"
+    type: regex
+    severity: info
+    config:
+      pattern: "^\\s*#region\\b"
+      mode: forbid
+    applies_to:
+      paths:
+        - "**/*.cs"
+      exclude_paths:
+        - "**/Generated/**"
+        - "**/Designer.cs"
+    fix_hint: "Remove #region blocks; consider extracting to separate files instead"
+
+  - id: no-suppressions
+    name: "No Warning Suppressions"
+    description: "Warning suppressions should be documented or fixed"
+    type: regex
+    severity: warning
+    config:
+      pattern: "#pragma\\s+warning\\s+disable"
+      mode: forbid
+    applies_to:
+      paths:
+        - "**/*.cs"
+      exclude_paths:
+        - "**/GlobalSuppressions.cs"
+    fix_hint: "Fix the underlying warning or document why suppression is necessary"

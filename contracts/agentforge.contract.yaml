@@ -1,0 +1,236 @@
+schema_version: "1.0"
+
+contract:
+  name: "agentforge"
+  type: patterns
+  description: |
+    AgentForge-specific contract that combines Python patterns with
+    project-specific rules for the AgentForge tooling project.
+
+    This is a CONCRETE contract (no underscore prefix) - it is meant to be
+    applied directly to the project. It inherits from abstract contracts
+    and can override specific checks as needed.
+  version: "1.0.0"
+  enabled: true
+  extends:
+    - "_patterns-python"
+    - "_typing-python"
+    - "_security-python"
+    - "_testing-python"
+    - "_cli-python"
+  applies_to:
+    languages:
+      - python
+  tags:
+    - agentforge
+    - python
+
+checks:
+  # ===========================================================================
+  # Override inherited checks for this project's needs
+  # ===========================================================================
+
+  # This is a CLI tool - print statements are intentional for user output
+  - id: no-print-statements
+    name: "No print() in Production"
+    type: regex
+    severity: warning
+    enabled: false  # CLI tool uses print() intentionally
+    config:
+      pattern: "\\bprint\\s*\\("
+      mode: forbid
+
+  # Project doesn't use src/ layout - uses tools/ instead
+  - id: require-init-files
+    name: "Package __init__.py Required"
+    type: file_exists
+    severity: warning
+    enabled: false  # Project uses tools/ not src/
+    config:
+      required_files:
+        - "src/**/__init__.py"
+
+  # Disable external tool checks until tools are installed
+  - id: ruff-lint
+    name: "Ruff Linting"
+    type: command
+    severity: warning
+    enabled: false  # Enable when ruff is installed
+    config:
+      command: "ruff"
+      args: ["check", "."]
+
+  - id: mypy-strict
+    name: "mypy Strict Mode"
+    type: command
+    severity: error
+    enabled: false  # Enable when mypy is installed
+    config:
+      command: "mypy"
+      args: ["."]
+
+  - id: mypy-standard
+    name: "mypy Standard Mode"
+    type: command
+    severity: warning
+    enabled: false  # Enable when mypy is installed
+    config:
+      command: "mypy"
+      args: ["."]
+
+  - id: pytest-pass
+    name: "pytest Tests Pass"
+    type: command
+    severity: error
+    enabled: false  # Enable when tests directory exists
+    config:
+      command: "pytest"
+      args: ["."]
+
+  - id: bandit-scan
+    name: "Bandit Security Scan"
+    type: command
+    severity: error
+    enabled: false  # Enable when bandit is installed
+    config:
+      command: "bandit"
+      args: ["-r", "."]
+
+  # Disable test directory checks until tests are created
+  - id: require-tests-directory
+    name: "Tests Directory Required"
+    type: file_exists
+    severity: warning
+    enabled: false  # Enable when tests are added
+    config:
+      required_files:
+        - "tests/**/*.py"
+
+  - id: require-conftest
+    name: "conftest.py Required"
+    type: file_exists
+    severity: info
+    enabled: false  # Enable when tests are added
+    config:
+      required_files:
+        - "tests/conftest.py"
+
+  # CLI entry point check - execute.py is the entry point, not __main__.py
+  - id: require-main-entry
+    name: "Main Entry Point Required"
+    type: file_exists
+    severity: warning
+    enabled: false  # execute.py is the entry point
+    config:
+      required_files:
+        - "__main__.py"
+
+  # ===========================================================================
+  # AgentForge-Specific Project Structure Checks
+  # ===========================================================================
+
+  - id: require-tools-init
+    name: "Tools Package __init__.py"
+    description: "tools directory must be a proper package"
+    type: file_exists
+    severity: warning
+    config:
+      required_files:
+        - "tools/__init__.py"
+    fix_hint: "Create tools/__init__.py"
+
+  - id: require-schemas-dir
+    name: "Schemas Directory Required"
+    description: "Project should have schemas directory"
+    type: file_exists
+    severity: warning
+    config:
+      required_files:
+        - "schemas/*.yaml"
+    fix_hint: "Create schemas directory with YAML schema files"
+
+  - id: require-builtin-contracts
+    name: "Builtin Contracts Required"
+    description: "Project should have builtin contract definitions"
+    type: file_exists
+    severity: warning
+    config:
+      required_files:
+        - "contracts/builtin/_base.contract.yaml"
+    fix_hint: "Create builtin contract files in contracts/builtin/"
+
+  # ===========================================================================
+  # Contract File Validation
+  # ===========================================================================
+
+  - id: contract-schema-version
+    name: "Contracts Have Schema Version"
+    description: "All contract files must specify schema_version"
+    type: regex
+    severity: error
+    config:
+      pattern: "^schema_version:\\s*['\"]?1\\.0['\"]?"
+      mode: require
+    applies_to:
+      paths:
+        - "contracts/**/*.contract.yaml"
+    fix_hint: "Add 'schema_version: \"1.0\"' at the top of the contract file"
+
+  - id: contract-has-name
+    name: "Contracts Have Name"
+    description: "All contracts must have a name field"
+    type: regex
+    severity: error
+    config:
+      pattern: "contract:\\s*\\n\\s+name:"
+      mode: require
+      multiline: true
+    applies_to:
+      paths:
+        - "contracts/**/*.contract.yaml"
+    fix_hint: "Add 'name' field to contract definition"
+
+  # ===========================================================================
+  # Code Quality Rules
+  # ===========================================================================
+
+  - id: no-hardcoded-paths
+    name: "No Hardcoded Absolute Paths"
+    description: "Use Path objects and relative paths"
+    type: regex
+    severity: warning
+    config:
+      pattern: "['\"]/(Users|home|opt|var)/"
+      mode: forbid
+    applies_to:
+      paths:
+        - "tools/**/*.py"
+      exclude_paths:
+        - "**/tests/**"
+    fix_hint: "Use Path objects and relative paths from repo root"
+
+  - id: use-pathlib
+    name: "Use pathlib for Path Operations"
+    description: "Use pathlib.Path instead of os.path"
+    type: regex
+    severity: info
+    config:
+      pattern: "os\\.path\\.(join|exists|isfile|isdir|dirname|basename)"
+      mode: forbid
+    applies_to:
+      paths:
+        - "tools/**/*.py"
+    fix_hint: "Use pathlib.Path: path.exists(), path.is_file(), path / 'subdir'"
+
+  - id: yaml-safe-load
+    name: "Use yaml.safe_load"
+    description: "Always use safe_load for YAML parsing"
+    type: regex
+    severity: error
+    config:
+      pattern: "yaml\\.load\\s*\\([^)]*\\)(?!.*Loader)"
+      mode: forbid
+    applies_to:
+      paths:
+        - "tools/**/*.py"
+    fix_hint: "Use yaml.safe_load() instead of yaml.load()"

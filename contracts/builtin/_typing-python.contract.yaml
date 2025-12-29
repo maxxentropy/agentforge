@@ -1,0 +1,178 @@
+schema_version: "1.0"
+
+contract:
+  name: "_typing-python"
+  type: patterns
+  description: |
+    Python type safety rules using mypy and pyright.
+    Ensures consistent type annotations and catches type errors.
+  version: "1.0.0"
+  enabled: true
+  extends: "_patterns-python"
+  applies_to:
+    languages:
+      - python
+  tags:
+    - builtin
+    - python
+    - typing
+
+checks:
+  # ===========================================================================
+  # Command-based type checking (external tools)
+  # ===========================================================================
+
+  - id: mypy-strict
+    name: "mypy Strict Mode"
+    description: "Code must pass mypy strict type checking"
+    type: command
+    severity: error
+    enabled: false  # Enable per-repo - requires mypy
+    config:
+      command: "mypy"
+      args: [".", "--strict", "--ignore-missing-imports"]
+      timeout: 300
+    fix_hint: "Add type annotations and fix type errors reported by mypy"
+
+  - id: mypy-standard
+    name: "mypy Standard Mode"
+    description: "Code must pass mypy type checking"
+    type: command
+    severity: warning
+    enabled: false  # Enable per-repo - requires mypy
+    config:
+      command: "mypy"
+      args: [".", "--ignore-missing-imports"]
+      timeout: 300
+    fix_hint: "Fix type errors reported by mypy"
+
+  - id: pyright-check
+    name: "Pyright Type Check"
+    description: "Code must pass Pyright type checking"
+    type: command
+    severity: warning
+    enabled: false  # Enable per-repo - requires pyright
+    config:
+      command: "pyright"
+      args: ["."]
+      timeout: 300
+    fix_hint: "Fix type errors reported by pyright"
+
+  # ===========================================================================
+  # LSP-based semantic checks (using pyright/pylsp)
+  # ===========================================================================
+
+  - id: public-functions-typed
+    name: "Public Functions Must Have Type Hints"
+    description: "Public API functions should have complete type annotations"
+    type: lsp_query
+    severity: info
+    enabled: false  # Enable per-repo
+    config:
+      query: symbols
+      filter:
+        kind: function
+        visibility: public
+      exclude:
+        name_pattern: "^_.*"  # Exclude private by convention
+    applies_to:
+      paths:
+        - "**/*.py"
+      exclude_paths:
+        - "**/tests/**"
+    fix_hint: "Add parameter and return type annotations to public functions"
+
+  - id: no-any-return
+    name: "No 'Any' Return Types"
+    description: "Functions should not have 'Any' as return type"
+    type: lsp_query
+    severity: warning
+    enabled: false  # Enable per-repo - requires LSP with type info
+    config:
+      query: symbols
+      filter:
+        kind: function
+        return_type: Any
+      exclude:
+        name_pattern: "^_.*"
+    applies_to:
+      paths:
+        - "**/*.py"
+      exclude_paths:
+        - "**/tests/**"
+    fix_hint: "Use specific return type instead of 'Any'"
+
+  # ===========================================================================
+  # File existence checks
+  # ===========================================================================
+
+  - id: require-py-typed
+    name: "py.typed Marker Required"
+    description: "Typed packages should include py.typed marker"
+    type: file_exists
+    severity: info
+    enabled: false  # Enable for library projects
+    config:
+      required_files:
+        - "src/**/py.typed"
+    fix_hint: "Create an empty py.typed file in your package root"
+
+  - id: require-type-stubs-or-annotations
+    name: "Type Information Required"
+    description: "Package should have inline types or stub files"
+    type: file_exists
+    severity: info
+    enabled: false  # Enable per-repo
+    config:
+      required_files:
+        - "**/*.pyi"
+    fix_hint: "Add inline type annotations or create .pyi stub files"
+
+  # ===========================================================================
+  # Text pattern checks (appropriate for regex)
+  # ===========================================================================
+
+  - id: no-cast-without-reason
+    name: "cast() Should Have Comment"
+    description: "typing.cast() usage should be documented"
+    type: regex
+    severity: info
+    enabled: false  # Enable per-repo
+    config:
+      pattern: "cast\\([^)]+\\)(?!.*#)"
+      mode: forbid
+    applies_to:
+      paths:
+        - "**/*.py"
+    fix_hint: "Add a comment explaining why cast() is needed"
+
+  - id: prefer-typing-extensions
+    name: "Use typing_extensions for Backports"
+    description: "Use typing_extensions for features not in base typing module"
+    type: regex
+    severity: info
+    enabled: false  # Enable per-repo
+    config:
+      pattern: "from typing import.*(Literal|Protocol|TypedDict|Final|Annotated)"
+      mode: forbid
+    applies_to:
+      paths:
+        - "**/*.py"
+    fix_hint: "Import from typing_extensions for Python < 3.10 compatibility"
+
+  - id: consistent-type-imports
+    name: "Consistent TYPE_CHECKING Imports"
+    description: "Type-only imports should use TYPE_CHECKING guard"
+    type: regex
+    severity: info
+    enabled: false  # Enable per-repo
+    config:
+      pattern: "if TYPE_CHECKING:"
+      mode: require
+    applies_to:
+      paths:
+        - "**/*.py"
+      exclude_paths:
+        - "**/tests/**"
+        - "**/__init__.py"
+    fix_hint: "Use 'if TYPE_CHECKING:' for type-only imports to avoid circular imports"

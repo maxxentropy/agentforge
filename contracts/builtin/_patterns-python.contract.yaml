@@ -1,0 +1,254 @@
+schema_version: "1.0"
+
+contract:
+  name: "_patterns-python"
+  type: patterns
+  description: |
+    Python code quality and pattern rules.
+    Uses external tools (ruff, radon) and AST analysis for accurate checking.
+  version: "1.0.0"
+  enabled: true
+  extends: "_base"
+  applies_to:
+    languages:
+      - python
+  tags:
+    - builtin
+    - python
+
+checks:
+  # ===========================================================================
+  # Command-based checks (external tools)
+  # ===========================================================================
+
+  - id: ruff-lint
+    name: "Ruff Linting"
+    description: "Code must pass Ruff linting checks"
+    type: command
+    severity: warning
+    enabled: false  # Enable per-repo - requires ruff
+    config:
+      command: "ruff"
+      args: ["check", "."]
+      timeout: 120
+    fix_hint: "Run 'ruff check --fix .' to auto-fix issues"
+
+  - id: ruff-format
+    name: "Ruff Formatting"
+    description: "Code must be formatted according to Ruff style"
+    type: command
+    severity: info
+    enabled: false  # Enable per-repo - requires ruff
+    config:
+      command: "ruff"
+      args: ["format", "--check", "."]
+      timeout: 120
+    fix_hint: "Run 'ruff format .' to format code"
+
+  # ===========================================================================
+  # AST-based metrics checks (using built-in ast_check)
+  # ===========================================================================
+
+  - id: max-cyclomatic-complexity
+    name: "Maximum Cyclomatic Complexity"
+    description: "Functions should not exceed complexity threshold"
+    type: ast_check
+    severity: warning
+    config:
+      metric: cyclomatic_complexity
+      threshold: 10
+      scope: function
+    applies_to:
+      paths:
+        - "**/*.py"
+      exclude_paths:
+        - "**/tests/**"
+        - "**/*_test.py"
+        - "**/*.test.py"
+    fix_hint: "Break complex functions into smaller, focused helper functions"
+
+  - id: max-function-length
+    name: "Maximum Function Length"
+    description: "Functions should not exceed 50 lines"
+    type: ast_check
+    severity: warning
+    config:
+      metric: function_length
+      threshold: 50
+      scope: function
+    applies_to:
+      paths:
+        - "**/*.py"
+      exclude_paths:
+        - "**/tests/**"
+        - "**/*_test.py"
+    fix_hint: "Extract logic into helper functions or use composition"
+
+  - id: max-nesting-depth
+    name: "Maximum Nesting Depth"
+    description: "Code should not be nested more than 4 levels deep"
+    type: ast_check
+    severity: warning
+    config:
+      metric: nesting_depth
+      threshold: 4
+      scope: function
+    applies_to:
+      paths:
+        - "**/*.py"
+      exclude_paths:
+        - "**/tests/**"
+    fix_hint: "Use early returns, guard clauses, or extract nested logic"
+
+  - id: max-parameter-count
+    name: "Maximum Parameter Count"
+    description: "Functions should have at most 5 parameters"
+    type: ast_check
+    severity: info
+    config:
+      metric: parameter_count
+      threshold: 5
+      scope: function
+    applies_to:
+      paths:
+        - "**/*.py"
+      exclude_paths:
+        - "**/tests/**"
+    fix_hint: "Group related parameters into a dataclass or use **kwargs"
+
+  - id: max-class-size
+    name: "Maximum Class Size"
+    description: "Classes should not have more than 20 methods"
+    type: ast_check
+    severity: warning
+    config:
+      metric: class_size
+      threshold: 20
+      scope: class
+    applies_to:
+      paths:
+        - "**/*.py"
+    fix_hint: "Consider splitting into multiple classes with single responsibilities"
+
+  - id: max-imports
+    name: "Maximum Import Count"
+    description: "Files should not have more than 30 imports"
+    type: ast_check
+    severity: info
+    config:
+      metric: import_count
+      threshold: 30
+      scope: file
+    applies_to:
+      paths:
+        - "**/*.py"
+    fix_hint: "Consider splitting module or consolidating imports"
+
+  # ===========================================================================
+  # File existence checks
+  # ===========================================================================
+
+  - id: require-pyproject
+    name: "pyproject.toml Required"
+    description: "Python projects should use pyproject.toml for configuration"
+    type: file_exists
+    severity: info
+    config:
+      required_files:
+        - "pyproject.toml"
+    fix_hint: "Create pyproject.toml using 'poetry init' or manually"
+
+  # ===========================================================================
+  # Text pattern checks (appropriate for regex)
+  # ===========================================================================
+
+  - id: no-print-statements
+    name: "No print() in Production"
+    description: "print() should not be used in production code"
+    type: regex
+    severity: warning
+    config:
+      pattern: "\\bprint\\s*\\("
+      mode: forbid
+    applies_to:
+      paths:
+        - "**/*.py"
+      exclude_paths:
+        - "**/tests/**"
+        - "**/*_test.py"
+        - "**/test_*.py"
+        - "**/conftest.py"
+        - "**/scripts/**"
+        - "**/cli/**"
+        - "**/manage.py"
+    fix_hint: "Use logging module instead: import logging; logger = logging.getLogger(__name__)"
+
+  - id: no-breakpoint
+    name: "No breakpoint() Statements"
+    description: "breakpoint() should not be committed"
+    type: regex
+    severity: error
+    config:
+      pattern: "\\bbreakpoint\\s*\\(\\)"
+      mode: forbid
+    applies_to:
+      paths:
+        - "**/*.py"
+    fix_hint: "Remove breakpoint() before committing"
+
+  - id: no-pdb-import
+    name: "No pdb Import"
+    description: "pdb should not be imported in production code"
+    type: regex
+    severity: error
+    config:
+      pattern: "\\bimport\\s+pdb\\b|\\bfrom\\s+pdb\\s+import\\b"
+      mode: forbid
+    applies_to:
+      paths:
+        - "**/*.py"
+      exclude_paths:
+        - "**/tests/**"
+    fix_hint: "Remove pdb import before committing"
+
+  - id: no-bare-except
+    name: "No Bare Except"
+    description: "Avoid except: without specifying exception type"
+    type: regex
+    severity: warning
+    config:
+      pattern: "\\bexcept\\s*:"
+      mode: forbid
+    applies_to:
+      paths:
+        - "**/*.py"
+    fix_hint: "Use 'except Exception:' or a more specific exception type"
+
+  - id: no-star-imports
+    name: "No Star Imports"
+    description: "from module import * is discouraged"
+    type: regex
+    severity: warning
+    config:
+      pattern: "from\\s+\\S+\\s+import\\s+\\*"
+      mode: forbid
+    applies_to:
+      paths:
+        - "**/*.py"
+      exclude_paths:
+        - "**/__init__.py"
+    fix_hint: "Import specific names instead of using wildcard imports"
+
+  - id: no-type-ignore-without-code
+    name: "Type Ignore Requires Code"
+    description: "# type: ignore should specify the error code"
+    type: regex
+    severity: info
+    enabled: false  # Enable per-repo
+    config:
+      pattern: "#\\s*type:\\s*ignore(?!\\[)"
+      mode: forbid
+    applies_to:
+      paths:
+        - "**/*.py"
+    fix_hint: "Use '# type: ignore[error-code]' instead"

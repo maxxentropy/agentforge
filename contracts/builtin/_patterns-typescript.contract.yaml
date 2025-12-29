@@ -1,0 +1,182 @@
+schema_version: "1.0"
+
+contract:
+  name: "_patterns-typescript"
+  type: patterns
+  description: |
+    TypeScript/JavaScript specific code quality and pattern rules.
+    Uses LSP semantic analysis for accurate code checking.
+  version: "1.0.0"
+  enabled: true
+  extends: "_base"
+  applies_to:
+    languages:
+      - typescript
+      - javascript
+  tags:
+    - builtin
+    - typescript
+    - javascript
+
+checks:
+  # ===========================================================================
+  # LSP-based semantic checks (accurate, parser-based)
+  # ===========================================================================
+
+  - id: no-any-type
+    name: "No 'any' Type"
+    description: "Avoid using 'any' type - use specific types or 'unknown'"
+    type: lsp_query
+    severity: warning
+    config:
+      query: symbols
+      filter:
+        kind:
+          - variable
+          - parameter
+          - property
+        return_type: any
+    applies_to:
+      paths:
+        - "**/*.ts"
+        - "**/*.tsx"
+      exclude_paths:
+        - "**/*.test.ts"
+        - "**/*.spec.ts"
+        - "**/tests/**"
+    fix_hint: "Use a specific type or 'unknown' instead of 'any'"
+
+  - id: exported-functions-documented
+    name: "Exported Functions Must Be Documented"
+    description: "Public API functions should have JSDoc documentation"
+    type: lsp_query
+    severity: info
+    enabled: false  # Enable per-repo
+    config:
+      query: symbols
+      filter:
+        kind: function
+        visibility: public
+      exclude:
+        name_pattern: "^_.*"  # Private by convention
+    fix_hint: "Add JSDoc documentation for exported functions"
+
+  # ===========================================================================
+  # Command-based checks (external tools)
+  # ===========================================================================
+
+  - id: typescript-compile
+    name: "TypeScript Compilation"
+    description: "Code must compile without type errors"
+    type: command
+    severity: error
+    enabled: false  # Enable per-repo - requires tsc
+    config:
+      command: "npx"
+      args: ["tsc", "--noEmit"]
+      timeout: 180
+    fix_hint: "Fix TypeScript errors shown in compilation output"
+
+  - id: eslint-check
+    name: "ESLint Check"
+    description: "Code must pass ESLint checks"
+    type: command
+    severity: warning
+    enabled: false  # Enable per-repo - requires eslint
+    config:
+      command: "npx"
+      args: ["eslint", ".", "--ext", ".ts,.tsx,.js,.jsx"]
+      timeout: 180
+    fix_hint: "Run 'npx eslint --fix .' to auto-fix issues"
+
+  - id: prettier-check
+    name: "Prettier Formatting"
+    description: "Code must be formatted with Prettier"
+    type: command
+    severity: info
+    enabled: false  # Enable per-repo - requires prettier
+    config:
+      command: "npx"
+      args: ["prettier", "--check", "."]
+      timeout: 120
+    fix_hint: "Run 'npx prettier --write .' to format code"
+
+  # ===========================================================================
+  # File existence checks
+  # ===========================================================================
+
+  - id: require-tsconfig
+    name: "TypeScript Config Required"
+    description: "TypeScript projects should have tsconfig.json"
+    type: file_exists
+    severity: warning
+    config:
+      required_files:
+        - "tsconfig.json"
+    applies_to:
+      languages:
+        - typescript
+    fix_hint: "Create a tsconfig.json for TypeScript configuration"
+
+  - id: require-package-json
+    name: "Package.json Required"
+    description: "Node.js projects should have package.json"
+    type: file_exists
+    severity: warning
+    config:
+      required_files:
+        - "package.json"
+    fix_hint: "Run 'npm init' to create package.json"
+
+  # ===========================================================================
+  # Text pattern checks (appropriate for regex)
+  # ===========================================================================
+
+  - id: no-console-log
+    name: "No console.log"
+    description: "console.log should not be used in production code"
+    type: regex
+    severity: warning
+    config:
+      pattern: "\\bconsole\\.(log|debug|info)\\s*\\("
+      mode: forbid
+    applies_to:
+      paths:
+        - "**/*.ts"
+        - "**/*.tsx"
+        - "**/*.js"
+        - "**/*.jsx"
+      exclude_paths:
+        - "**/*.test.*"
+        - "**/*.spec.*"
+        - "**/tests/**"
+        - "**/__tests__/**"
+        - "**/scripts/**"
+    fix_hint: "Use a proper logging service for production code"
+
+  - id: no-debugger
+    name: "No debugger Statements"
+    description: "debugger statements should not be committed"
+    type: regex
+    severity: error
+    config:
+      pattern: "\\bdebugger\\b"
+      mode: forbid
+    applies_to:
+      paths:
+        - "**/*.ts"
+        - "**/*.tsx"
+        - "**/*.js"
+        - "**/*.jsx"
+    fix_hint: "Remove debugger statements before committing"
+
+  - id: no-todo-fixme
+    name: "Track TODOs"
+    description: "TODO/FIXME comments should reference tickets"
+    type: regex
+    severity: info
+    enabled: false  # Enable per-repo
+    config:
+      pattern: "//\\s*(TODO|FIXME)(?!.*(?:AB#|JIRA-|GH#))"
+      mode: forbid
+    fix_hint: "Add ticket reference: // TODO(AB#1234): description"

@@ -1,0 +1,219 @@
+schema_version: "1.0"
+
+contract:
+  name: "_architecture-python"
+  type: architecture
+  description: |
+    Python architectural rules for Clean Architecture and layered design.
+    Enforces proper separation of concerns and dependency direction.
+  version: "1.0.0"
+  enabled: true
+  extends: "_patterns-python"
+  applies_to:
+    languages:
+      - python
+    repo_types:
+      - service
+      - api
+  tags:
+    - builtin
+    - python
+    - architecture
+
+checks:
+  # ===========================================================================
+  # Clean Architecture Layer Checks
+  # ===========================================================================
+
+  - id: domain-no-infrastructure
+    name: "Domain Layer Independence"
+    description: "Domain layer should not import from infrastructure"
+    type: regex
+    severity: error
+    config:
+      pattern: "from\\s+(\\w+\\.)?infrastructure(\\.|\\s+import)|import\\s+(\\w+\\.)?infrastructure"
+      mode: forbid
+    applies_to:
+      paths:
+        - "**/domain/**/*.py"
+    fix_hint: "Domain layer should only contain pure business logic with no external dependencies"
+
+  - id: domain-no-application
+    name: "Domain Layer No Application Imports"
+    description: "Domain layer should not import from application layer"
+    type: regex
+    severity: error
+    config:
+      pattern: "from\\s+(\\w+\\.)?application(\\.|\\s+import)|import\\s+(\\w+\\.)?application"
+      mode: forbid
+    applies_to:
+      paths:
+        - "**/domain/**/*.py"
+    fix_hint: "Domain should be the innermost layer with no outward dependencies"
+
+  - id: application-no-infrastructure
+    name: "Application Layer Independence"
+    description: "Application layer should not directly import infrastructure implementations"
+    type: regex
+    severity: warning
+    config:
+      pattern: "from\\s+(\\w+\\.)?infrastructure\\.(repositories|services|adapters)(\\.|\\s+import)"
+      mode: forbid
+    applies_to:
+      paths:
+        - "**/application/**/*.py"
+      exclude_paths:
+        - "**/application/interfaces/**"
+    fix_hint: "Use dependency injection - import interfaces, not implementations"
+
+  - id: interface-no-implementations
+    name: "Interfaces Layer No Implementations"
+    description: "Interface layer should use abstractions, not concrete implementations"
+    type: regex
+    severity: warning
+    config:
+      pattern: "from\\s+(\\w+\\.)?(infrastructure|application)\\.(\\w+)\\s+import\\s+(?!I[A-Z]|Abstract)"
+      mode: forbid
+    applies_to:
+      paths:
+        - "**/interfaces/**/*.py"
+    fix_hint: "Import interfaces (starting with I) or abstract classes"
+
+  # ===========================================================================
+  # Dependency Direction Checks
+  # ===========================================================================
+
+  - id: no-circular-imports
+    name: "No Circular Imports"
+    description: "Modules should not have circular import dependencies"
+    type: custom
+    severity: error
+    enabled: false  # Enable per-repo - requires pydeps
+    config:
+      module: builtin_checks
+      function: check_circular_imports
+      params:
+        package_path: "src"
+    fix_hint: "Refactor to break circular dependencies using interfaces or restructuring"
+
+  - id: acyclic-dependencies
+    name: "Acyclic Package Dependencies"
+    description: "Package dependencies should form a directed acyclic graph"
+    type: command
+    severity: warning
+    enabled: false  # Enable per-repo - requires pydeps
+    config:
+      command: "pydeps"
+      args: ["--no-show", "--no-output", "--only", "src", "src"]
+      timeout: 120
+    fix_hint: "Restructure packages to eliminate dependency cycles"
+
+  # ===========================================================================
+  # Structure Checks
+  # ===========================================================================
+
+  - id: require-init-files
+    name: "Package __init__.py Required"
+    description: "Python packages must have __init__.py files"
+    type: file_exists
+    severity: warning
+    config:
+      required_files:
+        - "src/**/__init__.py"
+    fix_hint: "Create __init__.py in each package directory"
+
+  - id: single-responsibility-modules
+    name: "Single Responsibility Modules"
+    description: "Modules should focus on a single responsibility"
+    type: ast_check
+    severity: info
+    config:
+      metric: class_size
+      threshold: 3
+      scope: file
+    applies_to:
+      paths:
+        - "**/*.py"
+      exclude_paths:
+        - "**/tests/**"
+        - "**/__init__.py"
+    fix_hint: "Split modules with too many classes into focused single-class modules"
+
+  # ===========================================================================
+  # Pattern Enforcement
+  # ===========================================================================
+
+  - id: repository-pattern
+    name: "Repository Pattern Required"
+    description: "Data access should use repository pattern"
+    type: file_exists
+    severity: info
+    enabled: false  # Enable per-repo
+    config:
+      required_files:
+        - "**/repositories/*.py"
+        - "**/interfaces/repositories.py"
+    fix_hint: "Create repository interfaces and implementations for data access"
+
+  - id: factory-pattern
+    name: "Factory for Complex Objects"
+    description: "Complex object creation should use factory pattern"
+    type: regex
+    severity: info
+    enabled: false  # Enable per-repo
+    config:
+      pattern: "class\\s+\\w+Factory"
+      mode: require
+    applies_to:
+      paths:
+        - "**/factories/**/*.py"
+        - "**/application/**/*.py"
+    fix_hint: "Create factory classes for complex object instantiation"
+
+  - id: no-god-classes
+    name: "No God Classes"
+    description: "Classes should not have excessive responsibilities"
+    type: ast_check
+    severity: warning
+    config:
+      metric: class_size
+      threshold: 15
+      scope: class
+    applies_to:
+      paths:
+        - "**/*.py"
+      exclude_paths:
+        - "**/tests/**"
+    fix_hint: "Split large classes using composition or inheritance"
+
+  # ===========================================================================
+  # Text Pattern Checks
+  # ===========================================================================
+
+  - id: no-direct-db-access
+    name: "No Direct Database Access"
+    description: "Direct database access should go through repositories"
+    type: regex
+    severity: warning
+    enabled: false  # Enable per-repo
+    config:
+      pattern: "(session\\.query|session\\.execute|cursor\\.execute)"
+      mode: forbid
+    applies_to:
+      paths:
+        - "**/domain/**/*.py"
+        - "**/application/**/*.py"
+    fix_hint: "Use repository pattern for database operations"
+
+  - id: no-http-in-domain
+    name: "No HTTP Calls in Domain"
+    description: "Domain layer should not make HTTP calls directly"
+    type: regex
+    severity: error
+    config:
+      pattern: "(requests\\.(get|post|put|delete|patch)|httpx\\.|aiohttp\\.)"
+      mode: forbid
+    applies_to:
+      paths:
+        - "**/domain/**/*.py"
+    fix_hint: "HTTP calls should be in infrastructure layer behind an interface"

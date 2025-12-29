@@ -1,0 +1,546 @@
+$schema: "http://json-schema.org/draft-07/schema#"
+$id: "https://agentforge.dev/schemas/contract.schema.yaml"
+title: "AgentForge Contract"
+description: |
+  Schema for contract files that define machine-verifiable code correctness rules.
+  Contracts can be placed at global, workspace, or repo level and support inheritance.
+
+type: object
+
+required:
+  - schema_version
+  - contract
+
+properties:
+  schema_version:
+    type: string
+    pattern: "^\\d+\\.\\d+$"
+    description: "Schema version for migration support (e.g., '1.0')"
+    examples: ["1.0"]
+
+  contract:
+    type: object
+    required:
+      - name
+      - type
+    properties:
+      name:
+        type: string
+        minLength: 1
+        maxLength: 100
+        description: "Human-readable contract name"
+        examples: ["No Console Logging", "Repository Pattern Required"]
+
+      type:
+        type: string
+        enum:
+          - architecture
+          - patterns
+          - naming
+          - testing
+          - documentation
+          - security
+          - api
+          - custom
+        description: |
+          Contract category:
+          - architecture: Structural rules (layering, dependencies)
+          - patterns: Required design patterns
+          - naming: Naming conventions
+          - testing: Test coverage and structure
+          - documentation: Required documentation
+          - security: Security requirements
+          - api: API design rules
+          - custom: User-defined rules
+
+      description:
+        type: string
+        description: "Detailed description of what this contract enforces"
+
+      version:
+        type: string
+        pattern: "^\\d+\\.\\d+\\.\\d+$"
+        default: "1.0.0"
+        description: "Semantic version of this contract"
+
+      extends:
+        oneOf:
+          - type: string
+            description: "Single parent contract to extend"
+          - type: array
+            items:
+              type: string
+            description: "Multiple parent contracts to extend (merged in order)"
+        description: |
+          Contract(s) to inherit from. Can be:
+          - Builtin: "_base", "_patterns-csharp", "_patterns-typescript"
+          - Workspace contract: "workspace:contract-name"
+          - Relative path: "./other-contract.yaml"
+        examples:
+          - "_base"
+          - ["_base", "_patterns-csharp"]
+          - "workspace:api-standards"
+
+      enabled:
+        type: boolean
+        default: true
+        description: "Whether this contract is active"
+
+      applies_to:
+        type: object
+        description: "Scope restrictions for when this contract applies"
+        properties:
+          languages:
+            type: array
+            items:
+              type: string
+            description: "Languages this contract applies to"
+            examples:
+              - ["csharp", "typescript"]
+
+          repo_types:
+            type: array
+            items:
+              type: string
+              enum:
+                - service
+                - library
+                - cli
+                - webapp
+                - api
+                - worker
+            description: "Repository types this contract applies to"
+
+          paths:
+            type: array
+            items:
+              type: string
+            description: "Glob patterns for paths this contract applies to"
+            examples:
+              - ["src/**/*.cs", "!src/**/*.Tests.cs"]
+
+          exclude_paths:
+            type: array
+            items:
+              type: string
+            description: "Glob patterns for paths to exclude"
+            examples:
+              - ["**/Generated/**", "**/Migrations/**"]
+
+      tags:
+        type: array
+        items:
+          type: string
+        description: "Tags for organizing and filtering contracts"
+        examples:
+          - ["security", "required", "team-platform"]
+
+  checks:
+    type: array
+    description: "List of checks that enforce this contract"
+    items:
+      $ref: "#/$defs/check"
+
+$defs:
+  check:
+    type: object
+    required:
+      - id
+      - name
+      - type
+    properties:
+      id:
+        type: string
+        pattern: "^[a-z][a-z0-9_-]*$"
+        description: "Unique identifier for this check within the contract"
+        examples: ["no-console-log", "require-repository-pattern"]
+
+      name:
+        type: string
+        description: "Human-readable name for this check"
+
+      description:
+        type: string
+        description: "Detailed description of what this check validates"
+
+      type:
+        type: string
+        enum:
+          - regex
+          - lsp_query
+          - ast_check
+          - command
+          - file_exists
+          - custom
+        description: |
+          Check type:
+          - regex: Text pattern matching (TODOs, secrets, comments only)
+          - lsp_query: Semantic code analysis via LSP adapters
+          - ast_check: AST-based structural/metrics analysis (complexity, etc.)
+          - command: Runs external command (build, lint, tests)
+          - file_exists: Checks for required/forbidden files
+          - custom: Invokes custom Python check function
+
+      severity:
+        type: string
+        enum:
+          - error
+          - warning
+          - info
+        default: error
+        description: |
+          Severity level:
+          - error: Blocks CI, must be fixed or exempted
+          - warning: Reported but doesn't block
+          - info: Informational, for awareness
+
+      enabled:
+        type: boolean
+        default: true
+        description: "Whether this check is active"
+
+      fix_hint:
+        type: string
+        description: "Guidance on how to fix violations"
+
+      documentation_url:
+        type: string
+        format: uri
+        description: "Link to detailed documentation"
+
+      applies_to:
+        type: object
+        description: "Override contract-level applies_to for this check"
+        properties:
+          languages:
+            type: array
+            items:
+              type: string
+          paths:
+            type: array
+            items:
+              type: string
+          exclude_paths:
+            type: array
+            items:
+              type: string
+
+      # Type-specific configuration
+      config:
+        type: object
+        description: "Type-specific configuration for the check"
+        properties:
+          # ============================================
+          # regex type - for TEXT patterns only
+          # ============================================
+          pattern:
+            type: string
+            description: "Regex pattern to search for (regex type)"
+
+          mode:
+            type: string
+            enum:
+              - forbid
+              - require
+            description: |
+              For regex type:
+              - forbid: Pattern must NOT be found (violation if found)
+              - require: Pattern MUST be found (violation if missing)
+
+          multiline:
+            type: boolean
+            default: false
+            description: "Enable multiline regex mode"
+
+          case_insensitive:
+            type: boolean
+            default: false
+            description: "Enable case-insensitive matching"
+
+          # ============================================
+          # lsp_query type - semantic code analysis
+          # ============================================
+          query:
+            type: string
+            enum:
+              - symbols
+              - references
+              - diagnostics
+              - call_hierarchy
+            description: |
+              LSP query type:
+              - symbols: Query document/workspace symbols (functions, classes, fields)
+              - references: Find references to symbols
+              - diagnostics: Get compiler diagnostics
+              - call_hierarchy: Analyze call relationships
+
+          filter:
+            type: object
+            description: "Filter criteria for LSP query results"
+            properties:
+              kind:
+                oneOf:
+                  - type: string
+                  - type: array
+                    items:
+                      type: string
+                description: |
+                  Symbol kind(s) to match: class, interface, method, function,
+                  field, property, variable, constant, enum, module, etc.
+
+              visibility:
+                type: string
+                enum:
+                  - public
+                  - private
+                  - protected
+                  - internal
+                description: "Filter by visibility/access modifier"
+
+              name_pattern:
+                type: string
+                description: "Regex pattern to match symbol names"
+
+              container_pattern:
+                type: string
+                description: "Regex pattern to match containing type/namespace"
+
+              return_type:
+                type: string
+                description: "Match symbols with specific return type"
+
+              has_modifier:
+                type: array
+                items:
+                  type: string
+                description: "Require specific modifiers (async, static, abstract)"
+
+          exclude:
+            type: object
+            description: "Exclusion criteria for LSP query"
+            properties:
+              modifiers:
+                type: array
+                items:
+                  type: string
+                description: "Exclude symbols with these modifiers"
+                examples:
+                  - ["const", "static readonly"]
+
+              name_pattern:
+                type: string
+                description: "Exclude symbols matching this pattern"
+
+              containers:
+                type: array
+                items:
+                  type: string
+                description: "Exclude symbols in these containers"
+
+          assertion:
+            type: string
+            enum:
+              - none_exist
+              - all_exist
+              - count_zero
+              - count_nonzero
+            default: none_exist
+            description: |
+              What to assert about query results:
+              - none_exist: Violation if ANY matches found
+              - all_exist: Violation if NO matches found
+              - count_zero: Same as none_exist
+              - count_nonzero: Same as all_exist
+
+          # ============================================
+          # command type - external tools
+          # ============================================
+          command:
+            type: string
+            description: "Command to execute"
+
+          args:
+            type: array
+            items:
+              type: string
+            description: "Command arguments"
+
+          working_dir:
+            type: string
+            description: "Working directory for command (relative to repo)"
+
+          timeout:
+            type: integer
+            minimum: 1
+            maximum: 3600
+            default: 60
+            description: "Command timeout in seconds"
+
+          expected_exit_code:
+            type: integer
+            default: 0
+            description: "Expected exit code for success"
+
+          # ============================================
+          # file_exists type - filesystem checks
+          # ============================================
+          required_files:
+            type: array
+            items:
+              type: string
+            description: "Files that must exist (glob patterns supported)"
+            examples:
+              - ["README.md", "src/**/README.md"]
+
+          forbidden_files:
+            type: array
+            items:
+              type: string
+            description: "Files that must not exist"
+
+          # ============================================
+          # ast_check type - structural/metrics analysis
+          # ============================================
+          metric:
+            type: string
+            enum:
+              - cyclomatic_complexity
+              - function_length
+              - nesting_depth
+              - parameter_count
+              - class_size
+              - import_count
+            description: |
+              Metric to measure:
+              - cyclomatic_complexity: McCabe complexity of functions
+              - function_length: Lines of code in functions
+              - nesting_depth: Maximum nesting level
+              - parameter_count: Number of function parameters
+              - class_size: Methods/properties per class
+              - import_count: Number of imports per file
+
+          threshold:
+            type: integer
+            minimum: 1
+            description: "Maximum allowed value for the metric"
+
+          scope:
+            type: string
+            enum:
+              - function
+              - class
+              - file
+            default: function
+            description: "Scope at which to measure the metric"
+
+          # ============================================
+          # custom type - Python function
+          # ============================================
+          module:
+            type: string
+            description: "Python module containing the check function"
+
+          function:
+            type: string
+            description: "Function name to call"
+
+          params:
+            type: object
+            additionalProperties: true
+            description: "Parameters to pass to the custom function"
+
+additionalProperties: false
+
+examples:
+  # Example 1: LSP-based semantic analysis for code quality
+  - schema_version: "1.0"
+    contract:
+      name: "No Public Fields"
+      type: patterns
+      description: "Enforces encapsulation by requiring properties instead of public fields"
+      version: "1.0.0"
+      extends: "_base"
+      applies_to:
+        languages: ["csharp"]
+        exclude_paths: ["**/Tests/**", "**/Generated/**"]
+    checks:
+      - id: no-public-fields
+        name: "No Public Fields"
+        description: "Public fields should be properties for encapsulation"
+        type: lsp_query
+        severity: warning
+        fix_hint: "Convert to property: public Type Name { get; set; }"
+        config:
+          query: symbols
+          filter:
+            kind: field
+            visibility: public
+          exclude:
+            modifiers: ["const", "static readonly"]
+          assertion: none_exist
+
+  # Example 2: Command-based check using external tools
+  - schema_version: "1.0"
+    contract:
+      name: "Build Must Pass"
+      type: testing
+      description: "Code must compile without errors"
+      applies_to:
+        languages: ["csharp"]
+    checks:
+      - id: dotnet-build
+        name: "Dotnet Build"
+        description: "Solution must build successfully"
+        type: command
+        severity: error
+        config:
+          command: "dotnet"
+          args: ["build", "--no-restore", "-warnaserror"]
+          timeout: 300
+
+  # Example 3: Regex for text patterns (appropriate use)
+  - schema_version: "1.0"
+    contract:
+      name: "Security Basics"
+      type: security
+      description: "Basic security checks for hardcoded secrets"
+      version: "1.0.0"
+    checks:
+      - id: no-hardcoded-secrets
+        name: "No Hardcoded Secrets"
+        description: "API keys and passwords should not be hardcoded"
+        type: regex
+        severity: error
+        fix_hint: "Use environment variables or a secrets manager"
+        config:
+          pattern: "(password|api_key|secret)\\s*[=:]\\s*['\"][^'\"]{8,}['\"]"
+          mode: forbid
+          case_insensitive: true
+
+  # Example 4: File existence checks
+  - schema_version: "1.0"
+    contract:
+      name: "Repository Pattern"
+      type: architecture
+      description: "Enforces repository pattern for data access"
+      extends: ["_base", "_patterns-csharp"]
+      applies_to:
+        languages: ["csharp"]
+        repo_types: ["service", "api"]
+    checks:
+      - id: require-repository-interface
+        name: "Repository Interface Required"
+        type: file_exists
+        severity: error
+        config:
+          required_files:
+            - "src/**/Repositories/I*Repository.cs"
+
+      - id: no-env-files
+        name: "No .env Files"
+        type: file_exists
+        severity: error
+        config:
+          forbidden_files:
+            - "**/.env"
+            - "**/.env.local"

@@ -184,7 +184,7 @@ EXAMPLE - GOOD (readable):
     finally:
         try:
             os.unlink(temp_path)
-        except:
+        except OSError:
             pass
 
 
@@ -615,7 +615,7 @@ def run_validate(args):
         try:
             specification_data = yaml.safe_load(spec_content)
             print(f"  Spec format: YAML (structured)")
-        except:
+        except yaml.YAMLError:
             print(f"  Spec format: YAML (parse failed, using raw)")
     else:
         print(f"  Spec format: Markdown")
@@ -1610,7 +1610,7 @@ Output the complete revised YAML specification:"""
     
     try:
         return yaml.safe_load(yaml_content)
-    except:
+    except yaml.YAMLError:
         return {"_raw": response}
 
 
@@ -2615,6 +2615,601 @@ def run_config_set(args):
     print(f"\n✅ Configuration updated")
 
 
+# ==============================================================================
+# CONTRACT HANDLERS
+# ==============================================================================
+
+def run_contracts(args):
+    """Fallback for contracts without subcommand."""
+    pass  # Handled in main()
+
+
+def run_contracts_list(args):
+    """List all contracts."""
+    print()
+    print("=" * 60)
+    print("CONTRACTS LIST")
+    print("=" * 60)
+
+    sys.path.insert(0, str(Path(__file__).parent / 'tools'))
+
+    try:
+        from contracts import ContractRegistry
+    except ImportError as e:
+        print(f"\nError: Could not import contracts module: {e}")
+        sys.exit(1)
+
+    # Create registry from current directory
+    repo_root = Path.cwd()
+    registry = ContractRegistry(repo_root)
+    contracts = registry.discover_contracts()
+
+    # Apply filters
+    filtered = []
+    for name, contract in contracts.items():
+        # Filter by tier
+        if args.tier and contract.tier != args.tier:
+            continue
+
+        # Filter by language
+        if args.language:
+            languages = contract.applies_to.get('languages', [])
+            if args.language not in languages and languages:
+                continue
+
+        # Filter by type
+        if args.type and contract.type != args.type:
+            continue
+
+        # Filter by tag
+        if args.tag:
+            if args.tag not in contract.tags:
+                continue
+
+        filtered.append(contract)
+
+    if not filtered:
+        print("\n  No contracts found matching filters")
+        return
+
+    if args.format == 'table':
+        print(f"\n  Found {len(filtered)} contracts:\n")
+        print(f"  {'Name':<30} {'Type':<15} {'Tier':<10} {'Checks':<8} {'Enabled'}")
+        print(f"  {'-' * 30} {'-' * 15} {'-' * 10} {'-' * 8} {'-' * 7}")
+        for c in sorted(filtered, key=lambda x: (x.tier, x.name)):
+            check_count = len(c.checks)
+            enabled = '✓' if c.enabled else '✗'
+            print(f"  {c.name:<30} {c.type:<15} {c.tier:<10} {check_count:<8} {enabled}")
+    elif args.format == 'yaml':
+        output = {'contracts': []}
+        for c in filtered:
+            output['contracts'].append({
+                'name': c.name,
+                'type': c.type,
+                'tier': c.tier,
+                'enabled': c.enabled,
+                'checks': len(c.checks),
+                'tags': c.tags
+            })
+        print(yaml.dump(output, default_flow_style=False))
+    elif args.format == 'json':
+        import json
+        output = {'contracts': []}
+        for c in filtered:
+            output['contracts'].append({
+                'name': c.name,
+                'type': c.type,
+                'tier': c.tier,
+                'enabled': c.enabled,
+                'checks': len(c.checks),
+                'tags': c.tags
+            })
+        print(json.dumps(output, indent=2))
+
+
+def run_contracts_show(args):
+    """Show contract details."""
+    print()
+    print("=" * 60)
+    print("CONTRACT DETAILS")
+    print("=" * 60)
+
+    sys.path.insert(0, str(Path(__file__).parent / 'tools'))
+
+    try:
+        from contracts import ContractRegistry
+    except ImportError as e:
+        print(f"\nError: Could not import contracts module: {e}")
+        sys.exit(1)
+
+    repo_root = Path.cwd()
+    registry = ContractRegistry(repo_root)
+    contract = registry.get_contract(args.name)
+
+    if not contract:
+        print(f"\n❌ Contract not found: {args.name}")
+        sys.exit(1)
+
+    if args.format == 'yaml':
+        output = {
+            'name': contract.name,
+            'type': contract.type,
+            'description': contract.description,
+            'version': contract.version,
+            'tier': contract.tier,
+            'enabled': contract.enabled,
+            'extends': contract.extends,
+            'applies_to': contract.applies_to,
+            'tags': contract.tags,
+            'checks': contract.all_checks()
+        }
+        print(yaml.dump(output, default_flow_style=False))
+    elif args.format == 'json':
+        import json
+        output = {
+            'name': contract.name,
+            'type': contract.type,
+            'description': contract.description,
+            'version': contract.version,
+            'tier': contract.tier,
+            'enabled': contract.enabled,
+            'extends': contract.extends,
+            'applies_to': contract.applies_to,
+            'tags': contract.tags,
+            'checks': contract.all_checks()
+        }
+        print(json.dumps(output, indent=2))
+    else:
+        print(f"\n  Contract: {contract.name}")
+        print(f"  Type: {contract.type}")
+        print(f"  Version: {contract.version}")
+        print(f"  Tier: {contract.tier}")
+        print(f"  Enabled: {contract.enabled}")
+        if contract.description:
+            print(f"  Description: {contract.description[:80]}...")
+        if contract.extends:
+            print(f"  Extends: {', '.join(contract.extends)}")
+        print(f"\n  Checks ({len(contract.all_checks())}):")
+        for check in contract.all_checks():
+            status = '✓' if check.get('enabled', True) else '✗'
+            print(f"    {status} {check.get('id')}: {check.get('name')} [{check.get('type')}]")
+
+
+def run_contracts_check(args):
+    """Run contract checks."""
+    print()
+    print("=" * 60)
+    print("CONTRACT CHECK")
+    print("=" * 60)
+
+    sys.path.insert(0, str(Path(__file__).parent / 'tools'))
+
+    try:
+        from contracts import ContractRegistry, run_contract, run_all_contracts
+    except ImportError as e:
+        print(f"\nError: Could not import contracts module: {e}")
+        sys.exit(1)
+
+    repo_root = Path.cwd()
+
+    # Get file paths if specified
+    file_paths = None
+    if args.files:
+        file_paths = [Path(f.strip()) for f in args.files.split(',')]
+
+    # Run checks
+    if args.contract:
+        # Run specific contract
+        registry = ContractRegistry(repo_root)
+        contract = registry.get_contract(args.contract)
+        if not contract:
+            print(f"\n❌ Contract not found: {args.contract}")
+            sys.exit(1)
+        results = [run_contract(contract, repo_root, registry, file_paths)]
+    else:
+        # Run all applicable contracts
+        results = run_all_contracts(
+            repo_root,
+            language=args.language,
+            repo_type=args.repo_type,
+            file_paths=file_paths
+        )
+
+    # Calculate summary
+    total_errors = sum(len(r.errors) for r in results)
+    total_warnings = sum(len(r.warnings) for r in results)
+    total_exempted = sum(r.exempted_count for r in results)
+    all_passed = all(r.passed for r in results)
+
+    if args.format == 'text':
+        print(f"\n  Ran {len(results)} contracts\n")
+
+        for result in results:
+            status = '✓' if result.passed else '✗'
+            print(f"  {status} {result.contract_name} ({result.contract_type})")
+
+            for check_result in result.check_results:
+                if not check_result.passed:
+                    severity_icon = '❌' if check_result.severity == 'error' else '⚠️' if check_result.severity == 'warning' else 'ℹ️'
+                    if check_result.exempted:
+                        severity_icon = '🔓'
+                    location = f"{check_result.file_path}:{check_result.line_number}" if check_result.file_path else ""
+                    print(f"      {severity_icon} {check_result.check_name}: {check_result.message}")
+                    if location:
+                        print(f"         at {location}")
+                    if check_result.fix_hint:
+                        print(f"         fix: {check_result.fix_hint}")
+
+        print(f"\n  Summary:")
+        print(f"    Errors: {total_errors}")
+        print(f"    Warnings: {total_warnings}")
+        print(f"    Exempted: {total_exempted}")
+
+    elif args.format == 'yaml':
+        output = {
+            'summary': {
+                'passed': all_passed,
+                'contracts_checked': len(results),
+                'errors': total_errors,
+                'warnings': total_warnings,
+                'exempted': total_exempted
+            },
+            'results': []
+        }
+        for result in results:
+            output['results'].append({
+                'contract': result.contract_name,
+                'type': result.contract_type,
+                'passed': result.passed,
+                'violations': [
+                    {
+                        'check_id': r.check_id,
+                        'check_name': r.check_name,
+                        'severity': r.severity,
+                        'message': r.message,
+                        'file': r.file_path,
+                        'line': r.line_number,
+                        'exempted': r.exempted,
+                        'exemption_id': r.exemption_id
+                    }
+                    for r in result.check_results if not r.passed
+                ]
+            })
+        print(yaml.dump(output, default_flow_style=False))
+
+    elif args.format == 'json':
+        import json
+        output = {
+            'summary': {
+                'passed': all_passed,
+                'contracts_checked': len(results),
+                'errors': total_errors,
+                'warnings': total_warnings,
+                'exempted': total_exempted
+            },
+            'results': []
+        }
+        for result in results:
+            output['results'].append({
+                'contract': result.contract_name,
+                'type': result.contract_type,
+                'passed': result.passed,
+                'violations': [
+                    {
+                        'check_id': r.check_id,
+                        'check_name': r.check_name,
+                        'severity': r.severity,
+                        'message': r.message,
+                        'file': r.file_path,
+                        'line': r.line_number,
+                        'exempted': r.exempted,
+                        'exemption_id': r.exemption_id
+                    }
+                    for r in result.check_results if not r.passed
+                ]
+            })
+        print(json.dumps(output, indent=2))
+
+    # Exit with error code if failed
+    if not all_passed:
+        if args.strict or total_errors > 0:
+            sys.exit(1)
+
+
+def run_contracts_init(args):
+    """Initialize contract for repo."""
+    print()
+    print("=" * 60)
+    print("CONTRACT INIT")
+    print("=" * 60)
+
+    repo_root = Path.cwd()
+    contracts_dir = repo_root / 'contracts'
+    contracts_dir.mkdir(exist_ok=True)
+
+    # Determine contract name
+    name = args.name or repo_root.name.replace('-', '_').replace(' ', '_').lower()
+
+    contract_path = contracts_dir / f'{name}.contract.yaml'
+
+    if contract_path.exists():
+        print(f"\n❌ Contract already exists: {contract_path}")
+        sys.exit(1)
+
+    # Build contract content
+    extends = args.extends or '_base'
+
+    contract = {
+        'schema_version': '1.0',
+        'contract': {
+            'name': name,
+            'type': args.type,
+            'description': f'Contract for {name} repository',
+            'version': '1.0.0',
+            'enabled': True,
+            'extends': extends
+        },
+        'checks': []
+    }
+
+    with open(contract_path, 'w') as f:
+        yaml.dump(contract, f, default_flow_style=False, sort_keys=False)
+
+    print(f"\n✅ Created contract: {contract_path}")
+    print(f"   Extends: {extends}")
+    print(f"\n   Next steps:")
+    print(f"   1. Edit {contract_path} to add checks")
+    print(f"   2. Run 'python execute.py contracts check' to verify")
+
+
+def run_contracts_validate(args):
+    """Validate contract files."""
+    print()
+    print("=" * 60)
+    print("CONTRACT VALIDATE")
+    print("=" * 60)
+
+    # TODO: Implement schema validation using the contract schema
+    # For now, just check if contracts can be loaded
+
+    sys.path.insert(0, str(Path(__file__).parent / 'tools'))
+
+    try:
+        from contracts import ContractRegistry
+    except ImportError as e:
+        print(f"\nError: Could not import contracts module: {e}")
+        sys.exit(1)
+
+    repo_root = Path.cwd()
+
+    if args.file:
+        # Validate specific file
+        file_path = Path(args.file)
+        if not file_path.exists():
+            print(f"\n❌ File not found: {file_path}")
+            sys.exit(1)
+
+        try:
+            with open(file_path) as f:
+                data = yaml.safe_load(f)
+            if 'contract' not in data:
+                print(f"\n❌ Invalid contract: missing 'contract' key")
+                sys.exit(1)
+            print(f"\n✅ Contract valid: {file_path}")
+        except Exception as e:
+            print(f"\n❌ Failed to validate: {e}")
+            sys.exit(1)
+    else:
+        # Validate all contracts
+        registry = ContractRegistry(repo_root)
+        contracts = registry.discover_contracts()
+        print(f"\n  Validated {len(contracts)} contracts")
+        for name, contract in contracts.items():
+            print(f"    ✓ {name} ({contract.tier})")
+
+
+# ==============================================================================
+# EXEMPTION HANDLERS
+# ==============================================================================
+
+def run_exemptions(args):
+    """Fallback for exemptions without subcommand."""
+    pass  # Handled in main()
+
+
+def run_exemptions_list(args):
+    """List all exemptions."""
+    print()
+    print("=" * 60)
+    print("EXEMPTIONS LIST")
+    print("=" * 60)
+
+    sys.path.insert(0, str(Path(__file__).parent / 'tools'))
+
+    try:
+        from contracts import ContractRegistry
+    except ImportError as e:
+        print(f"\nError: Could not import contracts module: {e}")
+        sys.exit(1)
+
+    repo_root = Path.cwd()
+    registry = ContractRegistry(repo_root)
+    exemptions = registry.load_exemptions()
+
+    # Apply filters
+    filtered = []
+    for ex in exemptions:
+        if args.contract and ex.contract != args.contract:
+            continue
+
+        if args.status != 'all':
+            if args.status == 'active' and not ex.is_active():
+                continue
+            if args.status == 'expired' and not ex.is_expired():
+                continue
+            if args.status == 'resolved' and ex.status != 'resolved':
+                continue
+
+        filtered.append(ex)
+
+    if not filtered:
+        print("\n  No exemptions found matching filters")
+        return
+
+    if args.format == 'table':
+        print(f"\n  Found {len(filtered)} exemptions:\n")
+        print(f"  {'ID':<25} {'Contract':<20} {'Check':<20} {'Status':<10} {'Expires'}")
+        print(f"  {'-' * 25} {'-' * 20} {'-' * 20} {'-' * 10} {'-' * 12}")
+        for ex in filtered:
+            status = 'active' if ex.is_active() else 'expired' if ex.is_expired() else ex.status
+            expires = str(ex.expires) if ex.expires else '-'
+            checks_str = ex.checks[0] if len(ex.checks) == 1 else f"{ex.checks[0]}+{len(ex.checks)-1}"
+            print(f"  {ex.id:<25} {ex.contract:<20} {checks_str:<20} {status:<10} {expires}")
+
+    elif args.format == 'yaml':
+        output = {'exemptions': []}
+        for ex in filtered:
+            output['exemptions'].append({
+                'id': ex.id,
+                'contract': ex.contract,
+                'checks': ex.checks,
+                'reason': ex.reason,
+                'approved_by': ex.approved_by,
+                'expires': str(ex.expires) if ex.expires else None,
+                'status': ex.status,
+                'is_active': ex.is_active()
+            })
+        print(yaml.dump(output, default_flow_style=False))
+
+    elif args.format == 'json':
+        import json
+        output = {'exemptions': []}
+        for ex in filtered:
+            output['exemptions'].append({
+                'id': ex.id,
+                'contract': ex.contract,
+                'checks': ex.checks,
+                'reason': ex.reason,
+                'approved_by': ex.approved_by,
+                'expires': str(ex.expires) if ex.expires else None,
+                'status': ex.status,
+                'is_active': ex.is_active()
+            })
+        print(json.dumps(output, indent=2))
+
+
+def run_exemptions_add(args):
+    """Add a new exemption."""
+    print()
+    print("=" * 60)
+    print("ADD EXEMPTION")
+    print("=" * 60)
+
+    from datetime import date
+
+    repo_root = Path.cwd()
+    exemptions_dir = repo_root / 'exemptions'
+    exemptions_dir.mkdir(exist_ok=True)
+
+    # Create exemption file if needed
+    exemptions_file = exemptions_dir / 'exemptions.yaml'
+
+    if exemptions_file.exists():
+        with open(exemptions_file) as f:
+            data = yaml.safe_load(f) or {}
+    else:
+        data = {'schema_version': '1.0', 'exemptions': []}
+
+    if 'exemptions' not in data:
+        data['exemptions'] = []
+
+    # Generate exemption ID
+    exemption_id = f"{args.contract.replace(' ', '-').lower()}-{args.check}-{date.today().isoformat()}"
+
+    # Parse scope
+    scope = {}
+    if args.files:
+        scope['files'] = [f.strip() for f in args.files.split(',')]
+    else:
+        scope['global'] = True
+
+    # Create exemption
+    exemption = {
+        'id': exemption_id,
+        'contract': args.contract,
+        'check': args.check,
+        'reason': args.reason,
+        'approved_by': args.approved_by,
+        'approved_date': date.today().isoformat(),
+        'scope': scope,
+        'status': 'active'
+    }
+
+    if args.expires:
+        exemption['expires'] = args.expires
+
+    if args.ticket:
+        exemption['ticket'] = args.ticket
+
+    data['exemptions'].append(exemption)
+
+    # Write back
+    with open(exemptions_file, 'w') as f:
+        yaml.dump(data, f, default_flow_style=False, sort_keys=False)
+
+    print(f"\n✅ Added exemption: {exemption_id}")
+    print(f"   Contract: {args.contract}")
+    print(f"   Check: {args.check}")
+    print(f"   File: {exemptions_file}")
+
+
+def run_exemptions_audit(args):
+    """Audit exemptions."""
+    print()
+    print("=" * 60)
+    print("EXEMPTION AUDIT")
+    print("=" * 60)
+
+    sys.path.insert(0, str(Path(__file__).parent / 'tools'))
+
+    try:
+        from contracts import ContractRegistry
+    except ImportError as e:
+        print(f"\nError: Could not import contracts module: {e}")
+        sys.exit(1)
+
+    repo_root = Path.cwd()
+    registry = ContractRegistry(repo_root)
+    exemptions = registry.load_exemptions()
+
+    # Categorize
+    active = [e for e in exemptions if e.is_active()]
+    expired = [e for e in exemptions if e.is_expired()]
+    no_expiry = [e for e in active if e.expires is None]
+
+    print(f"\n  Exemption Audit Summary:")
+    print(f"  {'─' * 40}")
+    print(f"  Total exemptions: {len(exemptions)}")
+    print(f"  Active: {len(active)}")
+    print(f"  Expired: {len(expired)}")
+    print(f"  Without expiration: {len(no_expiry)}")
+
+    if args.show_expired and expired:
+        print(f"\n  Expired Exemptions:")
+        for ex in expired:
+            print(f"    ⏰ {ex.id} (expired {ex.expires})")
+            print(f"       Contract: {ex.contract}, Check: {ex.checks[0]}")
+
+    if no_expiry:
+        print(f"\n  ⚠️  Exemptions without expiration date:")
+        for ex in no_expiry:
+            print(f"    {ex.id}")
+            print(f"       Contract: {ex.contract}, Check: {ex.checks[0]}")
+
+    if expired:
+        print(f"\n  Recommendation: Review and remove expired exemptions")
+
+
 def run_render_spec(args):
     """Render YAML specification to Markdown for human consumption."""
     print()
@@ -2984,6 +3579,20 @@ Examples:
   python execute.py config show                  # Show all tiers
   python execute.py config show --tier global   # Show only global
   python execute.py config set context.budget_tokens 8000 --global
+
+  # Contract management (code correctness rules)
+  python execute.py contracts list                          # List all contracts
+  python execute.py contracts list --tier builtin          # Show builtin contracts
+  python execute.py contracts show _patterns-csharp        # Show contract details
+  python execute.py contracts check                        # Run all contract checks
+  python execute.py contracts check --contract my-rules    # Run specific contract
+  python execute.py contracts init --extends _patterns-csharp  # Create repo contract
+
+  # Exemption management (documented intentional violations)
+  python execute.py exemptions list                        # List exemptions
+  python execute.py exemptions list --status expired       # Show expired
+  python execute.py exemptions add -c my-contract -k check-id -r "Legacy code" -a @me
+  python execute.py exemptions audit                       # Audit exemptions
 """
     )
     
@@ -3216,6 +3825,130 @@ Examples:
 
     config_parser.set_defaults(func=run_config)
 
+    # CONTRACTS
+    contracts_parser = subparsers.add_parser('contracts', help='Contract management')
+    contracts_subparsers = contracts_parser.add_subparsers(dest='contracts_command',
+                                                           help='Contracts subcommand')
+
+    # contracts list
+    ct_list_parser = contracts_subparsers.add_parser('list', help='List all contracts')
+    ct_list_parser.add_argument('--language', '--lang', '-l',
+                                help='Filter by language')
+    ct_list_parser.add_argument('--type', '-t',
+                                help='Filter by contract type')
+    ct_list_parser.add_argument('--tag',
+                                help='Filter by tag')
+    ct_list_parser.add_argument('--tier',
+                                choices=['builtin', 'global', 'workspace', 'repo'],
+                                help='Filter by tier')
+    ct_list_parser.add_argument('--format', '-f',
+                                choices=['table', 'json', 'yaml'],
+                                default='table',
+                                help='Output format')
+    ct_list_parser.set_defaults(func=run_contracts_list)
+
+    # contracts show
+    ct_show_parser = contracts_subparsers.add_parser('show', help='Show contract details')
+    ct_show_parser.add_argument('name', help='Contract name')
+    ct_show_parser.add_argument('--format', '-f',
+                                choices=['yaml', 'json', 'text'],
+                                default='yaml',
+                                help='Output format')
+    ct_show_parser.set_defaults(func=run_contracts_show)
+
+    # contracts check
+    ct_check_parser = contracts_subparsers.add_parser('check', help='Run contract checks')
+    ct_check_parser.add_argument('--contract', '-c',
+                                 help='Run specific contract (default: all applicable)')
+    ct_check_parser.add_argument('--check', '-k',
+                                 help='Run specific check ID')
+    ct_check_parser.add_argument('--language', '--lang', '-l',
+                                 help='Filter by language')
+    ct_check_parser.add_argument('--repo-type', '-t',
+                                 help='Repository type (service, library, etc.)')
+    ct_check_parser.add_argument('--files', '-F',
+                                 help='Comma-separated file paths to check')
+    ct_check_parser.add_argument('--format', '-f',
+                                 choices=['text', 'yaml', 'json'],
+                                 default='text',
+                                 help='Output format')
+    ct_check_parser.add_argument('--strict', action='store_true',
+                                 help='Fail on warnings too (not just errors)')
+    ct_check_parser.set_defaults(func=run_contracts_check)
+
+    # contracts init
+    ct_init_parser = contracts_subparsers.add_parser('init', help='Initialize contract for repo')
+    ct_init_parser.add_argument('--extends', '-e',
+                                help='Parent contract to extend (e.g., _patterns-csharp)')
+    ct_init_parser.add_argument('--name', '-n',
+                                help='Contract name (default: repo-specific)')
+    ct_init_parser.add_argument('--type', '-t',
+                                choices=['architecture', 'patterns', 'naming', 'testing',
+                                         'documentation', 'security', 'api', 'custom'],
+                                default='patterns',
+                                help='Contract type')
+    ct_init_parser.set_defaults(func=run_contracts_init)
+
+    # contracts validate
+    ct_validate_parser = contracts_subparsers.add_parser('validate',
+                                                          help='Validate contract files')
+    ct_validate_parser.add_argument('--file', '-f',
+                                    help='Specific contract file to validate')
+    ct_validate_parser.set_defaults(func=run_contracts_validate)
+
+    contracts_parser.set_defaults(func=run_contracts)
+
+    # EXEMPTIONS
+    exemptions_parser = subparsers.add_parser('exemptions', help='Exemption management')
+    exemptions_subparsers = exemptions_parser.add_subparsers(dest='exemptions_command',
+                                                             help='Exemptions subcommand')
+
+    # exemptions list
+    ex_list_parser = exemptions_subparsers.add_parser('list', help='List all exemptions')
+    ex_list_parser.add_argument('--contract', '-c',
+                                help='Filter by contract')
+    ex_list_parser.add_argument('--status',
+                                choices=['active', 'expired', 'resolved', 'all'],
+                                default='active',
+                                help='Filter by status')
+    ex_list_parser.add_argument('--format', '-f',
+                                choices=['table', 'json', 'yaml'],
+                                default='table',
+                                help='Output format')
+    ex_list_parser.set_defaults(func=run_exemptions_list)
+
+    # exemptions add
+    ex_add_parser = exemptions_subparsers.add_parser('add', help='Add a new exemption')
+    ex_add_parser.add_argument('--contract', '-c', required=True,
+                               help='Contract name')
+    ex_add_parser.add_argument('--check', '-k', required=True,
+                               help='Check ID to exempt')
+    ex_add_parser.add_argument('--reason', '-r', required=True,
+                               help='Reason for exemption')
+    ex_add_parser.add_argument('--approved-by', '-a', required=True,
+                               help='Who approved (e.g., @username)')
+    ex_add_parser.add_argument('--files', '-F',
+                               help='Comma-separated file patterns to exempt')
+    ex_add_parser.add_argument('--expires', '-e',
+                               help='Expiration date (YYYY-MM-DD)')
+    ex_add_parser.add_argument('--ticket', '-t',
+                               help='Tracking ticket (e.g., AB#1234)')
+    ex_add_parser.set_defaults(func=run_exemptions_add)
+
+    # exemptions audit
+    ex_audit_parser = exemptions_subparsers.add_parser('audit', help='Audit exemptions')
+    ex_audit_parser.add_argument('--show-expired', action='store_true',
+                                 help='Include expired exemptions')
+    ex_audit_parser.add_argument('--show-unused', action='store_true',
+                                 help='Find exemptions that no longer match violations')
+    ex_audit_parser.add_argument('--format', '-f',
+                                 choices=['text', 'yaml', 'json'],
+                                 default='text',
+                                 help='Output format')
+    ex_audit_parser.set_defaults(func=run_exemptions_audit)
+
+    exemptions_parser.set_defaults(func=run_exemptions)
+
     args = parser.parse_args()
 
     if args.command is None:
@@ -3230,6 +3963,16 @@ Examples:
     # Handle config without subcommand
     if args.command == 'config' and (not hasattr(args, 'config_command') or args.config_command is None):
         config_parser.print_help()
+        sys.exit(1)
+
+    # Handle contracts without subcommand
+    if args.command == 'contracts' and (not hasattr(args, 'contracts_command') or args.contracts_command is None):
+        contracts_parser.print_help()
+        sys.exit(1)
+
+    # Handle exemptions without subcommand
+    if args.command == 'exemptions' and (not hasattr(args, 'exemptions_command') or args.exemptions_command is None):
+        exemptions_parser.print_help()
         sys.exit(1)
 
     args.func(args)

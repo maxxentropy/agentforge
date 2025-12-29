@@ -1,0 +1,320 @@
+schema_version: "1.0"
+
+contract:
+  name: "_security-python"
+  type: security
+  description: |
+    Python security rules using bandit and pattern detection.
+    Covers OWASP Top 10, secure coding practices, and secrets detection.
+  version: "1.0.0"
+  enabled: true
+  extends: "_base"
+  applies_to:
+    languages:
+      - python
+  tags:
+    - builtin
+    - python
+    - security
+
+checks:
+  # ===========================================================================
+  # Command-based security scanning (external tools)
+  # ===========================================================================
+
+  - id: bandit-scan
+    name: "Bandit Security Scan"
+    description: "Code must pass Bandit security scanning"
+    type: command
+    severity: error
+    enabled: false  # Enable per-repo - requires bandit
+    config:
+      command: "bandit"
+      args: ["-r", ".", "-f", "json", "-ll"]  # -ll = medium severity and up
+      timeout: 180
+    fix_hint: "Fix security issues identified by bandit"
+
+  - id: bandit-strict
+    name: "Bandit Strict Mode"
+    description: "Code must pass Bandit with all severity levels"
+    type: command
+    severity: warning
+    enabled: false  # Enable per-repo - requires bandit
+    config:
+      command: "bandit"
+      args: ["-r", ".", "-f", "json"]
+      timeout: 180
+    fix_hint: "Review and fix all bandit warnings"
+
+  - id: safety-check
+    name: "Safety Dependency Check"
+    description: "Dependencies must not have known vulnerabilities"
+    type: command
+    severity: error
+    enabled: false  # Enable per-repo - requires safety
+    config:
+      command: "safety"
+      args: ["check", "--full-report"]
+      timeout: 120
+    fix_hint: "Update vulnerable dependencies to patched versions"
+
+  - id: pip-audit
+    name: "pip-audit Vulnerability Check"
+    description: "Check for known vulnerabilities in dependencies"
+    type: command
+    severity: error
+    enabled: false  # Enable per-repo - requires pip-audit
+    config:
+      command: "pip-audit"
+      args: ["--strict"]
+      timeout: 120
+    fix_hint: "Update vulnerable packages identified by pip-audit"
+
+  # ===========================================================================
+  # Injection vulnerabilities (text patterns)
+  # ===========================================================================
+
+  - id: no-sql-string-format
+    name: "No SQL String Formatting"
+    description: "SQL queries should not use string formatting"
+    type: regex
+    severity: error
+    config:
+      pattern: "(execute|cursor)\\s*\\(\\s*['\"].*(%s|\\{|%\\(|f['\"])"
+      mode: forbid
+    applies_to:
+      paths:
+        - "**/*.py"
+    fix_hint: "Use parameterized queries instead of string formatting"
+
+  - id: no-raw-sql-execute
+    name: "No Raw SQL with Variables"
+    description: "Avoid executing SQL with string concatenation"
+    type: regex
+    severity: error
+    config:
+      pattern: "execute\\s*\\(.*\\+.*\\)"
+      mode: forbid
+    applies_to:
+      paths:
+        - "**/*.py"
+    fix_hint: "Use parameterized queries: cursor.execute('SELECT * FROM users WHERE id = ?', (user_id,))"
+
+  - id: no-shell-true
+    name: "No subprocess shell=True"
+    description: "subprocess with shell=True is a security risk"
+    type: regex
+    severity: error
+    config:
+      pattern: "subprocess\\.(run|call|Popen)\\s*\\([^)]*shell\\s*=\\s*True"
+      mode: forbid
+    applies_to:
+      paths:
+        - "**/*.py"
+    fix_hint: "Pass command as list without shell=True: subprocess.run(['cmd', 'arg1', 'arg2'])"
+
+  - id: no-eval
+    name: "No eval() Usage"
+    description: "eval() is a security risk and should be avoided"
+    type: regex
+    severity: error
+    config:
+      pattern: "\\beval\\s*\\("
+      mode: forbid
+    applies_to:
+      paths:
+        - "**/*.py"
+      exclude_paths:
+        - "**/tests/**"
+    fix_hint: "Use ast.literal_eval() for safe evaluation or restructure code"
+
+  - id: no-exec
+    name: "No exec() Usage"
+    description: "exec() is a security risk and should be avoided"
+    type: regex
+    severity: error
+    config:
+      pattern: "\\bexec\\s*\\("
+      mode: forbid
+    applies_to:
+      paths:
+        - "**/*.py"
+      exclude_paths:
+        - "**/tests/**"
+    fix_hint: "Refactor code to avoid dynamic execution"
+
+  - id: no-pickle-load
+    name: "No Untrusted Pickle"
+    description: "pickle.load from untrusted sources is dangerous"
+    type: regex
+    severity: warning
+    config:
+      pattern: "pickle\\.(load|loads)\\s*\\("
+      mode: forbid
+    applies_to:
+      paths:
+        - "**/*.py"
+    fix_hint: "Use JSON or other safe serialization formats for untrusted data"
+
+  - id: no-yaml-unsafe-load
+    name: "No Unsafe YAML Loading"
+    description: "yaml.load() without Loader is unsafe"
+    type: regex
+    severity: error
+    config:
+      pattern: "yaml\\.load\\s*\\([^)]*\\)(?!.*Loader)"
+      mode: forbid
+    applies_to:
+      paths:
+        - "**/*.py"
+    fix_hint: "Use yaml.safe_load() or yaml.load(data, Loader=yaml.SafeLoader)"
+
+  # ===========================================================================
+  # Authentication & Authorization
+  # ===========================================================================
+
+  - id: no-hardcoded-passwords
+    name: "No Hardcoded Passwords"
+    description: "Passwords should not be hardcoded in source code"
+    type: regex
+    severity: error
+    config:
+      pattern: "(password|passwd|pwd)\\s*[=:]\\s*['\"][^'\"]{4,}['\"]"
+      mode: forbid
+      case_insensitive: true
+    applies_to:
+      paths:
+        - "**/*.py"
+      exclude_paths:
+        - "**/tests/**"
+        - "**/test_*.py"
+    fix_hint: "Use environment variables or a secrets manager"
+
+  - id: no-hardcoded-api-keys
+    name: "No Hardcoded API Keys"
+    description: "API keys should not be hardcoded"
+    type: regex
+    severity: error
+    config:
+      pattern: "(api_key|apikey|api-key|secret_key)\\s*[=:]\\s*['\"][^'\"]{8,}['\"]"
+      mode: forbid
+      case_insensitive: true
+    applies_to:
+      paths:
+        - "**/*.py"
+      exclude_paths:
+        - "**/tests/**"
+    fix_hint: "Use environment variables: os.environ.get('API_KEY')"
+
+  - id: no-jwt-without-verify
+    name: "JWT Must Verify Signature"
+    description: "JWT decoding should verify the signature"
+    type: regex
+    severity: error
+    config:
+      pattern: "jwt\\.decode\\s*\\([^)]*verify\\s*=\\s*False"
+      mode: forbid
+    applies_to:
+      paths:
+        - "**/*.py"
+    fix_hint: "Always verify JWT signatures: jwt.decode(token, key, algorithms=['HS256'])"
+
+  # ===========================================================================
+  # Cryptography
+  # ===========================================================================
+
+  - id: no-md5-for-security
+    name: "No MD5 for Security"
+    description: "MD5 should not be used for security purposes"
+    type: regex
+    severity: error
+    config:
+      pattern: "hashlib\\.md5\\s*\\(|MD5\\.new\\s*\\("
+      mode: forbid
+    applies_to:
+      paths:
+        - "**/*.py"
+      exclude_paths:
+        - "**/tests/**"
+    fix_hint: "Use SHA-256 or better: hashlib.sha256()"
+
+  - id: no-sha1-for-security
+    name: "No SHA1 for Security"
+    description: "SHA1 should not be used for security purposes"
+    type: regex
+    severity: warning
+    config:
+      pattern: "hashlib\\.sha1\\s*\\("
+      mode: forbid
+    applies_to:
+      paths:
+        - "**/*.py"
+      exclude_paths:
+        - "**/tests/**"
+    fix_hint: "Use SHA-256 or better: hashlib.sha256()"
+
+  - id: no-weak-random
+    name: "No Weak Random for Security"
+    description: "Use secrets module for security-sensitive random values"
+    type: regex
+    severity: warning
+    config:
+      pattern: "random\\.(random|randint|choice|sample)\\s*\\("
+      mode: forbid
+    applies_to:
+      paths:
+        - "**/auth/**/*.py"
+        - "**/security/**/*.py"
+        - "**/crypto/**/*.py"
+    fix_hint: "Use secrets module: secrets.token_hex(), secrets.choice()"
+
+  # ===========================================================================
+  # Network & SSL
+  # ===========================================================================
+
+  - id: no-ssl-verify-false
+    name: "No Disabled SSL Verification"
+    description: "SSL certificate verification should not be disabled"
+    type: regex
+    severity: error
+    config:
+      pattern: "verify\\s*=\\s*False|CERT_NONE|check_hostname\\s*=\\s*False"
+      mode: forbid
+    applies_to:
+      paths:
+        - "**/*.py"
+      exclude_paths:
+        - "**/tests/**"
+    fix_hint: "Always verify SSL certificates in production"
+
+  - id: no-http-without-https
+    name: "Use HTTPS for External URLs"
+    description: "External API calls should use HTTPS"
+    type: regex
+    severity: warning
+    config:
+      pattern: "http://(?!localhost|127\\.0\\.0\\.1|0\\.0\\.0\\.0)"
+      mode: forbid
+    applies_to:
+      paths:
+        - "**/*.py"
+      exclude_paths:
+        - "**/tests/**"
+    fix_hint: "Use HTTPS for all external connections"
+
+  # ===========================================================================
+  # File existence checks
+  # ===========================================================================
+
+  - id: no-env-files-committed
+    name: "No .env Files Committed"
+    description: ".env files with secrets should not be in repo"
+    type: file_exists
+    severity: error
+    config:
+      forbidden_files:
+        - "**/.env"
+        - "**/.env.local"
+        - "**/.env.production"
+        - "**/.env.*.local"
+    fix_hint: "Add .env files to .gitignore; use .env.example instead"

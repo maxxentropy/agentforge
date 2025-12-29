@@ -1,0 +1,271 @@
+schema_version: "1.0"
+
+contract:
+  name: "_testing-python"
+  type: testing
+  description: |
+    Python testing rules using pytest conventions and coverage requirements.
+    Enforces test structure, naming, and quality standards.
+  version: "1.0.0"
+  enabled: true
+  extends: "_base"
+  applies_to:
+    languages:
+      - python
+  tags:
+    - builtin
+    - python
+    - testing
+
+checks:
+  # ===========================================================================
+  # Command-based test execution
+  # ===========================================================================
+
+  - id: pytest-pass
+    name: "pytest Tests Pass"
+    description: "All pytest tests must pass"
+    type: command
+    severity: error
+    enabled: false  # Enable per-repo - requires pytest
+    config:
+      command: "pytest"
+      args: ["--tb=short", "-q"]
+      timeout: 600
+    fix_hint: "Fix failing tests before committing"
+
+  - id: pytest-coverage
+    name: "pytest Coverage Check"
+    description: "Test coverage must meet minimum threshold"
+    type: command
+    severity: warning
+    enabled: false  # Enable per-repo - requires pytest-cov
+    config:
+      command: "pytest"
+      args: ["--cov=src", "--cov-report=term", "--cov-fail-under=80"]
+      timeout: 600
+    fix_hint: "Add tests to improve code coverage to at least 80%"
+
+  - id: pytest-no-warnings
+    name: "pytest No Warnings"
+    description: "Tests should not produce warnings"
+    type: command
+    severity: info
+    enabled: false  # Enable per-repo
+    config:
+      command: "pytest"
+      args: ["-W", "error"]
+      timeout: 600
+    fix_hint: "Fix deprecation warnings and other test warnings"
+
+  # ===========================================================================
+  # Test structure checks
+  # ===========================================================================
+
+  - id: require-tests-directory
+    name: "Tests Directory Required"
+    description: "Project should have a tests directory"
+    type: file_exists
+    severity: warning
+    config:
+      required_files:
+        - "tests/**/*.py"
+    fix_hint: "Create a tests/ directory with test files"
+
+  - id: require-conftest
+    name: "conftest.py Required"
+    description: "Tests should have a conftest.py for fixtures"
+    type: file_exists
+    severity: info
+    config:
+      required_files:
+        - "tests/conftest.py"
+    fix_hint: "Create tests/conftest.py for shared fixtures"
+
+  - id: test-file-naming
+    name: "Test File Naming Convention"
+    description: "Test files should be named test_*.py or *_test.py"
+    type: regex
+    severity: warning
+    config:
+      pattern: "def\\s+test_"
+      mode: require
+    applies_to:
+      paths:
+        - "tests/**/*.py"
+      exclude_paths:
+        - "**/conftest.py"
+        - "**/fixtures/**"
+        - "**/__init__.py"
+    fix_hint: "Name test files as test_*.py and test functions as test_*"
+
+  # ===========================================================================
+  # Test quality patterns
+  # ===========================================================================
+
+  - id: no-assert-true-false
+    name: "No assert True/False"
+    description: "Use specific assertions instead of assert True/False"
+    type: regex
+    severity: warning
+    config:
+      pattern: "assert\\s+(True|False)\\b"
+      mode: forbid
+    applies_to:
+      paths:
+        - "tests/**/*.py"
+        - "**/*_test.py"
+        - "**/test_*.py"
+    fix_hint: "Use specific assertions: assert result == expected"
+
+  - id: no-bare-assert
+    name: "No Bare Assertions"
+    description: "Assertions should have descriptive messages"
+    type: regex
+    severity: info
+    enabled: false  # Enable per-repo
+    config:
+      pattern: "^\\s*assert\\s+[^,]+$"
+      mode: forbid
+      multiline: true
+    applies_to:
+      paths:
+        - "tests/**/*.py"
+    fix_hint: "Add assertion message: assert x == y, 'Expected x to equal y'"
+
+  - id: prefer-pytest-raises
+    name: "Use pytest.raises for Exceptions"
+    description: "Use pytest.raises() instead of try/except in tests"
+    type: regex
+    severity: info
+    config:
+      pattern: "try:.*except\\s+\\w+.*assert"
+      mode: forbid
+      multiline: true
+    applies_to:
+      paths:
+        - "tests/**/*.py"
+    fix_hint: "Use: with pytest.raises(ExceptionType):"
+
+  - id: no-sleep-in-tests
+    name: "No time.sleep in Tests"
+    description: "Tests should not use time.sleep()"
+    type: regex
+    severity: warning
+    config:
+      pattern: "time\\.sleep\\s*\\("
+      mode: forbid
+    applies_to:
+      paths:
+        - "tests/**/*.py"
+    fix_hint: "Use pytest-timeout, mocking, or async waiting instead"
+
+  - id: no-real-network-calls
+    name: "No Real Network in Unit Tests"
+    description: "Unit tests should mock network calls"
+    type: regex
+    severity: warning
+    config:
+      pattern: "requests\\.(get|post|put|delete|patch)\\s*\\("
+      mode: forbid
+    applies_to:
+      paths:
+        - "tests/unit/**/*.py"
+    fix_hint: "Use responses, httpretty, or pytest-mock to mock network calls"
+
+  # ===========================================================================
+  # Test organization
+  # ===========================================================================
+
+  - id: unit-tests-isolated
+    name: "Unit Tests Isolated"
+    description: "Unit tests should not depend on external resources"
+    type: regex
+    severity: warning
+    config:
+      pattern: "(sqlite3|psycopg2|mysql|redis|mongodb)"
+      mode: forbid
+    applies_to:
+      paths:
+        - "tests/unit/**/*.py"
+    fix_hint: "Mock database connections in unit tests"
+
+  - id: test-docstrings
+    name: "Test Functions Have Docstrings"
+    description: "Test functions should have docstrings explaining what they test"
+    type: lsp_query
+    severity: info
+    enabled: false  # Enable per-repo
+    config:
+      query: symbols
+      filter:
+        kind: function
+        name_pattern: "^test_"
+      assertion: all_exist
+    applies_to:
+      paths:
+        - "tests/**/*.py"
+    fix_hint: "Add docstrings to test functions describing the test scenario"
+
+  # ===========================================================================
+  # Fixture patterns
+  # ===========================================================================
+
+  - id: fixtures-in-conftest
+    name: "Shared Fixtures in conftest.py"
+    description: "Reusable fixtures should be in conftest.py"
+    type: regex
+    severity: info
+    config:
+      pattern: "@pytest\\.fixture"
+      mode: forbid
+    applies_to:
+      paths:
+        - "tests/**/test_*.py"
+        - "tests/**/*_test.py"
+    fix_hint: "Move shared fixtures to conftest.py"
+
+  - id: no-global-fixtures
+    name: "Fixtures Should Use Scope"
+    description: "Session/module fixtures should specify scope explicitly"
+    type: regex
+    severity: info
+    enabled: false  # Enable per-repo
+    config:
+      pattern: "@pytest\\.fixture(?!\\(.*scope)"
+      mode: forbid
+    applies_to:
+      paths:
+        - "**/conftest.py"
+    fix_hint: "Specify fixture scope: @pytest.fixture(scope='function')"
+
+  # ===========================================================================
+  # Test data handling
+  # ===========================================================================
+
+  - id: no-hardcoded-test-data-paths
+    name: "No Hardcoded Test Data Paths"
+    description: "Test data paths should use fixtures or Path objects"
+    type: regex
+    severity: info
+    config:
+      pattern: "open\\s*\\(['\"](?!/tmp|tests/)"
+      mode: forbid
+    applies_to:
+      paths:
+        - "tests/**/*.py"
+    fix_hint: "Use tmp_path fixture or Path(__file__).parent for test data"
+
+  - id: parametrize-similar-tests
+    name: "Use @pytest.mark.parametrize"
+    description: "Similar tests should use parametrization"
+    type: regex
+    severity: info
+    enabled: false  # Enable per-repo
+    config:
+      pattern: "@pytest\\.mark\\.parametrize"
+      mode: require
+    applies_to:
+      paths:
+        - "tests/**/*.py"
+    fix_hint: "Use @pytest.mark.parametrize for data-driven tests"

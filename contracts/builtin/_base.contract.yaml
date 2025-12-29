@@ -1,0 +1,151 @@
+schema_version: "1.0"
+
+contract:
+  name: "_base"
+  type: patterns
+  description: |
+    Base contract with universal code quality rules.
+    All other contracts should extend this contract.
+  version: "1.0.0"
+  enabled: true
+  tags:
+    - builtin
+    - base
+
+checks:
+  # File hygiene
+  - id: max-file-lines
+    name: "Maximum File Length"
+    description: "Files should not exceed 500 lines to maintain readability"
+    type: custom
+    severity: warning
+    config:
+      module: builtin_checks
+      function: check_file_size
+      params:
+        max_lines: 500
+        max_bytes: 100000
+    applies_to:
+      paths:
+        - "**/*.py"
+        - "**/*.ts"
+        - "**/*.js"
+        - "**/*.cs"
+        - "**/*.java"
+        - "**/*.go"
+        - "**/*.rs"
+      exclude_paths:
+        - "**/node_modules/**"
+        - "**/vendor/**"
+        - "**/.git/**"
+    fix_hint: "Split large files into smaller, focused modules"
+
+  - id: no-trailing-whitespace
+    name: "No Trailing Whitespace"
+    description: "Lines should not have trailing whitespace"
+    type: custom
+    severity: info
+    enabled: false  # Disabled by default - noisy
+    config:
+      module: builtin_checks
+      function: check_trailing_whitespace
+    applies_to:
+      paths:
+        - "**/*.py"
+        - "**/*.ts"
+        - "**/*.js"
+        - "**/*.cs"
+    fix_hint: "Configure your editor to trim trailing whitespace on save"
+
+  - id: max-line-length
+    name: "Maximum Line Length"
+    description: "Lines should not exceed 120 characters"
+    type: custom
+    severity: info
+    enabled: false  # Disabled by default - use linters instead
+    config:
+      module: builtin_checks
+      function: check_line_length
+      params:
+        max_length: 120
+    applies_to:
+      paths:
+        - "**/*.py"
+        - "**/*.ts"
+        - "**/*.js"
+        - "**/*.cs"
+    fix_hint: "Break long lines for better readability"
+
+  # Required files
+  - id: require-readme
+    name: "README Required"
+    description: "Repository should have a README file"
+    type: file_exists
+    severity: warning
+    config:
+      required_files:
+        - "README.md"
+    fix_hint: "Create a README.md describing your project"
+
+  # Security basics
+  - id: no-secrets-in-code
+    name: "No Hardcoded Secrets"
+    description: "Passwords and API keys should not be hardcoded"
+    type: regex
+    severity: error
+    config:
+      pattern: "(password|api_key|apikey|secret|token)\\s*[=:]\\s*['\"][^'\"]{8,}['\"]"
+      mode: forbid
+      case_insensitive: true
+    applies_to:
+      exclude_paths:
+        - "**/*.test.*"
+        - "**/*.spec.*"
+        - "**/test*/**"
+        - "**/__tests__/**"
+    fix_hint: "Use environment variables or a secrets manager"
+
+  - id: no-private-keys
+    name: "No Private Key Files"
+    description: "Private key files should not be committed"
+    type: file_exists
+    severity: error
+    config:
+      forbidden_files:
+        - "**/*.pem"
+        - "**/*.key"
+        - "**/*.p12"
+        - "**/*.pfx"
+        - "**/id_rsa"
+        - "**/id_ed25519"
+    fix_hint: "Add private key patterns to .gitignore"
+
+  - id: no-env-files
+    name: "No Environment Files"
+    description: ".env files with secrets should not be committed"
+    type: file_exists
+    severity: error
+    config:
+      forbidden_files:
+        - "**/.env"
+        - "**/.env.local"
+        - "**/.env.production"
+    fix_hint: "Add .env files to .gitignore and use .env.example instead"
+
+  # TODO tracking
+  - id: todo-requires-ticket
+    name: "TODOs Require Ticket"
+    description: "TODO comments should reference a ticket for tracking"
+    type: custom
+    severity: warning
+    enabled: false  # Disabled by default - teams can enable
+    config:
+      module: builtin_checks
+      function: check_todo_comments
+      params:
+        require_ticket: true
+        ticket_patterns:
+          - 'AB#\d+'
+          - '[A-Z]+-\d+'
+          - 'GH#\d+'
+    fix_hint: "Add ticket reference: TODO(AB#1234): ..."

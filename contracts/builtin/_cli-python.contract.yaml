@@ -1,0 +1,289 @@
+schema_version: "1.0"
+
+contract:
+  name: "_cli-python"
+  type: patterns
+  description: |
+    Python CLI application patterns using Click, argparse, or Typer.
+    Enforces consistent CLI design, help text, and error handling.
+  version: "1.0.0"
+  enabled: true
+  extends: "_patterns-python"
+  applies_to:
+    languages:
+      - python
+    repo_types:
+      - cli
+  tags:
+    - builtin
+    - python
+    - cli
+
+checks:
+  # ===========================================================================
+  # Entry Point Checks
+  # ===========================================================================
+
+  - id: require-main-entry
+    name: "Main Entry Point Required"
+    description: "CLI should have a clear main entry point"
+    type: file_exists
+    severity: warning
+    config:
+      required_files:
+        - "__main__.py"
+    fix_hint: "Create __main__.py with 'if __name__ == \"__main__\"' block"
+
+  - id: main-guard-pattern
+    name: "Main Guard Required"
+    description: "Executable modules should have if __name__ == '__main__' guard"
+    type: regex
+    severity: warning
+    config:
+      pattern: "if\\s+__name__\\s*==\\s*['\"]__main__['\"]"
+      mode: require
+    applies_to:
+      paths:
+        - "**/__main__.py"
+        - "**/cli.py"
+        - "**/main.py"
+    fix_hint: "Add: if __name__ == '__main__': main()"
+
+  # ===========================================================================
+  # Help and Documentation
+  # ===========================================================================
+
+  - id: commands-have-help
+    name: "CLI Commands Have Help Text"
+    description: "All CLI commands should have help documentation"
+    type: regex
+    severity: warning
+    config:
+      pattern: "@(click\\.command|app\\.command)\\s*\\([^)]*help\\s*="
+      mode: require
+    applies_to:
+      paths:
+        - "**/cli/**/*.py"
+        - "**/commands/**/*.py"
+    fix_hint: "Add help parameter: @click.command(help='Description')"
+
+  - id: options-have-help
+    name: "CLI Options Have Help Text"
+    description: "All CLI options should have help documentation"
+    type: regex
+    severity: info
+    config:
+      pattern: "@click\\.option\\s*\\([^)]*help\\s*="
+      mode: require
+    applies_to:
+      paths:
+        - "**/cli/**/*.py"
+        - "**/commands/**/*.py"
+    fix_hint: "Add help parameter: @click.option('--name', help='Description')"
+
+  - id: cli-has-version
+    name: "CLI Has Version Flag"
+    description: "CLI should have a --version flag"
+    type: regex
+    severity: info
+    config:
+      pattern: "@click\\.version_option|--version|version_callback"
+      mode: require
+    applies_to:
+      paths:
+        - "**/cli.py"
+        - "**/main.py"
+        - "**/__main__.py"
+    fix_hint: "Add @click.version_option() to main command"
+
+  # ===========================================================================
+  # Error Handling
+  # ===========================================================================
+
+  - id: cli-proper-exit-codes
+    name: "CLI Uses Proper Exit Codes"
+    description: "CLI should use sys.exit with proper codes"
+    type: regex
+    severity: info
+    config:
+      pattern: "sys\\.exit\\s*\\(\\s*[012]\\s*\\)|raise\\s+(SystemExit|click\\.Abort|typer\\.Abort)"
+      mode: require
+    applies_to:
+      paths:
+        - "**/cli/**/*.py"
+        - "**/commands/**/*.py"
+    fix_hint: "Use sys.exit(0) for success, sys.exit(1) for errors"
+
+  - id: cli-exception-handling
+    name: "CLI Has Exception Handling"
+    description: "Main CLI entry should catch and handle exceptions gracefully"
+    type: regex
+    severity: warning
+    config:
+      pattern: "except\\s+(Exception|BaseException|KeyboardInterrupt)"
+      mode: require
+    applies_to:
+      paths:
+        - "**/cli.py"
+        - "**/main.py"
+        - "**/__main__.py"
+    fix_hint: "Catch exceptions and provide user-friendly error messages"
+
+  - id: no-bare-exceptions-cli
+    name: "No Bare Exceptions in CLI"
+    description: "CLI should handle specific exceptions"
+    type: regex
+    severity: warning
+    config:
+      pattern: "except\\s*:"
+      mode: forbid
+    applies_to:
+      paths:
+        - "**/cli/**/*.py"
+        - "**/commands/**/*.py"
+    fix_hint: "Catch specific exceptions for better error handling"
+
+  # ===========================================================================
+  # Output and Formatting
+  # ===========================================================================
+
+  - id: use-click-echo
+    name: "Use click.echo for Output"
+    description: "CLI should use click.echo instead of print"
+    type: regex
+    severity: info
+    config:
+      pattern: "\\bprint\\s*\\("
+      mode: forbid
+    applies_to:
+      paths:
+        - "**/cli/**/*.py"
+        - "**/commands/**/*.py"
+    fix_hint: "Use click.echo() or rich.print() for CLI output"
+
+  - id: colored-output-optional
+    name: "Colored Output Should Be Optional"
+    description: "CLI should respect NO_COLOR and --no-color flags"
+    type: regex
+    severity: info
+    enabled: false  # Enable per-repo
+    config:
+      pattern: "(NO_COLOR|--no-color|color\\s*=)"
+      mode: require
+    applies_to:
+      paths:
+        - "**/cli.py"
+        - "**/main.py"
+    fix_hint: "Add --no-color flag or check NO_COLOR environment variable"
+
+  # ===========================================================================
+  # Configuration
+  # ===========================================================================
+
+  - id: cli-config-from-env
+    name: "CLI Supports Environment Variables"
+    description: "CLI options should be configurable via environment"
+    type: regex
+    severity: info
+    config:
+      pattern: "(envvar\\s*=|os\\.environ|getenv)"
+      mode: require
+    applies_to:
+      paths:
+        - "**/cli.py"
+        - "**/config.py"
+    fix_hint: "Add envvar parameter: @click.option('--api-key', envvar='API_KEY')"
+
+  - id: cli-config-file-support
+    name: "CLI Config File Support"
+    description: "CLI should support configuration files"
+    type: regex
+    severity: info
+    enabled: false  # Enable per-repo
+    config:
+      pattern: "(config_file|--config|\\.(yaml|json|toml))"
+      mode: require
+    applies_to:
+      paths:
+        - "**/cli.py"
+        - "**/config.py"
+    fix_hint: "Add --config option for loading configuration from file"
+
+  # ===========================================================================
+  # Command Structure
+  # ===========================================================================
+
+  - id: command-groups-organized
+    name: "Commands Are Grouped"
+    description: "Related CLI commands should be organized in groups"
+    type: regex
+    severity: info
+    enabled: false  # Enable per-repo
+    config:
+      pattern: "@click\\.group|app\\.add_typer"
+      mode: require
+    applies_to:
+      paths:
+        - "**/cli.py"
+        - "**/main.py"
+    fix_hint: "Use @click.group() to organize related commands"
+
+  - id: subcommands-in-separate-modules
+    name: "Subcommands in Separate Modules"
+    description: "CLI subcommands should be in dedicated modules"
+    type: file_exists
+    severity: info
+    enabled: false  # Enable per-repo
+    config:
+      required_files:
+        - "**/commands/*.py"
+    fix_hint: "Create commands/ directory with separate files for each command group"
+
+  # ===========================================================================
+  # Input Validation
+  # ===========================================================================
+
+  - id: validate-cli-inputs
+    name: "Validate CLI Inputs"
+    description: "CLI inputs should be validated before use"
+    type: regex
+    severity: info
+    config:
+      pattern: "(callback\\s*=|type\\s*=\\s*(click\\.Path|click\\.Choice|click\\.IntRange))"
+      mode: require
+    applies_to:
+      paths:
+        - "**/cli/**/*.py"
+        - "**/commands/**/*.py"
+    fix_hint: "Use Click types for validation: type=click.Path(exists=True)"
+
+  - id: path-inputs-validated
+    name: "Path Inputs Are Validated"
+    description: "File/directory path inputs should use click.Path"
+    type: regex
+    severity: warning
+    config:
+      pattern: "click\\.Path\\s*\\("
+      mode: require
+    applies_to:
+      paths:
+        - "**/cli/**/*.py"
+    fix_hint: "Use click.Path(exists=True) for validated path inputs"
+
+  # ===========================================================================
+  # Testing
+  # ===========================================================================
+
+  - id: cli-tests-use-runner
+    name: "CLI Tests Use CliRunner"
+    description: "CLI tests should use Click's CliRunner"
+    type: regex
+    severity: info
+    config:
+      pattern: "(CliRunner|invoke\\s*\\()"
+      mode: require
+    applies_to:
+      paths:
+        - "tests/**/test_*cli*.py"
+        - "tests/**/test_*command*.py"
+    fix_hint: "Use CliRunner for testing: from click.testing import CliRunner"

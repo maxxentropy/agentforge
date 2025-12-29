@@ -1,138 +1,224 @@
 # Context Retrieval Configuration
-# Defines how code context is retrieved and indexed
-# Schema: config/context_retrieval.schema.yaml
+# ================================
+# Hybrid LSP + Vector retrieval for code context.
+# "Correctness is Upstream" - agents need real code to write accurate specs.
+#
+# Schema: schemas/context_retrieval.schema.yaml
 
-# LSP Language Server Configuration
+# =============================================================================
+# LSP (Language Server Protocol) Configuration
+# =============================================================================
+# This is the core - provides compiler-accurate code intelligence.
+# LSP gives us the compiler's view of the code, which is the only source of truth.
+
 lsp:
+  # Primary language for this project (auto-detected if not specified)
+  primary_language: csharp
+
   servers:
+    # C# - PRIMARY TARGET
+    # csharp-ls is lightweight and fast, better for our use case than OmniSharp
     csharp:
-      name: "OmniSharp"
-      command: "omnisharp"
-      args: ["-lsp"]
+      name: "csharp-ls"
+      command: "csharp-ls"
+      args: []
       file_extensions: [".cs", ".csx"]
       enabled: true
-      
+      install_instructions: "dotnet tool install -g csharp-ls"
+
+    # Python
     python:
       name: "Pyright"
       command: "pyright-langserver"
       args: ["--stdio"]
       file_extensions: [".py", ".pyi"]
-      enabled: false
-      
+      enabled: true
+      install_instructions: "pip install pyright"
+
+    # TypeScript/JavaScript
     typescript:
-      name: "TypeScript"
+      name: "TypeScript Language Server"
       command: "typescript-language-server"
       args: ["--stdio"]
       file_extensions: [".ts", ".tsx", ".js", ".jsx"]
-      enabled: false
+      enabled: true
+      install_instructions: "npm install -g typescript-language-server typescript"
 
-  # LSP operations to use for context retrieval
+  # LSP operations and their timeouts
   operations:
     document_symbols:
       method: "textDocument/documentSymbol"
-      use_case: "Index file structure"
+      use_case: "Get all symbols in a file"
       timeout_ms: 5000
-      
+
+    workspace_symbols:
+      method: "workspace/symbol"
+      use_case: "Search for symbols across workspace"
+      timeout_ms: 10000
+
     definition:
       method: "textDocument/definition"
       use_case: "Find where symbol is defined"
       timeout_ms: 2000
-      
+
     references:
       method: "textDocument/references"
       use_case: "Find all usages of symbol"
       timeout_ms: 10000
-      
+
     hover:
       method: "textDocument/hover"
       use_case: "Get type info and documentation"
       timeout_ms: 2000
 
+# =============================================================================
 # Vector Search Configuration
+# =============================================================================
+# Semantic search complements LSP's structural queries.
+# LSP answers: "where is OrderService defined?"
+# Vector answers: "what code is related to discount handling?"
+
 vector:
   enabled: true
-  
+
+  # Embedding model (OpenAI)
   embedding:
-    model: "text-embedding-3-small"
+    model: "text-embedding-3-small"  # Cheap and good
     dimensions: 1536
     batch_size: 100
-    
+
+  # FAISS index configuration
   index:
-    type: "hnsw"
+    type: "flat"  # flat for <10k chunks, ivf for larger
     metric: "cosine"
-    ef_construction: 200
-    m: 16
-    
+
+  # Code chunking strategy
   chunking:
-    strategy: "ast_aware"  # ast_aware | sliding_window | semantic
-    
+    strategy: "ast_aware"  # ast_aware | sliding_window
+
     ast_aware:
-      # Chunk by code structure (functions, classes)
       max_chunk_tokens: 500
       min_chunk_tokens: 50
       include_signature: true
       include_docstring: true
-      
+
     sliding_window:
-      # Fallback for non-parseable files
       window_size_tokens: 400
       overlap_tokens: 100
 
-# Hybrid Retrieval Configuration  
+  # Index storage location
+  index_path: ".agentforge/vector_index"
+
+# =============================================================================
+# Retrieval Configuration
+# =============================================================================
+
 retrieval:
   # How to combine LSP and vector results
   fusion:
     strategy: "reciprocal_rank"  # reciprocal_rank | weighted | cascade
-    
+
     reciprocal_rank:
       k: 60  # RRF constant
-      
+
     weights:
-      lsp: 0.6
-      vector: 0.4
-      
+      lsp: 0.6      # Structural results get higher weight
+      vector: 0.4   # Semantic results complement
+
   # Token budget management
   budget:
-    default_tokens: 4000
-    max_tokens: 8000
-    
+    default_tokens: 6000
+    max_tokens: 12000
+
+    # How to allocate budget across result types
     allocation:
       primary_components: 0.50    # Components being modified
       related_components: 0.25    # Components that interact
       pattern_examples: 0.15      # Example code for patterns
       documentation: 0.10         # Relevant docs
 
+# =============================================================================
 # File Filtering
+# =============================================================================
+
 filters:
   include_patterns:
-    - "src/**/*.cs"
-    - "src/**/*.py"
-    - "tests/**/*.cs"
-    - "docs/**/*.md"
-    
+    - "**/*.cs"
+    - "**/*.py"
+    - "**/*.ts"
+    - "**/*.js"
+    - "**/*.java"
+
   exclude_patterns:
     - "**/bin/**"
     - "**/obj/**"
     - "**/node_modules/**"
     - "**/.git/**"
     - "**/packages/**"
-    
+    - "**/dist/**"
+    - "**/build/**"
+    - "**/__pycache__/**"
+    - "**/test*/**"        # Exclude tests by default
+    - "**/*Test*.cs"
+    - "**/*Tests*.cs"
+
   exclude_files:
     - "*.Designer.cs"
     - "*.g.cs"
     - "AssemblyInfo.cs"
+    - "GlobalUsings.cs"
 
+# =============================================================================
+# Layer Detection (Clean Architecture)
+# =============================================================================
+# Used to categorize files by architectural layer for better context organization.
+
+layer_detection:
+  patterns:
+    Domain:
+      - "**/Domain/**"
+      - "**/Entities/**"
+      - "**/Core/**"
+      - "**/Models/**"
+      - "**/ValueObjects/**"
+      - "**/Aggregates/**"
+
+    Application:
+      - "**/Application/**"
+      - "**/UseCases/**"
+      - "**/Services/**"
+      - "**/Commands/**"
+      - "**/Queries/**"
+      - "**/Handlers/**"
+      - "**/Features/**"
+
+    Infrastructure:
+      - "**/Infrastructure/**"
+      - "**/Persistence/**"
+      - "**/External/**"
+      - "**/Data/**"
+      - "**/Repositories/**"
+      - "**/Adapters/**"
+
+    Presentation:
+      - "**/Presentation/**"
+      - "**/Api/**"
+      - "**/Controllers/**"
+      - "**/Web/**"
+      - "**/UI/**"
+      - "**/Endpoints/**"
+
+# =============================================================================
 # Indexing Configuration
+# =============================================================================
+
 indexing:
-  # Background indexing
-  watch_enabled: true
-  debounce_ms: 1000
-  
-  # Storage
+  # Storage location
   storage:
-    structure_db: "agentforge_structure.db"  # SQLite
-    vector_index: "agentforge_vectors.idx"   # HNSW index
-    
-  # Incremental updates
-  incremental: true
-  full_reindex_on_error: false
+    base_path: ".agentforge"
+    vector_index: "vector_index"
+
+  # Cache settings
+  cache:
+    enabled: true
+    invalidate_on_file_change: true

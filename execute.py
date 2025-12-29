@@ -439,37 +439,72 @@ def run_analyze(args):
     print("=" * 60)
     print("ANALYZE")
     print("=" * 60)
-    
+
     # Load required files
     intake_path = Path(args.intake_file)
     clarify_path = Path(args.clarification_file)
-    
+
     if not intake_path.exists():
         print(f"Error: {intake_path} not found")
         sys.exit(1)
     if not clarify_path.exists():
         print(f"Error: {clarify_path} not found")
         sys.exit(1)
-    
+
     with open(intake_path) as f:
         intake_record = yaml.safe_load(f)
     with open(clarify_path) as f:
         clarification_log = yaml.safe_load(f)
-    
+
     # Load architecture if exists
     arch_path = Path('config/architecture.yaml')
     architecture_rules = ""
     if arch_path.exists():
         with open(arch_path) as f:
             architecture_rules = f.read()
-    
+
+    # Get code context if project path provided
+    code_context = args.code_context or "No code context provided."
+
+    if args.project_path:
+        print(f"\n  Retrieving context from: {args.project_path}")
+        try:
+            sys.path.insert(0, str(Path(__file__).parent / 'tools'))
+            from context_retrieval import ContextRetriever
+
+            retriever = ContextRetriever(args.project_path)
+
+            # Build query from intake record
+            query_parts = [
+                intake_record.get('detected_intent', ''),
+                intake_record.get('detected_scope', ''),
+                intake_record.get('original_request', ''),
+            ]
+            query = ' '.join(part for part in query_parts if part)
+
+            context = retriever.retrieve(query, budget_tokens=6000)
+
+            print(f"  Found {len(context.files)} relevant files")
+            print(f"  Found {len(context.symbols)} relevant symbols")
+            print(f"  Total tokens: {context.total_tokens}")
+
+            # Format for LLM consumption
+            code_context = context.to_prompt_text()
+
+            retriever.shutdown()
+
+        except ImportError as e:
+            print(f"  Warning: Context retrieval not available: {e}")
+        except Exception as e:
+            print(f"  Warning: Context retrieval failed: {e}")
+
     inputs = {
         'intake_record': intake_record,
         'clarification_log': clarification_log,
         'architecture_rules': architecture_rules or "No architecture rules configured.",
-        'code_context': args.code_context or "No code context provided.",
+        'code_context': code_context,
     }
-    
+
     result = execute_contract('spec.analyze.v1', inputs, args.use_api)
     
     output_path = Path('outputs/analysis_report.yaml')
@@ -1587,6 +1622,122 @@ def increment_version(version: str) -> str:
     return '.'.join(parts)
 
 
+def run_context(args):
+    """
+    Test context retrieval system.
+
+    Retrieves relevant code context using LSP and/or vector search.
+    Useful for testing and debugging context retrieval before running analyze.
+    """
+    print()
+    print("=" * 60)
+    print("CONTEXT RETRIEVAL")
+    print("=" * 60)
+
+    sys.path.insert(0, str(Path(__file__).parent / 'tools'))
+
+    try:
+        from context_retrieval import ContextRetriever
+    except ImportError as e:
+        print(f"\nError: Could not import context_retrieval: {e}")
+        sys.exit(1)
+
+    print(f"\n  Project: {args.project}")
+
+    retriever = ContextRetriever(args.project)
+
+    try:
+        # Check dependencies if requested
+        if args.check:
+            print("\nChecking components...")
+            status = retriever.check_dependencies()
+
+            print("\n  LSP (Language Server Protocol):")
+            lsp = status["lsp"]
+            if lsp["available"]:
+                print(f"    Status: Available")
+                print(f"    Server: {lsp.get('server', 'unknown')}")
+            else:
+                print(f"    Status: Not available")
+                if lsp.get("error"):
+                    print(f"    Error: {lsp['error']}")
+                if lsp.get("install_instructions"):
+                    print(f"    Install: {lsp['install_instructions']}")
+
+            print("\n  Vector Search:")
+            vec = status["vector"]
+            if vec["available"]:
+                print(f"    Status: Available")
+                print(f"    Indexed: {'Yes' if vec.get('indexed') else 'No'}")
+            else:
+                print(f"    Status: Not available")
+                if vec.get("error"):
+                    print(f"    Error: {vec['error']}")
+                print("    Install: pip install openai faiss-cpu")
+            return
+
+        # Build index if requested
+        if args.index:
+            print("\nBuilding vector index...")
+            stats = retriever.index(force_rebuild=args.force)
+            print(f"  Files indexed: {stats.file_count}")
+            print(f"  Chunks created: {stats.chunk_count}")
+            print(f"  Duration: {stats.duration_ms}ms")
+            if stats.errors:
+                print(f"  Errors: {len(stats.errors)}")
+
+        # Search if query provided
+        if args.query:
+            print(f"\n  Query: {args.query}")
+            print(f"  Budget: {args.budget} tokens")
+            print()
+            print("-" * 60)
+            print("Searching...")
+            print("-" * 60)
+
+            context = retriever.retrieve(
+                args.query,
+                budget_tokens=args.budget,
+                use_lsp=not args.no_lsp,
+                use_vector=not args.no_vector,
+            )
+
+            print(f"\n  Found {len(context.files)} files")
+            print(f"  Found {len(context.symbols)} symbols")
+            print(f"  Total tokens: {context.total_tokens}")
+            print()
+            print("-" * 60)
+            print("RESULTS")
+            print("-" * 60)
+
+            if args.format == 'yaml':
+                print(context.to_yaml())
+            elif args.format == 'json':
+                import json
+                print(json.dumps(context.to_dict(), indent=2))
+            else:
+                print(context.to_prompt_text())
+
+            # Save output
+            output_dir = Path('outputs')
+            output_dir.mkdir(exist_ok=True)
+            output_path = output_dir / 'context_retrieval.yaml'
+
+            with open(output_path, 'w') as f:
+                f.write(context.to_yaml())
+
+            print(f"\nSaved to: {output_path}")
+
+        elif not args.check and not args.index:
+            print("\nNo action specified. Use --query, --check, or --index")
+            print("  python execute.py context -p /path/to/project --check")
+            print("  python execute.py context -p /path/to/project --index")
+            print("  python execute.py context -p /path/to/project -q 'order processing'")
+
+    finally:
+        retriever.shutdown()
+
+
 def run_verify(args):
     """
     Run deterministic verification checks.
@@ -2093,6 +2244,11 @@ Examples:
   python execute.py revise --apply       # Apply decisions
   python execute.py revise --force       # Start fresh
 
+  # Context retrieval (code intelligence)
+  python execute.py context -p ~/projects/MyApp --check      # Check components
+  python execute.py context -p ~/projects/MyApp --index      # Build vector index
+  python execute.py context -p ~/projects/MyApp -q "order processing"
+
   # Deterministic verification (replaces LLM judgment)
   python execute.py verify                           # Quick profile
   python execute.py verify --profile ci             # CI checks
@@ -2125,7 +2281,8 @@ Examples:
     analyze_parser = subparsers.add_parser('analyze', help='Run ANALYZE')
     analyze_parser.add_argument('--intake-file', default='outputs/intake_record.yaml')
     analyze_parser.add_argument('--clarification-file', default='outputs/clarification_log.yaml')
-    analyze_parser.add_argument('--code-context', help='Code context to include')
+    analyze_parser.add_argument('--code-context', help='Code context to include (manual)')
+    analyze_parser.add_argument('--project-path', help='Project path for automatic context retrieval')
     analyze_parser.set_defaults(func=run_analyze)
     
     # DRAFT
@@ -2157,6 +2314,20 @@ Examples:
                                help='Start fresh session (discard existing)')
     revise_parser.set_defaults(func=run_revise)
     
+    # CONTEXT (test context retrieval)
+    context_parser = subparsers.add_parser('context', help='Test context retrieval')
+    context_parser.add_argument('--project', '-p', required=True, help='Project root path')
+    context_parser.add_argument('--query', '-q', help='Search query')
+    context_parser.add_argument('--budget', '-b', type=int, default=6000, help='Token budget')
+    context_parser.add_argument('--check', action='store_true', help='Check available components')
+    context_parser.add_argument('--index', action='store_true', help='Build/rebuild vector index')
+    context_parser.add_argument('--force', action='store_true', help='Force rebuild index')
+    context_parser.add_argument('--no-lsp', action='store_true', help='Disable LSP')
+    context_parser.add_argument('--no-vector', action='store_true', help='Disable vector search')
+    context_parser.add_argument('--format', '-f', choices=['text', 'yaml', 'json'], default='text',
+                                help='Output format')
+    context_parser.set_defaults(func=run_context)
+
     # VERIFY (deterministic correctness checks)
     verify_parser = subparsers.add_parser('verify', help='Run deterministic correctness checks')
     verify_parser.add_argument('--profile', '-p',

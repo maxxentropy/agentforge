@@ -1,0 +1,334 @@
+# Refactor Intake Record Schema
+# Output of SPEC.REFACTOR.INTAKE state
+# Validates: outputs/refactor_intake_record.yaml
+
+$schema: "http://json-schema.org/draft-07/schema#"
+$id: "https://agentforge.dev/schemas/refactor_intake_record.schema.yaml"
+title: RefactorIntakeRecord
+description: Output of the REFACTOR.INTAKE state - analysis of code violations and refactoring opportunities
+
+type: object
+required:
+  - violation_summary
+  - structural_analysis
+  - refactoring_opportunities
+  - proposed_actions
+additionalProperties: false
+
+properties:
+  violation_summary:
+    type: object
+    description: Summary of code quality violations from contract checks
+    required:
+      - total_violations
+      - by_severity
+      - top_issues
+    additionalProperties: false
+    properties:
+      total_violations:
+        type: integer
+        minimum: 0
+      by_severity:
+        type: object
+        properties:
+          error:
+            type: integer
+            minimum: 0
+            default: 0
+          warning:
+            type: integer
+            minimum: 0
+            default: 0
+          advisory:
+            type: integer
+            minimum: 0
+            default: 0
+      top_issues:
+        type: array
+        description: Most significant issue categories
+        items:
+          type: object
+          required:
+            - category
+            - count
+            - description
+          additionalProperties: false
+          properties:
+            category:
+              type: string
+              description: Issue type (e.g., cyclomatic_complexity, function_length)
+            count:
+              type: integer
+              minimum: 1
+            description:
+              type: string
+
+  structural_analysis:
+    type: object
+    description: Analysis of code structure from AST
+    required:
+      - file_summary
+      - cohesion_analysis
+      - coupling_concerns
+    additionalProperties: false
+    properties:
+      file_summary:
+        type: array
+        description: Summary of analyzed files
+        items:
+          type: object
+          required:
+            - file
+            - lines
+            - functions
+            - classes
+            - complexity_score
+          additionalProperties: false
+          properties:
+            file:
+              type: string
+              description: File path
+            lines:
+              type: integer
+              minimum: 1
+            functions:
+              type: integer
+              minimum: 0
+            classes:
+              type: integer
+              minimum: 0
+            complexity_score:
+              type: string
+              enum:
+                - low
+                - medium
+                - high
+                - critical
+              description: |
+                low: No functions exceed thresholds
+                medium: Some functions near thresholds
+                high: Multiple functions exceed thresholds
+                critical: Severe complexity issues
+
+      cohesion_analysis:
+        type: array
+        description: Analysis of logical function groupings
+        items:
+          type: object
+          required:
+            - group_name
+            - cohesion
+            - members
+            - rationale
+          additionalProperties: false
+          properties:
+            group_name:
+              type: string
+              description: Name identifying this group
+            cohesion:
+              type: string
+              enum:
+                - high
+                - medium
+                - low
+              description: How strongly related are group members
+            members:
+              type: array
+              items:
+                type: string
+              description: Functions/classes in this group
+            rationale:
+              type: string
+              description: Why these belong together
+
+      coupling_concerns:
+        type: array
+        description: Identified coupling issues
+        items:
+          type: object
+          required:
+            - concern
+            - affected_items
+            - severity
+          additionalProperties: false
+          properties:
+            concern:
+              type: string
+              description: Description of the coupling issue
+            affected_items:
+              type: array
+              items:
+                type: string
+              description: Files/functions affected
+            severity:
+              type: string
+              enum:
+                - low
+                - medium
+                - high
+
+  refactoring_opportunities:
+    type: array
+    description: Identified opportunities for refactoring
+    items:
+      type: object
+      required:
+        - id
+        - type
+        - target
+        - description
+        - impact
+        - effort
+        - priority
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          pattern: "^R[0-9]{3}$"
+          description: Unique opportunity identifier (R001, R002, etc.)
+        type:
+          type: string
+          enum:
+            - extract_module
+            - extract_method
+            - reduce_complexity
+            - improve_cohesion
+            - rename
+            - inline
+          description: |
+            extract_module: Move functions to new module
+            extract_method: Break function into smaller pieces
+            reduce_complexity: Simplify complex logic
+            improve_cohesion: Reorganize for better grouping
+            rename: Change names for clarity
+            inline: Remove unnecessary abstraction
+        target:
+          type: string
+          description: "File or function being refactored (e.g., execute.py:run_render_spec)"
+        description:
+          type: string
+          minLength: 20
+          description: What the refactoring will accomplish
+        impact:
+          type: string
+          enum:
+            - low
+            - medium
+            - high
+          description: How much this improves the codebase
+        effort:
+          type: string
+          enum:
+            - trivial
+            - small
+            - medium
+            - large
+          description: |
+            trivial: < 30 min
+            small: < 2 hours
+            medium: < 1 day
+            large: > 1 day
+        priority:
+          type: integer
+          minimum: 1
+          maximum: 10
+          description: Execution priority (1 = highest)
+
+  proposed_actions:
+    type: array
+    description: Concrete actions to implement refactorings
+    items:
+      type: object
+      required:
+        - action_id
+        - opportunity_ref
+        - action_type
+        - details
+        - verification
+      additionalProperties: false
+      properties:
+        action_id:
+          type: string
+          pattern: "^A[0-9]{3}$"
+          description: Unique action identifier
+        opportunity_ref:
+          type: string
+          pattern: "^R[0-9]{3}$"
+          description: Reference to refactoring opportunity
+        action_type:
+          type: string
+          enum:
+            - create_file
+            - modify_file
+            - move_functions
+            - rename
+            - delete
+        details:
+          type: object
+          description: Action-specific parameters
+          additionalProperties: true
+        verification:
+          type: string
+          description: How to verify this action succeeded
+
+  clarifying_questions:
+    type: array
+    description: Questions that need answers before proceeding
+    items:
+      type: object
+      required:
+        - question
+        - priority
+        - affects
+      additionalProperties: false
+      properties:
+        question:
+          type: string
+        priority:
+          type: string
+          enum:
+            - blocking
+            - important
+            - nice_to_know
+        affects:
+          type: array
+          items:
+            type: string
+          description: Opportunity IDs affected by this question
+
+  risk_assessment:
+    type: object
+    description: Assessment of refactoring risks
+    required:
+      - overall_risk
+      - risks
+    additionalProperties: false
+    properties:
+      overall_risk:
+        type: string
+        enum:
+          - low
+          - medium
+          - high
+      risks:
+        type: array
+        items:
+          type: object
+          required:
+            - risk
+            - likelihood
+            - mitigation
+          additionalProperties: false
+          properties:
+            risk:
+              type: string
+              description: What could go wrong
+            likelihood:
+              type: string
+              enum:
+                - low
+                - medium
+                - high
+            mitigation:
+              type: string
+              description: How to prevent or handle this risk

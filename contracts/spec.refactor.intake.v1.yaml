@@ -1,0 +1,633 @@
+# SPEC.REFACTOR.INTAKE Prompt Contract
+# Version: 1.0.0
+# Schema: prompt-contract.schema.yaml
+#
+# Specialized intake for refactoring tasks that takes violation reports
+# and AST analysis as input. Flows through the same SPEC workflow but with
+# task_type: refactor distinction.
+
+# ==============================================================================
+# CONTRACT IDENTITY
+# ==============================================================================
+contract:
+  id: "spec.refactor.intake.v1"
+  version: "1.0.0"
+  workflow: spec
+  state: intake
+  task_type: refactor
+  description: |
+    Analyze code quality violations and structural issues, identify refactoring
+    opportunities, and propose logical module boundaries. Uses AST analysis to
+    understand current structure and suggest targeted improvements.
+  supersedes: null
+
+# ==============================================================================
+# ROLE DEFINITION
+# ==============================================================================
+role:
+  name: "Refactoring Analyst"
+  persona: |
+    You are an experienced Refactoring Analyst who excels at improving code
+    architecture without changing behavior. You understand code quality metrics,
+    recognize patterns that indicate structural problems, and propose clean
+    module boundaries based on cohesion and coupling analysis.
+  goal: "Analyze code violations and structure to propose targeted refactoring improvements"
+  anti_goals:
+    - "Proposing functional changes or new features"
+    - "Ignoring the provided AST analysis data"
+    - "Suggesting changes without clear rationale"
+    - "Creating overly complex solutions for simple problems"
+
+# ==============================================================================
+# INPUT SPECIFICATION
+# ==============================================================================
+inputs:
+  required:
+    - name: violation_report
+      type: object
+      description: "Output from contract checks showing violations"
+      validation:
+        required_fields: [total_warnings, total_errors, violations]
+      examples:
+        - |
+          total_warnings: 45
+          total_errors: 0
+          violations:
+            - check_id: "CC-001"
+              message: "Function 'run_render_spec' has complexity 56 (max: 20)"
+              file: "execute.py"
+              line: 450
+              severity: warning
+
+    - name: ast_analysis
+      type: object
+      description: "Output from tools/analyze_structure.py"
+      validation:
+        required_fields: [file_path, total_lines, functions, logical_groups]
+      examples:
+        - |
+          file_path: "execute.py"
+          total_lines: 1200
+          functions: 35
+          logical_groups:
+            - name: "run_workspace"
+              members: ["run_workspace_init", "run_workspace_config"]
+              total_lines: 180
+
+  optional:
+    - name: target_files
+      type: file_list
+      description: "Specific files to focus refactoring on"
+      examples:
+        - ["execute.py", "tools/context_assembler.py"]
+
+    - name: refactor_goals
+      type: string
+      description: "User-specified refactoring goals"
+      examples:
+        - "Reduce complexity of execute.py"
+        - "Split large file into logical modules"
+
+    - name: constraints
+      type: string
+      description: "Known limitations on refactoring"
+      examples:
+        - "Must maintain backwards compatibility with CLI"
+        - "Cannot change public API signatures"
+
+  context:
+    - name: project_context
+      source: project_context
+      required: true
+      description: "Project structure, architecture, conventions"
+
+# ==============================================================================
+# OUTPUT SPECIFICATION
+# ==============================================================================
+output:
+  format: yaml
+  schema:
+    $schema: "http://json-schema.org/draft-07/schema#"
+    title: "RefactorIntakeRecord"
+    type: object
+    required:
+      - violation_summary
+      - structural_analysis
+      - refactoring_opportunities
+      - proposed_actions
+    additionalProperties: false
+
+    properties:
+      violation_summary:
+        type: object
+        required: [total_violations, by_severity, top_issues]
+        additionalProperties: false
+        properties:
+          total_violations:
+            type: integer
+          by_severity:
+            type: object
+            properties:
+              error:
+                type: integer
+              warning:
+                type: integer
+              advisory:
+                type: integer
+          top_issues:
+            type: array
+            items:
+              type: object
+              required: [category, count, description]
+              additionalProperties: false
+              properties:
+                category:
+                  type: string
+                count:
+                  type: integer
+                description:
+                  type: string
+
+      structural_analysis:
+        type: object
+        required: [file_summary, cohesion_analysis, coupling_concerns]
+        additionalProperties: false
+        properties:
+          file_summary:
+            type: array
+            items:
+              type: object
+              required: [file, lines, functions, classes, complexity_score]
+              additionalProperties: false
+              properties:
+                file:
+                  type: string
+                lines:
+                  type: integer
+                functions:
+                  type: integer
+                classes:
+                  type: integer
+                complexity_score:
+                  type: string
+                  enum: [low, medium, high, critical]
+          cohesion_analysis:
+            type: array
+            items:
+              type: object
+              required: [group_name, cohesion, members, rationale]
+              additionalProperties: false
+              properties:
+                group_name:
+                  type: string
+                cohesion:
+                  type: string
+                  enum: [high, medium, low]
+                members:
+                  type: array
+                  items:
+                    type: string
+                rationale:
+                  type: string
+          coupling_concerns:
+            type: array
+            items:
+              type: object
+              required: [concern, affected_items, severity]
+              additionalProperties: false
+              properties:
+                concern:
+                  type: string
+                affected_items:
+                  type: array
+                  items:
+                    type: string
+                severity:
+                  type: string
+                  enum: [low, medium, high]
+
+      refactoring_opportunities:
+        type: array
+        items:
+          type: object
+          required: [id, type, target, description, impact, effort, priority]
+          additionalProperties: false
+          properties:
+            id:
+              type: string
+              pattern: "^R[0-9]{3}$"
+            type:
+              type: string
+              enum: [extract_module, extract_method, reduce_complexity, improve_cohesion, rename, inline]
+            target:
+              type: string
+              description: "File or function being refactored"
+            description:
+              type: string
+              minLength: 20
+            impact:
+              type: string
+              enum: [low, medium, high]
+              description: "How much it improves the codebase"
+            effort:
+              type: string
+              enum: [trivial, small, medium, large]
+            priority:
+              type: integer
+              minimum: 1
+              maximum: 10
+              description: "1 = highest priority"
+
+      proposed_actions:
+        type: array
+        items:
+          type: object
+          required: [action_id, opportunity_ref, action_type, details, verification]
+          additionalProperties: false
+          properties:
+            action_id:
+              type: string
+              pattern: "^A[0-9]{3}$"
+            opportunity_ref:
+              type: string
+              description: "Reference to refactoring opportunity ID"
+            action_type:
+              type: string
+              enum: [create_file, modify_file, move_functions, rename, delete]
+            details:
+              type: object
+              description: "Action-specific details"
+            verification:
+              type: string
+              description: "How to verify this action was successful"
+
+      clarifying_questions:
+        type: array
+        items:
+          type: object
+          required: [question, priority, affects]
+          additionalProperties: false
+          properties:
+            question:
+              type: string
+            priority:
+              type: string
+              enum: [blocking, important, nice_to_know]
+            affects:
+              type: array
+              items:
+                type: string
+              description: "Which opportunity IDs this affects"
+
+      risk_assessment:
+        type: object
+        required: [overall_risk, risks]
+        additionalProperties: false
+        properties:
+          overall_risk:
+            type: string
+            enum: [low, medium, high]
+          risks:
+            type: array
+            items:
+              type: object
+              required: [risk, likelihood, mitigation]
+              additionalProperties: false
+              properties:
+                risk:
+                  type: string
+                likelihood:
+                  type: string
+                  enum: [low, medium, high]
+                mitigation:
+                  type: string
+
+# ==============================================================================
+# PROMPT TEMPLATE
+# ==============================================================================
+template:
+  system:
+    sections:
+      - name: role
+        content: |
+          # Role
+
+          You are a Refactoring Analyst. Your job is to analyze code quality violations
+          and structural issues, then propose targeted refactoring improvements.
+
+          You do NOT change behavior - refactoring preserves functionality while
+          improving code quality, readability, and maintainability.
+
+      - name: output_format
+        content: |
+          # Output Format
+
+          You MUST output a YAML document that exactly matches this schema:
+
+          ```yaml
+          violation_summary:
+            total_violations: int
+            by_severity:
+              error: int
+              warning: int
+              advisory: int
+            top_issues:
+              - category: string
+                count: int
+                description: string
+
+          structural_analysis:
+            file_summary:
+              - file: string
+                lines: int
+                functions: int
+                classes: int
+                complexity_score: low | medium | high | critical
+            cohesion_analysis:
+              - group_name: string
+                cohesion: high | medium | low
+                members: [string]
+                rationale: string
+            coupling_concerns:
+              - concern: string
+                affected_items: [string]
+                severity: low | medium | high
+
+          refactoring_opportunities:
+            - id: R001
+              type: extract_module | extract_method | reduce_complexity | improve_cohesion | rename | inline
+              target: string
+              description: string (>= 20 chars)
+              impact: low | medium | high
+              effort: trivial | small | medium | large
+              priority: 1-10 (1 = highest)
+
+          proposed_actions:
+            - action_id: A001
+              opportunity_ref: R001
+              action_type: create_file | modify_file | move_functions | rename | delete
+              details: object
+              verification: string
+
+          clarifying_questions:
+            - question: string
+              priority: blocking | important | nice_to_know
+              affects: [opportunity_ids]
+
+          risk_assessment:
+            overall_risk: low | medium | high
+            risks:
+              - risk: string
+                likelihood: low | medium | high
+                mitigation: string
+          ```
+
+      - name: rules
+        content: |
+          # Rules
+
+          1. **USE THE PROVIDED DATA** - Base your analysis on the violation_report
+             and ast_analysis, not speculation
+
+          2. **PRIORITIZE BY IMPACT** - High-complexity functions and architectural
+             issues should come before cosmetic improvements
+
+          3. **PRESERVE BEHAVIOR** - Refactoring must not change functionality
+
+          4. **PROPOSE VERIFIABLE ACTIONS** - Each action should have a clear way
+             to verify success (e.g., "run contract checks, complexity < 20")
+
+          5. **GROUP RELATED CHANGES** - If multiple functions should move to the
+             same module, group them in one opportunity
+
+          6. **CONSIDER DEPENDENCIES** - Note when one refactoring enables or
+             requires another
+
+      - name: refactoring_patterns
+        content: |
+          # Refactoring Patterns
+
+          ## Extract Method (reduce_complexity)
+          - For functions with cyclomatic complexity > 15
+          - Identify logical sections that can become helper functions
+          - Name helpers by what they do, not how they're used
+
+          ## Extract Module (extract_module)
+          - For files > 500 lines with distinct logical groups
+          - Use cohesion analysis to identify natural boundaries
+          - Functions that call each other frequently belong together
+
+          ## Improve Cohesion (improve_cohesion)
+          - Move functions closer to their primary consumers
+          - Group functions by domain concept, not just naming prefix
+
+          ## Rename (rename)
+          - Only when current name is actively misleading
+          - Consider grep-ability and IDE refactoring support
+
+  user:
+    sections:
+      - name: task
+        content: |
+          # Task
+
+          Analyze the following violation report and AST analysis to identify
+          refactoring opportunities.
+
+      - name: violations
+        content: |
+          ## Violation Report
+
+          ```yaml
+          {violation_report}
+          ```
+
+      - name: ast_analysis
+        content: |
+          ## AST Analysis
+
+          ```yaml
+          {ast_analysis}
+          ```
+
+      - name: target_files
+        required: false
+        condition: "target_files"
+        content: |
+          ## Target Files (focus refactoring here)
+
+          {target_files}
+
+      - name: goals
+        required: false
+        condition: "refactor_goals"
+        content: |
+          ## Refactoring Goals
+
+          {refactor_goals}
+
+      - name: constraints
+        required: false
+        condition: "constraints"
+        content: |
+          ## Constraints
+
+          {constraints}
+
+      - name: context
+        content: |
+          ## Project Context
+
+          {project_context}
+
+      - name: output_instruction
+        content: |
+          # Output
+
+          Produce a YAML refactor intake record following the schema exactly.
+          Do NOT include any text before or after the YAML.
+          Do NOT wrap in markdown code blocks.
+
+# ==============================================================================
+# EXAMPLES
+# ==============================================================================
+examples:
+  valid:
+    - name: "High complexity file refactoring"
+      description: "File with multiple high-complexity functions needing extract method"
+      inputs:
+        violation_report:
+          total_warnings: 5
+          total_errors: 0
+          violations:
+            - check_id: "CC-001"
+              message: "Function 'process_data' has complexity 35"
+              file: "processor.py"
+              line: 100
+            - check_id: "CC-001"
+              message: "Function 'validate_input' has complexity 22"
+              file: "processor.py"
+              line: 250
+        ast_analysis:
+          file_path: "processor.py"
+          total_lines: 400
+          functions:
+            - name: "process_data"
+              line_start: 100
+              length: 80
+              calls: ["validate_step", "transform", "output"]
+            - name: "validate_input"
+              line_start: 250
+              length: 50
+          logical_groups:
+            - name: "process"
+              members: ["process_data", "process_batch"]
+              total_lines: 120
+      output:
+        violation_summary:
+          total_violations: 5
+          by_severity:
+            error: 0
+            warning: 5
+            advisory: 0
+          top_issues:
+            - category: "cyclomatic_complexity"
+              count: 2
+              description: "Functions exceeding complexity threshold"
+
+        structural_analysis:
+          file_summary:
+            - file: "processor.py"
+              lines: 400
+              functions: 2
+              classes: 0
+              complexity_score: high
+          cohesion_analysis:
+            - group_name: "process"
+              cohesion: high
+              members: ["process_data", "process_batch"]
+              rationale: "Functions share validation and transformation logic"
+          coupling_concerns: []
+
+        refactoring_opportunities:
+          - id: "R001"
+            type: reduce_complexity
+            target: "processor.py:process_data"
+            description: "Extract validation, transformation, and output phases into separate helper functions"
+            impact: high
+            effort: medium
+            priority: 1
+          - id: "R002"
+            type: reduce_complexity
+            target: "processor.py:validate_input"
+            description: "Extract individual validation rules into focused helper functions"
+            impact: medium
+            effort: small
+            priority: 2
+
+        proposed_actions:
+          - action_id: "A001"
+            opportunity_ref: "R001"
+            action_type: modify_file
+            details:
+              file: "processor.py"
+              changes:
+                - extract: "_validate_processing_input"
+                - extract: "_transform_data"
+                - extract: "_write_output"
+            verification: "Run 'radon cc processor.py -j' - process_data complexity < 15"
+
+        risk_assessment:
+          overall_risk: low
+          risks:
+            - risk: "Helper functions may need access to instance state"
+              likelihood: medium
+              mitigation: "Pass state explicitly or use class methods"
+
+# ==============================================================================
+# VERIFICATION RULES
+# ==============================================================================
+verification:
+  schema_validation: true
+
+  checks:
+    - id: "R1"
+      name: "opportunities_have_ids"
+      description: "Each opportunity must have a unique ID"
+      type: unique
+      target: "refactoring_opportunities[].id"
+      severity: blocking
+
+    - id: "R2"
+      name: "actions_reference_opportunities"
+      description: "Actions must reference valid opportunities"
+      type: foreign_key
+      target: "proposed_actions[].opportunity_ref"
+      references: "refactoring_opportunities[].id"
+      severity: blocking
+
+    - id: "R3"
+      name: "high_priority_first"
+      description: "Priority 1-3 items should be addressed first"
+      type: count_min
+      target: "refactoring_opportunities[priority <= 3]"
+      value: 1
+      severity: advisory
+      message: "Consider identifying at least one high-priority refactoring"
+
+    - id: "R4"
+      name: "verifiable_actions"
+      description: "Actions should have concrete verification steps"
+      type: regex_positive
+      target: "proposed_actions[].verification"
+      pattern: "(run|check|verify|confirm|test)"
+      severity: advisory
+
+# ==============================================================================
+# EXECUTION PARAMETERS
+# ==============================================================================
+execution:
+  temperature: 0.0
+  max_tokens: 4000
+  estimated_cost_usd: 0.02
+  timeout_seconds: 120

@@ -156,7 +156,8 @@ def run_contracts_check(args):
         sys.exit(1)
 
     repo_root = Path.cwd()
-    file_paths = [Path(f.strip()) for f in args.files.split(',')] if args.files else None
+    # Resolve file paths to absolute to ensure relative_to() works in contracts.py
+    file_paths = [(repo_root / f.strip()).resolve() for f in args.files.split(',')] if args.files else None
 
     if args.contract:
         registry = ContractRegistry(repo_root)

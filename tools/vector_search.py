@@ -452,116 +452,98 @@ class VectorSearch:
 
         return hasher.hexdigest()[:16]
 
-    def index(self, force_rebuild: bool = False) -> IndexStats:
-        """
-        Index or re-index the codebase.
-
-        Creates embeddings for code chunks and stores in FAISS index.
-        Index is cached in .agentforge/vector_index/
-
-        Args:
-            force_rebuild: Force rebuild even if cache is valid
-
-        Returns:
-            IndexStats with counts and timing
-        """
+    def _try_load_cache(self, project_hash: str, stats: IndexStats) -> bool:
+        """Try to load index from cache. Returns True if cache was valid."""
+        import faiss
+        if not self.metadata_file.exists():
+            return False
         try:
-            import faiss
-            import numpy as np
-        except ImportError:
-            raise ImportError(
-                "FAISS not installed. Run: pip install faiss-cpu"
-            )
+            with open(self.metadata_file, 'r', encoding='utf-8') as f:
+                cached = json.load(f)
+            if cached.get('project_hash') != project_hash:
+                return False
+            self._metadata = [Chunk.from_dict(c) for c in cached['chunks']]
+            self._index = faiss.read_index(str(self.index_file))
+            stats.file_count = cached.get('file_count', 0)
+            stats.chunk_count = len(self._metadata)
+            stats.duration_ms = 0
+            return True
+        except Exception:
+            return False
 
-        stats = IndexStats()
-        start_time = datetime.now()
-
-        # Check cache validity
-        project_hash = self._compute_project_hash()
-        cache_valid = False
-
-        if not force_rebuild and self.metadata_file.exists():
-            try:
-                with open(self.metadata_file, 'r', encoding='utf-8') as f:
-                    cached = json.load(f)
-                    if cached.get('project_hash') == project_hash:
-                        cache_valid = True
-                        self._metadata = [Chunk.from_dict(c) for c in cached['chunks']]
-                        self._index = faiss.read_index(str(self.index_file))
-                        stats.file_count = cached.get('file_count', 0)
-                        stats.chunk_count = len(self._metadata)
-                        stats.duration_ms = 0
-                        return stats
-            except Exception:
-                pass
-
-        # Build new index
-        files = self._get_files()
-        stats.file_count = len(files)
-
-        all_chunks: List[Chunk] = []
-
+    def _chunk_files(self, files: List[Path], stats: IndexStats) -> List[Chunk]:
+        """Chunk all files and collect errors."""
+        all_chunks = []
         for file_path in files:
             try:
                 with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
                     content = f.read()
-
                 language = self._detect_language(str(file_path))
                 rel_path = str(file_path.relative_to(self.project_path))
-                chunks = self.chunker.chunk_file(rel_path, content, language)
-                all_chunks.extend(chunks)
-
+                all_chunks.extend(self.chunker.chunk_file(rel_path, content, language))
             except Exception as e:
                 stats.errors.append(f"{file_path}: {e}")
+        return all_chunks
 
+    def _build_faiss_index(self, vectors, dimension: int):
+        """Build appropriate FAISS index based on dataset size."""
+        import faiss
+        if len(vectors) < 10000:
+            index = faiss.IndexFlatIP(dimension)
+        else:
+            nlist = min(100, len(vectors) // 10)
+            quantizer = faiss.IndexFlatIP(dimension)
+            index = faiss.IndexIVFFlat(quantizer, dimension, nlist, faiss.METRIC_INNER_PRODUCT)
+            index.train(vectors)
+        index.add(vectors)
+        return index
+
+    def _save_index(self, index, chunks: List[Chunk], project_hash: str, file_count: int):
+        """Save index and metadata to disk."""
+        import faiss
+        self.index_dir.mkdir(parents=True, exist_ok=True)
+        faiss.write_index(index, str(self.index_file))
+        with open(self.metadata_file, 'w', encoding='utf-8') as f:
+            json.dump({
+                'project_hash': project_hash, 'chunks': [c.to_dict() for c in chunks],
+                'file_count': file_count, 'created': datetime.now().isoformat(),
+            }, f)
+
+    def index(self, force_rebuild: bool = False) -> IndexStats:
+        """Index or re-index the codebase. Creates embeddings for code chunks and stores in FAISS index."""
+        import faiss
+        import numpy as np
+
+        stats = IndexStats()
+        start_time = datetime.now()
+        project_hash = self._compute_project_hash()
+
+        if not force_rebuild and self._try_load_cache(project_hash, stats):
+            return stats
+
+        files = self._get_files()
+        stats.file_count = len(files)
+        all_chunks = self._chunk_files(files, stats)
         stats.chunk_count = len(all_chunks)
 
         if not all_chunks:
             stats.duration_ms = int((datetime.now() - start_time).total_seconds() * 1000)
             return stats
 
-        # Get embeddings using provider
         provider = self.embedding_provider
         print(f"  Generating embeddings with '{provider.name}' for {len(all_chunks)} chunks...", file=sys.stderr)
-        texts = [chunk.to_embedding_text() for chunk in all_chunks]
-        embeddings = provider.embed(texts)
+        embeddings = provider.embed([chunk.to_embedding_text() for chunk in all_chunks])
 
-        # Build FAISS index
-        dimension = provider.dimension
         vectors = np.array(embeddings, dtype=np.float32)
-
-        # Normalize for cosine similarity
         faiss.normalize_L2(vectors)
+        index = self._build_faiss_index(vectors, provider.dimension)
 
-        # Use flat index for small datasets, IVF for larger
-        if len(vectors) < 10000:
-            index = faiss.IndexFlatIP(dimension)  # Inner product = cosine for normalized vectors
-        else:
-            nlist = min(100, len(vectors) // 10)
-            quantizer = faiss.IndexFlatIP(dimension)
-            index = faiss.IndexIVFFlat(quantizer, dimension, nlist, faiss.METRIC_INNER_PRODUCT)
-            index.train(vectors)
-
-        index.add(vectors)
-
-        # Save to disk
-        self.index_dir.mkdir(parents=True, exist_ok=True)
-        faiss.write_index(index, str(self.index_file))
-
-        with open(self.metadata_file, 'w', encoding='utf-8') as f:
-            json.dump({
-                'project_hash': project_hash,
-                'chunks': [c.to_dict() for c in all_chunks],
-                'file_count': stats.file_count,
-                'created': datetime.now().isoformat(),
-            }, f)
-
+        self._save_index(index, all_chunks, project_hash, stats.file_count)
         self._index = index
         self._metadata = all_chunks
 
         stats.total_tokens = sum(c.token_estimate for c in all_chunks)
         stats.duration_ms = int((datetime.now() - start_time).total_seconds() * 1000)
-
         return stats
 
     def _load_index(self) -> bool:

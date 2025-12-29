@@ -745,113 +745,54 @@ class VerificationRunner:
             return CheckResult(check_id=check_id, check_name=check_name, status=CheckStatus.ERROR,
                                severity=severity, message=f"Contracts check failed: {str(e)}", details=str(e))
 
+    def _filter_pyright_diagnostics(self, diagnostics: list, file_set: set, severity_filter: list) -> list:
+        """Filter pyright diagnostics to target files and severities."""
+        filtered = []
+        for diag in diagnostics:
+            diag_path = str(Path(diag.file).resolve()) if diag.file else ""
+            if diag_path in file_set and diag.severity in severity_filter:
+                filtered.append(diag)
+        return filtered
+
     def _run_lsp_query_check(self, check: Dict, settings: Dict) -> CheckResult:
-        """
-        Run semantic Python analysis using pyright CLI.
-
-        NOTE: This uses pyright as a subprocess with --outputjson,
-        NOT an actual LSP server connection.
-
-        Config options:
-            - file_patterns: Glob patterns for files to check
-            - severity_filter: Which severities to report (error, warning, information)
-            - rules: Specific pyright rules to check (optional)
-        """
+        """Run semantic Python analysis using pyright CLI."""
         check_id = check["id"]
         check_name = check.get("name", check_id)
         severity = Severity(check.get("severity", "required"))
 
         try:
-            # Get file patterns to check
-            file_patterns = check.get(
-                "file_patterns",
-                settings.get("include_patterns", ["**/*.py"])
-            )
-            exclude_patterns = check.get(
-                "exclude_patterns",
-                settings.get("exclude_patterns", [])
-            )
-            severity_filter = check.get("severity_filter", ["error"])
+            include_patterns = check.get("file_patterns", settings.get("include_patterns", ["**/*.py"]))
+            exclude_patterns = check.get("exclude_patterns", settings.get("exclude_patterns", []))
+            files = self._collect_files_for_check(include_patterns, exclude_patterns)
 
-            # Find matching files
-            all_files = []
-            for pattern in file_patterns:
-                pattern = self._substitute_variables(pattern)
-                matches = glob.glob(str(self.project_root / pattern), recursive=True)
-                all_files.extend(matches)
-
-            # Filter exclusions
-            files = []
-            for f in all_files:
-                rel_path = os.path.relpath(f, self.project_root)
-                excluded = any(
-                    fnmatch.fnmatch(rel_path, self._substitute_variables(exc))
-                    for exc in exclude_patterns
-                )
-                if not excluded:
-                    files.append(f)
-
-            # Run pyright on the project (more efficient than per-file)
             result = self.pyright_runner.check_project()
-
-            # Filter diagnostics to only files in our list
             file_set = set(str(Path(f).resolve()) for f in files)
-            filtered_diags = []
+            filtered_diags = self._filter_pyright_diagnostics(
+                result.diagnostics, file_set, check.get("severity_filter", ["error"])
+            )
 
-            for diag in result.diagnostics:
-                diag_path = str(Path(diag.file).resolve()) if diag.file else ""
-                if diag_path in file_set and diag.severity in severity_filter:
-                    filtered_diags.append(diag)
-
-            # Build error details
-            errors = [
-                {
-                    "file": os.path.relpath(d.file, self.project_root) if d.file else "",
-                    "line": d.line,
-                    "column": d.column,
-                    "message": d.message,
-                    "rule": d.rule,
-                    "severity": d.severity,
-                }
-                for d in filtered_diags[:50]  # Limit to first 50
-            ]
+            errors = [{
+                "file": os.path.relpath(d.file, self.project_root) if d.file else "",
+                "line": d.line, "column": d.column, "message": d.message,
+                "rule": d.rule, "severity": d.severity,
+            } for d in filtered_diags[:50]]
 
             passed = len(filtered_diags) == 0
-            message = (
-                f"Found {len(filtered_diags)} type issues"
-                if not passed
-                else f"Type check passed ({result.files_analyzed} files analyzed)"
-            )
+            message = f"Found {len(filtered_diags)} type issues" if not passed else f"Type check passed ({result.files_analyzed} files analyzed)"
 
             return CheckResult(
-                check_id=check_id,
-                check_name=check_name,
+                check_id=check_id, check_name=check_name,
                 status=CheckStatus.PASSED if passed else CheckStatus.FAILED,
-                severity=severity,
-                message=message,
-                errors=errors,
+                severity=severity, message=message, errors=errors,
                 details=f"Analyzed {len(files)} files, {result.error_count} errors, {result.warning_count} warnings",
             )
 
         except RuntimeError as e:
-            # Pyright not installed
-            return CheckResult(
-                check_id=check_id,
-                check_name=check_name,
-                status=CheckStatus.ERROR,
-                severity=severity,
-                message=str(e),
-                details="Install pyright with: pip install pyright",
-            )
+            return CheckResult(check_id=check_id, check_name=check_name, status=CheckStatus.ERROR,
+                               severity=severity, message=str(e), details="Install pyright with: pip install pyright")
         except Exception as e:
-            return CheckResult(
-                check_id=check_id,
-                check_name=check_name,
-                status=CheckStatus.ERROR,
-                severity=severity,
-                message=f"LSP query check failed: {str(e)}",
-                details=str(e),
-            )
+            return CheckResult(check_id=check_id, check_name=check_name, status=CheckStatus.ERROR,
+                               severity=severity, message=f"LSP query check failed: {str(e)}", details=str(e))
 
     def _run_ast_check(self, check: Dict, settings: Dict) -> CheckResult:
         """

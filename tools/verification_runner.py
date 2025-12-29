@@ -352,6 +352,26 @@ class VerificationRunner:
 
         return result
 
+    def _check_output_indicators(self, output: str, passed: bool,
+                                  success_indicators: list, failure_indicators: list) -> bool:
+        """Check output for success/failure indicators and adjust passed status."""
+        if passed and failure_indicators:
+            for indicator in failure_indicators:
+                if indicator in output:
+                    return False
+        if not passed and success_indicators:
+            for indicator in success_indicators:
+                if indicator in output:
+                    return True
+        return passed
+
+    def _parse_error_output(self, output: str, error_parser: Dict | None) -> list:
+        """Parse structured errors from command output."""
+        if not error_parser:
+            return []
+        pattern = error_parser["pattern"]
+        return [match.groupdict() for match in re.finditer(pattern, output)]
+
     def _run_command_check(self, check: Dict, settings: Dict) -> CheckResult:
         """Run a shell command check."""
         check_id = check["id"]
@@ -364,116 +384,52 @@ class VerificationRunner:
         )
         timeout = check.get("timeout", settings.get("default_timeout", 300))
 
-        # Resolve working directory
         if not os.path.isabs(working_dir):
             working_dir = str(self.project_root / working_dir)
 
         try:
-            # Parse command string into list to avoid shell=True security risk
-            # If shell features are needed, use explicit shell invocation in config:
-            # command: "sh -c 'complex | command'"
-            if isinstance(command, str):
-                command_list = shlex.split(command)
-            else:
-                command_list = command
-
+            command_list = shlex.split(command) if isinstance(command, str) else command
             result = subprocess.run(
-                command_list,
-                shell=False,
-                capture_output=True,
-                text=True,
-                timeout=timeout,
-                cwd=working_dir,
-                env={**os.environ, "NO_COLOR": "1"},
+                command_list, shell=False, capture_output=True, text=True,
+                timeout=timeout, cwd=working_dir, env={**os.environ, "NO_COLOR": "1"},
             )
 
             output = result.stdout + result.stderr
-            passed = result.returncode == 0
-
-            # Check for success/failure indicators
-            success_indicators = check.get("success_indicators", [])
-            failure_indicators = check.get("failure_indicators", [])
-
-            if passed and failure_indicators:
-                for indicator in failure_indicators:
-                    if indicator in output:
-                        passed = False
-                        break
-
-            if not passed and success_indicators:
-                for indicator in success_indicators:
-                    if indicator in output:
-                        passed = True
-                        break
-
-            # Parse structured errors if available
-            errors = []
-            error_parser = check.get("error_parser")
-            if error_parser and not passed:
-                pattern = error_parser["pattern"]
-                for match in re.finditer(pattern, output):
-                    errors.append(match.groupdict())
+            passed = self._check_output_indicators(
+                output, result.returncode == 0,
+                check.get("success_indicators", []), check.get("failure_indicators", [])
+            )
+            errors = self._parse_error_output(output, check.get("error_parser")) if not passed else []
 
             return CheckResult(
-                check_id=check_id,
-                check_name=check_name,
+                check_id=check_id, check_name=check_name,
                 status=CheckStatus.PASSED if passed else CheckStatus.FAILED,
                 severity=severity,
                 message=check.get("message", f"Command {'succeeded' if passed else 'failed'}"),
                 output=output[:5000] if len(output) > 5000 else output,
-                errors=errors,
-                details=f"Exit code: {result.returncode}",
+                errors=errors, details=f"Exit code: {result.returncode}",
             )
 
         except subprocess.TimeoutExpired:
             return CheckResult(
-                check_id=check_id,
-                check_name=check_name,
-                status=CheckStatus.ERROR,
-                severity=severity,
-                message=f"Command timed out after {timeout}s",
+                check_id=check_id, check_name=check_name, status=CheckStatus.ERROR,
+                severity=severity, message=f"Command timed out after {timeout}s",
             )
 
         except Exception as e:
             return CheckResult(
-                check_id=check_id,
-                check_name=check_name,
-                status=CheckStatus.ERROR,
-                severity=severity,
-                message=f"Command execution failed: {str(e)}",
+                check_id=check_id, check_name=check_name, status=CheckStatus.ERROR,
+                severity=severity, message=f"Command execution failed: {str(e)}",
             )
 
-    def _run_regex_check(self, check: Dict, settings: Dict) -> CheckResult:
-        """Run a regex pattern check on source files."""
-        check_id = check["id"]
-        check_name = check.get("name", check_id)
-        severity = Severity(check.get("severity", "required"))
-
-        # Get patterns (single or multiple)
-        patterns = check.get("patterns", [])
-        if not patterns and check.get("pattern"):
-            patterns = [{"name": "pattern", "pattern": check["pattern"]}]
-
-        negative_match = check.get("negative_match", False)
-
-        # Get file patterns
-        include_patterns = check.get(
-            "file_patterns",
-            settings.get("include_patterns", ["**/*.cs"])
-        )
-        exclude_patterns = check.get(
-            "exclude_patterns",
-            settings.get("exclude_patterns", [])
-        )
-
-        # Find matching files
+    def _collect_files_for_check(self, include_patterns: list, exclude_patterns: list) -> list:
+        """Collect files matching include patterns, excluding those matching exclude patterns."""
         all_files = []
         for pattern in include_patterns:
             pattern = self._substitute_variables(pattern)
             matches = glob.glob(str(self.project_root / pattern), recursive=True)
             all_files.extend(matches)
 
-        # Filter exclusions
         files = []
         for f in all_files:
             rel_path = os.path.relpath(f, self.project_root)
@@ -483,57 +439,62 @@ class VerificationRunner:
             )
             if not excluded:
                 files.append(f)
+        return files
 
-        # Search for patterns
+    def _search_patterns_in_file(self, file_path: str, patterns: list) -> list:
+        """Search for patterns in a single file, returning matches."""
+        matches = []
+        try:
+            with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+                content = f.read()
+
+            for pat_def in patterns:
+                pat_name = pat_def.get("name", "pattern")
+                pattern = pat_def["pattern"]
+                for match in re.finditer(pattern, content):
+                    line_num = content[:match.start()].count("\n") + 1
+                    rel_path = os.path.relpath(file_path, self.project_root)
+                    matches.append({
+                        "file": rel_path, "line": line_num,
+                        "pattern_name": pat_name, "match": match.group()[:100],
+                    })
+        except Exception:
+            pass
+        return matches
+
+    def _run_regex_check(self, check: Dict, settings: Dict) -> CheckResult:
+        """Run a regex pattern check on source files."""
+        check_id = check["id"]
+        check_name = check.get("name", check_id)
+        severity = Severity(check.get("severity", "required"))
+
+        patterns = check.get("patterns", [])
+        if not patterns and check.get("pattern"):
+            patterns = [{"name": "pattern", "pattern": check["pattern"]}]
+
+        negative_match = check.get("negative_match", False)
+        include_patterns = check.get("file_patterns", settings.get("include_patterns", ["**/*.cs"]))
+        exclude_patterns = check.get("exclude_patterns", settings.get("exclude_patterns", []))
+
+        files = self._collect_files_for_check(include_patterns, exclude_patterns)
         matches_found = []
-
         for file_path in files:
-            try:
-                with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
-                    content = f.read()
-
-                for pat_def in patterns:
-                    pat_name = pat_def.get("name", "pattern")
-                    pattern = pat_def["pattern"]
-
-                    for match in re.finditer(pattern, content):
-                        line_num = content[:match.start()].count("\n") + 1
-                        rel_path = os.path.relpath(file_path, self.project_root)
-                        matches_found.append({
-                            "file": rel_path,
-                            "line": line_num,
-                            "pattern_name": pat_name,
-                            "match": match.group()[:100],
-                        })
-            except Exception:
-                continue
+            matches_found.extend(self._search_patterns_in_file(file_path, patterns))
 
         # Determine pass/fail
         if negative_match:
-            # Pattern should NOT be found
             passed = len(matches_found) == 0
-            message = (
-                check.get("message", f"Pattern should not match")
-                if not passed else "No forbidden patterns found"
-            )
+            message = check.get("message", "Pattern should not match") if not passed else "No forbidden patterns found"
         else:
-            # Pattern SHOULD be found
             passed = len(matches_found) > 0
-            message = (
-                check.get("message", f"Pattern should match")
-                if not passed else f"Found {len(matches_found)} match(es)"
-            )
+            message = check.get("message", "Pattern should match") if not passed else f"Found {len(matches_found)} match(es)"
 
         return CheckResult(
-            check_id=check_id,
-            check_name=check_name,
+            check_id=check_id, check_name=check_name,
             status=CheckStatus.PASSED if passed else CheckStatus.FAILED,
-            severity=severity,
-            message=message,
-            errors=[
-                {"file": m["file"], "line": m["line"], "match": m["match"]}
-                for m in matches_found[:20]  # Limit to first 20
-            ] if not passed and negative_match else [],
+            severity=severity, message=message,
+            errors=[{"file": m["file"], "line": m["line"], "match": m["match"]} for m in matches_found[:20]]
+            if not passed and negative_match else [],
             details=f"Searched {len(files)} files, found {len(matches_found)} matches",
         )
 
@@ -717,111 +678,72 @@ class VerificationRunner:
                 details=str(e),
             )
 
+    def _get_contract_results(self, check: Dict):
+        """Get contract results based on check config. Returns (results, error_msg)."""
+        from contracts import ContractRegistry, run_contract, run_all_contracts
+
+        contract_name = check.get("contract")
+        if contract_name:
+            registry = ContractRegistry(self.project_root)
+            contract = registry.get_contract(contract_name)
+            if not contract:
+                return None, f"Contract not found: {contract_name}"
+            return [run_contract(contract, self.project_root, registry)], None
+
+        return run_all_contracts(
+            self.project_root, language=check.get("language"), repo_type=check.get("repo_type")
+        ), None
+
+    def _build_contract_errors(self, results: list) -> list:
+        """Build error details from contract results."""
+        errors = []
+        for result in results:
+            for check_result in result.check_results:
+                if not check_result.passed and not check_result.exempted:
+                    errors.append({
+                        "contract": result.contract_name, "check": check_result.check_id,
+                        "severity": check_result.severity, "message": check_result.message,
+                        "file": check_result.file_path, "line": check_result.line_number,
+                    })
+        return errors
+
     def _run_contracts_check(self, check: Dict, settings: Dict) -> CheckResult:
-        """
-        Run contract-based checks using the contracts module.
-
-        This integrates the contract system with the verification runner,
-        allowing contracts to be run as part of verification profiles.
-
-        Config options:
-          - contract: Specific contract name to run (optional)
-          - language: Filter by language (optional)
-          - repo_type: Filter by repo type (optional)
-          - fail_on_warning: Treat warnings as failures (default: false)
-        """
+        """Run contract-based checks using the contracts module."""
         check_id = check["id"]
         check_name = check.get("name", check_id)
         severity = Severity(check.get("severity", "required"))
 
         try:
-            from contracts import ContractRegistry, run_contract, run_all_contracts
+            results, error_msg = self._get_contract_results(check)
+            if error_msg:
+                return CheckResult(check_id=check_id, check_name=check_name,
+                                   status=CheckStatus.ERROR, severity=severity, message=error_msg)
 
-            # Get config options
-            contract_name = check.get("contract")
-            language = check.get("language")
-            repo_type = check.get("repo_type")
-            fail_on_warning = check.get("fail_on_warning", False)
-
-            # Run contracts
-            if contract_name:
-                # Run specific contract
-                registry = ContractRegistry(self.project_root)
-                contract = registry.get_contract(contract_name)
-                if not contract:
-                    return CheckResult(
-                        check_id=check_id,
-                        check_name=check_name,
-                        status=CheckStatus.ERROR,
-                        severity=severity,
-                        message=f"Contract not found: {contract_name}",
-                    )
-                results = [run_contract(contract, self.project_root, registry)]
-            else:
-                # Run all applicable contracts
-                results = run_all_contracts(
-                    self.project_root,
-                    language=language,
-                    repo_type=repo_type
-                )
-
-            # Aggregate results
             total_errors = sum(len(r.errors) for r in results)
             total_warnings = sum(len(r.warnings) for r in results)
             total_exempted = sum(r.exempted_count for r in results)
             all_passed = all(r.passed for r in results)
 
-            # Determine pass/fail
-            if fail_on_warning:
-                passed = all_passed and total_warnings == 0
-            else:
-                passed = all_passed
-
-            # Build error details
-            errors = []
-            for result in results:
-                for check_result in result.check_results:
-                    if not check_result.passed and not check_result.exempted:
-                        errors.append({
-                            "contract": result.contract_name,
-                            "check": check_result.check_id,
-                            "severity": check_result.severity,
-                            "message": check_result.message,
-                            "file": check_result.file_path,
-                            "line": check_result.line_number,
-                        })
+            passed = all_passed and total_warnings == 0 if check.get("fail_on_warning") else all_passed
+            errors = self._build_contract_errors(results)
 
             message = f"Ran {len(results)} contracts: {total_errors} errors, {total_warnings} warnings"
             if total_exempted > 0:
                 message += f", {total_exempted} exempted"
 
             return CheckResult(
-                check_id=check_id,
-                check_name=check_name,
+                check_id=check_id, check_name=check_name,
                 status=CheckStatus.PASSED if passed else CheckStatus.FAILED,
-                severity=severity,
-                message=message,
-                errors=errors[:50],  # Limit to first 50
+                severity=severity, message=message, errors=errors[:50],
                 details=f"Contracts: {', '.join(r.contract_name for r in results)}",
             )
 
         except ImportError as e:
-            return CheckResult(
-                check_id=check_id,
-                check_name=check_name,
-                status=CheckStatus.ERROR,
-                severity=severity,
-                message=f"Could not import contracts module: {e}",
-            )
+            return CheckResult(check_id=check_id, check_name=check_name, status=CheckStatus.ERROR,
+                               severity=severity, message=f"Could not import contracts module: {e}")
         except Exception as e:
-            return CheckResult(
-                check_id=check_id,
-                check_name=check_name,
-                status=CheckStatus.ERROR,
-                severity=severity,
-                message=f"Contracts check failed: {str(e)}",
-                details=str(e),
-            )
+            return CheckResult(check_id=check_id, check_name=check_name, status=CheckStatus.ERROR,
+                               severity=severity, message=f"Contracts check failed: {str(e)}", details=str(e))
 
     def _run_lsp_query_check(self, check: Dict, settings: Dict) -> CheckResult:
         """

@@ -416,44 +416,24 @@ class ContextRetriever:
 # CLI Interface
 # =============================================================================
 
-def main():
+def _build_context_retrieval_parser():
+    """Build argument parser for context retrieval CLI."""
     import argparse
-
     parser = argparse.ArgumentParser(
         description="AgentForge Context Retrieval",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  # Check available components
-  python context_retrieval.py -p /path/to/project check
-
-  # Build vector index
-  python context_retrieval.py -p /path/to/project index
-
-  # Search for relevant code
-  python context_retrieval.py -p /path/to/project search "discount code validation"
-
-  # Get context for a specific symbol
-  python context_retrieval.py -p /path/to/project symbol OrderService
-
-  # Search with custom budget
-  python context_retrieval.py -p /path/to/project search "order processing" --budget 8000
-"""
+        epilog="Examples:\n  python context_retrieval.py -p /path check\n"
+               "  python context_retrieval.py -p /path search 'order processing'"
     )
-
     parser.add_argument("--project", "-p", required=True, help="Project root path")
     parser.add_argument("--config", "-c", help="Config file path")
 
     subparsers = parser.add_subparsers(dest="command", help="Command")
-
-    # check command
     subparsers.add_parser("check", help="Check available components")
 
-    # index command
     idx_parser = subparsers.add_parser("index", help="Build/rebuild index")
     idx_parser.add_argument("--force", "-f", action="store_true", help="Force rebuild")
 
-    # search command
     search_parser = subparsers.add_parser("search", help="Search for code context")
     search_parser.add_argument("query", help="Search query")
     search_parser.add_argument("--budget", "-b", type=int, default=6000, help="Token budget")
@@ -461,10 +441,78 @@ Examples:
     search_parser.add_argument("--no-vector", action="store_true", help="Disable vector search")
     search_parser.add_argument("--format", "-f", choices=["text", "yaml", "json"], default="text")
 
-    # symbol command
     sym_parser = subparsers.add_parser("symbol", help="Get context for a symbol")
     sym_parser.add_argument("name", help="Symbol name")
 
+    return parser
+
+
+def _run_check_command(retriever, project: str):
+    """Run the check command to display component status."""
+    print(f"Checking components for: {project}\n")
+    status = retriever.check_dependencies()
+
+    print("LSP (Language Server Protocol):")
+    lsp = status["lsp"]
+    if lsp["available"]:
+        print(f"  Status: Available\n  Server: {lsp['server']}")
+    else:
+        print("  Status: Not available")
+        if lsp.get("error"):
+            print(f"  Error: {lsp['error']}")
+        if lsp.get("install_instructions"):
+            print(f"  Install: {lsp['install_instructions']}")
+
+    print("\nVector Search:")
+    vec = status["vector"]
+    if vec["available"]:
+        print(f"  Status: Available\n  Indexed: {'Yes' if vec['indexed'] else 'No (run: index command)'}")
+    else:
+        print("  Status: Not available")
+        if vec.get("error"):
+            print(f"  Error: {vec['error']}")
+        print("  Install: pip install openai faiss-cpu")
+
+
+def _run_index_command(retriever, project: str, force: bool):
+    """Run the index command to build vector index."""
+    print(f"Indexing: {project}")
+    stats = retriever.index(force_rebuild=force)
+    print(f"\nIndex complete:\n  Files: {stats.file_count}\n  Chunks: {stats.chunk_count}\n  Duration: {stats.duration_ms}ms")
+    if stats.errors:
+        print(f"  Errors: {len(stats.errors)}")
+        for err in stats.errors[:5]:
+            print(f"    - {err}")
+
+
+def _run_search_command(retriever, args) -> int:
+    """Run the search command."""
+    print(f"Searching: {args.query}\nProject: {args.project}\nBudget: {args.budget} tokens\n")
+    context = retriever.retrieve(args.query, budget_tokens=args.budget,
+                                  use_lsp=not args.no_lsp, use_vector=not args.no_vector)
+    if args.format == "yaml":
+        print(context.to_yaml())
+    elif args.format == "json":
+        import json
+        print(json.dumps(context.to_dict(), indent=2))
+    else:
+        print(context.to_prompt_text())
+    return 0
+
+
+def _run_symbol_command(retriever, name: str) -> int:
+    """Run the symbol command."""
+    print(f"Getting context for symbol: {name}")
+    context = retriever.get_symbol_context(name)
+    if context:
+        print(context.to_prompt_text())
+        return 0
+    print(f"Symbol not found: {name}")
+    return 1
+
+
+def main():
+    parser = _build_context_retrieval_parser()
     args = parser.parse_args()
 
     if not args.command:
@@ -475,88 +523,20 @@ Examples:
 
     try:
         if args.command == "check":
-            print(f"Checking components for: {args.project}")
-            print()
-
-            status = retriever.check_dependencies()
-
-            print("LSP (Language Server Protocol):")
-            lsp = status["lsp"]
-            if lsp["available"]:
-                print(f"  Status: Available")
-                print(f"  Server: {lsp['server']}")
-            else:
-                print(f"  Status: Not available")
-                if lsp.get("error"):
-                    print(f"  Error: {lsp['error']}")
-                if lsp.get("install_instructions"):
-                    print(f"  Install: {lsp['install_instructions']}")
-
-            print()
-            print("Vector Search:")
-            vec = status["vector"]
-            if vec["available"]:
-                print(f"  Status: Available")
-                print(f"  Indexed: {'Yes' if vec['indexed'] else 'No (run: index command)'}")
-            else:
-                print(f"  Status: Not available")
-                if vec.get("error"):
-                    print(f"  Error: {vec['error']}")
-                print("  Install: pip install openai faiss-cpu")
-
+            _run_check_command(retriever, args.project)
         elif args.command == "index":
-            print(f"Indexing: {args.project}")
-            stats = retriever.index(force_rebuild=args.force)
-
-            print(f"\nIndex complete:")
-            print(f"  Files: {stats.file_count}")
-            print(f"  Chunks: {stats.chunk_count}")
-            print(f"  Duration: {stats.duration_ms}ms")
-            if stats.errors:
-                print(f"  Errors: {len(stats.errors)}")
-                for err in stats.errors[:5]:
-                    print(f"    - {err}")
-
+            _run_index_command(retriever, args.project, args.force)
         elif args.command == "search":
-            print(f"Searching: {args.query}")
-            print(f"Project: {args.project}")
-            print(f"Budget: {args.budget} tokens")
-            print()
-
-            context = retriever.retrieve(
-                args.query,
-                budget_tokens=args.budget,
-                use_lsp=not args.no_lsp,
-                use_vector=not args.no_vector,
-            )
-
-            if args.format == "yaml":
-                print(context.to_yaml())
-            elif args.format == "json":
-                import json
-                print(json.dumps(context.to_dict(), indent=2))
-            else:
-                print(context.to_prompt_text())
-
+            return _run_search_command(retriever, args)
         elif args.command == "symbol":
-            print(f"Getting context for symbol: {args.name}")
-
-            context = retriever.get_symbol_context(args.name)
-
-            if context:
-                print(context.to_prompt_text())
-            else:
-                print(f"Symbol not found: {args.name}")
-                return 1
+            return _run_symbol_command(retriever, args.name)
 
     except KeyboardInterrupt:
         print("\nInterrupted")
         return 130
-
     except Exception as e:
         print(f"\nError: {e}")
         return 1
-
     finally:
         retriever.shutdown()
 

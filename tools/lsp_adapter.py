@@ -1067,130 +1067,96 @@ def get_adapter_for_project(project_path: str, prefer_omnisharp: bool = True) ->
 # CLI for Testing
 # =============================================================================
 
-def main():
+def _build_lsp_cli_parser():
+    """Build argument parser for LSP CLI."""
     import argparse
-
     parser = argparse.ArgumentParser(
         description="Test LSP adapter functionality",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  # Get symbols in a file
-  python lsp_adapter.py -p /path/to/project symbols src/Domain/Order.cs
-
-  # Find definition
-  python lsp_adapter.py -p /path/to/project definition src/App/Service.cs 45 12
-
-  # Find references
-  python lsp_adapter.py -p /path/to/project references src/Domain/Order.cs 10 18
-
-  # Search workspace symbols
-  python lsp_adapter.py -p /path/to/project search Order
-"""
+        epilog="Examples:\n  python lsp_adapter.py -p /path symbols src/Order.cs\n"
+               "  python lsp_adapter.py -p /path definition src/Service.cs 45 12"
     )
-
     parser.add_argument("--project", "-p", required=True, help="Project root path")
     parser.add_argument("--language", "-l", choices=["csharp", "python", "typescript"],
                         help="Force specific language (auto-detect if not specified)")
 
     subparsers = parser.add_subparsers(dest="command", help="Command")
 
-    # symbols command
     sym_parser = subparsers.add_parser("symbols", help="Get symbols in a file")
     sym_parser.add_argument("file", help="File path")
 
-    # definition command
-    def_parser = subparsers.add_parser("definition", help="Find definition")
-    def_parser.add_argument("file", help="File path")
-    def_parser.add_argument("line", type=int, help="Line number (1-based)")
-    def_parser.add_argument("column", type=int, help="Column number (1-based)")
+    for cmd in ["definition", "references", "hover"]:
+        p = subparsers.add_parser(cmd, help=f"{'Find' if cmd != 'hover' else 'Get'} {cmd}")
+        p.add_argument("file", help="File path")
+        p.add_argument("line", type=int, help="Line number (1-based)")
+        p.add_argument("column", type=int, help="Column number (1-based)")
 
-    # references command
-    ref_parser = subparsers.add_parser("references", help="Find references")
-    ref_parser.add_argument("file", help="File path")
-    ref_parser.add_argument("line", type=int, help="Line number (1-based)")
-    ref_parser.add_argument("column", type=int, help="Column number (1-based)")
-
-    # hover command
-    hover_parser = subparsers.add_parser("hover", help="Get hover info")
-    hover_parser.add_argument("file", help="File path")
-    hover_parser.add_argument("line", type=int, help="Line number (1-based)")
-    hover_parser.add_argument("column", type=int, help="Column number (1-based)")
-
-    # search command
     search_parser = subparsers.add_parser("search", help="Search workspace symbols")
     search_parser.add_argument("query", help="Search query")
 
+    return parser
+
+
+def _get_lsp_adapter(args):
+    """Get appropriate LSP adapter based on args."""
+    if args.language:
+        adapters = {"csharp": CSharpLSPAdapter, "python": PyrightAdapter, "typescript": TypeScriptAdapter}
+        return adapters[args.language](args.project)
+    return get_adapter_for_project(args.project)
+
+
+def _run_lsp_command(adapter, args):
+    """Run the specified LSP command."""
+    if args.command == "symbols":
+        symbols = adapter.get_symbols(args.file)
+        print(f"\nSymbols in {args.file} ({len(symbols)}):")
+        for sym in symbols:
+            indent = "  " if sym.container else ""
+            print(f"{indent}{sym.kind}: {sym.name}")
+            if sym.detail:
+                print(f"{indent}  {sym.detail}")
+            for child in sym.children:
+                print(f"    {child.kind}: {child.name}")
+
+    elif args.command == "definition":
+        loc = adapter.get_definition(args.file, args.line - 1, args.column - 1)
+        print(f"\nDefinition: {loc}" if loc else "\nNo definition found")
+
+    elif args.command == "references":
+        refs = adapter.get_references(args.file, args.line - 1, args.column - 1)
+        print(f"\nReferences ({len(refs)}):")
+        for ref in refs:
+            print(f"  {ref}")
+
+    elif args.command == "hover":
+        info = adapter.get_hover(args.file, args.line - 1, args.column - 1)
+        print(f"\nHover info:\n{info.contents}" if info else "\nNo hover info")
+
+    elif args.command == "search":
+        symbols = adapter.get_workspace_symbols(args.query)
+        print(f"\nWorkspace symbols matching '{args.query}' ({len(symbols)}):")
+        for sym in symbols[:20]:
+            print(f"  {sym.kind}: {sym.name}\n    at {sym.location}")
+
+
+def main():
+    parser = _build_lsp_cli_parser()
     args = parser.parse_args()
 
     if not args.command:
         parser.print_help()
         return 1
 
-    # Get appropriate adapter
-    if args.language:
-        adapters = {
-            "csharp": CSharpLSPAdapter,
-            "python": PyrightAdapter,
-            "typescript": TypeScriptAdapter,
-        }
-        adapter = adapters[args.language](args.project)
-    else:
-        adapter = get_adapter_for_project(args.project)
-
+    adapter = _get_lsp_adapter(args)
     print(f"Using {adapter.SERVER_NAME} for {args.project}")
 
     try:
         print("Initializing LSP server...")
         adapter.initialize()
         print("Server initialized successfully")
+        _run_lsp_command(adapter, args)
 
-        if args.command == "symbols":
-            symbols = adapter.get_symbols(args.file)
-            print(f"\nSymbols in {args.file} ({len(symbols)}):")
-            for sym in symbols:
-                indent = "  " if sym.container else ""
-                print(f"{indent}{sym.kind}: {sym.name}")
-                if sym.detail:
-                    print(f"{indent}  {sym.detail}")
-                for child in sym.children:
-                    print(f"    {child.kind}: {child.name}")
-
-        elif args.command == "definition":
-            # Convert to 0-based
-            loc = adapter.get_definition(args.file, args.line - 1, args.column - 1)
-            if loc:
-                print(f"\nDefinition: {loc}")
-            else:
-                print("\nNo definition found")
-
-        elif args.command == "references":
-            # Convert to 0-based
-            refs = adapter.get_references(args.file, args.line - 1, args.column - 1)
-            print(f"\nReferences ({len(refs)}):")
-            for ref in refs:
-                print(f"  {ref}")
-
-        elif args.command == "hover":
-            # Convert to 0-based
-            info = adapter.get_hover(args.file, args.line - 1, args.column - 1)
-            if info:
-                print(f"\nHover info:\n{info.contents}")
-            else:
-                print("\nNo hover info")
-
-        elif args.command == "search":
-            symbols = adapter.get_workspace_symbols(args.query)
-            print(f"\nWorkspace symbols matching '{args.query}' ({len(symbols)}):")
-            for sym in symbols[:20]:
-                print(f"  {sym.kind}: {sym.name}")
-                print(f"    at {sym.location}")
-
-    except LSPServerNotFound as e:
-        print(f"\nError: {e}")
-        return 1
-
-    except LSPInitializationError as e:
+    except (LSPServerNotFound, LSPInitializationError) as e:
         print(f"\nError: {e}")
         return 1
 

@@ -780,6 +780,63 @@ def _execute_lsp_query_check(check_id: str, check_name: str, severity: str,
     return results
 
 
+def _symbol_matches_kind(symbol: Dict, kind_filter) -> bool:
+    """Check if symbol matches kind filter."""
+    if not kind_filter:
+        return True
+    kinds = [kind_filter] if isinstance(kind_filter, str) else kind_filter
+    return symbol.get("kind", "").lower() in [k.lower() for k in kinds]
+
+
+def _symbol_matches_visibility(symbol: Dict, visibility_filter) -> bool:
+    """Check if symbol matches visibility filter."""
+    if not visibility_filter:
+        return True
+    return symbol.get("visibility", "").lower() == visibility_filter.lower()
+
+
+def _symbol_matches_name(symbol: Dict, name_pattern) -> bool:
+    """Check if symbol matches name pattern filter."""
+    if not name_pattern:
+        return True
+    return bool(re.match(name_pattern, symbol.get("name", "")))
+
+
+def _symbol_has_modifiers(symbol: Dict, required_modifiers: list) -> bool:
+    """Check if symbol has all required modifiers."""
+    if not required_modifiers:
+        return True
+    symbol_modifiers = [m.lower() for m in symbol.get("modifiers", [])]
+    return all(m.lower() in symbol_modifiers for m in required_modifiers)
+
+
+def _symbol_excluded_by_modifiers(symbol: Dict, exclude_modifiers: list) -> bool:
+    """Check if symbol is excluded by modifier rules."""
+    if not exclude_modifiers:
+        return False
+    symbol_modifiers = [m.lower() for m in symbol.get("modifiers", [])]
+    for excl in exclude_modifiers:
+        excl_parts = [p.lower() for p in excl.split()]
+        if all(p in symbol_modifiers for p in excl_parts):
+            return True
+    return False
+
+
+def _symbol_excluded_by_name(symbol: Dict, exclude_pattern) -> bool:
+    """Check if symbol is excluded by name pattern."""
+    if not exclude_pattern:
+        return False
+    return bool(re.match(exclude_pattern, symbol.get("name", "")))
+
+
+def _symbol_excluded_by_container(symbol: Dict, exclude_containers: list) -> bool:
+    """Check if symbol is excluded by container."""
+    if not exclude_containers:
+        return False
+    container = symbol.get("container", "")
+    return any(c.lower() in container.lower() for c in exclude_containers)
+
+
 def _lsp_query_symbols(adapter, file_path: Path, filter_config: Dict,
                        exclude_config: Dict) -> List[Dict]:
     """Query document symbols and filter by criteria."""
@@ -789,61 +846,25 @@ def _lsp_query_symbols(adapter, file_path: Path, filter_config: Dict,
         symbols = []
 
     matches = []
-
     for symbol in symbols:
-        # Apply kind filter
-        kind_filter = filter_config.get("kind")
-        if kind_filter:
-            kinds = [kind_filter] if isinstance(kind_filter, str) else kind_filter
-            if symbol.get("kind", "").lower() not in [k.lower() for k in kinds]:
-                continue
+        # Apply inclusion filters
+        if not _symbol_matches_kind(symbol, filter_config.get("kind")):
+            continue
+        if not _symbol_matches_visibility(symbol, filter_config.get("visibility")):
+            continue
+        if not _symbol_matches_name(symbol, filter_config.get("name_pattern")):
+            continue
+        if not _symbol_has_modifiers(symbol, filter_config.get("has_modifier", [])):
+            continue
 
-        # Apply visibility filter
-        visibility_filter = filter_config.get("visibility")
-        if visibility_filter:
-            symbol_visibility = symbol.get("visibility", "").lower()
-            if symbol_visibility != visibility_filter.lower():
-                continue
+        # Apply exclusion filters
+        if _symbol_excluded_by_modifiers(symbol, exclude_config.get("modifiers", [])):
+            continue
+        if _symbol_excluded_by_name(symbol, exclude_config.get("name_pattern")):
+            continue
+        if _symbol_excluded_by_container(symbol, exclude_config.get("containers", [])):
+            continue
 
-        # Apply name pattern filter
-        name_pattern = filter_config.get("name_pattern")
-        if name_pattern:
-            if not re.match(name_pattern, symbol.get("name", "")):
-                continue
-
-        # Apply modifier requirements
-        has_modifier = filter_config.get("has_modifier", [])
-        if has_modifier:
-            symbol_modifiers = [m.lower() for m in symbol.get("modifiers", [])]
-            if not all(m.lower() in symbol_modifiers for m in has_modifier):
-                continue
-
-        # Apply exclusions
-        exclude_modifiers = exclude_config.get("modifiers", [])
-        if exclude_modifiers:
-            symbol_modifiers = [m.lower() for m in symbol.get("modifiers", [])]
-            # Check each exclude modifier - can be compound like "static readonly"
-            excluded = False
-            for excl in exclude_modifiers:
-                excl_parts = [p.lower() for p in excl.split()]
-                if all(p in symbol_modifiers for p in excl_parts):
-                    excluded = True
-                    break
-            if excluded:
-                continue
-
-        exclude_name_pattern = exclude_config.get("name_pattern")
-        if exclude_name_pattern:
-            if re.match(exclude_name_pattern, symbol.get("name", "")):
-                continue
-
-        exclude_containers = exclude_config.get("containers", [])
-        if exclude_containers:
-            container = symbol.get("container", "")
-            if any(c.lower() in container.lower() for c in exclude_containers):
-                continue
-
-        # Symbol matches all criteria
         matches.append(symbol)
 
     return matches

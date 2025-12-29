@@ -17,7 +17,16 @@ lsp:
 
   servers:
     # C# - PRIMARY TARGET
-    # csharp-ls is lightweight and fast, better for our use case than OmniSharp
+    # OmniSharp is preferred (more reliable for complex projects)
+    # Falls back to csharp-ls if OmniSharp not available
+    omnisharp:
+      name: "OmniSharp"
+      command: "~/.local/share/omnisharp/OmniSharp"
+      args: ["-lsp"]
+      file_extensions: [".cs", ".csx"]
+      enabled: true
+      install_instructions: "Download from https://github.com/OmniSharp/omnisharp-roslyn/releases"
+
     csharp:
       name: "csharp-ls"
       command: "csharp-ls"

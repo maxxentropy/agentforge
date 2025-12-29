@@ -903,8 +903,7 @@ class CSharpLSPAdapter(LSPAdapter):
     """
     Adapter for csharp-ls.
 
-    This is the primary target for AgentForge since the user
-    focuses on .NET development.
+    Lightweight C# language server.
 
     Installation: dotnet tool install -g csharp-ls
     """
@@ -932,6 +931,65 @@ class CSharpLSPAdapter(LSPAdapter):
             return str(csproj_files[0])
 
         return None
+
+
+class OmniSharpAdapter(LSPAdapter):
+    """
+    Adapter for OmniSharp (C#/.NET).
+
+    Full-featured C# language server with Roslyn. More reliable than csharp-ls
+    for complex projects but requires more setup.
+
+    Installation: Download from https://github.com/OmniSharp/omnisharp-roslyn/releases
+    """
+
+    # OmniSharp binary location - can be overridden
+    OMNISHARP_PATH = os.path.expanduser("~/.local/share/omnisharp/OmniSharp")
+
+    SERVER_NAME = "omnisharp"
+    INSTALL_INSTRUCTIONS = "Download from https://github.com/OmniSharp/omnisharp-roslyn/releases"
+    LANGUAGE_ID = "csharp"
+    FILE_EXTENSIONS = [".cs", ".csx"]
+
+    @property
+    def SERVER_COMMAND(self) -> List[str]:
+        """OmniSharp command with LSP mode enabled."""
+        solution = self.find_solution_or_project()
+        cmd = [self.OMNISHARP_PATH, "-lsp"]
+        if solution:
+            cmd.extend(["-s", solution])
+        return cmd
+
+    def _get_initialization_options(self) -> dict:
+        """OmniSharp-specific options."""
+        return {
+            "RoslynExtensionsOptions": {
+                "EnableAnalyzersSupport": False,  # Disable for speed
+                "EnableImportCompletion": True,
+            },
+            "FormattingOptions": {
+                "EnableEditorConfigSupport": True,
+            },
+        }
+
+    def find_solution_or_project(self) -> Optional[str]:
+        """Find .sln or .csproj file in project root."""
+        # Prefer .sln files
+        sln_files = list(self.project_path.glob("*.sln"))
+        if sln_files:
+            return str(sln_files[0])
+
+        # Fall back to .csproj
+        csproj_files = list(self.project_path.glob("**/*.csproj"))
+        if csproj_files:
+            return str(csproj_files[0])
+
+        return None
+
+    @classmethod
+    def is_available(cls) -> bool:
+        """Check if OmniSharp is installed."""
+        return os.path.isfile(cls.OMNISHARP_PATH) and os.access(cls.OMNISHARP_PATH, os.X_OK)
 
 
 class PyrightAdapter(LSPAdapter):
@@ -966,7 +1024,7 @@ class TypeScriptAdapter(LSPAdapter):
 # Factory Function
 # =============================================================================
 
-def get_adapter_for_project(project_path: str) -> LSPAdapter:
+def get_adapter_for_project(project_path: str, prefer_omnisharp: bool = True) -> LSPAdapter:
     """
     Get the appropriate LSP adapter for a project.
 
@@ -974,6 +1032,7 @@ def get_adapter_for_project(project_path: str) -> LSPAdapter:
 
     Args:
         project_path: Root directory of the project
+        prefer_omnisharp: For C# projects, prefer OmniSharp over csharp-ls
 
     Returns:
         Appropriate LSPAdapter subclass instance
@@ -982,6 +1041,9 @@ def get_adapter_for_project(project_path: str) -> LSPAdapter:
 
     # Check for .NET project
     if list(project.glob("*.sln")) or list(project.glob("**/*.csproj")):
+        # Prefer OmniSharp if available (more reliable for complex projects)
+        if prefer_omnisharp and OmniSharpAdapter.is_available():
+            return OmniSharpAdapter(project_path)
         return CSharpLSPAdapter(project_path)
 
     # Check for Python project
@@ -996,6 +1058,8 @@ def get_adapter_for_project(project_path: str) -> LSPAdapter:
         return TypeScriptAdapter(project_path)
 
     # Default to C# (primary target)
+    if prefer_omnisharp and OmniSharpAdapter.is_available():
+        return OmniSharpAdapter(project_path)
     return CSharpLSPAdapter(project_path)
 
 

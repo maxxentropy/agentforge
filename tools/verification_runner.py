@@ -19,6 +19,7 @@ Usage:
     python tools/verification_runner.py --checks compile_check,test_check
 """
 
+import ast
 import os
 import re
 import sys
@@ -34,6 +35,15 @@ from enum import Enum
 from datetime import datetime
 import fnmatch
 import json
+
+# Import our runners
+try:
+    from .pyright_runner import PyrightRunner
+    from .command_runner import CommandRunner
+except ImportError:
+    # Allow running as standalone script
+    from pyright_runner import PyrightRunner
+    from command_runner import CommandRunner
 
 
 class Severity(Enum):
@@ -126,6 +136,24 @@ class VerificationRunner:
         self.config_path = config_path or self.project_root / "config" / "correctness.yaml"
         self.config = self._load_config()
         self.context: Dict[str, Any] = {}
+
+        # Initialize runners (lazy loading to avoid import errors if tools not installed)
+        self._pyright_runner = None
+        self._command_runner = None
+
+    @property
+    def pyright_runner(self) -> PyrightRunner:
+        """Lazy-load pyright runner."""
+        if self._pyright_runner is None:
+            self._pyright_runner = PyrightRunner(self.project_root)
+        return self._pyright_runner
+
+    @property
+    def command_runner(self) -> CommandRunner:
+        """Lazy-load command runner."""
+        if self._command_runner is None:
+            self._command_runner = CommandRunner(self.project_root)
+        return self._command_runner
 
     def _load_config(self) -> Dict[str, Any]:
         """Load verification configuration."""
@@ -295,6 +323,10 @@ class VerificationRunner:
                 result = self._run_custom_check(check, settings)
             elif check_type == "contracts":
                 result = self._run_contracts_check(check, settings)
+            elif check_type == "lsp_query":
+                result = self._run_lsp_query_check(check, settings)
+            elif check_type == "ast_check":
+                result = self._run_ast_check(check, settings)
             else:
                 result = CheckResult(
                     check_id=check_id,
@@ -790,6 +822,411 @@ class VerificationRunner:
                 message=f"Contracts check failed: {str(e)}",
                 details=str(e),
             )
+
+    def _run_lsp_query_check(self, check: Dict, settings: Dict) -> CheckResult:
+        """
+        Run semantic Python analysis using pyright CLI.
+
+        NOTE: This uses pyright as a subprocess with --outputjson,
+        NOT an actual LSP server connection.
+
+        Config options:
+            - file_patterns: Glob patterns for files to check
+            - severity_filter: Which severities to report (error, warning, information)
+            - rules: Specific pyright rules to check (optional)
+        """
+        check_id = check["id"]
+        check_name = check.get("name", check_id)
+        severity = Severity(check.get("severity", "required"))
+
+        try:
+            # Get file patterns to check
+            file_patterns = check.get(
+                "file_patterns",
+                settings.get("include_patterns", ["**/*.py"])
+            )
+            exclude_patterns = check.get(
+                "exclude_patterns",
+                settings.get("exclude_patterns", [])
+            )
+            severity_filter = check.get("severity_filter", ["error"])
+
+            # Find matching files
+            all_files = []
+            for pattern in file_patterns:
+                pattern = self._substitute_variables(pattern)
+                matches = glob.glob(str(self.project_root / pattern), recursive=True)
+                all_files.extend(matches)
+
+            # Filter exclusions
+            files = []
+            for f in all_files:
+                rel_path = os.path.relpath(f, self.project_root)
+                excluded = any(
+                    fnmatch.fnmatch(rel_path, self._substitute_variables(exc))
+                    for exc in exclude_patterns
+                )
+                if not excluded:
+                    files.append(f)
+
+            # Run pyright on the project (more efficient than per-file)
+            result = self.pyright_runner.check_project()
+
+            # Filter diagnostics to only files in our list
+            file_set = set(str(Path(f).resolve()) for f in files)
+            filtered_diags = []
+
+            for diag in result.diagnostics:
+                diag_path = str(Path(diag.file).resolve()) if diag.file else ""
+                if diag_path in file_set and diag.severity in severity_filter:
+                    filtered_diags.append(diag)
+
+            # Build error details
+            errors = [
+                {
+                    "file": os.path.relpath(d.file, self.project_root) if d.file else "",
+                    "line": d.line,
+                    "column": d.column,
+                    "message": d.message,
+                    "rule": d.rule,
+                    "severity": d.severity,
+                }
+                for d in filtered_diags[:50]  # Limit to first 50
+            ]
+
+            passed = len(filtered_diags) == 0
+            message = (
+                f"Found {len(filtered_diags)} type issues"
+                if not passed
+                else f"Type check passed ({result.files_analyzed} files analyzed)"
+            )
+
+            return CheckResult(
+                check_id=check_id,
+                check_name=check_name,
+                status=CheckStatus.PASSED if passed else CheckStatus.FAILED,
+                severity=severity,
+                message=message,
+                errors=errors,
+                details=f"Analyzed {len(files)} files, {result.error_count} errors, {result.warning_count} warnings",
+            )
+
+        except RuntimeError as e:
+            # Pyright not installed
+            return CheckResult(
+                check_id=check_id,
+                check_name=check_name,
+                status=CheckStatus.ERROR,
+                severity=severity,
+                message=str(e),
+                details="Install pyright with: pip install pyright",
+            )
+        except Exception as e:
+            return CheckResult(
+                check_id=check_id,
+                check_name=check_name,
+                status=CheckStatus.ERROR,
+                severity=severity,
+                message=f"LSP query check failed: {str(e)}",
+                details=str(e),
+            )
+
+    def _run_ast_check(self, check: Dict, settings: Dict) -> CheckResult:
+        """
+        Run AST-based code quality checks using Python's ast module.
+
+        Supported metrics:
+            - cyclomatic_complexity: Check function complexity
+            - function_length: Check function line count
+            - nesting_depth: Check nesting depth
+            - parameter_count: Check function parameter count
+            - class_size: Check class method count
+            - import_count: Check module import count
+
+        Config options:
+            - metric: Which metric to check
+            - max_value: Maximum allowed value
+            - file_patterns: Glob patterns for files to check
+        """
+        check_id = check["id"]
+        check_name = check.get("name", check_id)
+        severity = Severity(check.get("severity", "required"))
+
+        try:
+            config = check.get("config", {})
+            metric = config.get("metric", "")
+            max_value = config.get("max_value", 10)
+
+            # Get file patterns
+            file_patterns = check.get(
+                "file_patterns",
+                settings.get("include_patterns", ["**/*.py"])
+            )
+            exclude_patterns = check.get(
+                "exclude_patterns",
+                settings.get("exclude_patterns", [])
+            )
+
+            # Find matching files
+            all_files = []
+            for pattern in file_patterns:
+                pattern = self._substitute_variables(pattern)
+                matches = glob.glob(str(self.project_root / pattern), recursive=True)
+                all_files.extend(matches)
+
+            # Filter exclusions
+            files = []
+            for f in all_files:
+                rel_path = os.path.relpath(f, self.project_root)
+                excluded = any(
+                    fnmatch.fnmatch(rel_path, self._substitute_variables(exc))
+                    for exc in exclude_patterns
+                )
+                if not excluded:
+                    files.append(Path(f))
+
+            # Run the appropriate metric check
+            violations = []
+
+            for file_path in files:
+                try:
+                    with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+                        source = f.read()
+                    tree = ast.parse(source)
+
+                    file_violations = self._check_ast_metric(
+                        tree, source, metric, max_value, file_path
+                    )
+                    violations.extend(file_violations)
+                except SyntaxError:
+                    continue  # Skip files with syntax errors
+
+            # Build result
+            errors = [
+                {
+                    "file": os.path.relpath(v["file"], self.project_root),
+                    "line": v.get("line"),
+                    "function": v.get("function"),
+                    "value": v.get("value"),
+                    "max": max_value,
+                    "message": v.get("message"),
+                }
+                for v in violations[:50]
+            ]
+
+            passed = len(violations) == 0
+            message = (
+                f"Found {len(violations)} {metric} violations (max: {max_value})"
+                if not passed
+                else f"All {len(files)} files pass {metric} check (max: {max_value})"
+            )
+
+            return CheckResult(
+                check_id=check_id,
+                check_name=check_name,
+                status=CheckStatus.PASSED if passed else CheckStatus.FAILED,
+                severity=severity,
+                message=message,
+                errors=errors,
+                details=f"Checked {len(files)} files for {metric}",
+            )
+
+        except Exception as e:
+            return CheckResult(
+                check_id=check_id,
+                check_name=check_name,
+                status=CheckStatus.ERROR,
+                severity=severity,
+                message=f"AST check failed: {str(e)}",
+                details=str(e),
+            )
+
+    def _check_ast_metric(
+        self,
+        tree: ast.AST,
+        source: str,
+        metric: str,
+        max_value: int,
+        file_path: Path
+    ) -> List[Dict]:
+        """Check a specific AST metric and return violations."""
+        violations = []
+
+        if metric == "function_length":
+            violations = self._check_function_length(tree, max_value, file_path)
+        elif metric == "nesting_depth":
+            violations = self._check_nesting_depth(tree, max_value, file_path)
+        elif metric == "parameter_count":
+            violations = self._check_parameter_count(tree, max_value, file_path)
+        elif metric == "class_size":
+            violations = self._check_class_size(tree, max_value, file_path)
+        elif metric == "import_count":
+            violations = self._check_import_count(tree, max_value, file_path)
+        elif metric == "cyclomatic_complexity":
+            # Use radon for complexity (more accurate than manual counting)
+            violations = self._check_complexity_with_radon(file_path, max_value)
+
+        return violations
+
+    def _check_function_length(
+        self, tree: ast.AST, max_lines: int, file_path: Path
+    ) -> List[Dict]:
+        """Check function lengths."""
+        violations = []
+
+        for node in ast.walk(tree):
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                if hasattr(node, 'end_lineno') and hasattr(node, 'lineno'):
+                    length = node.end_lineno - node.lineno + 1
+                    if length > max_lines:
+                        violations.append({
+                            "file": str(file_path),
+                            "function": node.name,
+                            "line": node.lineno,
+                            "value": length,
+                            "message": f"Function '{node.name}' is {length} lines (max: {max_lines})",
+                        })
+
+        return violations
+
+    def _check_nesting_depth(
+        self, tree: ast.AST, max_depth: int, file_path: Path
+    ) -> List[Dict]:
+        """Check nesting depth."""
+        violations = []
+
+        nesting_nodes = (
+            ast.If, ast.For, ast.While, ast.With,
+            ast.Try, ast.ExceptHandler
+        )
+
+        def check_depth(node: ast.AST, current_depth: int, parent_func: str):
+            new_depth = current_depth
+            if isinstance(node, nesting_nodes):
+                new_depth = current_depth + 1
+                if new_depth > max_depth:
+                    violations.append({
+                        "file": str(file_path),
+                        "function": parent_func,
+                        "line": node.lineno,
+                        "value": new_depth,
+                        "message": f"Nesting depth {new_depth} in '{parent_func}' (max: {max_depth})",
+                    })
+
+            for child in ast.iter_child_nodes(node):
+                if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    check_depth(child, 0, child.name)
+                else:
+                    check_depth(child, new_depth, parent_func)
+
+        for node in ast.iter_child_nodes(tree):
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                check_depth(node, 0, node.name)
+
+        return violations
+
+    def _check_parameter_count(
+        self, tree: ast.AST, max_params: int, file_path: Path
+    ) -> List[Dict]:
+        """Check function parameter count."""
+        violations = []
+
+        for node in ast.walk(tree):
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                # Count parameters (excluding self/cls for methods)
+                args = node.args
+                param_count = (
+                    len(args.args) +
+                    len(args.posonlyargs) +
+                    len(args.kwonlyargs) +
+                    (1 if args.vararg else 0) +
+                    (1 if args.kwarg else 0)
+                )
+
+                # Subtract 1 for self/cls in methods
+                if args.args and args.args[0].arg in ('self', 'cls'):
+                    param_count -= 1
+
+                if param_count > max_params:
+                    violations.append({
+                        "file": str(file_path),
+                        "function": node.name,
+                        "line": node.lineno,
+                        "value": param_count,
+                        "message": f"Function '{node.name}' has {param_count} parameters (max: {max_params})",
+                    })
+
+        return violations
+
+    def _check_class_size(
+        self, tree: ast.AST, max_methods: int, file_path: Path
+    ) -> List[Dict]:
+        """Check class method count."""
+        violations = []
+
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ClassDef):
+                method_count = sum(
+                    1 for child in node.body
+                    if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef))
+                )
+
+                if method_count > max_methods:
+                    violations.append({
+                        "file": str(file_path),
+                        "function": node.name,
+                        "line": node.lineno,
+                        "value": method_count,
+                        "message": f"Class '{node.name}' has {method_count} methods (max: {max_methods})",
+                    })
+
+        return violations
+
+    def _check_import_count(
+        self, tree: ast.AST, max_imports: int, file_path: Path
+    ) -> List[Dict]:
+        """Check module import count."""
+        import_count = sum(
+            1 for node in ast.walk(tree)
+            if isinstance(node, (ast.Import, ast.ImportFrom))
+        )
+
+        if import_count > max_imports:
+            return [{
+                "file": str(file_path),
+                "function": "<module>",
+                "line": 1,
+                "value": import_count,
+                "message": f"Module has {import_count} imports (max: {max_imports})",
+            }]
+
+        return []
+
+    def _check_complexity_with_radon(
+        self, file_path: Path, max_complexity: int
+    ) -> List[Dict]:
+        """Check cyclomatic complexity using radon."""
+        violations = []
+
+        result = self.command_runner.run_radon_cc(file_path)
+
+        if not result.parsed_output:
+            return violations
+
+        # radon output is dict of file_path -> list of functions
+        for funcs in result.parsed_output.values():
+            for func in funcs:
+                complexity = func.get("complexity", 0)
+                if complexity > max_complexity:
+                    violations.append({
+                        "file": str(file_path),
+                        "function": func.get("name"),
+                        "line": func.get("lineno"),
+                        "value": complexity,
+                        "message": f"Function '{func.get('name')}' has complexity {complexity} (max: {max_complexity})",
+                    })
+
+        return violations
 
     def generate_report(self, report: VerificationReport, format: str = "text") -> str:
         """Generate formatted report."""

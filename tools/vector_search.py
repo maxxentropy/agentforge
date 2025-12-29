@@ -36,7 +36,7 @@ from pathlib import Path
 from dataclasses import dataclass, field
 from typing import List, Dict, Any, Optional, Tuple
 from datetime import datetime
-import pickle
+# Note: pickle removed in favor of JSON for security
 
 
 # =============================================================================
@@ -65,6 +65,29 @@ class Chunk:
     def token_estimate(self) -> int:
         """Rough token estimate."""
         return len(self.to_embedding_text()) // 4
+
+    def to_dict(self) -> dict:
+        """Convert to dictionary for JSON serialization."""
+        return {
+            "file_path": self.file_path,
+            "content": self.content,
+            "start_line": self.start_line,
+            "end_line": self.end_line,
+            "context": self.context,
+            "language": self.language,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "Chunk":
+        """Create Chunk from dictionary."""
+        return cls(
+            file_path=data["file_path"],
+            content=data["content"],
+            start_line=data["start_line"],
+            end_line=data["end_line"],
+            context=data.get("context", ""),
+            language=data.get("language", "text"),
+        )
 
 
 @dataclass
@@ -459,11 +482,11 @@ class VectorSearch:
 
         if not force_rebuild and self.metadata_file.exists():
             try:
-                with open(self.metadata_file, 'rb') as f:
-                    cached = pickle.load(f)
+                with open(self.metadata_file, 'r', encoding='utf-8') as f:
+                    cached = json.load(f)
                     if cached.get('project_hash') == project_hash:
                         cache_valid = True
-                        self._metadata = cached['chunks']
+                        self._metadata = [Chunk.from_dict(c) for c in cached['chunks']]
                         self._index = faiss.read_index(str(self.index_file))
                         stats.file_count = cached.get('file_count', 0)
                         stats.chunk_count = len(self._metadata)
@@ -525,10 +548,10 @@ class VectorSearch:
         self.index_dir.mkdir(parents=True, exist_ok=True)
         faiss.write_index(index, str(self.index_file))
 
-        with open(self.metadata_file, 'wb') as f:
-            pickle.dump({
+        with open(self.metadata_file, 'w', encoding='utf-8') as f:
+            json.dump({
                 'project_hash': project_hash,
-                'chunks': all_chunks,
+                'chunks': [c.to_dict() for c in all_chunks],
                 'file_count': stats.file_count,
                 'created': datetime.now().isoformat(),
             }, f)
@@ -553,9 +576,9 @@ class VectorSearch:
             import faiss
             self._index = faiss.read_index(str(self.index_file))
 
-            with open(self.metadata_file, 'rb') as f:
-                cached = pickle.load(f)
-                self._metadata = cached['chunks']
+            with open(self.metadata_file, 'r', encoding='utf-8') as f:
+                cached = json.load(f)
+                self._metadata = [Chunk.from_dict(c) for c in cached['chunks']]
 
             return True
 

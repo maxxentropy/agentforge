@@ -589,72 +589,59 @@ def create_repo_link(
     return repo_yaml_path
 
 
+def _validate_repo_entry(repo: dict, seen_names: set, ctx: WorkspaceContext, errors: list, warnings: list):
+    """Validate a single repo entry and update errors/warnings."""
+    name = repo.get('name')
+    if not name:
+        errors.append("Repo missing 'name'")
+        return
+    if name in seen_names:
+        errors.append(f"Duplicate repo name: {name}")
+    seen_names.add(name)
+    if not repo.get('path'):
+        errors.append(f"Repo '{name}' missing 'path'")
+    if not repo.get('language'):
+        errors.append(f"Repo '{name}' missing 'language'")
+    if name in ctx.unavailable_repos:
+        warnings.append(f"Repo '{name}' path not found")
+
+
+def _validate_repo_yaml_files(ctx: WorkspaceContext, errors: list, warnings: list):
+    """Validate that repo.yaml files match workspace config."""
+    for name, path in ctx.available_repos.items():
+        repo_yaml = path / '.agentforge' / 'repo.yaml'
+        if not repo_yaml.exists():
+            continue
+        try:
+            repo_config = yaml.safe_load(repo_yaml.read_text())
+            if repo_config.get('repo_name') != name:
+                errors.append(f"Repo '{name}': repo.yaml says '{repo_config.get('repo_name')}'")
+        except Exception as e:
+            warnings.append(f"Repo '{name}': Failed to parse repo.yaml: {e}")
+
+
 def validate_workspace(ctx: WorkspaceContext) -> tuple:
-    """
-    Validate workspace configuration.
-
-    Args:
-        ctx: WorkspaceContext
-
-    Returns:
-        Tuple of (errors, warnings) lists
-    """
-    errors = []
-    warnings = []
+    """Validate workspace configuration. Returns (errors, warnings)."""
+    errors, warnings = [], []
 
     if not ctx.is_workspace_mode:
         errors.append("No workspace loaded")
         return errors, warnings
 
-    # Check schema version
-    schema_version = ctx.workspace_config.get('schema_version')
-    if not schema_version:
+    if not ctx.workspace_config.get('schema_version'):
         errors.append("Missing 'schema_version'")
-
-    # Check workspace section
-    ws = ctx.workspace_config.get('workspace', {})
-    if not ws.get('name'):
+    if not ctx.workspace_config.get('workspace', {}).get('name'):
         errors.append("Missing 'workspace.name'")
 
-    # Check repos
     repos = ctx.workspace_config.get('repos', [])
     if not repos:
         warnings.append("No repos defined")
 
     seen_names = set()
     for repo in repos:
-        name = repo.get('name')
-        if not name:
-            errors.append("Repo missing 'name'")
-            continue
+        _validate_repo_entry(repo, seen_names, ctx, errors, warnings)
 
-        if name in seen_names:
-            errors.append(f"Duplicate repo name: {name}")
-        seen_names.add(name)
-
-        if not repo.get('path'):
-            errors.append(f"Repo '{name}' missing 'path'")
-
-        if not repo.get('language'):
-            errors.append(f"Repo '{name}' missing 'language'")
-
-        # Check if path exists
-        if name in ctx.unavailable_repos:
-            warnings.append(f"Repo '{name}' path not found")
-
-    # Check that all repo.yaml files match
-    for name, path in ctx.available_repos.items():
-        repo_yaml = path / '.agentforge' / 'repo.yaml'
-        if repo_yaml.exists():
-            try:
-                repo_config = yaml.safe_load(repo_yaml.read_text())
-                if repo_config.get('repo_name') != name:
-                    errors.append(
-                        f"Repo '{name}': repo.yaml says '{repo_config.get('repo_name')}'"
-                    )
-            except Exception as e:
-                warnings.append(f"Repo '{name}': Failed to parse repo.yaml: {e}")
-
+    _validate_repo_yaml_files(ctx, errors, warnings)
     return errors, warnings
 
 
@@ -1141,82 +1128,60 @@ def unlink_repo(directory: Path = None) -> bool:
     return True
 
 
-def format_config_status(ctx: ConfigContext) -> str:
-    """
-    Format configuration status for CLI output.
-
-    Args:
-        ctx: ConfigContext
-
-    Returns:
-        Formatted string
-    """
-    lines = []
-
-    lines.append("=" * 60)
-    lines.append("AgentForge Configuration Status")
-    lines.append("=" * 60)
-
-    # Discovery log
-    lines.append("\nDiscovery:")
-    for entry in ctx.discovery_log:
-        lines.append(f"  - {entry}")
-
-    lines.append(f"\nMode: {ctx.mode}")
-
-    # Global
+def _format_global_section(ctx: ConfigContext, lines: list):
+    """Format global tier section."""
     lines.append("\n" + "-" * 40)
     lines.append("TIER 1: Global (~/.agentforge/)")
     if ctx.global_path and ctx.global_path.exists():
-        lines.append(f"  Location: {ctx.global_path}")
-        lines.append(f"  Contracts: {len(ctx.global_contracts)}")
+        lines.extend([f"  Location: {ctx.global_path}", f"  Contracts: {len(ctx.global_contracts)}"])
     else:
-        lines.append("  Not configured")
-        lines.append("  Run: python execute.py config init-global")
+        lines.extend(["  Not configured", "  Run: python execute.py config init-global"])
 
-    # Workspace
+
+def _format_workspace_section(ctx: ConfigContext, lines: list):
+    """Format workspace tier section."""
     lines.append("\n" + "-" * 40)
     lines.append("TIER 2: Workspace")
-    if ctx.workspace_path:
-        ws = (ctx.workspace_config or {}).get('workspace', {})
-        lines.append(f"  Name: {ws.get('name', 'N/A')}")
-        lines.append(f"  Location: {ctx.workspace_path}")
-        lines.append(f"  Contracts: {len(ctx.workspace_contracts)}")
-        lines.append(f"\n  Repositories:")
-        for repo in (ctx.workspace_config or {}).get('repos', []):
-            name = repo['name']
-            if name in ctx.available_repos:
-                status = "✓"
-                path = ctx.available_repos[name]
-            else:
-                status = "✗"
-                path = "(not found)"
-            current = " <- current" if name == ctx.current_repo_name else ""
-            lines.append(f"    {status} {name:20} {path}{current}")
-    else:
-        if ctx.mode == "single-repo":
-            lines.append("  N/A (single-repo mode)")
-        else:
-            lines.append("  Not configured")
+    if not ctx.workspace_path:
+        lines.append("  N/A (single-repo mode)" if ctx.mode == "single-repo" else "  Not configured")
+        return
 
-    # Repo
+    ws = (ctx.workspace_config or {}).get('workspace', {})
+    lines.extend([f"  Name: {ws.get('name', 'N/A')}", f"  Location: {ctx.workspace_path}",
+                  f"  Contracts: {len(ctx.workspace_contracts)}", "\n  Repositories:"])
+
+    for repo in (ctx.workspace_config or {}).get('repos', []):
+        name = repo['name']
+        status, path = ("✓", ctx.available_repos[name]) if name in ctx.available_repos else ("✗", "(not found)")
+        current = " <- current" if name == ctx.current_repo_name else ""
+        lines.append(f"    {status} {name:20} {path}{current}")
+
+
+def _format_repo_section(ctx: ConfigContext, lines: list):
+    """Format repository tier section."""
     lines.append("\n" + "-" * 40)
     lines.append("TIER 3: Repository")
     if ctx.repo_path:
-        lines.append(f"  Name: {ctx.current_repo_name}")
-        lines.append(f"  Location: {ctx.repo_path}")
-        lines.append(f"  Contracts: {len(ctx.repo_contracts)}")
+        lines.extend([f"  Name: {ctx.current_repo_name}", f"  Location: {ctx.repo_path}",
+                      f"  Contracts: {len(ctx.repo_contracts)}"])
     else:
-        lines.append("  Not in an AgentForge-configured repo")
-        lines.append("  Run: python execute.py workspace init --single-repo --name <name> --language <lang>")
+        lines.extend(["  Not in an AgentForge-configured repo",
+                      "  Run: python execute.py workspace init --single-repo --name <name> --language <lang>"])
 
-    # Effective config summary
-    lines.append("\n" + "-" * 40)
-    lines.append("Effective Configuration:")
-    lines.append(f"  Total contracts: {len(ctx.effective_contracts)}")
+
+def format_config_status(ctx: ConfigContext) -> str:
+    """Format configuration status for CLI output."""
+    lines = ["=" * 60, "AgentForge Configuration Status", "=" * 60, "\nDiscovery:"]
+    lines.extend(f"  - {entry}" for entry in ctx.discovery_log)
+    lines.append(f"\nMode: {ctx.mode}")
+
+    _format_global_section(ctx, lines)
+    _format_workspace_section(ctx, lines)
+    _format_repo_section(ctx, lines)
+
+    lines.extend(["\n" + "-" * 40, "Effective Configuration:", f"  Total contracts: {len(ctx.effective_contracts)}"])
     if ctx.effective_contracts:
-        for name in list(ctx.effective_contracts.keys())[:5]:
-            lines.append(f"    - {name}")
+        lines.extend(f"    - {name}" for name in list(ctx.effective_contracts.keys())[:5])
         if len(ctx.effective_contracts) > 5:
             lines.append(f"    ... and {len(ctx.effective_contracts) - 5} more")
 

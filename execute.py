@@ -1644,7 +1644,8 @@ def run_context(args):
 
     print(f"\n  Project: {args.project}")
 
-    retriever = ContextRetriever(args.project)
+    provider = getattr(args, 'provider', None)
+    retriever = ContextRetriever(args.project, provider=provider)
 
     try:
         # Check dependencies if requested
@@ -1664,6 +1665,23 @@ def run_context(args):
                 if lsp.get("install_instructions"):
                     print(f"    Install: {lsp['install_instructions']}")
 
+            print("\n  Embedding Providers:")
+            try:
+                from embedding_providers import list_providers, get_available_providers
+                providers = list_providers()
+                available = get_available_providers()
+                current = available[0] if available else None
+
+                for p in providers:
+                    mark = "✓" if p["available"] else "✗"
+                    default = " (current)" if p["name"] == current else ""
+                    api_note = "" if not p["requires_api_key"] else " (needs API key)"
+                    print(f"    {mark} {p['name']}{api_note}{default}")
+                    if not p["available"] and p["install_instructions"]:
+                        print(f"      Install: {p['install_instructions']}")
+            except ImportError:
+                print("    Could not load embedding providers")
+
             print("\n  Vector Search:")
             vec = status["vector"]
             if vec["available"]:
@@ -1673,7 +1691,7 @@ def run_context(args):
                 print(f"    Status: Not available")
                 if vec.get("error"):
                     print(f"    Error: {vec['error']}")
-                print("    Install: pip install openai faiss-cpu")
+                print("    Install: pip install sentence-transformers faiss-cpu")
             return
 
         # Build index if requested
@@ -2322,6 +2340,8 @@ Examples:
     context_parser.add_argument('--check', action='store_true', help='Check available components')
     context_parser.add_argument('--index', action='store_true', help='Build/rebuild vector index')
     context_parser.add_argument('--force', action='store_true', help='Force rebuild index')
+    context_parser.add_argument('--provider', choices=['local', 'openai', 'voyage'],
+                                help='Embedding provider (default: auto-select)')
     context_parser.add_argument('--no-lsp', action='store_true', help='Disable LSP')
     context_parser.add_argument('--no-vector', action='store_true', help='Disable vector search')
     context_parser.add_argument('--format', '-f', choices=['text', 'yaml', 'json'], default='text',

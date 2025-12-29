@@ -72,25 +72,36 @@ lsp:
       timeout_ms: 2000
 
 # =============================================================================
-# Vector Search Configuration
+# Semantic Search Configuration
 # =============================================================================
 # Semantic search complements LSP's structural queries.
 # LSP answers: "where is OrderService defined?"
 # Vector answers: "what code is related to discount handling?"
 
-vector:
+semantic:
   enabled: true
 
-  # Embedding model (OpenAI)
-  embedding:
-    model: "text-embedding-3-small"  # Cheap and good
-    dimensions: 1536
-    batch_size: 100
+  # Embedding provider: "local", "openai", "voyage", or null (auto-select)
+  # Auto-select priority: voyage (if VOYAGE_API_KEY set) > openai (if OPENAI_API_KEY set) > local
+  # Default: local (no API key needed, code stays on your machine)
+  embedding_provider: null
 
-  # FAISS index configuration
-  index:
-    type: "flat"  # flat for <10k chunks, ivf for larger
-    metric: "cosine"
+  # Local provider settings (sentence-transformers)
+  # No API key needed. Model downloads ~80MB on first use.
+  local:
+    model: "all-MiniLM-L6-v2"  # Fast, good quality, 384 dimensions
+    # Alternatives:
+    # - all-mpnet-base-v2: Better quality, slower, 768 dimensions
+    # - codeparrot/codebert-base: Optimized for code, 768 dimensions
+
+  # OpenAI provider settings (requires OPENAI_API_KEY)
+  openai:
+    model: "text-embedding-3-small"  # 1536 dimensions, ~$0.02/1M tokens
+
+  # Voyage AI provider settings (requires VOYAGE_API_KEY)
+  # Anthropic's recommended embedding partner, optimized for code
+  voyage:
+    model: "voyage-code-2"  # 1024 dimensions, ~$0.02/1M tokens
 
   # Code chunking strategy
   chunking:
@@ -106,7 +117,7 @@ vector:
       window_size_tokens: 400
       overlap_tokens: 100
 
-  # Index storage location
+  # Index storage location (provider name is appended automatically)
   index_path: ".agentforge/vector_index"
 
 # =============================================================================

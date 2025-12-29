@@ -69,17 +69,19 @@ class ContextRetriever:
         print(context.to_prompt_text())
     """
 
-    def __init__(self, project_path: str, config_path: str = None):
+    def __init__(self, project_path: str, config_path: str = None, provider: str = None):
         """
         Initialize retriever for a project.
 
         Args:
             project_path: Root of the codebase to analyze
             config_path: Optional path to context_retrieval.yaml
+            provider: Force specific embedding provider ("local", "openai", "voyage")
         """
         self.project_path = Path(project_path).resolve()
         self.config_path = config_path
         self.config = self._load_config()
+        self.provider = provider  # Embedding provider override
 
         # Components (lazy-loaded)
         self._lsp_adapter = None
@@ -163,7 +165,8 @@ class ContextRetriever:
 
                 self._vector_search = VectorSearch(
                     str(self.project_path),
-                    self.config.get("vector", {})
+                    self.config.get("semantic", {}),
+                    provider=self.provider
                 )
                 self._vector_available = True
 

@@ -9,12 +9,15 @@ Complements LSP's structural queries with "fuzzy" natural language search.
 - LSP answers: "where is OrderService defined?"
 - Vector answers: "what code is related to discount handling?"
 
-Uses:
-- OpenAI text-embedding-3-small (default, cheap and good)
-- FAISS for fast local vector search
+Embedding Providers (auto-selected by priority):
+1. LOCAL (default) - sentence-transformers, no API key needed
+2. VOYAGE - voyage-code-2, requires VOYAGE_API_KEY
+3. OPENAI - text-embedding-3-small, requires OPENAI_API_KEY
 
 Dependencies:
-    pip install openai faiss-cpu tiktoken
+    pip install sentence-transformers faiss-cpu  # Minimal (local embeddings)
+    pip install openai                           # Optional (cloud embeddings)
+    pip install voyageai                         # Optional (code-optimized)
 
 Usage:
     vs = VectorSearch("/path/to/project")
@@ -303,36 +306,38 @@ class VectorSearch:
     """
     Semantic search over codebase using embeddings.
 
-    Uses OpenAI text-embedding-3-small and FAISS for local search.
+    Uses pluggable embedding providers with local embeddings as default.
     """
 
-    def __init__(self, project_path: str, config: dict = None):
+    def __init__(self, project_path: str, config: dict = None, provider: str = None):
         """
         Initialize vector search.
 
         Args:
             project_path: Root of codebase
-            config: Optional config with embedding_model, chunk_size, etc.
+            config: Optional config with embedding settings, chunk_size, etc.
+            provider: Force specific embedding provider ("local", "openai", "voyage")
         """
         self.project_path = Path(project_path).resolve()
         self.config = config or {}
 
         # Configuration
-        self.embedding_model = self.config.get("embedding", {}).get("model", "text-embedding-3-small")
         self.chunk_size = self.config.get("chunking", {}).get("ast_aware", {}).get("max_chunk_tokens", 500)
         self.chunk_overlap = self.config.get("chunking", {}).get("sliding_window", {}).get("overlap_tokens", 50)
 
-        # Index storage
-        index_path = self.config.get("semantic", {}).get("index_path", ".agentforge/vector_index")
-        self.index_dir = self.project_path / index_path
-        self.index_file = self.index_dir / "index.faiss"
-        self.metadata_file = self.index_dir / "metadata.pkl"
+        # Get embedding provider (lazy-loaded on first use)
+        self._provider_name = provider or self.config.get("semantic", {}).get("embedding_provider")
+        self._embedding_provider = None
+
+        # Index storage - includes provider name (different dimensions need different index)
+        index_base = self.config.get("semantic", {}).get("index_path", ".agentforge/vector_index")
+        self.index_base = self.project_path / index_base
+        self._index_dir = None  # Set when provider is initialized
 
         # Components
         self.chunker = CodeChunker(self.chunk_size, self.chunk_overlap)
         self._index = None
         self._metadata: List[Chunk] = []
-        self._openai_client = None
 
         # File patterns
         self.include_patterns = self.config.get("include_patterns", ["**/*.cs", "**/*.py", "**/*.ts"])
@@ -341,41 +346,36 @@ class VectorSearch:
         ])
 
     @property
-    def openai_client(self):
-        """Lazy-load OpenAI client."""
-        if self._openai_client is None:
-            try:
-                from openai import OpenAI
-                self._openai_client = OpenAI()
-            except ImportError:
-                raise ImportError(
-                    "OpenAI package not installed. Run: pip install openai"
-                )
-            except Exception as e:
-                raise RuntimeError(f"Failed to initialize OpenAI client: {e}")
-        return self._openai_client
-
-    def _get_embedding(self, text: str) -> List[float]:
-        """Get embedding for a text."""
-        response = self.openai_client.embeddings.create(
-            model=self.embedding_model,
-            input=text,
-        )
-        return response.data[0].embedding
-
-    def _get_embeddings_batch(self, texts: List[str], batch_size: int = 100) -> List[List[float]]:
-        """Get embeddings for multiple texts."""
-        embeddings = []
-
-        for i in range(0, len(texts), batch_size):
-            batch = texts[i:i + batch_size]
-            response = self.openai_client.embeddings.create(
-                model=self.embedding_model,
-                input=batch,
+    def embedding_provider(self):
+        """Lazy-load embedding provider."""
+        if self._embedding_provider is None:
+            from tools.embedding_providers import get_embedding_provider
+            provider_config = self.config.get("semantic", {})
+            self._embedding_provider = get_embedding_provider(
+                self._provider_name,
+                config=provider_config
             )
-            embeddings.extend([d.embedding for d in response.data])
+            # Set index directory based on provider (different dimensions = different index)
+            self._index_dir = self.index_base / self._embedding_provider.name
+        return self._embedding_provider
 
-        return embeddings
+    @property
+    def index_dir(self) -> Path:
+        """Get index directory (depends on provider)."""
+        if self._index_dir is None:
+            # Initialize provider to get index dir
+            _ = self.embedding_provider
+        return self._index_dir
+
+    @property
+    def index_file(self) -> Path:
+        """Path to FAISS index file."""
+        return self.index_dir / "index.faiss"
+
+    @property
+    def metadata_file(self) -> Path:
+        """Path to metadata pickle file."""
+        return self.index_dir / "metadata.pkl"
 
     def _get_files(self) -> List[Path]:
         """Get all files matching include/exclude patterns."""
@@ -497,13 +497,14 @@ class VectorSearch:
             stats.duration_ms = int((datetime.now() - start_time).total_seconds() * 1000)
             return stats
 
-        # Get embeddings
-        print(f"  Getting embeddings for {len(all_chunks)} chunks...")
+        # Get embeddings using provider
+        provider = self.embedding_provider
+        print(f"  Generating embeddings with '{provider.name}' for {len(all_chunks)} chunks...", file=sys.stderr)
         texts = [chunk.to_embedding_text() for chunk in all_chunks]
-        embeddings = self._get_embeddings_batch(texts)
+        embeddings = provider.embed(texts)
 
         # Build FAISS index
-        dimension = len(embeddings[0])
+        dimension = provider.dimension
         vectors = np.array(embeddings, dtype=np.float32)
 
         # Normalize for cosine similarity
@@ -586,8 +587,9 @@ class VectorSearch:
         if self._index is None or not self._metadata:
             return []
 
-        # Get query embedding
-        query_embedding = np.array([self._get_embedding(query)], dtype=np.float32)
+        # Get query embedding using same provider
+        query_embedding = self.embedding_provider.embed([query])
+        query_embedding = np.array(query_embedding, dtype=np.float32)
         faiss.normalize_L2(query_embedding)
 
         # Search
@@ -642,6 +644,8 @@ Examples:
 
     parser.add_argument("--project", "-p", required=True, help="Project root path")
     parser.add_argument("--config", help="Config file path")
+    parser.add_argument("--provider", choices=["local", "openai", "voyage"],
+                        help="Embedding provider (default: auto-select)")
 
     subparsers = parser.add_subparsers(dest="command", help="Command")
 
@@ -667,7 +671,7 @@ Examples:
         with open(args.config) as f:
             config = yaml.safe_load(f)
 
-    vs = VectorSearch(args.project, config)
+    vs = VectorSearch(args.project, config, provider=args.provider)
 
     try:
         if args.command == "index":

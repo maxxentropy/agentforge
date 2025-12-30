@@ -28,19 +28,23 @@ except ImportError:
     from contracts_types import CheckResult
 
 
-def execute_check(check: Dict[str, Any], repo_root: Path,
+def execute_check(check: Dict[str, Any], repo_root,
                   file_paths: Optional[List[Path]] = None) -> List[CheckResult]:
     """
     Execute a single check against the repo or specific files.
 
     Args:
         check: Check configuration from contract
-        repo_root: Repository root directory
+        repo_root: Repository root directory (Path or str)
         file_paths: Optional list of specific files to check
 
     Returns:
         List of CheckResult for any violations found
     """
+    # Ensure repo_root is a Path
+    if not isinstance(repo_root, Path):
+        repo_root = Path(repo_root)
+
     # Lazy import to avoid circular imports
     try:
         from .contracts_ast import execute_ast_check

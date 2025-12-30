@@ -478,3 +478,6 @@ class ReportStore:
             )
         except Exception:
             return None
+
+# Re-export HistoryStore for backwards compatibility
+from .history_store import HistoryStore

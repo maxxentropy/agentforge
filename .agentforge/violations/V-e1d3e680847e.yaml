@@ -6,7 +6,7 @@ severity: major
 file_path: tests/unit/tools/test_builtin_checks_architecture.py
 message: 'Forbidden pattern found: ''requests.get('''
 detected_at: '2025-12-30T17:10:15.629931'
-last_seen_at: '2025-12-30T17:10:15.629931'
+last_seen_at: '2025-12-30T18:26:38.410816'
 status: open
 line_number: 468
 fix_hint: Use responses, httpretty, or pytest-mock to mock network calls

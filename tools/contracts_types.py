@@ -134,15 +134,42 @@ class Contract:
         return self.name.startswith("_")
 
     def all_checks(self) -> List[Dict[str, Any]]:
-        """Get all checks including inherited ones."""
+        """Get all checks including inherited ones, with proper merging.
+
+        Child check definitions override specific fields from parent definitions
+        while inheriting the rest. This allows contracts to override just
+        `enabled` or `severity` without needing to redefine the full check.
+        """
         if not self._resolved:
             return self.checks
-        check_ids = set()
-        result = []
-        for check in self.checks:
-            check_ids.add(check.get("id"))
-            result.append(check)
+
+        # Build lookup of inherited checks by ID
+        inherited_by_id: Dict[str, Dict[str, Any]] = {}
         for check in self._inherited_checks:
-            if check.get("id") not in check_ids:
+            check_id = check.get("id")
+            if check_id:
+                inherited_by_id[check_id] = check
+
+        result = []
+        processed_ids = set()
+
+        # Process child checks, merging with inherited definitions
+        for check in self.checks:
+            check_id = check.get("id")
+            if check_id and check_id in inherited_by_id:
+                # Merge: start with inherited, override with child's fields
+                merged = inherited_by_id[check_id].copy()
+                merged.update(check)
+                result.append(merged)
+            else:
+                # New check defined only in child
                 result.append(check)
+            if check_id:
+                processed_ids.add(check_id)
+
+        # Add inherited checks not overridden by child
+        for check in self._inherited_checks:
+            if check.get("id") not in processed_ids:
+                result.append(check)
+
         return result

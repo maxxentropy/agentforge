@@ -6,7 +6,11 @@ severity: minor
 file_path: cli/commands/workspace.py
 message: 'Forbidden pattern found: ''print('''
 detected_at: '2025-12-30T17:10:16.048757'
-last_seen_at: '2025-12-30T17:10:16.477394'
-status: open
+last_seen_at: '2025-12-30T17:46:09.474305'
+status: resolved
 line_number: 424
 fix_hint: Use click.echo() or rich.print() for CLI output
+resolution:
+  resolved_at: '2025-12-30T18:00:52.103451'
+  resolved_by: system
+  reason: No longer detected in full verification run

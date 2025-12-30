@@ -7,4 +7,8 @@ file_path: ''
 message: 'Unknown check type: None'
 detected_at: '2025-12-30T17:10:15.572909'
 last_seen_at: '2025-12-30T17:10:15.572909'
-status: open
+status: resolved
+resolution:
+  resolved_at: '2025-12-30T17:35:53.261796'
+  resolved_by: system
+  reason: No longer detected in full verification run

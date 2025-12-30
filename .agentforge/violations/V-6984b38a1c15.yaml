@@ -6,7 +6,11 @@ severity: minor
 file_path: cli/commands/contracts.py
 message: 'Forbidden pattern found: ''print('''
 detected_at: '2025-12-30T17:10:15.846999'
-last_seen_at: '2025-12-30T17:10:16.262209'
-status: open
+last_seen_at: '2025-12-30T17:46:09.306016'
+status: resolved
 line_number: 278
 fix_hint: Use click.echo() or rich.print() for CLI output
+resolution:
+  resolved_at: '2025-12-30T18:00:52.393579'
+  resolved_by: system
+  reason: No longer detected in full verification run

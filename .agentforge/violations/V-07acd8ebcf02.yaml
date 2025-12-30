@@ -1,0 +1,16 @@
+schema_version: '1.0'
+violation_id: V-07acd8ebcf02
+contract_id: agentforge
+check_id: max-parameter-count
+severity: major
+file_path: cli/main.py
+message: 'Function ''workspace_init'' has 8 parameters (max: 5)'
+detected_at: '2025-12-30T18:11:20.062764'
+last_seen_at: '2025-12-30T18:12:10.501687'
+status: resolved
+line_number: 311
+fix_hint: Group related parameters into a dataclass or use **kwargs
+resolution:
+  resolved_at: '2025-12-30T18:15:45.075121'
+  resolved_by: system
+  reason: No longer detected in full verification run

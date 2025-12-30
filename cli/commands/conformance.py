@@ -12,6 +12,7 @@ Provides commands for managing per-repository conformance state:
 
 import sys
 import json
+import click
 from pathlib import Path
 from datetime import date
 from typing import Optional
@@ -36,90 +37,56 @@ def run_conformance(args):
 
 def run_conformance_init(args):
     """Initialize conformance tracking."""
-    print("\n" + "=" * 60)
-    print("CONFORMANCE INIT")
-    print("=" * 60)
+    click.echo("\n" + "=" * 60)
+    click.echo("CONFORMANCE INIT")
+    click.echo("=" * 60)
 
     manager = _get_manager()
 
     try:
         manager.initialize(force=getattr(args, 'force', False))
-        print(f"\n  Initialized: {manager.agentforge_path}/")
-        print("  Created:")
-        print("    - violations/")
-        print("    - exemptions/")
-        print("    - history/")
-        print("    - conformance_report.yaml")
-        print("\n  Added .agentforge/local.yaml to .gitignore")
-        print("\nConformance tracking is ready.")
-        print("Run 'agentforge conformance check --full' to analyze your codebase.")
+        click.echo(f"\n  Initialized: {manager.agentforge_path}/")
+        click.echo("  Created:")
+        click.echo("    - violations/")
+        click.echo("    - exemptions/")
+        click.echo("    - history/")
+        click.echo("    - conformance_report.yaml")
+        click.echo("\n  Added .agentforge/local.yaml to .gitignore")
+        click.echo("\nConformance tracking is ready.")
+        click.echo("Run 'agentforge conformance check --full' to analyze your codebase.")
     except FileExistsError as e:
-        print(f"\n  Error: {e}")
+        click.echo(f"\n  Error: {e}")
         sys.exit(1)
 
 
-def run_conformance_check(args):
-    """Run conformance checks."""
-    print("\n" + "=" * 60)
-    print("CONFORMANCE CHECK")
-    print("=" * 60)
+def _run_contract_checks(registry, repo_root, contract_filter, file_list):
+    """Run contract checks and return results."""
+    from contracts import run_contract, run_all_contracts
 
-    manager = _get_manager()
-
-    if not manager.is_initialized():
-        print("\n  Error: Conformance tracking not initialized.")
-        print("  Run 'agentforge conformance init' first.")
-        sys.exit(1)
-
-    _ensure_tools()
-    from contracts import ContractRegistry, run_contract, run_all_contracts
-
-    is_full = getattr(args, 'full', False)
-    print(f"\n  Mode: {'full' if is_full else 'incremental'}")
-
-    repo_root = Path.cwd()
-    registry = ContractRegistry(repo_root)
-    all_contracts = registry.discover_contracts()
-
-    if not all_contracts:
-        print("\n  No contracts found. Create a contract first.")
-        sys.exit(1)
-
-    contract_filter = getattr(args, 'contract', None)
-    file_filter = getattr(args, 'files', None)
-    file_list = [f.strip() for f in file_filter.split(',')] if file_filter else None
-
-    # Run contract checks
     if contract_filter:
         contract = registry.get_contract(contract_filter)
         if not contract:
-            print(f"\n  Error: Contract not found: {contract_filter}")
+            click.echo(f"\n  Error: Contract not found: {contract_filter}")
             sys.exit(1)
-        results = [run_contract(contract, repo_root, registry, file_list)]
-    else:
-        results = run_all_contracts(repo_root, file_paths=file_list)
+        return [run_contract(contract, repo_root, registry, file_list)]
+    return run_all_contracts(repo_root, file_paths=file_list)
 
-    print(f"  Contracts: {len(results)}")
-    print()
-    print("-" * 60)
 
-    # Convert contract results to violation format
-    all_violations = []
+def _results_to_violations(results):
+    """Convert contract results to violation format."""
+    violations = []
     contracts_checked = []
     files_checked = set()
 
     for result in results:
-        # ContractResult is a dataclass
         contract_id = result.contract_name
         contracts_checked.append(contract_id)
-        print(f"\n  Checked: {contract_id}")
+        click.echo(f"\n  Checked: {contract_id}")
 
         for check_result in result.check_results:
-            # Only process failed checks as violations
             if check_result.passed:
                 continue
-
-            v = {
+            violations.append({
                 'contract_id': contract_id,
                 'check_id': check_result.check_id,
                 'file': check_result.file_path or '',
@@ -127,48 +94,84 @@ def run_conformance_check(args):
                 'message': check_result.message,
                 'severity': check_result.severity,
                 'fix_hint': check_result.fix_hint,
-            }
-            all_violations.append(v)
+            })
             if check_result.file_path:
                 files_checked.add(check_result.file_path)
 
-    print(f"\n  Files analyzed: {len(files_checked)}")
-    print(f"  Violations found: {len(all_violations)}")
+    return violations, contracts_checked, files_checked
+
+
+def run_conformance_check(args):
+    """Run conformance checks."""
+    click.echo("\n" + "=" * 60)
+    click.echo("CONFORMANCE CHECK")
+    click.echo("=" * 60)
+
+    manager = _get_manager()
+    if not manager.is_initialized():
+        click.echo("\n  Error: Conformance tracking not initialized.")
+        click.echo("  Run 'agentforge conformance init' first.")
+        sys.exit(1)
+
+    _ensure_tools()
+    from contracts import ContractRegistry
+
+    is_full = getattr(args, 'full', False)
+    click.echo(f"\n  Mode: {'full' if is_full else 'incremental'}")
+
+    repo_root = Path.cwd()
+    registry = ContractRegistry(repo_root)
+
+    if not registry.discover_contracts():
+        click.echo("\n  No contracts found. Create a contract first.")
+        sys.exit(1)
+
+    contract_filter = getattr(args, 'contract', None)
+    file_filter = getattr(args, 'files', None)
+    file_list = [f.strip() for f in file_filter.split(',')] if file_filter else None
+
+    results = _run_contract_checks(registry, repo_root, contract_filter, file_list)
+    click.echo(f"  Contracts: {len(results)}")
+    click.echo()
+    click.echo("-" * 60)
+
+    violations, contracts_checked, files_checked = _results_to_violations(results)
+    click.echo(f"\n  Files analyzed: {len(files_checked)}")
+    click.echo(f"  Violations found: {len(violations)}")
 
     report = manager.run_conformance_check(
-        verification_results=all_violations,
+        verification_results=violations,
         contracts_checked=contracts_checked,
         files_checked=len(files_checked),
         is_full_run=is_full,
     )
 
-    print()
-    print("-" * 60)
+    click.echo()
+    click.echo("-" * 60)
     _print_report_summary(report)
-    print("-" * 60)
+    click.echo("-" * 60)
 
-    if getattr(args, 'exit_code', False):
-        if report.summary.failed > 0:
-            print("\nExiting with code 1 (violations found)")
-            sys.exit(1)
+    if getattr(args, 'exit_code', False) and report.summary.failed > 0:
+        click.echo("\nExiting with code 1 (violations found)")
+        sys.exit(1)
 
 
 def run_conformance_report(args):
     """Show current conformance report."""
-    print("\n" + "=" * 60)
-    print("CONFORMANCE REPORT")
-    print("=" * 60)
+    click.echo("\n" + "=" * 60)
+    click.echo("CONFORMANCE REPORT")
+    click.echo("=" * 60)
 
     manager = _get_manager()
 
     if not manager.is_initialized():
-        print("\n  Error: Conformance tracking not initialized.")
-        print("  Run 'agentforge conformance init' first.")
+        click.echo("\n  Error: Conformance tracking not initialized.")
+        click.echo("  Run 'agentforge conformance init' first.")
         sys.exit(1)
 
     report = manager.get_report()
     if not report:
-        print("\n  No report found. Run 'agentforge conformance check' first.")
+        click.echo("\n  No report found. Run 'agentforge conformance check' first.")
         sys.exit(1)
 
     fmt = getattr(args, 'format', 'text')
@@ -184,47 +187,46 @@ def run_conformance_report(args):
 def _print_report_summary(report):
     """Print brief report summary."""
     s = report.summary
-    print(f"\n  Summary:")
-    print(f"    Failed:   {s.failed}")
-    print(f"    Exempted: {s.exempted}")
-    print(f"    Stale:    {s.stale}")
+    click.echo(f"\n  Summary:")
+    click.echo(f"    Failed:   {s.failed}")
+    click.echo(f"    Exempted: {s.exempted}")
+    click.echo(f"    Stale:    {s.stale}")
 
     if report.by_severity:
-        print(f"\n  By Severity:")
+        click.echo(f"\n  By Severity:")
         for severity, count in report.by_severity.items():
-            print(f"    {severity}: {count}")
+            click.echo(f"    {severity}: {count}")
 
     if report.trend:
         delta = report.trend.get('failed_delta', 0)
         if delta != 0:
             direction = "↑" if delta > 0 else "↓"
-            print(f"\n  Trend: {direction} {abs(delta)} since last run")
+            click.echo(f"\n  Trend: {direction} {abs(delta)} since last run")
 
 
 def _print_report_text(report):
     """Print full report in text format."""
-    print(f"\n  Generated: {report.generated_at.isoformat()}")
-    print(f"  Run ID: {report.run_id}")
-    print(f"  Run Type: {report.run_type}")
-    print()
-    print("-" * 60)
+    click.echo(f"\n  Generated: {report.generated_at.isoformat()}")
+    click.echo(f"  Run ID: {report.run_id}")
+    click.echo(f"  Run Type: {report.run_type}")
+    click.echo()
+    click.echo("-" * 60)
     _print_report_summary(report)
 
     if report.by_contract:
-        print(f"\n  By Contract:")
+        click.echo(f"\n  By Contract:")
         for contract, count in report.by_contract.items():
-            print(f"    {contract}: {count}")
+            click.echo(f"    {contract}: {count}")
 
-    print(f"\n  Contracts Checked: {len(report.contracts_checked)}")
+    click.echo(f"\n  Contracts Checked: {len(report.contracts_checked)}")
     for c in report.contracts_checked:
-        print(f"    - {c}")
+        click.echo(f"    - {c}")
 
-    print(f"\n  Files Checked: {report.files_checked}")
+    click.echo(f"\n  Files Checked: {report.files_checked}")
 
 
 def _print_report_json(report):
     """Print report as JSON."""
-    import json
     data = {
         'schema_version': report.schema_version,
         'generated_at': report.generated_at.isoformat(),
@@ -243,7 +245,7 @@ def _print_report_json(report):
         'files_checked': report.files_checked,
         'trend': report.trend,
     }
-    print(json.dumps(data, indent=2))
+    click.echo(json.dumps(data, indent=2))
 
 
 def _print_report_yaml(report):
@@ -267,7 +269,7 @@ def _print_report_yaml(report):
         'files_checked': report.files_checked,
         'trend': report.trend,
     }
-    print(yaml.dump(data, default_flow_style=False, sort_keys=False))
+    click.echo(yaml.dump(data, default_flow_style=False, sort_keys=False))
 
 
 def run_conformance_violations(args):
@@ -280,7 +282,7 @@ def run_conformance_violations_list(args):
     manager = _get_manager()
 
     if not manager.is_initialized():
-        print("Error: Conformance tracking not initialized.")
+        click.echo("Error: Conformance tracking not initialized.")
         sys.exit(1)
 
     from conformance.domain import ViolationStatus, Severity
@@ -320,17 +322,17 @@ def run_conformance_violations_list(args):
 def _print_violations_table(violations):
     """Print violations as table."""
     if not violations:
-        print("\nNo violations found.")
+        click.echo("\nNo violations found.")
         return
 
-    print(f"\n{'ID':<15} {'Severity':<10} {'Contract':<20} {'File':<30} {'Status':<10}")
-    print("-" * 85)
+    click.echo(f"\n{'ID':<15} {'Severity':<10} {'Contract':<20} {'File':<30} {'Status':<10}")
+    click.echo("-" * 85)
 
     for v in violations:
         file_display = v.file_path[-28:] if len(v.file_path) > 28 else v.file_path
-        print(f"{v.violation_id:<15} {v.severity.value:<10} {v.contract_id:<20} {file_display:<30} {v.status.value:<10}")
+        click.echo(f"{v.violation_id:<15} {v.severity.value:<10} {v.contract_id:<20} {file_display:<30} {v.status.value:<10}")
 
-    print(f"\nTotal: {len(violations)} violation(s)")
+    click.echo(f"\nTotal: {len(violations)} violation(s)")
 
 
 def _print_violations_json(violations):
@@ -349,7 +351,7 @@ def _print_violations_json(violations):
             'detected_at': v.detected_at.isoformat(),
             'exemption_id': v.exemption_id,
         })
-    print(json.dumps(data, indent=2))
+    click.echo(json.dumps(data, indent=2))
 
 
 def _print_violations_yaml(violations):
@@ -369,7 +371,7 @@ def _print_violations_yaml(violations):
             'detected_at': v.detected_at.isoformat(),
             'exemption_id': v.exemption_id,
         })
-    print(yaml.dump(data, default_flow_style=False, sort_keys=False))
+    click.echo(yaml.dump(data, default_flow_style=False, sort_keys=False))
 
 
 def run_conformance_violations_show(args):
@@ -377,37 +379,37 @@ def run_conformance_violations_show(args):
     manager = _get_manager()
 
     if not manager.is_initialized():
-        print("Error: Conformance tracking not initialized.")
+        click.echo("Error: Conformance tracking not initialized.")
         sys.exit(1)
 
     violation_id = args.violation_id
     violation = manager.get_violation(violation_id)
 
     if not violation:
-        print(f"Error: Violation '{violation_id}' not found.")
+        click.echo(f"Error: Violation '{violation_id}' not found.")
         sys.exit(1)
 
-    print(f"\nViolation: {violation.violation_id}")
-    print("=" * 60)
-    print(f"  Contract:  {violation.contract_id}")
-    print(f"  Check:     {violation.check_id}")
-    print(f"  Severity:  {violation.severity.value}")
-    print(f"  Status:    {violation.status.value}")
-    print(f"  File:      {violation.file_path}")
+    click.echo(f"\nViolation: {violation.violation_id}")
+    click.echo("=" * 60)
+    click.echo(f"  Contract:  {violation.contract_id}")
+    click.echo(f"  Check:     {violation.check_id}")
+    click.echo(f"  Severity:  {violation.severity.value}")
+    click.echo(f"  Status:    {violation.status.value}")
+    click.echo(f"  File:      {violation.file_path}")
     if violation.line_number:
-        print(f"  Line:      {violation.line_number}")
-    print(f"\n  Message:   {violation.message}")
+        click.echo(f"  Line:      {violation.line_number}")
+    click.echo(f"\n  Message:   {violation.message}")
     if violation.fix_hint:
-        print(f"  Fix Hint:  {violation.fix_hint}")
-    print(f"\n  Detected:  {violation.detected_at.isoformat()}")
-    print(f"  Last Seen: {violation.last_seen_at.isoformat()}")
+        click.echo(f"  Fix Hint:  {violation.fix_hint}")
+    click.echo(f"\n  Detected:  {violation.detected_at.isoformat()}")
+    click.echo(f"  Last Seen: {violation.last_seen_at.isoformat()}")
     if violation.exemption_id:
-        print(f"\n  Exemption: {violation.exemption_id}")
+        click.echo(f"\n  Exemption: {violation.exemption_id}")
     if violation.resolution:
-        print(f"\n  Resolution:")
-        print(f"    Resolved At: {violation.resolution.get('resolved_at')}")
-        print(f"    Resolved By: {violation.resolution.get('resolved_by')}")
-        print(f"    Reason: {violation.resolution.get('reason')}")
+        click.echo(f"\n  Resolution:")
+        click.echo(f"    Resolved At: {violation.resolution.get('resolved_at')}")
+        click.echo(f"    Resolved By: {violation.resolution.get('resolved_by')}")
+        click.echo(f"    Reason: {violation.resolution.get('reason')}")
 
 
 def run_conformance_violations_resolve(args):
@@ -415,7 +417,7 @@ def run_conformance_violations_resolve(args):
     manager = _get_manager()
 
     if not manager.is_initialized():
-        print("Error: Conformance tracking not initialized.")
+        click.echo("Error: Conformance tracking not initialized.")
         sys.exit(1)
 
     violation_id = args.violation_id
@@ -424,11 +426,11 @@ def run_conformance_violations_resolve(args):
     violation = manager.resolve_violation(violation_id, reason, resolved_by="user")
 
     if not violation:
-        print(f"Error: Violation '{violation_id}' not found.")
+        click.echo(f"Error: Violation '{violation_id}' not found.")
         sys.exit(1)
 
-    print(f"Violation {violation_id} marked as resolved.")
-    print(f"  Reason: {reason}")
+    click.echo(f"Violation {violation_id} marked as resolved.")
+    click.echo(f"  Reason: {reason}")
 
 
 def run_conformance_violations_prune(args):
@@ -436,7 +438,7 @@ def run_conformance_violations_prune(args):
     manager = _get_manager()
 
     if not manager.is_initialized():
-        print("Error: Conformance tracking not initialized.")
+        click.echo("Error: Conformance tracking not initialized.")
         sys.exit(1)
 
     days = getattr(args, 'days', 30)
@@ -445,9 +447,9 @@ def run_conformance_violations_prune(args):
     count = manager.prune_violations(older_than_days=days, dry_run=dry_run)
 
     if dry_run:
-        print(f"Would prune {count} violation(s) older than {days} days.")
+        click.echo(f"Would prune {count} violation(s) older than {days} days.")
     else:
-        print(f"Pruned {count} violation(s) older than {days} days.")
+        click.echo(f"Pruned {count} violation(s) older than {days} days.")
 
 
 def run_conformance_history(args):
@@ -455,14 +457,14 @@ def run_conformance_history(args):
     manager = _get_manager()
 
     if not manager.is_initialized():
-        print("Error: Conformance tracking not initialized.")
+        click.echo("Error: Conformance tracking not initialized.")
         sys.exit(1)
 
     days = getattr(args, 'days', 30)
     snapshots = manager.get_history(days=days)
 
     if not snapshots:
-        print(f"\nNo history found for the last {days} days.")
+        click.echo(f"\nNo history found for the last {days} days.")
         return
 
     fmt = getattr(args, 'format', 'text')
@@ -477,22 +479,22 @@ def run_conformance_history(args):
 
 def _print_history_text(snapshots):
     """Print history as text."""
-    print(f"\nConformance History ({len(snapshots)} snapshots)")
-    print("=" * 60)
-    print(f"{'Date':<12} {'Failed':<8} {'Exempted':<10} {'Stale':<8} {'Files':<8}")
-    print("-" * 60)
+    click.echo(f"\nConformance History ({len(snapshots)} snapshots)")
+    click.echo("=" * 60)
+    click.echo(f"{'Date':<12} {'Failed':<8} {'Exempted':<10} {'Stale':<8} {'Files':<8}")
+    click.echo("-" * 60)
 
     for snapshot in snapshots:
         s = snapshot.summary
-        print(f"{snapshot.date.isoformat():<12} {s.failed:<8} {s.exempted:<10} {s.stale:<8} {snapshot.files_analyzed:<8}")
+        click.echo(f"{snapshot.date.isoformat():<12} {s.failed:<8} {s.exempted:<10} {s.stale:<8} {snapshot.files_analyzed:<8}")
 
     if len(snapshots) >= 2:
         delta = snapshots[-1].delta_from(snapshots[0])
-        print()
-        print("-" * 60)
-        print(f"Change over period:")
-        print(f"  Failed:   {delta['failed_delta']:+d}")
-        print(f"  Exempted: {delta['exempted_delta']:+d}")
+        click.echo()
+        click.echo("-" * 60)
+        click.echo(f"Change over period:")
+        click.echo(f"  Failed:   {delta['failed_delta']:+d}")
+        click.echo(f"  Exempted: {delta['exempted_delta']:+d}")
 
 
 def _print_history_json(snapshots):
@@ -511,7 +513,7 @@ def _print_history_json(snapshots):
             'by_severity': s.by_severity,
             'files_analyzed': s.files_analyzed,
         })
-    print(json.dumps(data, indent=2))
+    click.echo(json.dumps(data, indent=2))
 
 
 def _print_history_yaml(snapshots):
@@ -531,4 +533,4 @@ def _print_history_yaml(snapshots):
             'by_severity': s.by_severity,
             'files_analyzed': s.files_analyzed,
         })
-    print(yaml.dump(data, default_flow_style=False, sort_keys=False))
+    click.echo(yaml.dump(data, default_flow_style=False, sort_keys=False))

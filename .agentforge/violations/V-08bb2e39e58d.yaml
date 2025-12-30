@@ -6,7 +6,7 @@ severity: minor
 file_path: tools/pyright_runner.py
 message: 'Class ''PyrightRunner'' has 7 methods (max: 3)'
 detected_at: '2025-12-30T17:10:15.584652'
-last_seen_at: '2025-12-30T17:10:15.584652'
+last_seen_at: '2025-12-30T18:26:38.371526'
 status: open
 line_number: 40
 fix_hint: Split modules with too many classes into focused single-class modules

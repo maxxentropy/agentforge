@@ -6,6 +6,7 @@ across the three-tier config system (global, workspace, repo).
 """
 
 import sys
+import click
 import yaml
 from pathlib import Path
 
@@ -22,48 +23,48 @@ def run_config(args):
 
 def run_config_init_global(args):
     """Initialize global config at ~/.agentforge/"""
-    print()
-    print("=" * 60)
-    print("CONFIG INIT-GLOBAL")
-    print("=" * 60)
+    click.echo()
+    click.echo("=" * 60)
+    click.echo("CONFIG INIT-GLOBAL")
+    click.echo("=" * 60)
 
     _ensure_workspace_tools()
 
     try:
         from workspace import init_global_config
     except ImportError as e:
-        print(f"\nError: Could not import workspace module: {e}")
+        click.echo(f"\nError: Could not import workspace module: {e}")
         sys.exit(1)
 
-    print(f"\n  Location: ~/.agentforge/")
+    click.echo(f"\n  Location: ~/.agentforge/")
 
     try:
         result = init_global_config(force=getattr(args, 'force', False))
-        print(f"\n✅ Global config initialized: {result}")
-        print("\nCreated:")
-        print("  ~/.agentforge/")
-        print("  ├── config.yaml")
-        print("  ├── contracts/")
-        print("  └── workspaces/")
-        print("\nEdit config.yaml to set your default preferences.")
+        click.echo(f"\nGlobal config initialized: {result}")
+        click.echo("\nCreated:")
+        click.echo("  ~/.agentforge/")
+        click.echo("  ├── config.yaml")
+        click.echo("  ├── contracts/")
+        click.echo("  └── workspaces/")
+        click.echo("\nEdit config.yaml to set your default preferences.")
     except Exception as e:
-        print(f"\n❌ Failed to initialize: {e}")
+        click.echo(f"\nFailed to initialize: {e}")
         sys.exit(1)
 
 
 def run_config_show(args):
     """Show configuration at specified tier or effective."""
-    print()
-    print("=" * 60)
-    print("CONFIG SHOW")
-    print("=" * 60)
+    click.echo()
+    click.echo("=" * 60)
+    click.echo("CONFIG SHOW")
+    click.echo("=" * 60)
 
     _ensure_workspace_tools()
 
     try:
         from workspace import discover_config, format_config_status
     except ImportError as e:
-        print(f"\nError: Could not import workspace module: {e}")
+        click.echo(f"\nError: Could not import workspace module: {e}")
         sys.exit(1)
 
     ctx = discover_config()
@@ -76,60 +77,60 @@ def run_config_show(args):
     elif tier == 'repo':
         _show_repo_config(ctx)
     else:
-        print(format_config_status(ctx))
+        click.echo(format_config_status(ctx))
 
 
 def _show_global_config(ctx):
     """Show global configuration."""
-    print("\nGlobal Configuration (~/.agentforge/config.yaml):")
-    print("-" * 50)
+    click.echo("\nGlobal Configuration (~/.agentforge/config.yaml):")
+    click.echo("-" * 50)
     if ctx.global_config:
-        print(yaml.dump(ctx.global_config, default_flow_style=False))
+        click.echo(yaml.dump(ctx.global_config, default_flow_style=False))
     else:
-        print("Not configured. Run: python execute.py config init-global")
+        click.echo("Not configured. Run: python execute.py config init-global")
 
 
 def _show_workspace_config(ctx):
     """Show workspace configuration."""
-    print("\nWorkspace Configuration:")
-    print("-" * 50)
+    click.echo("\nWorkspace Configuration:")
+    click.echo("-" * 50)
     if ctx.workspace_config:
         defaults = ctx.workspace_config.get('defaults', {})
         if defaults:
-            print(yaml.dump(defaults, default_flow_style=False))
+            click.echo(yaml.dump(defaults, default_flow_style=False))
         else:
-            print("No defaults configured in workspace")
+            click.echo("No defaults configured in workspace")
     else:
-        print("No workspace found")
+        click.echo("No workspace found")
 
 
 def _show_repo_config(ctx):
     """Show repository configuration."""
-    print("\nRepository Configuration:")
-    print("-" * 50)
+    click.echo("\nRepository Configuration:")
+    click.echo("-" * 50)
     if ctx.repo_config:
         overrides = ctx.repo_config.get('overrides', {})
         if overrides:
-            print(yaml.dump(overrides, default_flow_style=False))
+            click.echo(yaml.dump(overrides, default_flow_style=False))
         else:
-            print("No overrides configured in repo")
+            click.echo("No overrides configured in repo")
     else:
-        print("No repo config found")
+        click.echo("No repo config found")
 
 
 def run_config_set(args):
     """Set a configuration value."""
-    print()
-    print("=" * 60)
-    print("CONFIG SET")
-    print("=" * 60)
+    click.echo()
+    click.echo("=" * 60)
+    click.echo("CONFIG SET")
+    click.echo("=" * 60)
 
     _ensure_workspace_tools()
 
     try:
         from workspace import find_upward
     except ImportError as e:
-        print(f"\nError: Could not import workspace module: {e}")
+        click.echo(f"\nError: Could not import workspace module: {e}")
         sys.exit(1)
 
     key = args.key
@@ -140,13 +141,13 @@ def run_config_set(args):
         return
 
     if not config_path.exists():
-        print(f"\n❌ Config file not found: {config_path}")
+        click.echo(f"\nConfig file not found: {config_path}")
         sys.exit(1)
 
-    print(f"\n  Tier: {tier}")
-    print(f"  File: {config_path}")
-    print(f"  Key: {key}")
-    print(f"  Value: {value}")
+    click.echo(f"\n  Tier: {tier}")
+    click.echo(f"  File: {config_path}")
+    click.echo(f"  Key: {key}")
+    click.echo(f"  Value: {value}")
 
     with open(config_path) as f:
         config = yaml.safe_load(f) or {}
@@ -157,7 +158,7 @@ def run_config_set(args):
     with open(config_path, 'w') as f:
         yaml.dump(config, f, default_flow_style=False, sort_keys=False)
 
-    print(f"\n✅ Configuration updated")
+    click.echo(f"\nConfiguration updated")
 
 
 def _determine_config_file(args, find_upward):
@@ -167,7 +168,7 @@ def _determine_config_file(args, find_upward):
     elif getattr(args, 'set_workspace', False):
         ws_yaml = find_upward('workspace.yaml') or find_upward('agentforge/workspace.yaml')
         if not ws_yaml:
-            print("\n❌ No workspace found")
+            click.echo("\nNo workspace found")
             sys.exit(1)
         return ws_yaml, 'workspace'
     else:

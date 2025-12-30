@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-b28b83d8e69a
+contract_id: agentforge
+check_id: max-cyclomatic-complexity
+severity: major
+file_path: tools/builtin_checks_architecture.py
+message: 'Function ''check_constructor_injection'' has complexity 26 (max: 10)'
+detected_at: '2025-12-30T17:35:52.280570'
+last_seen_at: '2025-12-30T18:26:38.339806'
+status: open
+line_number: 161
+fix_hint: Break complex functions into smaller, focused helper functions

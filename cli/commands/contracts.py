@@ -1,5 +1,5 @@
 """Contract management commands - listing, checking, validation, exemptions."""
-import sys, json, yaml
+import sys, json, click, yaml
 from pathlib import Path
 from datetime import date
 
@@ -16,17 +16,17 @@ def run_contracts(args):
 
 def run_contracts_list(args):
     """List all contracts."""
-    print()
-    print("=" * 60)
-    print("CONTRACTS LIST")
-    print("=" * 60)
+    click.echo()
+    click.echo("=" * 60)
+    click.echo("CONTRACTS LIST")
+    click.echo("=" * 60)
 
     _ensure_contracts_tools()
 
     try:
         from contracts import ContractRegistry
     except ImportError as e:
-        print(f"\nError: Could not import contracts module: {e}")
+        click.echo(f"\nError: Could not import contracts module: {e}")
         sys.exit(1)
 
     repo_root = Path.cwd()
@@ -36,7 +36,7 @@ def run_contracts_list(args):
     filtered = _filter_contracts(contracts, args)
 
     if not filtered:
-        print("\n  No contracts found matching filters")
+        click.echo("\n  No contracts found matching filters")
         return
 
     _output_contracts(filtered, args.format)
@@ -65,33 +65,33 @@ def _filter_contracts(contracts: dict, args) -> list:
 def _output_contracts(filtered: list, fmt: str):
     """Output contracts in specified format."""
     if fmt == 'table':
-        print(f"\n  Found {len(filtered)} contracts:\n")
-        print(f"  {'Name':<30} {'Type':<15} {'Tier':<10} {'Checks':<8} {'Enabled'}")
-        print(f"  {'-' * 30} {'-' * 15} {'-' * 10} {'-' * 8} {'-' * 7}")
+        click.echo(f"\n  Found {len(filtered)} contracts:\n")
+        click.echo(f"  {'Name':<30} {'Type':<15} {'Tier':<10} {'Checks':<8} {'Enabled'}")
+        click.echo(f"  {'-' * 30} {'-' * 15} {'-' * 10} {'-' * 8} {'-' * 7}")
         for c in sorted(filtered, key=lambda x: (x.tier, x.name)):
-            enabled = '✓' if c.enabled else '✗'
-            print(f"  {c.name:<30} {c.type:<15} {c.tier:<10} {len(c.checks):<8} {enabled}")
+            enabled = 'Y' if c.enabled else 'N'
+            click.echo(f"  {c.name:<30} {c.type:<15} {c.tier:<10} {len(c.checks):<8} {enabled}")
     elif fmt == 'yaml':
         output = {'contracts': [{'name': c.name, 'type': c.type, 'tier': c.tier, 'enabled': c.enabled, 'checks': len(c.checks), 'tags': c.tags} for c in filtered]}
-        print(yaml.dump(output, default_flow_style=False))
+        click.echo(yaml.dump(output, default_flow_style=False))
     elif fmt == 'json':
         output = {'contracts': [{'name': c.name, 'type': c.type, 'tier': c.tier, 'enabled': c.enabled, 'checks': len(c.checks), 'tags': c.tags} for c in filtered]}
-        print(json.dumps(output, indent=2))
+        click.echo(json.dumps(output, indent=2))
 
 
 def run_contracts_show(args):
     """Show contract details."""
-    print()
-    print("=" * 60)
-    print("CONTRACT DETAILS")
-    print("=" * 60)
+    click.echo()
+    click.echo("=" * 60)
+    click.echo("CONTRACT DETAILS")
+    click.echo("=" * 60)
 
     _ensure_contracts_tools()
 
     try:
         from contracts import ContractRegistry
     except ImportError as e:
-        print(f"\nError: Could not import contracts module: {e}")
+        click.echo(f"\nError: Could not import contracts module: {e}")
         sys.exit(1)
 
     repo_root = Path.cwd()
@@ -99,7 +99,7 @@ def run_contracts_show(args):
     contract = registry.get_contract(args.name)
 
     if not contract:
-        print(f"\n❌ Contract not found: {args.name}")
+        click.echo(f"\nContract not found: {args.name}")
         sys.exit(1)
 
     _output_contract_details(contract, args.format)
@@ -114,20 +114,20 @@ def _output_contract_details(contract, fmt: str):
         'checks': contract.all_checks()
     }
     if fmt == 'yaml':
-        print(yaml.dump(output, default_flow_style=False))
+        click.echo(yaml.dump(output, default_flow_style=False))
     elif fmt == 'json':
-        print(json.dumps(output, indent=2))
+        click.echo(json.dumps(output, indent=2))
     else:
-        print(f"\n  Contract: {contract.name}")
-        print(f"  Type: {contract.type}\n  Version: {contract.version}\n  Tier: {contract.tier}\n  Enabled: {contract.enabled}")
+        click.echo(f"\n  Contract: {contract.name}")
+        click.echo(f"  Type: {contract.type}\n  Version: {contract.version}\n  Tier: {contract.tier}\n  Enabled: {contract.enabled}")
         if contract.description:
-            print(f"  Description: {contract.description[:80]}...")
+            click.echo(f"  Description: {contract.description[:80]}...")
         if contract.extends:
-            print(f"  Extends: {', '.join(contract.extends)}")
-        print(f"\n  Checks ({len(contract.all_checks())}):")
+            click.echo(f"  Extends: {', '.join(contract.extends)}")
+        click.echo(f"\n  Checks ({len(contract.all_checks())}):")
         for check in contract.all_checks():
-            status = '✓' if check.get('enabled', True) else '✗'
-            print(f"    {status} {check.get('id')}: {check.get('name')} [{check.get('type')}]")
+            status = 'Y' if check.get('enabled', True) else 'N'
+            click.echo(f"    [{status}] {check.get('id')}: {check.get('name')} [{check.get('type')}]")
 
 
 def _get_contract_results(args, repo_root, file_paths):
@@ -138,7 +138,7 @@ def _get_contract_results(args, repo_root, file_paths):
         registry = ContractRegistry(repo_root)
         contract = registry.get_contract(args.contract)
         if not contract:
-            print(f"\n❌ Contract not found: {args.contract}")
+            click.echo(f"\nContract not found: {args.contract}")
             sys.exit(1)
         return [run_contract(contract, repo_root, registry, file_paths)]
 
@@ -159,10 +159,10 @@ def _calculate_contract_totals(results):
 
 def run_contracts_check(args):
     """Run contract checks."""
-    print()
-    print("=" * 60)
-    print("CONTRACT CHECK")
-    print("=" * 60)
+    click.echo()
+    click.echo("=" * 60)
+    click.echo("CONTRACT CHECK")
+    click.echo("=" * 60)
 
     _ensure_contracts_tools()
 
@@ -171,35 +171,41 @@ def run_contracts_check(args):
         file_paths = [(repo_root / f.strip()).resolve() for f in args.files.split(',')] if args.files else None
         results = _get_contract_results(args, repo_root, file_paths)
     except ImportError as e:
-        print(f"\nError: Could not import contracts module: {e}")
+        click.echo(f"\nError: Could not import contracts module: {e}")
         sys.exit(1)
 
     totals = _calculate_contract_totals(results)
 
-    _output_check_results(
-        results, totals["all_passed"], totals["errors"],
-        totals["warnings"], totals["exempted"], args.format
-    )
+    _output_check_results(results, totals, args.format)
 
     if not totals["all_passed"] and (args.strict or totals["errors"] > 0):
         sys.exit(1)
 
 
-def _output_check_results(results, all_passed, total_errors, total_warnings, total_exempted, fmt):
+def _output_check_results(results, totals, fmt):
     """Output check results in specified format."""
     if fmt == 'text':
-        _print_contracts_text(results, total_errors, total_warnings, total_exempted)
+        _print_contracts_text(results, totals['errors'], totals['warnings'], totals['exempted'])
     else:
-        output = _build_contracts_output(results, all_passed, total_errors, total_warnings, total_exempted)
+        output = _build_contracts_output(results, totals)
         if fmt == 'yaml':
-            print(yaml.dump(output, default_flow_style=False))
+            click.echo(yaml.dump(output, default_flow_style=False))
         elif fmt == 'json':
-            print(json.dumps(output, indent=2))
+            click.echo(json.dumps(output, indent=2))
 
 
-def _build_contracts_output(results, all_passed, total_errors, total_warnings, total_exempted):
+def _build_contracts_output(results, totals):
     """Build structured output dict for contract results."""
-    output = {'summary': {'passed': all_passed, 'contracts_checked': len(results), 'errors': total_errors, 'warnings': total_warnings, 'exempted': total_exempted}, 'results': []}
+    output = {
+        'summary': {
+            'passed': totals['all_passed'],
+            'contracts_checked': len(results),
+            'errors': totals['errors'],
+            'warnings': totals['warnings'],
+            'exempted': totals['exempted']
+        },
+        'results': []
+    }
     for result in results:
         output['results'].append({
             'contract': result.contract_name, 'type': result.contract_type, 'passed': result.passed,
@@ -211,39 +217,39 @@ def _build_contracts_output(results, all_passed, total_errors, total_warnings, t
 def _get_check_icon(check_result) -> str:
     """Get icon for check result based on status and severity."""
     if check_result.exempted:
-        return '🔓'
-    severity_icons = {'error': '❌', 'warning': '⚠️'}
-    return severity_icons.get(check_result.severity, 'ℹ️')
+        return '[EX]'
+    severity_icons = {'error': '[ERR]', 'warning': '[WRN]'}
+    return severity_icons.get(check_result.severity, '[INF]')
 
 
 def _print_check_failure(check_result):
     """Print a failed check result."""
     icon = _get_check_icon(check_result)
-    print(f"      {icon} {check_result.check_name}: {check_result.message}")
+    click.echo(f"      {icon} {check_result.check_name}: {check_result.message}")
     if check_result.file_path:
-        print(f"         at {check_result.file_path}:{check_result.line_number}")
+        click.echo(f"         at {check_result.file_path}:{check_result.line_number}")
     if check_result.fix_hint:
-        print(f"         fix: {check_result.fix_hint}")
+        click.echo(f"         fix: {check_result.fix_hint}")
 
 
 def _print_contracts_text(results, total_errors, total_warnings, total_exempted):
     """Print contract results in text format."""
-    print(f"\n  Ran {len(results)} contracts\n")
+    click.echo(f"\n  Ran {len(results)} contracts\n")
     for result in results:
-        status = '✓' if result.passed else '✗'
-        print(f"  {status} {result.contract_name} ({result.contract_type})")
+        status = '[OK]' if result.passed else '[FAIL]'
+        click.echo(f"  {status} {result.contract_name} ({result.contract_type})")
         for check_result in result.check_results:
             if not check_result.passed:
                 _print_check_failure(check_result)
-    print(f"\n  Summary:\n    Errors: {total_errors}\n    Warnings: {total_warnings}\n    Exempted: {total_exempted}")
+    click.echo(f"\n  Summary:\n    Errors: {total_errors}\n    Warnings: {total_warnings}\n    Exempted: {total_exempted}")
 
 
 def run_contracts_init(args):
     """Initialize contract for repo."""
-    print()
-    print("=" * 60)
-    print("CONTRACT INIT")
-    print("=" * 60)
+    click.echo()
+    click.echo("=" * 60)
+    click.echo("CONTRACT INIT")
+    click.echo("=" * 60)
 
     repo_root = Path.cwd()
     contracts_dir = repo_root / 'contracts'
@@ -253,7 +259,7 @@ def run_contracts_init(args):
     contract_path = contracts_dir / f'{name}.contract.yaml'
 
     if contract_path.exists():
-        print(f"\n❌ Contract already exists: {contract_path}")
+        click.echo(f"\nContract already exists: {contract_path}")
         sys.exit(1)
 
     extends = args.extends or '_base'
@@ -266,24 +272,24 @@ def run_contracts_init(args):
     with open(contract_path, 'w') as f:
         yaml.dump(contract, f, default_flow_style=False, sort_keys=False)
 
-    print(f"\n✅ Created contract: {contract_path}")
-    print(f"   Extends: {extends}")
-    print(f"\n   Next steps:\n   1. Edit {contract_path} to add checks\n   2. Run 'python execute.py contracts check' to verify")
+    click.echo(f"\nCreated contract: {contract_path}")
+    click.echo(f"   Extends: {extends}")
+    click.echo(f"\n   Next steps:\n   1. Edit {contract_path} to add checks\n   2. Run 'python execute.py contracts check' to verify")
 
 
 def run_contracts_validate(args):
     """Validate contract files."""
-    print()
-    print("=" * 60)
-    print("CONTRACT VALIDATE")
-    print("=" * 60)
+    click.echo()
+    click.echo("=" * 60)
+    click.echo("CONTRACT VALIDATE")
+    click.echo("=" * 60)
 
     _ensure_contracts_tools()
 
     try:
         from contracts import ContractRegistry
     except ImportError as e:
-        print(f"\nError: Could not import contracts module: {e}")
+        click.echo(f"\nError: Could not import contracts module: {e}")
         sys.exit(1)
 
     repo_root = Path.cwd()
@@ -293,26 +299,26 @@ def run_contracts_validate(args):
     else:
         registry = ContractRegistry(repo_root)
         contracts = registry.discover_contracts()
-        print(f"\n  Validated {len(contracts)} contracts")
+        click.echo(f"\n  Validated {len(contracts)} contracts")
         for name, contract in contracts.items():
-            print(f"    ✓ {name} ({contract.tier})")
+            click.echo(f"    [OK] {name} ({contract.tier})")
 
 
 def _validate_single_contract(file_path: str):
     """Validate a single contract file."""
     path = Path(file_path)
     if not path.exists():
-        print(f"\n❌ File not found: {path}")
+        click.echo(f"\nFile not found: {path}")
         sys.exit(1)
     try:
         with open(path) as f:
             data = yaml.safe_load(f)
         if 'contract' not in data:
-            print(f"\n❌ Invalid contract: missing 'contract' key")
+            click.echo(f"\nInvalid contract: missing 'contract' key")
             sys.exit(1)
-        print(f"\n✅ Contract valid: {path}")
+        click.echo(f"\nContract valid: {path}")
     except Exception as e:
-        print(f"\n❌ Failed to validate: {e}")
+        click.echo(f"\nFailed to validate: {e}")
         sys.exit(1)
 
 
@@ -325,17 +331,17 @@ def run_exemptions(args):
 
 def run_exemptions_list(args):
     """List all exemptions."""
-    print()
-    print("=" * 60)
-    print("EXEMPTIONS LIST")
-    print("=" * 60)
+    click.echo()
+    click.echo("=" * 60)
+    click.echo("EXEMPTIONS LIST")
+    click.echo("=" * 60)
 
     _ensure_contracts_tools()
 
     try:
         from contracts import ContractRegistry
     except ImportError as e:
-        print(f"\nError: Could not import contracts module: {e}")
+        click.echo(f"\nError: Could not import contracts module: {e}")
         sys.exit(1)
 
     repo_root = Path.cwd()
@@ -345,7 +351,7 @@ def run_exemptions_list(args):
     filtered = _filter_exemptions(exemptions, args)
 
     if not filtered:
-        print("\n  No exemptions found matching filters")
+        click.echo("\n  No exemptions found matching filters")
         return
 
     _output_exemptions(filtered, args.format)
@@ -393,27 +399,27 @@ def _exemption_to_dict(ex) -> dict:
 def _output_exemptions(filtered, fmt: str):
     """Output exemptions in specified format."""
     if fmt == 'table':
-        print(f"\n  Found {len(filtered)} exemptions:\n")
-        print(f"  {'ID':<25} {'Contract':<20} {'Check':<20} {'Status':<10} {'Expires'}")
-        print(f"  {'-' * 25} {'-' * 20} {'-' * 20} {'-' * 10} {'-' * 12}")
+        click.echo(f"\n  Found {len(filtered)} exemptions:\n")
+        click.echo(f"  {'ID':<25} {'Contract':<20} {'Check':<20} {'Status':<10} {'Expires'}")
+        click.echo(f"  {'-' * 25} {'-' * 20} {'-' * 20} {'-' * 10} {'-' * 12}")
         for ex in filtered:
             checks_str = ex.checks[0] if len(ex.checks) == 1 else f"{ex.checks[0]}+{len(ex.checks)-1}"
             expires = str(ex.expires) if ex.expires else '-'
-            print(f"  {ex.id:<25} {ex.contract:<20} {checks_str:<20} {_get_exemption_status(ex):<10} {expires}")
+            click.echo(f"  {ex.id:<25} {ex.contract:<20} {checks_str:<20} {_get_exemption_status(ex):<10} {expires}")
     else:
         output = {'exemptions': [_exemption_to_dict(ex) for ex in filtered]}
         if fmt == 'yaml':
-            print(yaml.dump(output, default_flow_style=False))
+            click.echo(yaml.dump(output, default_flow_style=False))
         elif fmt == 'json':
-            print(json.dumps(output, indent=2))
+            click.echo(json.dumps(output, indent=2))
 
 
 def run_exemptions_add(args):
     """Add a new exemption."""
-    print()
-    print("=" * 60)
-    print("ADD EXEMPTION")
-    print("=" * 60)
+    click.echo()
+    click.echo("=" * 60)
+    click.echo("ADD EXEMPTION")
+    click.echo("=" * 60)
 
     repo_root = Path.cwd()
     exemptions_dir = repo_root / 'exemptions'
@@ -443,8 +449,8 @@ def run_exemptions_add(args):
     with open(exemptions_file, 'w') as f:
         yaml.dump(data, f, default_flow_style=False, sort_keys=False)
 
-    print(f"\n✅ Added exemption: {exemption_id}")
-    print(f"   Contract: {args.contract}\n   Check: {args.check}\n   File: {exemptions_file}")
+    click.echo(f"\nAdded exemption: {exemption_id}")
+    click.echo(f"   Contract: {args.contract}\n   Check: {args.check}\n   File: {exemptions_file}")
 
 
 def _categorize_exemptions(exemptions) -> tuple:
@@ -458,41 +464,41 @@ def _categorize_exemptions(exemptions) -> tuple:
 def _print_audit_details(expired, no_expiry, show_expired: bool):
     """Print detailed audit findings."""
     if show_expired and expired:
-        print(f"\n  Expired Exemptions:")
+        click.echo(f"\n  Expired Exemptions:")
         for ex in expired:
-            print(f"    ⏰ {ex.id} (expired {ex.expires})")
-            print(f"       Contract: {ex.contract}, Check: {ex.checks[0]}")
+            click.echo(f"    [EXP] {ex.id} (expired {ex.expires})")
+            click.echo(f"       Contract: {ex.contract}, Check: {ex.checks[0]}")
 
     if no_expiry:
-        print(f"\n  ⚠️  Exemptions without expiration date:")
+        click.echo(f"\n  Exemptions without expiration date:")
         for ex in no_expiry:
-            print(f"    {ex.id}\n       Contract: {ex.contract}, Check: {ex.checks[0]}")
+            click.echo(f"    {ex.id}\n       Contract: {ex.contract}, Check: {ex.checks[0]}")
 
     if expired:
-        print(f"\n  Recommendation: Review and remove expired exemptions")
+        click.echo(f"\n  Recommendation: Review and remove expired exemptions")
 
 
 def run_exemptions_audit(args):
     """Audit exemptions."""
-    print()
-    print("=" * 60)
-    print("EXEMPTION AUDIT")
-    print("=" * 60)
+    click.echo()
+    click.echo("=" * 60)
+    click.echo("EXEMPTION AUDIT")
+    click.echo("=" * 60)
 
     _ensure_contracts_tools()
 
     try:
         from contracts import ContractRegistry
     except ImportError as e:
-        print(f"\nError: Could not import contracts module: {e}")
+        click.echo(f"\nError: Could not import contracts module: {e}")
         sys.exit(1)
 
     registry = ContractRegistry(Path.cwd())
     exemptions = registry.load_exemptions()
     active, expired, no_expiry = _categorize_exemptions(exemptions)
 
-    print(f"\n  Exemption Audit Summary:")
-    print(f"  {'─' * 40}")
-    print(f"  Total exemptions: {len(exemptions)}\n  Active: {len(active)}\n  Expired: {len(expired)}\n  Without expiration: {len(no_expiry)}")
+    click.echo(f"\n  Exemption Audit Summary:")
+    click.echo(f"  {'─' * 40}")
+    click.echo(f"  Total exemptions: {len(exemptions)}\n  Active: {len(active)}\n  Expired: {len(expired)}\n  Without expiration: {len(no_expiry)}")
 
     _print_audit_details(expired, no_expiry, args.show_expired)

@@ -6,6 +6,10 @@ severity: major
 file_path: cli/render.py
 message: 'Required pattern not found: ''click\.Path\s*\('''
 detected_at: '2025-12-30T17:10:16.530187'
-last_seen_at: '2025-12-30T17:10:16.530187'
-status: open
+last_seen_at: '2025-12-30T18:11:20.190872'
+status: resolved
 fix_hint: Use click.Path(exists=True) for validated path inputs
+resolution:
+  resolved_at: '2025-12-30T18:12:10.623530'
+  resolved_by: system
+  reason: No longer detected in full verification run

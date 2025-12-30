@@ -5,6 +5,7 @@ Contains functions to render YAML specifications to human-readable Markdown.
 """
 
 import sys
+import click
 import yaml
 from pathlib import Path
 
@@ -357,15 +358,15 @@ def render_spec_to_markdown(spec: dict) -> str:
 
 def run_render_spec(args):
     """Render YAML specification to Markdown for human consumption."""
-    print()
-    print("=" * 60)
-    print("RENDER SPECIFICATION")
-    print("=" * 60)
+    click.echo()
+    click.echo("=" * 60)
+    click.echo("RENDER SPECIFICATION")
+    click.echo("=" * 60)
 
     spec_path = Path(args.spec_file)
     if not spec_path.exists():
-        print(f"Error: {spec_path} not found")
-        print("Run 'python execute.py draft' first")
+        click.echo(f"Error: {spec_path} not found")
+        click.echo("Run 'python execute.py draft' first")
         sys.exit(1)
 
     with open(spec_path) as f:
@@ -380,6 +381,6 @@ def run_render_spec(args):
     with open(output_path, 'w') as f:
         f.write(markdown)
 
-    print(f"\n✅ Rendered to: {output_path}")
-    print(f"   Source: {spec_path}")
-    print(f"   Lines: {len(lines)}")
+    click.echo(f"\nRendered to: {output_path}")
+    click.echo(f"   Source: {spec_path}")
+    click.echo(f"   Lines: {len(lines)}")

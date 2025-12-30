@@ -7,6 +7,7 @@ Uses LSP and/or vector search to find relevant code context.
 
 import sys
 import json
+import click
 from pathlib import Path
 
 
@@ -17,20 +18,20 @@ def _ensure_context_tools():
 
 def run_context(args):
     """Test context retrieval system."""
-    print()
-    print("=" * 60)
-    print("CONTEXT RETRIEVAL")
-    print("=" * 60)
+    click.echo()
+    click.echo("=" * 60)
+    click.echo("CONTEXT RETRIEVAL")
+    click.echo("=" * 60)
 
     _ensure_context_tools()
 
     try:
         from context_retrieval import ContextRetriever
     except ImportError as e:
-        print(f"\nError: Could not import context_retrieval: {e}")
+        click.echo(f"\nError: Could not import context_retrieval: {e}")
         sys.exit(1)
 
-    print(f"\n  Project: {args.project}")
+    click.echo(f"\n  Project: {args.project}")
 
     provider = getattr(args, 'provider', None)
     retriever = ContextRetriever(args.project, provider=provider)
@@ -52,7 +53,7 @@ def run_context(args):
 
 def _run_check(retriever):
     """Check available components."""
-    print("\nChecking components...")
+    click.echo("\nChecking components...")
     status = retriever.check_dependencies()
 
     _print_lsp_status(status["lsp"])
@@ -62,21 +63,21 @@ def _run_check(retriever):
 
 def _print_lsp_status(lsp):
     """Print LSP status."""
-    print("\n  LSP (Language Server Protocol):")
+    click.echo("\n  LSP (Language Server Protocol):")
     if lsp["available"]:
-        print(f"    Status: Available")
-        print(f"    Server: {lsp.get('server', 'unknown')}")
+        click.echo(f"    Status: Available")
+        click.echo(f"    Server: {lsp.get('server', 'unknown')}")
     else:
-        print(f"    Status: Not available")
+        click.echo(f"    Status: Not available")
         if lsp.get("error"):
-            print(f"    Error: {lsp['error']}")
+            click.echo(f"    Error: {lsp['error']}")
         if lsp.get("install_instructions"):
-            print(f"    Install: {lsp['install_instructions']}")
+            click.echo(f"    Install: {lsp['install_instructions']}")
 
 
 def _print_embedding_providers():
     """Print embedding provider status."""
-    print("\n  Embedding Providers:")
+    click.echo("\n  Embedding Providers:")
     try:
         from embedding_providers import list_providers, get_available_providers
         providers = list_providers()
@@ -84,48 +85,48 @@ def _print_embedding_providers():
         current = available[0] if available else None
 
         for p in providers:
-            mark = "✓" if p["available"] else "✗"
+            mark = "[Y]" if p["available"] else "[N]"
             default = " (current)" if p["name"] == current else ""
             api_note = "" if not p["requires_api_key"] else " (needs API key)"
-            print(f"    {mark} {p['name']}{api_note}{default}")
+            click.echo(f"    {mark} {p['name']}{api_note}{default}")
             if not p["available"] and p["install_instructions"]:
-                print(f"      Install: {p['install_instructions']}")
+                click.echo(f"      Install: {p['install_instructions']}")
     except ImportError:
-        print("    Could not load embedding providers")
+        click.echo("    Could not load embedding providers")
 
 
 def _print_vector_status(vec):
     """Print vector search status."""
-    print("\n  Vector Search:")
+    click.echo("\n  Vector Search:")
     if vec["available"]:
-        print(f"    Status: Available")
-        print(f"    Indexed: {'Yes' if vec.get('indexed') else 'No'}")
+        click.echo(f"    Status: Available")
+        click.echo(f"    Indexed: {'Yes' if vec.get('indexed') else 'No'}")
     else:
-        print(f"    Status: Not available")
+        click.echo(f"    Status: Not available")
         if vec.get("error"):
-            print(f"    Error: {vec['error']}")
-        print("    Install: pip install sentence-transformers faiss-cpu")
+            click.echo(f"    Error: {vec['error']}")
+        click.echo("    Install: pip install sentence-transformers faiss-cpu")
 
 
 def _run_index(retriever, force: bool):
     """Build vector index."""
-    print("\nBuilding vector index...")
+    click.echo("\nBuilding vector index...")
     stats = retriever.index(force_rebuild=force)
-    print(f"  Files indexed: {stats.file_count}")
-    print(f"  Chunks created: {stats.chunk_count}")
-    print(f"  Duration: {stats.duration_ms}ms")
+    click.echo(f"  Files indexed: {stats.file_count}")
+    click.echo(f"  Chunks created: {stats.chunk_count}")
+    click.echo(f"  Duration: {stats.duration_ms}ms")
     if stats.errors:
-        print(f"  Errors: {len(stats.errors)}")
+        click.echo(f"  Errors: {len(stats.errors)}")
 
 
 def _run_query(retriever, args):
     """Run context query."""
-    print(f"\n  Query: {args.query}")
-    print(f"  Budget: {args.budget} tokens")
-    print()
-    print("-" * 60)
-    print("Searching...")
-    print("-" * 60)
+    click.echo(f"\n  Query: {args.query}")
+    click.echo(f"  Budget: {args.budget} tokens")
+    click.echo()
+    click.echo("-" * 60)
+    click.echo("Searching...")
+    click.echo("-" * 60)
 
     context = retriever.retrieve(
         args.query,
@@ -134,13 +135,13 @@ def _run_query(retriever, args):
         use_vector=not args.no_vector,
     )
 
-    print(f"\n  Found {len(context.files)} files")
-    print(f"  Found {len(context.symbols)} symbols")
-    print(f"  Total tokens: {context.total_tokens}")
-    print()
-    print("-" * 60)
-    print("RESULTS")
-    print("-" * 60)
+    click.echo(f"\n  Found {len(context.files)} files")
+    click.echo(f"  Found {len(context.symbols)} symbols")
+    click.echo(f"  Total tokens: {context.total_tokens}")
+    click.echo()
+    click.echo("-" * 60)
+    click.echo("RESULTS")
+    click.echo("-" * 60)
 
     _output_context(context, args.format)
     _save_context(context)
@@ -149,11 +150,11 @@ def _run_query(retriever, args):
 def _output_context(context, fmt: str):
     """Output context in specified format."""
     if fmt == 'yaml':
-        print(context.to_yaml())
+        click.echo(context.to_yaml())
     elif fmt == 'json':
-        print(json.dumps(context.to_dict(), indent=2))
+        click.echo(json.dumps(context.to_dict(), indent=2))
     else:
-        print(context.to_prompt_text())
+        click.echo(context.to_prompt_text())
 
 
 def _save_context(context):
@@ -165,12 +166,12 @@ def _save_context(context):
     with open(output_path, 'w') as f:
         f.write(context.to_yaml())
 
-    print(f"\nSaved to: {output_path}")
+    click.echo(f"\nSaved to: {output_path}")
 
 
 def _print_usage():
     """Print usage information."""
-    print("\nNo action specified. Use --query, --check, or --index")
-    print("  python execute.py context -p /path/to/project --check")
-    print("  python execute.py context -p /path/to/project --index")
-    print("  python execute.py context -p /path/to/project -q 'order processing'")
+    click.echo("\nNo action specified. Use --query, --check, or --index")
+    click.echo("  python execute.py context -p /path/to/project --check")
+    click.echo("  python execute.py context -p /path/to/project --index")
+    click.echo("  python execute.py context -p /path/to/project -q 'order processing'")

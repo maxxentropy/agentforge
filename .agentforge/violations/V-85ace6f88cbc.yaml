@@ -6,7 +6,7 @@ severity: major
 file_path: tools/verification_runner.py
 message: 'Class ''VerificationRunner'' has 17 methods (max: 15)'
 detected_at: '2025-12-30T17:10:15.620941'
-last_seen_at: '2025-12-30T17:10:15.620941'
+last_seen_at: '2025-12-30T18:26:38.363265'
 status: open
 line_number: 50
 fix_hint: Split large classes using composition or inheritance

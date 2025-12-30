@@ -6,7 +6,7 @@ severity: minor
 file_path: tests/unit/tools/conformance/test_stores.py
 message: 'Forbidden pattern found: ''@pytest.fixture'''
 detected_at: '2025-12-30T17:10:15.642921'
-last_seen_at: '2025-12-30T17:10:15.642921'
+last_seen_at: '2025-12-30T18:26:38.422235'
 status: open
 line_number: 237
 fix_hint: Move shared fixtures to conftest.py

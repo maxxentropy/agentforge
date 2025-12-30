@@ -340,7 +340,8 @@ def mock_embeddings():
         import hashlib
         vectors = []
         for text in texts:
-            h = hashlib.md5(text.encode()).hexdigest()
+            h = hashlib.sha256(text.encode()).hexdigest()
+            # Take first 32 chars (128 bits) to match previous MD5 output length
             vector = [int(h[i:i+4], 16) / 65535.0 for i in range(0, 32, 4)]
             vectors.append(vector)
         return vectors

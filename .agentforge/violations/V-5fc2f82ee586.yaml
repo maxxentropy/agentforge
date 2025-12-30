@@ -6,6 +6,10 @@ severity: major
 file_path: cli/commands/revision_apply.py
 message: 'Required pattern not found: ''@(click\.command|app\.command)\s*\([^)]*help\s*='''
 detected_at: '2025-12-30T17:10:15.652664'
-last_seen_at: '2025-12-30T17:10:15.660748'
-status: open
+last_seen_at: '2025-12-30T18:11:20.154636'
+status: resolved
 fix_hint: 'Add help parameter: @click.command(help=''Description'')'
+resolution:
+  resolved_at: '2025-12-30T18:12:10.613879'
+  resolved_by: system
+  reason: No longer detected in full verification run

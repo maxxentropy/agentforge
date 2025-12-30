@@ -5,6 +5,7 @@ Contains the apply_revision_session function for applying revision decisions to 
 """
 
 import shutil
+import click
 import yaml
 from pathlib import Path
 from datetime import datetime
@@ -15,13 +16,13 @@ from cli.commands.revision import save_revision_session
 
 def apply_revision_session(args):
     """Apply all decisions from revision session to specification."""
-    print("\n" + "=" * 60)
-    print("REVISE - Apply Decisions")
-    print("=" * 60)
+    click.echo("\n" + "=" * 60)
+    click.echo("REVISE - Apply Decisions")
+    click.echo("=" * 60)
 
     session_path = Path('outputs/revision_session.yaml')
     if not session_path.exists():
-        print("\nNo revision session found. Start with: python execute.py revise")
+        click.echo("\nNo revision session found. Start with: python execute.py revise")
         return
 
     with open(session_path) as f:
@@ -29,18 +30,18 @@ def apply_revision_session(args):
 
     # Check status
     if session['status'] == 'pending_human':
-        print("\n⚠️  Some issues need human review first.")
-        print("Run: python execute.py revise --continue")
+        click.echo("\nSome issues need human review first.")
+        click.echo("Run: python execute.py revise --continue")
         return
     if session['status'] == 'applied':
-        print("\n✅ Session already applied.")
+        click.echo("\nSession already applied.")
         return
 
     # Check for unresolved issues
     unresolved = [i for i in session['issues'] if not i.get('decision') or i['decision'].get('requires_human')]
     if unresolved:
-        print(f"\n⚠️  {len(unresolved)} issue(s) still need decisions.")
-        print("Run: python execute.py revise --continue")
+        click.echo(f"\n{len(unresolved)} issue(s) still need decisions.")
+        click.echo("Run: python execute.py revise --continue")
         return
 
     _print_summary(session)
@@ -48,19 +49,19 @@ def apply_revision_session(args):
     # Build revision instructions from decisions
     to_apply, to_defer = _build_revision_lists(session)
 
-    print(f"\n  Will apply {len(to_apply)} change(s), defer {len(to_defer)}.")
+    click.echo(f"\n  Will apply {len(to_apply)} change(s), defer {len(to_defer)}.")
 
     if not to_apply:
-        print("\n✅ No changes to apply (all deferred).")
+        click.echo("\nNo changes to apply (all deferred).")
         session['status'] = 'applied'
         save_revision_session(session)
         return
 
     # Confirm
-    print()
+    click.echo()
     confirm = input("Apply these changes to specification? (y/n): ").strip().lower()
     if confirm != 'y':
-        print("\nAborted. Session preserved.")
+        click.echo("\nAborted. Session preserved.")
         return
 
     _execute_apply(session, to_apply, to_defer, args)
@@ -115,7 +116,7 @@ def _save_apply_success(result: dict, spec_path: Path, session: dict, to_apply: 
     """Save successful apply result and update session."""
     backup_path = spec_path.with_suffix('.yaml.bak')
     shutil.copy(spec_path, backup_path)
-    print(f"\n  Backed up: {backup_path}")
+    click.echo(f"\n  Backed up: {backup_path}")
 
     result['_revision_notes'] = _build_revision_notes(session, to_apply, to_defer)
 
@@ -131,12 +132,12 @@ def _save_apply_success(result: dict, spec_path: Path, session: dict, to_apply: 
     })
     save_revision_session(session)
 
-    print(f"\n✅ Specification updated: {spec_path}")
-    print("\n" + "-" * 60)
-    print("NEXT STEPS")
-    print("-" * 60)
-    print(f"  1. Review: diff {backup_path} {spec_path}")
-    print("  2. Re-validate: python execute.py validate")
+    click.echo(f"\nSpecification updated: {spec_path}")
+    click.echo("\n" + "-" * 60)
+    click.echo("NEXT STEPS")
+    click.echo("-" * 60)
+    click.echo(f"  1. Review: diff {backup_path} {spec_path}")
+    click.echo("  2. Re-validate: python execute.py validate")
 
 
 def _execute_apply(session: dict, to_apply: list, to_defer: list, args):
@@ -147,10 +148,10 @@ def _execute_apply(session: dict, to_apply: list, to_defer: list, args):
 
     revision_text = _build_apply_instructions(to_apply, to_defer)
 
-    print("\n" + "-" * 60)
-    print("APPLYING CHANGES")
-    print("-" * 60)
-    print("  Mode:", "Anthropic API" if args.use_api else "Claude Code CLI")
+    click.echo("\n" + "-" * 60)
+    click.echo("APPLYING CHANGES")
+    click.echo("-" * 60)
+    click.echo("  Mode:", "Anthropic API" if args.use_api else "Claude Code CLI")
 
     result = _execute_apply_revision(
         yaml.dump(specification, default_flow_style=False, sort_keys=False),
@@ -161,8 +162,8 @@ def _execute_apply(session: dict, to_apply: list, to_defer: list, args):
     if isinstance(result, dict) and '_raw' not in result:
         _save_apply_success(result, spec_path, session, to_apply, to_defer)
     else:
-        print("\n❌ Failed to apply changes.")
-        print("   Session preserved. Try again or apply manually.")
+        click.echo("\nFailed to apply changes.")
+        click.echo("   Session preserved. Try again or apply manually.")
 
 
 def _build_apply_instructions(to_apply: list, to_defer: list) -> str:
@@ -232,4 +233,4 @@ def _increment_version(version: str) -> str:
 def _print_summary(session: dict):
     """Print session summary."""
     s = session.get('summary', {})
-    print(f"\n  Summary: {s.get('resolved', 0)} resolved, {s.get('deferred', 0)} deferred, {s.get('pending_human', 0)} pending")
+    click.echo(f"\n  Summary: {s.get('resolved', 0)} resolved, {s.get('deferred', 0)} deferred, {s.get('pending_human', 0)} pending")

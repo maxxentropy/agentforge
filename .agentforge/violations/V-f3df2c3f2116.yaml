@@ -6,6 +6,10 @@ severity: minor
 file_path: cli/commands/verify.py
 message: 'Required pattern not found: ''@click\.option\s*\([^)]*help\s*='''
 detected_at: '2025-12-30T17:10:15.669456'
-last_seen_at: '2025-12-30T17:10:15.674789'
-status: open
+last_seen_at: '2025-12-30T18:11:20.169713'
+status: resolved
 fix_hint: 'Add help parameter: @click.option(''--name'', help=''Description'')'
+resolution:
+  resolved_at: '2025-12-30T18:12:10.598281'
+  resolved_by: system
+  reason: No longer detected in full verification run

@@ -6,7 +6,11 @@ severity: minor
 file_path: cli/commands/conformance.py
 message: 'Forbidden pattern found: ''print('''
 detected_at: '2025-12-30T17:10:15.957462'
-last_seen_at: '2025-12-30T17:10:16.383346'
-status: open
+last_seen_at: '2025-12-30T17:41:18.329231'
+status: resolved
 line_number: 482
 fix_hint: Use click.echo() or rich.print() for CLI output
+resolution:
+  resolved_at: '2025-12-30T17:46:09.578266'
+  resolved_by: system
+  reason: No longer detected in full verification run

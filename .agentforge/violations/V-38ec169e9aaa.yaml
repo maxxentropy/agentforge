@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-38ec169e9aaa
+contract_id: agentforge
+check_id: max-nesting-depth
+severity: major
+file_path: tools/builtin_checks_architecture.py
+message: 'Function ''check_layer_imports'' has nesting depth 5 (max: 4)'
+detected_at: '2025-12-30T17:35:52.288161'
+last_seen_at: '2025-12-30T18:26:38.346243'
+status: open
+line_number: 21
+fix_hint: Use early returns, guard clauses, or extract nested logic

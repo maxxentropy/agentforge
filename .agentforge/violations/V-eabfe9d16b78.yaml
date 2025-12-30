@@ -1,0 +1,16 @@
+schema_version: '1.0'
+violation_id: V-eabfe9d16b78
+contract_id: agentforge
+check_id: max-parameter-count
+severity: major
+file_path: cli/click_commands/contracts.py
+message: 'Function ''contracts_check'' has 8 parameters (max: 5)'
+detected_at: '2025-12-30T18:15:44.969165'
+last_seen_at: '2025-12-30T18:19:11.114193'
+status: resolved
+line_number: 77
+fix_hint: Group related parameters into a dataclass or use **kwargs
+resolution:
+  resolved_at: '2025-12-30T18:20:14.883268'
+  resolved_by: system
+  reason: No longer detected in full verification run

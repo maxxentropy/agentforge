@@ -1,24 +1,23 @@
 schema_version: '1.0'
-generated_at: '2025-12-30T17:10:16.966969'
-run_id: 9a63559a-2fe2-40d1-ad35-2695bec260fc
+generated_at: '2025-12-30T18:26:39.010269'
+run_id: 3ebabc89-3fcb-40ba-9eed-add4161e7837
 run_type: full
 summary:
-  total: 944
+  total: 160
   passed: 0
-  failed: 944
+  failed: 160
   exempted: 0
   stale: 0
 by_severity:
-  minor: 881
-  major: 45
-  blocker: 18
+  minor: 107
+  major: 53
 by_contract:
-  agentforge: 944
+  agentforge: 160
 contracts_checked:
 - agentforge
-files_checked: 52
+files_checked: 59
 trend:
   passed_delta: 0
-  failed_delta: 944
+  failed_delta: 0
   exempted_delta: 0
-  previous_run_id: c28f2006-f1ad-4663-9443-bd7d45d8ecbd
+  previous_run_id: faff0579-dce9-428d-b0b5-8e5c5fd14379

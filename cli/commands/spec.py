@@ -7,6 +7,7 @@ The revision commands are in cli/commands/revision.py.
 """
 
 import sys
+import click
 import yaml
 from pathlib import Path
 from datetime import datetime
@@ -16,10 +17,10 @@ from cli.core import execute_contract
 
 def run_intake(args):
     """Execute INTAKE contract."""
-    print()
-    print("=" * 60)
-    print("INTAKE")
-    print("=" * 60)
+    click.echo()
+    click.echo("=" * 60)
+    click.echo("INTAKE")
+    click.echo("=" * 60)
 
     inputs = {
         'raw_request': args.request,
@@ -35,12 +36,12 @@ def run_intake(args):
     with open(output_path, 'w') as f:
         yaml.dump(result, f, default_flow_style=False, sort_keys=False)
 
-    print(f"\n✅ Saved to: {output_path}")
-    print()
-    print("-" * 60)
-    print("RESULT")
-    print("-" * 60)
-    print(yaml.dump(result, default_flow_style=False, sort_keys=False))
+    click.echo(f"\nSaved to: {output_path}")
+    click.echo()
+    click.echo("-" * 60)
+    click.echo("RESULT")
+    click.echo("-" * 60)
+    click.echo(yaml.dump(result, default_flow_style=False, sort_keys=False))
 
     # Show next step
     if result.get('detected_scope') == 'unclear' or result.get('initial_questions'):
@@ -48,21 +49,21 @@ def run_intake(args):
         blocking = [q for q in questions if q.get('priority') == 'blocking']
 
         if blocking:
-            print("-" * 60)
-            print("BLOCKING QUESTIONS (answer before proceeding)")
-            print("-" * 60)
+            click.echo("-" * 60)
+            click.echo("BLOCKING QUESTIONS (answer before proceeding)")
+            click.echo("-" * 60)
             for i, q in enumerate(blocking, 1):
-                print(f"  {i}. {q.get('question', 'N/A')}")
-            print()
-            print("Next: python execute.py clarify")
+                click.echo(f"  {i}. {q.get('question', 'N/A')}")
+            click.echo()
+            click.echo("Next: python execute.py clarify")
 
 
 def _load_required_file(path: Path, error_hint: str = ""):
     """Load a required YAML file, exit on failure."""
     if not path.exists():
-        print(f"Error: {path} not found")
+        click.echo(f"Error: {path} not found")
         if error_hint:
-            print(error_hint)
+            click.echo(error_hint)
         sys.exit(1)
     with open(path) as f:
         return yaml.safe_load(f)
@@ -92,27 +93,27 @@ def _handle_clarify_result(result: dict):
     mode = result.get('mode', 'unknown')
     if mode == 'question':
         question = result.get('question', {})
-        print("-" * 60)
-        print("QUESTION FOR YOU")
-        print("-" * 60)
-        print(f"\n  {question.get('text', 'No question')}\n")
-        print("Run with your answer:")
-        print(f"  python execute.py clarify --answer \"your answer here\"")
+        click.echo("-" * 60)
+        click.echo("QUESTION FOR YOU")
+        click.echo("-" * 60)
+        click.echo(f"\n  {question.get('text', 'No question')}\n")
+        click.echo("Run with your answer:")
+        click.echo(f"  python execute.py clarify --answer \"your answer here\"")
     elif mode == 'complete':
         output_path = Path('outputs/clarification_log.yaml')
         with open(output_path, 'w') as f:
             yaml.dump(result.get('clarification_log', result), f, default_flow_style=False)
-        print(f"\n✅ Clarification complete! Saved to: {output_path}")
-        print()
-        print("Next: python execute.py analyze")
+        click.echo(f"\nClarification complete! Saved to: {output_path}")
+        click.echo()
+        click.echo("Next: python execute.py analyze")
 
 
 def run_clarify(args):
     """Execute CLARIFY contract."""
-    print()
-    print("=" * 60)
-    print("CLARIFY")
-    print("=" * 60)
+    click.echo()
+    click.echo("=" * 60)
+    click.echo("CLARIFY")
+    click.echo("=" * 60)
 
     intake_record = _load_required_file(
         Path(args.intake_file),
@@ -123,18 +124,18 @@ def run_clarify(args):
     inputs = {'intake_record': intake_record, 'conversation_history': history}
     result = execute_contract('spec.clarify.v1', inputs, args.use_api)
 
-    print()
-    print("-" * 60)
-    print("RESULT")
-    print("-" * 60)
-    print(yaml.dump(result, default_flow_style=False, sort_keys=False))
+    click.echo()
+    click.echo("-" * 60)
+    click.echo("RESULT")
+    click.echo("-" * 60)
+    click.echo(yaml.dump(result, default_flow_style=False, sort_keys=False))
 
     _handle_clarify_result(result)
 
 
 def _retrieve_context(project_path: str, intake_record: dict) -> str | None:
     """Retrieve code context from project. Returns None on failure."""
-    print(f"\n  Retrieving context from: {project_path}")
+    click.echo(f"\n  Retrieving context from: {project_path}")
     try:
         sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'tools'))
         from context_retrieval import ContextRetriever
@@ -144,17 +145,17 @@ def _retrieve_context(project_path: str, intake_record: dict) -> str | None:
         query = ' '.join(part for part in query_parts if part)
         context = retriever.retrieve(query, budget_tokens=6000)
 
-        print(f"  Found {len(context.files)} relevant files")
-        print(f"  Found {len(context.symbols)} relevant symbols")
-        print(f"  Total tokens: {context.total_tokens}")
+        click.echo(f"  Found {len(context.files)} relevant files")
+        click.echo(f"  Found {len(context.symbols)} relevant symbols")
+        click.echo(f"  Total tokens: {context.total_tokens}")
 
         result = context.to_prompt_text()
         retriever.shutdown()
         return result
     except ImportError as e:
-        print(f"  Warning: Context retrieval not available: {e}")
+        click.echo(f"  Warning: Context retrieval not available: {e}")
     except Exception as e:
-        print(f"  Warning: Context retrieval failed: {e}")
+        click.echo(f"  Warning: Context retrieval failed: {e}")
     return None
 
 
@@ -172,10 +173,10 @@ def _get_code_context(args, intake_record: dict) -> str:
 
 def run_analyze(args):
     """Execute ANALYZE contract."""
-    print()
-    print("=" * 60)
-    print("ANALYZE")
-    print("=" * 60)
+    click.echo()
+    click.echo("=" * 60)
+    click.echo("ANALYZE")
+    click.echo("=" * 60)
 
     intake_record = _load_required_file(Path(args.intake_file))
     clarification_log = _load_required_file(Path(args.clarification_file))
@@ -193,27 +194,27 @@ def run_analyze(args):
     with open(output_path, 'w') as f:
         yaml.dump(result, f, default_flow_style=False, sort_keys=False)
 
-    print(f"\n✅ Saved to: {output_path}")
-    print()
-    print("-" * 60)
-    print("RESULT")
-    print("-" * 60)
-    print(yaml.dump(result, default_flow_style=False, sort_keys=False)[:2000])
-    print()
-    print("Next: python execute.py draft")
+    click.echo(f"\nSaved to: {output_path}")
+    click.echo()
+    click.echo("-" * 60)
+    click.echo("RESULT")
+    click.echo("-" * 60)
+    click.echo(yaml.dump(result, default_flow_style=False, sort_keys=False)[:2000])
+    click.echo()
+    click.echo("Next: python execute.py draft")
 
 
 def _print_draft_summary(result: dict):
     """Print draft specification summary."""
     metadata = result.get('metadata', {})
-    print(f"  Feature: {metadata.get('feature_name', 'Unknown')}")
-    print(f"  Version: {metadata.get('version', '1.0')}")
-    print(f"  Status: {metadata.get('status', 'draft')}")
+    click.echo(f"  Feature: {metadata.get('feature_name', 'Unknown')}")
+    click.echo(f"  Version: {metadata.get('version', '1.0')}")
+    click.echo(f"  Status: {metadata.get('status', 'draft')}")
 
     reqs = result.get('requirements', {})
-    print(f"  Functional Requirements: {len(reqs.get('functional', []))}")
-    print(f"  Non-Functional Requirements: {len(reqs.get('non_functional', []))}")
-    print(f"  Entities: {len(result.get('entities', []))}")
+    click.echo(f"  Functional Requirements: {len(reqs.get('functional', []))}")
+    click.echo(f"  Non-Functional Requirements: {len(reqs.get('non_functional', []))}")
+    click.echo(f"  Entities: {len(result.get('entities', []))}")
 
 
 def _save_draft_success(result: dict, output_path: Path):
@@ -221,16 +222,16 @@ def _save_draft_success(result: dict, output_path: Path):
     with open(output_path, 'w') as f:
         yaml.dump(result, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
 
-    print(f"\n✅ Specification saved to: {output_path}")
-    print()
-    print("-" * 60)
-    print("SUMMARY")
-    print("-" * 60)
+    click.echo(f"\nSpecification saved to: {output_path}")
+    click.echo()
+    click.echo("-" * 60)
+    click.echo("SUMMARY")
+    click.echo("-" * 60)
     _print_draft_summary(result)
-    print()
-    print("Validate schema: python tools/validate_schema.py schemas/specification.schema.yaml outputs/specification.yaml")
-    print("Render to markdown: python execute.py render-spec")
-    print("Next step: python execute.py validate")
+    click.echo()
+    click.echo("Validate schema: python tools/validate_schema.py schemas/specification.schema.yaml outputs/specification.yaml")
+    click.echo("Render to markdown: python execute.py render-spec")
+    click.echo("Next step: python execute.py validate")
 
 
 def _save_draft_failure(result):
@@ -240,19 +241,19 @@ def _save_draft_failure(result):
     with open(raw_path, 'w') as f:
         f.write(raw_content)
 
-    print(f"\n⚠️  Could not parse output as YAML")
-    print(f"   Raw output saved to: {raw_path}")
-    print(f"   Error: {result.get('_parse_error', 'Unknown')}")
-    print()
-    print("Try re-running the draft step.")
+    click.echo(f"\nCould not parse output as YAML")
+    click.echo(f"   Raw output saved to: {raw_path}")
+    click.echo(f"   Error: {result.get('_parse_error', 'Unknown')}")
+    click.echo()
+    click.echo("Try re-running the draft step.")
 
 
 def run_draft(args):
     """Execute DRAFT contract."""
-    print()
-    print("=" * 60)
-    print("DRAFT")
-    print("=" * 60)
+    click.echo()
+    click.echo("=" * 60)
+    click.echo("DRAFT")
+    click.echo("=" * 60)
 
     inputs = {
         'intake_record': _load_required_file(Path(args.intake_file)),
@@ -277,40 +278,40 @@ def _load_spec_content(spec_path: Path) -> tuple:
     if spec_path.suffix in ['.yaml', '.yml']:
         try:
             specification_data = yaml.safe_load(spec_content)
-            print(f"  Spec format: YAML (structured)")
+            click.echo(f"  Spec format: YAML (structured)")
         except yaml.YAMLError:
-            print(f"  Spec format: YAML (parse failed, using raw)")
+            click.echo(f"  Spec format: YAML (parse failed, using raw)")
     else:
-        print(f"  Spec format: Markdown")
+        click.echo(f"  Spec format: Markdown")
 
     return spec_content, specification_data
 
 
 def _print_verdict(verdict: str):
     """Print verdict message based on validation result."""
-    print("-" * 60)
-    print(f"VERDICT: {verdict.upper()}")
-    print("-" * 60)
+    click.echo("-" * 60)
+    click.echo(f"VERDICT: {verdict.upper()}")
+    click.echo("-" * 60)
 
     messages = {
-        'approved': "\n✅ Specification approved! Ready for implementation.",
-        'approved_with_notes': "\n✅ Specification approved with conditions.\n   Address approval_conditions before implementation, or run:\n   python execute.py revise",
-        'needs_revision': "\n⚠️  Specification needs revision. Run:\n   python execute.py revise\n   Then re-validate: python execute.py validate",
+        'approved': "\nSpecification approved! Ready for implementation.",
+        'approved_with_notes': "\nSpecification approved with conditions.\n   Address approval_conditions before implementation, or run:\n   python execute.py revise",
+        'needs_revision': "\nSpecification needs revision. Run:\n   python execute.py revise\n   Then re-validate: python execute.py validate",
     }
-    print(messages.get(verdict, "\n❌ Specification rejected. Major rework needed.\n   Run: python execute.py revise"))
+    click.echo(messages.get(verdict, "\nSpecification rejected. Major rework needed.\n   Run: python execute.py revise"))
 
 
 def run_validate(args):
     """Execute VALIDATE contract."""
-    print()
-    print("=" * 60)
-    print("VALIDATE")
-    print("=" * 60)
+    click.echo()
+    click.echo("=" * 60)
+    click.echo("VALIDATE")
+    click.echo("=" * 60)
 
     spec_path = Path(args.spec_file)
     if not spec_path.exists():
-        print(f"Error: {spec_path} not found")
-        print("Run 'python execute.py draft' first")
+        click.echo(f"Error: {spec_path} not found")
+        click.echo("Run 'python execute.py draft' first")
         sys.exit(1)
 
     spec_content, specification_data = _load_spec_content(spec_path)
@@ -332,11 +333,11 @@ def run_validate(args):
     with open(output_path, 'w') as f:
         yaml.dump(result, f, default_flow_style=False, sort_keys=False)
 
-    print(f"\n✅ Saved to: {output_path}")
-    print()
-    print("-" * 60)
-    print("RESULT")
-    print("-" * 60)
-    print(yaml.dump(result, default_flow_style=False, sort_keys=False))
+    click.echo(f"\nSaved to: {output_path}")
+    click.echo()
+    click.echo("-" * 60)
+    click.echo("RESULT")
+    click.echo("-" * 60)
+    click.echo(yaml.dump(result, default_flow_style=False, sort_keys=False))
 
     _print_verdict(result.get('overall_verdict', 'unknown'))

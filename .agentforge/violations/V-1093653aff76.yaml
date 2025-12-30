@@ -6,7 +6,11 @@ severity: minor
 file_path: cli/render.py
 message: 'Forbidden pattern found: ''print('''
 detected_at: '2025-12-30T17:10:15.681762'
-last_seen_at: '2025-12-30T17:10:15.681762'
-status: open
+last_seen_at: '2025-12-30T17:46:08.768546'
+status: resolved
 line_number: 367
 fix_hint: Use click.echo() or rich.print() for CLI output
+resolution:
+  resolved_at: '2025-12-30T18:00:52.150488'
+  resolved_by: system
+  reason: No longer detected in full verification run

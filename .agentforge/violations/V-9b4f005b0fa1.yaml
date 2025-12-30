@@ -1,0 +1,15 @@
+schema_version: '1.0'
+violation_id: V-9b4f005b0fa1
+contract_id: agentforge
+check_id: path-inputs-validated
+severity: major
+file_path: cli/click_commands/conformance.py
+message: 'Required pattern not found: ''click\.Path\s*\('''
+detected_at: '2025-12-30T18:15:44.982786'
+last_seen_at: '2025-12-30T18:16:26.564011'
+status: resolved
+fix_hint: Use click.Path(exists=True) for validated path inputs
+resolution:
+  resolved_at: '2025-12-30T18:17:41.695548'
+  resolved_by: system
+  reason: No longer detected in full verification run

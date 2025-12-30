@@ -6,7 +6,7 @@ severity: minor
 file_path: tests/unit/tools/conformance/test_domain.py
 message: 'Class ''TestConformanceReport'' has 8 methods (max: 3)'
 detected_at: '2025-12-30T17:10:15.615014'
-last_seen_at: '2025-12-30T17:10:15.615014'
+last_seen_at: '2025-12-30T18:26:38.402602'
 status: open
 line_number: 360
 fix_hint: Split modules with too many classes into focused single-class modules

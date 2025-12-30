@@ -1,0 +1,16 @@
+schema_version: '1.0'
+violation_id: V-823419511b75
+contract_id: agentforge
+check_id: max-function-length
+severity: major
+file_path: cli/commands/conformance.py
+message: 'Function ''run_conformance_check'' has 72 lines (max: 50)'
+detected_at: '2025-12-30T17:35:52.287640'
+last_seen_at: '2025-12-30T17:41:17.518064'
+status: resolved
+line_number: 61
+fix_hint: Extract logic into helper functions or use composition
+resolution:
+  resolved_at: '2025-12-30T17:46:09.607192'
+  resolved_by: system
+  reason: No longer detected in full verification run

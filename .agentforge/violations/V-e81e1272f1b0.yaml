@@ -6,6 +6,10 @@ severity: minor
 file_path: cli/__init__.py
 message: 'Required pattern not found: ''@click\.option\s*\([^)]*help\s*='''
 detected_at: '2025-12-30T17:10:15.662806'
-last_seen_at: '2025-12-30T17:10:15.662806'
-status: open
+last_seen_at: '2025-12-30T18:11:20.156825'
+status: resolved
 fix_hint: 'Add help parameter: @click.option(''--name'', help=''Description'')'
+resolution:
+  resolved_at: '2025-12-30T18:12:10.616332'
+  resolved_by: system
+  reason: No longer detected in full verification run

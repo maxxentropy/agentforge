@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-5863df3c6a86
+contract_id: agentforge
+check_id: max-nesting-depth
+severity: major
+file_path: tools/builtin_checks_architecture.py
+message: 'Function ''find_cycle'' has nesting depth 5 (max: 4)'
+detected_at: '2025-12-30T17:35:52.290559'
+last_seen_at: '2025-12-30T18:26:38.348532'
+status: open
+line_number: 468
+fix_hint: Use early returns, guard clauses, or extract nested logic

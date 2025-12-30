@@ -6,5 +6,9 @@ severity: blocker
 file_path: ''
 message: 'Unknown check type: None'
 detected_at: '2025-12-30T17:10:15.570614'
-last_seen_at: '2025-12-30T17:10:15.570614'
-status: open
+last_seen_at: '2025-12-30T17:35:52.276064'
+status: resolved
+resolution:
+  resolved_at: '2025-12-30T17:41:18.520333'
+  resolved_by: system
+  reason: No longer detected in full verification run

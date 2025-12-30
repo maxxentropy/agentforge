@@ -6,7 +6,7 @@ severity: minor
 file_path: tools/embedding_providers.py
 message: 'Class ''VoyageEmbeddingProvider'' has 4 methods (max: 3)'
 detected_at: '2025-12-30T17:10:15.591546'
-last_seen_at: '2025-12-30T17:10:15.591546'
+last_seen_at: '2025-12-30T18:26:38.379174'
 status: open
 line_number: 192
 fix_hint: Split modules with too many classes into focused single-class modules

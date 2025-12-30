@@ -80,13 +80,18 @@ checks:
   # TIER 2: ENABLED BY DEFAULT - Warnings
   # ===========================================================================
 
-  # Code quality metrics - ENABLED as warnings
+  # Code quality metrics - ENABLED as warnings (relaxed for tests)
   - id: max-cyclomatic-complexity
     enabled: true
     severity: warning
     config:
       metric: cyclomatic_complexity
       threshold: 10
+    applies_to:
+      paths:
+        - "**/*.py"
+      exclude_paths:
+        - "**/tests/**"
 
   - id: max-function-length
     enabled: true
@@ -94,6 +99,11 @@ checks:
     config:
       metric: function_length
       threshold: 50
+    applies_to:
+      paths:
+        - "**/*.py"
+      exclude_paths:
+        - "**/tests/**"
 
   - id: max-nesting-depth
     enabled: true
@@ -101,6 +111,11 @@ checks:
     config:
       metric: nesting_depth
       threshold: 4
+    applies_to:
+      paths:
+        - "**/*.py"
+      exclude_paths:
+        - "**/tests/**"
 
   # CLI commands naturally have many parameters due to Click decorators
   - id: max-parameter-count
@@ -115,6 +130,7 @@ checks:
       exclude_paths:
         - "cli/click_commands/**"
         - "cli/main.py"
+        - "**/tests/**"
 
   - id: max-class-size
     enabled: true
@@ -122,6 +138,11 @@ checks:
     config:
       metric: class_size
       threshold: 20
+    applies_to:
+      paths:
+        - "**/*.py"
+      exclude_paths:
+        - "**/tests/**"
 
   # Pattern checks - ENABLED
   - id: no-bare-except
@@ -358,6 +379,21 @@ checks:
         - "cli/click_commands/*.py"
       exclude_paths:
         - "cli/click_commands/__init__.py"
+
+  # Architecture checks relaxed for tests
+  - id: no-god-classes
+    applies_to:
+      paths:
+        - "**/*.py"
+      exclude_paths:
+        - "**/tests/**"
+
+  - id: no-http-without-https
+    applies_to:
+      paths:
+        - "**/*.py"
+      exclude_paths:
+        - "**/tests/**"
 
   # Project uses tools/ not src/ layout
   - id: require-init-files

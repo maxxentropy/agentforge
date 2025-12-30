@@ -9,6 +9,7 @@ Contains shared functions used across multiple command modules:
 
 import os
 import sys
+import click
 import yaml
 import subprocess
 import tempfile
@@ -162,8 +163,8 @@ def call_claude_code(system: str, user: str) -> str:
         )
 
         if result.returncode != 0:
-            print(f"Claude Code error (exit {result.returncode}):")
-            print(result.stderr or result.stdout)
+            click.echo(f"Claude Code error (exit {result.returncode}):")
+            click.echo(result.stderr or result.stdout)
             sys.exit(1)
 
         # Parse JSON response
@@ -174,20 +175,20 @@ def call_claude_code(system: str, user: str) -> str:
             return result.stdout
 
     except FileNotFoundError:
-        print("=" * 60)
-        print("ERROR: 'claude' command not found")
-        print("=" * 60)
-        print("\nClaude Code CLI is not installed or not in PATH.\n")
-        print("Options:")
-        print("  1. Install Claude Code: npm install -g @anthropic-ai/claude-code")
-        print("     (Requires Node.js and Claude Pro/Team subscription)\n")
-        print("  2. Use API mode instead:")
-        print("     export ANTHROPIC_API_KEY=your_key")
-        print("     python execute.py intake --request '...' --use-api\n")
+        click.echo("=" * 60)
+        click.echo("ERROR: 'claude' command not found")
+        click.echo("=" * 60)
+        click.echo("\nClaude Code CLI is not installed or not in PATH.\n")
+        click.echo("Options:")
+        click.echo("  1. Install Claude Code: npm install -g @anthropic-ai/claude-code")
+        click.echo("     (Requires Node.js and Claude Pro/Team subscription)\n")
+        click.echo("  2. Use API mode instead:")
+        click.echo("     export ANTHROPIC_API_KEY=your_key")
+        click.echo("     python execute.py intake --request '...' --use-api\n")
         sys.exit(1)
 
     except subprocess.TimeoutExpired:
-        print("Error: Claude Code timed out after 5 minutes")
+        click.echo("Error: Claude Code timed out after 5 minutes")
         sys.exit(1)
 
     finally:
@@ -211,23 +212,23 @@ def call_anthropic_api(
     try:
         import anthropic
     except ImportError:
-        print("Error: anthropic package not installed")
-        print("Run: pip install anthropic")
+        click.echo("Error: anthropic package not installed")
+        click.echo("Run: pip install anthropic")
         sys.exit(1)
 
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
-        print("Error: ANTHROPIC_API_KEY environment variable not set")
-        print()
-        print("Get your API key from: https://console.anthropic.com/")
-        print()
-        print("Or use Claude Code CLI instead (uses subscription):")
-        print("  python execute.py intake --request '...'  # no --use-api flag")
+        click.echo("Error: ANTHROPIC_API_KEY environment variable not set")
+        click.echo()
+        click.echo("Get your API key from: https://console.anthropic.com/")
+        click.echo()
+        click.echo("Or use Claude Code CLI instead (uses subscription):")
+        click.echo("  python execute.py intake --request '...'  # no --use-api flag")
         sys.exit(1)
 
     client = anthropic.Anthropic(api_key=api_key)
 
-    print("  Calling Anthropic API...")
+    click.echo("  Calling Anthropic API...")
 
     response = client.messages.create(
         model="claude-sonnet-4-20250514",
@@ -311,13 +312,13 @@ def execute_contract(contract_id: str, inputs: dict, use_api: bool = False) -> d
     max_tokens = prompt_data['execution'].get('max_tokens', 4096)
     temperature = prompt_data['execution'].get('temperature', 0.0)
 
-    print(f"  Contract: {contract_id}")
+    click.echo(f"  Contract: {contract_id}")
 
     if use_api:
-        print("  Mode: Anthropic API (pay-per-token)")
+        click.echo("  Mode: Anthropic API (pay-per-token)")
         response = call_anthropic_api(system, user, max_tokens, temperature)
     else:
-        print("  Mode: Claude Code CLI (subscription)")
+        click.echo("  Mode: Claude Code CLI (subscription)")
         response = call_claude_code(system, user)
 
     # Extract YAML from response
@@ -331,16 +332,16 @@ def execute_contract(contract_id: str, inputs: dict, use_api: bool = False) -> d
         return parsed
 
     except yaml.YAMLError as e:
-        print(f"\nWarning: Could not parse response as YAML")
-        print(f"Error: {e}")
-        print("\nExtracted content:")
-        print("-" * 40)
-        print(yaml_content[:500])
+        click.echo(f"\nWarning: Could not parse response as YAML")
+        click.echo(f"Error: {e}")
+        click.echo("\nExtracted content:")
+        click.echo("-" * 40)
+        click.echo(yaml_content[:500])
         if len(yaml_content) > 500:
-            print(f"... ({len(yaml_content) - 500} more characters)")
-        print("-" * 40)
-        print("\nRaw response:")
-        print("-" * 40)
-        print(response[:500])
-        print("-" * 40)
+            click.echo(f"... ({len(yaml_content) - 500} more characters)")
+        click.echo("-" * 40)
+        click.echo("\nRaw response:")
+        click.echo("-" * 40)
+        click.echo(response[:500])
+        click.echo("-" * 40)
         return {"_raw": response, "_parse_error": str(e)}

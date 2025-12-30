@@ -1,0 +1,16 @@
+schema_version: '1.0'
+violation_id: V-b01048a0cef4
+contract_id: agentforge
+check_id: max-parameter-count
+severity: major
+file_path: cli/main.py
+message: 'Function ''config_set'' has 6 parameters (max: 5)'
+detected_at: '2025-12-30T18:11:20.063879'
+last_seen_at: '2025-12-30T18:12:10.503029'
+status: resolved
+line_number: 510
+fix_hint: Group related parameters into a dataclass or use **kwargs
+resolution:
+  resolved_at: '2025-12-30T18:15:45.074454'
+  resolved_by: system
+  reason: No longer detected in full verification run

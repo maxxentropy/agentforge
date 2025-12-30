@@ -6,7 +6,11 @@ severity: minor
 file_path: cli/commands/config.py
 message: 'Forbidden pattern found: ''print('''
 detected_at: '2025-12-30T17:10:15.714587'
-last_seen_at: '2025-12-30T17:10:16.084344'
-status: open
+last_seen_at: '2025-12-30T17:46:09.161688'
+status: resolved
 line_number: 25
 fix_hint: Use click.echo() or rich.print() for CLI output
+resolution:
+  resolved_at: '2025-12-30T18:00:52.488404'
+  resolved_by: system
+  reason: No longer detected in full verification run

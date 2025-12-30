@@ -6,7 +6,7 @@ severity: minor
 file_path: tools/verification_reports.py
 message: 'Class ''ReportGenerator'' has 7 methods (max: 3)'
 detected_at: '2025-12-30T17:10:15.581941'
-last_seen_at: '2025-12-30T17:10:15.581941'
+last_seen_at: '2025-12-30T18:26:38.368732'
 status: open
 line_number: 21
 fix_hint: Split modules with too many classes into focused single-class modules

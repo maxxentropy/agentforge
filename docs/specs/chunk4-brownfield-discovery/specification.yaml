@@ -1,0 +1,505 @@
+# Chunk 4: Brownfield Discovery - Structured Specification
+# Machine-readable format for validation and tracking
+
+schema_version: "1.0"
+document_type: specification
+chunk_id: 4
+title: Brownfield Discovery
+status: draft
+created_at: "2025-12-30"
+last_updated: "2025-12-30"
+
+# ============================================================================
+# OVERVIEW
+# ============================================================================
+
+overview:
+  purpose: |
+    Analyze existing codebases and reverse-engineer the artifacts that would 
+    have been produced if the code had been developed through the AgentForge 
+    greenfield workflow. Implements the Artifact Parity Principle.
+    
+  core_principle: |
+    A brownfield project that completes onboarding should have IDENTICAL 
+    artifacts to a greenfield project that followed the workflow.
+    
+  position_in_architecture:
+    builds_upon:
+      - chunk: 1
+        name: Workspace Config
+        relationship: "Reads repo.yaml for configuration"
+      - chunk: 2
+        name: Contract System
+        relationship: "Uses contracts to validate discovered patterns"
+      - chunk: 3
+        name: Conformance Tracking
+        relationship: "Sends violations for tracking and remediation"
+    enables:
+      - chunk: 7
+        name: Cross-Repo Aggregation
+        relationship: "Profiles feed into aggregated views"
+      - chunk: 8
+        name: CI/CD Integration
+        relationship: "Discovery can run in CI pipelines"
+
+# ============================================================================
+# SCOPE
+# ============================================================================
+
+scope:
+  in_scope:
+    - Language and framework detection
+    - Project structure analysis
+    - Pattern extraction (error handling, CQRS, repositories, DDD)
+    - Architecture mapping (layers, dependencies, violations)
+    - Convention inference (naming, file organization)
+    - As-built specification generation
+    - Codebase profile generation
+    - Test gap analysis
+    - Dependency analysis
+    - Incremental onboarding support
+    - Human curation workflow
+    
+  out_of_scope:
+    - Violation remediation (Chunk 3)
+    - Cross-repo aggregation (Chunk 7)
+    - CI/CD integration (Chunk 8)
+    - Automated code fixes (future)
+    - Runtime behavior analysis
+
+# ============================================================================
+# FUNCTIONAL REQUIREMENTS
+# ============================================================================
+
+functional_requirements:
+  - id: FR-001
+    name: Language Detection
+    priority: must
+    description: |
+      Detect primary and secondary programming languages in the codebase.
+    inputs:
+      - Repository root path
+    outputs:
+      - List of languages with percentages
+      - Confidence scores
+      - Framework/toolchain information
+    acceptance_criteria:
+      - id: AC-001.1
+        criterion: Detects language from project files (*.csproj → C#, pyproject.toml → Python)
+      - id: AC-001.2
+        criterion: Calculates language percentages by file count and/or LOC
+      - id: AC-001.3
+        criterion: Identifies frameworks (ASP.NET Core, FastAPI, etc.)
+      - id: AC-001.4
+        criterion: Confidence score >= 0.9 for project-file-based detection
+
+  - id: FR-002
+    name: Project Structure Analysis
+    priority: must
+    description: |
+      Map the directory structure and identify architectural components.
+    acceptance_criteria:
+      - id: AC-002.1
+        criterion: Identifies src/, tests/, docs/ structure variations
+      - id: AC-002.2
+        criterion: Maps directories to architectural layers when pattern matches
+      - id: AC-002.3
+        criterion: Detects entry point projects (console, web, library)
+      - id: AC-002.4
+        criterion: Identifies test projects and test frameworks in use
+      - id: AC-002.5
+        criterion: Handles monorepo and single-project structures
+
+  - id: FR-003
+    name: Pattern Extraction
+    priority: must
+    description: |
+      Extract coding patterns in use throughout the codebase.
+    patterns_to_detect:
+      - name: Error Handling
+        signals: [return_types, try_catch_frequency, Result<T>_usage]
+      - name: CQRS
+        signals: [MediatR_usage, Command_Query_classes, handler_patterns]
+      - name: Repository
+        signals: [interface_patterns, data_access_abstractions]
+      - name: Domain-Driven Design
+        signals: [Entity_bases, ValueObject_patterns, AggregateRoot]
+      - name: Dependency Injection
+        signals: [constructor_parameters, DI_framework_usage]
+    acceptance_criteria:
+      - id: AC-003.1
+        criterion: Detects Result<T> pattern vs exception-based error handling
+      - id: AC-003.2
+        criterion: Identifies CQRS patterns (Commands, Queries, Handlers)
+      - id: AC-003.3
+        criterion: Extracts repository interface patterns
+      - id: AC-003.4
+        criterion: Detects DDD tactical patterns
+      - id: AC-003.5
+        criterion: Each pattern includes usage examples from actual code
+      - id: AC-003.6
+        criterion: Patterns include confidence scores
+
+  - id: FR-004
+    name: Architecture Mapping
+    priority: must
+    description: |
+      Create a map of the actual architecture including dependencies.
+    acceptance_criteria:
+      - id: AC-004.1
+        criterion: Detects Clean Architecture layers from paths and namespaces
+      - id: AC-004.2
+        criterion: Builds project/module dependency graph
+      - id: AC-004.3
+        criterion: Identifies layer violations
+      - id: AC-004.4
+        criterion: Outputs architecture.yaml (as-built) format
+      - id: AC-004.5
+        criterion: Integrates with Chunk 2 architecture checks
+
+  - id: FR-005
+    name: Convention Inference
+    priority: must
+    description: |
+      Learn naming conventions and file organization patterns.
+    conventions_to_detect:
+      - File naming (PascalCase, snake_case, kebab-case)
+      - Class naming (EntityService, IEntityRepository)
+      - Method naming (GetById, FindByEmail)
+      - Field naming (_privateField, m_member)
+      - Test naming (Should_DoX_When_Y)
+    acceptance_criteria:
+      - id: AC-005.1
+        criterion: Infers file naming convention from sample
+      - id: AC-005.2
+        criterion: Detects interface naming patterns
+      - id: AC-005.3
+        criterion: Identifies private field naming
+      - id: AC-005.4
+        criterion: Extracts test naming patterns
+      - id: AC-005.5
+        criterion: Reports consistency percentage for each convention
+
+  - id: FR-006
+    name: As-Built Specification Generation
+    priority: should
+    description: |
+      Generate specification.yaml files that describe what was actually built.
+    acceptance_criteria:
+      - id: AC-006.1
+        criterion: Generates specification structure from code analysis
+      - id: AC-006.2
+        criterion: Extracts entities and their properties
+      - id: AC-006.3
+        criterion: Identifies API endpoints and their contracts
+      - id: AC-006.4
+        criterion: Links to actual source files
+      - id: AC-006.5
+        criterion: Marks specifications as source "discovered"
+
+  - id: FR-007
+    name: Codebase Profile Generation
+    priority: must
+    description: |
+      Combine all analysis into a comprehensive codebase_profile.yaml.
+    acceptance_criteria:
+      - id: AC-007.1
+        criterion: Consolidates all discovery outputs
+      - id: AC-007.2
+        criterion: Validates against codebase_profile.schema.yaml
+      - id: AC-007.3
+        criterion: Includes overall confidence score
+      - id: AC-007.4
+        criterion: Supports incremental updates
+      - id: AC-007.5
+        criterion: Tracks what has been analyzed vs not analyzed
+
+  - id: FR-008
+    name: Test Gap Analysis
+    priority: should
+    description: |
+      Analyze existing tests and identify coverage gaps.
+    acceptance_criteria:
+      - id: AC-008.1
+        criterion: Identifies test projects and frameworks
+      - id: AC-008.2
+        criterion: Counts test methods by category
+      - id: AC-008.3
+        criterion: Maps tests to source files where naming allows
+      - id: AC-008.4
+        criterion: Reports estimated coverage without running tests
+      - id: AC-008.5
+        criterion: Identifies untested public APIs
+
+  - id: FR-009
+    name: Dependency Analysis
+    priority: should
+    description: |
+      Analyze external dependencies for currency and risk.
+    acceptance_criteria:
+      - id: AC-009.1
+        criterion: Parses package files (*.csproj, requirements.txt, package.json)
+      - id: AC-009.2
+        criterion: Lists all dependencies with versions
+      - id: AC-009.3
+        criterion: Flags packages with known issues (configurable source)
+      - id: AC-009.4
+        criterion: Extracts license information where available
+
+  - id: FR-010
+    name: Incremental Onboarding
+    priority: should
+    description: |
+      Support discovery of large codebases in phases.
+    acceptance_criteria:
+      - id: AC-010.1
+        criterion: Can discover single module/project at a time
+      - id: AC-010.2
+        criterion: Tracks onboarding progress
+      - id: AC-010.3
+        criterion: Merges incremental discoveries into unified profile
+      - id: AC-010.4
+        criterion: Supports re-analysis of previously discovered modules
+
+  - id: FR-011
+    name: Human Curation Workflow
+    priority: should
+    description: |
+      Allow humans to review and override detected patterns.
+    acceptance_criteria:
+      - id: AC-011.1
+        criterion: All detections marked as auto-detected or human-curated
+      - id: AC-011.2
+        criterion: Curated values override auto-detected
+      - id: AC-011.3
+        criterion: Re-discovery preserves human curations
+      - id: AC-011.4
+        criterion: Export/import curation decisions
+
+  - id: FR-012
+    name: CLI Integration
+    priority: must
+    description: |
+      Provide command-line interface for discovery operations.
+    commands:
+      - name: "agentforge discover"
+        description: Run full discovery
+      - name: "agentforge discover --module <path>"
+        description: Discover specific module
+      - name: "agentforge discover --patterns"
+        description: Pattern extraction only
+      - name: "agentforge discover --architecture"
+        description: Architecture mapping only
+      - name: "agentforge discover --update"
+        description: Update existing profile
+      - name: "agentforge discover --diff"
+        description: Show changes since last run
+    acceptance_criteria:
+      - id: AC-012.1
+        criterion: All commands execute and produce valid output
+      - id: AC-012.2
+        criterion: Progress reporting for long-running operations
+      - id: AC-012.3
+        criterion: JSON output option for programmatic use
+      - id: AC-012.4
+        criterion: Respects configuration from repo.yaml
+
+  - id: FR-013
+    name: Integration with Conformance System
+    priority: must
+    description: |
+      Discovered code flows through Chunk 3 conformance system.
+    acceptance_criteria:
+      - id: AC-013.1
+        criterion: Discovery triggers conformance check automatically
+      - id: AC-013.2
+        criterion: Violations tracked in .agentforge/violations/
+      - id: AC-013.3
+        criterion: Remediation backlog generated from violations
+      - id: AC-013.4
+        criterion: As-built specs validated against contracts
+
+# ============================================================================
+# TECHNICAL ARCHITECTURE
+# ============================================================================
+
+technical_architecture:
+  components:
+    - name: DiscoveryManager
+      purpose: Orchestrates discovery phases, manages state
+      location: tools/discovery/manager.py
+      
+    - name: LanguageProvider
+      purpose: Abstract interface for language-specific analysis
+      location: tools/discovery/providers/base.py
+      implementations:
+        - PythonProvider
+        - DotNetProvider
+        
+    - name: StructureAnalyzer
+      purpose: Maps directory structure to architecture
+      location: tools/discovery/analyzers/structure.py
+      
+    - name: PatternExtractor
+      purpose: Extracts coding patterns via AST
+      location: tools/discovery/analyzers/patterns.py
+      
+    - name: ArchitectureMapper
+      purpose: Builds dependency graph, detects violations
+      location: tools/discovery/analyzers/architecture.py
+      
+    - name: ConventionInferrer
+      purpose: Learns naming conventions
+      location: tools/discovery/analyzers/conventions.py
+      
+    - name: TestGapAnalyzer
+      purpose: Analyzes test coverage gaps
+      location: tools/discovery/analyzers/tests.py
+      
+    - name: ProfileGenerator
+      purpose: Consolidates outputs into codebase_profile.yaml
+      location: tools/discovery/generators/profile.py
+
+  file_organization:
+    - path: tools/discovery/__init__.py
+    - path: tools/discovery/manager.py
+    - path: tools/discovery/domain.py
+    - path: tools/discovery/providers/__init__.py
+    - path: tools/discovery/providers/base.py
+    - path: tools/discovery/providers/python_provider.py
+    - path: tools/discovery/providers/dotnet_provider.py
+    - path: tools/discovery/analyzers/__init__.py
+    - path: tools/discovery/analyzers/structure.py
+    - path: tools/discovery/analyzers/patterns.py
+    - path: tools/discovery/analyzers/architecture.py
+    - path: tools/discovery/analyzers/conventions.py
+    - path: tools/discovery/analyzers/tests.py
+    - path: tools/discovery/generators/__init__.py
+    - path: tools/discovery/generators/profile.py
+    - path: cli/commands/discover.py
+
+# ============================================================================
+# IMPLEMENTATION PLAN
+# ============================================================================
+
+implementation_plan:
+  phases:
+    - id: 1
+      name: Core Infrastructure
+      duration_days: 2
+      deliverables:
+        - Discovery manager skeleton
+        - Language provider interface
+        - Python provider (using existing AST)
+        - Profile generator
+        
+    - id: 2
+      name: Structure Analysis
+      duration_days: 1
+      deliverables:
+        - Directory tree builder
+        - Layer detection
+        - Entry point detection
+        - Test project detection
+        
+    - id: 3
+      name: Pattern Extraction
+      duration_days: 2
+      deliverables:
+        - Error handling pattern detector
+        - CQRS pattern detector
+        - Repository pattern detector
+        - Generic pattern framework
+        
+    - id: 4
+      name: Architecture Mapping
+      duration_days: 1
+      deliverables:
+        - Dependency graph builder
+        - Layer violation detection
+        - Integration with Chunk 2 checks
+        
+    - id: 5
+      name: Convention Inference
+      duration_days: 1
+      deliverables:
+        - Naming convention analyzer
+        - Consistency calculator
+        - File organization detector
+        
+    - id: 6
+      name: CLI & Integration
+      duration_days: 1
+      deliverables:
+        - CLI commands
+        - Chunk 3 integration
+        - Output formatting
+        
+    - id: 7
+      name: .NET Provider
+      duration_days: 2
+      deliverables:
+        - csproj parsing
+        - LSP integration for symbols
+        - NuGet dependency analysis
+
+  total_estimated_days: 10
+
+# ============================================================================
+# RISKS & MITIGATIONS
+# ============================================================================
+
+risks:
+  - id: R-001
+    name: False pattern detection
+    impact: medium
+    likelihood: high
+    mitigation: Confidence scores, human curation workflow
+    
+  - id: R-002
+    name: Large codebase performance
+    impact: high
+    likelihood: medium
+    mitigation: Incremental discovery, caching, sampling
+    
+  - id: R-003
+    name: Language-specific complexity
+    impact: medium
+    likelihood: high
+    mitigation: Start with Python, make provider architecture extensible
+    
+  - id: R-004
+    name: Pattern conflicts
+    impact: low
+    likelihood: medium
+    mitigation: Report conflicts for human resolution
+    
+  - id: R-005
+    name: Integration complexity with Chunk 3
+    impact: medium
+    likelihood: medium
+    mitigation: Clear interfaces, staged rollout
+
+# ============================================================================
+# SUCCESS CRITERIA
+# ============================================================================
+
+success_criteria:
+  must_have:
+    - Discovery runs successfully on Python projects
+    - Discovery runs successfully on .NET projects
+    - Generates valid codebase_profile.yaml
+    - Detects at least 3 pattern types with >75% accuracy
+    - Identifies Clean Architecture layers
+    - Triggers Chunk 3 conformance check
+    
+  should_have:
+    - Test gap analysis
+    - Dependency analysis
+    - Incremental onboarding
+    - Human curation workflow
+    
+  nice_to_have:
+    - As-built specification generation
+    - Architecture visualization
+    - Pattern trend analysis

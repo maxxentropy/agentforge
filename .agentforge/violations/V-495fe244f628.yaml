@@ -6,7 +6,11 @@ severity: minor
 file_path: cli/commands/verify.py
 message: 'Forbidden pattern found: ''print('''
 detected_at: '2025-12-30T17:10:16.064889'
-last_seen_at: '2025-12-30T17:10:16.494240'
-status: open
+last_seen_at: '2025-12-30T17:46:09.493295'
+status: resolved
 line_number: 96
 fix_hint: Use click.echo() or rich.print() for CLI output
+resolution:
+  resolved_at: '2025-12-30T18:00:52.315715'
+  resolved_by: system
+  reason: No longer detected in full verification run

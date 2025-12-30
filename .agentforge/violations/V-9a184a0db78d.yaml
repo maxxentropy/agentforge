@@ -6,7 +6,11 @@ severity: minor
 file_path: cli/helpers.py
 message: 'Forbidden pattern found: ''print('''
 detected_at: '2025-12-30T17:10:15.703112'
-last_seen_at: '2025-12-30T17:10:15.703112'
-status: open
+last_seen_at: '2025-12-30T17:46:08.795094'
+status: resolved
 line_number: 77
 fix_hint: Use click.echo() or rich.print() for CLI output
+resolution:
+  resolved_at: '2025-12-30T18:00:52.351133'
+  resolved_by: system
+  reason: No longer detected in full verification run

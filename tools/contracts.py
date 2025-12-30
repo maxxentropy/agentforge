@@ -24,6 +24,9 @@ from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
 
 import yaml
 
+from tools.contracts_ast import execute_ast_check as _execute_ast_check
+from tools.contracts_lsp import execute_lsp_query_check as _execute_lsp_query_check
+
 # Builtin contracts directory (relative to this file)
 BUILTIN_CONTRACTS_DIR = Path(__file__).parent.parent / "contracts" / "builtin"
 
@@ -457,6 +460,20 @@ class ContractRegistry:
 
         return None
 
+    def _contract_matches_filters(self, contract: Contract, language: Optional[str],
+                                   repo_type: Optional[str], include_abstract: bool) -> bool:
+        """Check if a contract matches the specified filters."""
+        if not contract.enabled:
+            return False
+        if not include_abstract and contract.is_abstract:
+            return False
+        applies_to = contract.applies_to
+        if language and "languages" in applies_to and language not in applies_to["languages"]:
+            return False
+        if repo_type and "repo_types" in applies_to and repo_type not in applies_to["repo_types"]:
+            return False
+        return True
+
     def get_enabled_contracts(self, language: Optional[str] = None,
                               repo_type: Optional[str] = None,
                               include_abstract: bool = True) -> List[Contract]:
@@ -475,26 +492,8 @@ class ContractRegistry:
 
         result = []
         for contract in self._contracts.values():
-            if not contract.enabled:
+            if not self._contract_matches_filters(contract, language, repo_type, include_abstract):
                 continue
-
-            # Skip abstract contracts if requested
-            if not include_abstract and contract.is_abstract:
-                continue
-
-            applies_to = contract.applies_to
-
-            # Language filter
-            if language and "languages" in applies_to:
-                if language not in applies_to["languages"]:
-                    continue
-
-            # Repo type filter
-            if repo_type and "repo_types" in applies_to:
-                if repo_type not in applies_to["repo_types"]:
-                    continue
-
-            # Resolve inheritance before returning
             self.resolve_inheritance(contract)
             result.append(contract)
 
@@ -617,38 +616,51 @@ def _get_files_for_check(check: Dict[str, Any], repo_root: Path) -> List[Path]:
     return result
 
 
-def _execute_regex_check(check_id: str, check_name: str, severity: str,
-                         config: Dict, repo_root: Path, file_paths: List[Path],
-                         fix_hint: Optional[str]) -> List[CheckResult]:
-    """Execute a regex-based check."""
-    pattern = config.get("pattern")
-    mode = config.get("mode", "forbid")  # forbid or require
-    multiline = config.get("multiline", False)
-    case_insensitive = config.get("case_insensitive", False)
-
-    if not pattern:
-        return [CheckResult(
-            check_id=check_id, check_name=check_name, passed=False,
-            severity="error", message="Regex check missing 'pattern' in config"
-        )]
-
-    # Compile regex
+def _compile_regex(pattern: str, multiline: bool, case_insensitive: bool):
+    """Compile regex with flags. Returns (regex, error_message)."""
     flags = 0
     if multiline:
         flags |= re.MULTILINE | re.DOTALL
     if case_insensitive:
         flags |= re.IGNORECASE
-
     try:
-        regex = re.compile(pattern, flags)
+        return re.compile(pattern, flags), None
     except re.error as e:
-        return [CheckResult(
-            check_id=check_id, check_name=check_name, passed=False,
-            severity="error", message=f"Invalid regex pattern: {e}"
-        )]
+        return None, str(e)
+
+
+def _check_forbid_matches(matches, content: str, check_id: str, check_name: str,
+                          severity: str, file_path: Path, repo_root: Path,
+                          fix_hint: Optional[str]) -> List[CheckResult]:
+    """Generate results for forbidden pattern matches."""
+    results = []
+    for match in matches:
+        line_num = content[:match.start()].count("\n") + 1
+        results.append(CheckResult(
+            check_id=check_id, check_name=check_name, passed=False, severity=severity,
+            message=f"Forbidden pattern found: '{match.group()}'",
+            file_path=str(file_path.relative_to(repo_root)), line_number=line_num, fix_hint=fix_hint
+        ))
+    return results
+
+
+def _execute_regex_check(check_id: str, check_name: str, severity: str,
+                         config: Dict, repo_root: Path, file_paths: List[Path],
+                         fix_hint: Optional[str]) -> List[CheckResult]:
+    """Execute a regex-based check."""
+    pattern = config.get("pattern")
+    mode = config.get("mode", "forbid")
+
+    if not pattern:
+        return [CheckResult(check_id=check_id, check_name=check_name, passed=False,
+                           severity="error", message="Regex check missing 'pattern' in config")]
+
+    regex, error = _compile_regex(pattern, config.get("multiline", False), config.get("case_insensitive", False))
+    if error:
+        return [CheckResult(check_id=check_id, check_name=check_name, passed=False,
+                           severity="error", message=f"Invalid regex pattern: {error}")]
 
     results = []
-
     for file_path in file_paths:
         try:
             content = file_path.read_text(encoding="utf-8", errors="ignore")
@@ -658,515 +670,16 @@ def _execute_regex_check(check_id: str, check_name: str, severity: str,
         matches = list(regex.finditer(content))
 
         if mode == "forbid":
-            # Pattern should NOT be found
-            for match in matches:
-                # Calculate line number
-                line_num = content[:match.start()].count("\n") + 1
-                results.append(CheckResult(
-                    check_id=check_id,
-                    check_name=check_name,
-                    passed=False,
-                    severity=severity,
-                    message=f"Forbidden pattern found: '{match.group()}'",
-                    file_path=str(file_path.relative_to(repo_root)),
-                    line_number=line_num,
-                    fix_hint=fix_hint
-                ))
-
-        elif mode == "require":
-            # Pattern MUST be found
-            if not matches:
-                results.append(CheckResult(
-                    check_id=check_id,
-                    check_name=check_name,
-                    passed=False,
-                    severity=severity,
-                    message=f"Required pattern not found: '{pattern}'",
-                    file_path=str(file_path.relative_to(repo_root)),
-                    fix_hint=fix_hint
-                ))
-
-    return results
-
-
-def _execute_lsp_query_check(check_id: str, check_name: str, severity: str,
-                              config: Dict, repo_root: Path, file_paths: List[Path],
-                              fix_hint: Optional[str]) -> List[CheckResult]:
-    """
-    Execute an LSP-based semantic code analysis check.
-
-    This leverages the LSP adapters built in Phase 2 for accurate,
-    parser-based code analysis instead of fragile regex patterns.
-    """
-    query_type = config.get("query", "symbols")
-    filter_config = config.get("filter", {})
-    exclude_config = config.get("exclude", {})
-    assertion = config.get("assertion", "none_exist")
-
-    # Try to import LSP adapter
-    try:
-        from tools.lsp_adapter import get_lsp_adapter, LSPAdapter
-    except ImportError:
-        return [CheckResult(
-            check_id=check_id, check_name=check_name, passed=False,
-            severity="warning",
-            message="LSP adapter not available - skipping semantic check"
-        )]
-
-    results = []
-
-    for file_path in file_paths:
-        # Get appropriate LSP adapter for this file
-        try:
-            adapter = get_lsp_adapter(file_path)
-            if adapter is None:
-                continue  # No LSP available for this file type
-        except Exception:
-            continue
-
-        try:
-            # Execute the appropriate LSP query
-            if query_type == "symbols":
-                matches = _lsp_query_symbols(adapter, file_path, filter_config, exclude_config)
-            elif query_type == "references":
-                matches = _lsp_query_references(adapter, file_path, filter_config, exclude_config)
-            elif query_type == "diagnostics":
-                matches = _lsp_query_diagnostics(adapter, file_path, filter_config, exclude_config)
-            elif query_type == "call_hierarchy":
-                matches = _lsp_query_call_hierarchy(adapter, file_path, filter_config, exclude_config)
-            else:
-                continue  # Unknown query type
-
-            # Apply assertion
-            if assertion in ("none_exist", "count_zero"):
-                # Violation if ANY matches found
-                for match in matches:
-                    results.append(CheckResult(
-                        check_id=check_id,
-                        check_name=check_name,
-                        passed=False,
-                        severity=severity,
-                        message=f"Found {match.get('kind', 'symbol')}: {match.get('name', 'unknown')}",
-                        file_path=str(file_path.relative_to(repo_root)),
-                        line_number=match.get("line"),
-                        column=match.get("column"),
-                        fix_hint=fix_hint
-                    ))
-
-            elif assertion in ("all_exist", "count_nonzero"):
-                # Violation if NO matches found
-                if not matches:
-                    results.append(CheckResult(
-                        check_id=check_id,
-                        check_name=check_name,
-                        passed=False,
-                        severity=severity,
-                        message=f"Required pattern not found in {file_path.name}",
-                        file_path=str(file_path.relative_to(repo_root)),
-                        fix_hint=fix_hint
-                    ))
-
-        except Exception as e:
-            # LSP query failed - log but continue
+            results.extend(_check_forbid_matches(matches, content, check_id, check_name,
+                                                  severity, file_path, repo_root, fix_hint))
+        elif mode == "require" and not matches:
             results.append(CheckResult(
-                check_id=check_id,
-                check_name=check_name,
-                passed=False,
-                severity="warning",
-                message=f"LSP query failed for {file_path.name}: {e}",
-                file_path=str(file_path.relative_to(repo_root))
+                check_id=check_id, check_name=check_name, passed=False, severity=severity,
+                message=f"Required pattern not found: '{pattern}'",
+                file_path=str(file_path.relative_to(repo_root)), fix_hint=fix_hint
             ))
 
     return results
-
-
-def _symbol_matches_kind(symbol: Dict, kind_filter) -> bool:
-    """Check if symbol matches kind filter."""
-    if not kind_filter:
-        return True
-    kinds = [kind_filter] if isinstance(kind_filter, str) else kind_filter
-    return symbol.get("kind", "").lower() in [k.lower() for k in kinds]
-
-
-def _symbol_matches_visibility(symbol: Dict, visibility_filter) -> bool:
-    """Check if symbol matches visibility filter."""
-    if not visibility_filter:
-        return True
-    return symbol.get("visibility", "").lower() == visibility_filter.lower()
-
-
-def _symbol_matches_name(symbol: Dict, name_pattern) -> bool:
-    """Check if symbol matches name pattern filter."""
-    if not name_pattern:
-        return True
-    return bool(re.match(name_pattern, symbol.get("name", "")))
-
-
-def _symbol_has_modifiers(symbol: Dict, required_modifiers: list) -> bool:
-    """Check if symbol has all required modifiers."""
-    if not required_modifiers:
-        return True
-    symbol_modifiers = [m.lower() for m in symbol.get("modifiers", [])]
-    return all(m.lower() in symbol_modifiers for m in required_modifiers)
-
-
-def _symbol_excluded_by_modifiers(symbol: Dict, exclude_modifiers: list) -> bool:
-    """Check if symbol is excluded by modifier rules."""
-    if not exclude_modifiers:
-        return False
-    symbol_modifiers = [m.lower() for m in symbol.get("modifiers", [])]
-    for excl in exclude_modifiers:
-        excl_parts = [p.lower() for p in excl.split()]
-        if all(p in symbol_modifiers for p in excl_parts):
-            return True
-    return False
-
-
-def _symbol_excluded_by_name(symbol: Dict, exclude_pattern) -> bool:
-    """Check if symbol is excluded by name pattern."""
-    if not exclude_pattern:
-        return False
-    return bool(re.match(exclude_pattern, symbol.get("name", "")))
-
-
-def _symbol_excluded_by_container(symbol: Dict, exclude_containers: list) -> bool:
-    """Check if symbol is excluded by container."""
-    if not exclude_containers:
-        return False
-    container = symbol.get("container", "")
-    return any(c.lower() in container.lower() for c in exclude_containers)
-
-
-def _lsp_query_symbols(adapter, file_path: Path, filter_config: Dict,
-                       exclude_config: Dict) -> List[Dict]:
-    """Query document symbols and filter by criteria."""
-    try:
-        symbols = adapter.document_symbols(str(file_path))
-    except Exception:
-        symbols = []
-
-    matches = []
-    for symbol in symbols:
-        # Apply inclusion filters
-        if not _symbol_matches_kind(symbol, filter_config.get("kind")):
-            continue
-        if not _symbol_matches_visibility(symbol, filter_config.get("visibility")):
-            continue
-        if not _symbol_matches_name(symbol, filter_config.get("name_pattern")):
-            continue
-        if not _symbol_has_modifiers(symbol, filter_config.get("has_modifier", [])):
-            continue
-
-        # Apply exclusion filters
-        if _symbol_excluded_by_modifiers(symbol, exclude_config.get("modifiers", [])):
-            continue
-        if _symbol_excluded_by_name(symbol, exclude_config.get("name_pattern")):
-            continue
-        if _symbol_excluded_by_container(symbol, exclude_config.get("containers", [])):
-            continue
-
-        matches.append(symbol)
-
-    return matches
-
-
-def _lsp_query_references(adapter, file_path: Path, filter_config: Dict,
-                          exclude_config: Dict) -> List[Dict]:
-    """Query references - placeholder for future implementation."""
-    # Would require knowing what symbol to find references for
-    return []
-
-
-def _lsp_query_diagnostics(adapter, file_path: Path, filter_config: Dict,
-                           exclude_config: Dict) -> List[Dict]:
-    """Query compiler diagnostics."""
-    try:
-        diagnostics = adapter.diagnostics(str(file_path))
-    except Exception:
-        diagnostics = []
-
-    matches = []
-    for diag in diagnostics:
-        # Filter by severity if specified
-        severity_filter = filter_config.get("severity")
-        if severity_filter:
-            if diag.get("severity", "").lower() != severity_filter.lower():
-                continue
-
-        matches.append({
-            "name": diag.get("message", ""),
-            "kind": "diagnostic",
-            "line": diag.get("line"),
-            "column": diag.get("column")
-        })
-
-    return matches
-
-
-def _lsp_query_call_hierarchy(adapter, file_path: Path, filter_config: Dict,
-                              exclude_config: Dict) -> List[Dict]:
-    """Query call hierarchy - placeholder for future implementation."""
-    # Would require knowing what function to analyze
-    return []
-
-
-def _execute_ast_check(check_id: str, check_name: str, severity: str,
-                       config: Dict, repo_root: Path, file_paths: List[Path],
-                       fix_hint: Optional[str]) -> List[CheckResult]:
-    """
-    Execute an AST-based structural/metrics check.
-
-    Uses Python's ast module or radon for code metrics like:
-    - Cyclomatic complexity
-    - Function length
-    - Nesting depth
-    - Parameter count
-    - Class size
-    - Import count
-    """
-    import ast
-
-    metric = config.get("metric", "cyclomatic_complexity")
-    threshold = config.get("threshold", 10)
-    scope = config.get("scope", "function")
-
-    results = []
-
-    for file_path in file_paths:
-        # Only process Python files
-        if file_path.suffix != ".py":
-            continue
-
-        try:
-            content = file_path.read_text(encoding="utf-8", errors="ignore")
-            tree = ast.parse(content, filename=str(file_path))
-        except SyntaxError as e:
-            results.append(CheckResult(
-                check_id=check_id,
-                check_name=check_name,
-                passed=False,
-                severity="warning",
-                message=f"Syntax error parsing {file_path.name}: {e}",
-                file_path=str(file_path.relative_to(repo_root))
-            ))
-            continue
-        except Exception:
-            continue
-
-        relative_path = str(file_path.relative_to(repo_root))
-
-        if metric == "cyclomatic_complexity":
-            violations = _check_cyclomatic_complexity(tree, content, threshold)
-        elif metric == "function_length":
-            violations = _check_function_length(tree, content, threshold)
-        elif metric == "nesting_depth":
-            violations = _check_nesting_depth(tree, content, threshold)
-        elif metric == "parameter_count":
-            violations = _check_parameter_count(tree, content, threshold)
-        elif metric == "class_size":
-            violations = _check_class_size(tree, content, threshold)
-        elif metric == "import_count":
-            violations = _check_import_count(tree, content, threshold, relative_path)
-        else:
-            violations = []
-
-        for v in violations:
-            results.append(CheckResult(
-                check_id=check_id,
-                check_name=check_name,
-                passed=False,
-                severity=severity,
-                message=v["message"],
-                file_path=relative_path,
-                line_number=v.get("line"),
-                fix_hint=fix_hint
-            ))
-
-    return results
-
-
-def _check_cyclomatic_complexity(tree: "ast.AST", content: str, threshold: int) -> List[Dict]:
-    """Check cyclomatic complexity of functions."""
-    import ast
-
-    violations = []
-
-    for node in ast.walk(tree):
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-            # Count decision points: if, for, while, except, with, assert,
-            # boolean operators (and, or), comprehensions
-            complexity = 1  # Base complexity
-
-            for child in ast.walk(node):
-                if isinstance(child, (ast.If, ast.IfExp)):
-                    complexity += 1
-                elif isinstance(child, (ast.For, ast.AsyncFor)):
-                    complexity += 1
-                elif isinstance(child, (ast.While,)):
-                    complexity += 1
-                elif isinstance(child, ast.ExceptHandler):
-                    complexity += 1
-                elif isinstance(child, (ast.With, ast.AsyncWith)):
-                    complexity += 1
-                elif isinstance(child, ast.Assert):
-                    complexity += 1
-                elif isinstance(child, ast.BoolOp):
-                    # Each 'and'/'or' adds a decision point
-                    complexity += len(child.values) - 1
-                elif isinstance(child, (ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp)):
-                    # Each comprehension has implicit iteration
-                    complexity += len(child.generators)
-
-            if complexity > threshold:
-                violations.append({
-                    "message": f"Function '{node.name}' has complexity {complexity} (max: {threshold})",
-                    "line": node.lineno
-                })
-
-    return violations
-
-
-def _check_function_length(tree: "ast.AST", content: str, threshold: int) -> List[Dict]:
-    """Check function line counts."""
-    import ast
-
-    violations = []
-    lines = content.split("\n")
-
-    for node in ast.walk(tree):
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-            # Calculate function length
-            start_line = node.lineno
-            end_line = node.end_lineno or start_line
-
-            # Count non-empty, non-comment lines
-            func_lines = 0
-            for i in range(start_line - 1, min(end_line, len(lines))):
-                line = lines[i].strip()
-                if line and not line.startswith("#"):
-                    func_lines += 1
-
-            if func_lines > threshold:
-                violations.append({
-                    "message": f"Function '{node.name}' has {func_lines} lines (max: {threshold})",
-                    "line": node.lineno
-                })
-
-    return violations
-
-
-def _check_nesting_depth(tree: "ast.AST", content: str, threshold: int) -> List[Dict]:
-    """Check maximum nesting depth in functions."""
-    import ast
-
-    violations = []
-
-    for node in ast.walk(tree):
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-            max_depth = _calculate_max_nesting(node)
-
-            if max_depth > threshold:
-                violations.append({
-                    "message": f"Function '{node.name}' has nesting depth {max_depth} (max: {threshold})",
-                    "line": node.lineno
-                })
-
-    return violations
-
-
-def _calculate_max_nesting(node, current_depth: int = 0) -> int:
-    """Recursively calculate maximum nesting depth."""
-    import ast
-
-    nesting_nodes = (ast.If, ast.For, ast.AsyncFor, ast.While, ast.With,
-                     ast.AsyncWith, ast.Try, ast.ExceptHandler)
-
-    max_depth = current_depth
-
-    for child in ast.iter_child_nodes(node):
-        if isinstance(child, nesting_nodes):
-            child_depth = _calculate_max_nesting(child, current_depth + 1)
-            max_depth = max(max_depth, child_depth)
-        else:
-            child_depth = _calculate_max_nesting(child, current_depth)
-            max_depth = max(max_depth, child_depth)
-
-    return max_depth
-
-
-def _check_parameter_count(tree: "ast.AST", content: str, threshold: int) -> List[Dict]:
-    """Check function parameter counts."""
-    import ast
-
-    violations = []
-
-    for node in ast.walk(tree):
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-            args = node.args
-            param_count = (
-                len(args.posonlyargs) +
-                len(args.args) +
-                len(args.kwonlyargs) +
-                (1 if args.vararg else 0) +
-                (1 if args.kwarg else 0)
-            )
-
-            # Exclude 'self' and 'cls' from count
-            if args.args and args.args[0].arg in ("self", "cls"):
-                param_count -= 1
-
-            if param_count > threshold:
-                violations.append({
-                    "message": f"Function '{node.name}' has {param_count} parameters (max: {threshold})",
-                    "line": node.lineno
-                })
-
-    return violations
-
-
-def _check_class_size(tree: "ast.AST", content: str, threshold: int) -> List[Dict]:
-    """Check class method/property counts."""
-    import ast
-
-    violations = []
-
-    for node in ast.walk(tree):
-        if isinstance(node, ast.ClassDef):
-            member_count = 0
-
-            for item in node.body:
-                if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                    member_count += 1
-
-            if member_count > threshold:
-                violations.append({
-                    "message": f"Class '{node.name}' has {member_count} methods (max: {threshold})",
-                    "line": node.lineno
-                })
-
-    return violations
-
-
-def _check_import_count(tree: "ast.AST", content: str, threshold: int,
-                        file_path: str) -> List[Dict]:
-    """Check import count per file."""
-    import ast
-
-    import_count = 0
-
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Import):
-            import_count += len(node.names)
-        elif isinstance(node, ast.ImportFrom):
-            import_count += len(node.names)
-
-    if import_count > threshold:
-        return [{
-            "message": f"File has {import_count} imports (max: {threshold})",
-            "line": 1
-        }]
-
-    return []
 
 
 def _execute_command_check(check_id: str, check_name: str, severity: str,

@@ -176,6 +176,36 @@ class ContextRetriever:
 
         return self._vector_search
 
+    def _retrieve_lsp_symbols(self, query: str, entry_points: List[str] = None) -> list:
+        """Retrieve symbols via LSP for query keywords and entry points."""
+        if not self.lsp_adapter:
+            return []
+        try:
+            symbols = []
+            keywords = self._extract_keywords(query)
+            for keyword in keywords[:5]:
+                symbols.extend(self.lsp_adapter.get_workspace_symbols(keyword))
+            if entry_points:
+                for entry in entry_points:
+                    symbols.extend(self.lsp_adapter.get_workspace_symbols(entry))
+            return symbols
+        except Exception as e:
+            print(f"LSP query failed: {e}", file=sys.stderr)
+            return []
+
+    def _retrieve_vector_results(self, query: str) -> list:
+        """Retrieve results via vector search."""
+        if not self.vector_search:
+            return []
+        try:
+            if not self.vector_search.is_indexed():
+                print("Building vector index (first run)...", file=sys.stderr)
+                self.vector_search.index()
+            return self.vector_search.search(query, top_k=20)
+        except Exception as e:
+            print(f"Vector search failed: {e}", file=sys.stderr)
+            return []
+
     def retrieve(
         self,
         query: str,
@@ -199,41 +229,9 @@ class ContextRetriever:
         """
         budget = budget_tokens or self.config.get("retrieval", {}).get("budget", {}).get("default_tokens", 6000)
 
-        lsp_symbols = []
-        vector_results = []
+        lsp_symbols = self._retrieve_lsp_symbols(query, entry_points) if use_lsp else []
+        vector_results = self._retrieve_vector_results(query) if use_vector else []
 
-        # LSP: Get structural information
-        if use_lsp and self.lsp_adapter:
-            try:
-                # Search workspace symbols matching query keywords
-                keywords = self._extract_keywords(query)
-                for keyword in keywords[:5]:  # Limit keyword searches
-                    symbols = self.lsp_adapter.get_workspace_symbols(keyword)
-                    lsp_symbols.extend(symbols)
-
-                # Also search for entry points if specified
-                if entry_points:
-                    for entry in entry_points:
-                        symbols = self.lsp_adapter.get_workspace_symbols(entry)
-                        lsp_symbols.extend(symbols)
-
-            except Exception as e:
-                print(f"LSP query failed: {e}", file=sys.stderr)
-
-        # Vector: Get semantic matches
-        if use_vector and self.vector_search:
-            try:
-                # Ensure index exists
-                if not self.vector_search.is_indexed():
-                    print("Building vector index (first run)...", file=sys.stderr)
-                    self.vector_search.index()
-
-                vector_results = self.vector_search.search(query, top_k=20)
-
-            except Exception as e:
-                print(f"Vector search failed: {e}", file=sys.stderr)
-
-        # Assemble context
         context = self.assembler.assemble(
             query=query,
             lsp_symbols=lsp_symbols,
@@ -242,7 +240,6 @@ class ContextRetriever:
             budget_tokens=budget,
         )
 
-        # Add retrieval metadata
         context.retrieval_metadata.update({
             "project_path": str(self.project_path),
             "lsp_enabled": use_lsp and self._lsp_available,
@@ -511,6 +508,21 @@ def _run_symbol_command(retriever, name: str) -> int:
     return 1
 
 
+def _dispatch_command(retriever, args) -> int:
+    """Dispatch to appropriate command handler."""
+    if args.command == "check":
+        _run_check_command(retriever, args.project)
+        return 0
+    if args.command == "index":
+        _run_index_command(retriever, args.project, args.force)
+        return 0
+    if args.command == "search":
+        return _run_search_command(retriever, args)
+    if args.command == "symbol":
+        return _run_symbol_command(retriever, args.name)
+    return 1
+
+
 def main():
     parser = _build_context_retrieval_parser()
     args = parser.parse_args()
@@ -522,15 +534,7 @@ def main():
     retriever = ContextRetriever(args.project, args.config)
 
     try:
-        if args.command == "check":
-            _run_check_command(retriever, args.project)
-        elif args.command == "index":
-            _run_index_command(retriever, args.project, args.force)
-        elif args.command == "search":
-            return _run_search_command(retriever, args)
-        elif args.command == "symbol":
-            return _run_symbol_command(retriever, args.name)
-
+        return _dispatch_command(retriever, args)
     except KeyboardInterrupt:
         print("\nInterrupted")
         return 130
@@ -539,8 +543,6 @@ def main():
         return 1
     finally:
         retriever.shutdown()
-
-    return 0
 
 
 if __name__ == "__main__":

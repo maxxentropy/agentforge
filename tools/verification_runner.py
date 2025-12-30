@@ -40,10 +40,12 @@ import json
 try:
     from .pyright_runner import PyrightRunner
     from .command_runner import CommandRunner
+    from .verification_ast import ASTChecker
 except ImportError:
     # Allow running as standalone script
     from pyright_runner import PyrightRunner
     from command_runner import CommandRunner
+    from verification_ast import ASTChecker
 
 
 class Severity(Enum):
@@ -140,6 +142,7 @@ class VerificationRunner:
         # Initialize runners (lazy loading to avoid import errors if tools not installed)
         self._pyright_runner = None
         self._command_runner = None
+        self._ast_checker = None
 
     @property
     def pyright_runner(self) -> PyrightRunner:
@@ -154,6 +157,13 @@ class VerificationRunner:
         if self._command_runner is None:
             self._command_runner = CommandRunner(self.project_root)
         return self._command_runner
+
+    @property
+    def ast_checker(self) -> ASTChecker:
+        """Lazy-load AST checker."""
+        if self._ast_checker is None:
+            self._ast_checker = ASTChecker(self.command_runner)
+        return self._ast_checker
 
     def _load_config(self) -> Dict[str, Any]:
         """Load verification configuration."""
@@ -221,6 +231,30 @@ class VerificationRunner:
         settings = self.config.get("settings", {})
         return self._run_checks(checks, settings, None)
 
+    def _check_dependencies_met(self, deps: List[str], completed: set, results: list) -> bool:
+        """Check if all dependencies are met."""
+        return all(
+            d in completed and any(r.check_id == d and r.passed for r in results)
+            for d in deps
+        )
+
+    def _create_skip_result(self, check: Dict, message: str) -> CheckResult:
+        """Create a skipped check result."""
+        return CheckResult(
+            check_id=check["id"],
+            check_name=check.get("name", check["id"]),
+            status=CheckStatus.SKIPPED,
+            severity=Severity(check.get("severity", "required")),
+            message=message,
+        )
+
+    def _skip_remaining_checks(self, checks: List[Dict], completed: set, report: "VerificationReport"):
+        """Skip remaining checks due to fail_fast."""
+        for check in checks:
+            if check["id"] not in completed:
+                report.add_result(self._create_skip_result(
+                    check, "Skipped due to fail_fast on previous blocking failure"))
+
     def _run_checks(
         self,
         checks: List[Dict],
@@ -236,69 +270,42 @@ class VerificationRunner:
             project_path=self.context.get("project_path"),
             working_dir=str(self.project_root),
             total_checks=len(checks),
-            passed=0,
-            failed=0,
-            skipped=0,
-            errors=0,
-            blocking_failures=0,
-            required_failures=0,
-            advisory_warnings=0,
-            duration_ms=0,
+            passed=0, failed=0, skipped=0, errors=0,
+            blocking_failures=0, required_failures=0, advisory_warnings=0, duration_ms=0,
         )
 
         fail_fast = settings.get("fail_fast", False)
         completed_checks = set()
 
-        # Build dependency graph
-        check_deps = {c["id"]: c.get("depends_on", []) for c in checks}
-
-        # Run checks respecting dependencies
         for check in checks:
-            check_id = check["id"]
-
-            # Check dependencies
             deps = check.get("depends_on", [])
-            deps_met = all(
-                d in completed_checks and
-                any(r.check_id == d and r.passed for r in report.results)
-                for d in deps
-            )
-
-            if not deps_met and deps:
-                result = CheckResult(
-                    check_id=check_id,
-                    check_name=check.get("name", check_id),
-                    status=CheckStatus.SKIPPED,
-                    severity=Severity(check.get("severity", "required")),
-                    message=f"Skipped due to failed dependencies: {deps}",
-                )
-                report.add_result(result)
+            if deps and not self._check_dependencies_met(deps, completed_checks, report.results):
+                report.add_result(self._create_skip_result(check, f"Skipped due to failed dependencies: {deps}"))
                 continue
 
-            # Run the check
             result = self.run_check(check, settings)
             report.add_result(result)
-            completed_checks.add(check_id)
+            completed_checks.add(check["id"])
 
-            # Fail fast if blocking failure
             if fail_fast and result.is_blocking_failure:
-                # Skip remaining checks
-                for remaining in checks:
-                    if remaining["id"] not in completed_checks:
-                        skip_result = CheckResult(
-                            check_id=remaining["id"],
-                            check_name=remaining.get("name", remaining["id"]),
-                            status=CheckStatus.SKIPPED,
-                            severity=Severity(remaining.get("severity", "required")),
-                            message="Skipped due to fail_fast on previous blocking failure",
-                        )
-                        report.add_result(skip_result)
+                self._skip_remaining_checks(checks, completed_checks, report)
                 break
 
-        end_time = datetime.now()
-        report.duration_ms = int((end_time - start_time).total_seconds() * 1000)
-
+        report.duration_ms = int((datetime.now() - start_time).total_seconds() * 1000)
         return report
+
+    def _get_check_handlers(self) -> Dict[str, Callable]:
+        """Return dispatch table for check types."""
+        return {
+            "command": self._run_command_check,
+            "regex": self._run_regex_check,
+            "file_exists": self._run_file_exists_check,
+            "import_check": self._run_import_check,
+            "custom": self._run_custom_check,
+            "contracts": self._run_contracts_check,
+            "lsp_query": self._run_lsp_query_check,
+            "ast_check": self._run_ast_check,
+        }
 
     def run_check(self, check: Dict, settings: Dict[str, Any] = None) -> CheckResult:
         """Run a single verification check."""
@@ -311,45 +318,22 @@ class VerificationRunner:
         start_time = datetime.now()
 
         try:
-            if check_type == "command":
-                result = self._run_command_check(check, settings)
-            elif check_type == "regex":
-                result = self._run_regex_check(check, settings)
-            elif check_type == "file_exists":
-                result = self._run_file_exists_check(check, settings)
-            elif check_type == "import_check":
-                result = self._run_import_check(check, settings)
-            elif check_type == "custom":
-                result = self._run_custom_check(check, settings)
-            elif check_type == "contracts":
-                result = self._run_contracts_check(check, settings)
-            elif check_type == "lsp_query":
-                result = self._run_lsp_query_check(check, settings)
-            elif check_type == "ast_check":
-                result = self._run_ast_check(check, settings)
+            handler = self._get_check_handlers().get(check_type)
+            if handler:
+                result = handler(check, settings)
             else:
                 result = CheckResult(
-                    check_id=check_id,
-                    check_name=check_name,
-                    status=CheckStatus.ERROR,
-                    severity=severity,
-                    message=f"Unknown check type: {check_type}",
+                    check_id=check_id, check_name=check_name, status=CheckStatus.ERROR,
+                    severity=severity, message=f"Unknown check type: {check_type}",
                 )
-
         except Exception as e:
             result = CheckResult(
-                check_id=check_id,
-                check_name=check_name,
-                status=CheckStatus.ERROR,
-                severity=severity,
-                message=f"Check raised exception: {str(e)}",
-                details=str(e),
+                check_id=check_id, check_name=check_name, status=CheckStatus.ERROR,
+                severity=severity, message=f"Check raised exception: {str(e)}", details=str(e),
             )
 
-        end_time = datetime.now()
-        result.duration_ms = int((end_time - start_time).total_seconds() * 1000)
+        result.duration_ms = int((datetime.now() - start_time).total_seconds() * 1000)
         result.fix_suggestion = check.get("fix_suggestion")
-
         return result
 
     def _check_output_indicators(self, output: str, passed: bool,
@@ -462,6 +446,20 @@ class VerificationRunner:
             pass
         return matches
 
+    def _determine_regex_result(self, matches_found: list, negative_match: bool,
+                                  check_message: str) -> tuple[bool, str, list]:
+        """Determine regex check result. Returns (passed, message, errors)."""
+        if negative_match:
+            passed = len(matches_found) == 0
+            message = "No forbidden patterns found" if passed else check_message or "Pattern should not match"
+            errors = [{"file": m["file"], "line": m["line"], "match": m["match"]}
+                      for m in matches_found[:20]] if not passed else []
+        else:
+            passed = len(matches_found) > 0
+            message = f"Found {len(matches_found)} match(es)" if passed else check_message or "Pattern should match"
+            errors = []
+        return passed, message, errors
+
     def _run_regex_check(self, check: Dict, settings: Dict) -> CheckResult:
         """Run a regex pattern check on source files."""
         check_id = check["id"]
@@ -472,7 +470,6 @@ class VerificationRunner:
         if not patterns and check.get("pattern"):
             patterns = [{"name": "pattern", "pattern": check["pattern"]}]
 
-        negative_match = check.get("negative_match", False)
         include_patterns = check.get("file_patterns", settings.get("include_patterns", ["**/*.cs"]))
         exclude_patterns = check.get("exclude_patterns", settings.get("exclude_patterns", []))
 
@@ -481,20 +478,13 @@ class VerificationRunner:
         for file_path in files:
             matches_found.extend(self._search_patterns_in_file(file_path, patterns))
 
-        # Determine pass/fail
-        if negative_match:
-            passed = len(matches_found) == 0
-            message = check.get("message", "Pattern should not match") if not passed else "No forbidden patterns found"
-        else:
-            passed = len(matches_found) > 0
-            message = check.get("message", "Pattern should match") if not passed else f"Found {len(matches_found)} match(es)"
+        passed, message, errors = self._determine_regex_result(
+            matches_found, check.get("negative_match", False), check.get("message"))
 
         return CheckResult(
             check_id=check_id, check_name=check_name,
             status=CheckStatus.PASSED if passed else CheckStatus.FAILED,
-            severity=severity, message=message,
-            errors=[{"file": m["file"], "line": m["line"], "match": m["match"]} for m in matches_found[:20]]
-            if not passed and negative_match else [],
+            severity=severity, message=message, errors=errors,
             details=f"Searched {len(files)} files, found {len(matches_found)} matches",
         )
 
@@ -536,6 +526,37 @@ class VerificationRunner:
             details=f"Found {len(found)} of {len(files)} required files",
         )
 
+    def _find_forbidden_import_violations(self, source_file: str, forbidden_imports: list,
+                                           rule_message: str) -> list:
+        """Check a single file for forbidden import violations."""
+        violations = []
+        try:
+            with open(source_file, "r", encoding="utf-8", errors="ignore") as f:
+                content = f.read()
+
+            using_pattern = r"using\s+([a-zA-Z0-9_.]+)\s*;"
+            usings = re.findall(using_pattern, content)
+            rel_path = os.path.relpath(source_file, self.project_root)
+
+            for using in usings:
+                for forbidden in forbidden_imports:
+                    if forbidden in using:
+                        line_num = self._find_using_line(content, using)
+                        violations.append({
+                            "file": rel_path, "line": line_num, "import": using,
+                            "forbidden": forbidden, "message": rule_message,
+                        })
+        except Exception:
+            pass
+        return violations
+
+    def _find_using_line(self, content: str, using: str) -> int | None:
+        """Find the line number of a using statement."""
+        for i, line in enumerate(content.split("\n"), 1):
+            if f"using {using}" in line:
+                return i
+        return None
+
     def _run_import_check(self, check: Dict, settings: Dict) -> CheckResult:
         """Check import/dependency rules (layer isolation)."""
         check_id = check["id"]
@@ -548,52 +569,62 @@ class VerificationRunner:
         for rule in rules:
             source_pattern = self._substitute_variables(rule["source_pattern"])
             forbidden_imports = rule.get("forbidden_imports", [])
+            rule_message = rule.get("message", f"Forbidden import")
 
-            # Find source files
-            source_files = glob.glob(
-                str(self.project_root / source_pattern),
-                recursive=True
-            )
-
+            source_files = glob.glob(str(self.project_root / source_pattern), recursive=True)
             for source_file in source_files:
-                try:
-                    with open(source_file, "r", encoding="utf-8", errors="ignore") as f:
-                        content = f.read()
-
-                    # Check for using statements
-                    using_pattern = r"using\s+([a-zA-Z0-9_.]+)\s*;"
-                    usings = re.findall(using_pattern, content)
-
-                    for using in usings:
-                        for forbidden in forbidden_imports:
-                            if forbidden in using:
-                                rel_path = os.path.relpath(source_file, self.project_root)
-                                line_num = None
-                                for i, line in enumerate(content.split("\n"), 1):
-                                    if f"using {using}" in line:
-                                        line_num = i
-                                        break
-
-                                violations.append({
-                                    "file": rel_path,
-                                    "line": line_num,
-                                    "import": using,
-                                    "forbidden": forbidden,
-                                    "message": rule.get("message", f"Forbidden import: {forbidden}"),
-                                })
-                except Exception:
-                    continue
+                violations.extend(self._find_forbidden_import_violations(
+                    source_file, forbidden_imports, rule_message))
 
         passed = len(violations) == 0
-
         return CheckResult(
-            check_id=check_id,
-            check_name=check_name,
+            check_id=check_id, check_name=check_name,
             status=CheckStatus.PASSED if passed else CheckStatus.FAILED,
             severity=severity,
             message=check.get("message", "Layer dependencies OK") if passed else f"Found {len(violations)} violation(s)",
-            errors=violations[:20],
-            details=f"Checked {len(rules)} rules",
+            errors=violations[:20], details=f"Checked {len(rules)} rules",
+        )
+
+    def _load_custom_function(self, function_path: str) -> Callable:
+        """Load a custom function from module.function path."""
+        parts = function_path.rsplit(".", 1)
+        if len(parts) != 2:
+            raise ValueError(f"Invalid function path: {function_path}")
+
+        module_name, func_name = parts
+        tools_dir = Path(__file__).parent
+        module_file = tools_dir / f"{module_name}.py"
+
+        if module_file.exists():
+            spec = importlib.util.spec_from_file_location(module_name, module_file)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+        else:
+            module = importlib.import_module(module_name)
+
+        return getattr(module, func_name)
+
+    def _convert_custom_result(self, result: Any, check_id: str, check_name: str,
+                                severity: Severity, default_message: str) -> CheckResult:
+        """Convert custom function result to CheckResult."""
+        if isinstance(result, CheckResult):
+            return result
+        if isinstance(result, dict):
+            return CheckResult(
+                check_id=check_id, check_name=check_name,
+                status=CheckStatus.PASSED if result.get("passed", False) else CheckStatus.FAILED,
+                severity=severity, message=result.get("message", default_message),
+                errors=result.get("errors", []), details=result.get("details"),
+            )
+        if isinstance(result, bool):
+            return CheckResult(
+                check_id=check_id, check_name=check_name,
+                status=CheckStatus.PASSED if result else CheckStatus.FAILED,
+                severity=severity, message=default_message,
+            )
+        return CheckResult(
+            check_id=check_id, check_name=check_name, status=CheckStatus.ERROR,
+            severity=severity, message=f"Custom check returned unexpected type: {type(result)}",
         )
 
     def _run_custom_check(self, check: Dict, settings: Dict) -> CheckResult:
@@ -603,79 +634,17 @@ class VerificationRunner:
         severity = Severity(check.get("severity", "required"))
 
         function_path = check.get("function")
-        parameters = check.get("parameters", {})
-
-        # Substitute variables in parameters
-        for key, value in parameters.items():
-            if isinstance(value, str):
-                parameters[key] = self._substitute_variables(value)
+        parameters = {k: self._substitute_variables(v) if isinstance(v, str) else v
+                      for k, v in check.get("parameters", {}).items()}
 
         try:
-            # Parse module.function path
-            parts = function_path.rsplit(".", 1)
-            if len(parts) != 2:
-                raise ValueError(f"Invalid function path: {function_path}")
-
-            module_name, func_name = parts
-
-            # Try to import from tools directory
-            tools_dir = Path(__file__).parent
-            module_file = tools_dir / f"{module_name}.py"
-
-            if module_file.exists():
-                spec = importlib.util.spec_from_file_location(module_name, module_file)
-                module = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(module)
-            else:
-                module = importlib.import_module(module_name)
-
-            func = getattr(module, func_name)
-
-            # Call the function
-            result = func(
-                project_root=self.project_root,
-                context=self.context,
-                **parameters
-            )
-
-            # Handle different return types
-            if isinstance(result, CheckResult):
-                return result
-            elif isinstance(result, dict):
-                return CheckResult(
-                    check_id=check_id,
-                    check_name=check_name,
-                    status=CheckStatus.PASSED if result.get("passed", False) else CheckStatus.FAILED,
-                    severity=severity,
-                    message=result.get("message", check.get("message", "")),
-                    errors=result.get("errors", []),
-                    details=result.get("details"),
-                )
-            elif isinstance(result, bool):
-                return CheckResult(
-                    check_id=check_id,
-                    check_name=check_name,
-                    status=CheckStatus.PASSED if result else CheckStatus.FAILED,
-                    severity=severity,
-                    message=check.get("message", ""),
-                )
-            else:
-                return CheckResult(
-                    check_id=check_id,
-                    check_name=check_name,
-                    status=CheckStatus.ERROR,
-                    severity=severity,
-                    message=f"Custom check returned unexpected type: {type(result)}",
-                )
-
+            func = self._load_custom_function(function_path)
+            result = func(project_root=self.project_root, context=self.context, **parameters)
+            return self._convert_custom_result(result, check_id, check_name, severity, check.get("message", ""))
         except Exception as e:
             return CheckResult(
-                check_id=check_id,
-                check_name=check_name,
-                status=CheckStatus.ERROR,
-                severity=severity,
-                message=f"Custom check failed: {str(e)}",
-                details=str(e),
+                check_id=check_id, check_name=check_name, status=CheckStatus.ERROR,
+                severity=severity, message=f"Custom check failed: {str(e)}", details=str(e),
             )
 
     def _get_contract_results(self, check: Dict):
@@ -707,6 +676,15 @@ class VerificationRunner:
                     })
         return errors
 
+    def _aggregate_contract_stats(self, results: list) -> dict:
+        """Aggregate statistics from contract results."""
+        return {
+            "errors": sum(len(r.errors) for r in results),
+            "warnings": sum(len(r.warnings) for r in results),
+            "exempted": sum(r.exempted_count for r in results),
+            "all_passed": all(r.passed for r in results),
+        }
+
     def _run_contracts_check(self, check: Dict, settings: Dict) -> CheckResult:
         """Run contract-based checks using the contracts module."""
         check_id = check["id"]
@@ -719,22 +697,17 @@ class VerificationRunner:
                 return CheckResult(check_id=check_id, check_name=check_name,
                                    status=CheckStatus.ERROR, severity=severity, message=error_msg)
 
-            total_errors = sum(len(r.errors) for r in results)
-            total_warnings = sum(len(r.warnings) for r in results)
-            total_exempted = sum(r.exempted_count for r in results)
-            all_passed = all(r.passed for r in results)
+            stats = self._aggregate_contract_stats(results)
+            passed = stats["all_passed"] and (stats["warnings"] == 0 if check.get("fail_on_warning") else True)
 
-            passed = all_passed and total_warnings == 0 if check.get("fail_on_warning") else all_passed
-            errors = self._build_contract_errors(results)
-
-            message = f"Ran {len(results)} contracts: {total_errors} errors, {total_warnings} warnings"
-            if total_exempted > 0:
-                message += f", {total_exempted} exempted"
+            message = f"Ran {len(results)} contracts: {stats['errors']} errors, {stats['warnings']} warnings"
+            if stats["exempted"] > 0:
+                message += f", {stats['exempted']} exempted"
 
             return CheckResult(
                 check_id=check_id, check_name=check_name,
                 status=CheckStatus.PASSED if passed else CheckStatus.FAILED,
-                severity=severity, message=message, errors=errors[:50],
+                severity=severity, message=message, errors=self._build_contract_errors(results)[:50],
                 details=f"Contracts: {', '.join(r.contract_name for r in results)}",
             )
 
@@ -820,275 +793,43 @@ class VerificationRunner:
             metric = config.get("metric", "")
             max_value = config.get("max_value", 10)
 
-            # Get file patterns
-            file_patterns = check.get(
-                "file_patterns",
-                settings.get("include_patterns", ["**/*.py"])
-            )
-            exclude_patterns = check.get(
-                "exclude_patterns",
-                settings.get("exclude_patterns", [])
-            )
+            include_patterns = check.get("file_patterns", settings.get("include_patterns", ["**/*.py"]))
+            exclude_patterns = check.get("exclude_patterns", settings.get("exclude_patterns", []))
+            files = [Path(f) for f in self._collect_files_for_check(include_patterns, exclude_patterns)]
 
-            # Find matching files
-            all_files = []
-            for pattern in file_patterns:
-                pattern = self._substitute_variables(pattern)
-                matches = glob.glob(str(self.project_root / pattern), recursive=True)
-                all_files.extend(matches)
+            violations = self._collect_ast_violations(files, metric, max_value)
 
-            # Filter exclusions
-            files = []
-            for f in all_files:
-                rel_path = os.path.relpath(f, self.project_root)
-                excluded = any(
-                    fnmatch.fnmatch(rel_path, self._substitute_variables(exc))
-                    for exc in exclude_patterns
-                )
-                if not excluded:
-                    files.append(Path(f))
-
-            # Run the appropriate metric check
-            violations = []
-
-            for file_path in files:
-                try:
-                    with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
-                        source = f.read()
-                    tree = ast.parse(source)
-
-                    file_violations = self._check_ast_metric(
-                        tree, source, metric, max_value, file_path
-                    )
-                    violations.extend(file_violations)
-                except SyntaxError:
-                    continue  # Skip files with syntax errors
-
-            # Build result
-            errors = [
-                {
-                    "file": os.path.relpath(v["file"], self.project_root),
-                    "line": v.get("line"),
-                    "function": v.get("function"),
-                    "value": v.get("value"),
-                    "max": max_value,
-                    "message": v.get("message"),
-                }
-                for v in violations[:50]
-            ]
+            errors = [{
+                "file": os.path.relpath(v["file"], self.project_root),
+                "line": v.get("line"), "function": v.get("function"),
+                "value": v.get("value"), "max": max_value, "message": v.get("message"),
+            } for v in violations[:50]]
 
             passed = len(violations) == 0
-            message = (
-                f"Found {len(violations)} {metric} violations (max: {max_value})"
-                if not passed
-                else f"All {len(files)} files pass {metric} check (max: {max_value})"
-            )
+            message = (f"Found {len(violations)} {metric} violations (max: {max_value})"
+                       if not passed else f"All {len(files)} files pass {metric} check (max: {max_value})")
 
             return CheckResult(
-                check_id=check_id,
-                check_name=check_name,
+                check_id=check_id, check_name=check_name,
                 status=CheckStatus.PASSED if passed else CheckStatus.FAILED,
-                severity=severity,
-                message=message,
-                errors=errors,
+                severity=severity, message=message, errors=errors,
                 details=f"Checked {len(files)} files for {metric}",
             )
 
         except Exception as e:
-            return CheckResult(
-                check_id=check_id,
-                check_name=check_name,
-                status=CheckStatus.ERROR,
-                severity=severity,
-                message=f"AST check failed: {str(e)}",
-                details=str(e),
-            )
+            return CheckResult(check_id=check_id, check_name=check_name, status=CheckStatus.ERROR,
+                               severity=severity, message=f"AST check failed: {str(e)}", details=str(e))
 
-    def _check_ast_metric(
-        self,
-        tree: ast.AST,
-        source: str,
-        metric: str,
-        max_value: int,
-        file_path: Path
-    ) -> List[Dict]:
-        """Check a specific AST metric and return violations."""
+    def _collect_ast_violations(self, files: List[Path], metric: str, max_value: int) -> list:
+        """Collect AST violations across files."""
         violations = []
-
-        if metric == "function_length":
-            violations = self._check_function_length(tree, max_value, file_path)
-        elif metric == "nesting_depth":
-            violations = self._check_nesting_depth(tree, max_value, file_path)
-        elif metric == "parameter_count":
-            violations = self._check_parameter_count(tree, max_value, file_path)
-        elif metric == "class_size":
-            violations = self._check_class_size(tree, max_value, file_path)
-        elif metric == "import_count":
-            violations = self._check_import_count(tree, max_value, file_path)
-        elif metric == "cyclomatic_complexity":
-            # Use radon for complexity (more accurate than manual counting)
-            violations = self._check_complexity_with_radon(file_path, max_value)
-
-        return violations
-
-    def _check_function_length(
-        self, tree: ast.AST, max_lines: int, file_path: Path
-    ) -> List[Dict]:
-        """Check function lengths."""
-        violations = []
-
-        for node in ast.walk(tree):
-            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                if hasattr(node, 'end_lineno') and hasattr(node, 'lineno'):
-                    length = node.end_lineno - node.lineno + 1
-                    if length > max_lines:
-                        violations.append({
-                            "file": str(file_path),
-                            "function": node.name,
-                            "line": node.lineno,
-                            "value": length,
-                            "message": f"Function '{node.name}' is {length} lines (max: {max_lines})",
-                        })
-
-        return violations
-
-    def _check_nesting_depth(
-        self, tree: ast.AST, max_depth: int, file_path: Path
-    ) -> List[Dict]:
-        """Check nesting depth."""
-        violations = []
-
-        nesting_nodes = (
-            ast.If, ast.For, ast.While, ast.With,
-            ast.Try, ast.ExceptHandler
-        )
-
-        def check_depth(node: ast.AST, current_depth: int, parent_func: str):
-            new_depth = current_depth
-            if isinstance(node, nesting_nodes):
-                new_depth = current_depth + 1
-                if new_depth > max_depth:
-                    violations.append({
-                        "file": str(file_path),
-                        "function": parent_func,
-                        "line": node.lineno,
-                        "value": new_depth,
-                        "message": f"Nesting depth {new_depth} in '{parent_func}' (max: {max_depth})",
-                    })
-
-            for child in ast.iter_child_nodes(node):
-                if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                    check_depth(child, 0, child.name)
-                else:
-                    check_depth(child, new_depth, parent_func)
-
-        for node in ast.iter_child_nodes(tree):
-            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                check_depth(node, 0, node.name)
-
-        return violations
-
-    def _check_parameter_count(
-        self, tree: ast.AST, max_params: int, file_path: Path
-    ) -> List[Dict]:
-        """Check function parameter count."""
-        violations = []
-
-        for node in ast.walk(tree):
-            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                # Count parameters (excluding self/cls for methods)
-                args = node.args
-                param_count = (
-                    len(args.args) +
-                    len(args.posonlyargs) +
-                    len(args.kwonlyargs) +
-                    (1 if args.vararg else 0) +
-                    (1 if args.kwarg else 0)
-                )
-
-                # Subtract 1 for self/cls in methods
-                if args.args and args.args[0].arg in ('self', 'cls'):
-                    param_count -= 1
-
-                if param_count > max_params:
-                    violations.append({
-                        "file": str(file_path),
-                        "function": node.name,
-                        "line": node.lineno,
-                        "value": param_count,
-                        "message": f"Function '{node.name}' has {param_count} parameters (max: {max_params})",
-                    })
-
-        return violations
-
-    def _check_class_size(
-        self, tree: ast.AST, max_methods: int, file_path: Path
-    ) -> List[Dict]:
-        """Check class method count."""
-        violations = []
-
-        for node in ast.walk(tree):
-            if isinstance(node, ast.ClassDef):
-                method_count = sum(
-                    1 for child in node.body
-                    if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef))
-                )
-
-                if method_count > max_methods:
-                    violations.append({
-                        "file": str(file_path),
-                        "function": node.name,
-                        "line": node.lineno,
-                        "value": method_count,
-                        "message": f"Class '{node.name}' has {method_count} methods (max: {max_methods})",
-                    })
-
-        return violations
-
-    def _check_import_count(
-        self, tree: ast.AST, max_imports: int, file_path: Path
-    ) -> List[Dict]:
-        """Check module import count."""
-        import_count = sum(
-            1 for node in ast.walk(tree)
-            if isinstance(node, (ast.Import, ast.ImportFrom))
-        )
-
-        if import_count > max_imports:
-            return [{
-                "file": str(file_path),
-                "function": "<module>",
-                "line": 1,
-                "value": import_count,
-                "message": f"Module has {import_count} imports (max: {max_imports})",
-            }]
-
-        return []
-
-    def _check_complexity_with_radon(
-        self, file_path: Path, max_complexity: int
-    ) -> List[Dict]:
-        """Check cyclomatic complexity using radon."""
-        violations = []
-
-        result = self.command_runner.run_radon_cc(file_path)
-
-        if not result.parsed_output:
-            return violations
-
-        # radon output is dict of file_path -> list of functions
-        for funcs in result.parsed_output.values():
-            for func in funcs:
-                complexity = func.get("complexity", 0)
-                if complexity > max_complexity:
-                    violations.append({
-                        "file": str(file_path),
-                        "function": func.get("name"),
-                        "line": func.get("lineno"),
-                        "value": complexity,
-                        "message": f"Function '{func.get('name')}' has complexity {complexity} (max: {max_complexity})",
-                    })
-
+        for file_path in files:
+            try:
+                source = file_path.read_text(encoding="utf-8", errors="ignore")
+                tree = ast.parse(source)
+                violations.extend(self.ast_checker.check_metric(tree, source, metric, max_value, file_path))
+            except SyntaxError:
+                continue
         return violations
 
     def generate_report(self, report: VerificationReport, format: str = "text") -> str:
@@ -1100,80 +841,48 @@ class VerificationRunner:
         else:
             return self._generate_text_report(report)
 
+    def _format_check_result(self, result: CheckResult) -> list:
+        """Format a single check result for text report."""
+        status_icons = {CheckStatus.PASSED: "✓", CheckStatus.FAILED: "✗", CheckStatus.SKIPPED: "○", CheckStatus.ERROR: "!"}
+        lines = [
+            f"\n{status_icons.get(result.status, '?')} {result.check_id}: {result.check_name} [{result.severity.value.upper()}]",
+            f"  {result.message}"
+        ]
+        if result.details:
+            lines.append(f"  Details: {result.details}")
+        if result.errors:
+            lines.append(f"  Errors ({len(result.errors)}):")
+            for err in result.errors[:5]:
+                err_str = ", ".join(f"{k}: {v}" for k, v in err.items()) if isinstance(err, dict) else str(err)
+                lines.append(f"    - {err_str}")
+            if len(result.errors) > 5:
+                lines.append(f"    ... and {len(result.errors) - 5} more")
+        if result.fix_suggestion and not result.passed:
+            lines.append(f"  Fix: {result.fix_suggestion}")
+        if result.duration_ms > 0:
+            lines.append(f"  Duration: {result.duration_ms}ms")
+        return lines
+
     def _generate_text_report(self, report: VerificationReport) -> str:
         """Generate human-readable text report."""
         lines = [
-            "",
-            "=" * 70,
-            "VERIFICATION REPORT",
-            "=" * 70,
-            f"  Timestamp: {report.timestamp}",
-            f"  Profile: {report.profile or 'custom'}",
-            f"  Project: {report.project_path or 'N/A'}",
-            f"  Duration: {report.duration_ms}ms",
-            "",
-            "-" * 70,
-            "SUMMARY",
-            "-" * 70,
-            f"  Total Checks:      {report.total_checks}",
-            f"  Passed:            {report.passed}",
-            f"  Failed:            {report.failed}",
-            f"  Skipped:           {report.skipped}",
-            f"  Errors:            {report.errors}",
-            "",
-            f"  Blocking Failures: {report.blocking_failures}",
-            f"  Required Failures: {report.required_failures}",
-            f"  Advisory Warnings: {report.advisory_warnings}",
-            "",
-            f"  VERDICT: {'PASS' if report.is_valid else 'FAIL'}",
-            "",
+            "", "=" * 70, "VERIFICATION REPORT", "=" * 70,
+            f"  Timestamp: {report.timestamp}", f"  Profile: {report.profile or 'custom'}",
+            f"  Project: {report.project_path or 'N/A'}", f"  Duration: {report.duration_ms}ms",
+            "", "-" * 70, "SUMMARY", "-" * 70,
+            f"  Total Checks:      {report.total_checks}", f"  Passed:            {report.passed}",
+            f"  Failed:            {report.failed}", f"  Skipped:           {report.skipped}",
+            f"  Errors:            {report.errors}", "",
+            f"  Blocking Failures: {report.blocking_failures}", f"  Required Failures: {report.required_failures}",
+            f"  Advisory Warnings: {report.advisory_warnings}", "",
+            f"  VERDICT: {'PASS' if report.is_valid else 'FAIL'}", "",
+            "-" * 70, "DETAILED RESULTS", "-" * 70,
         ]
 
-        # Detailed results
-        lines.extend([
-            "-" * 70,
-            "DETAILED RESULTS",
-            "-" * 70,
-        ])
-
         for result in report.results:
-            status_icon = {
-                CheckStatus.PASSED: "✓",
-                CheckStatus.FAILED: "✗",
-                CheckStatus.SKIPPED: "○",
-                CheckStatus.ERROR: "!",
-            }.get(result.status, "?")
+            lines.extend(self._format_check_result(result))
 
-            severity_badge = f"[{result.severity.value.upper()}]"
-
-            lines.append(f"\n{status_icon} {result.check_id}: {result.check_name} {severity_badge}")
-            lines.append(f"  {result.message}")
-
-            if result.details:
-                lines.append(f"  Details: {result.details}")
-
-            if result.errors:
-                lines.append(f"  Errors ({len(result.errors)}):")
-                for err in result.errors[:5]:
-                    if isinstance(err, dict):
-                        err_str = ", ".join(f"{k}: {v}" for k, v in err.items())
-                        lines.append(f"    - {err_str}")
-                    else:
-                        lines.append(f"    - {err}")
-                if len(result.errors) > 5:
-                    lines.append(f"    ... and {len(result.errors) - 5} more")
-
-            if result.fix_suggestion and not result.passed:
-                lines.append(f"  Fix: {result.fix_suggestion}")
-
-            if result.duration_ms > 0:
-                lines.append(f"  Duration: {result.duration_ms}ms")
-
-        lines.extend([
-            "",
-            "=" * 70,
-        ])
-
+        lines.extend(["", "=" * 70])
         return "\n".join(lines)
 
     def _generate_yaml_report(self, report: VerificationReport) -> str:
@@ -1259,113 +968,56 @@ class VerificationRunner:
 # CLI Interface
 # =============================================================================
 
-def main():
+def _build_verification_parser():
+    """Build argument parser for verification CLI."""
     import argparse
-
     parser = argparse.ArgumentParser(
         description="AgentForge Verification Runner",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  # Run all checks
-  python verification_runner.py
+        epilog="Examples:\n  python verification_runner.py --profile ci\n"
+               "  python verification_runner.py --checks compile_check,test_check"
+    )
+    parser.add_argument("--profile", "-p", help="Check profile to run")
+    parser.add_argument("--checks", "-c", help="Comma-separated list of check IDs")
+    parser.add_argument("--project", help="Path to project file")
+    parser.add_argument("--project-root", help="Project root directory")
+    parser.add_argument("--config", help="Path to correctness.yaml")
+    parser.add_argument("--format", "-f", choices=["text", "yaml", "json"], default="text")
+    parser.add_argument("--output", "-o", help="Output file")
+    parser.add_argument("--fail-on-advisory", action="store_true")
+    return parser
 
-  # Run CI profile
-  python verification_runner.py --profile ci
 
-  # Run specific checks
-  python verification_runner.py --checks compile_check,test_check
+def _run_verification(runner, args):
+    """Run verification checks based on args."""
+    if args.profile:
+        return runner.run_profile(args.profile)
+    if args.checks:
+        return runner.run_checks(check_ids=[c.strip() for c in args.checks.split(",")])
+    return runner.run_checks(all_checks=True)
 
-  # Run with project path
-  python verification_runner.py --profile ci --project MyApp/MyApp.csproj
 
-  # Output as YAML
-  python verification_runner.py --profile ci --format yaml
-"""
-    )
-
-    parser.add_argument(
-        "--profile", "-p",
-        help="Check profile to run (quick, ci, full, architecture, precommit)"
-    )
-    parser.add_argument(
-        "--checks", "-c",
-        help="Comma-separated list of check IDs to run"
-    )
-    parser.add_argument(
-        "--project",
-        help="Path to project file (e.g., MyApp.csproj)"
-    )
-    parser.add_argument(
-        "--project-root",
-        help="Project root directory (default: current directory)"
-    )
-    parser.add_argument(
-        "--config",
-        help="Path to correctness.yaml config file"
-    )
-    parser.add_argument(
-        "--format", "-f",
-        choices=["text", "yaml", "json"],
-        default="text",
-        help="Output format (default: text)"
-    )
-    parser.add_argument(
-        "--output", "-o",
-        help="Output file (default: stdout)"
-    )
-    parser.add_argument(
-        "--fail-on-advisory",
-        action="store_true",
-        help="Exit with failure on advisory warnings too"
-    )
-
+def main():
+    parser = _build_verification_parser()
     args = parser.parse_args()
 
-    # Set up runner
     project_root = Path(args.project_root) if args.project_root else Path.cwd()
     config_path = Path(args.config) if args.config else None
 
-    runner = VerificationRunner(
-        config_path=config_path,
-        project_root=project_root
-    )
+    runner = VerificationRunner(config_path=config_path, project_root=project_root)
+    runner.set_context(project_path=args.project, project_root=str(project_root))
 
-    # Set context
-    if args.project:
-        runner.set_context(
-            project_path=args.project,
-            project_root=str(project_root),
-        )
-    else:
-        runner.set_context(project_root=str(project_root))
-
-    # Run checks
-    if args.profile:
-        report = runner.run_profile(args.profile)
-    elif args.checks:
-        check_ids = [c.strip() for c in args.checks.split(",")]
-        report = runner.run_checks(check_ids=check_ids)
-    else:
-        report = runner.run_checks(all_checks=True)
-
-    # Generate output
+    report = _run_verification(runner, args)
     output = runner.generate_report(report, format=args.format)
 
     if args.output:
-        with open(args.output, "w") as f:
-            f.write(output)
+        Path(args.output).write_text(output)
         print(f"Report saved to: {args.output}")
     else:
         print(output)
 
-    # Exit code
-    if not report.is_valid:
+    if not report.is_valid or (args.fail_on_advisory and report.advisory_warnings > 0):
         sys.exit(1)
-    elif args.fail_on_advisory and report.advisory_warnings > 0:
-        sys.exit(1)
-    else:
-        sys.exit(0)
 
 
 if __name__ == "__main__":

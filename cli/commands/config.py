@@ -174,24 +174,28 @@ def _determine_config_file(args, find_upward):
         return Path.cwd() / '.agentforge' / 'repo.yaml', 'repo'
 
 
+def _try_parse_float(value: str):
+    """Try to parse value as float, return original string if not possible."""
+    try:
+        return float(value)
+    except ValueError:
+        return value
+
+
 def _parse_config_value(value: str):
     """Parse a config value string to appropriate type."""
-    try:
-        if value.lower() == 'true':
-            return True
-        elif value.lower() == 'false':
-            return False
-        elif value.lower() in ('null', 'none'):
-            return None
-        elif value.isdigit():
-            return int(value)
-        else:
-            try:
-                return float(value)
-            except ValueError:
-                return value
-    except AttributeError:
+    if not isinstance(value, str):
         return value
+    lowered = value.lower()
+    if lowered == 'true':
+        return True
+    if lowered == 'false':
+        return False
+    if lowered in ('null', 'none'):
+        return None
+    if value.isdigit():
+        return int(value)
+    return _try_parse_float(value)
 
 
 def _get_tier_section(config: dict, keys: list, tier: str) -> dict:

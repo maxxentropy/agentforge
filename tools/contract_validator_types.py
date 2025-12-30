@@ -46,11 +46,16 @@ class ContractValidationReport:
     def add_result(self, result: ValidationResult):
         """Add a validation result and update failure counts."""
         self.results.append(result)
-        if not result.passed:
-            if result.severity == Severity.BLOCKING:
-                self.blocking_failures += 1
-                self.is_valid = False
-            elif result.severity == Severity.REQUIRED:
-                self.required_failures += 1
-            elif result.severity == Severity.ADVISORY:
-                self.advisory_warnings += 1
+        if result.passed:
+            return
+        self._update_failure_count(result.severity)
+
+    def _update_failure_count(self, severity: Severity):
+        """Update failure counts based on severity."""
+        if severity == Severity.BLOCKING:
+            self.blocking_failures += 1
+            self.is_valid = False
+        elif severity == Severity.REQUIRED:
+            self.required_failures += 1
+        elif severity == Severity.ADVISORY:
+            self.advisory_warnings += 1

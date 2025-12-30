@@ -192,34 +192,39 @@ def _render_entities(entities: list) -> list:
     return lines
 
 
+def _render_interface_response(resp: dict) -> list:
+    """Render interface response section."""
+    lines = [f"**Success Response:** `{resp.get('success', 'N/A')}`", ""]
+    if resp.get('error_codes'):
+        lines.append("**Error Codes:**")
+        for err in resp.get('error_codes', []):
+            lines.append(f"- `{err}`")
+        lines.append("")
+    return lines
+
+
+def _render_single_interface(iface: dict) -> list:
+    """Render a single interface to markdown lines."""
+    lines = [
+        f"#### {iface.get('name')}", "",
+        f"**Type:** {iface.get('type')} | **Path:** `{iface.get('path')}`", ""
+    ]
+    if iface.get('request'):
+        lines.append(f"**Request Body:** `{iface.get('request', {}).get('body', 'N/A')}`")
+        lines.append("")
+    if iface.get('response'):
+        lines.extend(_render_interface_response(iface.get('response', {})))
+    return lines
+
+
 def _render_interfaces(interfaces: list) -> list:
     """Render interfaces section to markdown lines."""
     lines = []
     if interfaces:
-        lines.append("## 4. Interfaces")
-        lines.append("")
+        lines.extend(["## 4. Interfaces", ""])
         for iface in interfaces:
-            lines.append(f"#### {iface.get('name')}")
-            lines.append("")
-            lines.append(f"**Type:** {iface.get('type')} | **Path:** `{iface.get('path')}`")
-            lines.append("")
-
-            if iface.get('request'):
-                req = iface.get('request', {})
-                lines.append(f"**Request Body:** `{req.get('body', 'N/A')}`")
-                lines.append("")
-
-            if iface.get('response'):
-                resp = iface.get('response', {})
-                lines.append(f"**Success Response:** `{resp.get('success', 'N/A')}`")
-                lines.append("")
-                if resp.get('error_codes'):
-                    lines.append("**Error Codes:**")
-                    for err in resp.get('error_codes', []):
-                        lines.append(f"- `{err}`")
-                    lines.append("")
-    lines.append("---")
-    lines.append("")
+            lines.extend(_render_single_interface(iface))
+    lines.extend(["---", ""])
     return lines
 
 

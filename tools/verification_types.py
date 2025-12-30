@@ -70,22 +70,36 @@ class VerificationReport:
     results: List[CheckResult] = field(default_factory=list)
     is_valid: bool = True
 
+    def _update_failure_counts(self, result: CheckResult):
+        """Update failure-related counters based on severity."""
+        if result.severity == Severity.BLOCKING:
+            self.blocking_failures += 1
+            self.is_valid = False
+        elif result.severity == Severity.REQUIRED:
+            self.required_failures += 1
+        elif result.severity == Severity.ADVISORY:
+            self.advisory_warnings += 1
+
     def add_result(self, result: CheckResult):
+        """Add a check result and update counters."""
         self.results.append(result)
-        if result.status == CheckStatus.PASSED:
-            self.passed += 1
-        elif result.status == CheckStatus.FAILED:
-            self.failed += 1
-            if result.severity == Severity.BLOCKING:
-                self.blocking_failures += 1
-                self.is_valid = False
-            elif result.severity == Severity.REQUIRED:
-                self.required_failures += 1
-            elif result.severity == Severity.ADVISORY:
-                self.advisory_warnings += 1
-        elif result.status == CheckStatus.SKIPPED:
-            self.skipped += 1
-        elif result.status == CheckStatus.ERROR:
-            self.errors += 1
-            if result.severity == Severity.BLOCKING:
-                self.is_valid = False
+        status_handlers = {
+            CheckStatus.PASSED: lambda: setattr(self, 'passed', self.passed + 1),
+            CheckStatus.SKIPPED: lambda: setattr(self, 'skipped', self.skipped + 1),
+            CheckStatus.ERROR: lambda: self._handle_error_result(result),
+            CheckStatus.FAILED: lambda: self._handle_failed_result(result),
+        }
+        handler = status_handlers.get(result.status)
+        if handler:
+            handler()
+
+    def _handle_failed_result(self, result: CheckResult):
+        """Handle a failed check result."""
+        self.failed += 1
+        self._update_failure_counts(result)
+
+    def _handle_error_result(self, result: CheckResult):
+        """Handle an error check result."""
+        self.errors += 1
+        if result.severity == Severity.BLOCKING:
+            self.is_valid = False

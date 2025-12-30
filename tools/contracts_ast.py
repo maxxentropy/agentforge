@@ -110,29 +110,25 @@ def check_cyclomatic_complexity(tree: ast.AST, content: str, threshold: int) -> 
     return violations
 
 
+def _get_node_complexity(child: ast.AST) -> int:
+    """Get complexity contribution of a single AST node."""
+    # Simple nodes that add 1 to complexity
+    simple_nodes = (ast.If, ast.IfExp, ast.For, ast.AsyncFor, ast.While,
+                    ast.ExceptHandler, ast.With, ast.AsyncWith, ast.Assert)
+    if isinstance(child, simple_nodes):
+        return 1
+    # Boolean operations add (num_operands - 1)
+    if isinstance(child, ast.BoolOp):
+        return len(child.values) - 1
+    # Comprehensions add (num_generators)
+    if isinstance(child, (ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp)):
+        return len(child.generators)
+    return 0
+
+
 def _calculate_complexity(node: ast.AST) -> int:
     """Calculate cyclomatic complexity for a function node."""
-    complexity = 1  # Base complexity
-
-    for child in ast.walk(node):
-        if isinstance(child, (ast.If, ast.IfExp)):
-            complexity += 1
-        elif isinstance(child, (ast.For, ast.AsyncFor)):
-            complexity += 1
-        elif isinstance(child, ast.While):
-            complexity += 1
-        elif isinstance(child, ast.ExceptHandler):
-            complexity += 1
-        elif isinstance(child, (ast.With, ast.AsyncWith)):
-            complexity += 1
-        elif isinstance(child, ast.Assert):
-            complexity += 1
-        elif isinstance(child, ast.BoolOp):
-            complexity += len(child.values) - 1
-        elif isinstance(child, (ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp)):
-            complexity += len(child.generators)
-
-    return complexity
+    return 1 + sum(_get_node_complexity(child) for child in ast.walk(node))
 
 
 def check_function_length(tree: ast.AST, content: str, threshold: int) -> List[Dict]:

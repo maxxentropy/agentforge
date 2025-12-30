@@ -106,38 +106,39 @@ class OutputValidator:
     def _dispatch_check(self, check: dict, check_type: str, output: Any,
                         inputs: dict, report: ContractValidationReport):
         """Dispatch to appropriate check handler. Returns passed or None if handled."""
+        check_handlers = {
+            'regex': lambda: self._check_regex(check, output, positive=True),
+            'regex_negative': lambda: self._check_regex(check, output, positive=False),
+            'field_equals': lambda: self._check_field_equals(check, output, inputs),
+            'conditional': lambda: self._check_conditional(check, output),
+            'count_min': lambda: self._check_count_min(check, output),
+        }
+
+        if check_type in check_handlers:
+            return check_handlers[check_type]()
+
+        return self._handle_special_check_type(check, check_type, report)
+
+    def _handle_special_check_type(self, check: dict, check_type: str,
+                                   report: ContractValidationReport):
+        """Handle special check types that add their own results."""
         check_id = check.get('id', 'UNKNOWN')
         severity = Severity(check.get('severity', 'required'))
 
-        if check_type == 'regex':
-            return self._check_regex(check, output, positive=True)
-        elif check_type == 'regex_negative':
-            return self._check_regex(check, output, positive=False)
-        elif check_type == 'field_equals':
-            return self._check_field_equals(check, output, inputs)
-        elif check_type == 'conditional':
-            return self._check_conditional(check, output)
-        elif check_type == 'count_min':
-            return self._check_count_min(check, output)
-        elif check_type == 'llm':
+        if check_type == 'llm':
             report.add_result(ValidationResult(
-                check_id=check_id,
-                check_name=check.get('name', check_id),
-                passed=True,
-                severity=severity,
+                check_id=check_id, check_name=check.get('name', check_id),
+                passed=True, severity=severity,
                 message="Requires LLM-based verification (deferred)",
                 details=check.get('prompt', '')[:100]
             ))
-            return None
         else:
             report.add_result(ValidationResult(
-                check_id=check_id,
-                check_name=check.get('name', check_id),
-                passed=True,
-                severity=Severity.INFORMATIONAL,
+                check_id=check_id, check_name=check.get('name', check_id),
+                passed=True, severity=Severity.INFORMATIONAL,
                 message=f"Unknown check type '{check_type}' - skipped"
             ))
-            return None
+        return None
 
     def _get_field_value(self, target: str, output: Any) -> Any:
         """Get a field value from output using dot notation."""

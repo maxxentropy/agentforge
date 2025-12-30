@@ -50,6 +50,23 @@ def build_contracts_output(
     return output
 
 
+def _get_severity_icon(check_result) -> str:
+    """Get icon for check result based on status."""
+    if check_result.exempted:
+        return '🔓'
+    return {'error': '❌', 'warning': '⚠️'}.get(check_result.severity, 'ℹ️')
+
+
+def _print_failed_check(check_result) -> None:
+    """Print a failed check result."""
+    icon = _get_severity_icon(check_result)
+    print(f"      {icon} {check_result.check_name}: {check_result.message}")
+    if check_result.file_path:
+        print(f"         at {check_result.file_path}:{check_result.line_number}")
+    if check_result.fix_hint:
+        print(f"         fix: {check_result.fix_hint}")
+
+
 def print_contracts_text(
     results: list,
     total_errors: int,
@@ -62,27 +79,9 @@ def print_contracts_text(
     for result in results:
         status = '✓' if result.passed else '✗'
         print(f"  {status} {result.contract_name} ({result.contract_type})")
-
         for check_result in result.check_results:
             if not check_result.passed:
-                if check_result.exempted:
-                    severity_icon = '🔓'
-                elif check_result.severity == 'error':
-                    severity_icon = '❌'
-                elif check_result.severity == 'warning':
-                    severity_icon = '⚠️'
-                else:
-                    severity_icon = 'ℹ️'
-
-                location = ""
-                if check_result.file_path:
-                    location = f"{check_result.file_path}:{check_result.line_number}"
-
-                print(f"      {severity_icon} {check_result.check_name}: {check_result.message}")
-                if location:
-                    print(f"         at {location}")
-                if check_result.fix_hint:
-                    print(f"         fix: {check_result.fix_hint}")
+                _print_failed_check(check_result)
 
     print(f"\n  Summary:")
     print(f"    Errors: {total_errors}")

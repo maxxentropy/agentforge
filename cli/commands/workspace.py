@@ -201,6 +201,18 @@ def _print_defaults_info(ctx):
             print(f"    Profiles: {', '.join(verify_defaults.get('profiles', ['quick']))}")
 
 
+def _print_optional_repo_params(args, layers, tags):
+    """Print optional repository parameters if set."""
+    if args.framework:
+        print(f"    Framework: {args.framework}")
+    if args.lsp:
+        print(f"    LSP: {args.lsp}")
+    if layers:
+        print(f"    Layers: {', '.join(layers)}")
+    if tags:
+        print(f"    Tags: {', '.join(tags)}")
+
+
 def run_workspace_add_repo(args):
     """Add a repository to the workspace."""
     print()
@@ -216,29 +228,20 @@ def run_workspace_add_repo(args):
         print(f"\nError: Could not import workspace module: {e}")
         sys.exit(1)
 
-    workspace_arg = args.workspace if args.workspace else None
-    ctx = discover_workspace(workspace_arg=workspace_arg)
+    ctx = discover_workspace(workspace_arg=args.workspace or None)
 
     if not ctx.is_workspace_mode:
         print("\n❌ No workspace found. Initialize first:")
         print("  python execute.py workspace init --name my-workspace")
         sys.exit(1)
 
-    print(f"\n  Workspace: {ctx.workspace_name}")
-    print(f"  Adding repo: {args.name}")
-    print(f"    Path: {args.path}\n    Type: {args.type}\n    Language: {args.language}")
-
     layers = args.layers.split(',') if args.layers else None
     tags = args.tags.split(',') if args.tags else None
 
-    if args.framework:
-        print(f"    Framework: {args.framework}")
-    if args.lsp:
-        print(f"    LSP: {args.lsp}")
-    if layers:
-        print(f"    Layers: {', '.join(layers)}")
-    if tags:
-        print(f"    Tags: {', '.join(tags)}")
+    print(f"\n  Workspace: {ctx.workspace_name}")
+    print(f"  Adding repo: {args.name}")
+    print(f"    Path: {args.path}\n    Type: {args.type}\n    Language: {args.language}")
+    _print_optional_repo_params(args, layers, tags)
 
     try:
         add_repo_to_workspace(
@@ -371,6 +374,17 @@ def run_workspace_validate(args):
         sys.exit(1)
 
 
+def _filter_repos(repos: list, args) -> list:
+    """Filter repos by type, language, and tag."""
+    if args.type:
+        repos = [r for r in repos if r.type == args.type]
+    if args.language:
+        repos = [r for r in repos if r.language == args.language]
+    if args.tag:
+        repos = [r for r in repos if args.tag in (r.tags or [])]
+    return repos
+
+
 def run_workspace_list_repos(args):
     """List repositories in workspace."""
     print()
@@ -386,8 +400,7 @@ def run_workspace_list_repos(args):
         print(f"\nError: Could not import workspace module: {e}")
         sys.exit(1)
 
-    workspace_arg = args.workspace if args.workspace else None
-    ctx = discover_workspace(workspace_arg=workspace_arg)
+    ctx = discover_workspace(workspace_arg=args.workspace or None)
 
     if not ctx.is_workspace_mode:
         print("\n❌ No workspace found.")
@@ -396,15 +409,7 @@ def run_workspace_list_repos(args):
     print(f"\n  Workspace: {ctx.workspace_name}")
     print()
 
-    repos = list(ctx.repos.values())
-
-    if args.type:
-        repos = [r for r in repos if r.type == args.type]
-    if args.language:
-        repos = [r for r in repos if r.language == args.language]
-    if args.tag:
-        repos = [r for r in repos if args.tag in (r.tags or [])]
-
+    repos = _filter_repos(list(ctx.repos.values()), args)
     _output_repos(repos, args.format)
     print(f"\nTotal: {len(repos)} repository(ies)")
 

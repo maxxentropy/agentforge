@@ -322,6 +322,13 @@ def _validate_single_contract(file_path: str):
 
 # --- EXEMPTION COMMANDS ---
 
+def _get_exemption_registry():
+    """Get the ExemptionRegistry for the current repo."""
+    from tools.conformance.stores import ExemptionRegistry
+    agentforge_path = Path.cwd() / '.agentforge'
+    return ExemptionRegistry(agentforge_path)
+
+
 def run_exemptions(args):
     """Fallback for exemptions without subcommand."""
     pass
@@ -334,17 +341,8 @@ def run_exemptions_list(args):
     click.echo("EXEMPTIONS LIST")
     click.echo("=" * 60)
 
-    _ensure_contracts_tools()
-
-    try:
-        from contracts import ContractRegistry
-    except ImportError as e:
-        click.echo(f"\nError: Could not import contracts module: {e}")
-        sys.exit(1)
-
-    repo_root = Path.cwd()
-    registry = ContractRegistry(repo_root)
-    exemptions = registry.load_exemptions()
+    registry = _get_exemption_registry()
+    exemptions = registry.load_all()
 
     filtered = _filter_exemptions(exemptions, args)
 
@@ -357,6 +355,7 @@ def run_exemptions_list(args):
 
 def _exemption_matches_status(ex, status: str) -> bool:
     """Check if exemption matches status filter."""
+    from tools.conformance.domain import ExemptionStatus
     if status == 'all':
         return True
     if status == 'active':
@@ -364,14 +363,14 @@ def _exemption_matches_status(ex, status: str) -> bool:
     if status == 'expired':
         return ex.is_expired()
     if status == 'resolved':
-        return ex.status == 'resolved'
+        return ex.status == ExemptionStatus.RESOLVED
     return True
 
 
 def _filter_exemptions(exemptions, args) -> list:
     """Filter exemptions by contract and status."""
     return [ex for ex in exemptions
-            if (not args.contract or ex.contract == args.contract)
+            if (not args.contract or ex.contract_id == args.contract)
             and _exemption_matches_status(ex, args.status)]
 
 
@@ -381,16 +380,16 @@ def _get_exemption_status(ex) -> str:
         return 'active'
     if ex.is_expired():
         return 'expired'
-    return ex.status
+    return ex.status.value
 
 
 def _exemption_to_dict(ex) -> dict:
     """Convert exemption to dictionary for output."""
     return {
-        'id': ex.id, 'contract': ex.contract, 'checks': ex.checks,
+        'id': ex.id, 'contract': ex.contract_id, 'checks': ex.check_ids,
         'reason': ex.reason, 'approved_by': ex.approved_by,
         'expires': str(ex.expires) if ex.expires else None,
-        'status': ex.status, 'is_active': ex.is_active()
+        'status': ex.status.value, 'is_active': ex.is_active()
     }
 
 
@@ -398,12 +397,12 @@ def _output_exemptions(filtered, fmt: str):
     """Output exemptions in specified format."""
     if fmt == 'table':
         click.echo(f"\n  Found {len(filtered)} exemptions:\n")
-        click.echo(f"  {'ID':<25} {'Contract':<20} {'Check':<20} {'Status':<10} {'Expires'}")
-        click.echo(f"  {'-' * 25} {'-' * 20} {'-' * 20} {'-' * 10} {'-' * 12}")
+        click.echo(f"  {'ID':<40} {'Contract':<15} {'Check':<25} {'Status':<10} {'Expires'}")
+        click.echo(f"  {'-' * 40} {'-' * 15} {'-' * 25} {'-' * 10} {'-' * 12}")
         for ex in filtered:
-            checks_str = ex.checks[0] if len(ex.checks) == 1 else f"{ex.checks[0]}+{len(ex.checks)-1}"
+            checks_str = ex.check_ids[0] if len(ex.check_ids) == 1 else f"{ex.check_ids[0]}+{len(ex.check_ids)-1}"
             expires = str(ex.expires) if ex.expires else '-'
-            click.echo(f"  {ex.id:<25} {ex.contract:<20} {checks_str:<20} {_get_exemption_status(ex):<10} {expires}")
+            click.echo(f"  {ex.id:<40} {ex.contract_id:<15} {checks_str:<25} {_get_exemption_status(ex):<10} {expires}")
     else:
         output = {'exemptions': [_exemption_to_dict(ex) for ex in filtered]}
         if fmt == 'yaml':
@@ -414,40 +413,61 @@ def _output_exemptions(filtered, fmt: str):
 
 def run_exemptions_add(args):
     """Add a new exemption."""
+    from tools.conformance.domain import (
+        Exemption, ExemptionStatus, ExemptionScope, ExemptionScopeType
+    )
+
     click.echo()
     click.echo("=" * 60)
     click.echo("ADD EXEMPTION")
     click.echo("=" * 60)
 
-    repo_root = Path.cwd()
-    exemptions_dir = repo_root / 'exemptions'
-    exemptions_dir.mkdir(exist_ok=True)
+    registry = _get_exemption_registry()
 
-    exemptions_file = exemptions_dir / 'exemptions.yaml'
-    if exemptions_file.exists():
-        with open(exemptions_file) as f:
-            data = yaml.safe_load(f) or {}
-    else:
-        data = {'schema_version': '1.0', 'exemptions': []}
-
-    if 'exemptions' not in data:
-        data['exemptions'] = []
-
+    # Generate exemption ID
     exemption_id = f"{args.contract.replace(' ', '-').lower()}-{args.check}-{date.today().isoformat()}"
-    scope = {'files': [f.strip() for f in args.files.split(',')]} if args.files else {'global': True}
 
-    exemption = {'id': exemption_id, 'contract': args.contract, 'check': args.check, 'reason': args.reason, 'approved_by': args.approved_by, 'approved_date': date.today().isoformat(), 'scope': scope, 'status': 'active'}
+    # Build scope
+    if args.files:
+        file_patterns = [f.strip() for f in args.files.split(',')]
+        scope = ExemptionScope(type=ExemptionScopeType.FILE_PATTERN, patterns=file_patterns)
+    else:
+        scope = ExemptionScope(type=ExemptionScopeType.GLOBAL)
+
+    # Parse expiration date
+    expires = None
     if args.expires:
-        exemption['expires'] = args.expires
-    if args.ticket:
-        exemption['ticket'] = args.ticket
+        try:
+            expires = date.fromisoformat(args.expires)
+        except ValueError:
+            click.echo(f"\n  Error: Invalid date format '{args.expires}'. Use YYYY-MM-DD.")
+            sys.exit(1)
 
-    data['exemptions'].append(exemption)
+    # Create exemption
+    exemption = Exemption(
+        id=exemption_id,
+        contract_id=args.contract,
+        check_ids=[args.check],
+        reason=args.reason,
+        approved_by=args.approved_by,
+        approved_date=date.today(),
+        status=ExemptionStatus.ACTIVE,
+        scope=scope,
+        expires=expires,
+        ticket=args.ticket if hasattr(args, 'ticket') and args.ticket else None,
+    )
 
-    with open(exemptions_file, 'w') as f:
-        yaml.dump(data, f, default_flow_style=False, sort_keys=False)
+    # Save to disk
+    registry.save(exemption)
 
-    click.echo(f"\nAdded exemption: {exemption_id}\n   Contract: {args.contract} | Check: {args.check}\n   File: {exemptions_file}")
+    click.echo(f"\n  Added exemption: {exemption_id}")
+    click.echo(f"    Contract: {args.contract}")
+    click.echo(f"    Check: {args.check}")
+    if args.files:
+        click.echo(f"    Files: {args.files}")
+    if expires:
+        click.echo(f"    Expires: {expires}")
+    click.echo(f"    Saved to: .agentforge/exemptions/{exemption_id}.yaml")
 
 
 def _categorize_exemptions(exemptions) -> tuple:
@@ -455,21 +475,29 @@ def _categorize_exemptions(exemptions) -> tuple:
     active = [e for e in exemptions if e.is_active()]
     expired = [e for e in exemptions if e.is_expired()]
     no_expiry = [e for e in active if e.expires is None]
-    return active, expired, no_expiry
+    needs_review = [e for e in exemptions if e.needs_review()]
+    return active, expired, no_expiry, needs_review
 
 
-def _print_audit_details(expired, no_expiry, show_expired: bool):
+def _print_audit_details(expired, no_expiry, needs_review, show_expired: bool):
     """Print detailed audit findings."""
     if show_expired and expired:
         click.echo(f"\n  Expired Exemptions:")
         for ex in expired:
             click.echo(f"    [EXP] {ex.id} (expired {ex.expires})")
-            click.echo(f"       Contract: {ex.contract}, Check: {ex.checks[0]}")
+            click.echo(f"       Contract: {ex.contract_id}, Check: {ex.check_ids[0]}")
 
     if no_expiry:
         click.echo(f"\n  Exemptions without expiration date:")
         for ex in no_expiry:
-            click.echo(f"    {ex.id}\n       Contract: {ex.contract}, Check: {ex.checks[0]}")
+            click.echo(f"    {ex.id}")
+            click.echo(f"       Contract: {ex.contract_id}, Check: {ex.check_ids[0]}")
+
+    if needs_review:
+        click.echo(f"\n  Exemptions needing review:")
+        for ex in needs_review:
+            click.echo(f"    {ex.id} (review due: {ex.review_date})")
+            click.echo(f"       Contract: {ex.contract_id}, Check: {ex.check_ids[0]}")
 
     if expired:
         click.echo(f"\n  Recommendation: Review and remove expired exemptions")
@@ -482,18 +510,16 @@ def run_exemptions_audit(args):
     click.echo("EXEMPTION AUDIT")
     click.echo("=" * 60)
 
-    _ensure_contracts_tools()
+    registry = _get_exemption_registry()
+    exemptions = registry.load_all()
+    active, expired, no_expiry, needs_review = _categorize_exemptions(exemptions)
 
-    try:
-        from contracts import ContractRegistry
-    except ImportError as e:
-        click.echo(f"\nError: Could not import contracts module: {e}")
-        sys.exit(1)
+    click.echo(f"\n  Exemption Audit Summary:")
+    click.echo(f"  {'─' * 40}")
+    click.echo(f"  Total: {len(exemptions)}")
+    click.echo(f"  Active: {len(active)}")
+    click.echo(f"  Expired: {len(expired)}")
+    click.echo(f"  No expiry: {len(no_expiry)}")
+    click.echo(f"  Needs review: {len(needs_review)}")
 
-    registry = ContractRegistry(Path.cwd())
-    exemptions = registry.load_exemptions()
-    active, expired, no_expiry = _categorize_exemptions(exemptions)
-
-    click.echo(f"\n  Exemption Audit Summary:\n  {'─' * 40}\n  Total: {len(exemptions)} | Active: {len(active)} | Expired: {len(expired)} | No expiry: {len(no_expiry)}")
-
-    _print_audit_details(expired, no_expiry, args.show_expired)
+    _print_audit_details(expired, no_expiry, needs_review, args.show_expired)

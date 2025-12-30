@@ -1,13 +1,5 @@
-"""
-Contract management commands.
-
-Handles contract listing, checking, initialization, validation, and
-exemption management.
-"""
-
-import sys
-import json
-import yaml
+"""Contract management commands - listing, checking, validation, exemptions."""
+import sys, json, yaml
 from pathlib import Path
 from datetime import date
 
@@ -16,10 +8,6 @@ def _ensure_contracts_tools():
     """Add tools directory to path for contracts imports."""
     sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'tools'))
 
-
-# =============================================================================
-# CONTRACT COMMANDS
-# =============================================================================
 
 def run_contracts(args):
     """Fallback for contracts without subcommand."""
@@ -328,9 +316,7 @@ def _validate_single_contract(file_path: str):
         sys.exit(1)
 
 
-# =============================================================================
-# EXEMPTION COMMANDS
-# =============================================================================
+# --- EXEMPTION COMMANDS ---
 
 def run_exemptions(args):
     """Fallback for exemptions without subcommand."""

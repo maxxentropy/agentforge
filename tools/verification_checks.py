@@ -1,45 +1,20 @@
 #!/usr/bin/env python3
 """
-Verification Check Implementations
-==================================
-
-Individual check type implementations for the verification runner.
-
-Check types:
-- command: Shell command execution
-- regex: Pattern matching on files
-- file_exists: File existence verification
-- import_check: Layer/import dependency rules
-- custom: Python function checks
-- contracts: Contract-based checks
-- lsp_query: Pyright type checking
-- ast_check: AST-based code metrics
-
+Verification Check Implementations - command, regex, file_exists, import, custom, contracts, lsp, ast.
 Extracted from verification_runner.py for modularity.
 """
-
-import os
-import re
-import glob
-import shlex
-import subprocess
-import fnmatch
-import importlib.util
+import os, re, glob, shlex, subprocess, fnmatch, importlib.util
 from pathlib import Path
 from typing import Dict, Any, List, Callable
 
 try:
     from .verification_types import CheckResult, CheckStatus, Severity
     from .verification_contracts_check import (
-        get_contract_results, build_contract_errors,
-        aggregate_contract_stats, build_contract_message
-    )
+        get_contract_results, build_contract_errors, aggregate_contract_stats, build_contract_message)
 except ImportError:
     from verification_types import CheckResult, CheckStatus, Severity
     from verification_contracts_check import (
-        get_contract_results, build_contract_errors,
-        aggregate_contract_stats, build_contract_message
-    )
+        get_contract_results, build_contract_errors, aggregate_contract_stats, build_contract_message)
 
 
 class CheckRunner:
@@ -53,9 +28,7 @@ class CheckRunner:
         """Replace {variable} placeholders with context values."""
         raise NotImplementedError
 
-    # =========================================================================
-    # Command Check
-    # =========================================================================
+    # --- Command Check ---
 
     def _check_output_indicators(self, output: str, passed: bool,
                                   success_indicators: list, failure_indicators: list) -> bool:
@@ -127,9 +100,7 @@ class CheckRunner:
                 severity=severity, message=f"Command execution failed: {str(e)}",
             )
 
-    # =========================================================================
-    # Regex Check
-    # =========================================================================
+    # --- Regex Check ---
 
     def _collect_files_for_check(self, include_patterns: list, exclude_patterns: list) -> list:
         """Collect files matching include patterns, excluding those matching exclude patterns."""
@@ -213,9 +184,7 @@ class CheckRunner:
             details=f"Searched {len(files)} files, found {len(matches_found)} matches",
         )
 
-    # =========================================================================
-    # File Exists Check
-    # =========================================================================
+    # --- File Exists Check ---
 
     def _run_file_exists_check(self, check: Dict, settings: Dict) -> CheckResult:
         """Check if required files exist."""
@@ -254,9 +223,7 @@ class CheckRunner:
             details=f"Found {len(found)} of {len(files)} required files",
         )
 
-    # =========================================================================
-    # Import Check
-    # =========================================================================
+    # --- Import Check ---
 
     def _find_forbidden_import_violations(self, source_file: str, forbidden_imports: list,
                                            rule_message: str) -> list:
@@ -317,9 +284,7 @@ class CheckRunner:
             errors=violations[:20], details=f"Checked {len(rules)} rules",
         )
 
-    # =========================================================================
-    # Custom Check
-    # =========================================================================
+    # --- Custom Check ---
 
     def _load_custom_function(self, function_path: str) -> Callable:
         """Load a custom function from module.function path."""
@@ -383,9 +348,7 @@ class CheckRunner:
                 severity=severity, message=f"Custom check failed: {str(e)}", details=str(e),
             )
 
-    # =========================================================================
-    # Contracts Check
-    # =========================================================================
+    # --- Contracts Check ---
 
     def _run_contracts_check(self, check: Dict, settings: Dict) -> CheckResult:
         """Run contract-based checks using the contracts module."""
@@ -417,9 +380,7 @@ class CheckRunner:
             return CheckResult(check_id=check_id, check_name=check_name, status=CheckStatus.ERROR,
                                severity=severity, message=f"Contracts check failed: {str(e)}", details=str(e))
 
-    # =========================================================================
-    # LSP Query Check (Pyright)
-    # =========================================================================
+    # --- LSP Query Check (Pyright) ---
 
     def _filter_pyright_diagnostics(self, diagnostics: list, file_set: set, severity_filter: list) -> list:
         """Filter pyright diagnostics to target files and severities."""
@@ -470,9 +431,7 @@ class CheckRunner:
             return CheckResult(check_id=check_id, check_name=check_name, status=CheckStatus.ERROR,
                                severity=severity, message=f"LSP query check failed: {str(e)}", details=str(e))
 
-    # =========================================================================
-    # AST Check
-    # =========================================================================
+    # --- AST Check ---
 
     def _run_ast_check(self, check: Dict, settings: Dict) -> CheckResult:
         """Run AST-based code quality checks using Python's ast module."""

@@ -582,3 +582,66 @@ class HistoryStore:
             "exempted": [s.summary.exempted for s in snapshots],
             "total": [s.summary.total for s in snapshots],
         }
+
+
+class ReportStore:
+    """Manages conformance_report.yaml persistence."""
+
+    def __init__(self, agentforge_path: Path):
+        self.report_path = agentforge_path / "conformance_report.yaml"
+
+    def save(self, report: ConformanceReport) -> None:
+        """Save conformance report to disk."""
+        data = {
+            "schema_version": report.schema_version,
+            "generated_at": report.generated_at.isoformat(),
+            "run_id": report.run_id,
+            "run_type": report.run_type,
+            "summary": {
+                "total": report.summary.total,
+                "passed": report.summary.passed,
+                "failed": report.summary.failed,
+                "exempted": report.summary.exempted,
+                "stale": report.summary.stale,
+            },
+            "by_severity": report.by_severity,
+            "by_contract": report.by_contract,
+            "contracts_checked": report.contracts_checked,
+            "files_checked": report.files_checked,
+        }
+        if report.trend:
+            data["trend"] = report.trend
+
+        with AtomicFileWriter(self.report_path) as f:
+            yaml.dump(data, f, default_flow_style=False, sort_keys=False)
+
+    def load(self) -> Optional[ConformanceReport]:
+        """Load existing conformance report."""
+        if not self.report_path.exists():
+            return None
+
+        try:
+            with open(self.report_path, 'r', encoding='utf-8') as f:
+                data = yaml.safe_load(f)
+
+            summary_data = data["summary"]
+            return ConformanceReport(
+                schema_version=data["schema_version"],
+                generated_at=datetime.fromisoformat(data["generated_at"]),
+                run_id=data["run_id"],
+                run_type=data["run_type"],
+                summary=ConformanceSummary(
+                    total=summary_data["total"],
+                    passed=summary_data["passed"],
+                    failed=summary_data["failed"],
+                    exempted=summary_data["exempted"],
+                    stale=summary_data.get("stale", 0),
+                ),
+                by_severity=data["by_severity"],
+                by_contract=data["by_contract"],
+                contracts_checked=data["contracts_checked"],
+                files_checked=data["files_checked"],
+                trend=data.get("trend"),
+            )
+        except Exception:
+            return None

@@ -18,7 +18,7 @@ from .domain import (
     Exemption, ExemptionStatus,
     ConformanceReport, ConformanceSummary, HistorySnapshot
 )
-from .stores import ViolationStore, ExemptionRegistry, HistoryStore, AtomicFileWriter
+from .stores import ViolationStore, ExemptionRegistry, HistoryStore, AtomicFileWriter, ReportStore
 
 
 class ConformanceManager:
@@ -39,6 +39,7 @@ class ConformanceManager:
         self.violation_store = ViolationStore(self.agentforge_path)
         self.exemption_registry = ExemptionRegistry(self.agentforge_path)
         self.history_store = HistoryStore(self.agentforge_path)
+        self.report_store = ReportStore(self.agentforge_path)
 
         self._previous_report: Optional[ConformanceReport] = None
 
@@ -82,16 +83,11 @@ class ConformanceManager:
             contracts_checked=[],
             files_checked=0,
         )
-        self._save_report(initial_report)
+        self.report_store.save(initial_report)
 
         # Add local.yaml to .gitignore
-        self._update_gitignore()
-
-    def _update_gitignore(self) -> None:
-        """Add local.yaml to .gitignore if not present."""
         gitignore_path = self.repo_root / ".gitignore"
         entry = ".agentforge/local.yaml"
-
         if gitignore_path.exists():
             content = gitignore_path.read_text()
             if entry not in content:
@@ -101,66 +97,47 @@ class ConformanceManager:
             gitignore_path.write_text(f"# AgentForge local config\n{entry}\n")
 
     def run_conformance_check(
-        self,
-        verification_results: List[Dict],
-        contracts_checked: List[str],
-        files_checked: int,
-        is_full_run: bool = True,
-        save_history: bool = True
+        self, verification_results: List[Dict], contracts_checked: List[str],
+        files_checked: int, is_full_run: bool = True, save_history: bool = True
     ) -> ConformanceReport:
-        """
-        Process verification results and update conformance state.
-
-        Args:
-            verification_results: List of violations from verification engine
-            contracts_checked: List of contract IDs that were checked
-            files_checked: Number of files analyzed
-            is_full_run: Whether this was a full or incremental run
-            save_history: Whether to save a history snapshot
-
-        Returns:
-            Generated ConformanceReport
-        """
-        # Load existing state
+        """Process verification results and update conformance state."""
         self.violation_store.load_all()
         self.exemption_registry.load_all()
-        self._previous_report = self._load_report()
+        self._previous_report = self.report_store.load()
 
         # Handle expired exemptions
-        self._process_expired_exemptions()
+        for exemption in self.exemption_registry.get_expired():
+            if exemption.status == ExemptionStatus.ACTIVE:
+                self.exemption_registry.update_status(exemption.id, ExemptionStatus.EXPIRED)
+                for v in self.violation_store.find_by_contract(exemption.contract_id):
+                    if v.exemption_id == exemption.id:
+                        v.mark_exemption_expired()
+                        self.violation_store.save(v)
 
-        # Track which violations are still present
         seen_violation_ids: Set[str] = set()
-
-        # Process new/updated violations
         for result in verification_results:
             violation = self._create_or_update_violation(result)
             seen_violation_ids.add(violation.violation_id)
-
-            # Check for exemption
             exemption = self.exemption_registry.find_for_violation(violation)
-            if exemption:
-                violation.exemption_id = exemption.id
-            else:
-                violation.exemption_id = None
-
+            violation.exemption_id = exemption.id if exemption else None
             self.violation_store.save(violation)
 
-        # Mark resolved violations (present before, not seen now)
-        if is_full_run:
-            self._mark_resolved_violations(seen_violation_ids, contracts_checked)
-        else:
-            # Incremental: mark as stale instead
-            self._mark_stale_violations(seen_violation_ids, contracts_checked)
+        # Mark unseen violations (resolved for full run, stale for incremental)
+        self._mark_unseen_violations(seen_violation_ids, contracts_checked, resolve=is_full_run)
 
         # Generate report
         report = self._generate_report(contracts_checked, files_checked, is_full_run)
-        self._save_report(report)
+        self.report_store.save(report)
 
         # Save history snapshot
         if save_history:
-            self._save_history_snapshot(report)
-            # Prune old history
+            snapshot = HistorySnapshot(
+                schema_version="1.0", date=date.today(), generated_at=datetime.utcnow(),
+                summary=report.summary, by_severity=report.by_severity,
+                by_contract=report.by_contract, files_analyzed=report.files_checked,
+                contracts_checked=report.contracts_checked,
+            )
+            self.history_store.save_snapshot(snapshot)
             self.history_store.prune_old_snapshots()
 
         return report
@@ -202,42 +179,20 @@ class ConformanceManager:
             fix_hint=result.get("fix_hint"),
         )
 
-    def _process_expired_exemptions(self) -> None:
-        """Handle expired exemptions and update affected violations."""
-        for exemption in self.exemption_registry.get_expired():
-            if exemption.status == ExemptionStatus.ACTIVE:
-                self.exemption_registry.update_status(exemption.id, ExemptionStatus.EXPIRED)
-                # Find affected violations
-                for violation in self.violation_store.find_by_contract(exemption.contract_id):
-                    if violation.exemption_id == exemption.id:
-                        violation.mark_exemption_expired()
-                        self.violation_store.save(violation)
-
-    def _mark_resolved_violations(
-        self,
-        seen_ids: Set[str],
-        contracts_checked: List[str]
+    def _mark_unseen_violations(
+        self, seen_ids: Set[str], contracts_checked: List[str], resolve: bool
     ) -> None:
-        """Mark violations as resolved if not seen in full run."""
+        """Mark violations as resolved or stale if not seen in current run."""
+        checked = set(contracts_checked)
         for violation in self.violation_store.find_by_status(ViolationStatus.OPEN):
-            if violation.contract_id not in contracts_checked:
+            if violation.contract_id not in checked:
                 continue
             if violation.violation_id not in seen_ids:
-                violation.mark_resolved("No longer detected in full verification run")
-                self.violation_store.save(violation)
-
-    def _mark_stale_violations(
-        self,
-        seen_ids: Set[str],
-        contracts_checked: List[str]
-    ) -> None:
-        """Mark violations as stale if not checked in incremental run."""
-        checked_contracts = set(contracts_checked)
-        for violation in self.violation_store.find_by_status(ViolationStatus.OPEN):
-            if violation.contract_id in checked_contracts:
-                if violation.violation_id not in seen_ids:
+                if resolve:
+                    violation.mark_resolved("No longer detected in full verification run")
+                else:
                     violation.mark_stale()
-                    self.violation_store.save(violation)
+                self.violation_store.save(violation)
 
     def _generate_report(
         self,
@@ -297,82 +252,9 @@ class ConformanceManager:
             trend=trend,
         )
 
-    def _save_report(self, report: ConformanceReport) -> None:
-        """Save conformance report to disk."""
-        report_path = self.agentforge_path / "conformance_report.yaml"
-
-        data = {
-            "schema_version": report.schema_version,
-            "generated_at": report.generated_at.isoformat(),
-            "run_id": report.run_id,
-            "run_type": report.run_type,
-            "summary": {
-                "total": report.summary.total,
-                "passed": report.summary.passed,
-                "failed": report.summary.failed,
-                "exempted": report.summary.exempted,
-                "stale": report.summary.stale,
-            },
-            "by_severity": report.by_severity,
-            "by_contract": report.by_contract,
-            "contracts_checked": report.contracts_checked,
-            "files_checked": report.files_checked,
-        }
-        if report.trend:
-            data["trend"] = report.trend
-
-        with AtomicFileWriter(report_path) as f:
-            yaml.dump(data, f, default_flow_style=False, sort_keys=False)
-
-    def _load_report(self) -> Optional[ConformanceReport]:
-        """Load existing conformance report."""
-        report_path = self.agentforge_path / "conformance_report.yaml"
-        if not report_path.exists():
-            return None
-
-        try:
-            with open(report_path, 'r', encoding='utf-8') as f:
-                data = yaml.safe_load(f)
-
-            summary_data = data["summary"]
-            return ConformanceReport(
-                schema_version=data["schema_version"],
-                generated_at=datetime.fromisoformat(data["generated_at"]),
-                run_id=data["run_id"],
-                run_type=data["run_type"],
-                summary=ConformanceSummary(
-                    total=summary_data["total"],
-                    passed=summary_data["passed"],
-                    failed=summary_data["failed"],
-                    exempted=summary_data["exempted"],
-                    stale=summary_data.get("stale", 0),
-                ),
-                by_severity=data["by_severity"],
-                by_contract=data["by_contract"],
-                contracts_checked=data["contracts_checked"],
-                files_checked=data["files_checked"],
-                trend=data.get("trend"),
-            )
-        except Exception:
-            return None
-
-    def _save_history_snapshot(self, report: ConformanceReport) -> None:
-        """Save daily history snapshot."""
-        snapshot = HistorySnapshot(
-            schema_version="1.0",
-            date=date.today(),
-            generated_at=datetime.utcnow(),
-            summary=report.summary,
-            by_severity=report.by_severity,
-            by_contract=report.by_contract,
-            files_analyzed=report.files_checked,
-            contracts_checked=report.contracts_checked,
-        )
-        self.history_store.save_snapshot(snapshot)
-
     def get_report(self) -> Optional[ConformanceReport]:
         """Get current conformance report."""
-        return self._load_report()
+        return self.report_store.load()
 
     def list_violations(
         self,

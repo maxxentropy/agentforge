@@ -176,10 +176,12 @@ class ProfileLoader:
         if not self._profile:
             raise ValueError("Profile not loaded. Call load() first.")
 
-        # Determine if multi-zone
-        is_multi = self.is_multi_zone()
+        # Check if zones exist in profile (even if just 1)
+        zones = self._profile.get("zones", {})
+        has_zones = isinstance(zones, dict) and len(zones) > 0
 
-        if is_multi and zone_name:
+        # If zone_name provided and exists in zones, use zone-specific context
+        if zone_name and has_zones and zone_name in zones:
             return self._create_zone_context(zone_name)
         else:
             return self._create_single_zone_context()

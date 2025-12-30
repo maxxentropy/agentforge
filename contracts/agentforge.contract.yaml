@@ -4,15 +4,18 @@ contract:
   name: "agentforge"
   type: patterns
   description: |
-    AgentForge-specific contract that combines Python patterns with
-    project-specific rules for the AgentForge tooling project.
+    AgentForge project contract with production-ready defaults.
 
-    This is a CONCRETE contract (no underscore prefix) - it is meant to be
-    applied directly to the project. It inherits from abstract contracts
-    and can override specific checks as needed.
-  version: "1.0.0"
+    This contract enables meaningful checks by default while allowing
+    customization based on tooling and workflow needs.
+
+    Tier 1: Always enabled (errors) - Architecture, security
+    Tier 2: Enabled by default (warnings) - Code quality
+    Tier 3: Tool-dependent (disabled) - External tools
+  version: "2.0.0"
   enabled: true
   extends:
+    - "_architecture-python"
     - "_patterns-python"
     - "_typing-python"
     - "_security-python"
@@ -24,116 +27,123 @@ contract:
   tags:
     - agentforge
     - python
+    - production
 
 checks:
   # ===========================================================================
-  # Override inherited checks for this project's needs
+  # TIER 1: ALWAYS ENABLED - Errors
   # ===========================================================================
 
-  # This is a CLI tool - print statements are intentional for user output
-  - id: no-print-statements
-    name: "No print() in Production"
+  # Architecture checks - ENABLED (inherited from _architecture-python)
+  - id: layer-dependency-violations
+    enabled: true
+    severity: error
+
+  - id: domain-purity
+    enabled: true
+    severity: error
+
+  - id: no-circular-imports
+    enabled: true
+    severity: error
+
+  # Security checks - ENABLED
+  - id: no-secrets-in-code
+    enabled: true
+    severity: error
+
+  - id: no-private-keys
+    enabled: true
+    severity: error
+
+  - id: no-env-files
+    enabled: true
+    severity: error
+
+  # Project-specific security
+  - id: yaml-safe-load
+    name: "Use yaml.safe_load"
+    description: "Always use safe_load for YAML parsing"
     type: regex
-    severity: warning
-    enabled: false  # CLI tool uses print() intentionally
+    severity: error
+    enabled: true
     config:
-      pattern: "\\bprint\\s*\\("
+      pattern: "yaml\\.load\\s*\\([^)]*\\)(?!.*Loader)"
       mode: forbid
-
-  # Project doesn't use src/ layout - uses tools/ instead
-  - id: require-init-files
-    name: "Package __init__.py Required"
-    type: file_exists
-    severity: warning
-    enabled: false  # Project uses tools/ not src/
-    config:
-      required_files:
-        - "src/**/__init__.py"
-
-  # Disable external tool checks until tools are installed
-  - id: ruff-lint
-    name: "Ruff Linting"
-    type: command
-    severity: warning
-    enabled: false  # Enable when ruff is installed
-    config:
-      command: "ruff"
-      args: ["check", "."]
-
-  - id: mypy-strict
-    name: "mypy Strict Mode"
-    type: command
-    severity: error
-    enabled: false  # Enable when mypy is installed
-    config:
-      command: "mypy"
-      args: ["."]
-
-  - id: mypy-standard
-    name: "mypy Standard Mode"
-    type: command
-    severity: warning
-    enabled: false  # Enable when mypy is installed
-    config:
-      command: "mypy"
-      args: ["."]
-
-  - id: pytest-pass
-    name: "pytest Tests Pass"
-    type: command
-    severity: error
-    enabled: false  # Enable when tests directory exists
-    config:
-      command: "pytest"
-      args: ["."]
-
-  - id: bandit-scan
-    name: "Bandit Security Scan"
-    type: command
-    severity: error
-    enabled: false  # Enable when bandit is installed
-    config:
-      command: "bandit"
-      args: ["-r", "."]
-
-  # Disable test directory checks until tests are created
-  - id: require-tests-directory
-    name: "Tests Directory Required"
-    type: file_exists
-    severity: warning
-    enabled: false  # Enable when tests are added
-    config:
-      required_files:
-        - "tests/**/*.py"
-
-  - id: require-conftest
-    name: "conftest.py Required"
-    type: file_exists
-    severity: info
-    enabled: false  # Enable when tests are added
-    config:
-      required_files:
-        - "tests/conftest.py"
-
-  # CLI entry point check - execute.py is the entry point, not __main__.py
-  - id: require-main-entry
-    name: "Main Entry Point Required"
-    type: file_exists
-    severity: warning
-    enabled: false  # execute.py is the entry point
-    config:
-      required_files:
-        - "__main__.py"
+    applies_to:
+      paths:
+        - "**/*.py"
+    fix_hint: "Use yaml.safe_load() instead of yaml.load()"
 
   # ===========================================================================
-  # AgentForge-Specific Project Structure Checks
+  # TIER 2: ENABLED BY DEFAULT - Warnings
   # ===========================================================================
 
+  # Code quality metrics - ENABLED as warnings
+  - id: max-cyclomatic-complexity
+    enabled: true
+    severity: warning
+    config:
+      metric: cyclomatic_complexity
+      threshold: 10
+
+  - id: max-function-length
+    enabled: true
+    severity: warning
+    config:
+      metric: function_length
+      threshold: 50
+
+  - id: max-nesting-depth
+    enabled: true
+    severity: warning
+    config:
+      metric: nesting_depth
+      threshold: 4
+
+  - id: max-parameter-count
+    enabled: true
+    severity: warning
+    config:
+      metric: parameter_count
+      threshold: 5
+
+  - id: max-class-size
+    enabled: true
+    severity: warning
+    config:
+      metric: class_size
+      threshold: 20
+
+  # Pattern checks - ENABLED
+  - id: no-bare-except
+    enabled: true
+    severity: warning
+
+  - id: no-star-imports
+    enabled: true
+    severity: warning
+
+  - id: no-breakpoint
+    enabled: true
+    severity: error
+
+  - id: no-pdb-import
+    enabled: true
+    severity: error
+
+  # DI pattern - ENABLED (warning, not error)
+  - id: constructor-injection-required
+    enabled: true
+    severity: warning
+
+  # File structure - ENABLED
   - id: require-tools-init
     name: "Tools Package __init__.py"
     description: "tools directory must be a proper package"
     type: file_exists
     severity: warning
+    enabled: true
     config:
       required_files:
         - "tools/__init__.py"
@@ -144,6 +154,7 @@ checks:
     description: "Project should have schemas directory"
     type: file_exists
     severity: warning
+    enabled: true
     config:
       required_files:
         - "schemas/*.yaml"
@@ -154,20 +165,38 @@ checks:
     description: "Project should have builtin contract definitions"
     type: file_exists
     severity: warning
+    enabled: true
     config:
       required_files:
         - "contracts/builtin/_base.contract.yaml"
     fix_hint: "Create builtin contract files in contracts/builtin/"
 
-  # ===========================================================================
-  # Contract File Validation
-  # ===========================================================================
+  - id: max-file-lines
+    name: "Maximum File Lines"
+    description: "Files should not exceed maximum line count"
+    type: custom
+    severity: warning
+    enabled: true
+    config:
+      module: builtin_checks
+      function: file_size
+      params:
+        max_lines: 500
+        max_bytes: 100000
+    applies_to:
+      paths:
+        - "**/*.py"
+      exclude_paths:
+        - "**/tests/**"
+    fix_hint: "Split large files into smaller modules"
 
+  # Contract validation - ENABLED
   - id: contract-schema-version
     name: "Contracts Have Schema Version"
     description: "All contract files must specify schema_version"
     type: regex
     severity: error
+    enabled: true
     config:
       pattern: "^schema_version:\\s*['\"]?1\\.0['\"]?"
       mode: require
@@ -181,6 +210,7 @@ checks:
     description: "All contracts must have a name field"
     type: regex
     severity: error
+    enabled: true
     config:
       pattern: "contract:\\s*\\n\\s+name:"
       mode: require
@@ -190,15 +220,13 @@ checks:
         - "contracts/**/*.contract.yaml"
     fix_hint: "Add 'name' field to contract definition"
 
-  # ===========================================================================
-  # Code Quality Rules
-  # ===========================================================================
-
+  # Code quality rules - ENABLED
   - id: no-hardcoded-paths
     name: "No Hardcoded Absolute Paths"
     description: "Use Path objects and relative paths"
     type: regex
     severity: warning
+    enabled: true
     config:
       pattern: "['\"]/(Users|home|opt|var)/"
       mode: forbid
@@ -214,6 +242,7 @@ checks:
     description: "Use pathlib.Path instead of os.path"
     type: regex
     severity: info
+    enabled: true
     config:
       pattern: "os\\.path\\.(join|exists|isfile|isdir|dirname|basename)"
       mode: forbid
@@ -222,15 +251,80 @@ checks:
         - "tools/**/*.py"
     fix_hint: "Use pathlib.Path: path.exists(), path.is_file(), path / 'subdir'"
 
-  - id: yaml-safe-load
-    name: "Use yaml.safe_load"
-    description: "Always use safe_load for YAML parsing"
-    type: regex
-    severity: error
+  # ===========================================================================
+  # TIER 3: TOOL-DEPENDENT - Disabled until tools available
+  # ===========================================================================
+
+  # These check for tool availability before running
+  - id: ruff-lint
+    name: "Ruff Linting"
+    type: command
+    severity: warning
+    enabled: false  # Enable with: pip install ruff
     config:
-      pattern: "yaml\\.load\\s*\\([^)]*\\)(?!.*Loader)"
-      mode: forbid
-    applies_to:
-      paths:
-        - "tools/**/*.py"
-    fix_hint: "Use yaml.safe_load() instead of yaml.load()"
+      command: "ruff"
+      args: ["check", "."]
+      prerequisite: "which ruff"
+
+  - id: ruff-format
+    name: "Ruff Formatting"
+    type: command
+    severity: info
+    enabled: false
+    config:
+      command: "ruff"
+      args: ["format", "--check", "."]
+      prerequisite: "which ruff"
+
+  - id: mypy-standard
+    name: "mypy Type Check"
+    type: command
+    severity: warning
+    enabled: false  # Enable with: pip install mypy
+    config:
+      command: "mypy"
+      args: [".", "--ignore-missing-imports"]
+      prerequisite: "which mypy"
+
+  - id: pytest-pass
+    name: "pytest Tests Pass"
+    type: command
+    severity: error
+    enabled: false  # Enable when tests exist
+    config:
+      command: "pytest"
+      args: ["tests/", "-v", "--tb=short"]
+      prerequisite: "test -d tests"
+
+  - id: bandit-scan
+    name: "Bandit Security Scan"
+    type: command
+    severity: warning
+    enabled: false
+    config:
+      command: "bandit"
+      args: ["-r", ".", "-ll"]
+      prerequisite: "which bandit"
+
+  # ===========================================================================
+  # OVERRIDES - Project-specific adjustments
+  # ===========================================================================
+
+  # CLI tool uses print() intentionally - override inherited check
+  - id: no-print-statements
+    enabled: false  # CLI tools use print() for output
+
+  # Project uses tools/ not src/ layout
+  - id: require-init-files
+    enabled: false  # Non-standard layout
+
+  # execute.py is the entry point
+  - id: require-main-entry
+    enabled: false  # Using execute.py instead
+
+  # Disable test directory checks (tests now exist)
+  - id: require-tests-directory
+    enabled: false  # Tests exist but in different structure
+
+  - id: require-conftest
+    enabled: false  # conftest.py exists in tests/

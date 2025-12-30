@@ -4,9 +4,14 @@ contract:
   name: "_architecture-python"
   type: architecture
   description: |
-    Python architectural rules for Clean Architecture and layered design.
-    Enforces proper separation of concerns and dependency direction.
-  version: "1.0.0"
+    Python Clean Architecture enforcement using semantic analysis.
+    Detects layer violations through AST-based import inspection.
+
+    Replaces regex-based checks with semantic AST analysis for:
+    - Accurate import detection (no false positives from strings/comments)
+    - Detection of aliased imports
+    - Support for both `import x` and `from x import y` forms
+  version: "2.0.0"
   enabled: true
   extends: "_patterns-python"
   applies_to:
@@ -19,68 +24,176 @@ contract:
     - builtin
     - python
     - architecture
+    - clean-architecture
 
 checks:
   # ===========================================================================
-  # Clean Architecture Layer Checks
+  # Clean Architecture Layer Enforcement (Semantic Analysis)
   # ===========================================================================
 
-  - id: domain-no-infrastructure
-    name: "Domain Layer Independence"
-    description: "Domain layer should not import from infrastructure"
-    type: regex
+  - id: layer-dependency-violations
+    name: "Clean Architecture Layer Violations"
+    description: |
+      Enforces dependency direction in Clean Architecture:
+      - Domain layer: No dependencies on other layers
+      - Application layer: May depend on Domain only
+      - Infrastructure layer: May depend on Domain and Application
+      - Presentation layer: May depend on Application only
+    type: custom
     severity: error
     config:
-      pattern: "from\\s+(\\w+\\.)?infrastructure(\\.|\\s+import)|import\\s+(\\w+\\.)?infrastructure"
-      mode: forbid
+      module: builtin_checks
+      function: layer_imports
+      params:
+        layer_detection:
+          "**/domain/**": "domain"
+          "**/core/**": "domain"
+          "**/entities/**": "domain"
+          "**/application/**": "application"
+          "**/use_cases/**": "application"
+          "**/services/**": "application"
+          "**/infrastructure/**": "infrastructure"
+          "**/adapters/**": "infrastructure"
+          "**/repositories/**": "infrastructure"
+          "**/presentation/**": "presentation"
+          "**/api/**": "presentation"
+          "**/cli/**": "presentation"
+          "**/web/**": "presentation"
+        layer_rules:
+          domain:
+            forbidden:
+              - infrastructure
+              - application
+              - presentation
+              - adapters
+              - repositories
+              - api
+              - cli
+              - web
+            message: "Domain layer must have no external dependencies"
+          application:
+            forbidden:
+              - infrastructure
+              - presentation
+              - adapters
+              - repositories
+              - api
+              - cli
+              - web
+            allowed:
+              - domain
+              - core
+              - entities
+            message: "Application layer may only depend on Domain"
+          infrastructure:
+            forbidden:
+              - presentation
+              - api
+              - cli
+              - web
+            allowed:
+              - domain
+              - application
+              - core
+              - entities
+            message: "Infrastructure may depend on Domain and Application"
+    applies_to:
+      paths:
+        - "**/*.py"
+      exclude_paths:
+        - "**/tests/**"
+        - "**/__init__.py"
+        - "**/conftest.py"
+    fix_hint: |
+      Move the import to the appropriate layer or use dependency injection.
+      Domain should never import from infrastructure - inject interfaces instead.
+
+  # ===========================================================================
+  # Domain Layer Purity
+  # ===========================================================================
+
+  - id: domain-purity
+    name: "Domain Layer Purity"
+    description: |
+      Domain layer should contain only pure business logic - no I/O operations,
+      HTTP calls, database access, or filesystem operations.
+    type: custom
+    severity: error
+    config:
+      module: builtin_checks
+      function: domain_purity
+      params:
+        forbidden_imports:
+          - requests
+          - httpx
+          - aiohttp
+          - urllib.request
+          - sqlite3
+          - psycopg2
+          - pymongo
+          - redis
+          - sqlalchemy
+          - django.db
+          - flask_sqlalchemy
+          - boto3
+          - azure
+          - google.cloud
+        forbidden_calls:
+          - "open("
+          - "Path.read"
+          - "Path.write"
+          - "os.path"
+          - "shutil."
+          - "subprocess."
+          - "os.system("
+          - "os.popen("
     applies_to:
       paths:
         - "**/domain/**/*.py"
-    fix_hint: "Domain layer should only contain pure business logic with no external dependencies"
+        - "**/core/**/*.py"
+        - "**/entities/**/*.py"
+      exclude_paths:
+        - "**/tests/**"
+    fix_hint: "Move I/O operations to infrastructure layer; domain should be pure business logic"
 
-  - id: domain-no-application
-    name: "Domain Layer No Application Imports"
-    description: "Domain layer should not import from application layer"
-    type: regex
-    severity: error
-    config:
-      pattern: "from\\s+(\\w+\\.)?application(\\.|\\s+import)|import\\s+(\\w+\\.)?application"
-      mode: forbid
-    applies_to:
-      paths:
-        - "**/domain/**/*.py"
-    fix_hint: "Domain should be the innermost layer with no outward dependencies"
+  # ===========================================================================
+  # Dependency Injection Pattern Detection
+  # ===========================================================================
 
-  - id: application-no-infrastructure
-    name: "Application Layer Independence"
-    description: "Application layer should not directly import infrastructure implementations"
-    type: regex
+  - id: constructor-injection-required
+    name: "Constructor Injection Required"
+    description: |
+      Service classes should receive dependencies through constructor injection,
+      not instantiate them directly.
+    type: custom
     severity: warning
     config:
-      pattern: "from\\s+(\\w+\\.)?infrastructure\\.(repositories|services|adapters)(\\.|\\s+import)"
-      mode: forbid
+      module: builtin_checks
+      function: constructor_injection
+      params:
+        class_patterns:
+          - "*Service"
+          - "*Repository"
+          - "*Handler"
+          - "*UseCase"
+          - "*Manager"
+        forbidden_instantiations:
+          - "HttpClient("
+          - "SqlConnection("
+          - "requests.Session("
+          - "aiohttp.ClientSession("
+        check_for_init_params: true
     applies_to:
       paths:
         - "**/application/**/*.py"
+        - "**/services/**/*.py"
+        - "**/use_cases/**/*.py"
       exclude_paths:
-        - "**/application/interfaces/**"
-    fix_hint: "Use dependency injection - import interfaces, not implementations"
-
-  - id: interface-no-implementations
-    name: "Interfaces Layer No Implementations"
-    description: "Interface layer should use abstractions, not concrete implementations"
-    type: regex
-    severity: warning
-    config:
-      pattern: "from\\s+(\\w+\\.)?(infrastructure|application)\\.(\\w+)\\s+import\\s+(?!I[A-Z]|Abstract)"
-      mode: forbid
-    applies_to:
-      paths:
-        - "**/interfaces/**/*.py"
-    fix_hint: "Import interfaces (starting with I) or abstract classes"
+        - "**/tests/**"
+    fix_hint: "Inject dependencies through __init__ parameters instead of instantiating directly"
 
   # ===========================================================================
-  # Dependency Direction Checks
+  # Circular Import Prevention
   # ===========================================================================
 
   - id: no-circular-imports
@@ -88,25 +201,22 @@ checks:
     description: "Modules should not have circular import dependencies"
     type: custom
     severity: error
-    enabled: false  # Enable per-repo - requires pydeps
     config:
       module: builtin_checks
-      function: check_circular_imports
+      function: circular_imports
       params:
-        package_path: "src"
-    fix_hint: "Refactor to break circular dependencies using interfaces or restructuring"
-
-  - id: acyclic-dependencies
-    name: "Acyclic Package Dependencies"
-    description: "Package dependencies should form a directed acyclic graph"
-    type: command
-    severity: warning
-    enabled: false  # Enable per-repo - requires pydeps
-    config:
-      command: "pydeps"
-      args: ["--no-show", "--no-output", "--only", "src", "src"]
-      timeout: 120
-    fix_hint: "Restructure packages to eliminate dependency cycles"
+        ignore_type_checking: true  # Allow TYPE_CHECKING imports
+        max_depth: 5
+    applies_to:
+      paths:
+        - "**/*.py"
+      exclude_paths:
+        - "**/tests/**"
+    fix_hint: |
+      Break circular imports by:
+      1. Moving shared types to a separate module
+      2. Using TYPE_CHECKING guards for type hints
+      3. Restructuring dependencies to flow in one direction
 
   # ===========================================================================
   # Structure Checks
@@ -143,33 +253,6 @@ checks:
   # Pattern Enforcement
   # ===========================================================================
 
-  - id: repository-pattern
-    name: "Repository Pattern Required"
-    description: "Data access should use repository pattern"
-    type: file_exists
-    severity: info
-    enabled: false  # Enable per-repo
-    config:
-      required_files:
-        - "**/repositories/*.py"
-        - "**/interfaces/repositories.py"
-    fix_hint: "Create repository interfaces and implementations for data access"
-
-  - id: factory-pattern
-    name: "Factory for Complex Objects"
-    description: "Complex object creation should use factory pattern"
-    type: regex
-    severity: info
-    enabled: false  # Enable per-repo
-    config:
-      pattern: "class\\s+\\w+Factory"
-      mode: require
-    applies_to:
-      paths:
-        - "**/factories/**/*.py"
-        - "**/application/**/*.py"
-    fix_hint: "Create factory classes for complex object instantiation"
-
   - id: no-god-classes
     name: "No God Classes"
     description: "Classes should not have excessive responsibilities"
@@ -186,34 +269,14 @@ checks:
         - "**/tests/**"
     fix_hint: "Split large classes using composition or inheritance"
 
-  # ===========================================================================
-  # Text Pattern Checks
-  # ===========================================================================
-
-  - id: no-direct-db-access
-    name: "No Direct Database Access"
-    description: "Direct database access should go through repositories"
-    type: regex
-    severity: warning
+  - id: repository-pattern
+    name: "Repository Pattern Required"
+    description: "Data access should use repository pattern"
+    type: file_exists
+    severity: info
     enabled: false  # Enable per-repo
     config:
-      pattern: "(session\\.query|session\\.execute|cursor\\.execute)"
-      mode: forbid
-    applies_to:
-      paths:
-        - "**/domain/**/*.py"
-        - "**/application/**/*.py"
-    fix_hint: "Use repository pattern for database operations"
-
-  - id: no-http-in-domain
-    name: "No HTTP Calls in Domain"
-    description: "Domain layer should not make HTTP calls directly"
-    type: regex
-    severity: error
-    config:
-      pattern: "(requests\\.(get|post|put|delete|patch)|httpx\\.|aiohttp\\.)"
-      mode: forbid
-    applies_to:
-      paths:
-        - "**/domain/**/*.py"
-    fix_hint: "HTTP calls should be in infrastructure layer behind an interface"
+      required_files:
+        - "**/repositories/*.py"
+        - "**/interfaces/repositories.py"
+    fix_hint: "Create repository interfaces and implementations for data access"

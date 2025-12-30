@@ -24,12 +24,9 @@ def _get_manager():
     return ConformanceManager(Path.cwd())
 
 
-def _get_contract_runner():
-    """Get contract verification runner."""
+def _ensure_tools():
+    """Add tools directory to path."""
     sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'tools'))
-    from contracts.loader import ContractLoader
-    from contracts.engine import ContractVerificationEngine
-    return ContractLoader, ContractVerificationEngine
 
 
 def run_conformance(args):
@@ -74,57 +71,72 @@ def run_conformance_check(args):
         print("  Run 'agentforge conformance init' first.")
         sys.exit(1)
 
-    ContractLoader, ContractVerificationEngine = _get_contract_runner()
+    _ensure_tools()
+    from contracts import ContractRegistry, run_contract, run_all_contracts
 
     is_full = getattr(args, 'full', False)
     print(f"\n  Mode: {'full' if is_full else 'incremental'}")
 
-    loader = ContractLoader(Path.cwd())
-    engine = ContractVerificationEngine(loader)
+    repo_root = Path.cwd()
+    registry = ContractRegistry(repo_root)
+    all_contracts = registry.discover_contracts()
 
-    contracts = loader.get_enabled_contracts()
-    if not contracts:
+    if not all_contracts:
         print("\n  No contracts found. Create a contract first.")
         sys.exit(1)
-
-    print(f"  Contracts: {len(contracts)}")
-    print()
-    print("-" * 60)
-
-    all_results = []
-    contracts_checked = []
-    files_checked = set()
 
     contract_filter = getattr(args, 'contract', None)
     file_filter = getattr(args, 'files', None)
     file_list = [f.strip() for f in file_filter.split(',')] if file_filter else None
 
-    for contract in contracts:
-        if contract_filter and contract.id != contract_filter:
-            continue
+    # Run contract checks
+    if contract_filter:
+        contract = registry.get_contract(contract_filter)
+        if not contract:
+            print(f"\n  Error: Contract not found: {contract_filter}")
+            sys.exit(1)
+        results = [run_contract(contract, repo_root, registry, file_list)]
+    else:
+        results = run_all_contracts(repo_root, file_paths=file_list)
 
-        print(f"\n  Checking: {contract.id}")
-        contracts_checked.append(contract.id)
+    print(f"  Contracts: {len(results)}")
+    print()
+    print("-" * 60)
 
-        for check in contract.checks:
-            if not check.enabled:
+    # Convert contract results to violation format
+    all_violations = []
+    contracts_checked = []
+    files_checked = set()
+
+    for result in results:
+        # ContractResult is a dataclass
+        contract_id = result.contract_name
+        contracts_checked.append(contract_id)
+        print(f"\n  Checked: {contract_id}")
+
+        for check_result in result.check_results:
+            # Only process failed checks as violations
+            if check_result.passed:
                 continue
 
-            result = engine.run_check(check, file_list)
-            if result.get('violations'):
-                for v in result['violations']:
-                    v['contract_id'] = contract.id
-                    v['check_id'] = check.id
-                    v['severity'] = check.severity
-                    all_results.append(v)
-                    if v.get('file'):
-                        files_checked.add(v['file'])
+            v = {
+                'contract_id': contract_id,
+                'check_id': check_result.check_id,
+                'file': check_result.file_path or '',
+                'line': check_result.line_number,
+                'message': check_result.message,
+                'severity': check_result.severity,
+                'fix_hint': check_result.fix_hint,
+            }
+            all_violations.append(v)
+            if check_result.file_path:
+                files_checked.add(check_result.file_path)
 
     print(f"\n  Files analyzed: {len(files_checked)}")
-    print(f"  Violations found: {len(all_results)}")
+    print(f"  Violations found: {len(all_violations)}")
 
     report = manager.run_conformance_check(
-        verification_results=all_results,
+        verification_results=all_violations,
         contracts_checked=contracts_checked,
         files_checked=len(files_checked),
         is_full_run=is_full,

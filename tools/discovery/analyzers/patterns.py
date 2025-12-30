@@ -23,19 +23,89 @@ PATTERN_DEFINITIONS = {
         "description": "Result<T> or similar error handling pattern",
         "signals": {
             "class_name": {
-                "patterns": [r"^Result$", r"^Result\[", r"^Either$", r"^Option$"],
+                # Python and C# Result types
+                "patterns": [r"^Result$", r"^Result\[", r"^Result<", r"^Either$", r"^Option$", r"^ErrorOr<"],
                 "weight": 0.9,
             },
             "return_type": {
-                "patterns": [r"Result\[", r"Result$", r"Either\[", r"Option\["],
+                "patterns": [r"Result\[", r"Result$", r"Result<", r"Either\[", r"Option\[", r"ErrorOr<"],
                 "weight": 0.8,
             },
             "import": {
-                "patterns": [r"from.*result.*import", r"from.*returns.*import"],
+                # Python and C# imports
+                "patterns": [r"from.*result.*import", r"from.*returns.*import", r"using.*Result", r"using.*ErrorOr"],
                 "weight": 0.7,
             },
         },
         "min_confidence": 0.5,
+    },
+    "mediatr_cqrs": {
+        "description": "MediatR CQRS pattern (IRequest/IRequestHandler)",
+        "signals": {
+            "base_class": {
+                "patterns": [r"IRequest<", r"IRequest$", r"IRequestHandler<", r"INotification$", r"INotificationHandler<"],
+                "weight": 1.0,
+            },
+            "class_suffix": {
+                "patterns": [r"Command$", r"Query$", r"CommandHandler$", r"QueryHandler$"],
+                "weight": 0.8,
+            },
+            "import": {
+                "patterns": [r"using MediatR", r"using.*MediatR"],
+                "weight": 0.9,
+            },
+            "directory": {
+                "patterns": [r"Commands?", r"Queries?", r"Handlers?"],
+                "weight": 0.6,
+            },
+        },
+        "min_confidence": 0.5,
+    },
+    "ddd_entity": {
+        "description": "DDD Entity pattern with typed ID",
+        "signals": {
+            "base_class": {
+                "patterns": [r"Entity<", r"Entity$", r"AggregateRoot<", r"AggregateRoot$", r"BaseEntity"],
+                "weight": 0.9,
+            },
+            "property": {
+                "patterns": [r"public.*Id\s*{", r"protected.*Id\s*{"],
+                "weight": 0.6,
+            },
+            "directory": {
+                "patterns": [r"[Ee]ntities", r"[Dd]omain", r"[Aa]ggregates"],
+                "weight": 0.5,
+            },
+        },
+        "min_confidence": 0.5,
+    },
+    "ddd_value_object": {
+        "description": "DDD Value Object pattern (immutable, equality by value)",
+        "signals": {
+            "base_class": {
+                "patterns": [r"ValueObject$", r"ValueObject<"],
+                "weight": 0.9,
+            },
+            "class_suffix": {
+                "patterns": [r"Id$", r"Email$", r"Address$", r"Money$", r"Name$"],
+                "weight": 0.5,
+            },
+            "attribute": {
+                "patterns": [r"record\s+struct", r"readonly\s+struct"],
+                "weight": 0.7,
+            },
+        },
+        "min_confidence": 0.5,
+    },
+    "interface_prefix": {
+        "description": "I-prefix interface naming convention",
+        "signals": {
+            "class_name": {
+                "patterns": [r"^I[A-Z][a-zA-Z]+$"],
+                "weight": 0.9,
+            },
+        },
+        "min_confidence": 0.7,
     },
     "cqrs": {
         "description": "Command Query Responsibility Segregation",
@@ -236,6 +306,70 @@ FRAMEWORK_PATTERNS = {
             "decorator": [r"@app\.command"],
         },
         "type": "cli",
+    },
+    # .NET Frameworks
+    "mediatr": {
+        "signals": {
+            "import": [r"using MediatR", r"using.*MediatR"],
+            "class_base": [r"IRequest<", r"IRequestHandler<", r"INotification"],
+        },
+        "type": "cqrs",
+    },
+    "fluentvalidation": {
+        "signals": {
+            "import": [r"using FluentValidation", r"using.*FluentValidation"],
+            "class_base": [r"AbstractValidator<", r"InlineValidator<"],
+        },
+        "type": "validation",
+    },
+    "efcore": {
+        "signals": {
+            "import": [r"using.*EntityFrameworkCore", r"using Microsoft\.EntityFrameworkCore"],
+            "class_base": [r"DbContext$", r"DbSet<"],
+        },
+        "type": "orm",
+    },
+    "aspnetcore": {
+        "signals": {
+            "import": [r"using Microsoft\.AspNetCore", r"using.*AspNetCore"],
+            "class_base": [r"ControllerBase$", r"Controller$", r"MinimalApiEndpoint"],
+            "attribute": [r"\[ApiController\]", r"\[HttpGet", r"\[HttpPost", r"\[Route\("],
+        },
+        "type": "web",
+    },
+    "automapper": {
+        "signals": {
+            "import": [r"using AutoMapper", r"using.*AutoMapper"],
+            "class_base": [r"Profile$", r"IMapper"],
+        },
+        "type": "mapping",
+    },
+    "serilog": {
+        "signals": {
+            "import": [r"using Serilog", r"using.*Serilog"],
+        },
+        "type": "logging",
+    },
+    "xunit": {
+        "signals": {
+            "import": [r"using Xunit", r"using.*Xunit"],
+            "attribute": [r"\[Fact\]", r"\[Theory\]", r"\[InlineData"],
+        },
+        "type": "testing",
+    },
+    "nunit": {
+        "signals": {
+            "import": [r"using NUnit", r"using.*NUnit"],
+            "attribute": [r"\[Test\]", r"\[TestCase\]", r"\[SetUp\]"],
+        },
+        "type": "testing",
+    },
+    "moq": {
+        "signals": {
+            "import": [r"using Moq", r"using.*Moq"],
+            "class_usage": [r"Mock<", r"\.Setup\(", r"\.Verify\("],
+        },
+        "type": "testing",
     },
 }
 

@@ -104,6 +104,7 @@ class StructureAnalyzer:
     def __init__(self, provider: LanguageProvider):
         self.provider = provider
         self._dir_cache: Dict[Path, DirectoryInfo] = {}
+        self._dotnet_projects: Dict[str, Dict[str, Any]] = {}
 
     def analyze(self, root: Path) -> StructureAnalysisResult:
         """
@@ -115,6 +116,10 @@ class StructureAnalyzer:
         Returns:
             StructureAnalysisResult with detected architecture
         """
+        # For .NET projects, detect layers from project names first
+        if self.provider.language_name == "csharp":
+            self._detect_dotnet_layers(root)
+
         # Find all relevant directories
         directories = self._scan_directories(root)
 
@@ -435,3 +440,113 @@ class StructureAnalyzer:
                 return self._dir_cache[parent].detected_layer
 
         return None
+
+    def _detect_dotnet_layers(self, root: Path) -> None:
+        """
+        Detect layers from .NET project names.
+
+        .NET Clean Architecture projects typically follow naming conventions:
+        - Company.Project.Domain → domain layer
+        - Company.Project.Application → application layer
+        - Company.Project.Infrastructure → infrastructure layer
+        - Company.Project.Api/Web → presentation layer
+        """
+        # .NET layer indicators in project names
+        dotnet_layer_patterns = {
+            "domain": [".domain", ".core", ".entities", ".model"],
+            "application": [".application", ".usecases", ".services", ".business"],
+            "infrastructure": [".infrastructure", ".persistence", ".data", ".repository", ".external"],
+            "presentation": [".api", ".web", ".presentation", ".ui", ".mvc", ".blazor", ".grpc"],
+        }
+
+        # Find all csproj files
+        for csproj in root.rglob("*.csproj"):
+            project_name = csproj.stem.lower()
+            project_dir = csproj.parent
+
+            detected_layer = None
+            confidence = 0.0
+            signals = []
+
+            for layer, patterns in dotnet_layer_patterns.items():
+                for pattern in patterns:
+                    if pattern in project_name:
+                        detected_layer = layer
+                        confidence = 0.9  # High confidence for explicit naming
+                        signals.append(f"project_name:{pattern}")
+                        break
+                if detected_layer:
+                    break
+
+            if detected_layer:
+                self._dotnet_projects[str(csproj)] = {
+                    "layer": detected_layer,
+                    "confidence": confidence,
+                    "signals": signals,
+                    "directory": project_dir,
+                }
+
+                # Pre-populate directory cache
+                try:
+                    relative = project_dir.relative_to(root)
+                except ValueError:
+                    relative = project_dir
+
+                self._dir_cache[project_dir] = DirectoryInfo(
+                    path=project_dir,
+                    relative_path=str(relative),
+                    detected_layer=detected_layer,
+                    confidence=confidence,
+                    signals=signals,
+                )
+
+    def _find_dotnet_entry_points(self, root: Path) -> List[Path]:
+        """Find .NET application entry points."""
+        entry_points = []
+
+        for csproj in root.rglob("*.csproj"):
+            try:
+                content = csproj.read_text(encoding='utf-8')
+
+                # Check for executable output type
+                if "<OutputType>Exe</OutputType>" in content:
+                    entry_points.append(csproj)
+                    continue
+
+                # Check for web SDK (ASP.NET Core)
+                if 'Sdk="Microsoft.NET.Sdk.Web"' in content:
+                    entry_points.append(csproj)
+                    continue
+
+                # Check for common web packages
+                if "Microsoft.AspNetCore" in content:
+                    entry_points.append(csproj)
+                    continue
+
+            except Exception:
+                continue
+
+        return entry_points
+
+    def _find_dotnet_test_directories(self, root: Path) -> List[Path]:
+        """Find .NET test project directories."""
+        test_dirs = []
+
+        for csproj in root.rglob("*.csproj"):
+            project_name = csproj.stem.lower()
+
+            # Check project name
+            if any(test in project_name for test in [".test", ".tests", "test.", "tests."]):
+                test_dirs.append(csproj.parent)
+                continue
+
+            # Check for test packages
+            try:
+                content = csproj.read_text(encoding='utf-8')
+                test_packages = ["xunit", "nunit", "mstest", "Microsoft.NET.Test.Sdk"]
+                if any(pkg in content for pkg in test_packages):
+                    test_dirs.append(csproj.parent)
+            except Exception:
+                continue
+
+        return test_dirs

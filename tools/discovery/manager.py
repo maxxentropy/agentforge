@@ -17,6 +17,7 @@ from .domain import (
 )
 from .providers.base import LanguageProvider
 from .providers.python_provider import PythonProvider
+from .providers.dotnet_provider import DotNetProvider
 from .analyzers.structure import StructureAnalyzer, StructureAnalysisResult
 from .analyzers.patterns import PatternAnalyzer, PatternAnalysisResult
 from .generators.profile import ProfileGenerator
@@ -69,6 +70,7 @@ class DiscoveryManager:
     # Available language providers
     PROVIDERS = {
         "python": PythonProvider,
+        "csharp": DotNetProvider,
     }
 
     def __init__(

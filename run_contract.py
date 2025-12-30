@@ -182,7 +182,8 @@ class ContractRunner:
         return filepath
 
 
-def main():
+def _build_parser():
+    """Build argument parser with all subcommands."""
     parser = argparse.ArgumentParser(
         description='AgentForge Contract Runner',
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -241,6 +242,27 @@ Examples:
     vo_parser.add_argument('contract_id', help='Contract ID (e.g., spec.intake.v1)')
     vo_parser.add_argument('output_file', help='Path to output YAML')
 
+    return parser
+
+
+def _dispatch_command(args, runner):
+    """Dispatch to appropriate command handler."""
+    handlers = {
+        'intake': lambda: run_intake(args, runner),
+        'clarify': lambda: run_clarify(args, runner),
+        'analyze': lambda: run_analyze(args, runner),
+        'draft': lambda: run_draft(args, runner),
+        'validate': lambda: run_validate(args, runner),
+        'validate-contract': lambda: validate_contract(args, ContractValidator, ContractValidationReport),
+        'validate-output': lambda: validate_output(args, runner, OutputValidator),
+    }
+    handler = handlers.get(args.command)
+    if handler:
+        handler()
+
+
+def main():
+    parser = _build_parser()
     args = parser.parse_args()
 
     if args.command is None:
@@ -248,22 +270,7 @@ Examples:
         sys.exit(1)
 
     runner = ContractRunner()
-
-    # Dispatch to command handlers
-    if args.command == 'intake':
-        run_intake(args, runner)
-    elif args.command == 'clarify':
-        run_clarify(args, runner)
-    elif args.command == 'analyze':
-        run_analyze(args, runner)
-    elif args.command == 'draft':
-        run_draft(args, runner)
-    elif args.command == 'validate':
-        run_validate(args, runner)
-    elif args.command == 'validate-contract':
-        validate_contract(args, ContractValidator, ContractValidationReport)
-    elif args.command == 'validate-output':
-        validate_output(args, runner, OutputValidator)
+    _dispatch_command(args, runner)
 
 
 if __name__ == '__main__':

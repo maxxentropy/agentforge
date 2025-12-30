@@ -39,6 +39,7 @@ from cli.click_commands.workspace import workspace
 from cli.click_commands.config import config
 from cli.click_commands.contracts import contracts, exemptions
 from cli.click_commands.conformance import conformance
+from cli.click_commands.discover import discover
 
 # Register spec workflow commands
 cli.add_command(intake)
@@ -59,6 +60,7 @@ cli.add_command(config)
 cli.add_command(contracts)
 cli.add_command(exemptions)
 cli.add_command(conformance)
+cli.add_command(discover)
 
 
 def main():

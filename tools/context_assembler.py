@@ -22,155 +22,23 @@ Priority Order:
 import re
 import fnmatch
 from pathlib import Path
-from dataclasses import dataclass, field
-from typing import List, Dict, Any, Optional, Set
-from enum import Enum
+from typing import List, Dict, Any, Set
 
+try:
+    from .context_assembler_types import (
+        ArchitectureLayer, SymbolInfo, FileContext, PatternMatch, CodeContext
+    )
+except ImportError:
+    from context_assembler_types import (
+        ArchitectureLayer, SymbolInfo, FileContext, PatternMatch, CodeContext
+    )
 
-# =============================================================================
-# Data Classes
-# =============================================================================
+# Re-export types for backwards compatibility
+__all__ = [
+    'ArchitectureLayer', 'SymbolInfo', 'FileContext', 'PatternMatch',
+    'CodeContext', 'ContextAssembler'
+]
 
-class ArchitectureLayer(Enum):
-    """Clean Architecture layers."""
-    DOMAIN = "Domain"
-    APPLICATION = "Application"
-    INFRASTRUCTURE = "Infrastructure"
-    PRESENTATION = "Presentation"
-    UNKNOWN = "Unknown"
-
-
-@dataclass
-class SymbolInfo:
-    """Information about a code symbol."""
-    name: str
-    kind: str
-    file_path: str
-    line: int
-    signature: Optional[str] = None
-    docstring: Optional[str] = None
-    parent: Optional[str] = None
-
-    def to_dict(self) -> dict:
-        return {
-            "name": self.name,
-            "kind": self.kind,
-            "location": f"{self.file_path}:{self.line}",
-        }
-
-
-@dataclass
-class FileContext:
-    """Context for a single file."""
-    path: str
-    language: str
-    content: str
-    layer: str = "Unknown"
-    relevance_score: float = 0.0
-    symbols: List[SymbolInfo] = field(default_factory=list)
-    imports: List[str] = field(default_factory=list)
-    token_count: int = 0
-
-    def to_dict(self) -> dict:
-        return {
-            "path": self.path,
-            "layer": self.layer,
-            "relevance_score": round(self.relevance_score, 3),
-            "content": self.content,
-            "symbols": [{"name": s.name, "kind": s.kind} for s in self.symbols],
-        }
-
-
-@dataclass
-class PatternMatch:
-    """Detected architectural pattern."""
-    name: str
-    description: str
-    examples: List[str] = field(default_factory=list)
-    confidence: float = 0.0
-
-    def to_dict(self) -> dict:
-        return {
-            "name": self.name,
-            "description": self.description,
-            "examples": self.examples[:3],
-        }
-
-
-@dataclass
-class CodeContext:
-    """Complete assembled context for LLM consumption."""
-    files: List[FileContext] = field(default_factory=list)
-    symbols: List[SymbolInfo] = field(default_factory=list)
-    patterns: List[PatternMatch] = field(default_factory=list)
-    total_tokens: int = 0
-    retrieval_metadata: Dict[str, Any] = field(default_factory=dict)
-
-    def to_dict(self) -> dict:
-        return {
-            "summary": {
-                "total_files": len(self.files),
-                "total_symbols": len(self.symbols),
-                "total_tokens": self.total_tokens,
-            },
-            "files": [f.to_dict() for f in self.files],
-            "patterns_detected": [p.to_dict() for p in self.patterns],
-        }
-
-    def to_yaml(self) -> str:
-        import yaml
-        return yaml.dump(self.to_dict(), default_flow_style=False, sort_keys=False)
-
-    def to_prompt_text(self) -> str:
-        """Format context for LLM consumption."""
-        lines = [
-            "# Code Context",
-            "",
-            f"Retrieved {len(self.files)} files, {len(self.symbols)} symbols ({self.total_tokens} tokens)",
-            "",
-        ]
-
-        # Group by layer
-        by_layer: Dict[str, List[FileContext]] = {}
-        for f in self.files:
-            layer = f.layer or "Unknown"
-            if layer not in by_layer:
-                by_layer[layer] = []
-            by_layer[layer].append(f)
-
-        # Output in architecture order
-        layer_order = ["Domain", "Application", "Infrastructure", "Presentation", "Unknown"]
-        for layer in layer_order:
-            if layer in by_layer:
-                lines.append(f"## {layer} Layer")
-                lines.append("")
-                for f in by_layer[layer]:
-                    lines.append(f"### {f.path}")
-                    lines.append("")
-                    if f.symbols:
-                        lines.append("**Symbols:** " + ", ".join(s.name for s in f.symbols[:5]))
-                    lines.append("")
-                    lines.append("```" + f.language)
-                    lines.append(f.content)
-                    lines.append("```")
-                    lines.append("")
-
-        # Patterns
-        if self.patterns:
-            lines.append("## Detected Patterns")
-            lines.append("")
-            for p in self.patterns:
-                lines.append(f"- **{p.name}**: {p.description}")
-                if p.examples:
-                    lines.append(f"  Examples: {', '.join(p.examples[:3])}")
-            lines.append("")
-
-        return "\n".join(lines)
-
-
-# =============================================================================
-# Context Assembler
-# =============================================================================
 
 class ContextAssembler:
     """
@@ -233,7 +101,6 @@ class ContextAssembler:
 
     def detect_layer(self, file_path: str) -> str:
         """Detect which architectural layer a file belongs to."""
-        # Handle both absolute and relative paths
         try:
             if Path(file_path).is_absolute():
                 rel_path = str(Path(file_path).relative_to(self.project_path))
@@ -286,13 +153,11 @@ class ContextAssembler:
                     "source": "vector",
                 }
 
-            # Use highest score for file
             file_data[file_path]["score"] = max(
                 file_data[file_path]["score"],
                 result.score
             )
 
-            # Accumulate content (avoiding duplicates)
             if result.chunk not in file_data[file_path]["content"]:
                 if file_data[file_path]["content"]:
                     file_data[file_path]["content"] += "\n\n// ...\n\n"
@@ -312,7 +177,6 @@ class ContextAssembler:
             if not file_path:
                 continue
 
-            # Normalize path
             try:
                 if Path(file_path).is_absolute():
                     file_path = str(Path(file_path).relative_to(self.project_path))
@@ -327,12 +191,10 @@ class ContextAssembler:
                     "source": "lsp",
                 }
 
-            # Boost score for exact symbol matches
             symbol_name = symbol.name.lower() if hasattr(symbol, 'name') else ""
             if symbol_name in query_lower:
                 file_data[file_path]["score"] += 0.5
 
-            # Add symbol info
             file_data[file_path]["symbols"].append(SymbolInfo(
                 name=symbol.name,
                 kind=symbol.kind,
@@ -366,7 +228,6 @@ class ContextAssembler:
         for file_path, data in sorted_files:
             content = data["content"]
 
-            # If no content from vector, try to read file
             if not content:
                 try:
                     full_path = self.project_path / file_path
@@ -381,7 +242,6 @@ class ContextAssembler:
 
             tokens = self.estimate_tokens(content)
 
-            # Truncate if needed
             if current_tokens + tokens > budget:
                 remaining = budget - current_tokens
                 if remaining < 200:
@@ -389,7 +249,6 @@ class ContextAssembler:
                 content = self._truncate_content(content, remaining)
                 tokens = remaining
 
-            # Create file context
             file_ctx = FileContext(
                 path=file_path,
                 language=self.detect_language(file_path),
@@ -403,7 +262,6 @@ class ContextAssembler:
             context.files.append(file_ctx)
             current_tokens += tokens
 
-            # Track symbols
             for sym in data["symbols"]:
                 if sym.name not in seen_symbols:
                     context.symbols.append(sym)
@@ -445,23 +303,19 @@ class ContextAssembler:
             "vector_results": len(vector_results) if vector_results else 0,
         }
 
-        # Phase 1: Collect file data from all sources
         file_data: Dict[str, Dict[str, Any]] = {}
         self._process_vector_results(vector_results, file_data)
         self._process_lsp_symbols(lsp_symbols, query, file_data)
         self._apply_entry_point_boosts(entry_points, file_data)
 
-        # Phase 2: Sort by relevance score
         sorted_files = sorted(
             file_data.items(),
             key=lambda x: x[1]["score"],
             reverse=True
         )
 
-        # Phase 3: Build file contexts within budget
         current_tokens = self._build_file_contexts(sorted_files, budget, context)
 
-        # Phase 4: Detect patterns and finalize
         context.patterns = self._detect_patterns(context)
         context.total_tokens = current_tokens
 
@@ -473,7 +327,6 @@ class ContextAssembler:
         if len(content) <= max_chars:
             return content
 
-        # Try to truncate at a natural boundary
         truncated = content[:max_chars]
         last_newline = truncated.rfind("\n")
         if last_newline > max_chars * 0.8:
@@ -532,20 +385,16 @@ class ContextAssembler:
 
         patterns = []
 
-        # Check each pattern definition
         for pdef in self._PATTERN_DEFS:
             content_match = False
             symbol_examples = []
 
-            # Check content pattern if defined
             if "content_pattern" in pdef:
                 content_match = bool(re.search(pdef["content_pattern"], all_content))
 
-            # Check symbol filter if defined
             if "symbol_filter" in pdef:
                 symbol_examples = [s for s in all_symbols if pdef["symbol_filter"](s)][:3]
 
-            # Pattern matches if content matches OR symbols found
             if content_match or symbol_examples:
                 patterns.append(PatternMatch(
                     name=pdef["name"],
@@ -554,7 +403,7 @@ class ContextAssembler:
                     confidence=pdef["confidence"],
                 ))
 
-        # Special case: CQRS (needs both commands and queries check)
+        # Special case: CQRS
         commands = [s for s in all_symbols if s.endswith("Command")]
         queries = [s for s in all_symbols if s.endswith("Query")]
         if commands or queries:
@@ -624,7 +473,6 @@ class ContextAssembler:
 
 def main():
     import argparse
-    import yaml
 
     parser = argparse.ArgumentParser(description="Test context assembler")
     parser.add_argument("--project", "-p", required=True, help="Project root path")
@@ -638,7 +486,6 @@ def main():
     if args.files:
         context = assembler.assemble_from_files(args.files, args.budget)
     else:
-        # Demo with no input
         context = CodeContext()
         print("No files specified. Use --files to provide file paths.")
         return

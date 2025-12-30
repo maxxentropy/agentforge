@@ -34,17 +34,18 @@ checks:
   # TIER 1: ALWAYS ENABLED - Errors
   # ===========================================================================
 
-  # Architecture checks - ENABLED (inherited from _architecture-python)
+  # Architecture checks - DISABLED (custom functions not yet implemented)
+  # These require AST-based analysis functions in builtin_checks.py
   - id: layer-dependency-violations
-    enabled: true
+    enabled: false  # Requires layer_imports function
     severity: error
 
   - id: domain-purity
-    enabled: true
+    enabled: false  # Requires domain_purity function
     severity: error
 
   - id: no-circular-imports
-    enabled: true
+    enabled: false  # Requires circular_imports function
     severity: error
 
   # Security checks - ENABLED
@@ -101,12 +102,19 @@ checks:
       metric: nesting_depth
       threshold: 4
 
+  # CLI commands naturally have many parameters due to Click decorators
   - id: max-parameter-count
     enabled: true
     severity: warning
     config:
       metric: parameter_count
       threshold: 5
+    applies_to:
+      paths:
+        - "**/*.py"
+      exclude_paths:
+        - "cli/click_commands/**"
+        - "cli/main.py"
 
   - id: max-class-size
     enabled: true
@@ -132,9 +140,9 @@ checks:
     enabled: true
     severity: error
 
-  # DI pattern - ENABLED (warning, not error)
+  # DI pattern - DISABLED (custom function not yet implemented)
   - id: constructor-injection-required
-    enabled: true
+    enabled: false  # Requires constructor_injection function
     severity: warning
 
   # File structure - ENABLED
@@ -179,7 +187,7 @@ checks:
     enabled: true
     config:
       module: builtin_checks
-      function: file_size
+      function: check_file_size
       params:
         max_lines: 500
         max_bytes: 100000
@@ -310,9 +318,46 @@ checks:
   # OVERRIDES - Project-specific adjustments
   # ===========================================================================
 
-  # CLI tool uses print() intentionally - override inherited check
+  # CLI uses click.echo() for output - disable print check
   - id: no-print-statements
-    enabled: false  # CLI tools use print() for output
+    enabled: false  # Legacy - CLI now uses click.echo()
+
+  # Click patterns only apply to CLI definition files, not handler implementations
+  # Override to match both @click.command and @group.command patterns
+  - id: commands-have-help
+    config:
+      pattern: "@\\w+\\.command\\s*\\([^)]*help\\s*="
+      mode: require
+    applies_to:
+      paths:
+        - "cli/main.py"
+        - "cli/click_commands/*.py"
+      exclude_paths:
+        - "cli/click_commands/__init__.py"
+
+  # Only check path validation in files that actually have path arguments
+  - id: path-inputs-validated
+    applies_to:
+      paths:
+        - "cli/click_commands/spec.py"
+        - "cli/click_commands/utility.py"
+        - "cli/click_commands/workspace.py"
+
+  - id: validate-cli-inputs
+    applies_to:
+      paths:
+        - "cli/main.py"
+        - "cli/click_commands/*.py"
+      exclude_paths:
+        - "cli/click_commands/__init__.py"
+
+  - id: options-have-help
+    applies_to:
+      paths:
+        - "cli/main.py"
+        - "cli/click_commands/*.py"
+      exclude_paths:
+        - "cli/click_commands/__init__.py"
 
   # Project uses tools/ not src/ layout
   - id: require-init-files

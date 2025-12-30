@@ -123,22 +123,8 @@ def discover_workspace(workspace_arg: str = None) -> WorkspaceContext:
     return ctx
 
 
-def _load_workspace(ctx: WorkspaceContext) -> WorkspaceContext:
-    """Load and validate workspace configuration."""
-    if not ctx.workspace_path:
-        return ctx
-
-    if not ctx.workspace_path.exists():
-        ctx.discovery_method = "none"
-        ctx.workspace_path = None
-        return ctx
-
-    try:
-        ctx.workspace_config = yaml.safe_load(ctx.workspace_path.read_text())
-    except Exception as e:
-        raise WorkspaceSchemaError(f"Failed to parse workspace.yaml: {e}")
-
-    workspace_dir = ctx.workspace_path.parent
+def _load_repos_into_context(ctx: WorkspaceContext, workspace_dir: Path) -> None:
+    """Load repo configurations into context."""
     for repo_data in ctx.workspace_config.get('repos', []):
         repo = RepoConfig.from_dict(repo_data)
         repo.resolved_path = (workspace_dir / repo.path).resolve()
@@ -150,15 +136,36 @@ def _load_workspace(ctx: WorkspaceContext) -> WorkspaceContext:
         else:
             ctx.unavailable_repos.append(repo.name)
 
-    if not ctx.current_repo and ctx.current_repo_path:
-        for name, path in ctx.available_repos.items():
-            try:
-                if ctx.current_repo_path.resolve().is_relative_to(path):
-                    ctx.current_repo = name
-                    ctx.current_repo_path = path
-                    break
-            except ValueError:
-                pass
+
+def _detect_current_repo(ctx: WorkspaceContext) -> None:
+    """Detect which repo we're currently in."""
+    if ctx.current_repo or not ctx.current_repo_path:
+        return
+    for name, path in ctx.available_repos.items():
+        try:
+            if ctx.current_repo_path.resolve().is_relative_to(path):
+                ctx.current_repo = name
+                ctx.current_repo_path = path
+                break
+        except ValueError:
+            pass
+
+
+def _load_workspace(ctx: WorkspaceContext) -> WorkspaceContext:
+    """Load and validate workspace configuration."""
+    if not ctx.workspace_path or not ctx.workspace_path.exists():
+        if ctx.workspace_path:
+            ctx.discovery_method = "none"
+            ctx.workspace_path = None
+        return ctx
+
+    try:
+        ctx.workspace_config = yaml.safe_load(ctx.workspace_path.read_text())
+    except Exception as e:
+        raise WorkspaceSchemaError(f"Failed to parse workspace.yaml: {e}")
+
+    _load_repos_into_context(ctx, ctx.workspace_path.parent)
+    _detect_current_repo(ctx)
 
     return ctx
 

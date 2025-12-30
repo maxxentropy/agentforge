@@ -182,50 +182,46 @@ class StructureAnalyzer(ast.NodeVisitor):
         ))
 
 
+def _extract_function_prefix(name: str) -> str:
+    """Extract grouping prefix from function name."""
+    parts = name.split('_')
+    if len(parts) < 2:
+        return 'misc'
+    if parts[0] == 'run' and len(parts) >= 3:
+        return f"{parts[0]}_{parts[1]}"
+    if parts[0] in ('_', ''):
+        return '_helpers'
+    return parts[0]
+
+
+# Prefix descriptions for logical groups
+_PREFIX_DESCRIPTIONS = {
+    'run_workspace': 'Workspace management commands',
+    'run_config': 'Configuration management commands',
+    'run_contracts': 'Contract management commands',
+    'run_exemptions': 'Exemption management commands',
+    '_render': 'Spec rendering helpers',
+    'run': 'CLI command handlers',
+    '_helpers': 'Internal helper functions',
+    'call': 'External API/CLI callers',
+}
+
+
 def identify_logical_groups(functions: list[FunctionInfo]) -> list[LogicalGroup]:
     """Identify logical groupings based on naming patterns and call relationships."""
-    groups = []
-
-    # Group by prefix patterns
     prefix_groups = defaultdict(list)
     for func in functions:
-        # Extract prefix (e.g., run_workspace_init -> run_workspace)
-        parts = func.name.split('_')
-        if len(parts) >= 2:
-            if parts[0] == 'run' and len(parts) >= 3:
-                prefix = f"{parts[0]}_{parts[1]}"
-            elif parts[0] in ('_', ''):
-                prefix = '_helpers'
-            else:
-                prefix = parts[0]
-        else:
-            prefix = 'misc'
-        prefix_groups[prefix].append(func)
+        prefix_groups[_extract_function_prefix(func.name)].append(func)
 
-    # Convert to LogicalGroup objects
+    groups = []
     for prefix, funcs in prefix_groups.items():
-        if len(funcs) >= 2:  # Only groups with multiple members
-            total_lines = sum(f.length for f in funcs)
-
-            # Determine description based on prefix
-            descriptions = {
-                'run_workspace': 'Workspace management commands',
-                'run_config': 'Configuration management commands',
-                'run_contracts': 'Contract management commands',
-                'run_exemptions': 'Exemption management commands',
-                '_render': 'Spec rendering helpers',
-                'run': 'CLI command handlers',
-                '_helpers': 'Internal helper functions',
-                'call': 'External API/CLI callers',
-            }
-            desc = descriptions.get(prefix, f'Functions with {prefix} prefix')
-
+        if len(funcs) >= 2:
             groups.append(LogicalGroup(
                 name=prefix,
-                description=desc,
+                description=_PREFIX_DESCRIPTIONS.get(prefix, f'Functions with {prefix} prefix'),
                 members=[f.name for f in funcs],
-                total_lines=total_lines,
-                shared_imports=[],  # Would need more analysis
+                total_lines=sum(f.length for f in funcs),
+                shared_imports=[],
                 cohesion_score=0.8 if len(funcs) >= 3 else 0.5
             ))
 

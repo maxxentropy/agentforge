@@ -205,17 +205,8 @@ def _load_repo_config(ctx: ConfigContext) -> Path | None:
     return repo_yaml_path
 
 
-def _resolve_workspace_path(ctx: ConfigContext, workspace_arg: str, repo_yaml_path: Path | None) -> Path | None:
-    """Resolve workspace path from multiple sources (Tier 2)."""
-    if workspace_arg:
-        ctx.discovery_log.append(f"Workspace from --workspace flag: {workspace_arg}")
-        return expand_path(workspace_arg)
-
-    env_ws = os.environ.get('AGENTFORGE_WORKSPACE')
-    if env_ws:
-        ctx.discovery_log.append(f"Workspace from env var: {env_ws}")
-        return expand_path(env_ws)
-
+def _try_workspace_from_config(ctx: ConfigContext, repo_yaml_path: Path | None) -> Path | None:
+    """Try to get workspace from local or repo config."""
     if ctx.local_config and ctx.local_config.get('workspace_ref'):
         ws = expand_path(ctx.local_config['workspace_ref'],
                         relative_to=repo_yaml_path.parent if repo_yaml_path else None)
@@ -229,6 +220,23 @@ def _resolve_workspace_path(ctx: ConfigContext, workspace_arg: str, repo_yaml_pa
             ctx.discovery_log.append(f"Workspace from repo.yaml: {ws}")
             return ws
         ctx.discovery_log.append("Workspace ref is null (single-repo mode)")
+    return None
+
+
+def _resolve_workspace_path(ctx: ConfigContext, workspace_arg: str, repo_yaml_path: Path | None) -> Path | None:
+    """Resolve workspace path from multiple sources (Tier 2)."""
+    if workspace_arg:
+        ctx.discovery_log.append(f"Workspace from --workspace flag: {workspace_arg}")
+        return expand_path(workspace_arg)
+
+    env_ws = os.environ.get('AGENTFORGE_WORKSPACE')
+    if env_ws:
+        ctx.discovery_log.append(f"Workspace from env var: {env_ws}")
+        return expand_path(env_ws)
+
+    ws = _try_workspace_from_config(ctx, repo_yaml_path)
+    if ws:
+        return ws
 
     ws_yaml = find_upward('workspace.yaml') or find_upward('agentforge/workspace.yaml')
     if ws_yaml:

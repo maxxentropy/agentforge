@@ -30,6 +30,16 @@ class ReportGenerator:
         else:
             return self._generate_text_report(report)
 
+    def _format_errors_section(self, errors: list) -> list:
+        """Format errors section for a check result."""
+        lines = [f"  Errors ({len(errors)}):"]
+        for err in errors[:5]:
+            err_str = ", ".join(f"{k}: {v}" for k, v in err.items()) if isinstance(err, dict) else str(err)
+            lines.append(f"    - {err_str}")
+        if len(errors) > 5:
+            lines.append(f"    ... and {len(errors) - 5} more")
+        return lines
+
     def _format_check_result(self, result: "CheckResult") -> list:
         """Format a single check result for text report."""
         try:
@@ -37,12 +47,7 @@ class ReportGenerator:
         except ImportError:
             from verification_types import CheckStatus
 
-        status_icons = {
-            CheckStatus.PASSED: "✓",
-            CheckStatus.FAILED: "✗",
-            CheckStatus.SKIPPED: "○",
-            CheckStatus.ERROR: "!"
-        }
+        status_icons = {CheckStatus.PASSED: "✓", CheckStatus.FAILED: "✗", CheckStatus.SKIPPED: "○", CheckStatus.ERROR: "!"}
         lines = [
             f"\n{status_icons.get(result.status, '?')} {result.check_id}: {result.check_name} [{result.severity.value.upper()}]",
             f"  {result.message}"
@@ -50,12 +55,7 @@ class ReportGenerator:
         if result.details:
             lines.append(f"  Details: {result.details}")
         if result.errors:
-            lines.append(f"  Errors ({len(result.errors)}):")
-            for err in result.errors[:5]:
-                err_str = ", ".join(f"{k}: {v}" for k, v in err.items()) if isinstance(err, dict) else str(err)
-                lines.append(f"    - {err_str}")
-            if len(result.errors) > 5:
-                lines.append(f"    ... and {len(result.errors) - 5} more")
+            lines.extend(self._format_errors_section(result.errors))
         if result.fix_suggestion and not result.passed:
             lines.append(f"  Fix: {result.fix_suggestion}")
         if result.duration_ms > 0:

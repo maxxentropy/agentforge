@@ -158,6 +158,18 @@ def _retrieve_context(project_path: str, intake_record: dict) -> str | None:
     return None
 
 
+def _load_optional_file(path: Path, default: str = "") -> str:
+    """Load file content if exists, otherwise return default."""
+    return path.read_text() if path.exists() else default
+
+
+def _get_code_context(args, intake_record: dict) -> str:
+    """Get code context from args or retrieval."""
+    if args.project_path:
+        return _retrieve_context(args.project_path, intake_record) or args.code_context or "No code context provided."
+    return args.code_context or "No code context provided."
+
+
 def run_analyze(args):
     """Execute ANALYZE contract."""
     print()
@@ -165,30 +177,14 @@ def run_analyze(args):
     print("ANALYZE")
     print("=" * 60)
 
-    intake_path, clarify_path = Path(args.intake_file), Path(args.clarification_file)
-    if not intake_path.exists():
-        print(f"Error: {intake_path} not found")
-        sys.exit(1)
-    if not clarify_path.exists():
-        print(f"Error: {clarify_path} not found")
-        sys.exit(1)
-
-    with open(intake_path) as f:
-        intake_record = yaml.safe_load(f)
-    with open(clarify_path) as f:
-        clarification_log = yaml.safe_load(f)
-
-    arch_path = Path('config/architecture.yaml')
-    architecture_rules = arch_path.read_text() if arch_path.exists() else ""
-
-    code_context = args.code_context or "No code context provided."
-    if args.project_path:
-        code_context = _retrieve_context(args.project_path, intake_record) or code_context
+    intake_record = _load_required_file(Path(args.intake_file))
+    clarification_log = _load_required_file(Path(args.clarification_file))
+    architecture_rules = _load_optional_file(Path('config/architecture.yaml'), "No architecture rules configured.")
 
     inputs = {
         'intake_record': intake_record, 'clarification_log': clarification_log,
-        'architecture_rules': architecture_rules or "No architecture rules configured.",
-        'code_context': code_context,
+        'architecture_rules': architecture_rules,
+        'code_context': _get_code_context(args, intake_record),
     }
 
     result = execute_contract('spec.analyze.v1', inputs, args.use_api)

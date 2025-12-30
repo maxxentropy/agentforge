@@ -54,22 +54,24 @@ def run_contracts_list(args):
     _output_contracts(filtered, args.format)
 
 
+def _contract_matches_filter(contract, args) -> bool:
+    """Check if a contract matches the filter criteria."""
+    if args.tier and contract.tier != args.tier:
+        return False
+    if args.language:
+        languages = contract.applies_to.get('languages', [])
+        if args.language not in languages and languages:
+            return False
+    if args.type and contract.type != args.type:
+        return False
+    if args.tag and args.tag not in contract.tags:
+        return False
+    return True
+
+
 def _filter_contracts(contracts: dict, args) -> list:
     """Filter contracts by tier, language, type, tag."""
-    filtered = []
-    for name, contract in contracts.items():
-        if args.tier and contract.tier != args.tier:
-            continue
-        if args.language:
-            languages = contract.applies_to.get('languages', [])
-            if args.language not in languages and languages:
-                continue
-        if args.type and contract.type != args.type:
-            continue
-        if args.tag and args.tag not in contract.tags:
-            continue
-        filtered.append(contract)
-    return filtered
+    return [c for c in contracts.values() if _contract_matches_filter(c, args)]
 
 
 def _output_contracts(filtered: list, fmt: str):
@@ -218,6 +220,24 @@ def _build_contracts_output(results, all_passed, total_errors, total_warnings, t
     return output
 
 
+def _get_check_icon(check_result) -> str:
+    """Get icon for check result based on status and severity."""
+    if check_result.exempted:
+        return '🔓'
+    severity_icons = {'error': '❌', 'warning': '⚠️'}
+    return severity_icons.get(check_result.severity, 'ℹ️')
+
+
+def _print_check_failure(check_result):
+    """Print a failed check result."""
+    icon = _get_check_icon(check_result)
+    print(f"      {icon} {check_result.check_name}: {check_result.message}")
+    if check_result.file_path:
+        print(f"         at {check_result.file_path}:{check_result.line_number}")
+    if check_result.fix_hint:
+        print(f"         fix: {check_result.fix_hint}")
+
+
 def _print_contracts_text(results, total_errors, total_warnings, total_exempted):
     """Print contract results in text format."""
     print(f"\n  Ran {len(results)} contracts\n")
@@ -226,13 +246,7 @@ def _print_contracts_text(results, total_errors, total_warnings, total_exempted)
         print(f"  {status} {result.contract_name} ({result.contract_type})")
         for check_result in result.check_results:
             if not check_result.passed:
-                icon = '🔓' if check_result.exempted else '❌' if check_result.severity == 'error' else '⚠️' if check_result.severity == 'warning' else 'ℹ️'
-                location = f"{check_result.file_path}:{check_result.line_number}" if check_result.file_path else ""
-                print(f"      {icon} {check_result.check_name}: {check_result.message}")
-                if location:
-                    print(f"         at {location}")
-                if check_result.fix_hint:
-                    print(f"         fix: {check_result.fix_hint}")
+                _print_check_failure(check_result)
     print(f"\n  Summary:\n    Errors: {total_errors}\n    Warnings: {total_warnings}\n    Exempted: {total_exempted}")
 
 
@@ -351,21 +365,43 @@ def run_exemptions_list(args):
     _output_exemptions(filtered, args.format)
 
 
+def _exemption_matches_status(ex, status: str) -> bool:
+    """Check if exemption matches status filter."""
+    if status == 'all':
+        return True
+    if status == 'active':
+        return ex.is_active()
+    if status == 'expired':
+        return ex.is_expired()
+    if status == 'resolved':
+        return ex.status == 'resolved'
+    return True
+
+
 def _filter_exemptions(exemptions, args) -> list:
     """Filter exemptions by contract and status."""
-    filtered = []
-    for ex in exemptions:
-        if args.contract and ex.contract != args.contract:
-            continue
-        if args.status != 'all':
-            if args.status == 'active' and not ex.is_active():
-                continue
-            if args.status == 'expired' and not ex.is_expired():
-                continue
-            if args.status == 'resolved' and ex.status != 'resolved':
-                continue
-        filtered.append(ex)
-    return filtered
+    return [ex for ex in exemptions
+            if (not args.contract or ex.contract == args.contract)
+            and _exemption_matches_status(ex, args.status)]
+
+
+def _get_exemption_status(ex) -> str:
+    """Get display status for exemption."""
+    if ex.is_active():
+        return 'active'
+    if ex.is_expired():
+        return 'expired'
+    return ex.status
+
+
+def _exemption_to_dict(ex) -> dict:
+    """Convert exemption to dictionary for output."""
+    return {
+        'id': ex.id, 'contract': ex.contract, 'checks': ex.checks,
+        'reason': ex.reason, 'approved_by': ex.approved_by,
+        'expires': str(ex.expires) if ex.expires else None,
+        'status': ex.status, 'is_active': ex.is_active()
+    }
 
 
 def _output_exemptions(filtered, fmt: str):
@@ -375,12 +411,11 @@ def _output_exemptions(filtered, fmt: str):
         print(f"  {'ID':<25} {'Contract':<20} {'Check':<20} {'Status':<10} {'Expires'}")
         print(f"  {'-' * 25} {'-' * 20} {'-' * 20} {'-' * 10} {'-' * 12}")
         for ex in filtered:
-            status = 'active' if ex.is_active() else 'expired' if ex.is_expired() else ex.status
-            expires = str(ex.expires) if ex.expires else '-'
             checks_str = ex.checks[0] if len(ex.checks) == 1 else f"{ex.checks[0]}+{len(ex.checks)-1}"
-            print(f"  {ex.id:<25} {ex.contract:<20} {checks_str:<20} {status:<10} {expires}")
+            expires = str(ex.expires) if ex.expires else '-'
+            print(f"  {ex.id:<25} {ex.contract:<20} {checks_str:<20} {_get_exemption_status(ex):<10} {expires}")
     else:
-        output = {'exemptions': [{'id': ex.id, 'contract': ex.contract, 'checks': ex.checks, 'reason': ex.reason, 'approved_by': ex.approved_by, 'expires': str(ex.expires) if ex.expires else None, 'status': ex.status, 'is_active': ex.is_active()} for ex in filtered]}
+        output = {'exemptions': [_exemption_to_dict(ex) for ex in filtered]}
         if fmt == 'yaml':
             print(yaml.dump(output, default_flow_style=False))
         elif fmt == 'json':
@@ -426,6 +461,31 @@ def run_exemptions_add(args):
     print(f"   Contract: {args.contract}\n   Check: {args.check}\n   File: {exemptions_file}")
 
 
+def _categorize_exemptions(exemptions) -> tuple:
+    """Categorize exemptions by status."""
+    active = [e for e in exemptions if e.is_active()]
+    expired = [e for e in exemptions if e.is_expired()]
+    no_expiry = [e for e in active if e.expires is None]
+    return active, expired, no_expiry
+
+
+def _print_audit_details(expired, no_expiry, show_expired: bool):
+    """Print detailed audit findings."""
+    if show_expired and expired:
+        print(f"\n  Expired Exemptions:")
+        for ex in expired:
+            print(f"    ⏰ {ex.id} (expired {ex.expires})")
+            print(f"       Contract: {ex.contract}, Check: {ex.checks[0]}")
+
+    if no_expiry:
+        print(f"\n  ⚠️  Exemptions without expiration date:")
+        for ex in no_expiry:
+            print(f"    {ex.id}\n       Contract: {ex.contract}, Check: {ex.checks[0]}")
+
+    if expired:
+        print(f"\n  Recommendation: Review and remove expired exemptions")
+
+
 def run_exemptions_audit(args):
     """Audit exemptions."""
     print()
@@ -441,28 +501,12 @@ def run_exemptions_audit(args):
         print(f"\nError: Could not import contracts module: {e}")
         sys.exit(1)
 
-    repo_root = Path.cwd()
-    registry = ContractRegistry(repo_root)
+    registry = ContractRegistry(Path.cwd())
     exemptions = registry.load_exemptions()
-
-    active = [e for e in exemptions if e.is_active()]
-    expired = [e for e in exemptions if e.is_expired()]
-    no_expiry = [e for e in active if e.expires is None]
+    active, expired, no_expiry = _categorize_exemptions(exemptions)
 
     print(f"\n  Exemption Audit Summary:")
     print(f"  {'─' * 40}")
     print(f"  Total exemptions: {len(exemptions)}\n  Active: {len(active)}\n  Expired: {len(expired)}\n  Without expiration: {len(no_expiry)}")
 
-    if args.show_expired and expired:
-        print(f"\n  Expired Exemptions:")
-        for ex in expired:
-            print(f"    ⏰ {ex.id} (expired {ex.expires})")
-            print(f"       Contract: {ex.contract}, Check: {ex.checks[0]}")
-
-    if no_expiry:
-        print(f"\n  ⚠️  Exemptions without expiration date:")
-        for ex in no_expiry:
-            print(f"    {ex.id}\n       Contract: {ex.contract}, Check: {ex.checks[0]}")
-
-    if expired:
-        print(f"\n  Recommendation: Review and remove expired exemptions")
+    _print_audit_details(expired, no_expiry, args.show_expired)

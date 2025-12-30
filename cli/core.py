@@ -175,16 +175,10 @@ def call_claude_code(system: str, user: str) -> str:
             return result.stdout
 
     except FileNotFoundError:
-        click.echo("=" * 60)
-        click.echo("ERROR: 'claude' command not found")
-        click.echo("=" * 60)
-        click.echo("\nClaude Code CLI is not installed or not in PATH.\n")
-        click.echo("Options:")
-        click.echo("  1. Install Claude Code: npm install -g @anthropic-ai/claude-code")
-        click.echo("     (Requires Node.js and Claude Pro/Team subscription)\n")
-        click.echo("  2. Use API mode instead:")
-        click.echo("     export ANTHROPIC_API_KEY=your_key")
-        click.echo("     python execute.py intake --request '...' --use-api\n")
+        click.echo("=" * 60 + "\nERROR: 'claude' command not found\n" + "=" * 60)
+        click.echo("\nClaude Code CLI not installed. Options:")
+        click.echo("  1. Install: npm install -g @anthropic-ai/claude-code")
+        click.echo("  2. Use API: export ANTHROPIC_API_KEY=key && python execute.py --use-api\n")
         sys.exit(1)
 
     except subprocess.TimeoutExpired:

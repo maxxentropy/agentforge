@@ -272,9 +272,7 @@ def run_contracts_init(args):
     with open(contract_path, 'w') as f:
         yaml.dump(contract, f, default_flow_style=False, sort_keys=False)
 
-    click.echo(f"\nCreated contract: {contract_path}")
-    click.echo(f"   Extends: {extends}")
-    click.echo(f"\n   Next steps:\n   1. Edit {contract_path} to add checks\n   2. Run 'python execute.py contracts check' to verify")
+    click.echo(f"\nCreated contract: {contract_path}\n   Extends: {extends}\n   Next: Edit {contract_path}, then run 'python execute.py contracts check'")
 
 
 def run_contracts_validate(args):
@@ -449,8 +447,7 @@ def run_exemptions_add(args):
     with open(exemptions_file, 'w') as f:
         yaml.dump(data, f, default_flow_style=False, sort_keys=False)
 
-    click.echo(f"\nAdded exemption: {exemption_id}")
-    click.echo(f"   Contract: {args.contract}\n   Check: {args.check}\n   File: {exemptions_file}")
+    click.echo(f"\nAdded exemption: {exemption_id}\n   Contract: {args.contract} | Check: {args.check}\n   File: {exemptions_file}")
 
 
 def _categorize_exemptions(exemptions) -> tuple:
@@ -497,8 +494,6 @@ def run_exemptions_audit(args):
     exemptions = registry.load_exemptions()
     active, expired, no_expiry = _categorize_exemptions(exemptions)
 
-    click.echo(f"\n  Exemption Audit Summary:")
-    click.echo(f"  {'─' * 40}")
-    click.echo(f"  Total exemptions: {len(exemptions)}\n  Active: {len(active)}\n  Expired: {len(expired)}\n  Without expiration: {len(no_expiry)}")
+    click.echo(f"\n  Exemption Audit Summary:\n  {'─' * 40}\n  Total: {len(exemptions)} | Active: {len(active)} | Expired: {len(expired)} | No expiry: {len(no_expiry)}")
 
     _print_audit_details(expired, no_expiry, args.show_expired)

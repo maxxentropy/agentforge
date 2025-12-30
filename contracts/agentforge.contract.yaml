@@ -216,7 +216,8 @@ checks:
       paths:
         - "**/*.py"
       exclude_paths:
-        - "**/tests/**"
+        - "tests/**"
+        - "**/test_*.py"
     fix_hint: "Split large files into smaller modules"
 
   # Contract validation - ENABLED
@@ -345,13 +346,13 @@ checks:
 
   # Click patterns only apply to CLI definition files, not handler implementations
   # Override to match both @click.command and @group.command patterns
+  # Exclude main.py (only has @click.group which gets help from docstring)
   - id: commands-have-help
     config:
       pattern: "@\\w+\\.command\\s*\\([^)]*help\\s*="
       mode: require
     applies_to:
       paths:
-        - "cli/main.py"
         - "cli/click_commands/*.py"
       exclude_paths:
         - "cli/click_commands/__init__.py"
@@ -386,14 +387,16 @@ checks:
       paths:
         - "**/*.py"
       exclude_paths:
-        - "**/tests/**"
+        - "tests/**"
+        - "**/test_*.py"
 
   - id: no-http-without-https
     applies_to:
       paths:
         - "**/*.py"
       exclude_paths:
-        - "**/tests/**"
+        - "tests/**"
+        - "**/test_*.py"
 
   # Project uses tools/ not src/ layout
   - id: require-init-files

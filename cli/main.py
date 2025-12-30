@@ -6,6 +6,7 @@ This module defines the main CLI entry point using Click.
 Commands are organized into groups imported from cli/click_commands/.
 """
 
+import sys
 import click
 
 __version__ = "2.0.0"
@@ -62,7 +63,14 @@ cli.add_command(conformance)
 
 def main():
     """Main entry point for the CLI."""
-    cli(obj={})
+    try:
+        cli(obj={})
+    except KeyboardInterrupt:
+        click.echo("\nOperation cancelled.")
+        sys.exit(130)
+    except Exception as e:
+        click.echo(f"\nError: {e}", err=True)
+        sys.exit(1)
 
 
 if __name__ == '__main__':

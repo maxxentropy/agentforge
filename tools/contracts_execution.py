@@ -83,10 +83,8 @@ def execute_check(check: Dict[str, Any], repo_root,
 
     handlers = {
         "regex": _execute_regex_check,
-        "lsp_query": lambda c: execute_lsp_query_check(
-            c.check_id, c.check_name, c.severity, c.config, c.repo_root, c.file_paths, c.fix_hint),
-        "ast_check": lambda c: execute_ast_check(
-            c.check_id, c.check_name, c.severity, c.config, c.repo_root, c.file_paths, c.fix_hint),
+        "lsp_query": execute_lsp_query_check,
+        "ast_check": execute_ast_check,
         "command": _execute_command_check,
         "file_exists": _execute_file_exists_check,
         "custom": _execute_custom_check,

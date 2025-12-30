@@ -1,35 +1,16 @@
 #!/usr/bin/env python3
 """
-Workspace Management
-====================
+Workspace Management - A workspace is a collection of related repositories.
 
-A workspace is a collection of related repositories that form a logical
-product or system. Provides:
+Provides shared contracts, cross-repo artifact tracking, unified conformance
+reporting, and multi-repo context retrieval.
 
-- Shared contracts (architectural rules, patterns, naming conventions)
-- Cross-repo artifact tracking (shared DTOs, API contracts)
-- Unified conformance reporting
-- Multi-repo context retrieval
-
-Discovery Priority:
-1. --workspace flag (explicit)
-2. AGENTFORGE_WORKSPACE environment variable
-3. .agentforge/repo.yaml in current or parent directory (workspace_ref)
-4. workspace.yaml in current or parent directory
-5. agentforge/workspace.yaml in current or parent directory
-6. No workspace (single-repo mode)
-
-Usage:
-    from tools.workspace import discover_workspace, WorkspaceContext
-
-    ctx = discover_workspace()
-    if ctx.is_workspace_mode:
-        print(f"Workspace: {ctx.workspace_name}")
-        for name, path in ctx.available_repos.items():
-            print(f"  - {name}: {path}")
+Discovery order: --workspace flag > AGENTFORGE_WORKSPACE env > repo.yaml
+workspace_ref > workspace.yaml in current/parent dir > single-repo mode.
 """
 
 import os
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional, List
 import yaml
@@ -38,6 +19,19 @@ from .workspace_types import (
     WorkspaceError, RepoNotFoundError, WorkspaceSchemaError,
     WorkspaceNotFoundError, RepoConfig, WorkspaceContext
 )
+
+
+@dataclass
+class RepoMetadata:
+    """Metadata for a repository in a workspace."""
+    repo_type: str = 'service'
+    language: str = 'csharp'
+    framework: Optional[str] = None
+    lsp: Optional[str] = None
+    layers: List[str] = field(default_factory=list)
+    tags: List[str] = field(default_factory=list)
+
+
 from .workspace_config import (
     ConfigContext, discover_config, format_config_status,
     load_yaml_file, find_upward, expand_path
@@ -205,16 +199,17 @@ def init_workspace(directory: Path, name: str, description: str = None, force: b
     return workspace_file
 
 
-def add_repo_to_workspace(ctx: WorkspaceContext, name: str, path: str, repo_type: str = 'service',
-                          language: str = 'csharp', framework: str = None, lsp: str = None,
-                          layers: List[str] = None, tags: List[str] = None,
-                          create_repo_yaml: bool = True) -> RepoConfig:
+def add_repo_to_workspace(
+    ctx: WorkspaceContext, name: str, path: str,
+    metadata: Optional[RepoMetadata] = None, create_repo_yaml: bool = True
+) -> RepoConfig:
     """Add a repository to the workspace."""
     if not ctx.is_workspace_mode:
         raise WorkspaceError("No workspace loaded")
     if name in ctx.repos:
         raise WorkspaceError(f"Repo '{name}' already exists in workspace")
 
+    meta = metadata or RepoMetadata()
     repo_path = Path(path).resolve()
     workspace_dir = ctx.workspace_path.parent
 
@@ -224,8 +219,8 @@ def add_repo_to_workspace(ctx: WorkspaceContext, name: str, path: str, repo_type
         relative_path = str(repo_path)
 
     repo = RepoConfig(
-        name=name, path=relative_path, type=repo_type, language=language,
-        framework=framework, lsp=lsp, layers=layers or [], tags=tags or [],
+        name=name, path=relative_path, type=meta.repo_type, language=meta.language,
+        framework=meta.framework, lsp=meta.lsp, layers=meta.layers, tags=meta.tags,
         resolved_path=repo_path, is_available=repo_path.exists()
     )
 

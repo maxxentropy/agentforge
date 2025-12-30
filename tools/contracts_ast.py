@@ -16,31 +16,21 @@ Metrics supported:
 
 import ast
 from pathlib import Path
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .contracts_execution import CheckContext
 
 
-def execute_ast_check(check_id: str, check_name: str, severity: str,
-                      config: Dict, repo_root: Path, file_paths: List[Path],
-                      fix_hint: Optional[str]) -> List:
-    """
-    Execute an AST-based structural/metrics check.
-
-    Uses Python's ast module for code metrics like:
-    - Cyclomatic complexity
-    - Function length
-    - Nesting depth
-    - Parameter count
-    - Class size
-    - Import count
-    """
+def execute_ast_check(ctx: "CheckContext") -> List:
+    """Execute an AST-based structural/metrics check."""
     from tools.contracts import CheckResult
 
-    metric = config.get("metric", "cyclomatic_complexity")
-    threshold = config.get("threshold", 10)
-
+    metric = ctx.config.get("metric", "cyclomatic_complexity")
+    threshold = ctx.config.get("threshold", 10)
     results = []
 
-    for file_path in file_paths:
+    for file_path in ctx.file_paths:
         if file_path.suffix != ".py":
             continue
 
@@ -49,30 +39,22 @@ def execute_ast_check(check_id: str, check_name: str, severity: str,
             tree = ast.parse(content, filename=str(file_path))
         except SyntaxError as e:
             results.append(CheckResult(
-                check_id=check_id,
-                check_name=check_name,
-                passed=False,
-                severity="warning",
-                message=f"Syntax error parsing {file_path.name}: {e}",
-                file_path=str(file_path.relative_to(repo_root))
+                check_id=ctx.check_id, check_name=ctx.check_name, passed=False,
+                severity="warning", message=f"Syntax error parsing {file_path.name}: {e}",
+                file_path=str(file_path.relative_to(ctx.repo_root))
             ))
             continue
         except Exception:
             continue
 
-        relative_path = str(file_path.relative_to(repo_root))
+        relative_path = str(file_path.relative_to(ctx.repo_root))
         violations = _get_violations(metric, tree, content, threshold, relative_path)
 
         for v in violations:
             results.append(CheckResult(
-                check_id=check_id,
-                check_name=check_name,
-                passed=False,
-                severity=severity,
-                message=v["message"],
-                file_path=relative_path,
-                line_number=v.get("line"),
-                fix_hint=fix_hint
+                check_id=ctx.check_id, check_name=ctx.check_name, passed=False,
+                severity=ctx.severity, message=v["message"], file_path=relative_path,
+                line_number=v.get("line"), fix_hint=ctx.fix_hint
             ))
 
     return results

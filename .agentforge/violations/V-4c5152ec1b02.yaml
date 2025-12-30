@@ -6,6 +6,10 @@ severity: major
 file_path: cli/commands/conformance.py
 message: File exceeds line limit (535 lines > 500)
 detected_at: '2025-12-30T17:41:17.531631'
-last_seen_at: '2025-12-30T18:26:38.359514'
-status: open
+last_seen_at: '2025-12-30T18:41:16.171390'
+status: resolved
 fix_hint: Consider splitting into smaller files
+resolution:
+  resolved_at: '2025-12-30T18:44:40.461450'
+  resolved_by: system
+  reason: No longer detected in full verification run

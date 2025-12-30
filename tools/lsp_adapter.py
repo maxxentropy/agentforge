@@ -74,27 +74,13 @@ class LSPAdapter:
         self._initialized = False
         self._open_documents: set = set()
 
-    def _check_server_installed(self) -> bool:
-        """Check if the language server is installed."""
-        if not self.SERVER_COMMAND:
-            return False
-        return shutil.which(self.SERVER_COMMAND[0]) is not None
-
     def initialize(self) -> bool:
-        """
-        Initialize the language server.
-
-        Returns:
-            True if initialization successful
-
-        Raises:
-            LSPServerNotFound: If server binary not found
-            LSPInitializationError: If server fails to initialize
-        """
+        """Initialize the language server."""
         if self._initialized:
             return True
 
-        if not self._check_server_installed():
+        # Check if server is installed
+        if not self.SERVER_COMMAND or not shutil.which(self.SERVER_COMMAND[0]):
             raise LSPServerNotFound(self.SERVER_NAME, self.INSTALL_INSTRUCTIONS)
 
         self.client = LSPClient(self.SERVER_COMMAND, str(self.project_path))
@@ -129,12 +115,8 @@ class LSPAdapter:
                     'symbol': {'symbolKind': {'valueSet': list(range(1, 27))}},
                 },
             },
-            'initializationOptions': self._get_initialization_options(),
+            'initializationOptions': {},  # Override in subclass if needed
         }
-
-    def _get_initialization_options(self) -> dict:
-        """Get server-specific initialization options. Override in subclass."""
-        return {}
 
     def _ensure_initialized(self):
         """Ensure the server is initialized."""

@@ -6,7 +6,11 @@ severity: major
 file_path: cli/core.py
 message: 'Function ''call_claude_code'' has 51 lines (max: 50)'
 detected_at: '2025-12-30T18:00:51.929792'
-last_seen_at: '2025-12-30T18:26:38.345668'
-status: open
+last_seen_at: '2025-12-30T18:44:40.362884'
+status: resolved
 line_number: 138
 fix_hint: Extract logic into helper functions or use composition
+resolution:
+  resolved_at: '2025-12-30T18:47:38.754092'
+  resolved_by: system
+  reason: No longer detected in full verification run

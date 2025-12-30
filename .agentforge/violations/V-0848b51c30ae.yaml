@@ -6,6 +6,10 @@ severity: major
 file_path: tools/conformance/stores.py
 message: File exceeds line limit (585 lines > 500)
 detected_at: '2025-12-30T17:41:17.528340'
-last_seen_at: '2025-12-30T18:26:38.355621'
-status: open
+last_seen_at: '2025-12-30T19:16:48.078662'
+status: resolved
 fix_hint: Consider splitting into smaller files
+resolution:
+  resolved_at: '2025-12-30T19:20:39.409465'
+  resolved_by: system
+  reason: No longer detected in full verification run

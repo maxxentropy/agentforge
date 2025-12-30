@@ -6,7 +6,11 @@ severity: major
 file_path: tests/unit/tools/conformance/test_domain.py
 message: 'Class ''TestExemption'' has 16 methods (max: 15)'
 detected_at: '2025-12-30T17:10:15.622846'
-last_seen_at: '2025-12-30T18:26:38.365909'
-status: open
+last_seen_at: '2025-12-30T18:48:37.821623'
+status: resolved
 line_number: 203
 fix_hint: Split large classes using composition or inheritance
+resolution:
+  resolved_at: '2025-12-30T18:49:53.271734'
+  resolved_by: system
+  reason: No longer detected in full verification run

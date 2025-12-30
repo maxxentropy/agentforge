@@ -57,10 +57,13 @@ class VerificationRunner(CheckRunner, ReportGenerator):
     def __init__(self, config_path: Path = None, project_root: Path = None):
         self.project_root = project_root or Path.cwd()
         self.config_path = config_path or self.project_root / "config" / "correctness.yaml"
-        self.config = self._load_config()
+        # Load config inline
+        if self.config_path.exists():
+            with open(self.config_path) as f:
+                self.config = yaml.safe_load(f)
+        else:
+            self.config = {"checks": [], "profiles": {}, "settings": {}}
         self.context: Dict[str, Any] = {}
-
-        # Initialize runners (lazy loading)
         self._pyright_runner = None
         self._command_runner = None
         self._ast_checker = None
@@ -85,14 +88,6 @@ class VerificationRunner(CheckRunner, ReportGenerator):
         if self._ast_checker is None:
             self._ast_checker = ASTChecker(self.command_runner)
         return self._ast_checker
-
-    def _load_config(self) -> Dict[str, Any]:
-        """Load verification configuration."""
-        if not self.config_path.exists():
-            return {"checks": [], "profiles": {}, "settings": {}}
-
-        with open(self.config_path) as f:
-            return yaml.safe_load(f)
 
     def set_context(self, **kwargs):
         """Set context variables for template substitution."""
@@ -160,60 +155,45 @@ class VerificationRunner(CheckRunner, ReportGenerator):
     # Check Execution
     # =========================================================================
 
-    def _check_dependencies_met(self, deps: List[str], completed: set, results: list) -> bool:
-        """Check if all dependencies are met."""
-        return all(
-            d in completed and any(r.check_id == d and r.passed for r in results)
-            for d in deps
-        )
+    def _check_deps_met(self, deps: List[str], completed: set, results: list) -> bool:
+        """Check if dependencies are met."""
+        return all(d in completed and any(r.check_id == d and r.passed for r in results) for d in deps)
 
     def _create_skip_result(self, check: Dict, message: str) -> CheckResult:
         """Create a skipped check result."""
         return CheckResult(
-            check_id=check["id"],
-            check_name=check.get("name", check["id"]),
-            status=CheckStatus.SKIPPED,
-            severity=Severity(check.get("severity", "required")),
+            check_id=check["id"], check_name=check.get("name", check["id"]),
+            status=CheckStatus.SKIPPED, severity=Severity(check.get("severity", "required")),
             message=message,
         )
-
-    def _skip_remaining_checks(self, checks: List[Dict], completed: set, report: VerificationReport):
-        """Skip remaining checks due to fail_fast."""
-        for check in checks:
-            if check["id"] not in completed:
-                report.add_result(self._create_skip_result(
-                    check, "Skipped due to fail_fast on previous blocking failure"))
 
     def _run_checks(self, checks: List[Dict], settings: Dict[str, Any],
                     profile: Optional[str]) -> VerificationReport:
         """Execute a list of checks and generate report."""
         start_time = datetime.now()
-
         report = VerificationReport(
-            timestamp=start_time.isoformat() + "Z",
-            profile=profile,
-            project_path=self.context.get("project_path"),
-            working_dir=str(self.project_root),
-            total_checks=len(checks),
-            passed=0, failed=0, skipped=0, errors=0,
+            timestamp=start_time.isoformat() + "Z", profile=profile,
+            project_path=self.context.get("project_path"), working_dir=str(self.project_root),
+            total_checks=len(checks), passed=0, failed=0, skipped=0, errors=0,
             blocking_failures=0, required_failures=0, advisory_warnings=0, duration_ms=0,
         )
 
-        fail_fast = settings.get("fail_fast", False)
-        completed_checks = set()
+        fail_fast, completed = settings.get("fail_fast", False), set()
 
         for check in checks:
             deps = check.get("depends_on", [])
-            if deps and not self._check_dependencies_met(deps, completed_checks, report.results):
-                report.add_result(self._create_skip_result(check, f"Skipped due to failed dependencies: {deps}"))
+            if deps and not self._check_deps_met(deps, completed, report.results):
+                report.add_result(self._create_skip_result(check, f"Skipped: dependencies {deps}"))
                 continue
 
             result = self.run_check(check, settings)
             report.add_result(result)
-            completed_checks.add(check["id"])
+            completed.add(check["id"])
 
             if fail_fast and result.is_blocking_failure:
-                self._skip_remaining_checks(checks, completed_checks, report)
+                for c in checks:
+                    if c["id"] not in completed:
+                        report.add_result(self._create_skip_result(c, "Skipped: fail_fast"))
                 break
 
         report.duration_ms = int((datetime.now() - start_time).total_seconds() * 1000)

@@ -6,7 +6,11 @@ severity: major
 file_path: tools/builtin_checks_architecture.py
 message: 'Function ''check_circular_imports'' has 101 lines (max: 50)'
 detected_at: '2025-12-30T17:35:52.286048'
-last_seen_at: '2025-12-30T18:26:38.344467'
-status: open
+last_seen_at: '2025-12-30T20:02:49.165915'
+status: resolved
 line_number: 390
 fix_hint: Extract logic into helper functions or use composition
+resolution:
+  resolved_at: '2025-12-30T20:10:24.789934'
+  resolved_by: system
+  reason: No longer detected in full verification run

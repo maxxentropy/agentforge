@@ -6,7 +6,11 @@ severity: major
 file_path: tools/contracts_execution.py
 message: 'Function ''_check_forbid_matches'' has 8 parameters (max: 5)'
 detected_at: '2025-12-30T17:35:52.291148'
-last_seen_at: '2025-12-30T18:26:38.349079'
-status: open
+last_seen_at: '2025-12-30T18:50:52.643368'
+status: resolved
 line_number: 124
 fix_hint: Group related parameters into a dataclass or use **kwargs
+resolution:
+  resolved_at: '2025-12-30T19:03:47.204870'
+  resolved_by: system
+  reason: No longer detected in full verification run

@@ -6,9 +6,9 @@ severity: blocker
 file_path: ''
 message: Function 'file_size' not found in builtin_checks
 detected_at: '2025-12-30T17:10:15.579269'
-last_seen_at: '2025-12-30T17:35:52.297733'
+last_seen_at: '2025-12-30T20:18:06.324169'
 status: resolved
 resolution:
-  resolved_at: '2025-12-30T17:41:18.519200'
+  resolved_at: '2025-12-30T20:23:06.153947'
   resolved_by: system
   reason: No longer detected in full verification run

@@ -6,7 +6,11 @@ severity: minor
 file_path: tests/unit/tools/conformance/test_manager.py
 message: 'Class ''TestConformanceCheck'' has 8 methods (max: 3)'
 detected_at: '2025-12-30T17:10:15.616291'
-last_seen_at: '2025-12-30T18:26:38.403761'
-status: open
+last_seen_at: '2025-12-30T20:13:13.728010'
+status: resolved
 line_number: 105
 fix_hint: Split modules with too many classes into focused single-class modules
+resolution:
+  resolved_at: '2025-12-30T20:18:06.404225'
+  resolved_by: system
+  reason: No longer detected in full verification run

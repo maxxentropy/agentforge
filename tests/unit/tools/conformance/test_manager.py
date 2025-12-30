@@ -21,6 +21,13 @@ from conformance.domain import (
 from conformance.manager import ConformanceManager
 
 
+def _make_violation(vid: str, message: str, detected: datetime, status: ViolationStatus) -> Violation:
+    """Helper to create test violations."""
+    return Violation(
+        violation_id=vid, contract_id="c", check_id="k", severity=Severity.MAJOR,
+        file_path=f"{vid}.py", message=message, detected_at=detected, last_seen_at=detected, status=status)
+
+
 class TestConformanceManagerInit:
     """Tests for ConformanceManager initialization."""
 
@@ -186,10 +193,7 @@ class TestConformanceCheck:
         )
         first_seen = manager.list_violations()[0].last_seen_at
 
-        # Small delay to ensure different timestamp
-        import time
-        time.sleep(0.1)
-
+        # Run again - timestamp should be updated
         manager.run_conformance_check(
             verification_results=results,
             contracts_checked=["c"],
@@ -505,59 +509,16 @@ class TestPruneViolations:
         manager = ConformanceManager(tmp_path)
         manager.initialize()
 
-        old_date = datetime.utcnow() - timedelta(days=60)
-        recent_date = datetime.utcnow() - timedelta(days=5)
-
+        old = datetime.utcnow() - timedelta(days=60)
+        recent = datetime.utcnow() - timedelta(days=5)
         violations = [
-            Violation(
-                violation_id="V-old-resolved",
-                contract_id="c",
-                check_id="k",
-                severity=Severity.MAJOR,
-                file_path="f.py",
-                message="old resolved",
-                detected_at=old_date,
-                last_seen_at=old_date,
-                status=ViolationStatus.RESOLVED,
-            ),
-            Violation(
-                violation_id="V-old-stale",
-                contract_id="c",
-                check_id="k",
-                severity=Severity.MAJOR,
-                file_path="g.py",
-                message="old stale",
-                detected_at=old_date,
-                last_seen_at=old_date,
-                status=ViolationStatus.STALE,
-            ),
-            Violation(
-                violation_id="V-recent-resolved",
-                contract_id="c",
-                check_id="k",
-                severity=Severity.MAJOR,
-                file_path="h.py",
-                message="recent resolved",
-                detected_at=recent_date,
-                last_seen_at=recent_date,
-                status=ViolationStatus.RESOLVED,
-            ),
-            Violation(
-                violation_id="V-open",
-                contract_id="c",
-                check_id="k",
-                severity=Severity.MAJOR,
-                file_path="i.py",
-                message="open",
-                detected_at=old_date,
-                last_seen_at=old_date,
-                status=ViolationStatus.OPEN,
-            ),
+            _make_violation("V-old-resolved", "old resolved", old, ViolationStatus.RESOLVED),
+            _make_violation("V-old-stale", "old stale", old, ViolationStatus.STALE),
+            _make_violation("V-recent-resolved", "recent resolved", recent, ViolationStatus.RESOLVED),
+            _make_violation("V-open", "open", old, ViolationStatus.OPEN),
         ]
-
         for v in violations:
             manager.violation_store.save(v)
-
         return manager
 
     def test_prune_dry_run(self, manager):

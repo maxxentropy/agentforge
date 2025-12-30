@@ -15,8 +15,18 @@ For implementation details, see:
 - contracts_lsp.py: LSP-based checks
 """
 
+from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional
+
+
+@dataclass
+class RegistryOptions:
+    """Options for contract registry configuration."""
+    workspace_root: Optional[Path] = None
+    global_root: Optional[Path] = None
+    include_abstract: bool = False
+
 
 # Re-export types for backwards compatibility
 try:
@@ -84,36 +94,15 @@ def run_contract(contract: Contract, repo_root: Path,
     )
 
 
-def run_all_contracts(repo_root: Path,
-                      workspace_root: Optional[Path] = None,
-                      global_root: Optional[Path] = None,
-                      language: Optional[str] = None,
-                      repo_type: Optional[str] = None,
-                      file_paths: Optional[List[Path]] = None,
-                      include_abstract: bool = False) -> List[ContractResult]:
-    """
-    Run all applicable contracts for a repository.
+def run_all_contracts(
+    repo_root: Path, language: Optional[str] = None, repo_type: Optional[str] = None,
+    file_paths: Optional[List[Path]] = None, options: Optional[RegistryOptions] = None
+) -> List[ContractResult]:
+    """Run all applicable contracts for a repository."""
+    opts = options or RegistryOptions()
+    registry = ContractRegistry(repo_root, opts.workspace_root, opts.global_root)
 
-    By default, only runs CONCRETE contracts (no underscore prefix).
-    Abstract contracts (e.g., _base, _patterns-python) are building blocks
-    meant to be extended, not run directly. Concrete contracts (e.g., agentforge)
-    inherit from abstract contracts and are the entry points for projects.
-
-    Args:
-        repo_root: Repository root directory
-        workspace_root: Optional workspace contracts directory
-        global_root: Optional global contracts directory
-        language: Filter by language
-        repo_type: Filter by repo type
-        file_paths: Optional specific files to check
-        include_abstract: If True, also run abstract contracts (not recommended)
-
-    Returns:
-        List of ContractResult for each contract
-    """
-    registry = ContractRegistry(repo_root, workspace_root, global_root)
-
-    if include_abstract:
+    if opts.include_abstract:
         contracts = registry.get_enabled_contracts(language, repo_type, include_abstract=True)
     else:
         contracts = registry.get_applicable_contracts(language, repo_type)

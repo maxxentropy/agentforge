@@ -6,6 +6,10 @@ severity: major
 file_path: cli/main.py
 message: 'Required pattern not found: ''except\s+(Exception|BaseException|KeyboardInterrupt)'''
 detected_at: '2025-12-30T18:11:20.175797'
-last_seen_at: '2025-12-30T18:26:38.434253'
-status: open
+last_seen_at: '2025-12-30T18:44:40.458641'
+status: resolved
 fix_hint: Catch exceptions and provide user-friendly error messages
+resolution:
+  resolved_at: '2025-12-30T18:47:38.752257'
+  resolved_by: system
+  reason: No longer detected in full verification run

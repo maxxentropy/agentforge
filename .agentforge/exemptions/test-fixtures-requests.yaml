@@ -1,0 +1,17 @@
+id: test-fixtures-requests
+contract_id: agentforge
+check_ids:
+  - no-real-network-calls
+reason: |
+  Test file contains embedded source code fixtures with requests.get calls that test
+  the architecture checker's ability to detect HTTP library usage. The patterns are
+  test data written to temp files, not actual network calls.
+approved_by: Claude
+approved_date: '2025-12-30'
+status: active
+scope:
+  type: file_pattern
+  patterns:
+    - tests/unit/tools/test_builtin_checks_architecture.py
+expires: '2026-01-01'
+ticket: TEST-FIXTURES

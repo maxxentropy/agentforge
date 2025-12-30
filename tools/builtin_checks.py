@@ -303,12 +303,20 @@ def check_hardcoded_secrets(repo_root: Path, file_paths: List[Path],
 # ==============================================================================
 # These are imported from a separate module to keep file size manageable
 
-from builtin_checks_architecture import (
-    check_layer_imports,
-    check_constructor_injection,
-    check_domain_purity,
-    check_circular_imports,
-)
+try:
+    from .builtin_checks_architecture import (
+        check_layer_imports,
+        check_constructor_injection,
+        check_domain_purity,
+        check_circular_imports,
+    )
+except ImportError:
+    from builtin_checks_architecture import (
+        check_layer_imports,
+        check_constructor_injection,
+        check_domain_purity,
+        check_circular_imports,
+    )
 
 # ==============================================================================
 # Registry of built-in checks

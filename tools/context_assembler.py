@@ -165,23 +165,6 @@ class ContextAssembler:
                     file_data[file_path]["content"] += "\n\n// ...\n\n"
                 file_data[file_path]["content"] += result.chunk
 
-    def _get_symbol_file_path(self, symbol) -> str | None:
-        """Extract and normalize file path from symbol."""
-        file_path = symbol.location.file if hasattr(symbol, 'location') else None
-        if not file_path:
-            return None
-        try:
-            if Path(file_path).is_absolute():
-                return str(Path(file_path).relative_to(self.project_path))
-        except ValueError:
-            pass
-        return file_path
-
-    def _ensure_file_data_entry(self, file_data: Dict, file_path: str, source: str):
-        """Ensure file_data has entry for file_path."""
-        if file_path not in file_data:
-            file_data[file_path] = {"content": "", "score": 0.0, "symbols": [], "source": source}
-
     def _process_lsp_symbols(
         self, lsp_symbols: List[Any], query: str, file_data: Dict[str, Dict[str, Any]]
     ) -> None:
@@ -192,21 +175,25 @@ class ContextAssembler:
         query_lower = query.lower()
 
         for symbol in lsp_symbols:
-            file_path = self._get_symbol_file_path(symbol)
+            loc = getattr(symbol, 'location', None)
+            file_path = getattr(loc, 'file', None) if loc else None
             if not file_path:
                 continue
 
-            self._ensure_file_data_entry(file_data, file_path, "lsp")
+            # Normalize absolute paths to relative
+            p = Path(file_path)
+            if p.is_absolute() and str(p).startswith(str(self.project_path)):
+                file_path = str(p.relative_to(self.project_path))
 
-            symbol_name = symbol.name.lower() if hasattr(symbol, 'name') else ""
-            if symbol_name in query_lower:
+            file_data.setdefault(file_path, {"content": "", "score": 0.0, "symbols": [], "source": "lsp"})
+
+            symbol_name = getattr(symbol, 'name', '').lower()
+            if symbol_name and symbol_name in query_lower:
                 file_data[file_path]["score"] += 0.5
 
             file_data[file_path]["symbols"].append(SymbolInfo(
-                name=symbol.name,
-                kind=symbol.kind,
-                file_path=file_path,
-                line=symbol.location.line if hasattr(symbol.location, 'line') else 0,
+                name=getattr(symbol, 'name', ''), kind=getattr(symbol, 'kind', ''),
+                file_path=file_path, line=getattr(loc, 'line', 0) if loc else 0,
             ))
 
     def _apply_entry_point_boosts(

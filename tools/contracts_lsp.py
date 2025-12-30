@@ -14,28 +14,29 @@ Query types supported:
 
 import re
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .contracts_execution import CheckContext
 
 
-def execute_lsp_query_check(check_id: str, check_name: str, severity: str,
-                             config: Dict, repo_root: Path, file_paths: List[Path],
-                             fix_hint: Optional[str]) -> List:
+def execute_lsp_query_check(ctx: "CheckContext") -> List:
     """Execute an LSP-based semantic code analysis check."""
     from tools.contracts import CheckResult
 
     try:
         from tools.lsp_adapter import get_lsp_adapter
     except ImportError:
-        return [CheckResult(check_id=check_id, check_name=check_name, passed=False,
+        return [CheckResult(check_id=ctx.check_id, check_name=ctx.check_name, passed=False,
                            severity="warning", message="LSP adapter not available - skipping semantic check")]
 
-    query_type = config.get("query", "symbols")
-    filter_config = config.get("filter", {})
-    exclude_config = config.get("exclude", {})
-    assertion = config.get("assertion", "none_exist")
+    query_type = ctx.config.get("query", "symbols")
+    filter_config = ctx.config.get("filter", {})
+    exclude_config = ctx.config.get("exclude", {})
+    assertion = ctx.config.get("assertion", "none_exist")
     results = []
 
-    for file_path in file_paths:
+    for file_path in ctx.file_paths:
         try:
             adapter = get_lsp_adapter(file_path)
             if adapter is None:
@@ -45,27 +46,27 @@ def execute_lsp_query_check(check_id: str, check_name: str, severity: str,
 
         try:
             matches = _run_lsp_query(adapter, file_path, query_type, filter_config, exclude_config)
-            rel_path = str(file_path.relative_to(repo_root))
+            rel_path = str(file_path.relative_to(ctx.repo_root))
 
             if assertion in ("none_exist", "count_zero"):
                 for match in matches:
                     results.append(CheckResult(
-                        check_id=check_id, check_name=check_name, passed=False, severity=severity,
+                        check_id=ctx.check_id, check_name=ctx.check_name, passed=False,
+                        severity=ctx.severity, file_path=rel_path, fix_hint=ctx.fix_hint,
                         message=f"Found {match.get('kind', 'symbol')}: {match.get('name', 'unknown')}",
-                        file_path=rel_path, line_number=match.get("line"), column=match.get("column"),
-                        fix_hint=fix_hint
+                        line_number=match.get("line"), column=match.get("column"),
                     ))
             elif assertion in ("all_exist", "count_nonzero") and not matches:
                 results.append(CheckResult(
-                    check_id=check_id, check_name=check_name, passed=False, severity=severity,
+                    check_id=ctx.check_id, check_name=ctx.check_name, passed=False,
+                    severity=ctx.severity, file_path=rel_path, fix_hint=ctx.fix_hint,
                     message=f"Required pattern not found in {file_path.name}",
-                    file_path=rel_path, fix_hint=fix_hint
                 ))
         except Exception as e:
             results.append(CheckResult(
-                check_id=check_id, check_name=check_name, passed=False, severity="warning",
+                check_id=ctx.check_id, check_name=ctx.check_name, passed=False, severity="warning",
                 message=f"LSP query failed for {file_path.name}: {e}",
-                file_path=str(file_path.relative_to(repo_root))
+                file_path=str(file_path.relative_to(ctx.repo_root))
             ))
 
     return results

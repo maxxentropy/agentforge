@@ -245,10 +245,12 @@ def run_workspace_add_repo(args):
     _print_optional_repo_params(args, layers, tags)
 
     try:
-        add_repo_to_workspace(
-            ctx, name=args.name, path=args.path, repo_type=args.type, language=args.language,
-            framework=args.framework, lsp=args.lsp, layers=layers, tags=tags,
+        from tools.workspace import RepoMetadata
+        metadata = RepoMetadata(
+            repo_type=args.type, language=args.language, framework=args.framework,
+            lsp=args.lsp, layers=layers, tags=tags
         )
+        add_repo_to_workspace(ctx, name=args.name, path=args.path, metadata=metadata)
         click.echo(f"\nRepository added: {args.name}")
         click.echo(f"   Updated: {ctx.workspace_path}")
     except Exception as e:

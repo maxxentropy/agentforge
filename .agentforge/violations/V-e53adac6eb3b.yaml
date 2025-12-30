@@ -6,7 +6,7 @@ severity: minor
 file_path: tests/unit/tools/test_builtin_checks_architecture.py
 message: 'Forbidden pattern found: ''open("'''
 detected_at: '2025-12-30T17:10:15.644381'
-last_seen_at: '2025-12-30T18:26:38.423784'
+last_seen_at: '2025-12-30T20:29:36.745577'
 status: open
 line_number: 890
 fix_hint: Use tmp_path fixture or Path(__file__).parent for test data

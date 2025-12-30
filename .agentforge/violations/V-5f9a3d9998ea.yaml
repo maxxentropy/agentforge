@@ -6,7 +6,11 @@ severity: major
 file_path: tools/contracts.py
 message: 'Function ''run_all_contracts'' has 7 parameters (max: 5)'
 detected_at: '2025-12-30T17:35:52.294291'
-last_seen_at: '2025-12-30T18:26:38.351972'
-status: open
+last_seen_at: '2025-12-30T19:20:39.327615'
+status: resolved
 line_number: 87
 fix_hint: Group related parameters into a dataclass or use **kwargs
+resolution:
+  resolved_at: '2025-12-30T19:31:30.469817'
+  resolved_by: system
+  reason: No longer detected in full verification run

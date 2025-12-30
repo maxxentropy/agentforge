@@ -1,0 +1,18 @@
+id: max-cyclomatic-complexity-verification-checks
+contract_id: agentforge
+check_ids:
+  - max-cyclomatic-complexity
+reason: |
+  Trade-off from god-class refactoring: reduced CheckRunner from 20 to 15 methods by
+  inlining helpers. The _run_command_check function inherently requires handling subprocess
+  execution, exit codes, indicator overrides, error parsing, and exception handling.
+  Splitting would re-introduce god-class violation. Scheduled for architectural review.
+approved_by: Claude
+approved_date: '2025-12-30'
+status: active
+scope:
+  type: file_pattern
+  patterns:
+    - tools/verification_checks.py
+expires: '2026-01-06'
+ticket: REFACTOR-001

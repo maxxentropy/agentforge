@@ -30,75 +30,32 @@ class CheckRunner:
 
     # --- Command Check ---
 
-    def _check_output_indicators(self, output: str, passed: bool,
-                                  success_indicators: list, failure_indicators: list) -> bool:
-        """Check output for success/failure indicators and adjust passed status."""
-        if passed and failure_indicators:
-            for indicator in failure_indicators:
-                if indicator in output:
-                    return False
-        if not passed and success_indicators:
-            for indicator in success_indicators:
-                if indicator in output:
-                    return True
-        return passed
-
-    def _parse_error_output(self, output: str, error_parser: Dict | None) -> list:
-        """Parse structured errors from command output."""
-        if not error_parser:
-            return []
-        pattern = error_parser["pattern"]
-        return [match.groupdict() for match in re.finditer(pattern, output)]
-
     def _run_command_check(self, check: Dict, settings: Dict) -> CheckResult:
         """Run a shell command check."""
-        check_id = check["id"]
-        check_name = check.get("name", check_id)
-        severity = Severity(check.get("severity", "required"))
-
+        check_id, severity = check["id"], Severity(check.get("severity", "required"))
+        check_name, timeout = check.get("name", check_id), check.get("timeout", settings.get("default_timeout", 300))
         command = self._substitute_variables(check["command"])
-        working_dir = self._substitute_variables(
-            check.get("working_dir", settings.get("working_dir", "."))
-        )
-        timeout = check.get("timeout", settings.get("default_timeout", 300))
-
-        if not os.path.isabs(working_dir):
-            working_dir = str(self.project_root / working_dir)
+        wd = self._substitute_variables(check.get("working_dir", settings.get("working_dir", ".")))
+        cwd = wd if os.path.isabs(wd) else str(self.project_root / wd)
 
         try:
-            command_list = shlex.split(command) if isinstance(command, str) else command
-            result = subprocess.run(
-                command_list, shell=False, capture_output=True, text=True,
-                timeout=timeout, cwd=working_dir, env={**os.environ, "NO_COLOR": "1"},
-            )
+            r = subprocess.run(shlex.split(command), capture_output=True, text=True, timeout=timeout, cwd=cwd)
+            output, ok = r.stdout + r.stderr, r.returncode == 0
+            # Indicators override exit code
+            for ind in check.get("failure_indicators", []):
+                ok = ok and ind not in output
+            for ind in check.get("success_indicators", []):
+                ok = ok or ind in output
 
-            output = result.stdout + result.stderr
-            passed = self._check_output_indicators(
-                output, result.returncode == 0,
-                check.get("success_indicators", []), check.get("failure_indicators", [])
-            )
-            errors = self._parse_error_output(output, check.get("error_parser")) if not passed else []
-
-            return CheckResult(
-                check_id=check_id, check_name=check_name,
-                status=CheckStatus.PASSED if passed else CheckStatus.FAILED,
-                severity=severity,
-                message=check.get("message", f"Command {'succeeded' if passed else 'failed'}"),
-                output=output[:5000] if len(output) > 5000 else output,
-                errors=errors, details=f"Exit code: {result.returncode}",
-            )
-
-        except subprocess.TimeoutExpired:
-            return CheckResult(
-                check_id=check_id, check_name=check_name, status=CheckStatus.ERROR,
-                severity=severity, message=f"Command timed out after {timeout}s",
-            )
-
+            pattern = check.get("error_parser", {}).get("pattern", "")
+            errors = [m.groupdict() for m in re.finditer(pattern, output)][:50] if pattern else []
+            return CheckResult(check_id=check_id, check_name=check_name, severity=severity, errors=errors if not ok else [],
+                               status=CheckStatus.PASSED if ok else CheckStatus.FAILED, output=output[:5000],
+                               message=check.get("message") or f"Command {'succeeded' if ok else 'failed'}",
+                               details=f"Exit code: {r.returncode}")
         except Exception as e:
-            return CheckResult(
-                check_id=check_id, check_name=check_name, status=CheckStatus.ERROR,
-                severity=severity, message=f"Command execution failed: {str(e)}",
-            )
+            return CheckResult(check_id=check_id, check_name=check_name, status=CheckStatus.ERROR, severity=severity,
+                               message=f"Command timed out after {timeout}s" if "TimeoutExpired" in type(e).__name__ else str(e))
 
     # --- Regex Check ---
 
@@ -142,47 +99,26 @@ class CheckRunner:
             pass
         return matches
 
-    def _determine_regex_result(self, matches_found: list, negative_match: bool,
-                                  check_message: str) -> tuple[bool, str, list]:
-        """Determine regex check result. Returns (passed, message, errors)."""
-        if negative_match:
-            passed = len(matches_found) == 0
-            message = "No forbidden patterns found" if passed else check_message or "Pattern should not match"
-            errors = [{"file": m["file"], "line": m["line"], "match": m["match"]}
-                      for m in matches_found[:20]] if not passed else []
-        else:
-            passed = len(matches_found) > 0
-            message = f"Found {len(matches_found)} match(es)" if passed else check_message or "Pattern should match"
-            errors = []
-        return passed, message, errors
-
     def _run_regex_check(self, check: Dict, settings: Dict) -> CheckResult:
         """Run a regex pattern check on source files."""
-        check_id = check["id"]
+        check_id, severity = check["id"], Severity(check.get("severity", "required"))
         check_name = check.get("name", check_id)
-        severity = Severity(check.get("severity", "required"))
 
-        patterns = check.get("patterns", [])
-        if not patterns and check.get("pattern"):
-            patterns = [{"name": "pattern", "pattern": check["pattern"]}]
+        patterns = check.get("patterns") or [{"name": "pattern", "pattern": check.get("pattern", "")}]
+        files = self._collect_files_for_check(
+            check.get("file_patterns", settings.get("include_patterns", ["**/*.cs"])),
+            check.get("exclude_patterns", settings.get("exclude_patterns", [])))
 
-        include_patterns = check.get("file_patterns", settings.get("include_patterns", ["**/*.cs"]))
-        exclude_patterns = check.get("exclude_patterns", settings.get("exclude_patterns", []))
+        matches_found = [m for f in files for m in self._search_patterns_in_file(f, patterns)]
+        found_count, negative_match = len(matches_found), check.get("negative_match", False)
+        passed = (found_count == 0) == negative_match or (found_count > 0) != negative_match
 
-        files = self._collect_files_for_check(include_patterns, exclude_patterns)
-        matches_found = []
-        for file_path in files:
-            matches_found.extend(self._search_patterns_in_file(file_path, patterns))
+        errors = [{"file": m["file"], "line": m["line"], "match": m["match"]} for m in matches_found[:20]] if not passed else []
+        msg = check.get("message") or (f"Found {found_count} match(es)" if passed else "Pattern match failed")
 
-        passed, message, errors = self._determine_regex_result(
-            matches_found, check.get("negative_match", False), check.get("message"))
-
-        return CheckResult(
-            check_id=check_id, check_name=check_name,
-            status=CheckStatus.PASSED if passed else CheckStatus.FAILED,
-            severity=severity, message=message, errors=errors,
-            details=f"Searched {len(files)} files, found {len(matches_found)} matches",
-        )
+        return CheckResult(check_id=check_id, check_name=check_name, severity=severity, errors=errors,
+                           status=CheckStatus.PASSED if passed else CheckStatus.FAILED, message=msg,
+                           details=f"Searched {len(files)} files, found {found_count} matches")
 
     # --- File Exists Check ---
 
@@ -233,6 +169,7 @@ class CheckRunner:
             with open(source_file, "r", encoding="utf-8", errors="ignore") as f:
                 content = f.read()
 
+            lines = content.split("\n")
             using_pattern = r"using\s+([a-zA-Z0-9_.]+)\s*;"
             usings = re.findall(using_pattern, content)
             rel_path = os.path.relpath(source_file, self.project_root)
@@ -240,7 +177,8 @@ class CheckRunner:
             for using in usings:
                 for forbidden in forbidden_imports:
                     if forbidden in using:
-                        line_num = self._find_using_line(content, using)
+                        # Find line number of using statement
+                        line_num = next((i for i, ln in enumerate(lines, 1) if f"using {using}" in ln), None)
                         violations.append({
                             "file": rel_path, "line": line_num, "import": using,
                             "forbidden": forbidden, "message": rule_message,
@@ -248,13 +186,6 @@ class CheckRunner:
         except Exception:
             pass
         return violations
-
-    def _find_using_line(self, content: str, using: str) -> int | None:
-        """Find the line number of a using statement."""
-        for i, line in enumerate(content.split("\n"), 1):
-            if f"using {using}" in line:
-                return i
-        return None
 
     def _run_import_check(self, check: Dict, settings: Dict) -> CheckResult:
         """Check import/dependency rules (layer isolation)."""
@@ -382,54 +313,34 @@ class CheckRunner:
 
     # --- LSP Query Check (Pyright) ---
 
-    def _filter_pyright_diagnostics(self, diagnostics: list, file_set: set, severity_filter: list) -> list:
-        """Filter pyright diagnostics to target files and severities."""
-        filtered = []
-        for diag in diagnostics:
-            diag_path = str(Path(diag.file).resolve()) if diag.file else ""
-            if diag_path in file_set and diag.severity in severity_filter:
-                filtered.append(diag)
-        return filtered
-
     def _run_lsp_query_check(self, check: Dict, settings: Dict) -> CheckResult:
         """Run semantic Python analysis using pyright CLI."""
-        check_id = check["id"]
+        check_id, severity = check["id"], Severity(check.get("severity", "required"))
         check_name = check.get("name", check_id)
-        severity = Severity(check.get("severity", "required"))
 
         try:
-            include_patterns = check.get("file_patterns", settings.get("include_patterns", ["**/*.py"]))
-            exclude_patterns = check.get("exclude_patterns", settings.get("exclude_patterns", []))
-            files = self._collect_files_for_check(include_patterns, exclude_patterns)
+            files = self._collect_files_for_check(
+                check.get("file_patterns", settings.get("include_patterns", ["**/*.py"])),
+                check.get("exclude_patterns", settings.get("exclude_patterns", [])))
+            file_set = {str(Path(f).resolve()) for f in files}
+            severity_filter = set(check.get("severity_filter", ["error"]))
 
             result = self.pyright_runner.check_project()
-            file_set = set(str(Path(f).resolve()) for f in files)
-            filtered_diags = self._filter_pyright_diagnostics(
-                result.diagnostics, file_set, check.get("severity_filter", ["error"])
-            )
+            filtered = [d for d in result.diagnostics
+                        if str(Path(d.file).resolve()) in file_set and d.severity in severity_filter]
 
-            errors = [{
-                "file": os.path.relpath(d.file, self.project_root) if d.file else "",
-                "line": d.line, "column": d.column, "message": d.message,
-                "rule": d.rule, "severity": d.severity,
-            } for d in filtered_diags[:50]]
+            errors = [{"file": os.path.relpath(d.file, self.project_root), "line": d.line, "column": d.column,
+                       "message": d.message, "rule": d.rule, "severity": d.severity} for d in filtered[:50]]
+            passed = len(filtered) == 0
+            msg = f"Type check passed ({result.files_analyzed} files)" if passed else f"Found {len(filtered)} type issues"
 
-            passed = len(filtered_diags) == 0
-            message = f"Found {len(filtered_diags)} type issues" if not passed else f"Type check passed ({result.files_analyzed} files analyzed)"
+            return CheckResult(check_id=check_id, check_name=check_name, severity=severity, errors=errors,
+                               status=CheckStatus.PASSED if passed else CheckStatus.FAILED, message=msg,
+                               details=f"Analyzed {len(files)} files, {result.error_count} errors, {result.warning_count} warnings")
 
-            return CheckResult(
-                check_id=check_id, check_name=check_name,
-                status=CheckStatus.PASSED if passed else CheckStatus.FAILED,
-                severity=severity, message=message, errors=errors,
-                details=f"Analyzed {len(files)} files, {result.error_count} errors, {result.warning_count} warnings",
-            )
-
-        except RuntimeError as e:
-            return CheckResult(check_id=check_id, check_name=check_name, status=CheckStatus.ERROR,
-                               severity=severity, message=str(e), details="Install pyright with: pip install pyright")
         except Exception as e:
-            return CheckResult(check_id=check_id, check_name=check_name, status=CheckStatus.ERROR,
-                               severity=severity, message=f"LSP query check failed: {str(e)}", details=str(e))
+            msg = str(e) if isinstance(e, RuntimeError) else f"LSP query check failed: {e}"
+            return CheckResult(check_id=check_id, check_name=check_name, status=CheckStatus.ERROR, severity=severity, message=msg)
 
     # --- AST Check ---
 

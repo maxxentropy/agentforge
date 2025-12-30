@@ -1,0 +1,17 @@
+id: test-fixtures-sqlite3
+contract_id: agentforge
+check_ids:
+  - unit-tests-isolated
+reason: |
+  Test file contains embedded source code fixtures that test the architecture checker's
+  ability to detect forbidden imports like sqlite3. The patterns are test data written
+  to temp files, not actual database connections.
+approved_by: Claude
+approved_date: '2025-12-30'
+status: active
+scope:
+  type: file_pattern
+  patterns:
+    - tests/unit/tools/test_builtin_checks_architecture.py
+expires: '2026-01-01'
+ticket: TEST-FIXTURES

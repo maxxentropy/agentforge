@@ -135,18 +135,6 @@ class VectorSearch:
         ext = Path(file_path).suffix.lower()
         return ext_map.get(ext, "text")
 
-    def _compute_project_hash(self) -> str:
-        """Compute hash of project files for cache invalidation."""
-        files = sorted(self._get_files())
-        hasher = hashlib.sha256()
-        for f in files:
-            try:
-                stat = f.stat()
-                hasher.update(f"{f}:{stat.st_mtime}:{stat.st_size}".encode())
-            except Exception:
-                continue
-        return hasher.hexdigest()[:16]
-
     def _try_load_cache(self, project_hash: str, stats: IndexStats) -> bool:
         """Try to load index from cache. Returns True if cache was valid."""
         import faiss
@@ -211,7 +199,17 @@ class VectorSearch:
 
         stats = IndexStats()
         start_time = datetime.now()
-        project_hash = self._compute_project_hash()
+
+        # Compute project hash for cache invalidation
+        files = sorted(self._get_files())
+        hasher = hashlib.sha256()
+        for f in files:
+            try:
+                stat = f.stat()
+                hasher.update(f"{f}:{stat.st_mtime}:{stat.st_size}".encode())
+            except Exception:
+                continue
+        project_hash = hasher.hexdigest()[:16]
 
         if not force_rebuild and self._try_load_cache(project_hash, stats):
             return stats

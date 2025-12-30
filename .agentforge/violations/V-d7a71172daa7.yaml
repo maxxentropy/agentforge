@@ -6,6 +6,6 @@ severity: minor
 file_path: cli/click_commands/conformance.py
 message: 'Required pattern not found: ''sys\.exit\s*\(\s*[012]\s*\)|raise\s+(SystemExit|click\.Abort|typer\.Abort)'''
 detected_at: '2025-12-30T18:15:45.062790'
-last_seen_at: '2025-12-30T18:26:38.431176'
+last_seen_at: '2025-12-30T20:29:36.753370'
 status: open
 fix_hint: Use sys.exit(0) for success, sys.exit(1) for errors

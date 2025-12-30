@@ -18,7 +18,8 @@ from .domain import (
     Exemption, ExemptionStatus,
     ConformanceReport, ConformanceSummary, HistorySnapshot
 )
-from .stores import ViolationStore, ExemptionRegistry, HistoryStore, AtomicFileWriter, ReportStore
+from .stores import ViolationStore, ExemptionRegistry, AtomicFileWriter, ReportStore
+from .history_store import HistoryStore
 
 
 class ConformanceManager:

@@ -30,65 +30,32 @@ class CommandRunner:
         self.working_dir = working_dir or Path.cwd()
 
     def run(
-        self,
-        command: list[str],
-        *,
-        parse_json: bool = False,
-        timeout: int = 120,
-        success_codes: list[int] | None = None
+        self, command: list[str], *, parse_json: bool = False,
+        timeout: int = 120, success_codes: list[int] | None = None
     ) -> CommandResult:
-        """
-        Run a command and return the result.
-
-        Args:
-            command: Command and arguments as list.
-            parse_json: If True, parse stdout as JSON.
-            timeout: Timeout in seconds.
-            success_codes: Return codes considered success. Default [0].
-
-        Returns:
-            CommandResult with output.
-        """
+        """Run a command and return the result."""
         success_codes = success_codes or [0]
 
         try:
             result = subprocess.run(
-                command,
-                capture_output=True,
-                text=True,
-                cwd=self.working_dir,
-                timeout=timeout
+                command, capture_output=True, text=True,
+                cwd=self.working_dir, timeout=timeout
             )
         except subprocess.TimeoutExpired:
-            return CommandResult(
-                success=False,
-                return_code=-1,
-                stdout="",
-                stderr=f"Command timed out after {timeout}s",
-                parsed_output=None
-            )
+            return CommandResult(False, -1, "", f"Command timed out after {timeout}s", None)
         except FileNotFoundError:
-            return CommandResult(
-                success=False,
-                return_code=-1,
-                stdout="",
-                stderr=f"Command not found: {command[0]}",
-                parsed_output=None
-            )
+            return CommandResult(False, -1, "", f"Command not found: {command[0]}", None)
 
         parsed = None
         if parse_json and result.stdout:
             try:
                 parsed = json.loads(result.stdout)
             except json.JSONDecodeError:
-                pass  # Leave parsed as None
+                pass
 
         return CommandResult(
-            success=result.returncode in success_codes,
-            return_code=result.returncode,
-            stdout=result.stdout,
-            stderr=result.stderr,
-            parsed_output=parsed
+            result.returncode in success_codes, result.returncode,
+            result.stdout, result.stderr, parsed
         )
 
     # Convenience methods for common tools

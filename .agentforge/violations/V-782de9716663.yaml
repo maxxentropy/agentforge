@@ -1,0 +1,16 @@
+schema_version: '1.0'
+violation_id: V-782de9716663
+contract_id: agentforge
+check_id: max-cyclomatic-complexity
+severity: major
+file_path: tools/verification_checks.py
+message: 'Function ''_run_lsp_query_check'' has complexity 11 (max: 10)'
+detected_at: '2025-12-30T19:57:36.776662'
+last_seen_at: '2025-12-30T19:57:36.776662'
+status: resolved
+line_number: 363
+fix_hint: Break complex functions into smaller, focused helper functions
+resolution:
+  resolved_at: '2025-12-30T19:59:15.467916'
+  resolved_by: system
+  reason: No longer detected in full verification run

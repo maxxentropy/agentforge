@@ -57,31 +57,25 @@ def run_intake(args):
             print("Next: python execute.py clarify")
 
 
-def run_clarify(args):
-    """Execute CLARIFY contract."""
-    print()
-    print("=" * 60)
-    print("CLARIFY")
-    print("=" * 60)
-
-    # Load intake record
-    intake_path = Path(args.intake_file)
-    if not intake_path.exists():
-        print(f"Error: {intake_path} not found")
-        print("Run intake first: python execute.py intake --request '...'")
+def _load_required_file(path: Path, error_hint: str = ""):
+    """Load a required YAML file, exit on failure."""
+    if not path.exists():
+        print(f"Error: {path} not found")
+        if error_hint:
+            print(error_hint)
         sys.exit(1)
+    with open(path) as f:
+        return yaml.safe_load(f)
 
-    with open(intake_path) as f:
-        intake_record = yaml.safe_load(f)
 
-    # Load history if exists
-    history = []
+def _load_conversation_history(args) -> list:
+    """Load conversation history and optionally append an answer."""
     history_path = Path('outputs/conversation_history.yaml')
+    history = []
     if history_path.exists():
         with open(history_path) as f:
             history = yaml.safe_load(f) or []
 
-    # Add answer to history if provided
     if args.answer:
         history.append({
             'question': 'Previous question',
@@ -90,22 +84,12 @@ def run_clarify(args):
         })
         with open(history_path, 'w') as f:
             yaml.dump(history, f, default_flow_style=False)
+    return history
 
-    inputs = {
-        'intake_record': intake_record,
-        'conversation_history': history,
-    }
 
-    result = execute_contract('spec.clarify.v1', inputs, args.use_api)
-
-    print()
-    print("-" * 60)
-    print("RESULT")
-    print("-" * 60)
-    print(yaml.dump(result, default_flow_style=False, sort_keys=False))
-
+def _handle_clarify_result(result: dict):
+    """Handle clarify result based on mode."""
     mode = result.get('mode', 'unknown')
-
     if mode == 'question':
         question = result.get('question', {})
         print("-" * 60)
@@ -114,15 +98,38 @@ def run_clarify(args):
         print(f"\n  {question.get('text', 'No question')}\n")
         print("Run with your answer:")
         print(f"  python execute.py clarify --answer \"your answer here\"")
-
     elif mode == 'complete':
         output_path = Path('outputs/clarification_log.yaml')
         with open(output_path, 'w') as f:
             yaml.dump(result.get('clarification_log', result), f, default_flow_style=False)
-
         print(f"\n✅ Clarification complete! Saved to: {output_path}")
         print()
         print("Next: python execute.py analyze")
+
+
+def run_clarify(args):
+    """Execute CLARIFY contract."""
+    print()
+    print("=" * 60)
+    print("CLARIFY")
+    print("=" * 60)
+
+    intake_record = _load_required_file(
+        Path(args.intake_file),
+        "Run intake first: python execute.py intake --request '...'"
+    )
+    history = _load_conversation_history(args)
+
+    inputs = {'intake_record': intake_record, 'conversation_history': history}
+    result = execute_contract('spec.clarify.v1', inputs, args.use_api)
+
+    print()
+    print("-" * 60)
+    print("RESULT")
+    print("-" * 60)
+    print(yaml.dump(result, default_flow_style=False, sort_keys=False))
+
+    _handle_clarify_result(result)
 
 
 def _retrieve_context(project_path: str, intake_record: dict) -> str | None:
@@ -200,6 +207,50 @@ def run_analyze(args):
     print("Next: python execute.py draft")
 
 
+def _print_draft_summary(result: dict):
+    """Print draft specification summary."""
+    metadata = result.get('metadata', {})
+    print(f"  Feature: {metadata.get('feature_name', 'Unknown')}")
+    print(f"  Version: {metadata.get('version', '1.0')}")
+    print(f"  Status: {metadata.get('status', 'draft')}")
+
+    reqs = result.get('requirements', {})
+    print(f"  Functional Requirements: {len(reqs.get('functional', []))}")
+    print(f"  Non-Functional Requirements: {len(reqs.get('non_functional', []))}")
+    print(f"  Entities: {len(result.get('entities', []))}")
+
+
+def _save_draft_success(result: dict, output_path: Path):
+    """Save successful draft result and print summary."""
+    with open(output_path, 'w') as f:
+        yaml.dump(result, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
+
+    print(f"\n✅ Specification saved to: {output_path}")
+    print()
+    print("-" * 60)
+    print("SUMMARY")
+    print("-" * 60)
+    _print_draft_summary(result)
+    print()
+    print("Validate schema: python tools/validate_schema.py schemas/specification.schema.yaml outputs/specification.yaml")
+    print("Render to markdown: python execute.py render-spec")
+    print("Next step: python execute.py validate")
+
+
+def _save_draft_failure(result):
+    """Save failed draft result (raw output)."""
+    raw_path = Path('outputs/specification_raw.txt')
+    raw_content = result.get('_raw', str(result)) if isinstance(result, dict) else str(result)
+    with open(raw_path, 'w') as f:
+        f.write(raw_content)
+
+    print(f"\n⚠️  Could not parse output as YAML")
+    print(f"   Raw output saved to: {raw_path}")
+    print(f"   Error: {result.get('_parse_error', 'Unknown')}")
+    print()
+    print("Try re-running the draft step.")
+
+
 def run_draft(args):
     """Execute DRAFT contract."""
     print()
@@ -207,68 +258,19 @@ def run_draft(args):
     print("DRAFT")
     print("=" * 60)
 
-    # Load required files
-    with open(args.intake_file) as f:
-        intake_record = yaml.safe_load(f)
-    with open(args.clarification_file) as f:
-        clarification_log = yaml.safe_load(f)
-    with open(args.analysis_file) as f:
-        analysis_report = yaml.safe_load(f)
-
     inputs = {
-        'intake_record': intake_record,
-        'clarification_log': clarification_log,
-        'analysis_report': analysis_report,
+        'intake_record': _load_required_file(Path(args.intake_file)),
+        'clarification_log': _load_required_file(Path(args.clarification_file)),
+        'analysis_report': _load_required_file(Path(args.analysis_file)),
     }
 
     result = execute_contract('spec.draft.v1', inputs, args.use_api)
-
-    # Draft output is now YAML (specification.schema.yaml)
     output_path = Path('outputs/specification.yaml')
 
     if isinstance(result, dict) and '_raw' not in result:
-        # Successfully parsed as YAML - save it
-        with open(output_path, 'w') as f:
-            yaml.dump(result, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
-
-        print(f"\n✅ Specification saved to: {output_path}")
-        print()
-        print("-" * 60)
-        print("SUMMARY")
-        print("-" * 60)
-
-        # Show summary
-        metadata = result.get('metadata', {})
-        print(f"  Feature: {metadata.get('feature_name', 'Unknown')}")
-        print(f"  Version: {metadata.get('version', '1.0')}")
-        print(f"  Status: {metadata.get('status', 'draft')}")
-
-        reqs = result.get('requirements', {})
-        fr_count = len(reqs.get('functional', []))
-        nfr_count = len(reqs.get('non_functional', []))
-        entity_count = len(result.get('entities', []))
-
-        print(f"  Functional Requirements: {fr_count}")
-        print(f"  Non-Functional Requirements: {nfr_count}")
-        print(f"  Entities: {entity_count}")
-
-        print()
-        print("Validate schema: python tools/validate_schema.py schemas/specification.schema.yaml outputs/specification.yaml")
-        print("Render to markdown: python execute.py render-spec")
-        print("Next step: python execute.py validate")
-
+        _save_draft_success(result, output_path)
     else:
-        # Couldn't parse as YAML - save raw and warn
-        raw_path = Path('outputs/specification_raw.txt')
-        raw_content = result.get('_raw', str(result)) if isinstance(result, dict) else str(result)
-        with open(raw_path, 'w') as f:
-            f.write(raw_content)
-
-        print(f"\n⚠️  Could not parse output as YAML")
-        print(f"   Raw output saved to: {raw_path}")
-        print(f"   Error: {result.get('_parse_error', 'Unknown')}")
-        print()
-        print("Try re-running the draft step.")
+        _save_draft_failure(result)
 
 
 def _load_spec_content(spec_path: Path) -> tuple:

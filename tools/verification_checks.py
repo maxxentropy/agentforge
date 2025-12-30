@@ -30,8 +30,16 @@ from typing import Dict, Any, List, Callable
 
 try:
     from .verification_types import CheckResult, CheckStatus, Severity
+    from .verification_contracts_check import (
+        get_contract_results, build_contract_errors,
+        aggregate_contract_stats, build_contract_message
+    )
 except ImportError:
     from verification_types import CheckResult, CheckStatus, Severity
+    from verification_contracts_check import (
+        get_contract_results, build_contract_errors,
+        aggregate_contract_stats, build_contract_message
+    )
 
 
 class CheckRunner:
@@ -379,44 +387,6 @@ class CheckRunner:
     # Contracts Check
     # =========================================================================
 
-    def _get_contract_results(self, check: Dict):
-        """Get contract results based on check config. Returns (results, error_msg)."""
-        from contracts import ContractRegistry, run_contract, run_all_contracts
-
-        contract_name = check.get("contract")
-        if contract_name:
-            registry = ContractRegistry(self.project_root)
-            contract = registry.get_contract(contract_name)
-            if not contract:
-                return None, f"Contract not found: {contract_name}"
-            return [run_contract(contract, self.project_root, registry)], None
-
-        return run_all_contracts(
-            self.project_root, language=check.get("language"), repo_type=check.get("repo_type")
-        ), None
-
-    def _build_contract_errors(self, results: list) -> list:
-        """Build error details from contract results."""
-        errors = []
-        for result in results:
-            for check_result in result.check_results:
-                if not check_result.passed and not check_result.exempted:
-                    errors.append({
-                        "contract": result.contract_name, "check": check_result.check_id,
-                        "severity": check_result.severity, "message": check_result.message,
-                        "file": check_result.file_path, "line": check_result.line_number,
-                    })
-        return errors
-
-    def _aggregate_contract_stats(self, results: list) -> dict:
-        """Aggregate statistics from contract results."""
-        return {
-            "errors": sum(len(r.errors) for r in results),
-            "warnings": sum(len(r.warnings) for r in results),
-            "exempted": sum(r.exempted_count for r in results),
-            "all_passed": all(r.passed for r in results),
-        }
-
     def _run_contracts_check(self, check: Dict, settings: Dict) -> CheckResult:
         """Run contract-based checks using the contracts module."""
         check_id = check["id"]
@@ -424,22 +394,19 @@ class CheckRunner:
         severity = Severity(check.get("severity", "required"))
 
         try:
-            results, error_msg = self._get_contract_results(check)
+            results, error_msg = get_contract_results(check, self.project_root)
             if error_msg:
                 return CheckResult(check_id=check_id, check_name=check_name,
                                    status=CheckStatus.ERROR, severity=severity, message=error_msg)
 
-            stats = self._aggregate_contract_stats(results)
+            stats = aggregate_contract_stats(results)
             passed = stats["all_passed"] and (stats["warnings"] == 0 if check.get("fail_on_warning") else True)
-
-            message = f"Ran {len(results)} contracts: {stats['errors']} errors, {stats['warnings']} warnings"
-            if stats["exempted"] > 0:
-                message += f", {stats['exempted']} exempted"
 
             return CheckResult(
                 check_id=check_id, check_name=check_name,
                 status=CheckStatus.PASSED if passed else CheckStatus.FAILED,
-                severity=severity, message=message, errors=self._build_contract_errors(results)[:50],
+                severity=severity, message=build_contract_message(results, stats),
+                errors=build_contract_errors(results)[:50],
                 details=f"Contracts: {', '.join(r.contract_name for r in results)}",
             )
 

@@ -94,14 +94,57 @@ def _build_revision_lists(session: dict) -> tuple:
     return to_apply, to_defer
 
 
+def _build_revision_notes(session: dict, to_apply: list, to_defer: list) -> dict:
+    """Build revision notes to embed in the spec."""
+    return {
+        'revision_version': _increment_version(session['spec_version']),
+        'session_id': session['session_id'],
+        'previous_verdict': session['validation_verdict'],
+        'issues_addressed': [
+            {'id': r['issue_id'], 'action': r['resolution'][:50], 'decided_by': r['decided_by']}
+            for r in to_apply
+        ],
+        'issues_deferred': [
+            {'id': d['issue_id'], 'reason': d['reason']}
+            for d in to_defer
+        ],
+    }
+
+
+def _save_apply_success(result: dict, spec_path: Path, session: dict, to_apply: list, to_defer: list):
+    """Save successful apply result and update session."""
+    backup_path = spec_path.with_suffix('.yaml.bak')
+    shutil.copy(spec_path, backup_path)
+    print(f"\n  Backed up: {backup_path}")
+
+    result['_revision_notes'] = _build_revision_notes(session, to_apply, to_defer)
+
+    with open(spec_path, 'w') as f:
+        yaml.dump(result, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
+
+    session['status'] = 'applied'
+    session['apply_log'].append({
+        'timestamp': datetime.utcnow().isoformat() + 'Z',
+        'action': 'applied',
+        'changes': len(to_apply),
+        'deferred': len(to_defer),
+    })
+    save_revision_session(session)
+
+    print(f"\n✅ Specification updated: {spec_path}")
+    print("\n" + "-" * 60)
+    print("NEXT STEPS")
+    print("-" * 60)
+    print(f"  1. Review: diff {backup_path} {spec_path}")
+    print("  2. Re-validate: python execute.py validate")
+
+
 def _execute_apply(session: dict, to_apply: list, to_defer: list, args):
     """Execute the application of revisions."""
-    # Load specification
     spec_path = Path(session['spec_file'])
     with open(spec_path) as f:
         specification = yaml.safe_load(f)
 
-    # Build instructions for Claude
     revision_text = _build_apply_instructions(to_apply, to_defer)
 
     print("\n" + "-" * 60)
@@ -116,45 +159,7 @@ def _execute_apply(session: dict, to_apply: list, to_defer: list, args):
     )
 
     if isinstance(result, dict) and '_raw' not in result:
-        # Success - backup and save
-        backup_path = spec_path.with_suffix('.yaml.bak')
-        shutil.copy(spec_path, backup_path)
-        print(f"\n  Backed up: {backup_path}")
-
-        # Add revision notes
-        result['_revision_notes'] = {
-            'revision_version': _increment_version(session['spec_version']),
-            'session_id': session['session_id'],
-            'previous_verdict': session['validation_verdict'],
-            'issues_addressed': [
-                {'id': r['issue_id'], 'action': r['resolution'][:50], 'decided_by': r['decided_by']}
-                for r in to_apply
-            ],
-            'issues_deferred': [
-                {'id': d['issue_id'], 'reason': d['reason']}
-                for d in to_defer
-            ],
-        }
-
-        with open(spec_path, 'w') as f:
-            yaml.dump(result, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
-
-        # Update session
-        session['status'] = 'applied'
-        session['apply_log'].append({
-            'timestamp': datetime.utcnow().isoformat() + 'Z',
-            'action': 'applied',
-            'changes': len(to_apply),
-            'deferred': len(to_defer),
-        })
-        save_revision_session(session)
-
-        print(f"\n✅ Specification updated: {spec_path}")
-        print("\n" + "-" * 60)
-        print("NEXT STEPS")
-        print("-" * 60)
-        print(f"  1. Review: diff {backup_path} {spec_path}")
-        print("  2. Re-validate: python execute.py validate")
+        _save_apply_success(result, spec_path, session, to_apply, to_defer)
     else:
         print("\n❌ Failed to apply changes.")
         print("   Session preserved. Try again or apply manually.")

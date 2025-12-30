@@ -194,27 +194,28 @@ def _parse_config_value(value: str):
         return value
 
 
+def _get_tier_section(config: dict, keys: list, tier: str) -> dict:
+    """Get the appropriate config section based on tier."""
+    section_map = {
+        'repo': ('overrides', keys[0] != 'overrides'),
+        'workspace': ('defaults', keys[0] != 'defaults'),
+        'global': ('defaults', keys[0] != 'defaults'),
+    }
+
+    if tier in section_map:
+        section_name, should_use_section = section_map[tier]
+        if should_use_section:
+            if section_name not in config:
+                config[section_name] = {}
+            return config[section_name]
+    return config
+
+
 def _set_config_value(config: dict, key: str, value, tier: str):
     """Set a value in the config dict using dot notation."""
     keys = key.split('.')
+    target = _get_tier_section(config, keys, tier)
 
-    # Navigate to appropriate section based on tier
-    if tier == 'repo' and keys[0] != 'overrides':
-        if 'overrides' not in config:
-            config['overrides'] = {}
-        target = config['overrides']
-    elif tier == 'workspace' and keys[0] != 'defaults':
-        if 'defaults' not in config:
-            config['defaults'] = {}
-        target = config['defaults']
-    elif tier == 'global' and keys[0] != 'defaults':
-        if 'defaults' not in config:
-            config['defaults'] = {}
-        target = config['defaults']
-    else:
-        target = config
-
-    # Navigate/create nested structure
     for k in keys[:-1]:
         if k not in target:
             target[k] = {}

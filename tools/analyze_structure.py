@@ -146,12 +146,8 @@ class StructureAnalyzer(ast.NodeVisitor):
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef):
         self._visit_function(node, is_async=True)
 
-    def _visit_function(self, node, is_async: bool):
-        # Only top-level functions (col_offset == 0)
-        if node.col_offset != 0:
-            return
-
-        # Extract function calls
+    def _extract_function_calls(self, node) -> list:
+        """Extract all function call names from AST node."""
         calls = []
         for child in ast.walk(node):
             if isinstance(child, ast.Call):
@@ -159,23 +155,30 @@ class StructureAnalyzer(ast.NodeVisitor):
                     calls.append(child.func.id)
                 elif isinstance(child.func, ast.Attribute):
                     calls.append(child.func.attr)
+        return list(set(calls))
 
-        # Extract parameters
-        params = [arg.arg for arg in node.args.args]
+    def _truncate_docstring(self, docstring: Optional[str]) -> Optional[str]:
+        """Truncate docstring to 100 chars if needed."""
+        if docstring and len(docstring) > 100:
+            return docstring[:100] + "..."
+        return docstring
 
-        docstring = ast.get_docstring(node)
+    def _visit_function(self, node, is_async: bool):
+        """Process a function definition node."""
+        if node.col_offset != 0:
+            return
 
         self.functions.append(FunctionInfo(
             name=node.name,
             line_start=node.lineno,
             line_end=node.end_lineno or node.lineno,
             length=(node.end_lineno or node.lineno) - node.lineno + 1,
-            parameters=params,
-            calls=list(set(calls)),  # Dedupe
+            parameters=[arg.arg for arg in node.args.args],
+            calls=self._extract_function_calls(node),
             is_public=not node.name.startswith('_'),
             is_async=is_async,
             decorators=[ast.unparse(d) for d in node.decorator_list],
-            docstring=docstring[:100] + "..." if docstring and len(docstring) > 100 else docstring
+            docstring=self._truncate_docstring(ast.get_docstring(node))
         ))
 
 

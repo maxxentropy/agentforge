@@ -378,6 +378,42 @@ class ContextAssembler:
         },
     ]
 
+    def _check_pattern_def(self, pdef: dict, all_content: str, all_symbols: List[str]) -> PatternMatch:
+        """Check if a pattern definition matches. Returns PatternMatch or None."""
+        content_match = False
+        symbol_examples = []
+
+        if "content_pattern" in pdef:
+            content_match = bool(re.search(pdef["content_pattern"], all_content))
+
+        if "symbol_filter" in pdef:
+            symbol_examples = [s for s in all_symbols if pdef["symbol_filter"](s)][:3]
+
+        if not content_match and not symbol_examples:
+            return None
+
+        return PatternMatch(
+            name=pdef["name"],
+            description=pdef["description"],
+            examples=symbol_examples,
+            confidence=pdef["confidence"],
+        )
+
+    def _check_cqrs_pattern(self, all_symbols: List[str]) -> PatternMatch:
+        """Check for CQRS pattern. Returns PatternMatch or None."""
+        commands = [s for s in all_symbols if s.endswith("Command")]
+        queries = [s for s in all_symbols if s.endswith("Query")]
+
+        if not commands and not queries:
+            return None
+
+        return PatternMatch(
+            name="CQRS Pattern",
+            description="Commands and Queries are separate types",
+            examples=commands[:2] + queries[:2],
+            confidence=0.9,
+        )
+
     def _detect_patterns(self, context: CodeContext) -> List[PatternMatch]:
         """Detect architectural patterns in the assembled context."""
         all_content = "\n".join(f.content for f in context.files)
@@ -386,33 +422,13 @@ class ContextAssembler:
         patterns = []
 
         for pdef in self._PATTERN_DEFS:
-            content_match = False
-            symbol_examples = []
+            match = self._check_pattern_def(pdef, all_content, all_symbols)
+            if match:
+                patterns.append(match)
 
-            if "content_pattern" in pdef:
-                content_match = bool(re.search(pdef["content_pattern"], all_content))
-
-            if "symbol_filter" in pdef:
-                symbol_examples = [s for s in all_symbols if pdef["symbol_filter"](s)][:3]
-
-            if content_match or symbol_examples:
-                patterns.append(PatternMatch(
-                    name=pdef["name"],
-                    description=pdef["description"],
-                    examples=symbol_examples,
-                    confidence=pdef["confidence"],
-                ))
-
-        # Special case: CQRS
-        commands = [s for s in all_symbols if s.endswith("Command")]
-        queries = [s for s in all_symbols if s.endswith("Query")]
-        if commands or queries:
-            patterns.append(PatternMatch(
-                name="CQRS Pattern",
-                description="Commands and Queries are separate types",
-                examples=commands[:2] + queries[:2],
-                confidence=0.9,
-            ))
+        cqrs = self._check_cqrs_pattern(all_symbols)
+        if cqrs:
+            patterns.append(cqrs)
 
         return patterns
 

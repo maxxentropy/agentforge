@@ -103,6 +103,36 @@ class CodeContext:
         import yaml
         return yaml.dump(self.to_dict(), default_flow_style=False, sort_keys=False)
 
+    def _group_files_by_layer(self) -> Dict[str, List["FileContext"]]:
+        """Group files by architecture layer."""
+        by_layer: Dict[str, List[FileContext]] = {}
+        for f in self.files:
+            layer = f.layer or "Unknown"
+            if layer not in by_layer:
+                by_layer[layer] = []
+            by_layer[layer].append(f)
+        return by_layer
+
+    def _format_file_section(self, f: "FileContext") -> List[str]:
+        """Format a single file for prompt output."""
+        lines = [f"### {f.path}", ""]
+        if f.symbols:
+            lines.append("**Symbols:** " + ", ".join(s.name for s in f.symbols[:5]))
+        lines.extend(["", "```" + f.language, f.content, "```", ""])
+        return lines
+
+    def _format_patterns_section(self) -> List[str]:
+        """Format patterns section for prompt output."""
+        if not self.patterns:
+            return []
+        lines = ["## Detected Patterns", ""]
+        for p in self.patterns:
+            lines.append(f"- **{p.name}**: {p.description}")
+            if p.examples:
+                lines.append(f"  Examples: {', '.join(p.examples[:3])}")
+        lines.append("")
+        return lines
+
     def to_prompt_text(self) -> str:
         """Format context for LLM consumption."""
         lines = [
@@ -112,39 +142,15 @@ class CodeContext:
             "",
         ]
 
-        # Group by layer
-        by_layer: Dict[str, List[FileContext]] = {}
-        for f in self.files:
-            layer = f.layer or "Unknown"
-            if layer not in by_layer:
-                by_layer[layer] = []
-            by_layer[layer].append(f)
-
-        # Output in architecture order
+        by_layer = self._group_files_by_layer()
         layer_order = ["Domain", "Application", "Infrastructure", "Presentation", "Unknown"]
+
         for layer in layer_order:
             if layer in by_layer:
-                lines.append(f"## {layer} Layer")
-                lines.append("")
+                lines.extend([f"## {layer} Layer", ""])
                 for f in by_layer[layer]:
-                    lines.append(f"### {f.path}")
-                    lines.append("")
-                    if f.symbols:
-                        lines.append("**Symbols:** " + ", ".join(s.name for s in f.symbols[:5]))
-                    lines.append("")
-                    lines.append("```" + f.language)
-                    lines.append(f.content)
-                    lines.append("```")
-                    lines.append("")
+                    lines.extend(self._format_file_section(f))
 
-        # Patterns
-        if self.patterns:
-            lines.append("## Detected Patterns")
-            lines.append("")
-            for p in self.patterns:
-                lines.append(f"- **{p.name}**: {p.description}")
-                if p.examples:
-                    lines.append(f"  Examples: {', '.join(p.examples[:3])}")
-            lines.append("")
+        lines.extend(self._format_patterns_section())
 
         return "\n".join(lines)

@@ -140,6 +140,33 @@ def _output_contract_details(contract, fmt: str):
             print(f"    {status} {check.get('id')}: {check.get('name')} [{check.get('type')}]")
 
 
+def _get_contract_results(args, repo_root, file_paths):
+    """Get contract results based on args. Returns list of results."""
+    from contracts import ContractRegistry, run_contract, run_all_contracts
+
+    if args.contract:
+        registry = ContractRegistry(repo_root)
+        contract = registry.get_contract(args.contract)
+        if not contract:
+            print(f"\n❌ Contract not found: {args.contract}")
+            sys.exit(1)
+        return [run_contract(contract, repo_root, registry, file_paths)]
+
+    return run_all_contracts(
+        repo_root, language=args.language, repo_type=args.repo_type, file_paths=file_paths
+    )
+
+
+def _calculate_contract_totals(results):
+    """Calculate aggregate totals from contract results."""
+    return {
+        "errors": sum(len(r.errors) for r in results),
+        "warnings": sum(len(r.warnings) for r in results),
+        "exempted": sum(r.exempted_count for r in results),
+        "all_passed": all(r.passed for r in results),
+    }
+
+
 def run_contracts_check(args):
     """Run contract checks."""
     print()
@@ -150,33 +177,21 @@ def run_contracts_check(args):
     _ensure_contracts_tools()
 
     try:
-        from contracts import ContractRegistry, run_contract, run_all_contracts
+        repo_root = Path.cwd()
+        file_paths = [(repo_root / f.strip()).resolve() for f in args.files.split(',')] if args.files else None
+        results = _get_contract_results(args, repo_root, file_paths)
     except ImportError as e:
         print(f"\nError: Could not import contracts module: {e}")
         sys.exit(1)
 
-    repo_root = Path.cwd()
-    # Resolve file paths to absolute to ensure relative_to() works in contracts.py
-    file_paths = [(repo_root / f.strip()).resolve() for f in args.files.split(',')] if args.files else None
+    totals = _calculate_contract_totals(results)
 
-    if args.contract:
-        registry = ContractRegistry(repo_root)
-        contract = registry.get_contract(args.contract)
-        if not contract:
-            print(f"\n❌ Contract not found: {args.contract}")
-            sys.exit(1)
-        results = [run_contract(contract, repo_root, registry, file_paths)]
-    else:
-        results = run_all_contracts(repo_root, language=args.language, repo_type=args.repo_type, file_paths=file_paths)
+    _output_check_results(
+        results, totals["all_passed"], totals["errors"],
+        totals["warnings"], totals["exempted"], args.format
+    )
 
-    total_errors = sum(len(r.errors) for r in results)
-    total_warnings = sum(len(r.warnings) for r in results)
-    total_exempted = sum(r.exempted_count for r in results)
-    all_passed = all(r.passed for r in results)
-
-    _output_check_results(results, all_passed, total_errors, total_warnings, total_exempted, args.format)
-
-    if not all_passed and (args.strict or total_errors > 0):
+    if not totals["all_passed"] and (args.strict or totals["errors"] > 0):
         sys.exit(1)
 
 

@@ -60,6 +60,8 @@ PATTERN_DEFINITIONS = {
             },
         },
         "min_confidence": 0.5,
+        # At least one of these signals must be present (not just naming)
+        "required_signals": ["base_class", "import"],
     },
     "ddd_entity": {
         "description": "DDD Entity pattern with typed ID",
@@ -124,6 +126,8 @@ PATTERN_DEFINITIONS = {
             },
         },
         "min_confidence": 0.5,
+        # Require actual CQRS base classes, not just naming conventions
+        "required_signals": ["base_class"],
     },
     "repository": {
         "description": "Repository pattern for data access abstraction",
@@ -609,6 +613,18 @@ class PatternAnalyzer:
             pattern_def = PATTERN_DEFINITIONS[pattern_name]
             min_confidence = pattern_def.get("min_confidence", 0.5)
 
+            # Get all matches for this pattern
+            pattern_matches = [m for m in self._matches if m.pattern_name == pattern_name]
+            signals = list(set(m.signal_type for m in pattern_matches))
+
+            # Check required signals - if defined, at least one must be present
+            required_signals = pattern_def.get("required_signals", [])
+            if required_signals:
+                has_required = any(sig in signals for sig in required_signals)
+                if not has_required:
+                    # Skip this pattern - naming/directory alone isn't enough
+                    continue
+
             # Calculate overall confidence
             total_score = sum(file_scores.values())
             file_count = len(file_scores)
@@ -618,10 +634,6 @@ class PatternAnalyzer:
 
             if confidence < min_confidence:
                 continue
-
-            # Get all matches for this pattern
-            pattern_matches = [m for m in self._matches if m.pattern_name == pattern_name]
-            signals = list(set(m.signal_type for m in pattern_matches))
 
             # Get file locations
             locations = list(file_scores.keys())

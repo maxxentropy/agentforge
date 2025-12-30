@@ -1,0 +1,2345 @@
+metadata:
+  version: '1.0'
+  status: draft
+  feature_name: Per-Repository Conformance Tracking System
+  created_date: '2025-12-30'
+overview:
+  purpose: 'Provide a comprehensive per-repository conformance tracking system that
+    stores
+
+    conformance state, violations, exemptions, and historical trends in a structured
+
+    .agentforge/ directory. This enables continuous monitoring of how well a codebase
+
+    adheres to defined architectural contracts, answering: How correct is this codebase
+
+    right now? What violations exist? Are we improving over time?
+
+    '
+  background: 'This is Chunk 3 of the AgentForge workspace architecture. It builds
+    upon:
+
+    - Chunk 1 (Workspace Config): repo.yaml lives in .agentforge/
+
+    - Chunk 2 (Contract System): contracts define what to check
+
+    - Phase 1 (Verification Engine): runs the checks, produces results
+
+
+    The conformance system bridges verification output to persistent, trackable state
+
+    that enables trend analysis, exemption management, and CI/CD integration.
+
+    '
+  scope:
+    includes:
+    - .agentforge/ directory structure within each repository
+    - conformance_report.yaml schema definition
+    - codebase_profile.yaml schema definition
+    - violations/ directory and violation record schema
+    - exemptions/ directory and exemption schema
+    - history/ directory and snapshot schema
+    - CLI commands for conformance operations
+    - Integration points with Verification Engine and Contract System
+    excludes:
+    - Actual violation detection logic (Phase 1 Verification Engine responsibility)
+    - Brownfield discovery logic (Chunk 4 responsibility)
+    - Cross-repo aggregation (Chunk 7)
+    - CI/CD integration details (Chunk 8)
+  assumptions:
+  - Severity levels align with Chunk 2 (Contract System) using blocker, critical,
+    major, minor, info
+  - All schemas use JSON Schema draft-07 for compatibility with existing schemas
+  - Violation identity based on hash of (contract_id + check_id + file_path + line_number
+    + rule_id)
+  - Daily history snapshots with 90-day default retention
+  - Exemptions require approved_by field for audit trail
+  - Expired exemptions auto-convert to violations with status 'exemption_expired'
+  - Smart merge for incremental runs - update only checked files/contracts, preserve
+    others
+  constraints:
+  - All conformance YAML files SHALL include schema_version field with pattern "^\d+\.\d+$"
+  - Individual files per violation for git-friendly tracking
+  - History retention policy required to prevent unbounded growth
+  - Atomic file operations required to handle concurrent access
+  - IDs SHALL use lowercase with hyphens pattern "^[a-z][a-z0-9_-]*$"
+requirements:
+  functional:
+  - id: FR-001
+    title: Directory Structure Creation
+    priority: must
+    description: "The system SHALL create and maintain the following directory structure\
+      \ within\neach repository:\n\n.agentforge/\n├── repo.yaml                  \
+      \  # Repository configuration (Chunk 1)\n├── conformance_report.yaml      #\
+      \ Current conformance state\n├── codebase_profile.yaml        # Extracted codebase\
+      \ metadata\n├── local.yaml                   # Machine-specific overrides (gitignored)\n\
+      ├── violations/                  # Individual violation records\n│   └── V-{hash}.yaml\
+      \           # One file per violation\n├── exemptions/                  # Approved\
+      \ exemptions\n│   └── {exemption-id}.yaml     # One file per exemption\n└──\
+      \ history/                     # Historical snapshots\n    └── YYYY-MM-DD.yaml\
+      \         # One file per day\n"
+    rationale: 'Single source of truth for all conformance data. Git-friendly structure
+      enables
+
+      tracking changes over time via commits.
+
+      '
+    acceptance_criteria:
+    - id: AC-001
+      given: A repository without .agentforge/ directory
+      when: conformance init command is executed
+      then: All required directories and placeholder files are created
+    - id: AC-002
+      given: A repository with existing .agentforge/ directory
+      when: conformance check command is executed
+      then: Missing subdirectories are created without affecting existing files
+  - id: FR-002
+    title: Conformance Report Generation
+    priority: must
+    description: 'The system SHALL generate conformance_report.yaml containing:
+
+      - schema_version: Version of the conformance report schema
+
+      - generated_at: ISO 8601 timestamp of report generation
+
+      - run_id: Unique identifier for this verification run (UUID v4)
+
+      - run_type: Either ''full'' or ''incremental''
+
+      - summary: Aggregated counts by status (passed, failed, exempted, stale)
+
+      - by_severity: Breakdown of violations by severity level
+
+      - by_contract: Breakdown of violations by contract_id
+
+      - contracts_checked: List of contract IDs included in this run
+
+      - files_checked: Count of files analyzed
+
+      - stale_count: Number of violations not re-checked this run
+
+      - trend: Comparison with previous run (delta for each count)
+
+      '
+    rationale: 'Single-file summary enables quick assessment of conformance state
+      without
+
+      parsing individual violation files.
+
+      '
+    acceptance_criteria:
+    - id: AC-003
+      given: Verification run completes with 10 failures, 5 exempted, 85 passed
+      when: Conformance report is generated
+      then: Summary shows total=100, passed=85, failed=10, exempted=5
+    - id: AC-004
+      given: Previous run had 15 failures, current run has 10 failures
+      when: Conformance report is generated
+      then: Trend shows failed_delta=-5
+    - id: AC-005
+      given: Incremental run checks only 'naming-conventions' contract
+      when: Conformance report is generated
+      then: contracts_checked contains only 'naming-conventions'
+  - id: FR-003
+    title: Violation Record Management
+    priority: must
+    description: 'The system SHALL create individual violation files with the following
+      fields:
+
+      - violation_id: Hash-based ID (V-{sha256-12-chars})
+
+      - contract_id: Reference to the contract that was violated
+
+      - check_id: Specific check within the contract
+
+      - severity: One of blocker, critical, major, minor, info
+
+      - file_path: Relative path to the violating file
+
+      - line_number: Line number of the violation (nullable for file-level violations)
+
+      - column_number: Column number if available (nullable)
+
+      - message: Human-readable description of the violation
+
+      - fix_hint: Suggested remediation (nullable)
+
+      - code_snippet: Relevant code context (nullable, max 5 lines)
+
+      - detected_at: ISO 8601 timestamp of first detection
+
+      - last_seen_at: ISO 8601 timestamp of most recent detection
+
+      - status: One of open, resolved, exemption_expired, stale
+
+      - resolution: Details if resolved (nullable)
+
+      '
+    rationale: 'Individual files enable granular git history for violation lifecycle.
+
+      Hash-based IDs ensure stable identity across runs.
+
+      '
+    acceptance_criteria:
+    - id: AC-006
+      given: Same violation detected in two consecutive runs
+      when: Violation records are compared
+      then: Both runs reference the same violation_id
+    - id: AC-007
+      given: Violation exists but file/contract not checked in incremental run
+      when: Conformance merge completes
+      then: Violation status is set to 'stale'
+    - id: AC-008
+      given: Previously detected violation no longer fails check
+      when: Full verification run completes
+      then: Violation status is updated to 'resolved' with resolved_at timestamp
+  - id: FR-004
+    title: Violation Identity Calculation
+    priority: must
+    description: 'The system SHALL calculate violation identity using SHA-256 hash
+      of:
+
+      - contract_id
+
+      - check_id
+
+      - file_path (normalized with forward slashes)
+
+      - line_number (as string, or ''file'' for file-level violations)
+
+      - rule_id (if applicable, else empty string)
+
+
+      The violation_id format SHALL be: V-{first-12-chars-of-hash}
+
+
+      In case of hash collision (same 12-char prefix), the system SHALL append
+
+      a numeric suffix: V-{hash}-1, V-{hash}-2, etc.
+
+      '
+    rationale: 'Composite key provides high uniqueness. Truncated hash balances readability
+
+      with collision resistance.
+
+      '
+    acceptance_criteria:
+    - id: AC-009
+      given: Violation at file.py:42 for check 'no-print-statements'
+      when: Violation ID is calculated twice
+      then: Both calculations produce identical violation_id
+    - id: AC-010
+      given: Two violations produce same 12-char hash prefix
+      when: Second violation is stored
+      then: Second violation gets suffix '-1' appended to ID
+  - id: FR-005
+    title: Exemption Management
+    priority: must
+    description: "The system SHALL support exemptions with the following fields:\n\
+      - id: Unique exemption identifier (lowercase with hyphens)\n- contract_id: Contract\
+      \ being exempted\n- check_ids: List of specific checks exempted (or '*' for\
+      \ all)\n- reason: Justification for the exemption\n- approved_by: Username,\
+      \ email, or 'self' for acknowledged debt\n- approved_date: ISO 8601 date of\
+      \ approval\n- expires: Optional ISO 8601 date when exemption expires\n- review_date:\
+      \ Optional date to reconsider exemption\n- status: One of active, expired, resolved,\
+      \ under_review\n- scope: Definition of what is covered:\n  - type: One of check_id,\
+      \ file_pattern, violation_id, global\n  - patterns: List of glob patterns (for\
+      \ file_pattern type)\n  - violation_ids: List of specific violation IDs (for\
+      \ violation_id type)\n  - lines: Optional line range restrictions\n"
+    rationale: 'Exemptions enable pragmatic handling of known debt while maintaining
+
+      visibility and accountability.
+
+      '
+    acceptance_criteria:
+    - id: AC-011
+      given: Exemption with pattern 'tests/**/*.py' for check 'docstring-required'
+      when: Violation in 'tests/unit/test_foo.py' is evaluated
+      then: Violation is marked as exempted with exemption_id reference
+    - id: AC-012
+      given: Exemption with expires='2025-01-15' and current date is '2025-01-16'
+      when: Conformance check runs
+      then: Exemption status is set to 'expired' and covered violations become open
+  - id: FR-006
+    title: Exemption Expiry Handling
+    priority: must
+    description: "The system SHALL handle exemption expiry as follows:\n1. During\
+      \ conformance check, validate all exemption expiry dates\n2. If exemption.expires\
+      \ < current_date:\n   - Set exemption.status to 'expired'\n   - Find all violations\
+      \ covered by this exemption\n   - Update violation.status to 'exemption_expired'\n\
+      \   - Set violation.exemption_expired_at timestamp\n3. Generate warning in conformance\
+      \ report for expired exemptions\n"
+    rationale: 'Expired exemptions must surface as violations to prevent silent accumulation
+
+      of technical debt.
+
+      '
+    acceptance_criteria:
+    - id: AC-013
+      given: Exemption 'legacy-console-logging' expires yesterday
+      when: Conformance check runs
+      then: All 5 violations it covered now have status 'exemption_expired'
+    - id: AC-014
+      given: Exemption expires today
+      when: Conformance check runs at 00:00:01
+      then: Exemption is still active (expires means end of day)
+  - id: FR-007
+    title: History Snapshot Generation
+    priority: must
+    description: "The system SHALL generate daily history snapshots containing:\n\
+      - schema_version: Version of the history schema\n- date: ISO 8601 date (YYYY-MM-DD)\n\
+      - generated_at: ISO 8601 timestamp\n- summary:\n  - total_checks: Number of\
+      \ checks executed\n  - passed: Count of passed checks\n  - failed: Count of\
+      \ failed checks\n  - exempted: Count of exempted violations\n  - stale: Count\
+      \ of stale violations\n- by_severity: Counts per severity level\n- by_contract:\
+      \ Counts per contract_id\n- files_analyzed: Total files checked\n- contracts_checked:\
+      \ List of contract IDs\n\nOnly one snapshot per day SHALL exist. Later runs\
+      \ on same day SHALL\noverwrite the previous snapshot.\n"
+    rationale: 'Summary-only snapshots enable trend visualization without disk bloat.
+
+      Daily granularity balances detail with storage efficiency.
+
+      '
+    acceptance_criteria:
+    - id: AC-015
+      given: Conformance check runs on 2025-01-15
+      when: History snapshot is saved
+      then: File .agentforge/history/2025-01-15.yaml is created
+    - id: AC-016
+      given: Two conformance runs on same day
+      when: Second run completes
+      then: History file contains data from second run only
+  - id: FR-008
+    title: History Retention Policy
+    priority: must
+    description: 'The system SHALL enforce history retention policy:
+
+      - Default retention: 90 days
+
+      - Configurable via repo.yaml conformance.history_retention_days
+
+      - Minimum allowed: 7 days
+
+      - Maximum allowed: 365 days
+
+
+      During conformance check, the system SHALL:
+
+      1. Calculate cutoff date (today - retention_days)
+
+      2. Delete history files older than cutoff date
+
+      3. Log count of pruned files
+
+      '
+    rationale: 'Prevents unbounded growth of history directory while maintaining
+
+      sufficient data for trend analysis.
+
+      '
+    acceptance_criteria:
+    - id: AC-017
+      given: Retention set to 30 days and 50 history files exist
+      when: Conformance check runs
+      then: Files older than 30 days are deleted
+    - id: AC-018
+      given: User sets history_retention_days to 3
+      when: Configuration is validated
+      then: 'Error: minimum retention is 7 days'
+  - id: FR-009
+    title: Incremental Run Smart Merge
+    priority: must
+    description: "The system SHALL support incremental verification runs that:\n1.\
+      \ Accept list of contracts and/or files to check\n2. Run verification only for\
+      \ specified scope\n3. Merge results with existing conformance state:\n   - Update\
+      \ violations for checked files/contracts\n   - Mark violations for unchecked\
+      \ files/contracts as 'stale'\n   - Preserve stale violations (do not delete)\n\
+      \   - Update conformance_report with run_type='incremental'\n   - Record contracts_checked\
+      \ and files_checked in report\n4. Full run (no scope restriction) SHALL:\n \
+      \  - Clear stale status from all violations\n   - Delete violations for files\
+      \ that no longer exist\n   - Delete violations for checks that no longer fail\n"
+    rationale: 'Incremental runs enable fast feedback during development while
+
+      maintaining complete conformance picture.
+
+      '
+    acceptance_criteria:
+    - id: AC-019
+      given: 100 existing violations, incremental run checks 10 files
+      when: Incremental run finds 2 new violations in checked files
+      then: Total violations = 102 (100 preserved + 2 new)
+    - id: AC-020
+      given: Violation V-abc123 exists for unchecked file
+      when: Incremental run completes
+      then: V-abc123 status is 'stale', not deleted
+    - id: AC-021
+      given: Full run finds violation V-abc123 no longer fails
+      when: Full run completes
+      then: V-abc123 status is 'resolved'
+  - id: FR-010
+    title: Codebase Profile Extraction
+    priority: should
+    description: "The system SHALL generate codebase_profile.yaml containing:\n- schema_version:\
+      \ Version of the profile schema\n- generated_at: ISO 8601 timestamp\n- languages:\
+      \ List of detected programming languages with percentages\n- frameworks: List\
+      \ of detected frameworks/libraries\n- structure:\n  - root_path: Repository\
+      \ root\n  - layers: Identified architectural layers (if detectable)\n  - key_directories:\
+      \ Important directories with descriptions\n  - entry_points: Main entry point\
+      \ files\n- patterns_detected:\n  - naming_conventions: Detected naming patterns\n\
+      \  - file_organization: How files are organized\n  - test_structure: Test file\
+      \ locations and naming\n- dependencies:\n  - direct: List of direct dependencies\n\
+      \  - dev: List of development dependencies\n- metrics:\n  - total_files: Count\
+      \ of source files\n  - total_lines: Approximate lines of code\n  - by_language:\
+      \ Breakdown by language\n\nProfile MAY be auto-detected or manually curated.\
+      \ Auto-detected fields\nSHALL include confidence score.\n"
+    rationale: 'Codebase profile provides context for contracts and enables
+
+      intelligent defaults for new repositories.
+
+      '
+    acceptance_criteria:
+    - id: AC-022
+      given: Python repository with pytest tests in tests/ directory
+      when: Codebase profile is generated
+      then: languages includes 'Python', test_structure shows 'tests/'
+    - id: AC-023
+      given: Auto-detected naming convention with 80% confidence
+      when: Profile is saved
+      then: 'Field includes ''confidence: 0.8'' and ''source: auto-detected'''
+  - id: FR-011
+    title: Conformance CLI - Check Command
+    priority: must
+    description: "The system SHALL provide CLI command:\n\nagentforge conformance\
+      \ check [OPTIONS]\n\nOptions:\n  --contracts LIST    Comma-separated contract\
+      \ IDs to check\n  --files LIST        Comma-separated file paths/patterns to\
+      \ check\n  --full              Force full run (clear stale violations)\n  --no-history\
+      \        Skip history snapshot generation\n  --exit-code         Return non-zero\
+      \ exit code based on severity threshold\n  --severity-threshold LEVEL  Minimum\
+      \ severity to cause non-zero exit (default: blocker)\n\nThe command SHALL:\n\
+      1. Load contracts from Chunk 2 Contract System\n2. Run verification via Phase\
+      \ 1 Verification Engine\n3. Transform results into violation records\n4. Apply\
+      \ exemption matching\n5. Merge with existing conformance state\n6. Generate\
+      \ conformance_report.yaml\n7. Generate history snapshot (unless --no-history)\n\
+      8. Return exit code based on --severity-threshold\n"
+    rationale: 'Primary entry point for conformance verification. Supports both CI/CD
+
+      and interactive development workflows.
+
+      '
+    acceptance_criteria:
+    - id: AC-024
+      given: 3 blocker violations exist, threshold is 'critical'
+      when: conformance check --exit-code runs
+      then: Exit code is non-zero (blockers exceed threshold)
+    - id: AC-025
+      given: Only 'minor' violations exist, threshold is 'major'
+      when: conformance check --exit-code runs
+      then: Exit code is 0
+  - id: FR-012
+    title: Conformance CLI - Report Command
+    priority: must
+    description: "The system SHALL provide CLI command:\n\nagentforge conformance\
+      \ report [OPTIONS]\n\nOptions:\n  --format FORMAT     Output format: text, json,\
+      \ yaml (default: text)\n  --verbose           Include violation details\n  --by-severity\
+      \       Group output by severity\n  --by-contract       Group output by contract\n\
+      \nThe command SHALL display current conformance state from\nconformance_report.yaml\
+      \ without running new checks.\n"
+    rationale: 'Quick access to current conformance state without re-running verification.
+
+      '
+    acceptance_criteria:
+    - id: AC-026
+      given: conformance_report.yaml shows 5 blockers, 10 majors
+      when: conformance report --format text runs
+      then: Output shows summary with blocker and major counts
+    - id: AC-027
+      given: conformance report --by-severity --verbose
+      when: Command runs
+      then: Output groups violations by severity with full details
+  - id: FR-013
+    title: Conformance CLI - Violations Command
+    priority: must
+    description: "The system SHALL provide CLI command:\n\nagentforge conformance\
+      \ violations [SUBCOMMAND] [OPTIONS]\n\nSubcommands:\n  list                List\
+      \ all violations\n    --status STATUS   Filter by status (open, resolved, stale,\
+      \ exemption_expired)\n    --severity LEVEL  Filter by severity\n    --contract\
+      \ ID     Filter by contract\n    --file PATTERN    Filter by file pattern\n\
+      \    --limit N         Limit results (default: 50)\n  \n  show ID          \
+      \   Show detailed violation record\n  \n  resolve ID          Mark violation\
+      \ as resolved\n    --reason TEXT     Resolution reason (required)\n  \n  prune\
+      \               Remove resolved/stale violations\n    --older-than DAYS Only\
+      \ prune violations older than N days (default: 30)\n    --dry-run         Show\
+      \ what would be pruned without deleting\n"
+    rationale: 'Granular violation management for investigation and cleanup.
+
+      '
+    acceptance_criteria:
+    - id: AC-028
+      given: 20 open violations, 10 resolved
+      when: conformance violations list --status open
+      then: Only 20 open violations shown
+    - id: AC-029
+      given: Violation V-abc123 exists
+      when: conformance violations resolve V-abc123 --reason 'Fixed in PR#456'
+      then: Violation status is 'resolved', resolution contains reason
+  - id: FR-014
+    title: Conformance CLI - History Command
+    priority: should
+    description: "The system SHALL provide CLI command:\n\nagentforge conformance\
+      \ history [OPTIONS]\n\nOptions:\n  --days N            Show last N days (default:\
+      \ 30)\n  --format FORMAT     Output format: text, json, yaml, csv\n  --metric\
+      \ METRIC     Specific metric to track: total, failed, passed, exempted\n\nThe\
+      \ command SHALL display trend data from history/ directory.\n"
+    rationale: 'Trend visualization helps teams track improvement over time.
+
+      '
+    acceptance_criteria:
+    - id: AC-030
+      given: 30 days of history snapshots exist
+      when: conformance history --days 7 --metric failed
+      then: Output shows failed count for each of last 7 days
+  - id: FR-015
+    title: Conformance CLI - Init Command
+    priority: must
+    description: "The system SHALL provide CLI command:\n\nagentforge conformance\
+      \ init [OPTIONS]\n\nOptions:\n  --force             Overwrite existing conformance\
+      \ files\n\nThe command SHALL:\n1. Create .agentforge/ directory if not exists\n\
+      2. Create violations/, exemptions/, history/ subdirectories\n3. Create .gitkeep\
+      \ files in empty directories\n4. Generate initial codebase_profile.yaml (auto-detected)\n\
+      5. Generate initial conformance_report.yaml (empty state)\n6. Add local.yaml\
+      \ to .gitignore if not present\n"
+    rationale: 'Easy onboarding for new repositories.
+
+      '
+    acceptance_criteria:
+    - id: AC-031
+      given: Repository without .agentforge/ directory
+      when: conformance init runs
+      then: All directories and initial files are created
+    - id: AC-032
+      given: .agentforge/ already exists with violations
+      when: conformance init runs (without --force)
+      then: 'Error: .agentforge/ already exists, use --force to reinitialize'
+  - id: FR-016
+    title: Severity Mapping
+    priority: must
+    description: 'The system SHALL map between Contract System and Verification Engine
+      severity levels:
+
+
+      Contract Severity → Conformance Severity
+
+      - error           → blocker
+
+      - warning         → major
+
+      - info            → minor
+
+
+      Verification Severity → Conformance Severity
+
+      - BLOCKING        → blocker
+
+      - REQUIRED        → critical
+
+      - ADVISORY        → major
+
+      - INFORMATIONAL   → info
+
+
+      The canonical conformance severity levels SHALL be:
+
+      - blocker: Blocks CI, must be fixed or exempted immediately
+
+      - critical: Should be fixed soon, may block CI in strict mode
+
+      - major: Should be addressed, tracked for resolution
+
+      - minor: Low priority, tracked for awareness
+
+      - info: Informational only, no action required
+
+      '
+    rationale: 'Unified severity model enables consistent reporting across different
+
+      check types and integration points.
+
+      '
+    acceptance_criteria:
+    - id: AC-033
+      given: Contract check with severity='error'
+      when: Violation is recorded
+      then: Violation severity is 'blocker'
+    - id: AC-034
+      given: Verification check with severity=ADVISORY
+      when: Violation is recorded
+      then: Violation severity is 'major'
+  - id: FR-017
+    title: Atomic File Operations
+    priority: must
+    description: 'The system SHALL use atomic file operations for all writes:
+
+      1. Write content to temporary file in same directory
+
+      2. Verify temporary file content is valid YAML
+
+      3. Rename temporary file to target filename (atomic on POSIX)
+
+      4. Include run_id in conformance_report.yaml for conflict detection
+
+
+      If concurrent modification is detected (run_id mismatch), the system
+
+      SHALL log a warning and proceed with current run''s data.
+
+      '
+    rationale: 'Prevents data corruption from concurrent CI jobs or interrupted writes.
+
+      '
+    acceptance_criteria:
+    - id: AC-035
+      given: conformance_report.yaml is being updated
+      when: Process is interrupted mid-write
+      then: Either old or new file exists completely, never partial
+    - id: AC-036
+      given: Two CI jobs run conformance check simultaneously
+      when: Both complete
+      then: conformance_report.yaml is valid YAML from one of the runs
+  non_functional:
+  - id: NFR-001
+    title: Performance - Large Codebase
+    priority: should
+    description: 'The system SHOULD complete conformance check operations within acceptable
+
+      time limits:
+
+      - Report generation: < 5 seconds for 10,000 violation records
+
+      - History snapshot: < 1 second
+
+      - Violation store operations: < 100ms per violation
+
+      - Full conformance check: Linear scaling with number of checks/files
+
+      '
+    acceptance_criteria:
+    - id: AC-037
+      given: Repository with 10,000 existing violations
+      when: conformance report command runs
+      then: Command completes in under 5 seconds
+  - id: NFR-002
+    title: Storage Efficiency
+    priority: should
+    description: 'The system SHOULD maintain reasonable storage footprint:
+
+      - Average violation file: < 2KB
+
+      - History snapshot: < 5KB
+
+      - 90-day history: < 500KB total
+
+      - Conformance report: < 50KB for 1000 violations
+
+      '
+    acceptance_criteria:
+    - id: AC-038
+      given: 90 days of history with 1000 daily violations
+      when: History directory size is measured
+      then: Total size is under 500KB
+  - id: NFR-003
+    title: Git-Friendly Output
+    priority: must
+    description: 'All generated YAML files SHALL be formatted for minimal git diffs:
+
+      - Consistent key ordering (alphabetical within sections)
+
+      - No trailing whitespace
+
+      - Single newline at end of file
+
+      - Literal block style for multi-line strings
+
+      - 2-space indentation
+
+      - No flow style for complex structures
+
+      '
+    acceptance_criteria:
+    - id: AC-039
+      given: Two runs with identical conformance state
+      when: Files are compared
+      then: git diff shows no changes
+    - id: AC-040
+      given: One new violation added
+      when: Files are compared
+      then: git diff shows only the new violation file and summary count changes
+  - id: NFR-004
+    title: Schema Validation
+    priority: must
+    description: 'All conformance YAML files SHALL validate against their JSON Schema:
+
+      - conformance_report.yaml → conformance_report.schema.yaml
+
+      - codebase_profile.yaml → codebase_profile.schema.yaml
+
+      - violations/*.yaml → violation.schema.yaml
+
+      - exemptions/*.yaml → exemption.schema.yaml
+
+      - history/*.yaml → history_snapshot.schema.yaml
+
+
+      Invalid files SHALL cause operations to fail with descriptive error messages.
+
+      '
+    acceptance_criteria:
+    - id: AC-041
+      given: Violation file missing required 'severity' field
+      when: File is loaded
+      then: ValidationError with message indicating missing field
+entities:
+- name: ConformanceReport
+  layer: Domain
+  type: aggregate_root
+  description: 'Represents the current conformance state of a repository. Aggregates
+
+    summary statistics from all violations and provides trend comparison
+
+    with previous runs.
+
+    '
+  properties:
+  - name: schema_version
+    type: string
+    nullable: false
+    constraints:
+    - 'pattern: ^\d+\.\d+$'
+    - required
+    description: Schema version for migration support
+  - name: generated_at
+    type: datetime
+    nullable: false
+    constraints:
+    - required
+    - iso8601
+    description: Timestamp of report generation
+  - name: run_id
+    type: string
+    nullable: false
+    constraints:
+    - required
+    - uuid-v4
+    description: Unique identifier for this verification run
+  - name: run_type
+    type: string
+    nullable: false
+    constraints:
+    - 'enum: full, incremental'
+    - required
+    description: Type of verification run
+  - name: summary
+    type: ConformanceSummary
+    nullable: false
+    constraints:
+    - required
+    description: Aggregated counts by status
+  - name: by_severity
+    type: Dictionary<Severity, int>
+    nullable: false
+    constraints:
+    - required
+    description: Violation counts by severity level
+  - name: by_contract
+    type: Dictionary<string, int>
+    nullable: false
+    constraints:
+    - required
+    description: Violation counts by contract ID
+  - name: contracts_checked
+    type: List<string>
+    nullable: false
+    constraints:
+    - required
+    description: Contract IDs included in this run
+  - name: files_checked
+    type: int
+    nullable: false
+    constraints:
+    - required
+    - 'min: 0'
+    description: Count of files analyzed
+  - name: stale_count
+    type: int
+    nullable: false
+    constraints:
+    - required
+    - 'min: 0'
+    description: Number of stale violations
+  - name: trend
+    type: ConformanceTrend
+    nullable: true
+    constraints: []
+    description: Comparison with previous run
+  methods:
+  - name: calculate_summary
+    returns: ConformanceSummary
+    parameters:
+    - name: violations
+      type: List<Violation>
+    description: Calculate summary statistics from violation list
+  - name: calculate_trend
+    returns: ConformanceTrend
+    parameters:
+    - name: previous_report
+      type: ConformanceReport
+    description: Calculate delta from previous report
+  invariants:
+  - summary.total == summary.passed + summary.failed + summary.exempted
+  - sum(by_severity.values) == summary.failed + summary.exempted
+- name: ConformanceSummary
+  layer: Domain
+  type: value_object
+  description: 'Aggregated counts of check results by status.
+
+    '
+  properties:
+  - name: total
+    type: int
+    nullable: false
+    constraints:
+    - 'min: 0'
+    description: Total number of checks executed
+  - name: passed
+    type: int
+    nullable: false
+    constraints:
+    - 'min: 0'
+    description: Checks that passed
+  - name: failed
+    type: int
+    nullable: false
+    constraints:
+    - 'min: 0'
+    description: Checks that failed (not exempted)
+  - name: exempted
+    type: int
+    nullable: false
+    constraints:
+    - 'min: 0'
+    description: Violations covered by exemptions
+  - name: stale
+    type: int
+    nullable: false
+    constraints:
+    - 'min: 0'
+    description: Violations not checked this run
+  invariants:
+  - total >= passed + failed + exempted
+- name: ConformanceTrend
+  layer: Domain
+  type: value_object
+  description: 'Delta values comparing current run to previous run.
+
+    '
+  properties:
+  - name: total_delta
+    type: int
+    nullable: false
+    constraints: []
+    description: Change in total checks
+  - name: passed_delta
+    type: int
+    nullable: false
+    constraints: []
+    description: Change in passed count
+  - name: failed_delta
+    type: int
+    nullable: false
+    constraints: []
+    description: Change in failed count
+  - name: exempted_delta
+    type: int
+    nullable: false
+    constraints: []
+    description: Change in exempted count
+  - name: previous_run_id
+    type: string
+    nullable: false
+    constraints:
+    - uuid-v4
+    description: Run ID of comparison baseline
+  invariants: []
+- name: Violation
+  layer: Domain
+  type: entity
+  description: 'A single instance where code fails a contract check. Immutable identity
+
+    based on hash of composite key. Tracks lifecycle from detection through
+
+    resolution.
+
+    '
+  properties:
+  - name: violation_id
+    type: string
+    nullable: false
+    constraints:
+    - 'pattern: ^V-[a-f0-9]{12}(-\d+)?$'
+    - required
+    description: Hash-based unique identifier
+  - name: contract_id
+    type: string
+    nullable: false
+    constraints:
+    - 'pattern: ^[a-z][a-z0-9_-]*$'
+    - required
+    description: Contract that was violated
+  - name: check_id
+    type: string
+    nullable: false
+    constraints:
+    - 'pattern: ^[a-z][a-z0-9_-]*$'
+    - required
+    description: Specific check within contract
+  - name: severity
+    type: Severity
+    nullable: false
+    constraints:
+    - required
+    description: Violation severity level
+  - name: file_path
+    type: string
+    nullable: false
+    constraints:
+    - required
+    - relative-path
+    description: Relative path to violating file
+  - name: line_number
+    type: int
+    nullable: true
+    constraints:
+    - 'min: 1'
+    description: Line number (null for file-level)
+  - name: column_number
+    type: int
+    nullable: true
+    constraints:
+    - 'min: 1'
+    description: Column number if available
+  - name: message
+    type: string
+    nullable: false
+    constraints:
+    - required
+    - 'max-length: 500'
+    description: Human-readable description
+  - name: fix_hint
+    type: string
+    nullable: true
+    constraints:
+    - 'max-length: 500'
+    description: Suggested remediation
+  - name: code_snippet
+    type: string
+    nullable: true
+    constraints:
+    - 'max-lines: 5'
+    description: Relevant code context
+  - name: detected_at
+    type: datetime
+    nullable: false
+    constraints:
+    - required
+    - iso8601
+    description: First detection timestamp
+  - name: last_seen_at
+    type: datetime
+    nullable: false
+    constraints:
+    - required
+    - iso8601
+    description: Most recent detection
+  - name: status
+    type: ViolationStatus
+    nullable: false
+    constraints:
+    - required
+    description: Current violation status
+  - name: resolved_at
+    type: datetime
+    nullable: true
+    constraints:
+    - iso8601
+    description: Resolution timestamp
+  - name: resolution
+    type: string
+    nullable: true
+    constraints:
+    - 'max-length: 500'
+    description: Resolution details
+  - name: exemption_id
+    type: string
+    nullable: true
+    constraints:
+    - 'pattern: ^[a-z][a-z0-9_-]*$'
+    description: Covering exemption if any
+  - name: exemption_expired_at
+    type: datetime
+    nullable: true
+    constraints:
+    - iso8601
+    description: When covering exemption expired
+  methods:
+  - name: calculate_id
+    returns: string
+    parameters:
+    - name: contract_id
+      type: string
+    - name: check_id
+      type: string
+    - name: file_path
+      type: string
+    - name: line_number
+      type: int?
+    - name: rule_id
+      type: string?
+    description: Calculate violation ID from composite key
+  - name: mark_resolved
+    returns: Violation
+    parameters:
+    - name: reason
+      type: string
+    description: Mark violation as resolved
+  - name: mark_stale
+    returns: Violation
+    parameters: []
+    description: Mark violation as stale
+  - name: mark_exemption_expired
+    returns: Violation
+    parameters: []
+    description: Mark violation as having expired exemption
+  invariants:
+  - status == 'resolved' implies resolved_at is not null
+  - status == 'exemption_expired' implies exemption_expired_at is not null
+  - exemption_id is not null implies status in ('exempted', 'exemption_expired')
+- name: ViolationStatus
+  layer: Domain
+  type: enum
+  description: 'Possible states for a violation throughout its lifecycle.
+
+    '
+  properties:
+  - name: open
+    type: string
+    nullable: false
+    constraints: []
+    description: Active violation requiring attention
+  - name: resolved
+    type: string
+    nullable: false
+    constraints: []
+    description: Violation has been fixed
+  - name: exempted
+    type: string
+    nullable: false
+    constraints: []
+    description: Covered by active exemption
+  - name: exemption_expired
+    type: string
+    nullable: false
+    constraints: []
+    description: Exemption expired, needs attention
+  - name: stale
+    type: string
+    nullable: false
+    constraints: []
+    description: Not checked in recent incremental run
+  invariants: []
+- name: Severity
+  layer: Domain
+  type: enum
+  description: 'Canonical severity levels for conformance violations.
+
+    '
+  properties:
+  - name: blocker
+    type: string
+    nullable: false
+    constraints: []
+    description: Blocks CI, must fix immediately
+  - name: critical
+    type: string
+    nullable: false
+    constraints: []
+    description: Should fix soon, may block in strict mode
+  - name: major
+    type: string
+    nullable: false
+    constraints: []
+    description: Should address, tracked for resolution
+  - name: minor
+    type: string
+    nullable: false
+    constraints: []
+    description: Low priority, tracked for awareness
+  - name: info
+    type: string
+    nullable: false
+    constraints: []
+    description: Informational only
+  invariants: []
+- name: Exemption
+  layer: Domain
+  type: entity
+  description: 'Approved exception to a contract check with justification and optional
+
+    expiration. Scope can be global, file patterns, specific checks, or
+
+    individual violations.
+
+    '
+  properties:
+  - name: id
+    type: string
+    nullable: false
+    constraints:
+    - 'pattern: ^[a-z][a-z0-9_-]*$'
+    - required
+    description: Unique exemption identifier
+  - name: contract_id
+    type: string
+    nullable: false
+    constraints:
+    - 'pattern: ^[a-z][a-z0-9_-]*$'
+    - required
+    description: Contract being exempted
+  - name: check_ids
+    type: List<string>
+    nullable: false
+    constraints:
+    - required
+    - 'min-items: 1'
+    description: Checks exempted (* for all)
+  - name: reason
+    type: string
+    nullable: false
+    constraints:
+    - required
+    - 'min-length: 10'
+    description: Justification for exemption
+  - name: approved_by
+    type: string
+    nullable: false
+    constraints:
+    - required
+    description: Approver (username, email, or 'self')
+  - name: approved_date
+    type: date
+    nullable: false
+    constraints:
+    - required
+    - iso8601-date
+    description: Date of approval
+  - name: expires
+    type: date
+    nullable: true
+    constraints:
+    - iso8601-date
+    description: Expiration date (end of day)
+  - name: review_date
+    type: date
+    nullable: true
+    constraints:
+    - iso8601-date
+    description: Date to reconsider exemption
+  - name: status
+    type: ExemptionStatus
+    nullable: false
+    constraints:
+    - required
+    description: Current exemption status
+  - name: scope
+    type: ExemptionScope
+    nullable: false
+    constraints:
+    - required
+    description: What this exemption covers
+  methods:
+  - name: is_expired
+    returns: bool
+    parameters: []
+    description: Check if exemption has expired
+  - name: is_active
+    returns: bool
+    parameters: []
+    description: Check if exemption is currently active
+  - name: covers_violation
+    returns: bool
+    parameters:
+    - name: violation
+      type: Violation
+    description: Check if this exemption covers a violation
+  - name: covers_file
+    returns: bool
+    parameters:
+    - name: file_path
+      type: string
+    description: Check if file path matches scope patterns
+  invariants:
+  - expires is null or expires >= approved_date
+  - review_date is null or review_date >= approved_date
+  - status == 'expired' implies expires is not null and expires < today
+- name: ExemptionStatus
+  layer: Domain
+  type: enum
+  description: 'Possible states for an exemption.
+
+    '
+  properties:
+  - name: active
+    type: string
+    nullable: false
+    constraints: []
+    description: Exemption is in effect
+  - name: expired
+    type: string
+    nullable: false
+    constraints: []
+    description: Past expiration date
+  - name: resolved
+    type: string
+    nullable: false
+    constraints: []
+    description: Underlying issue fixed
+  - name: under_review
+    type: string
+    nullable: false
+    constraints: []
+    description: Being reconsidered
+  invariants: []
+- name: ExemptionScope
+  layer: Domain
+  type: value_object
+  description: 'Defines what violations an exemption covers.
+
+    '
+  properties:
+  - name: type
+    type: string
+    nullable: false
+    constraints:
+    - 'enum: check_id, file_pattern, violation_id, global'
+    - required
+    description: Type of scope restriction
+  - name: patterns
+    type: List<string>
+    nullable: true
+    constraints:
+    - glob-patterns
+    description: File glob patterns (for file_pattern type)
+  - name: violation_ids
+    type: List<string>
+    nullable: true
+    constraints:
+    - 'pattern: ^V-[a-f0-9]{12}(-\d+)?$'
+    description: Specific violation IDs (for violation_id type)
+  - name: lines
+    type: LineRange
+    nullable: true
+    constraints: []
+    description: Optional line range restriction
+  invariants:
+  - type == 'file_pattern' implies patterns is not null and not empty
+  - type == 'violation_id' implies violation_ids is not null and not empty
+  - type == 'global' implies patterns is null and violation_ids is null
+- name: LineRange
+  layer: Domain
+  type: value_object
+  description: 'Line range for scoping exemptions to specific code regions.
+
+    '
+  properties:
+  - name: start
+    type: int
+    nullable: false
+    constraints:
+    - 'min: 1'
+    description: Start line (inclusive)
+  - name: end
+    type: int
+    nullable: false
+    constraints:
+    - 'min: 1'
+    description: End line (inclusive)
+  invariants:
+  - end >= start
+- name: HistorySnapshot
+  layer: Domain
+  type: entity
+  description: 'Point-in-time summary of conformance state for trend analysis.
+
+    One snapshot per day, contains only aggregate counts.
+
+    '
+  properties:
+  - name: schema_version
+    type: string
+    nullable: false
+    constraints:
+    - 'pattern: ^\d+\.\d+$'
+    - required
+    description: Schema version
+  - name: date
+    type: date
+    nullable: false
+    constraints:
+    - required
+    - iso8601-date
+    description: Snapshot date
+  - name: generated_at
+    type: datetime
+    nullable: false
+    constraints:
+    - required
+    - iso8601
+    description: Generation timestamp
+  - name: summary
+    type: ConformanceSummary
+    nullable: false
+    constraints:
+    - required
+    description: Aggregate counts
+  - name: by_severity
+    type: Dictionary<Severity, int>
+    nullable: false
+    constraints:
+    - required
+    description: Counts by severity
+  - name: by_contract
+    type: Dictionary<string, int>
+    nullable: false
+    constraints:
+    - required
+    description: Counts by contract
+  - name: files_analyzed
+    type: int
+    nullable: false
+    constraints:
+    - 'min: 0'
+    description: Files checked
+  - name: contracts_checked
+    type: List<string>
+    nullable: false
+    constraints:
+    - required
+    description: Contracts included
+  invariants: []
+- name: CodebaseProfile
+  layer: Domain
+  type: aggregate_root
+  description: 'Extracted metadata about codebase structure, patterns, and conventions.
+
+    May be auto-detected or manually curated.
+
+    '
+  properties:
+  - name: schema_version
+    type: string
+    nullable: false
+    constraints:
+    - 'pattern: ^\d+\.\d+$'
+    - required
+    description: Schema version
+  - name: generated_at
+    type: datetime
+    nullable: false
+    constraints:
+    - required
+    - iso8601
+    description: Generation timestamp
+  - name: languages
+    type: List<LanguageInfo>
+    nullable: false
+    constraints:
+    - required
+    description: Detected programming languages
+  - name: frameworks
+    type: List<string>
+    nullable: false
+    constraints: []
+    description: Detected frameworks/libraries
+  - name: structure
+    type: CodebaseStructure
+    nullable: false
+    constraints:
+    - required
+    description: Directory and layer organization
+  - name: patterns_detected
+    type: DetectedPatterns
+    nullable: true
+    constraints: []
+    description: Naming and organization patterns
+  - name: dependencies
+    type: DependencyInfo
+    nullable: true
+    constraints: []
+    description: Project dependencies
+  - name: metrics
+    type: CodebaseMetrics
+    nullable: true
+    constraints: []
+    description: Size and composition metrics
+  invariants: []
+- name: LanguageInfo
+  layer: Domain
+  type: value_object
+  description: 'Information about a programming language used in the codebase.
+
+    '
+  properties:
+  - name: name
+    type: string
+    nullable: false
+    constraints:
+    - required
+    description: Language name
+  - name: percentage
+    type: float
+    nullable: false
+    constraints:
+    - 'min: 0'
+    - 'max: 100'
+    description: Percentage of codebase
+  - name: confidence
+    type: float
+    nullable: true
+    constraints:
+    - 'min: 0'
+    - 'max: 1'
+    description: Detection confidence (for auto-detected)
+  - name: source
+    type: string
+    nullable: false
+    constraints:
+    - 'enum: auto-detected, manual'
+    description: How this was determined
+  invariants: []
+- name: CodebaseStructure
+  layer: Domain
+  type: value_object
+  description: 'Organization of the codebase directories and layers.
+
+    '
+  properties:
+  - name: root_path
+    type: string
+    nullable: false
+    constraints:
+    - required
+    description: Repository root path
+  - name: layers
+    type: List<LayerInfo>
+    nullable: true
+    constraints: []
+    description: Architectural layers if detectable
+  - name: key_directories
+    type: List<DirectoryInfo>
+    nullable: false
+    constraints: []
+    description: Important directories
+  - name: entry_points
+    type: List<string>
+    nullable: true
+    constraints: []
+    description: Main entry point files
+  invariants: []
+- name: LayerInfo
+  layer: Domain
+  type: value_object
+  description: 'Information about an architectural layer.
+
+    '
+  properties:
+  - name: name
+    type: string
+    nullable: false
+    constraints:
+    - required
+    description: Layer name
+  - name: path
+    type: string
+    nullable: false
+    constraints:
+    - required
+    description: Layer directory path
+  - name: description
+    type: string
+    nullable: true
+    constraints: []
+    description: Layer responsibilities
+  invariants: []
+- name: DirectoryInfo
+  layer: Domain
+  type: value_object
+  description: 'Information about a key directory.
+
+    '
+  properties:
+  - name: path
+    type: string
+    nullable: false
+    constraints:
+    - required
+    description: Directory path
+  - name: purpose
+    type: string
+    nullable: false
+    constraints:
+    - required
+    description: What this directory contains
+  invariants: []
+- name: DetectedPatterns
+  layer: Domain
+  type: value_object
+  description: 'Naming and organization patterns detected in the codebase.
+
+    '
+  properties:
+  - name: naming_conventions
+    type: List<NamingConvention>
+    nullable: true
+    constraints: []
+    description: File and symbol naming patterns
+  - name: file_organization
+    type: string
+    nullable: true
+    constraints: []
+    description: How files are organized
+  - name: test_structure
+    type: TestStructure
+    nullable: true
+    constraints: []
+    description: Test file organization
+  invariants: []
+- name: NamingConvention
+  layer: Domain
+  type: value_object
+  description: 'A detected naming convention.
+
+    '
+  properties:
+  - name: applies_to
+    type: string
+    nullable: false
+    constraints:
+    - required
+    description: What this applies to (files, classes, functions)
+  - name: pattern
+    type: string
+    nullable: false
+    constraints:
+    - required
+    description: Naming pattern description
+  - name: examples
+    type: List<string>
+    nullable: true
+    constraints: []
+    description: Example names following convention
+  - name: confidence
+    type: float
+    nullable: true
+    constraints:
+    - 'min: 0'
+    - 'max: 1'
+    description: Detection confidence
+  invariants: []
+- name: TestStructure
+  layer: Domain
+  type: value_object
+  description: 'How tests are organized in the codebase.
+
+    '
+  properties:
+  - name: test_directories
+    type: List<string>
+    nullable: false
+    constraints: []
+    description: Where tests are located
+  - name: naming_pattern
+    type: string
+    nullable: true
+    constraints: []
+    description: Test file naming pattern
+  - name: framework
+    type: string
+    nullable: true
+    constraints: []
+    description: Test framework used
+  invariants: []
+- name: DependencyInfo
+  layer: Domain
+  type: value_object
+  description: 'Project dependencies information.
+
+    '
+  properties:
+  - name: direct
+    type: List<string>
+    nullable: false
+    constraints: []
+    description: Direct dependencies
+  - name: dev
+    type: List<string>
+    nullable: false
+    constraints: []
+    description: Development dependencies
+  invariants: []
+- name: CodebaseMetrics
+  layer: Domain
+  type: value_object
+  description: 'Size and composition metrics for the codebase.
+
+    '
+  properties:
+  - name: total_files
+    type: int
+    nullable: false
+    constraints:
+    - 'min: 0'
+    description: Total source files
+  - name: total_lines
+    type: int
+    nullable: false
+    constraints:
+    - 'min: 0'
+    description: Approximate lines of code
+  - name: by_language
+    type: Dictionary<string, int>
+    nullable: true
+    constraints: []
+    description: Lines by language
+  invariants: []
+- name: ConformanceManager
+  layer: Application
+  type: entity
+  description: 'Orchestrates conformance operations: running checks, updating violations,
+
+    generating reports, and pruning stale data. Main application service
+
+    integrating VerificationRunner output with .agentforge/ filesystem.
+
+    '
+  properties:
+  - name: repo_path
+    type: string
+    nullable: false
+    constraints:
+    - required
+    description: Repository root path
+  - name: agentforge_path
+    type: string
+    nullable: false
+    constraints:
+    - required
+    description: Path to .agentforge/ directory
+  - name: violation_store
+    type: ViolationStore
+    nullable: false
+    constraints:
+    - required
+    description: Violation storage manager
+  - name: history_store
+    type: HistoryStore
+    nullable: false
+    constraints:
+    - required
+    description: History storage manager
+  - name: exemption_registry
+    type: ExemptionRegistry
+    nullable: false
+    constraints:
+    - required
+    description: Exemption lookup service
+  methods:
+  - name: run_conformance_check
+    returns: ConformanceReport
+    parameters:
+    - name: contracts
+      type: List<string>?
+    - name: files
+      type: List<string>?
+    - name: full_run
+      type: bool
+    description: Execute conformance check with optional scope
+  - name: generate_report
+    returns: ConformanceReport
+    parameters: []
+    description: Generate report from current state
+  - name: update_violations
+    returns: int
+    parameters:
+    - name: check_results
+      type: List<CheckResult>
+    - name: run_type
+      type: string
+    description: Update violation store with check results
+  - name: apply_exemptions
+    returns: int
+    parameters:
+    - name: violations
+      type: List<Violation>
+    description: Apply exemptions to violations
+  - name: save_history_snapshot
+    returns: void
+    parameters:
+    - name: report
+      type: ConformanceReport
+    description: Save daily history snapshot
+  - name: prune_violations
+    returns: int
+    parameters:
+    - name: older_than_days
+      type: int
+    - name: statuses
+      type: List<ViolationStatus>
+    description: Remove old resolved/stale violations
+  invariants: []
+- name: ViolationStore
+  layer: Infrastructure
+  type: entity
+  description: 'Manages violations/ directory. Handles CRUD operations for violation
+    files,
+
+    ID generation, smart merge logic, and stale detection.
+
+    '
+  properties:
+  - name: violations_path
+    type: string
+    nullable: false
+    constraints:
+    - required
+    description: Path to violations/ directory
+  - name: violations_cache
+    type: Dictionary<string, Violation>
+    nullable: false
+    constraints: []
+    description: In-memory cache of loaded violations
+  methods:
+  - name: load_all
+    returns: List<Violation>
+    parameters: []
+    description: Load all violations from disk
+  - name: get
+    returns: Violation?
+    parameters:
+    - name: violation_id
+      type: string
+    description: Get violation by ID
+  - name: save
+    returns: void
+    parameters:
+    - name: violation
+      type: Violation
+    description: Save violation to disk atomically
+  - name: delete
+    returns: bool
+    parameters:
+    - name: violation_id
+      type: string
+    description: Delete violation file
+  - name: find_by_file
+    returns: List<Violation>
+    parameters:
+    - name: file_path
+      type: string
+    description: Find violations for a file
+  - name: find_by_contract
+    returns: List<Violation>
+    parameters:
+    - name: contract_id
+      type: string
+    description: Find violations for a contract
+  - name: mark_stale
+    returns: int
+    parameters:
+    - name: except_files
+      type: List<string>
+    - name: except_contracts
+      type: List<string>
+    description: Mark violations as stale except for specified scope
+  - name: generate_id
+    returns: string
+    parameters:
+    - name: contract_id
+      type: string
+    - name: check_id
+      type: string
+    - name: file_path
+      type: string
+    - name: line_number
+      type: int?
+    - name: rule_id
+      type: string?
+    description: Generate violation ID from composite key
+  invariants: []
+- name: HistoryStore
+  layer: Infrastructure
+  type: entity
+  description: 'Manages history/ directory. Handles daily snapshot creation, retention
+
+    policy enforcement, and trend calculation.
+
+    '
+  properties:
+  - name: history_path
+    type: string
+    nullable: false
+    constraints:
+    - required
+    description: Path to history/ directory
+  - name: retention_days
+    type: int
+    nullable: false
+    constraints:
+    - 'min: 7'
+    - 'max: 365'
+    - 'default: 90'
+    description: History retention in days
+  methods:
+  - name: save_snapshot
+    returns: void
+    parameters:
+    - name: snapshot
+      type: HistorySnapshot
+    description: Save or overwrite daily snapshot
+  - name: get_snapshot
+    returns: HistorySnapshot?
+    parameters:
+    - name: date
+      type: date
+    description: Get snapshot for specific date
+  - name: get_range
+    returns: List<HistorySnapshot>
+    parameters:
+    - name: start_date
+      type: date
+    - name: end_date
+      type: date
+    description: Get snapshots for date range
+  - name: prune_old_snapshots
+    returns: int
+    parameters: []
+    description: Delete snapshots older than retention period
+  - name: calculate_trend
+    returns: Dictionary<string, List<int>>
+    parameters:
+    - name: days
+      type: int
+    - name: metric
+      type: string
+    description: Calculate trend data for visualization
+  invariants: []
+- name: ExemptionRegistry
+  layer: Infrastructure
+  type: entity
+  description: 'Manages exemptions/ directory and provides lookup functionality.
+
+    '
+  properties:
+  - name: exemptions_path
+    type: string
+    nullable: false
+    constraints:
+    - required
+    description: Path to exemptions/ directory
+  - name: exemptions_cache
+    type: Dictionary<string, Exemption>
+    nullable: false
+    constraints: []
+    description: In-memory cache of loaded exemptions
+  methods:
+  - name: load_all
+    returns: List<Exemption>
+    parameters: []
+    description: Load all exemptions from disk
+  - name: find_for_violation
+    returns: Exemption?
+    parameters:
+    - name: violation
+      type: Violation
+    description: Find exemption that covers a violation
+  - name: get_expired
+    returns: List<Exemption>
+    parameters: []
+    description: Get all expired exemptions
+  - name: update_status
+    returns: void
+    parameters:
+    - name: exemption_id
+      type: string
+    - name: status
+      type: ExemptionStatus
+    description: Update exemption status
+  invariants: []
+- name: ConformanceConfig
+  layer: Domain
+  type: value_object
+  description: 'Conformance configuration stored in repo.yaml.
+
+    '
+  properties:
+  - name: history_retention_days
+    type: int
+    nullable: false
+    constraints:
+    - 'min: 7'
+    - 'max: 365'
+    - 'default: 90'
+    description: Days to retain history snapshots
+  - name: severity_threshold
+    type: Severity
+    nullable: false
+    constraints:
+    - 'default: blocker'
+    description: Minimum severity for non-zero exit code
+  - name: auto_prune
+    type: bool
+    nullable: false
+    constraints:
+    - 'default: true'
+    description: Auto-prune old resolved violations
+  - name: auto_prune_days
+    type: int
+    nullable: false
+    constraints:
+    - 'min: 7'
+    - 'default: 30'
+    description: Days before auto-pruning resolved violations
+  - name: notify_on_new_violations
+    type: bool
+    nullable: false
+    constraints:
+    - 'default: false'
+    description: Emit notification on new violations
+  invariants: []
+interfaces:
+- name: ConformanceCheck
+  type: command
+  path: 'CLI: agentforge conformance check'
+  request:
+    body: "Options:\n  --contracts: Optional[List[str]]\n  --files: Optional[List[str]]\n\
+      \  --full: bool = False\n  --no-history: bool = False\n  --exit-code: bool =\
+      \ False\n  --severity-threshold: Severity = blocker\n"
+  response:
+    success: ConformanceReport
+    error_codes:
+    - NoAgentForgeDirectory
+    - InvalidContract
+    - VerificationFailed
+  authorization: local execution
+- name: ConformanceReport
+  type: query
+  path: 'CLI: agentforge conformance report'
+  request:
+    body: "Options:\n  --format: str = \"text\" (text|json|yaml)\n  --verbose: bool\
+      \ = False\n  --by-severity: bool = False\n  --by-contract: bool = False\n"
+  response:
+    success: FormattedReport
+    error_codes:
+    - NoConformanceReport
+  authorization: local execution
+- name: ViolationsList
+  type: query
+  path: 'CLI: agentforge conformance violations list'
+  request:
+    body: "Options:\n  --status: Optional[ViolationStatus]\n  --severity: Optional[Severity]\n\
+      \  --contract: Optional[str]\n  --file: Optional[str]\n  --limit: int = 50\n"
+  response:
+    success: List[ViolationSummary]
+    error_codes:
+    - NoViolationsDirectory
+  authorization: local execution
+- name: ViolationShow
+  type: query
+  path: 'CLI: agentforge conformance violations show {id}'
+  request:
+    body: "Path parameters:\n  id: str (violation_id)\n"
+  response:
+    success: Violation
+    error_codes:
+    - ViolationNotFound
+  authorization: local execution
+- name: ViolationResolve
+  type: command
+  path: 'CLI: agentforge conformance violations resolve {id}'
+  request:
+    body: "Path parameters:\n  id: str (violation_id)\nOptions:\n  --reason: str (required)\n"
+  response:
+    success: Violation
+    error_codes:
+    - ViolationNotFound
+    - ReasonRequired
+  authorization: local execution
+- name: ViolationPrune
+  type: command
+  path: 'CLI: agentforge conformance violations prune'
+  request:
+    body: "Options:\n  --older-than: int = 30\n  --dry-run: bool = False\n"
+  response:
+    success: PruneResult
+    error_codes:
+    - NoViolationsDirectory
+  authorization: local execution
+- name: ConformanceHistory
+  type: query
+  path: 'CLI: agentforge conformance history'
+  request:
+    body: "Options:\n  --days: int = 30\n  --format: str = \"text\" (text|json|yaml|csv)\n\
+      \  --metric: str = \"failed\" (total|failed|passed|exempted)\n"
+  response:
+    success: HistoryData
+    error_codes:
+    - NoHistoryDirectory
+  authorization: local execution
+- name: ConformanceInit
+  type: command
+  path: 'CLI: agentforge conformance init'
+  request:
+    body: "Options:\n  --force: bool = False\n"
+  response:
+    success: InitResult
+    error_codes:
+    - DirectoryExists
+  authorization: local execution
+workflows:
+- name: Run Conformance Check
+  trigger: Developer or CI runs 'agentforge conformance check'
+  actors:
+  - User
+  - ConformanceManager
+  - VerificationEngine
+  - ViolationStore
+  - ExemptionRegistry
+  - HistoryStore
+  steps:
+  - step: 1
+    actor: User
+    action: Executes 'agentforge conformance check' with optional scope
+  - step: 2
+    actor: ConformanceManager
+    action: Loads configuration from repo.yaml
+  - step: 3
+    actor: ConformanceManager
+    action: Determines run type (full or incremental) based on options
+  - step: 4
+    actor: ConformanceManager
+    action: Invokes VerificationEngine with specified contracts/files
+  - step: 5
+    actor: VerificationEngine
+    action: Runs checks and returns List<CheckResult>
+  - step: 6
+    actor: ConformanceManager
+    action: Transforms CheckResult into Violation records
+  - step: 7
+    actor: ExemptionRegistry
+    action: Matches violations against exemptions, marks exempted violations
+  - step: 8
+    actor: ExemptionRegistry
+    action: Identifies expired exemptions, updates their status
+  - step: 9
+    actor: ViolationStore
+    action: Merges new violations with existing (smart merge for incremental)
+    alternatives:
+    - 'For incremental: mark unchecked violations as stale'
+    - 'For full: resolve violations that no longer fail'
+  - step: 10
+    actor: ConformanceManager
+    action: Generates ConformanceReport with summary and trend
+  - step: 11
+    actor: HistoryStore
+    action: Saves daily history snapshot (unless --no-history)
+  - step: 12
+    actor: HistoryStore
+    action: Prunes old history snapshots per retention policy
+  - step: 13
+    actor: ConformanceManager
+    action: Returns exit code based on severity threshold
+  success_outcome: Conformance state updated, report generated, history recorded
+  failure_outcomes:
+  - 'VerificationEngine error: return error details, no state changes'
+  - 'Invalid configuration: return validation error'
+  - 'File system error: log error, attempt recovery'
+- name: Handle Expired Exemption
+  trigger: Conformance check detects exemption past expiration date
+  actors:
+  - ConformanceManager
+  - ExemptionRegistry
+  - ViolationStore
+  steps:
+  - step: 1
+    actor: ConformanceManager
+    action: During check, requests expired exemptions from registry
+  - step: 2
+    actor: ExemptionRegistry
+    action: Returns list of exemptions where expires < current_date
+  - step: 3
+    actor: ConformanceManager
+    action: For each expired exemption, finds covered violations
+  - step: 4
+    actor: ViolationStore
+    action: Updates violation.status to 'exemption_expired'
+  - step: 5
+    actor: ViolationStore
+    action: Sets violation.exemption_expired_at timestamp
+  - step: 6
+    actor: ExemptionRegistry
+    action: Updates exemption.status to 'expired'
+  - step: 7
+    actor: ConformanceManager
+    action: Adds warning to conformance report about expired exemptions
+  success_outcome: Expired exemptions surfaced as violations requiring attention
+  failure_outcomes:
+  - 'Violation already resolved: skip status update'
+- name: Resolve Violation Manually
+  trigger: User runs 'agentforge conformance violations resolve V-xxx'
+  actors:
+  - User
+  - CLI
+  - ViolationStore
+  steps:
+  - step: 1
+    actor: User
+    action: Executes resolve command with violation ID and reason
+  - step: 2
+    actor: CLI
+    action: Validates violation ID exists
+    alternatives:
+    - 'If not found: return ViolationNotFound error'
+  - step: 3
+    actor: CLI
+    action: Validates reason is provided
+    alternatives:
+    - 'If missing: return ReasonRequired error'
+  - step: 4
+    actor: ViolationStore
+    action: Loads violation from file
+  - step: 5
+    actor: ViolationStore
+    action: Updates status to 'resolved', sets resolved_at and resolution
+  - step: 6
+    actor: ViolationStore
+    action: Saves violation file atomically
+  - step: 7
+    actor: CLI
+    action: Displays updated violation details
+  success_outcome: Violation marked as resolved with documented reason
+  failure_outcomes:
+  - 'Violation not found: error message with suggestion to check ID'
+  - 'File write error: error message, no changes made'
+- name: Initialize Conformance
+  trigger: User runs 'agentforge conformance init' in new repository
+  actors:
+  - User
+  - CLI
+  - ConformanceManager
+  steps:
+  - step: 1
+    actor: User
+    action: Executes 'conformance init' command
+  - step: 2
+    actor: CLI
+    action: Checks if .agentforge/ directory exists
+    alternatives:
+    - 'If exists and no --force: return DirectoryExists error'
+  - step: 3
+    actor: ConformanceManager
+    action: Creates .agentforge/ directory
+  - step: 4
+    actor: ConformanceManager
+    action: Creates violations/, exemptions/, history/ subdirectories
+  - step: 5
+    actor: ConformanceManager
+    action: Creates .gitkeep files in empty directories
+  - step: 6
+    actor: ConformanceManager
+    action: Generates initial codebase_profile.yaml (auto-detected)
+  - step: 7
+    actor: ConformanceManager
+    action: Generates initial conformance_report.yaml (empty state)
+  - step: 8
+    actor: ConformanceManager
+    action: Adds local.yaml to .gitignore if not present
+  - step: 9
+    actor: CLI
+    action: Displays initialization summary
+  success_outcome: .agentforge/ directory structure created and ready for use
+  failure_outcomes:
+  - 'Directory exists without --force: suggest using --force'
+  - 'Permission error: display permission requirements'
+error_handling:
+- error_code: NoAgentForgeDirectory
+  condition: .agentforge/ directory does not exist in repository
+  response: Return error with suggestion to run 'conformance init'
+  user_message: 'No .agentforge/ directory found. Run ''agentforge conformance init''
+    to initialize.
+
+    '
+- error_code: InvalidContract
+  condition: Specified contract ID not found in contract registry
+  response: Return error listing available contracts
+  user_message: 'Contract ''{contract_id}'' not found. Available contracts: {list}.
+
+    '
+- error_code: VerificationFailed
+  condition: Verification engine encounters unrecoverable error
+  response: Return error with engine details, no state changes
+  user_message: 'Verification failed: {error_message}. No conformance state was modified.
+
+    '
+- error_code: NoConformanceReport
+  condition: conformance_report.yaml does not exist
+  response: Return error suggesting to run check first
+  user_message: 'No conformance report found. Run ''agentforge conformance check''
+    first.
+
+    '
+- error_code: ViolationNotFound
+  condition: Requested violation ID does not exist
+  response: Return error with suggestion to list violations
+  user_message: 'Violation ''{violation_id}'' not found. Use ''violations list'' to
+    see available violations.
+
+    '
+- error_code: ReasonRequired
+  condition: Resolve command called without --reason
+  response: Return error explaining requirement
+  user_message: 'Resolution reason is required. Use --reason ''your reason'' to document
+    why this was resolved.
+
+    '
+- error_code: DirectoryExists
+  condition: .agentforge/ already exists when running init
+  response: Return error suggesting --force option
+  user_message: '.agentforge/ directory already exists. Use --force to reinitialize
+    (existing data will be preserved).
+
+    '
+- error_code: SchemaValidationError
+  condition: YAML file fails schema validation
+  response: Return error with validation details
+  user_message: 'Schema validation failed for {file_path}: {validation_error}
+
+    '
+- error_code: AtomicWriteFailed
+  condition: Atomic file rename operation fails
+  response: Return error, ensure no partial files remain
+  user_message: 'Failed to write {file_path}. Check disk space and permissions.
+
+    '
+- error_code: HashCollision
+  condition: Two different violations produce same 12-char hash
+  response: Append numeric suffix to ID (-1, -2, etc.)
+  user_message: null
+- error_code: RetentionPolicyViolation
+  condition: User sets retention outside allowed range
+  response: Return error with valid range
+  user_message: 'History retention must be between 7 and 365 days. Got: {value}
+
+    '
+testing_notes:
+  unit_test_focus:
+  - Violation ID calculation produces consistent results
+  - Smart merge correctly handles incremental vs full runs
+  - Exemption matching for all scope types (check_id, file_pattern, violation_id,
+    global)
+  - Exemption expiry date handling (boundary conditions)
+  - History retention pruning logic
+  - Severity mapping between systems
+  - Atomic file operations with temp file + rename
+  - ConformanceSummary calculation accuracy
+  - Trend calculation from previous report
+  integration_test_scenarios:
+  - Full conformance check lifecycle from init to report
+  - Incremental check preserving existing violations
+  - Exemption expiry transitioning violations to exemption_expired
+  - History accumulation over multiple days
+  - CLI commands with various option combinations
+  - Concurrent check handling (no corruption)
+  - Recovery from partial/corrupted files
+  edge_cases:
+  - Empty repository (no source files)
+  - Repository with no violations (perfect conformance)
+  - Violation at line 0 (file-level violation)
+  - Exemption with * for all checks
+  - File path with special characters
+  - Hash collision handling with -1 suffix
+  - Exactly 90-day-old history snapshot (boundary)
+  - Exemption expiring today at midnight
+  - Two violations with same location but different checks
+  - Incremental run with no changes
+open_questions: []
+glossary:
+- term: Conformance
+  definition: 'The degree to which a codebase adheres to its defined architectural
+    contracts.
+
+    Measured as ratio of passed checks to total checks.
+
+    '
+- term: Violation
+  definition: 'A single instance where code fails a contract check. Identified by
+    hash of
+
+    contract, check, file, and line number.
+
+    '
+- term: Exemption
+  definition: 'An approved exception to a contract check. Allows known technical debt
+    to
+
+    exist without failing conformance checks. Requires justification and may expire.
+
+    '
+- term: Stale Violation
+  definition: 'A violation from a previous run that was not re-checked in the current
+
+    incremental run because its file or contract was not in scope.
+
+    '
+- term: Smart Merge
+  definition: 'The process of combining incremental run results with existing conformance
+
+    state. Updates only violations for checked scope, preserves others as stale.
+
+    '
+- term: History Snapshot
+  definition: 'Daily summary of conformance metrics stored for trend analysis. Contains
+
+    only aggregate counts, not full violation details.
+
+    '
+- term: Severity Threshold
+  definition: 'The minimum violation severity that causes CLI to return non-zero exit
+    code.
+
+    Used for CI/CD gating decisions.
+
+    '
+- term: Atomic Write
+  definition: 'File write operation using temp file + rename pattern to ensure either
+
+    complete old or complete new file exists, never partial.
+
+    '
+- term: Codebase Profile
+  definition: 'Extracted metadata about a repository including languages, frameworks,
+
+    structure, and patterns. May be auto-detected or manually curated.
+
+    '
+- term: Run ID
+  definition: 'UUID v4 identifying a specific verification run. Used for conflict
+    detection
+
+    and trend comparison.'

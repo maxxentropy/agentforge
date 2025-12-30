@@ -88,6 +88,8 @@ def execute_check(check: Dict[str, Any], repo_root,
         "command": _execute_command_check,
         "file_exists": _execute_file_exists_check,
         "custom": _execute_custom_check,
+        "naming": _execute_naming_check,
+        "ast": _execute_ast_interface_check,
     }
 
     handler = handlers.get(check_type)
@@ -328,3 +330,278 @@ def _execute_custom_check(ctx: CheckContext) -> List[CheckResult]:
             check_id=ctx.check_id, check_name=ctx.check_name, passed=False,
             severity="error", message=f"Custom check execution failed: {e}"
         )]
+
+
+# =============================================================================
+# Naming Convention Check
+# =============================================================================
+
+# Regex patterns for extracting symbol names by language
+_SYMBOL_PATTERNS = {
+    "class": {
+        # C#: class ClassName or public class ClassName : BaseClass, IInterface
+        ".cs": r'(?:public|internal|private|protected)?\s*'
+               r'(?:sealed|abstract|static|partial\s+)*'
+               r'class\s+(\w+)',
+        # Python: class ClassName or class ClassName(BaseClass)
+        ".py": r'class\s+(\w+)',
+        # TypeScript/JavaScript: class ClassName
+        ".ts": r'(?:export\s+)?(?:abstract\s+)?class\s+(\w+)',
+        ".js": r'class\s+(\w+)',
+    },
+    "interface": {
+        ".cs": r'(?:public|internal|private|protected)?\s*'
+               r'(?:partial\s+)?interface\s+(\w+)',
+        ".ts": r'(?:export\s+)?interface\s+(\w+)',
+    },
+    "method": {
+        ".cs": r'(?:public|internal|private|protected)\s+'
+               r'(?:static\s+)?(?:virtual\s+)?(?:override\s+)?(?:async\s+)?'
+               r'(?:\w+(?:<[^>]+>)?)\s+(\w+)\s*\(',
+        ".py": r'def\s+(\w+)\s*\(',
+        ".ts": r'(?:public|private|protected)?\s*(?:async\s+)?(\w+)\s*\([^)]*\)\s*[:{]',
+    },
+}
+
+
+def _get_symbol_pattern(symbol_type: str, file_suffix: str) -> Optional[str]:
+    """Get regex pattern for extracting symbols of given type from file."""
+    type_patterns = _SYMBOL_PATTERNS.get(symbol_type, {})
+    return type_patterns.get(file_suffix)
+
+
+def _extract_symbols(content: str, symbol_type: str, file_suffix: str) -> List[tuple]:
+    """
+    Extract symbols from file content.
+
+    Returns list of (name, line_number) tuples.
+    """
+    pattern_str = _get_symbol_pattern(symbol_type, file_suffix)
+    if not pattern_str:
+        return []
+
+    symbols = []
+    try:
+        pattern = re.compile(pattern_str, re.MULTILINE)
+        for match in pattern.finditer(content):
+            line_num = content[:match.start()].count("\n") + 1
+            symbols.append((match.group(1), line_num))
+    except re.error:
+        pass
+
+    return symbols
+
+
+def _execute_naming_check(ctx: CheckContext) -> List[CheckResult]:
+    """
+    Execute a naming convention check.
+
+    Config options:
+        pattern: Regex pattern that symbol names must match
+        symbol_type: Type of symbol to check (class, interface, method)
+        mode: 'require' (names must match) or 'forbid' (names must not match)
+    """
+    pattern_str = ctx.config.get("pattern")
+    symbol_type = ctx.config.get("symbol_type", "class")
+    mode = ctx.config.get("mode", "require")
+
+    if not pattern_str:
+        return [CheckResult(
+            check_id=ctx.check_id, check_name=ctx.check_name, passed=False,
+            severity="error", message="Naming check missing 'pattern' in config"
+        )]
+
+    try:
+        name_pattern = re.compile(pattern_str)
+    except re.error as e:
+        return [CheckResult(
+            check_id=ctx.check_id, check_name=ctx.check_name, passed=False,
+            severity="error", message=f"Invalid naming pattern: {e}"
+        )]
+
+    results = []
+
+    for file_path in ctx.file_paths:
+        try:
+            content = file_path.read_text(encoding="utf-8", errors="ignore")
+        except Exception:
+            continue
+
+        symbols = _extract_symbols(content, symbol_type, file_path.suffix)
+
+        for name, line_num in symbols:
+            matches = name_pattern.match(name) is not None
+
+            if mode == "require" and not matches:
+                results.append(CheckResult(
+                    check_id=ctx.check_id, check_name=ctx.check_name, passed=False,
+                    severity=ctx.severity, fix_hint=ctx.fix_hint,
+                    message=f"{symbol_type.capitalize()} '{name}' does not match "
+                            f"required pattern '{pattern_str}'",
+                    file_path=str(file_path.relative_to(ctx.repo_root)),
+                    line_number=line_num
+                ))
+            elif mode == "forbid" and matches:
+                results.append(CheckResult(
+                    check_id=ctx.check_id, check_name=ctx.check_name, passed=False,
+                    severity=ctx.severity, fix_hint=ctx.fix_hint,
+                    message=f"{symbol_type.capitalize()} '{name}' matches "
+                            f"forbidden pattern '{pattern_str}'",
+                    file_path=str(file_path.relative_to(ctx.repo_root)),
+                    line_number=line_num
+                ))
+
+    return results
+
+
+# =============================================================================
+# AST Interface Implementation Check
+# =============================================================================
+
+# Regex patterns for extracting class definitions with inheritance
+_CLASS_WITH_INHERITANCE = {
+    # C#: class ClassName : BaseClass, IInterface1, IInterface2
+    ".cs": r'(?:public|internal|private|protected)?\s*'
+           r'(?:sealed|abstract|static|partial\s+)*'
+           r'class\s+(\w+)(?:\s*:\s*([^{]+))?',
+    # Python: class ClassName(Base1, Base2)
+    ".py": r'class\s+(\w+)\s*(?:\(([^)]*)\))?',
+    # TypeScript: class ClassName extends Base implements Interface
+    ".ts": r'(?:export\s+)?(?:abstract\s+)?class\s+(\w+)'
+           r'(?:\s+extends\s+(\w+))?'
+           r'(?:\s+implements\s+([^{]+))?',
+}
+
+
+def _extract_class_with_bases(content: str, file_suffix: str) -> List[tuple]:
+    """
+    Extract classes with their base classes/interfaces.
+
+    Returns list of (class_name, bases_string, line_number) tuples.
+    """
+    pattern_str = _CLASS_WITH_INHERITANCE.get(file_suffix)
+    if not pattern_str:
+        return []
+
+    classes = []
+    try:
+        pattern = re.compile(pattern_str, re.MULTILINE)
+        for match in pattern.finditer(content):
+            line_num = content[:match.start()].count("\n") + 1
+            class_name = match.group(1)
+
+            # Build inheritance string based on language
+            if file_suffix == ".ts":
+                # TypeScript has separate extends and implements groups
+                bases = []
+                if match.lastindex >= 2 and match.group(2):
+                    bases.append(match.group(2))
+                if match.lastindex >= 3 and match.group(3):
+                    bases.append(match.group(3))
+                bases_str = ", ".join(bases) if bases else ""
+            else:
+                bases_str = match.group(2) if match.lastindex >= 2 else ""
+
+            classes.append((class_name, bases_str or "", line_num))
+    except re.error:
+        pass
+
+    return classes
+
+
+def _parse_inheritance_list(bases_str: str, file_suffix: str) -> List[str]:
+    """Parse inheritance string into list of base/interface names."""
+    if not bases_str:
+        return []
+
+    # Split by comma and clean up
+    bases = [b.strip() for b in bases_str.split(",")]
+
+    # Extract just the type name (remove generic parameters like <T>)
+    result = []
+    for base in bases:
+        # Remove generic parameters
+        name = re.sub(r'<[^>]*>', '', base).strip()
+        # Remove 'where' clauses (C#)
+        name = name.split()[0] if name else ""
+        if name:
+            result.append(name)
+
+    return result
+
+
+def _execute_ast_interface_check(ctx: CheckContext) -> List[CheckResult]:
+    """
+    Execute an AST-based interface implementation check.
+
+    Config options:
+        class_pattern: Regex pattern to match class names
+        must_implement: List of interfaces/bases that matching classes must have
+        must_not_implement: List of interfaces/bases that matching classes must not have
+    """
+    class_pattern_str = ctx.config.get("class_pattern")
+    must_implement = ctx.config.get("must_implement", [])
+    must_not_implement = ctx.config.get("must_not_implement", [])
+
+    if not class_pattern_str:
+        return [CheckResult(
+            check_id=ctx.check_id, check_name=ctx.check_name, passed=False,
+            severity="error", message="AST check missing 'class_pattern' in config"
+        )]
+
+    try:
+        class_pattern = re.compile(class_pattern_str)
+    except re.error as e:
+        return [CheckResult(
+            check_id=ctx.check_id, check_name=ctx.check_name, passed=False,
+            severity="error", message=f"Invalid class pattern: {e}"
+        )]
+
+    results = []
+
+    for file_path in ctx.file_paths:
+        try:
+            content = file_path.read_text(encoding="utf-8", errors="ignore")
+        except Exception:
+            continue
+
+        classes = _extract_class_with_bases(content, file_path.suffix)
+
+        for class_name, bases_str, line_num in classes:
+            # Only check classes matching the pattern
+            if not class_pattern.match(class_name):
+                continue
+
+            implemented = _parse_inheritance_list(bases_str, file_path.suffix)
+            relative_path = str(file_path.relative_to(ctx.repo_root))
+
+            # Check must_implement requirements
+            for required in must_implement:
+                # Support partial matches (e.g., "IRequest" matches "IRequest<T>")
+                found = any(
+                    impl == required or impl.startswith(required)
+                    for impl in implemented
+                )
+                if not found:
+                    results.append(CheckResult(
+                        check_id=ctx.check_id, check_name=ctx.check_name, passed=False,
+                        severity=ctx.severity, fix_hint=ctx.fix_hint,
+                        message=f"Class '{class_name}' must implement '{required}'",
+                        file_path=relative_path, line_number=line_num
+                    ))
+
+            # Check must_not_implement restrictions
+            for forbidden in must_not_implement:
+                found = any(
+                    impl == forbidden or impl.startswith(forbidden)
+                    for impl in implemented
+                )
+                if found:
+                    results.append(CheckResult(
+                        check_id=ctx.check_id, check_name=ctx.check_name, passed=False,
+                        severity=ctx.severity, fix_hint=ctx.fix_hint,
+                        message=f"Class '{class_name}' must not implement '{forbidden}'",
+                        file_path=relative_path, line_number=line_num
+                    ))
+
+    return results

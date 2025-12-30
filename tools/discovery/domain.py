@@ -63,6 +63,24 @@ class OnboardingStatus(Enum):
     FAILED = "failed"
 
 
+class ZoneDetectionMode(Enum):
+    """How zone was detected."""
+    AUTO = "auto"
+    MANUAL = "manual"
+    HYBRID = "hybrid"
+
+
+class InteractionType(Enum):
+    """Types of cross-zone interactions."""
+    HTTP_API = "http_api"
+    GRPC = "grpc"
+    MESSAGE_QUEUE = "message_queue"
+    SHARED_SCHEMA = "shared_schema"
+    SHARED_LIBRARY = "shared_library"
+    DOCKER_COMPOSE = "docker_compose"
+    FILE_SYSTEM = "file_system"
+
+
 @dataclass
 class Detection:
     """A detection with confidence and evidence tracking."""
@@ -241,6 +259,110 @@ class TestAnalysis:
             "estimated_coverage": round(self.estimated_coverage, 2),
             "confidence": round(self.detection.confidence, 2),
         }
+
+
+@dataclass
+class Zone:
+    """
+    A coherent area of code with its own language, patterns, and conventions.
+
+    Zones enable multi-language repository support. Each zone is independently
+    analyzed and can have its own conformance contracts.
+    """
+    name: str
+    path: Path
+    language: str
+    marker: Optional[Path] = None  # The file that triggered detection (e.g., pyproject.toml)
+    detection: ZoneDetectionMode = ZoneDetectionMode.AUTO
+    purpose: Optional[str] = None
+    contracts: List[str] = field(default_factory=list)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "name": self.name,
+            "path": str(self.path),
+            "language": self.language,
+            "marker": str(self.marker) if self.marker else None,
+            "detection": self.detection.value,
+            "purpose": self.purpose,
+            "contracts": self.contracts,
+        }
+
+    def contains_path(self, path: Path) -> bool:
+        """Check if a path is within this zone."""
+        try:
+            path.relative_to(self.path)
+            return True
+        except ValueError:
+            return False
+
+
+@dataclass
+class Interaction:
+    """
+    A detected cross-zone interaction.
+
+    Interactions capture how different zones communicate - through HTTP APIs,
+    shared schemas, docker-compose orchestration, etc.
+    """
+    id: str
+    interaction_type: InteractionType
+    # For directional interactions (from_zone -> to_zone)
+    from_zone: Optional[str] = None
+    to_zone: Optional[str] = None
+    # For multi-zone interactions (e.g., shared schema used by multiple zones)
+    zones: List[str] = field(default_factory=list)
+    details: Dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> Dict[str, Any]:
+        result: Dict[str, Any] = {
+            "id": self.id,
+            "type": self.interaction_type.value,
+        }
+        if self.from_zone and self.to_zone:
+            result["from_zone"] = self.from_zone
+            result["to_zone"] = self.to_zone
+        if self.zones:
+            result["zones"] = self.zones
+        if self.details:
+            result["details"] = self.details
+        return result
+
+
+@dataclass
+class ZoneProfile:
+    """
+    Per-zone discovery results.
+
+    Each zone gets its own profile with language-specific patterns,
+    structure, and conventions. This enables different analysis
+    strategies per zone.
+    """
+    zone: Zone
+    languages: List[LanguageInfo] = field(default_factory=list)
+    structure: Dict[str, Any] = field(default_factory=dict)
+    patterns: Dict[str, Any] = field(default_factory=dict)
+    conventions: Optional[Dict[str, Any]] = None
+    frameworks: List[str] = field(default_factory=list)
+    dependencies: List["DependencyInfo"] = field(default_factory=list)
+    file_count: int = 0
+    line_count: int = 0
+
+    def to_dict(self) -> Dict[str, Any]:
+        result = {
+            "language": self.zone.language,
+            "path": str(self.zone.path),
+            "marker": str(self.zone.marker) if self.zone.marker else None,
+            "detection": self.zone.detection.value,
+            "purpose": self.zone.purpose,
+            "structure": self.structure,
+            "patterns": self.patterns,
+            "frameworks": self.frameworks,
+            "contracts": self.zone.contracts,
+        }
+        if self.conventions:
+            result["conventions"] = self.conventions
+        return result
 
 
 @dataclass

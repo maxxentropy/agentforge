@@ -1,0 +1,130 @@
+$schema: "http://json-schema.org/draft-07/schema#"
+$id: "https://agentforge.dev/schemas/violation.schema.yaml"
+title: "Violation Record"
+description: |
+  Individual violation record. Stored as V-{hash}.yaml in violations/ directory.
+  Hash-based ID ensures stable identity across verification runs.
+
+type: object
+required:
+  - schema_version
+  - violation_id
+  - contract_id
+  - check_id
+  - severity
+  - file_path
+  - message
+  - detected_at
+  - last_seen_at
+  - status
+
+properties:
+  schema_version:
+    type: string
+    pattern: "^\\d+\\.\\d+$"
+
+  violation_id:
+    type: string
+    pattern: "^V-[a-f0-9]{12}(-\\d+)?$"
+    description: "Hash-based unique identifier"
+    examples: ["V-a1b2c3d4e5f6", "V-a1b2c3d4e5f6-1"]
+
+  contract_id:
+    type: string
+    pattern: "^[a-z][a-z0-9_-]*$"
+    description: "Reference to the violated contract"
+
+  check_id:
+    type: string
+    pattern: "^[a-z][a-z0-9_-]*$"
+    description: "Specific check within the contract"
+
+  rule_id:
+    type: string
+    description: "Optional rule identifier for compound checks"
+
+  severity:
+    type: string
+    enum: [blocker, critical, major, minor, info]
+    description: "Canonical severity level"
+
+  file_path:
+    type: string
+    description: "Relative path to the violating file"
+
+  line_number:
+    type: integer
+    minimum: 1
+    description: "Line number of violation (null for file-level)"
+
+  column_number:
+    type: integer
+    minimum: 1
+    description: "Column number if available"
+
+  message:
+    type: string
+    minLength: 1
+    description: "Human-readable description of the violation"
+
+  fix_hint:
+    type: string
+    description: "Suggested remediation"
+
+  code_snippet:
+    type: string
+    maxLength: 500
+    description: "Relevant code context (max 5 lines)"
+
+  detected_at:
+    type: string
+    format: date-time
+    description: "ISO 8601 timestamp of first detection"
+
+  last_seen_at:
+    type: string
+    format: date-time
+    description: "ISO 8601 timestamp of most recent detection"
+
+  status:
+    type: string
+    enum: [open, resolved, exemption_expired, stale]
+    description: "Current violation status"
+
+  resolution:
+    type: object
+    description: "Resolution details if status is 'resolved'"
+    properties:
+      resolved_at:
+        type: string
+        format: date-time
+      resolved_by:
+        type: string
+      reason:
+        type: string
+        minLength: 1
+
+  exemption_id:
+    type: string
+    description: "Reference to covering exemption if exempted"
+
+  exemption_expired_at:
+    type: string
+    format: date-time
+    description: "When the covering exemption expired"
+
+additionalProperties: false
+
+examples:
+  - schema_version: "1.0"
+    violation_id: "V-a1b2c3d4e5f6"
+    contract_id: "agentforge"
+    check_id: "no-print-statements"
+    severity: "major"
+    file_path: "tools/verification_runner.py"
+    line_number: 42
+    message: "Debug print statement found"
+    fix_hint: "Remove print statement or use logging"
+    detected_at: "2025-01-10T10:00:00Z"
+    last_seen_at: "2025-01-15T14:30:00Z"
+    status: "open"

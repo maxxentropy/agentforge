@@ -1,219 +1,138 @@
 $schema: "http://json-schema.org/draft-07/schema#"
 $id: "https://agentforge.dev/schemas/exemption.schema.yaml"
-title: "AgentForge Exemption"
+title: "Exemption"
 description: |
-  Schema for exemption files that document intentional contract violations.
-  Exemptions require justification and have optional expiration dates.
+  Approved exception to contract checks with justification and optional expiration.
+  Supports scoped exemptions by file pattern, check ID, or specific violations.
+
+  Individual exemptions are stored as {exemption-id}.yaml in .agentforge/exemptions/
 
 type: object
-
 required:
   - schema_version
-  - exemptions
+  - id
+  - contract_id
+  - check_ids
+  - reason
+  - approved_by
+  - approved_date
+  - status
+  - scope
 
 properties:
   schema_version:
     type: string
     pattern: "^\\d+\\.\\d+$"
-    description: "Schema version for migration support (e.g., '1.0')"
-    examples: ["1.0"]
 
-  exemptions:
+  id:
+    type: string
+    pattern: "^[a-z][a-z0-9_-]*$"
+    description: "Unique exemption identifier"
+    examples: ["legacy-console-logging", "test-file-docstrings"]
+
+  contract_id:
+    type: string
+    pattern: "^[a-z][a-z0-9_-]*$"
+    description: "Contract being exempted"
+
+  check_ids:
     type: array
-    description: "List of exemptions in this file"
     items:
-      $ref: "#/$defs/exemption"
+      type: string
+    minItems: 1
+    description: "Checks exempted (use '*' for all checks in contract)"
+    examples: [["no-print-statements"], ["*"]]
 
-$defs:
-  exemption:
+  reason:
+    type: string
+    minLength: 10
+    description: "Justification for the exemption"
+
+  approved_by:
+    type: string
+    description: "Approver (username, email, or 'self' for acknowledged debt)"
+    examples: ["jsmith@example.com", "self"]
+
+  approved_date:
+    type: string
+    format: date
+    description: "ISO 8601 date of approval"
+
+  expires:
+    type: string
+    format: date
+    description: "Optional expiration date (end of day)"
+
+  review_date:
+    type: string
+    format: date
+    description: "Optional date to reconsider exemption"
+
+  status:
+    type: string
+    enum: [active, expired, resolved, under_review]
+    description: "Current exemption status"
+
+  scope:
     type: object
-    required:
-      - id
-      - contract
-      - check
-      - reason
-      - approved_by
+    required: [type]
     properties:
-      id:
+      type:
         type: string
-        pattern: "^[a-z][a-z0-9_-]*$"
-        description: "Unique identifier for this exemption"
-        examples: ["legacy-console-logging", "temp-dbcontext-migration"]
-
-      contract:
-        type: string
-        description: "Name or path of the contract being exempted"
-        examples: ["no-console-logging", "_patterns-csharp"]
-
-      check:
-        oneOf:
-          - type: string
-            description: "Single check ID being exempted"
-          - type: array
-            items:
-              type: string
-            description: "Multiple check IDs being exempted"
-        description: "Check ID(s) within the contract to exempt"
-        examples:
-          - "no-console-writeline"
-          - ["no-console-writeline", "no-debug-writeline"]
-
-      reason:
-        type: string
-        minLength: 10
-        description: "Detailed justification for why this exemption is needed"
-        examples:
-          - "Legacy logging in migration scripts - will be removed after Phase 2 migration"
-          - "Third-party library requires direct DbContext access for bulk operations"
-
-      scope:
-        type: object
-        description: "Scope of the exemption (which files/paths are exempted)"
-        properties:
-          files:
-            type: array
-            items:
-              type: string
-            description: "Specific files covered by this exemption (glob patterns)"
-            examples:
-              - ["src/Legacy/**/*.cs", "src/Migration/*.cs"]
-
-          functions:
-            type: array
-            items:
-              type: string
-            description: "Specific functions/methods covered"
-            examples:
-              - ["LegacyDataImporter.Import", "MigrationRunner.*"]
-
-          lines:
-            type: object
-            description: "Specific line ranges (for single-file exemptions)"
-            additionalProperties:
-              type: array
-              items:
-                type: array
-                items:
-                  type: integer
-                minItems: 2
-                maxItems: 2
-            examples:
-              - src/Legacy/Importer.cs: [[10, 25], [100, 110]]
-
-          global:
-            type: boolean
-            default: false
-            description: "If true, exemption applies to entire repo"
-
-      approved_by:
-        type: string
-        description: "Person/team who approved this exemption"
-        examples: ["@john.doe", "platform-team", "tech-lead"]
-
-      approved_date:
-        type: string
-        format: date
-        description: "Date when exemption was approved"
-        examples: ["2024-01-15"]
-
-      expires:
-        type: string
-        format: date
-        description: "Expiration date after which exemption is invalid"
-        examples: ["2024-06-30"]
-
-      ticket:
-        type: string
-        description: "Reference to tracking ticket for resolving the exemption"
-        examples: ["JIRA-1234", "AB#5678", "GH#123"]
-
-      tags:
+        enum: [check_id, file_pattern, violation_id, global]
+        description: "Type of scope restriction"
+      patterns:
         type: array
         items:
           type: string
-        description: "Tags for categorizing exemptions"
-        examples:
-          - ["legacy", "migration", "technical-debt"]
-          - ["external-dependency", "vendor-constraint"]
+        description: "File glob patterns (for file_pattern type)"
+        examples: [["tests/**/*.py", "scripts/*.py"]]
+      violation_ids:
+        type: array
+        items:
+          type: string
+          pattern: "^V-[a-f0-9]{12}(-\\d+)?$"
+        description: "Specific violation IDs (for violation_id type)"
+      lines:
+        type: object
+        properties:
+          start:
+            type: integer
+            minimum: 1
+          end:
+            type: integer
+            minimum: 1
+        description: "Optional line range restriction"
 
-      status:
-        type: string
-        enum:
-          - active
-          - expired
-          - resolved
-          - under_review
-        default: active
-        description: |
-          Exemption status:
-          - active: Currently valid
-          - expired: Past expiration date
-          - resolved: Issue fixed, exemption no longer needed
-          - under_review: Being evaluated for removal
+  notes:
+    type: string
+    description: "Additional context or tracking information"
 
-      notes:
-        type: string
-        description: "Additional context or history"
+  ticket:
+    type: string
+    description: "Reference to tracking ticket"
+    examples: ["JIRA-1234", "AB#5678"]
 
-      created_date:
-        type: string
-        format: date
-        description: "Date when exemption was created"
-
-      last_reviewed:
-        type: string
-        format: date
-        description: "Date of last review"
+  tags:
+    type: array
+    items:
+      type: string
+    description: "Tags for categorizing exemptions"
 
 additionalProperties: false
 
 examples:
   - schema_version: "1.0"
-    exemptions:
-      - id: legacy-console-logging
-        contract: "no-console-logging"
-        check: "no-console-writeline"
-        reason: "Legacy import scripts use console for progress reporting. Will be migrated to ILogger in Q2."
-        scope:
-          files:
-            - "src/Legacy/**/*.cs"
-            - "src/Tools/DataImport/*.cs"
-        approved_by: "@tech-lead"
-        approved_date: "2024-01-15"
-        expires: "2024-06-30"
-        ticket: "AB#12345"
-        tags: ["legacy", "migration"]
-        status: active
-
-  - schema_version: "1.0"
-    exemptions:
-      - id: bulk-insert-dbcontext
-        contract: "repository-pattern"
-        check: ["no-direct-dbcontext", "require-repository-interface"]
-        reason: "EF Core bulk extensions require direct DbContext access for performance. No repository abstraction available for bulk operations."
-        scope:
-          files:
-            - "src/Infrastructure/BulkOperations/*.cs"
-          functions:
-            - "BulkInsertService.*"
-            - "BulkUpdateService.*"
-        approved_by: "platform-team"
-        approved_date: "2024-02-01"
-        ticket: "AB#23456"
-        tags: ["external-dependency", "performance"]
-        notes: "Evaluated alternatives: EF Core 8 ExecuteUpdate is insufficient for our volume."
-        status: active
-
-      - id: vendor-sdk-patterns
-        contract: "_patterns-csharp"
-        check: "no-static-state"
-        reason: "Vendor SDK requires static initialization per their documentation"
-        scope:
-          files:
-            - "src/Integrations/VendorSDK/**/*.cs"
-        approved_by: "@john.doe"
-        approved_date: "2023-12-01"
-        expires: "2024-12-01"
-        ticket: "AB#34567"
-        tags: ["vendor-constraint"]
-        status: active
+    id: "legacy-console-logging"
+    contract_id: "agentforge"
+    check_ids: ["no-print-statements"]
+    reason: "Legacy CLI module uses print for user output. Will migrate to rich in Q2."
+    approved_by: "tech-lead@example.com"
+    approved_date: "2025-01-01"
+    expires: "2025-03-31"
+    review_date: "2025-03-01"
+    status: "active"
+    scope:
+      type: "file_pattern"
+      patterns:
+        - "cli/**/*.py"

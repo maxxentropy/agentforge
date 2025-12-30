@@ -1,0 +1,97 @@
+$schema: "http://json-schema.org/draft-07/schema#"
+$id: "https://agentforge.dev/schemas/history_snapshot.schema.yaml"
+title: "History Snapshot"
+description: |
+  Point-in-time summary of conformance state for trend analysis.
+  One snapshot per day, contains only aggregate counts.
+
+type: object
+required:
+  - schema_version
+  - date
+  - generated_at
+  - summary
+  - by_severity
+  - by_contract
+  - files_analyzed
+  - contracts_checked
+
+properties:
+  schema_version:
+    type: string
+    pattern: "^\\d+\\.\\d+$"
+
+  date:
+    type: string
+    format: date
+    description: "Snapshot date (YYYY-MM-DD)"
+
+  generated_at:
+    type: string
+    format: date-time
+    description: "Generation timestamp"
+
+  summary:
+    type: object
+    required: [total, passed, failed, exempted, stale]
+    properties:
+      total:
+        type: integer
+        minimum: 0
+      passed:
+        type: integer
+        minimum: 0
+      failed:
+        type: integer
+        minimum: 0
+      exempted:
+        type: integer
+        minimum: 0
+      stale:
+        type: integer
+        minimum: 0
+
+  by_severity:
+    type: object
+    additionalProperties:
+      type: integer
+      minimum: 0
+
+  by_contract:
+    type: object
+    additionalProperties:
+      type: integer
+      minimum: 0
+
+  files_analyzed:
+    type: integer
+    minimum: 0
+
+  contracts_checked:
+    type: array
+    items:
+      type: string
+
+additionalProperties: false
+
+examples:
+  - schema_version: "1.0"
+    date: "2025-01-15"
+    generated_at: "2025-01-15T23:59:00Z"
+    summary:
+      total: 100
+      passed: 85
+      failed: 10
+      exempted: 5
+      stale: 0
+    by_severity:
+      blocker: 2
+      critical: 3
+      major: 5
+    by_contract:
+      agentforge: 7
+      security-baseline: 3
+    files_analyzed: 45
+    contracts_checked:
+      - agentforge
+      - security-baseline

@@ -1,0 +1,108 @@
+$schema: "http://json-schema.org/draft-07/schema#"
+$id: "https://agentforge.dev/schemas/codebase_profile.schema.yaml"
+title: "Codebase Profile"
+description: |
+  Extracted metadata about codebase structure, patterns, and conventions.
+  May be auto-detected or manually curated.
+
+type: object
+required:
+  - schema_version
+  - generated_at
+  - languages
+  - structure
+
+properties:
+  schema_version:
+    type: string
+    pattern: "^\\d+\\.\\d+$"
+
+  generated_at:
+    type: string
+    format: date-time
+
+  languages:
+    type: array
+    items:
+      type: object
+      required: [name, percentage, source]
+      properties:
+        name:
+          type: string
+          description: "Language name"
+        percentage:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: "Percentage of codebase"
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: "Detection confidence"
+        source:
+          type: string
+          enum: [auto-detected, manual]
+
+  frameworks:
+    type: array
+    items:
+      type: string
+    description: "Detected frameworks/libraries"
+
+  structure:
+    type: object
+    required: [root_path]
+    properties:
+      root_path:
+        type: string
+      layers:
+        type: array
+        items:
+          type: object
+          properties:
+            name:
+              type: string
+            path:
+              type: string
+            description:
+              type: string
+      key_directories:
+        type: array
+        items:
+          type: object
+          properties:
+            path:
+              type: string
+            purpose:
+              type: string
+      entry_points:
+        type: array
+        items:
+          type: string
+
+  patterns_detected:
+    type: object
+    properties:
+      naming_conventions:
+        type: object
+        additionalProperties:
+          type: string
+      file_organization:
+        type: string
+
+  metrics:
+    type: object
+    properties:
+      total_files:
+        type: integer
+        minimum: 0
+      total_lines:
+        type: integer
+        minimum: 0
+      test_coverage_percent:
+        type: number
+        minimum: 0
+        maximum: 100
+
+additionalProperties: false

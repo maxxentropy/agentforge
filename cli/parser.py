@@ -60,8 +60,9 @@ def build_parser(handlers: dict):
     cfg_parser = _add_config_commands(subparsers, handlers)
     ct_parser = _add_contracts_commands(subparsers, handlers)
     ex_parser = _add_exemptions_commands(subparsers, handlers)
+    conf_parser = _add_conformance_commands(subparsers, handlers)
 
-    return parser, ws_parser, cfg_parser, ct_parser, ex_parser
+    return parser, ws_parser, cfg_parser, ct_parser, ex_parser, conf_parser
 
 
 def _add_spec_commands(subparsers, h):
@@ -320,3 +321,69 @@ def _add_exemptions_commands(subparsers, h):
 
     ex.set_defaults(func=h['run_exemptions'])
     return ex
+
+
+def _add_conformance_commands(subparsers, h):
+    """Add conformance tracking commands."""
+    conf = subparsers.add_parser('conformance', help='Conformance tracking')
+    conf_sub = conf.add_subparsers(dest='conformance_command', help='Conformance subcommand')
+
+    # init
+    p = conf_sub.add_parser('init', help='Initialize conformance tracking')
+    p.add_argument('--force', action='store_true', help='Force reinitialize')
+    p.set_defaults(func=h['run_conformance_init'])
+
+    # check
+    p = conf_sub.add_parser('check', help='Run conformance checks')
+    p.add_argument('--full', action='store_true', help='Full scan (marks resolved)')
+    p.add_argument('--contract', '-c', help='Check specific contract')
+    p.add_argument('--files', '-F', help='Comma-separated file paths')
+    p.add_argument('--exit-code', action='store_true', help='Exit 1 if violations')
+    p.set_defaults(func=h['run_conformance_check'])
+
+    # report
+    p = conf_sub.add_parser('report', help='Show conformance report')
+    p.add_argument('--format', '-f', choices=['text', 'json', 'yaml'], default='text')
+    p.set_defaults(func=h['run_conformance_report'])
+
+    # violations
+    viol = conf_sub.add_parser('violations', help='Manage violations')
+    viol_sub = viol.add_subparsers(dest='violations_command', help='Violations subcommand')
+
+    # violations list
+    p = viol_sub.add_parser('list', help='List violations')
+    p.add_argument('--status', '-s', choices=['open', 'resolved', 'stale', 'exemption_expired'])
+    p.add_argument('--severity', choices=['blocker', 'critical', 'major', 'minor', 'info'])
+    p.add_argument('--contract', '-c', help='Filter by contract')
+    p.add_argument('--file', '-F', help='Filter by file pattern')
+    p.add_argument('--limit', '-n', type=int, default=50, help='Max results')
+    p.add_argument('--format', '-f', choices=['table', 'json', 'yaml'], default='table')
+    p.set_defaults(func=h['run_conformance_violations_list'])
+
+    # violations show
+    p = viol_sub.add_parser('show', help='Show violation details')
+    p.add_argument('violation_id', help='Violation ID (V-xxxx)')
+    p.set_defaults(func=h['run_conformance_violations_show'])
+
+    # violations resolve
+    p = viol_sub.add_parser('resolve', help='Mark violation resolved')
+    p.add_argument('violation_id', help='Violation ID (V-xxxx)')
+    p.add_argument('--reason', '-r', required=True, help='Resolution reason')
+    p.set_defaults(func=h['run_conformance_violations_resolve'])
+
+    # violations prune
+    p = viol_sub.add_parser('prune', help='Remove old violations')
+    p.add_argument('--days', '-d', type=int, default=30, help='Older than N days')
+    p.add_argument('--dry-run', action='store_true', help='Preview only')
+    p.set_defaults(func=h['run_conformance_violations_prune'])
+
+    viol.set_defaults(func=h['run_conformance_violations'])
+
+    # history
+    p = conf_sub.add_parser('history', help='Show conformance history')
+    p.add_argument('--days', '-d', type=int, default=30, help='Number of days')
+    p.add_argument('--format', '-f', choices=['text', 'json', 'yaml'], default='text')
+    p.set_defaults(func=h['run_conformance_history'])
+
+    conf.set_defaults(func=h['run_conformance'])
+    return conf

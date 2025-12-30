@@ -49,6 +49,18 @@ from cli.commands.contracts import (
     run_exemptions_add,
     run_exemptions_audit,
 )
+from cli.commands.conformance import (
+    run_conformance,
+    run_conformance_init,
+    run_conformance_check,
+    run_conformance_report,
+    run_conformance_violations,
+    run_conformance_violations_list,
+    run_conformance_violations_show,
+    run_conformance_violations_resolve,
+    run_conformance_violations_prune,
+    run_conformance_history,
+)
 from cli.parser import build_parser
 
 # Handler mapping - maps parser defaults to command functions
@@ -68,6 +80,14 @@ HANDLERS = {
     'run_contracts_validate': run_contracts_validate, 'run_exemptions': run_exemptions,
     'run_exemptions_list': run_exemptions_list, 'run_exemptions_add': run_exemptions_add,
     'run_exemptions_audit': run_exemptions_audit,
+    'run_conformance': run_conformance, 'run_conformance_init': run_conformance_init,
+    'run_conformance_check': run_conformance_check, 'run_conformance_report': run_conformance_report,
+    'run_conformance_violations': run_conformance_violations,
+    'run_conformance_violations_list': run_conformance_violations_list,
+    'run_conformance_violations_show': run_conformance_violations_show,
+    'run_conformance_violations_resolve': run_conformance_violations_resolve,
+    'run_conformance_violations_prune': run_conformance_violations_prune,
+    'run_conformance_history': run_conformance_history,
 }
 
 # Commands that require subcommands
@@ -76,6 +96,7 @@ SUBCOMMAND_REQUIRED = {
     'config': 'config_command',
     'contracts': 'contracts_command',
     'exemptions': 'exemptions_command',
+    'conformance': 'conformance_command',
 }
 
 
@@ -91,7 +112,7 @@ def _check_subcommand(args, command: str, attr: str, subparser) -> bool:
 
 def main():
     """Main entry point."""
-    parser, ws_parser, cfg_parser, ct_parser, ex_parser = build_parser(HANDLERS)
+    parser, ws_parser, cfg_parser, ct_parser, ex_parser, conf_parser = build_parser(HANDLERS)
     args = parser.parse_args()
 
     if args.command is None:
@@ -99,7 +120,10 @@ def main():
         sys.exit(1)
 
     # Check subcommand requirements
-    subparsers = {'workspace': ws_parser, 'config': cfg_parser, 'contracts': ct_parser, 'exemptions': ex_parser}
+    subparsers = {
+        'workspace': ws_parser, 'config': cfg_parser, 'contracts': ct_parser,
+        'exemptions': ex_parser, 'conformance': conf_parser
+    }
     for cmd, attr in SUBCOMMAND_REQUIRED.items():
         if _check_subcommand(args, cmd, attr, subparsers[cmd]):
             sys.exit(1)

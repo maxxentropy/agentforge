@@ -215,6 +215,32 @@ class ContextAssembler:
                 if entry_lower in file_path.lower():
                     data["score"] += 1.0
 
+    def _get_file_content(self, file_path: str, cached_content: str) -> str:
+        """Get file content, loading from disk if not cached."""
+        if cached_content:
+            return cached_content
+        try:
+            full_path = self.project_path / file_path
+            if full_path.exists():
+                with open(full_path, 'r', encoding='utf-8', errors='replace') as f:
+                    return f.read()
+        except Exception:
+            pass
+        return ""
+
+    def _fit_content_to_budget(self, content: str, current_tokens: int, budget: int):
+        """Fit content to remaining budget. Returns (content, tokens) or (None, 0) if doesn't fit."""
+        tokens = self.estimate_tokens(content)
+
+        if current_tokens + tokens <= budget:
+            return content, tokens
+
+        remaining = budget - current_tokens
+        if remaining < 200:
+            return None, 0
+
+        return self._truncate_content(content, remaining), remaining
+
     def _build_file_contexts(
         self,
         sorted_files: List[tuple],
@@ -226,30 +252,15 @@ class ContextAssembler:
         seen_symbols: Set[str] = set()
 
         for file_path, data in sorted_files:
-            content = data["content"]
-
-            if not content:
-                try:
-                    full_path = self.project_path / file_path
-                    if full_path.exists():
-                        with open(full_path, 'r', encoding='utf-8', errors='replace') as f:
-                            content = f.read()
-                except Exception:
-                    continue
-
+            content = self._get_file_content(file_path, data["content"])
             if not content:
                 continue
 
-            tokens = self.estimate_tokens(content)
+            content, tokens = self._fit_content_to_budget(content, current_tokens, budget)
+            if content is None:
+                continue
 
-            if current_tokens + tokens > budget:
-                remaining = budget - current_tokens
-                if remaining < 200:
-                    continue
-                content = self._truncate_content(content, remaining)
-                tokens = remaining
-
-            file_ctx = FileContext(
+            context.files.append(FileContext(
                 path=file_path,
                 language=self.detect_language(file_path),
                 content=content,
@@ -257,9 +268,7 @@ class ContextAssembler:
                 relevance_score=data["score"],
                 symbols=data["symbols"],
                 token_count=tokens,
-            )
-
-            context.files.append(file_ctx)
+            ))
             current_tokens += tokens
 
             for sym in data["symbols"]:

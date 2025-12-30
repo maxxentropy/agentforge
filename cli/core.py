@@ -87,6 +87,27 @@ def _extract_from_content_blocks(content: list) -> str | None:
     return None
 
 
+def _try_parse_result_format(json_response: dict) -> str:
+    """Try to parse 'result' format from JSON response."""
+    if 'result' not in json_response:
+        return None
+    result_obj = json_response['result']
+    if isinstance(result_obj, str):
+        return result_obj
+    if isinstance(result_obj, dict):
+        return _extract_text_from_content(result_obj.get('content', []))
+    return None
+
+
+def _try_parse_direct_fields(json_response: dict) -> str:
+    """Try to parse direct 'text' or 'content' fields."""
+    if 'text' in json_response:
+        return json_response['text']
+    if 'content' in json_response:
+        return _extract_text_from_content(json_response['content'])
+    return None
+
+
 def _parse_claude_json_response(json_response: Any, raw_stdout: str) -> str:
     """Parse Claude CLI JSON response to extract text content."""
     if isinstance(json_response, str):
@@ -94,15 +115,10 @@ def _parse_claude_json_response(json_response: Any, raw_stdout: str) -> str:
     if not isinstance(json_response, dict):
         return raw_stdout
 
-    # Try result.content[0].text (newer format)
-    if 'result' in json_response:
-        result_obj = json_response['result']
-        if isinstance(result_obj, str):
-            return result_obj
-        if isinstance(result_obj, dict):
-            text = _extract_text_from_content(result_obj.get('content', []))
-            if text:
-                return text
+    # Try result format (newer)
+    text = _try_parse_result_format(json_response)
+    if text:
+        return text
 
     # Try messages array (conversation format)
     if 'messages' in json_response:
@@ -110,13 +126,10 @@ def _parse_claude_json_response(json_response: Any, raw_stdout: str) -> str:
         if text:
             return text
 
-    # Try direct text or content fields
-    if 'text' in json_response:
-        return json_response['text']
-    if 'content' in json_response:
-        text = _extract_text_from_content(json_response['content'])
-        if text:
-            return text
+    # Try direct fields
+    text = _try_parse_direct_fields(json_response)
+    if text:
+        return text
 
     return raw_stdout
 

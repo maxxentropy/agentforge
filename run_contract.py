@@ -72,45 +72,47 @@ class ContractRunner:
         with open(contract_file) as f:
             return yaml.safe_load(f)
 
+    def _build_system_message(self, contract: Dict) -> str:
+        """Build system message from contract template."""
+        sections = contract.get('template', {}).get('system', {}).get('sections', [])
+        return '\n'.join(section.get('content', '') for section in sections)
+
+    def _should_include_section(self, section: dict, inputs: Dict, context: Dict) -> bool:
+        """Check if a conditional section should be included."""
+        condition = section.get('condition')
+        if not condition:
+            return True
+        var_name = condition.strip()
+        return bool(inputs.get(var_name) or context.get(var_name))
+
+    def _build_user_message(self, contract: Dict, inputs: Dict, context: Dict) -> str:
+        """Build user message from contract template with conditions."""
+        sections = contract.get('template', {}).get('user', {}).get('sections', [])
+        parts = [
+            section.get('content', '')
+            for section in sections
+            if self._should_include_section(section, inputs, context)
+        ]
+        return '\n'.join(parts)
+
+    def _substitute_variables(self, message: str, variables: Dict) -> str:
+        """Substitute variables in message."""
+        for key, value in variables.items():
+            placeholder = f"{{{key}}}"
+            if placeholder in message:
+                replacement = yaml.dump(value, default_flow_style=False) if isinstance(value, (dict, list)) else str(value)
+                message = message.replace(placeholder, replacement)
+        return message
+
     def assemble_prompt(self, contract: Dict, inputs: Dict, context: Dict = None) -> Dict:
         """Assemble a prompt from contract and inputs. Returns structured dict."""
         context = context or {}
 
-        # Build system message
-        system_parts = []
-        for section in contract.get('template', {}).get('system', {}).get('sections', []):
-            content = section.get('content', '')
-            system_parts.append(content)
+        system_message = self._build_system_message(contract)
+        user_message = self._build_user_message(contract, inputs, context)
 
-        system_message = '\n'.join(system_parts)
-
-        # Build user message with variable substitution
-        user_parts = []
-        for section in contract.get('template', {}).get('user', {}).get('sections', []):
-            condition = section.get('condition')
-            if condition:
-                var_name = condition.strip()
-                if var_name not in inputs and var_name not in context:
-                    continue
-                if not inputs.get(var_name) and not context.get(var_name):
-                    continue
-
-            content = section.get('content', '')
-            user_parts.append(content)
-
-        user_message = '\n'.join(user_parts)
-
-        # Substitute variables
         all_vars = {**inputs, **context, 'project_context': self.project_context}
-
-        for key, value in all_vars.items():
-            placeholder = f"{{{key}}}"
-            if placeholder in user_message:
-                if isinstance(value, (dict, list)):
-                    replacement = yaml.dump(value, default_flow_style=False)
-                else:
-                    replacement = str(value)
-                user_message = user_message.replace(placeholder, replacement)
+        user_message = self._substitute_variables(user_message, all_vars)
 
         execution = contract.get('execution', {})
 

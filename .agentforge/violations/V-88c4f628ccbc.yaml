@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-88c4f628ccbc
+contract_id: agentforge
+check_id: single-responsibility-modules
+severity: minor
+file_path: tools/conformance/manager.py
+message: 'Class ''ConformanceManager'' has 21 methods (max: 3)'
+detected_at: '2025-12-30T17:10:15.597919'
+last_seen_at: '2025-12-30T17:10:15.597919'
+status: open
+line_number: 24
+fix_hint: Split modules with too many classes into focused single-class modules

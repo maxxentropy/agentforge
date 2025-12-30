@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-4e44c0397bdf
+contract_id: agentforge
+check_id: single-responsibility-modules
+severity: minor
+file_path: tools/verification_types.py
+message: 'Class ''VerificationReport'' has 4 methods (max: 3)'
+detected_at: '2025-12-30T17:10:15.582425'
+last_seen_at: '2025-12-30T17:10:15.582425'
+status: open
+line_number: 55
+fix_hint: Split modules with too many classes into focused single-class modules

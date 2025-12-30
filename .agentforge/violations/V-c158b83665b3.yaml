@@ -1,0 +1,11 @@
+schema_version: '1.0'
+violation_id: V-c158b83665b3
+contract_id: agentforge
+check_id: validate-cli-inputs
+severity: minor
+file_path: cli/commands/config.py
+message: 'Required pattern not found: ''(callback\s*=|type\s*=\s*(click\.Path|click\.Choice|click\.IntRange))'''
+detected_at: '2025-12-30T17:10:16.519038'
+last_seen_at: '2025-12-30T17:10:16.524729'
+status: open
+fix_hint: 'Use Click types for validation: type=click.Path(exists=True)'

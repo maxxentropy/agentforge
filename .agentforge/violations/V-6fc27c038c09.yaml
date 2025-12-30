@@ -1,0 +1,11 @@
+schema_version: '1.0'
+violation_id: V-6fc27c038c09
+contract_id: agentforge
+check_id: options-have-help
+severity: minor
+file_path: cli/commands/revision_apply.py
+message: 'Required pattern not found: ''@click\.option\s*\([^)]*help\s*='''
+detected_at: '2025-12-30T17:10:15.668531'
+last_seen_at: '2025-12-30T17:10:15.673427'
+status: open
+fix_hint: 'Add help parameter: @click.option(''--name'', help=''Description'')'

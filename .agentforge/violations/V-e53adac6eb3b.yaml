@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-e53adac6eb3b
+contract_id: agentforge
+check_id: no-hardcoded-test-data-paths
+severity: minor
+file_path: tests/unit/tools/test_builtin_checks_architecture.py
+message: 'Forbidden pattern found: ''open("'''
+detected_at: '2025-12-30T17:10:15.644381'
+last_seen_at: '2025-12-30T17:10:15.644381'
+status: open
+line_number: 890
+fix_hint: Use tmp_path fixture or Path(__file__).parent for test data

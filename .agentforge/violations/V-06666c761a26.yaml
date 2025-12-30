@@ -1,0 +1,11 @@
+schema_version: '1.0'
+violation_id: V-06666c761a26
+contract_id: agentforge
+check_id: commands-have-help
+severity: major
+file_path: cli/commands/spec.py
+message: 'Required pattern not found: ''@(click\.command|app\.command)\s*\([^)]*help\s*='''
+detected_at: '2025-12-30T17:10:15.649585'
+last_seen_at: '2025-12-30T17:10:15.657507'
+status: open
+fix_hint: 'Add help parameter: @click.command(help=''Description'')'

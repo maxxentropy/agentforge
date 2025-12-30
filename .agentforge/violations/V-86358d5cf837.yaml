@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-86358d5cf837
+contract_id: agentforge
+check_id: fixtures-in-conftest
+severity: minor
+file_path: tests/unit/tools/conformance/test_stores.py
+message: 'Forbidden pattern found: ''@pytest.fixture'''
+detected_at: '2025-12-30T17:10:15.643415'
+last_seen_at: '2025-12-30T17:10:15.643415'
+status: open
+line_number: 396
+fix_hint: Move shared fixtures to conftest.py

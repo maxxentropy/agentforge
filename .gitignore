@@ -32,7 +32,6 @@ ENV/
 
 # AgentForge
 outputs/
-.agentforge/
 *.bak
 
 # OS
@@ -44,5 +43,7 @@ Thumbs.db
 *.pem
 credentials.json
 
-# AgentForge local overrides
+# AgentForge local configs (not tracked)
+.agentforge/local.yaml
 .agentforge/local_overrides.yaml
+.agentforge/vector_index/

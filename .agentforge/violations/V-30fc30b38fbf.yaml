@@ -1,0 +1,11 @@
+schema_version: '1.0'
+violation_id: V-30fc30b38fbf
+contract_id: agentforge
+check_id: require-pyproject
+severity: minor
+file_path: ''
+message: 'Required file not found: ''pyproject.toml'''
+detected_at: '2025-12-30T17:10:15.624317'
+last_seen_at: '2025-12-30T17:10:16.538291'
+status: open
+fix_hint: Create pyproject.toml using 'poetry init' or manually

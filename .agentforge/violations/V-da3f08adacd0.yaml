@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-da3f08adacd0
+contract_id: agentforge
+check_id: no-god-classes
+severity: major
+file_path: tools/lsp_adapter.py
+message: 'Class ''LSPAdapter'' has 17 methods (max: 15)'
+detected_at: '2025-12-30T17:10:15.619955'
+last_seen_at: '2025-12-30T17:10:15.619955'
+status: open
+line_number: 56
+fix_hint: Split large classes using composition or inheritance

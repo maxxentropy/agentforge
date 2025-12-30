@@ -1,0 +1,11 @@
+schema_version: '1.0'
+violation_id: V-adcf93675be9
+contract_id: agentforge
+check_id: path-inputs-validated
+severity: major
+file_path: cli/render.py
+message: 'Required pattern not found: ''click\.Path\s*\('''
+detected_at: '2025-12-30T17:10:16.530187'
+last_seen_at: '2025-12-30T17:10:16.530187'
+status: open
+fix_hint: Use click.Path(exists=True) for validated path inputs

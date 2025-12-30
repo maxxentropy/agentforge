@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-8f0c83ef88a8
+contract_id: agentforge
+check_id: single-responsibility-modules
+severity: minor
+file_path: tests/unit/tools/test_verification_checks.py
+message: 'Class ''TestFileExistsCheck'' has 6 methods (max: 3)'
+detected_at: '2025-12-30T17:10:15.604027'
+last_seen_at: '2025-12-30T17:10:15.604027'
+status: open
+line_number: 246
+fix_hint: Split modules with too many classes into focused single-class modules

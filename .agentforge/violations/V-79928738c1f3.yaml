@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-79928738c1f3
+contract_id: agentforge
+check_id: no-god-classes
+severity: major
+file_path: tools/vector_search.py
+message: 'Class ''VectorSearch'' has 16 methods (max: 15)'
+detected_at: '2025-12-30T17:10:15.620470'
+last_seen_at: '2025-12-30T17:10:15.620470'
+status: open
+line_number: 46
+fix_hint: Split large classes using composition or inheritance

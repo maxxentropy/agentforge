@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-ac64c1a2c5e9
+contract_id: agentforge
+check_id: no-http-without-https
+severity: major
+file_path: tests/unit/tools/test_builtin_checks_architecture.py
+message: 'Forbidden pattern found: ''http://'''
+detected_at: '2025-12-30T17:10:15.628730'
+last_seen_at: '2025-12-30T17:10:15.628730'
+status: open
+line_number: 468
+fix_hint: Use HTTPS for all external connections

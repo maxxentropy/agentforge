@@ -1,0 +1,11 @@
+schema_version: '1.0'
+violation_id: V-6dab910bfbe1
+contract_id: agentforge
+check_id: cli-proper-exit-codes
+severity: minor
+file_path: cli/commands/__init__.py
+message: 'Required pattern not found: ''sys\.exit\s*\(\s*[012]\s*\)|raise\s+(SystemExit|click\.Abort|typer\.Abort)'''
+detected_at: '2025-12-30T17:10:15.676814'
+last_seen_at: '2025-12-30T17:10:15.678315'
+status: open
+fix_hint: Use sys.exit(0) for success, sys.exit(1) for errors

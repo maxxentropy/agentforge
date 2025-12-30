@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-b0b912ebe590
+contract_id: agentforge
+check_id: single-responsibility-modules
+severity: minor
+file_path: tests/unit/tools/conformance/test_stores.py
+message: 'Class ''TestExemptionRegistry'' has 10 methods (max: 3)'
+detected_at: '2025-12-30T17:10:15.618430'
+last_seen_at: '2025-12-30T17:10:15.618430'
+status: open
+line_number: 229
+fix_hint: Split modules with too many classes into focused single-class modules

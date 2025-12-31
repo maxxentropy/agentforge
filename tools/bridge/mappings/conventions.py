@@ -128,10 +128,9 @@ class ResultPatternMapping(PatternMapping):
         # Check various pattern keys
         for key in ["result_type", "error_handling", "result_pattern"]:
             if context.is_pattern_detected(key):
-                meta = context.get_pattern_metadata(key)
-                primary = meta.get("primary", "")
-                if "result" in primary.lower():
-                    return context.get_pattern_confidence(key) >= self.min_confidence
+                confidence = context.get_pattern_confidence(key)
+                if confidence >= self.min_confidence:
+                    return True
         return False
 
     def get_templates(self, context: MappingContext) -> List[CheckTemplate]:

@@ -32,6 +32,7 @@ from .working_memory import WorkingMemoryManager
 from .understanding import UnderstandingExtractor
 from .context_models import ActionResult, ActionRecord
 from .loop_detector import LoopDetector, LoopDetection, LoopType
+from .phase_machine import PhaseMachine, Phase, PhaseContext
 
 
 @dataclass
@@ -336,6 +337,7 @@ class MinimalContextExecutor:
         model: str = "claude-sonnet-4-20250514",
         max_tokens: int = 4096,
         enable_understanding_extraction: bool = True,
+        use_phase_machine: bool = True,
     ):
         """
         Initialize the executor.
@@ -348,6 +350,7 @@ class MinimalContextExecutor:
             model: Model to use for LLM calls
             max_tokens: Maximum tokens for LLM response
             enable_understanding_extraction: Enable fact extraction from actions
+            use_phase_machine: Use PhaseMachine for transitions (Phase 4)
         """
         self.project_path = Path(project_path)
         self.provider = provider or get_provider()
@@ -361,6 +364,9 @@ class MinimalContextExecutor:
         self.enable_understanding_extraction = enable_understanding_extraction
         self.understanding_extractor = UnderstandingExtractor() if enable_understanding_extraction else None
 
+        # Phase machine (Phase 4 of Enhanced Context Engineering)
+        self.use_phase_machine = use_phase_machine
+
     def register_action(self, name: str, executor: ActionExecutor) -> None:
         """Register an action executor."""
         self.action_executors[name] = executor
@@ -368,6 +374,123 @@ class MinimalContextExecutor:
     def register_actions(self, executors: Dict[str, ActionExecutor]) -> None:
         """Register multiple action executors."""
         self.action_executors.update(executors)
+
+    def _build_phase_context(
+        self,
+        machine: PhaseMachine,
+        state: TaskState,
+        last_action: Optional[str] = None,
+        last_action_result: Optional[str] = None,
+    ) -> PhaseContext:
+        """
+        Build PhaseContext for guard evaluation.
+
+        Args:
+            machine: Current phase machine
+            state: Current task state
+            last_action: Most recent action name
+            last_action_result: Most recent action result
+
+        Returns:
+            PhaseContext for transitions
+        """
+        # Get facts from working memory
+        task_dir = self.state_store._task_dir(state.task_id)
+        memory_manager = WorkingMemoryManager(task_dir)
+        fact_dicts = memory_manager.get_facts(current_step=state.current_step)
+
+        return PhaseContext(
+            current_phase=machine.current_phase,
+            steps_in_phase=machine.steps_in_phase,
+            total_steps=state.current_step,
+            verification_passing=state.verification.checks_failing == 0,
+            tests_passing=state.verification.tests_passing,
+            files_modified=state.context_data.get("files_modified", []),
+            facts=fact_dicts,
+            last_action=last_action,
+            last_action_result=last_action_result,
+        )
+
+    def _handle_phase_transition(
+        self,
+        task_id: str,
+        action_name: str,
+        action_result: Dict[str, Any],
+        state: TaskState,
+    ) -> None:
+        """
+        Handle phase transitions using PhaseMachine when enabled.
+
+        Args:
+            task_id: Task identifier
+            action_name: Executed action name
+            action_result: Action result dict
+            state: Current task state
+        """
+        if not self.use_phase_machine:
+            # Legacy behavior
+            if action_name == "complete" and action_result.get("status") == "success":
+                self.state_store.update_phase(task_id, TaskPhase.COMPLETE)
+            elif action_name == "escalate":
+                self.state_store.update_phase(task_id, TaskPhase.ESCALATED)
+            elif action_name == "cannot_fix":
+                self.state_store.update_phase(task_id, TaskPhase.ESCALATED)
+                reason = action_result.get("cannot_fix_reason", "Unknown reason")
+                self.state_store.update_context_data(task_id, "cannot_fix_reason", reason)
+            elif action_result.get("status") == "failure" and action_result.get("fatal"):
+                self.state_store.update_phase(task_id, TaskPhase.FAILED)
+                self.state_store.set_error(task_id, action_result.get("error", "Unknown error"))
+            return
+
+        # Enhanced behavior with PhaseMachine
+        machine = state.get_phase_machine()
+
+        # Build context for guard evaluation
+        context = self._build_phase_context(
+            machine=machine,
+            state=state,
+            last_action=action_name,
+            last_action_result=action_result.get("status"),
+        )
+
+        # Record the step in the phase
+        machine.advance_step()
+
+        # Check for explicit action-triggered transitions
+        target_phase = None
+
+        if action_name == "complete" and action_result.get("status") == "success":
+            target_phase = Phase.COMPLETE
+        elif action_name in ("escalate", "cannot_fix"):
+            target_phase = Phase.ESCALATED
+            if action_name == "cannot_fix":
+                reason = action_result.get("cannot_fix_reason", "Unknown reason")
+                self.state_store.update_context_data(task_id, "cannot_fix_reason", reason)
+        elif action_result.get("status") == "failure" and action_result.get("fatal"):
+            target_phase = Phase.FAILED
+            self.state_store.set_error(task_id, action_result.get("error", "Unknown error"))
+        else:
+            # Check for auto-transition based on phase success conditions
+            target_phase = machine.should_auto_transition(context)
+
+        # Attempt the transition if we have a target
+        if target_phase:
+            if machine.can_transition(target_phase, context):
+                machine.transition(target_phase, context)
+                # Update both legacy phase and phase machine state
+                legacy_phase = TaskPhase(target_phase.value)
+                self.state_store.update_phase(task_id, legacy_phase)
+                self.state_store.update_phase_machine(task_id, machine)
+            elif target_phase in (Phase.COMPLETE, Phase.ESCALATED, Phase.FAILED):
+                # Terminal transitions should always succeed
+                machine._current_phase = target_phase
+                machine._steps_in_phase = 0
+                legacy_phase = TaskPhase(target_phase.value)
+                self.state_store.update_phase(task_id, legacy_phase)
+                self.state_store.update_phase_machine(task_id, machine)
+        else:
+            # Just persist the advanced step count
+            self.state_store.update_phase_machine(task_id, machine)
 
     def execute_step(self, task_id: str) -> StepOutcome:
         """
@@ -464,19 +587,8 @@ class MinimalContextExecutor:
             # 7. Determine if we should continue
             should_continue = self._should_continue(action_name, action_result, state)
 
-            # Update phase if needed
-            if action_name == "complete" and action_result.get("status") == "success":
-                self.state_store.update_phase(task_id, TaskPhase.COMPLETE)
-            elif action_name == "escalate":
-                self.state_store.update_phase(task_id, TaskPhase.ESCALATED)
-            elif action_name == "cannot_fix":
-                # Cannot fix is not a failure - it's honest recognition of limitations
-                self.state_store.update_phase(task_id, TaskPhase.ESCALATED)
-                reason = action_result.get("cannot_fix_reason", "Unknown reason")
-                self.state_store.set_context(task_id, "cannot_fix_reason", reason)
-            elif action_result.get("status") == "failure" and action_result.get("fatal"):
-                self.state_store.update_phase(task_id, TaskPhase.FAILED)
-                self.state_store.set_error(task_id, action_result.get("error", "Unknown error"))
+            # Update phase using PhaseMachine (Phase 4) or legacy logic
+            self._handle_phase_transition(task_id, action_name, action_result, state)
 
             return StepOutcome(
                 success=True,

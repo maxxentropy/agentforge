@@ -23,7 +23,10 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .phase_machine import PhaseMachine
 
 
 class TaskPhase(str, Enum):
@@ -133,6 +136,9 @@ class TaskState:
     # Task-type specific data
     context_data: Dict[str, Any] = field(default_factory=dict)
 
+    # Enhanced Context Engineering (Phase 4): Phase machine state
+    phase_machine_state: Dict[str, Any] = field(default_factory=dict)
+
     def to_task_dict(self) -> Dict[str, Any]:
         """Serialize immutable task data."""
         return {
@@ -153,7 +159,25 @@ class TaskState:
             "last_updated": self.last_updated.isoformat(),
             "error": self.error,
             "context_data": self.context_data,
+            "phase_machine_state": self.phase_machine_state,
         }
+
+    def get_phase_machine(self) -> "PhaseMachine":
+        """Get PhaseMachine instance from persisted state."""
+        from .phase_machine import PhaseMachine
+        from .context_models import PhaseState
+
+        if self.phase_machine_state:
+            # Restore from persisted state
+            phase_state = PhaseState(**self.phase_machine_state)
+            return PhaseMachine.from_state(phase_state)
+        else:
+            # Create new machine
+            return PhaseMachine()
+
+    def set_phase_machine(self, machine: "PhaseMachine") -> None:
+        """Persist PhaseMachine state."""
+        self.phase_machine_state = machine.to_state().model_dump()
 
 
 class TaskStateStore:
@@ -264,6 +288,8 @@ class TaskStateStore:
             last_updated=datetime.fromisoformat(state_data["last_updated"]),
             error=state_data.get("error"),
             context_data=state_data.get("context_data", {}),
+            # Backward compatible: defaults to empty dict for legacy tasks
+            phase_machine_state=state_data.get("phase_machine_state", {}),
         )
 
     def _save_state(self, state: TaskState) -> None:
@@ -278,6 +304,13 @@ class TaskStateStore:
         state = self.load(task_id)
         if state:
             state.phase = phase
+            self._save_state(state)
+
+    def update_phase_machine(self, task_id: str, machine: "PhaseMachine") -> None:
+        """Update phase machine state."""
+        state = self.load(task_id)
+        if state:
+            state.set_phase_machine(machine)
             self._save_state(state)
 
     def increment_step(self, task_id: str) -> int:

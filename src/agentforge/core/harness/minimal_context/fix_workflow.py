@@ -20,6 +20,7 @@ from typing import Any, Callable, Dict, List, Optional
 from .state_store import TaskStateStore, TaskState, TaskPhase
 from .executor import MinimalContextExecutor, StepOutcome, AdaptiveBudget
 from .working_memory import WorkingMemoryManager
+from .phase_machine import PhaseMachine
 
 from ..violation_tools import ViolationTools, VIOLATION_TOOL_DEFINITIONS
 from ..conformance_tools import ConformanceTools, CONFORMANCE_TOOL_DEFINITIONS
@@ -1309,6 +1310,11 @@ class MinimalContextFixWorkflow:
             context_data=context_data,
             task_id=f"fix-{violation_id}",
         )
+
+        # Initialize PhaseMachine for enhanced phase transitions (Phase 4)
+        phase_machine = PhaseMachine()
+        task_state.set_phase_machine(phase_machine)
+        self.state_store._save_state(task_state)
 
         # Run until complete with adaptive budget
         budget = AdaptiveBudget(

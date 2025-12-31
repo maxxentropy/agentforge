@@ -1048,3 +1048,244 @@ class TestAdaptiveBudgetEnhancedLoopDetection:
         assert "loop_detection" in outcome_dict
         assert outcome_dict["loop_detection"]["type"] == "identical_action"
         assert outcome_dict["loop_detection"]["suggestions"] == ["Try something different"]
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Phase 4: Phase Machine Integration Tests
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+class TestPhaseMachineIntegration:
+    """Tests for PhaseMachine integration with state_store and executor."""
+
+    def test_task_state_phase_machine_persistence(self, tmp_path):
+        """Test that PhaseMachine state persists across save/load."""
+        from agentforge.core.harness.minimal_context import (
+            TaskStateStore,
+            TaskPhase,
+        )
+        from agentforge.core.harness.minimal_context.phase_machine import (
+            PhaseMachine,
+            Phase,
+        )
+
+        store = TaskStateStore(tmp_path)
+
+        # Create a task
+        task = store.create_task(
+            task_type="test",
+            goal="Test phase machine persistence",
+            success_criteria=["Persist state"],
+        )
+
+        # Initialize and modify phase machine
+        machine = PhaseMachine()
+        machine._current_phase = Phase.IMPLEMENT
+        machine._steps_in_phase = 3
+        machine._phase_history = [Phase.INIT, Phase.ANALYZE]
+
+        # Persist
+        task.set_phase_machine(machine)
+        store._save_state(task)
+
+        # Reload
+        loaded_task = store.load(task.task_id)
+        loaded_machine = loaded_task.get_phase_machine()
+
+        assert loaded_machine.current_phase == Phase.IMPLEMENT
+        assert loaded_machine.steps_in_phase == 3
+        assert len(loaded_machine.phase_history) == 2
+
+    def test_task_state_backward_compatible(self, tmp_path):
+        """Test that legacy tasks without phase_machine_state still work."""
+        from agentforge.core.harness.minimal_context import (
+            TaskStateStore,
+        )
+        from agentforge.core.harness.minimal_context.phase_machine import (
+            Phase,
+        )
+
+        store = TaskStateStore(tmp_path)
+
+        # Create a task (no phase_machine_state)
+        task = store.create_task(
+            task_type="test",
+            goal="Test backward compat",
+            success_criteria=["Load without error"],
+        )
+
+        # Reload without phase_machine_state set
+        loaded_task = store.load(task.task_id)
+
+        # Should get a fresh machine
+        machine = loaded_task.get_phase_machine()
+        assert machine.current_phase == Phase.INIT
+        assert machine.steps_in_phase == 0
+
+    def test_update_phase_machine_method(self, tmp_path):
+        """Test state_store.update_phase_machine method."""
+        from agentforge.core.harness.minimal_context import (
+            TaskStateStore,
+        )
+        from agentforge.core.harness.minimal_context.phase_machine import (
+            PhaseMachine,
+            Phase,
+        )
+
+        store = TaskStateStore(tmp_path)
+
+        # Create a task
+        task = store.create_task(
+            task_type="test",
+            goal="Test update_phase_machine",
+            success_criteria=["Update works"],
+        )
+
+        # Modify machine externally
+        machine = PhaseMachine()
+        machine._current_phase = Phase.VERIFY
+        machine._steps_in_phase = 2
+
+        # Use the new method
+        store.update_phase_machine(task.task_id, machine)
+
+        # Verify persistence
+        loaded = store.load(task.task_id)
+        loaded_machine = loaded.get_phase_machine()
+
+        assert loaded_machine.current_phase == Phase.VERIFY
+        assert loaded_machine.steps_in_phase == 2
+
+    def test_phase_context_building(self, tmp_path):
+        """Test that PhaseContext is built correctly from state."""
+        from agentforge.core.harness.minimal_context import (
+            TaskStateStore,
+            MinimalContextExecutor,
+        )
+        from agentforge.core.harness.minimal_context.phase_machine import (
+            PhaseMachine,
+            Phase,
+        )
+
+        store = TaskStateStore(tmp_path)
+        executor = MinimalContextExecutor(
+            project_path=tmp_path,
+            state_store=store,
+            use_phase_machine=True,
+        )
+
+        # Create a task with some context
+        task = store.create_task(
+            task_type="test",
+            goal="Test context building",
+            success_criteria=["Build context"],
+            context_data={"files_modified": ["test.py"]},
+        )
+
+        # Set verification status
+        store.update_verification(
+            task.task_id,
+            checks_passing=1,
+            checks_failing=0,
+            tests_passing=True,
+        )
+
+        # Reload and build context
+        task = store.load(task.task_id)
+        machine = task.get_phase_machine()
+
+        context = executor._build_phase_context(
+            machine=machine,
+            state=task,
+            last_action="edit_file",
+            last_action_result="success",
+        )
+
+        assert context.current_phase == Phase.INIT
+        assert context.verification_passing is True
+        assert context.tests_passing is True
+        assert context.files_modified == ["test.py"]
+        assert context.last_action == "edit_file"
+
+    def test_phase_transition_via_handle_method(self, tmp_path):
+        """Test _handle_phase_transition updates both legacy and machine state."""
+        from agentforge.core.harness.minimal_context import (
+            TaskStateStore,
+            TaskPhase,
+            MinimalContextExecutor,
+        )
+        from agentforge.core.harness.minimal_context.phase_machine import (
+            PhaseMachine,
+            Phase,
+        )
+
+        store = TaskStateStore(tmp_path)
+        executor = MinimalContextExecutor(
+            project_path=tmp_path,
+            state_store=store,
+            use_phase_machine=True,
+        )
+
+        # Create a task
+        task = store.create_task(
+            task_type="test",
+            goal="Test transition",
+            success_criteria=["Complete"],
+        )
+
+        # Initialize phase machine
+        machine = PhaseMachine()
+        task.set_phase_machine(machine)
+        store._save_state(task)
+
+        # Simulate "complete" action
+        executor._handle_phase_transition(
+            task_id=task.task_id,
+            action_name="complete",
+            action_result={"status": "success"},
+            state=task,
+        )
+
+        # Verify both states updated
+        loaded = store.load(task.task_id)
+        assert loaded.phase == TaskPhase.COMPLETE
+
+        loaded_machine = loaded.get_phase_machine()
+        assert loaded_machine.current_phase == Phase.COMPLETE
+
+    def test_legacy_mode_fallback(self, tmp_path):
+        """Test that use_phase_machine=False uses legacy behavior."""
+        from agentforge.core.harness.minimal_context import (
+            TaskStateStore,
+            TaskPhase,
+            MinimalContextExecutor,
+        )
+
+        store = TaskStateStore(tmp_path)
+        executor = MinimalContextExecutor(
+            project_path=tmp_path,
+            state_store=store,
+            use_phase_machine=False,  # Legacy mode
+        )
+
+        # Create a task (no machine initialization)
+        task = store.create_task(
+            task_type="test",
+            goal="Test legacy mode",
+            success_criteria=["Escalate"],
+        )
+
+        # Simulate "escalate" action
+        executor._handle_phase_transition(
+            task_id=task.task_id,
+            action_name="escalate",
+            action_result={"status": "success"},
+            state=task,
+        )
+
+        # Verify legacy phase updated
+        loaded = store.load(task.task_id)
+        assert loaded.phase == TaskPhase.ESCALATED
+
+        # phase_machine_state should be empty (legacy mode)
+        assert loaded.phase_machine_state == {}

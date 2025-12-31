@@ -347,7 +347,10 @@ class AgentOrchestrator:
         # Record observation for monitoring
         action = step_result.action
         if action:
-            self.agent_monitor.observe_output(output=action.reasoning)
+            self.agent_monitor.observe_output(
+                output=action.reasoning,
+                output_type=action.action_type.value
+            )
 
             # Check action type for state transitions
             if action.action_type == ActionType.COMPLETE:

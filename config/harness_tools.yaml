@@ -1,0 +1,254 @@
+# Agent Harness Tool Configuration
+# =================================
+# Defines available tools and workflow-specific tool profiles for the Agent Harness.
+#
+# Tools are composed from three sources:
+#   1. Base tools - Always available regardless of workflow/phase
+#   2. Phase tools - Available only during specific workflow phases
+#   3. Domain tools - Available based on detected project type (Python, .NET, TypeScript)
+
+version: "1.0"
+
+# Base tools available in all workflows and phases
+tools:
+  # File Operations
+  - name: read_file
+    description: Read contents of a file at a given path
+    category: base
+    parameters:
+      path: {type: string, required: true, description: "Absolute or relative path to the file"}
+      encoding: {type: string, required: false, default: "utf-8", description: "File encoding"}
+
+  - name: write_file
+    description: Write content to a file, creating directories as needed
+    category: base
+    parameters:
+      path: {type: string, required: true, description: "Path to write the file"}
+      content: {type: string, required: true, description: "Content to write"}
+      encoding: {type: string, required: false, default: "utf-8"}
+
+  - name: edit_file
+    description: Replace a specific string in a file
+    category: base
+    parameters:
+      path: {type: string, required: true, description: "Path to the file"}
+      old_string: {type: string, required: true, description: "String to find and replace"}
+      new_string: {type: string, required: true, description: "Replacement string"}
+
+  - name: list_files
+    description: List files and directories at a path
+    category: base
+    parameters:
+      path: {type: string, required: false, default: ".", description: "Directory path to list"}
+
+  # Search Operations
+  - name: glob
+    description: Find files matching a glob pattern
+    category: base
+    parameters:
+      pattern: {type: string, required: true, description: "Glob pattern (e.g., '**/*.py')"}
+      path: {type: string, required: false, description: "Base directory for search"}
+
+  - name: grep
+    description: Search file contents using regex pattern
+    category: base
+    parameters:
+      pattern: {type: string, required: true, description: "Regex pattern to search for"}
+      path: {type: string, required: false, description: "File or directory to search in"}
+      include: {type: string, required: false, description: "File glob pattern to include"}
+
+  # Shell Operations
+  - name: bash
+    description: Execute a shell command
+    category: base
+    parameters:
+      command: {type: string, required: true, description: "Shell command to execute"}
+      timeout: {type: integer, required: false, default: 120, description: "Timeout in seconds"}
+
+  # Git Operations
+  - name: git_status
+    description: Show git repository status
+    category: git
+    parameters: {}
+
+  - name: git_diff
+    description: Show git diff for staged or unstaged changes
+    category: git
+    parameters:
+      staged: {type: boolean, required: false, default: false}
+      path: {type: string, required: false, description: "Limit diff to specific path"}
+
+  - name: git_log
+    description: Show recent git commit history
+    category: git
+    parameters:
+      count: {type: integer, required: false, default: 10}
+      oneline: {type: boolean, required: false, default: true}
+
+  # Testing
+  - name: run_tests
+    description: Run project test suite
+    category: test
+    parameters:
+      path: {type: string, required: false, description: "Test file or directory"}
+      pattern: {type: string, required: false, description: "Test name pattern to match"}
+      verbose: {type: boolean, required: false, default: false}
+
+  - name: run_single_test
+    description: Run a single test by name
+    category: test
+    parameters:
+      test_name: {type: string, required: true, description: "Fully qualified test name"}
+
+  # Code Analysis
+  - name: lint
+    description: Run linter on code
+    category: analysis
+    parameters:
+      path: {type: string, required: false, description: "File or directory to lint"}
+      fix: {type: boolean, required: false, default: false, description: "Auto-fix issues"}
+
+  - name: typecheck
+    description: Run type checker on code
+    category: analysis
+    parameters:
+      path: {type: string, required: false, description: "File or directory to check"}
+
+  # Memory Operations
+  - name: remember
+    description: Store information in agent memory
+    category: memory
+    parameters:
+      key: {type: string, required: true, description: "Memory key"}
+      value: {type: string, required: true, description: "Value to remember"}
+      tier: {type: string, required: false, default: "session", description: "Memory tier (working/session/project/global)"}
+
+  - name: recall
+    description: Retrieve information from agent memory
+    category: memory
+    parameters:
+      key: {type: string, required: true, description: "Memory key to recall"}
+
+# Workflow-specific tool profiles
+profiles:
+  # Spec workflow phases
+  - workflow: spec
+    phase: intake
+    tools: [read_file, glob, grep, list_files, remember, recall]
+    description: "Gathering requirements and understanding the codebase"
+
+  - workflow: spec
+    phase: clarify
+    tools: [read_file, glob, grep, remember, recall]
+    description: "Clarifying requirements with stakeholders"
+
+  - workflow: spec
+    phase: design
+    tools: [read_file, write_file, glob, grep, remember, recall]
+    description: "Designing the solution architecture"
+
+  - workflow: spec
+    phase: validate
+    tools: [read_file, glob, grep, remember, recall]
+    description: "Validating design against requirements"
+
+  # TDFlow workflow phases
+  - workflow: tdflow
+    phase: red
+    tools: [read_file, write_file, edit_file, glob, grep, run_tests, run_single_test, remember, recall]
+    description: "Writing failing tests first"
+
+  - workflow: tdflow
+    phase: green
+    tools: [read_file, write_file, edit_file, glob, grep, run_tests, run_single_test, lint, typecheck, remember, recall]
+    description: "Making tests pass with minimal code"
+
+  - workflow: tdflow
+    phase: refactor
+    tools: [read_file, write_file, edit_file, glob, grep, run_tests, lint, typecheck, remember, recall]
+    description: "Improving code quality while keeping tests green"
+
+  # Agent workflow phases
+  - workflow: agent
+    phase: analyze
+    tools: [read_file, glob, grep, list_files, git_status, git_log, remember, recall]
+    description: "Analyzing the task and codebase"
+
+  - workflow: agent
+    phase: plan
+    tools: [read_file, glob, grep, write_file, remember, recall]
+    description: "Creating implementation plan"
+
+  - workflow: agent
+    phase: execute
+    tools: [read_file, write_file, edit_file, glob, grep, bash, run_tests, lint, typecheck, git_status, git_diff, remember, recall]
+    description: "Executing the implementation"
+
+  - workflow: agent
+    phase: verify
+    tools: [read_file, glob, grep, run_tests, lint, typecheck, git_status, git_diff, remember, recall]
+    description: "Verifying implementation correctness"
+
+# Domain-specific tools (auto-detected based on project type)
+domain_tools:
+  python:
+    tools:
+      - name: pytest
+        description: Run pytest test suite
+        category: test
+        parameters:
+          path: {type: string, required: false}
+          markers: {type: string, required: false, description: "Pytest markers to select"}
+          verbose: {type: boolean, required: false, default: false}
+      - name: pip_install
+        description: Install Python packages
+        category: package
+        parameters:
+          packages: {type: array, required: true, description: "Packages to install"}
+          dev: {type: boolean, required: false, default: false}
+      - name: mypy
+        description: Run mypy type checker
+        category: analysis
+        parameters:
+          path: {type: string, required: false}
+          strict: {type: boolean, required: false, default: false}
+
+  dotnet:
+    tools:
+      - name: dotnet_test
+        description: Run .NET test suite
+        category: test
+        parameters:
+          project: {type: string, required: false}
+          filter: {type: string, required: false, description: "Test filter expression"}
+      - name: dotnet_build
+        description: Build .NET project
+        category: build
+        parameters:
+          project: {type: string, required: false}
+          configuration: {type: string, required: false, default: "Debug"}
+      - name: dotnet_restore
+        description: Restore NuGet packages
+        category: package
+        parameters:
+          project: {type: string, required: false}
+
+  typescript:
+    tools:
+      - name: npm_test
+        description: Run npm test script
+        category: test
+        parameters:
+          script: {type: string, required: false, default: "test"}
+      - name: npm_install
+        description: Install npm packages
+        category: package
+        parameters:
+          packages: {type: array, required: false, description: "Packages to install (empty for package.json)"}
+          dev: {type: boolean, required: false, default: false}
+      - name: tsc
+        description: Run TypeScript compiler
+        category: analysis
+        parameters:
+          project: {type: string, required: false, description: "Path to tsconfig.json"}
+          noEmit: {type: boolean, required: false, default: true}

@@ -1665,3 +1665,685 @@ class TestFeatureFlagMigration:
         assert "use_enhanced_context=True" in docstring
         assert "PhaseMachine" in docstring
         assert "EnhancedContextBuilder" in docstring
+
+
+class TestTokenBudgetEnforcement:
+    """Tests for token budget enforcement with compaction."""
+
+    def test_agent_context_estimate_tokens(self):
+        """Test that AgentContext can estimate its token count."""
+        from agentforge.core.harness.minimal_context import (
+            AgentContext,
+            TaskSpec,
+            StateSpec,
+            ActionsSpec,
+            ActionDef,
+        )
+
+        context = AgentContext(
+            task=TaskSpec(
+                task_id="test-123",
+                task_type="fix",
+                goal="Fix the bug",
+                success_criteria=["Tests pass"],
+            ),
+            state=StateSpec(),
+            actions=ActionsSpec(
+                available=[
+                    ActionDef(
+                        name="read_file",
+                        description="Read a file",
+                    )
+                ],
+            ),
+        )
+
+        tokens = context.estimate_tokens()
+
+        # Should be a reasonable positive number
+        assert tokens > 0
+        assert tokens < 1000  # Simple context should be under 1000 tokens
+
+    def test_compaction_triggered_when_over_budget(self):
+        """Test that compaction is triggered when context exceeds budget."""
+        from agentforge.core.harness.minimal_context import (
+            EnhancedContextBuilder,
+            TaskSpec,
+            StateSpec,
+            ActionsSpec,
+            ActionDef,
+            PhaseMachine,
+            Understanding,
+            Fact,
+            FactCategory,
+        )
+
+        # Create builder with very small budget
+        builder = EnhancedContextBuilder(
+            project_path=Path("/tmp"),
+            max_tokens=100,  # Very small to trigger compaction
+        )
+
+        # Create context with lots of data
+        facts = [
+            Fact(
+                id=f"fact-{i}",
+                category=FactCategory.CODE_STRUCTURE,
+                statement=f"This is fact number {i} with some additional content to make it longer",
+                confidence=0.6,  # Low confidence to test compaction
+                source="test",
+                step=1,
+            )
+            for i in range(20)
+        ]
+
+        context = builder.build_context(
+            task_spec=TaskSpec(
+                task_id="test",
+                task_type="fix",
+                goal="Fix it",
+                success_criteria=["Done"],
+            ),
+            state_spec=StateSpec(
+                understanding=Understanding(facts=facts),
+            ),
+            domain_context={"key": "x" * 1000},  # Large domain context
+            precomputed={"analysis": "y" * 2000},  # Large precomputed
+            phase_machine=PhaseMachine(),
+        )
+
+        # Compaction should have been applied
+        # Low-confidence facts should be removed
+        high_conf_facts = [f for f in context.state.understanding.facts if f.confidence >= 0.8]
+        assert len(context.state.understanding.facts) <= 10
+
+    def test_compaction_preserves_high_confidence_facts(self):
+        """Test that high-confidence facts are preserved during compaction."""
+        from agentforge.core.harness.minimal_context import (
+            EnhancedContextBuilder,
+            TaskSpec,
+            StateSpec,
+            ActionsSpec,
+            Understanding,
+            Fact,
+            FactCategory,
+            PhaseMachine,
+        )
+
+        builder = EnhancedContextBuilder(
+            project_path=Path("/tmp"),
+            max_tokens=200,
+        )
+
+        # Create facts with varying confidence
+        facts = [
+            Fact(
+                id="high-1",
+                category=FactCategory.CODE_STRUCTURE,
+                statement="High confidence fact",
+                confidence=0.95,
+                source="test",
+                step=1,
+            ),
+            Fact(
+                id="low-1",
+                category=FactCategory.INFERENCE,
+                statement="Low confidence fact" * 50,
+                confidence=0.5,
+                source="test",
+                step=1,
+            ),
+            Fact(
+                id="high-2",
+                category=FactCategory.VERIFICATION,
+                statement="Another high confidence fact",
+                confidence=0.85,
+                source="test",
+                step=1,
+            ),
+        ]
+
+        context = builder.build_context(
+            task_spec=TaskSpec(
+                task_id="test",
+                task_type="fix",
+                goal="Fix it",
+                success_criteria=["Done"],
+            ),
+            state_spec=StateSpec(
+                understanding=Understanding(facts=facts),
+            ),
+            domain_context={},
+            precomputed={"large_data": "z" * 5000},  # Force compaction
+            phase_machine=PhaseMachine(),
+        )
+
+        # High confidence facts should still be there
+        fact_ids = [f.id for f in context.state.understanding.facts]
+        assert "high-1" in fact_ids or "high-2" in fact_ids
+
+    def test_compaction_truncates_precomputed_first(self):
+        """Test that precomputed is truncated before other content."""
+        from agentforge.core.harness.minimal_context import (
+            EnhancedContextBuilder,
+            TaskSpec,
+            StateSpec,
+            ActionsSpec,
+            PhaseMachine,
+        )
+
+        builder = EnhancedContextBuilder(
+            project_path=Path("/tmp"),
+            max_tokens=500,
+        )
+
+        original_precomputed = {"analysis": "x" * 10000}
+
+        context = builder.build_context(
+            task_spec=TaskSpec(
+                task_id="test",
+                task_type="fix",
+                goal="Fix it",
+                success_criteria=["Done"],
+            ),
+            state_spec=StateSpec(),
+            domain_context={},
+            precomputed=original_precomputed,
+            phase_machine=PhaseMachine(),
+        )
+
+        # Precomputed should be truncated or empty
+        if context.precomputed.get("analysis"):
+            assert len(context.precomputed["analysis"]) < 10000
+        # Context should fit in budget
+        assert context.estimate_tokens() <= 500 or len(context.precomputed) == 0
+
+    def test_normal_context_not_compacted(self):
+        """Test that normal-sized context is not compacted."""
+        from agentforge.core.harness.minimal_context import (
+            EnhancedContextBuilder,
+            TaskSpec,
+            StateSpec,
+            ActionsSpec,
+            ActionDef,
+            PhaseMachine,
+        )
+
+        builder = EnhancedContextBuilder(
+            project_path=Path("/tmp"),
+            max_tokens=6000,  # Default budget
+        )
+
+        context = builder.build_context(
+            task_spec=TaskSpec(
+                task_id="test",
+                task_type="fix",
+                goal="Simple fix",
+                success_criteria=["Tests pass"],
+            ),
+            state_spec=StateSpec(),
+            domain_context={"file": "test.py", "line": 42},
+            precomputed={"complexity": 5},
+            phase_machine=PhaseMachine(),
+        )
+
+        # Should not be compacted
+        assert context.precomputed.get("complexity") == 5
+        assert context.domain_context.get("file") == "test.py"
+
+
+class TestResponseValidation:
+    """Tests for LLM response validation against AgentResponse schema."""
+
+    def test_parse_action_block_format(self):
+        """Test parsing action block format."""
+        from agentforge.core.harness.minimal_context.executor import MinimalContextExecutor
+
+        executor = MinimalContextExecutor(project_path=Path("/tmp"))
+
+        response = '''Here is my action:
+```action
+name: read_file
+parameters:
+  path: /tmp/test.py
+```'''
+
+        action, params = executor._parse_action(response)
+
+        assert action == "read_file"
+        assert params == {"path": "/tmp/test.py"}
+
+    def test_parse_yaml_block_format(self):
+        """Test parsing YAML block format with 'action' key."""
+        from agentforge.core.harness.minimal_context.executor import MinimalContextExecutor
+
+        executor = MinimalContextExecutor(project_path=Path("/tmp"))
+
+        response = '''I will read the file:
+```yaml
+action: read_file
+parameters:
+  path: /tmp/test.py
+```'''
+
+        action, params = executor._parse_action(response)
+
+        assert action == "read_file"
+        assert params == {"path": "/tmp/test.py"}
+
+    def test_parse_with_reasoning(self):
+        """Test that reasoning is accepted but not returned."""
+        from agentforge.core.harness.minimal_context.executor import MinimalContextExecutor
+
+        executor = MinimalContextExecutor(project_path=Path("/tmp"))
+
+        response = '''```yaml
+action: edit_file
+parameters:
+  path: /tmp/test.py
+  old_text: "foo"
+  new_text: "bar"
+reasoning: "Replacing foo with bar to fix the bug"
+```'''
+
+        action, params = executor._parse_action(response)
+
+        assert action == "edit_file"
+        assert params == {"path": "/tmp/test.py", "old_text": "foo", "new_text": "bar"}
+
+    def test_parse_validates_against_schema(self):
+        """Test that response is validated against AgentResponse schema."""
+        from agentforge.core.harness.minimal_context.executor import MinimalContextExecutor
+        from agentforge.core.harness.minimal_context import AgentResponse
+
+        executor = MinimalContextExecutor(project_path=Path("/tmp"))
+
+        # Valid response should work
+        response = '''```yaml
+action: complete
+parameters:
+  summary: "Task completed"
+```'''
+
+        action, params = executor._parse_action(response)
+        assert action == "complete"
+
+        # The parsed values should be valid for AgentResponse
+        validated = AgentResponse(action=action, parameters=params)
+        assert validated.action == "complete"
+
+    def test_parse_fallback_to_simple_pattern(self):
+        """Test fallback to simple pattern matching."""
+        from agentforge.core.harness.minimal_context.executor import MinimalContextExecutor
+
+        executor = MinimalContextExecutor(project_path=Path("/tmp"))
+
+        response = "I will use action: read_file to examine the code."
+
+        action, params = executor._parse_action(response)
+
+        assert action == "read_file"
+        assert params == {}
+
+    def test_parse_handles_malformed_yaml(self):
+        """Test handling of malformed YAML."""
+        from agentforge.core.harness.minimal_context.executor import MinimalContextExecutor
+
+        executor = MinimalContextExecutor(project_path=Path("/tmp"))
+
+        response = '''```yaml
+action: [this is not valid yaml
+parameters:
+  foo: bar
+```'''
+
+        action, params = executor._parse_action(response)
+
+        # Should fallback to unknown when YAML is malformed
+        assert action == "unknown"
+        assert params == {}
+
+    def test_parse_handles_empty_parameters(self):
+        """Test handling of empty/null parameters."""
+        from agentforge.core.harness.minimal_context.executor import MinimalContextExecutor
+
+        executor = MinimalContextExecutor(project_path=Path("/tmp"))
+
+        response = '''```yaml
+action: complete
+parameters:
+```'''
+
+        action, params = executor._parse_action(response)
+
+        assert action == "complete"
+        assert params == {}
+
+
+class TestValueHintsPopulation:
+    """Tests for value_hints population from precomputed context."""
+
+    def test_extract_function_gets_hints_from_candidates(self):
+        """Test that extract_function action gets hints from extraction candidates."""
+        from agentforge.core.harness.minimal_context import (
+            EnhancedContextBuilder,
+            TaskSpec,
+            StateSpec,
+            PhaseMachine,
+            Phase,
+        )
+
+        builder = EnhancedContextBuilder(project_path=Path("/tmp"))
+        machine = PhaseMachine()
+        machine._current_phase = Phase.IMPLEMENT
+
+        precomputed = {
+            "extraction_candidates": [
+                {
+                    "start_line": 42,
+                    "end_line": 65,
+                    "suggested_name": "calculate_total",
+                    "source_function": "process_order",
+                    "file_path": "/tmp/orders.py",
+                }
+            ]
+        }
+
+        context = builder.build_context(
+            task_spec=TaskSpec(
+                task_id="test",
+                task_type="fix",
+                goal="Extract function",
+                success_criteria=["Done"],
+            ),
+            state_spec=StateSpec(),
+            domain_context={},
+            precomputed=precomputed,
+            phase_machine=machine,
+        )
+
+        # Find extract_function action
+        extract_action = next(
+            (a for a in context.actions.available if a.name == "extract_function"),
+            None,
+        )
+
+        assert extract_action is not None
+        assert extract_action.value_hints.get("start_line") == "42"
+        assert extract_action.value_hints.get("end_line") == "65"
+        assert extract_action.value_hints.get("new_function_name") == "calculate_total"
+        assert extract_action.value_hints.get("source_function") == "process_order"
+
+    def test_read_file_gets_path_hint(self):
+        """Test that read_file action gets path hint from precomputed."""
+        from agentforge.core.harness.minimal_context import (
+            EnhancedContextBuilder,
+            TaskSpec,
+            StateSpec,
+            PhaseMachine,
+            Phase,
+        )
+
+        builder = EnhancedContextBuilder(project_path=Path("/tmp"))
+        machine = PhaseMachine()
+        machine._current_phase = Phase.ANALYZE
+
+        precomputed = {
+            "file_path": "/tmp/target_file.py",
+        }
+
+        context = builder.build_context(
+            task_spec=TaskSpec(
+                task_id="test",
+                task_type="fix",
+                goal="Analyze file",
+                success_criteria=["Done"],
+            ),
+            state_spec=StateSpec(),
+            domain_context={},
+            precomputed=precomputed,
+            phase_machine=machine,
+        )
+
+        # Find read_file action
+        read_action = next(
+            (a for a in context.actions.available if a.name == "read_file"),
+            None,
+        )
+
+        assert read_action is not None
+        assert read_action.value_hints.get("path") == "/tmp/target_file.py"
+
+    def test_edit_file_gets_line_hint(self):
+        """Test that edit_file action gets line number hint."""
+        from agentforge.core.harness.minimal_context import (
+            EnhancedContextBuilder,
+            TaskSpec,
+            StateSpec,
+            PhaseMachine,
+            Phase,
+        )
+
+        builder = EnhancedContextBuilder(project_path=Path("/tmp"))
+        machine = PhaseMachine()
+        machine._current_phase = Phase.IMPLEMENT
+
+        precomputed = {
+            "file_path": "/tmp/target.py",
+            "line_number": 123,
+        }
+
+        context = builder.build_context(
+            task_spec=TaskSpec(
+                task_id="test",
+                task_type="fix",
+                goal="Edit file",
+                success_criteria=["Done"],
+            ),
+            state_spec=StateSpec(),
+            domain_context={},
+            precomputed=precomputed,
+            phase_machine=machine,
+        )
+
+        # Find edit_file action
+        edit_action = next(
+            (a for a in context.actions.available if a.name == "edit_file"),
+            None,
+        )
+
+        assert edit_action is not None
+        assert edit_action.value_hints.get("path") == "/tmp/target.py"
+        assert edit_action.value_hints.get("start_line") == "123"
+
+    def test_no_hints_without_precomputed(self):
+        """Test that no hints are added when precomputed is empty."""
+        from agentforge.core.harness.minimal_context import (
+            EnhancedContextBuilder,
+            TaskSpec,
+            StateSpec,
+            PhaseMachine,
+            Phase,
+        )
+
+        builder = EnhancedContextBuilder(project_path=Path("/tmp"))
+        machine = PhaseMachine()
+        machine._current_phase = Phase.IMPLEMENT
+
+        context = builder.build_context(
+            task_spec=TaskSpec(
+                task_id="test",
+                task_type="fix",
+                goal="Edit file",
+                success_criteria=["Done"],
+            ),
+            state_spec=StateSpec(),
+            domain_context={},
+            precomputed={},  # Empty
+            phase_machine=machine,
+        )
+
+        # Actions should have no value hints
+        for action in context.actions.available:
+            assert action.value_hints == {}
+
+
+class TestFactCompaction:
+    """Tests for proactive fact compaction."""
+
+    def test_understanding_compact_reduces_facts(self):
+        """Test that compact() reduces facts to max threshold."""
+        from agentforge.core.harness.minimal_context import (
+            Understanding,
+            Fact,
+            FactCategory,
+        )
+
+        # Create 30 low-confidence facts
+        facts = [
+            Fact(
+                id=f"fact-{i}",
+                category=FactCategory.INFERENCE,
+                statement=f"Fact number {i}",
+                confidence=0.5,
+                source="test",
+                step=i,
+            )
+            for i in range(30)
+        ]
+
+        understanding = Understanding(facts=facts)
+        assert len(understanding.get_active_facts()) == 30
+
+        # Compact to 15
+        compacted = understanding.compact(max_facts=15)
+        assert len(compacted.get_active_facts()) == 15
+
+    def test_understanding_compact_preserves_high_value(self):
+        """Test that compaction preserves high-value facts."""
+        from agentforge.core.harness.minimal_context import (
+            Understanding,
+            Fact,
+            FactCategory,
+        )
+
+        # Create mix of low and high value facts
+        facts = [
+            # High value: verification + high confidence
+            Fact(
+                id="high-1",
+                category=FactCategory.VERIFICATION,
+                statement="Check passed",
+                confidence=1.0,
+                source="test",
+                step=1,
+            ),
+            # High value: error fact
+            Fact(
+                id="high-2",
+                category=FactCategory.ERROR,
+                statement="Important error",
+                confidence=0.9,
+                source="test",
+                step=2,
+            ),
+            # Low value: inference with low confidence
+            *[
+                Fact(
+                    id=f"low-{i}",
+                    category=FactCategory.INFERENCE,
+                    statement=f"Low value fact {i}",
+                    confidence=0.3,
+                    source="test",
+                    step=i + 10,
+                )
+                for i in range(20)
+            ],
+        ]
+
+        understanding = Understanding(facts=facts)
+        compacted = understanding.compact(max_facts=5)
+
+        active_ids = [f.id for f in compacted.get_active_facts()]
+        assert "high-1" in active_ids
+        assert "high-2" in active_ids
+
+    def test_understanding_compact_noop_under_threshold(self):
+        """Test that compaction is a no-op under threshold."""
+        from agentforge.core.harness.minimal_context import (
+            Understanding,
+            Fact,
+            FactCategory,
+        )
+
+        facts = [
+            Fact(
+                id=f"fact-{i}",
+                category=FactCategory.INFERENCE,
+                statement=f"Fact {i}",
+                confidence=0.5,
+                source="test",
+                step=i,
+            )
+            for i in range(10)
+        ]
+
+        understanding = Understanding(facts=facts)
+        compacted = understanding.compact(max_facts=20)
+
+        # Should be the same object since under threshold
+        assert compacted is understanding
+        assert len(compacted.get_active_facts()) == 10
+
+    def test_understanding_compact_prioritizes_categories(self):
+        """Test that compaction prioritizes by category importance."""
+        from agentforge.core.harness.minimal_context import (
+            Understanding,
+            Fact,
+            FactCategory,
+        )
+
+        # All same confidence, different categories
+        facts = [
+            Fact(
+                id="verify",
+                category=FactCategory.VERIFICATION,
+                statement="Verification fact",
+                confidence=0.7,
+                source="test",
+                step=1,
+            ),
+            Fact(
+                id="error",
+                category=FactCategory.ERROR,
+                statement="Error fact",
+                confidence=0.7,
+                source="test",
+                step=2,
+            ),
+            Fact(
+                id="code",
+                category=FactCategory.CODE_STRUCTURE,
+                statement="Code structure fact",
+                confidence=0.7,
+                source="test",
+                step=3,
+            ),
+            Fact(
+                id="infer",
+                category=FactCategory.INFERENCE,
+                statement="Inference fact",
+                confidence=0.7,
+                source="test",
+                step=4,
+            ),
+        ]
+
+        understanding = Understanding(facts=facts)
+        compacted = understanding.compact(max_facts=2)
+
+        active_ids = [f.id for f in compacted.get_active_facts()]
+        # VERIFICATION (0.7 + 0.3 = 1.0) and ERROR (0.7 + 0.2 = 0.9) should be kept
+        assert "verify" in active_ids
+        assert "error" in active_ids
+        assert "infer" not in active_ids

@@ -188,6 +188,60 @@ class Understanding(BaseModel):
         """Get facts above confidence threshold."""
         return [f for f in self.get_active_facts() if f.confidence >= threshold]
 
+    def compact(self, max_facts: int = 20) -> "Understanding":
+        """
+        Compact facts to stay under the maximum threshold.
+
+        Removes low-value facts based on:
+        - Confidence score
+        - Category importance (VERIFICATION > ERROR > others)
+        - Superseded status
+
+        Args:
+            max_facts: Maximum number of facts to keep
+
+        Returns:
+            New Understanding with compacted facts
+        """
+        active = self.get_active_facts()
+
+        if len(active) <= max_facts:
+            return self
+
+        # Score facts by value
+        def score_fact(fact: Fact) -> float:
+            score = fact.confidence
+
+            # Verification facts are most valuable
+            if fact.category == FactCategory.VERIFICATION:
+                score += 0.3
+
+            # Error facts help avoid repeating mistakes
+            if fact.category == FactCategory.ERROR:
+                score += 0.2
+
+            # Code structure facts are important for context
+            if fact.category == FactCategory.CODE_STRUCTURE:
+                score += 0.1
+
+            return score
+
+        # Sort by score (highest first) and keep top N
+        scored = sorted(active, key=score_fact, reverse=True)
+        keep_facts = scored[:max_facts]
+        keep_ids = {f.id for f in keep_facts}
+
+        # Mark others as superseded
+        new_superseded = list(self.superseded_facts)
+        for fact in active:
+            if fact.id not in keep_ids:
+                new_superseded.append(fact.id)
+
+        return Understanding(
+            facts=self.facts,  # Keep all facts for history
+            superseded_facts=new_superseded,
+        )
+
 
 class PhaseState(BaseModel):
     """Current phase execution state."""
@@ -250,6 +304,22 @@ class AgentContext(BaseModel):
 
     # Precomputed analysis (AST-derived, not LLM-derived)
     precomputed: Dict[str, Any] = Field(default_factory=dict)
+
+    def estimate_tokens(self, chars_per_token: int = 4) -> int:
+        """
+        Estimate token count for this context.
+
+        Uses a conservative chars_per_token estimate. For accurate counts,
+        use the provider's tokenizer.
+
+        Args:
+            chars_per_token: Characters per token (default 4, conservative)
+
+        Returns:
+            Estimated token count
+        """
+        yaml_output = self.to_yaml()
+        return len(yaml_output) // chars_per_token
 
     def to_yaml(self) -> str:
         """Serialize to compact YAML for LLM context."""

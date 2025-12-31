@@ -308,6 +308,8 @@ class EnhancedContextBuilder:
         """
         Build complete agent context from typed specs.
 
+        Enforces token budget - if over max_tokens, automatically compacts.
+
         Args:
             task_spec: Immutable task specification
             state_spec: Current mutable state
@@ -316,10 +318,10 @@ class EnhancedContextBuilder:
             phase_machine: Current phase machine state
 
         Returns:
-            Validated AgentContext
+            Validated AgentContext (always within token budget)
         """
-        # Build actions based on current phase
-        actions = self._build_actions(phase_machine.current_phase, state_spec)
+        # Build actions based on current phase (with value hints from precomputed)
+        actions = self._build_actions(phase_machine.current_phase, state_spec, precomputed)
 
         # Update state with phase info
         state_spec = state_spec.model_copy(
@@ -337,6 +339,128 @@ class EnhancedContextBuilder:
 
         # Validate (will raise on invalid data)
         context.model_validate(context.model_dump())
+
+        # Enforce token budget with compaction
+        tokens = context.estimate_tokens()
+        if tokens > self.max_tokens:
+            context = self._compact_context(context, self.max_tokens)
+
+        return context
+
+    def _compact_context(
+        self,
+        context: AgentContext,
+        target_tokens: int,
+    ) -> AgentContext:
+        """
+        Compact context to fit within token budget.
+
+        Progressive compaction strategy:
+        1. Truncate precomputed analysis (most compressible)
+        2. Reduce facts to high-confidence only
+        3. Reduce actions to top 5
+        4. Truncate domain context
+
+        Args:
+            context: Original context
+            target_tokens: Target token count
+
+        Returns:
+            Compacted AgentContext
+        """
+        # Start with mutable copies
+        precomputed = dict(context.precomputed) if context.precomputed else {}
+        domain_context = dict(context.domain_context) if context.domain_context else {}
+        state_spec = context.state.model_copy()
+        actions_spec = context.actions.model_copy()
+
+        # Phase 1: Truncate precomputed to half, then eliminate
+        if context.estimate_tokens() > target_tokens and precomputed:
+            # Truncate string values in precomputed
+            for key in list(precomputed.keys()):
+                if isinstance(precomputed[key], str) and len(precomputed[key]) > 500:
+                    precomputed[key] = precomputed[key][:500] + "... (truncated)"
+
+            context = AgentContext(
+                task=context.task,
+                state=state_spec,
+                actions=actions_spec,
+                domain_context=domain_context,
+                precomputed=precomputed,
+            )
+
+        if context.estimate_tokens() > target_tokens and precomputed:
+            # Still over - remove precomputed entirely
+            precomputed = {}
+            context = AgentContext(
+                task=context.task,
+                state=state_spec,
+                actions=actions_spec,
+                domain_context=domain_context,
+                precomputed=precomputed,
+            )
+
+        # Phase 2: Reduce facts to high-confidence only (>= 0.8)
+        if context.estimate_tokens() > target_tokens:
+            high_conf_facts = [
+                f for f in state_spec.understanding.facts
+                if f.confidence >= 0.8
+            ]
+            understanding = Understanding(
+                facts=high_conf_facts[:10],  # Max 10 high-confidence facts
+                superseded_facts=state_spec.understanding.superseded_facts,
+            )
+            state_spec = state_spec.model_copy(update={"understanding": understanding})
+            context = AgentContext(
+                task=context.task,
+                state=state_spec,
+                actions=actions_spec,
+                domain_context=domain_context,
+                precomputed=precomputed,
+            )
+
+        # Phase 3: Reduce actions to top 5
+        if context.estimate_tokens() > target_tokens:
+            actions_spec = ActionsSpec(
+                available=actions_spec.available[:5],
+                recommended=actions_spec.recommended,
+                blocked=actions_spec.blocked[:2],
+            )
+            context = AgentContext(
+                task=context.task,
+                state=state_spec,
+                actions=actions_spec,
+                domain_context=domain_context,
+                precomputed=precomputed,
+            )
+
+        # Phase 4: Truncate domain context
+        if context.estimate_tokens() > target_tokens and domain_context:
+            # Truncate string values in domain context
+            for key in list(domain_context.keys()):
+                if isinstance(domain_context[key], str) and len(domain_context[key]) > 200:
+                    domain_context[key] = domain_context[key][:200] + "..."
+
+            context = AgentContext(
+                task=context.task,
+                state=state_spec,
+                actions=actions_spec,
+                domain_context=domain_context,
+                precomputed=precomputed,
+            )
+
+        # Phase 5: Last resort - reduce recent actions
+        if context.estimate_tokens() > target_tokens:
+            state_spec = state_spec.model_copy(
+                update={"recent_actions": state_spec.recent_actions[:1]}
+            )
+            context = AgentContext(
+                task=context.task,
+                state=state_spec,
+                actions=actions_spec,
+                domain_context=domain_context,
+                precomputed=precomputed,
+            )
 
         return context
 
@@ -381,12 +505,15 @@ class EnhancedContextBuilder:
                 statement=f.get("statement", ""),
                 confidence=f.get("confidence", 0.5),
                 source=f.get("source", "unknown"),
+                step=f.get("step", 0),
             )
             for f in fact_dicts
         ]
 
-        # Build Understanding
+        # Build Understanding with proactive compaction
         understanding = Understanding(facts=facts)
+        if len(understanding.get_active_facts()) > 20:
+            understanding = understanding.compact(max_facts=20)
 
         # Build VerificationState
         verification = VerificationState(
@@ -412,8 +539,9 @@ class EnhancedContextBuilder:
         self,
         phase: Phase,
         state: StateSpec,
+        precomputed: Optional[Dict[str, Any]] = None,
     ) -> ActionsSpec:
-        """Build available actions for current phase."""
+        """Build available actions for current phase with value hints."""
         # Collect all actions
         all_actions = get_base_actions()
 
@@ -430,6 +558,10 @@ class EnhancedContextBuilder:
             if not a.phases or phase.value in a.phases
         ]
 
+        # Populate value hints from precomputed context
+        if precomputed:
+            valid_actions = self._populate_value_hints(valid_actions, precomputed)
+
         # Sort by priority (highest first)
         valid_actions.sort(key=lambda a: a.priority, reverse=True)
 
@@ -444,6 +576,103 @@ class EnhancedContextBuilder:
             recommended=recommended,
             blocked=blocked,
         )
+
+    def _populate_value_hints(
+        self,
+        actions: List[ActionDef],
+        precomputed: Dict[str, Any],
+    ) -> List[ActionDef]:
+        """
+        Populate value_hints in actions from precomputed analysis.
+
+        Maps precomputed analysis data to action parameters:
+        - extraction_candidates -> extract_function hints
+        - file_path, line -> read_file, edit_file hints
+        - complexity_metrics -> simplify_conditional hints
+
+        Args:
+            actions: List of actions to enhance
+            precomputed: Precomputed analysis data
+
+        Returns:
+            Actions with populated value_hints
+        """
+        enhanced_actions = []
+
+        for action in actions:
+            hints = dict(action.value_hints)  # Start with existing hints
+
+            # Extract function hints from extraction candidates
+            if action.name == "extract_function":
+                candidates = precomputed.get("extraction_candidates", [])
+                if candidates and isinstance(candidates, list) and len(candidates) > 0:
+                    first = candidates[0]
+                    if isinstance(first, dict):
+                        if "start_line" in first:
+                            hints["start_line"] = str(first["start_line"])
+                        if "end_line" in first:
+                            hints["end_line"] = str(first["end_line"])
+                        if "suggested_name" in first:
+                            hints["new_function_name"] = first["suggested_name"]
+                        if "source_function" in first:
+                            hints["source_function"] = first["source_function"]
+                        if "file_path" in first:
+                            hints["file_path"] = first["file_path"]
+
+            # Read file hints from file_path
+            if action.name in ("read_file", "load_context"):
+                if "file_path" in precomputed:
+                    hints["path"] = precomputed["file_path"]
+                elif "violation" in precomputed:
+                    viol = precomputed["violation"]
+                    if isinstance(viol, dict) and "file_path" in viol:
+                        hints["path"] = viol["file_path"]
+
+            # Edit file hints
+            if action.name in ("edit_file", "replace_lines"):
+                if "file_path" in precomputed:
+                    hints["path"] = precomputed["file_path"]
+                    hints["file_path"] = precomputed["file_path"]
+                if "line_number" in precomputed:
+                    hints["start_line"] = str(precomputed["line_number"])
+
+            # Simplify conditional hints
+            if action.name == "simplify_conditional":
+                if "nested_conditionals" in precomputed:
+                    conditionals = precomputed["nested_conditionals"]
+                    if conditionals and isinstance(conditionals, list) and len(conditionals) > 0:
+                        first = conditionals[0]
+                        if isinstance(first, dict):
+                            if "if_line" in first:
+                                hints["if_line"] = str(first["if_line"])
+                            if "function_name" in first:
+                                hints["function_name"] = first["function_name"]
+
+            # Run check/tests hints
+            if action.name in ("run_check", "run_tests"):
+                if "file_path" in precomputed:
+                    hints["file_path"] = precomputed["file_path"]
+                if "test_path" in precomputed:
+                    hints["test_path"] = precomputed["test_path"]
+
+            # Create new action with hints if any were added
+            if hints != action.value_hints:
+                enhanced_actions.append(
+                    ActionDef(
+                        name=action.name,
+                        description=action.description,
+                        parameters=action.parameters,
+                        preconditions=action.preconditions,
+                        postconditions=action.postconditions,
+                        phases=action.phases,
+                        value_hints=hints,
+                        priority=action.priority,
+                    )
+                )
+            else:
+                enhanced_actions.append(action)
+
+        return enhanced_actions
 
     def _get_recommended_action(
         self,

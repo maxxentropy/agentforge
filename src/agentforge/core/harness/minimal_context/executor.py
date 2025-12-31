@@ -31,7 +31,7 @@ from .context_builder import ContextBuilder
 from .enhanced_context_builder import EnhancedContextBuilder
 from .working_memory import WorkingMemoryManager
 from .understanding import UnderstandingExtractor
-from .context_models import ActionResult, ActionRecord
+from .context_models import ActionResult, ActionRecord, AgentResponse
 from .loop_detector import LoopDetector, LoopDetection, LoopType
 from .phase_machine import PhaseMachine, Phase, PhaseContext
 
@@ -683,11 +683,18 @@ class MinimalContextExecutor:
 
     def _parse_action(self, response_text: str) -> tuple:
         """
-        Parse action from LLM response.
+        Parse and validate action from LLM response.
 
         Expects format:
         ```action
         name: action_name
+        parameters:
+          param1: value1
+        ```
+
+        or YAML format:
+        ```yaml
+        action: action_name
         parameters:
           param1: value1
         ```
@@ -698,7 +705,7 @@ class MinimalContextExecutor:
         Returns:
             Tuple of (action_name, action_params)
         """
-        # Look for action block
+        # Look for action block (```action ... ```)
         action_match = re.search(
             r"```action\s*\n(.*?)```",
             response_text,
@@ -707,16 +714,28 @@ class MinimalContextExecutor:
 
         if action_match:
             action_yaml = action_match.group(1).strip()
-            try:
-                action_data = yaml.safe_load(action_yaml)
-                if isinstance(action_data, dict):
-                    name = action_data.get("name", "unknown")
-                    params = action_data.get("parameters", {}) or {}
-                    return name, params
-            except yaml.YAMLError:
-                pass
+            result = self._parse_and_validate_yaml(action_yaml, "action")
+            if result:
+                return result
+
+        # Look for yaml block (```yaml ... ```)
+        yaml_match = re.search(
+            r"```yaml\s*\n(.*?)```",
+            response_text,
+            re.DOTALL | re.IGNORECASE
+        )
+
+        if yaml_match:
+            yaml_content = yaml_match.group(1).strip()
+            result = self._parse_and_validate_yaml(yaml_content, "yaml")
+            if result:
+                return result
 
         # Fallback: look for simple action pattern
+        simple_match = re.search(r"action:\s*(\w+)", response_text)
+        if simple_match:
+            return simple_match.group(1), {}
+
         simple_match = re.search(r"name:\s*(\w+)", response_text)
         if simple_match:
             return simple_match.group(1), {}
@@ -726,6 +745,51 @@ class MinimalContextExecutor:
             return "complete", {}
 
         return "unknown", {}
+
+    def _parse_and_validate_yaml(
+        self,
+        yaml_content: str,
+        block_type: str,
+    ) -> Optional[tuple]:
+        """
+        Parse YAML content and validate against AgentResponse schema.
+
+        Args:
+            yaml_content: YAML string to parse
+            block_type: Type of block ("action" or "yaml")
+
+        Returns:
+            Tuple of (action_name, action_params) or None if invalid
+        """
+        try:
+            action_data = yaml.safe_load(yaml_content)
+            if not isinstance(action_data, dict):
+                return None
+
+            # Handle different formats:
+            # Format 1: { name: "action", parameters: {...} }
+            # Format 2: { action: "action", parameters: {...} }
+            name = action_data.get("name") or action_data.get("action")
+            if not name:
+                return None
+
+            params = action_data.get("parameters", {}) or {}
+            reasoning = action_data.get("reasoning")
+
+            # Validate against AgentResponse schema
+            try:
+                validated = AgentResponse(
+                    action=name,
+                    parameters=params,
+                    reasoning=reasoning,
+                )
+                return validated.action, validated.parameters
+            except Exception:
+                # Validation failed but we have a name, use raw values
+                return name, params
+
+        except yaml.YAMLError:
+            return None
 
     def _execute_action(
         self,

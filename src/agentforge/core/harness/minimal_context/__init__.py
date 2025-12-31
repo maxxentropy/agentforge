@@ -39,7 +39,7 @@ Usage
     result = workflow.fix_violation("V-abc123")
 """
 
-from .state_store import TaskStateStore, TaskState, TaskPhase
+from .state_store import TaskStateStore, TaskState, TaskPhase, SCHEMA_VERSION
 from .token_budget import TokenBudget, TOKEN_BUDGET_LIMITS, ENHANCED_TOKEN_LIMITS
 from .working_memory import WorkingMemoryManager, WorkingMemoryItem
 from .context_schemas import ContextSchema, FixViolationSchema, get_schema_for_task
@@ -92,10 +92,11 @@ from .phase_machine import (
 )
 
 __all__ = [
-    # State (legacy)
+    # State
     "TaskStateStore",
     "TaskState",
     "TaskPhase",
+    "SCHEMA_VERSION",
     # Token Budget
     "TokenBudget",
     "TOKEN_BUDGET_LIMITS",

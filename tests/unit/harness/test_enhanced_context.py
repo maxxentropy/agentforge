@@ -2139,6 +2139,163 @@ class TestValueHintsPopulation:
             assert action.value_hints == {}
 
 
+class TestSchemaVersioning:
+    """Tests for state store schema versioning and migration."""
+
+    def test_schema_version_exported(self):
+        """Test that SCHEMA_VERSION is exported."""
+        from agentforge.core.harness.minimal_context import SCHEMA_VERSION
+
+        assert SCHEMA_VERSION == "2.0"
+
+    def test_new_task_has_schema_version(self, tmp_path):
+        """Test that newly created tasks have schema version."""
+        from agentforge.core.harness.minimal_context import TaskStateStore
+        import yaml
+
+        store = TaskStateStore(tmp_path)
+        task = store.create_task(
+            task_type="test",
+            goal="Test goal",
+            success_criteria=["Done"],
+        )
+
+        # Read state.yaml directly
+        state_file = tmp_path / ".agentforge" / "tasks" / task.task_id / "state.yaml"
+        with open(state_file) as f:
+            state_data = yaml.safe_load(f)
+
+        assert state_data["schema_version"] == "2.0"
+
+    def test_migrate_v1_to_v2(self, tmp_path):
+        """Test migration from v1.0 (no version) to v2.0."""
+        from agentforge.core.harness.minimal_context import TaskStateStore, TaskPhase
+        import yaml
+
+        # Create a v1.0 style state (no schema_version, no phase_machine_state)
+        task_dir = tmp_path / ".agentforge" / "tasks" / "legacy-task"
+        task_dir.mkdir(parents=True)
+
+        # Write legacy task.yaml
+        task_data = {
+            "task_id": "legacy-task",
+            "task_type": "fix_violation",
+            "goal": "Fix a legacy bug",
+            "success_criteria": ["Tests pass"],
+            "constraints": [],
+            "created_at": "2024-01-01T00:00:00+00:00",
+        }
+        with open(task_dir / "task.yaml", "w") as f:
+            yaml.dump(task_data, f)
+
+        # Write legacy state.yaml (v1.0 - no schema_version)
+        state_data = {
+            "phase": "init",
+            "current_step": 5,
+            "verification": {
+                "checks_passing": 0,
+                "checks_failing": 1,
+                "tests_passing": True,
+            },
+            "last_updated": "2024-01-01T01:00:00+00:00",
+            "error": None,
+            "context_data": {"file_path": "test.py"},
+            # Note: no phase_machine_state, no ready_for_completion
+        }
+        with open(task_dir / "state.yaml", "w") as f:
+            yaml.dump(state_data, f)
+
+        # Load the task - should trigger migration
+        store = TaskStateStore(tmp_path)
+        loaded = store.load("legacy-task")
+
+        # Verify migration
+        assert loaded is not None
+        assert loaded.phase == TaskPhase.INIT
+        assert loaded.current_step == 5
+        assert loaded.phase_machine_state == {}  # Added by migration
+        assert loaded.verification.ready_for_completion is False  # Added by migration
+
+        # Verify state.yaml was updated with new version
+        with open(task_dir / "state.yaml") as f:
+            updated_data = yaml.safe_load(f)
+
+        assert updated_data["schema_version"] == "2.0"
+        assert "phase_machine_state" in updated_data
+
+    def test_load_current_version_no_migration(self, tmp_path):
+        """Test that current version doesn't trigger migration."""
+        from agentforge.core.harness.minimal_context import TaskStateStore
+
+        store = TaskStateStore(tmp_path)
+
+        # Create a new task (v2.0)
+        task = store.create_task(
+            task_type="test",
+            goal="Test",
+            success_criteria=["Done"],
+        )
+
+        # Load it back
+        loaded = store.load(task.task_id)
+
+        assert loaded is not None
+        assert loaded.task_id == task.task_id
+
+    def test_migration_preserves_data(self, tmp_path):
+        """Test that migration preserves all existing data."""
+        from agentforge.core.harness.minimal_context import TaskStateStore
+        import yaml
+
+        task_dir = tmp_path / ".agentforge" / "tasks" / "preserve-test"
+        task_dir.mkdir(parents=True)
+
+        # Write task.yaml
+        task_data = {
+            "task_id": "preserve-test",
+            "task_type": "fix_violation",
+            "goal": "Preserve my data",
+            "success_criteria": ["Data preserved"],
+            "constraints": ["No data loss"],
+            "created_at": "2024-06-15T12:00:00+00:00",
+        }
+        with open(task_dir / "task.yaml", "w") as f:
+            yaml.dump(task_data, f)
+
+        # Write v1.0 state with lots of data
+        state_data = {
+            "phase": "implement",
+            "current_step": 42,
+            "verification": {
+                "checks_passing": 5,
+                "checks_failing": 2,
+                "tests_passing": True,
+                "details": {"custom": "data"},
+            },
+            "last_updated": "2024-06-15T14:30:00+00:00",
+            "error": "Previous error",
+            "context_data": {
+                "file_path": "important.py",
+                "line_number": 123,
+                "precomputed": {"analysis": "results"},
+            },
+        }
+        with open(task_dir / "state.yaml", "w") as f:
+            yaml.dump(state_data, f)
+
+        # Load and verify all data preserved
+        store = TaskStateStore(tmp_path)
+        loaded = store.load("preserve-test")
+
+        assert loaded.current_step == 42
+        assert loaded.verification.checks_passing == 5
+        assert loaded.verification.checks_failing == 2
+        assert loaded.verification.details == {"custom": "data"}
+        assert loaded.error == "Previous error"
+        assert loaded.context_data["file_path"] == "important.py"
+        assert loaded.context_data["precomputed"]["analysis"] == "results"
+
+
 class TestFactCompaction:
     """Tests for proactive fact compaction."""
 

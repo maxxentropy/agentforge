@@ -15,6 +15,15 @@ Directory structure:
     ├── inputs/               # Verified inputs (spec, violation, etc.)
     ├── outputs/              # Verified outputs from each phase
     └── snapshots/            # File states before/after changes
+
+Schema Versioning
+-----------------
+Schema version is stored in state.yaml as 'schema_version'.
+When loading, older versions are automatically migrated to current.
+
+Version History:
+- 1.0: Initial version (legacy, no version field)
+- 2.0: Enhanced Context Engineering (phase_machine_state added)
 """
 
 import uuid
@@ -25,10 +34,14 @@ from enum import Enum
 
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .phase_machine import PhaseMachine
+
+
+# Current schema version
+SCHEMA_VERSION = "2.0"
 
 
 def _utc_now() -> datetime:
@@ -160,6 +173,7 @@ class TaskState:
     def to_state_dict(self) -> Dict[str, Any]:
         """Serialize mutable state data."""
         return {
+            "schema_version": SCHEMA_VERSION,
             "phase": self.phase.value,
             "current_step": self.current_step,
             "verification": self.verification.to_dict(),
@@ -264,6 +278,8 @@ class TaskStateStore:
         """
         Load task state from disk.
 
+        Automatically migrates older schema versions to current.
+
         Args:
             task_id: Task identifier
 
@@ -282,7 +298,10 @@ class TaskStateStore:
         with open(task_dir / "state.yaml") as f:
             state_data = yaml.safe_load(f)
 
-        return TaskState(
+        # Check schema version and migrate if needed
+        state_data, migrated = self._migrate_state(state_data)
+
+        state = TaskState(
             task_id=task_data["task_id"],
             task_type=task_data["task_type"],
             goal=task_data["goal"],
@@ -295,9 +314,51 @@ class TaskStateStore:
             last_updated=datetime.fromisoformat(state_data["last_updated"]),
             error=state_data.get("error"),
             context_data=state_data.get("context_data", {}),
-            # Backward compatible: defaults to empty dict for legacy tasks
             phase_machine_state=state_data.get("phase_machine_state", {}),
         )
+
+        # If migrated, save the updated state
+        if migrated:
+            self._save_state(state)
+
+        return state
+
+    def _migrate_state(self, state_data: Dict[str, Any]) -> Tuple[Dict[str, Any], bool]:
+        """
+        Migrate state data from older schema versions to current.
+
+        Args:
+            state_data: Raw state data from YAML
+
+        Returns:
+            Tuple of (migrated_data, was_migrated)
+        """
+        version = state_data.get("schema_version", "1.0")
+        migrated = False
+
+        # Migration: 1.0 -> 2.0
+        if version == "1.0":
+            # Add phase_machine_state if missing
+            if "phase_machine_state" not in state_data:
+                state_data["phase_machine_state"] = {}
+
+            # Ensure verification has all required fields
+            verification = state_data.get("verification", {})
+            if "ready_for_completion" not in verification:
+                verification["ready_for_completion"] = False
+            state_data["verification"] = verification
+
+            state_data["schema_version"] = "2.0"
+            migrated = True
+
+        # Future migrations would go here:
+        # if version == "2.0":
+        #     # Migration: 2.0 -> 3.0
+        #     ...
+        #     state_data["schema_version"] = "3.0"
+        #     migrated = True
+
+        return state_data, migrated
 
     def _save_state(self, state: TaskState) -> None:
         """Save mutable state to disk."""

@@ -853,3 +853,198 @@ class TestWorkingMemoryFactStorage:
             # Action results should still be there
             actions = mgr.get_action_results()
             assert len(actions) == 1
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# AdaptiveBudget Integration Tests (Phase 3)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+from agentforge.core.harness.minimal_context import AdaptiveBudget
+
+
+class TestAdaptiveBudgetEnhancedLoopDetection:
+    """Tests for enhanced loop detection in AdaptiveBudget."""
+
+    def test_identical_loop_detection(self):
+        """Test detection of identical action loops."""
+        budget = AdaptiveBudget(
+            base_budget=15,
+            runaway_threshold=3,
+            use_enhanced_loop_detection=True,
+        )
+
+        # Create identical failing actions
+        actions = [
+            {
+                "step": i,
+                "action": "edit_file",
+                "parameters": {"path": "test.py"},
+                "result": "failure",
+                "summary": "Edit failed",
+                "error": "text not found",
+            }
+            for i in range(1, 4)
+        ]
+
+        should_continue, reason, loop_detection = budget.check_continue(3, actions)
+
+        assert not should_continue
+        assert "IDENTICAL_ACTION" in reason
+        assert loop_detection is not None
+        assert loop_detection.detected
+        assert loop_detection.loop_type == LoopType.IDENTICAL_ACTION
+
+    def test_error_cycle_detection(self):
+        """Test detection of A->B->A error cycling."""
+        budget = AdaptiveBudget(
+            base_budget=15,
+            use_enhanced_loop_detection=True,
+        )
+
+        # Create A->B->A->B->A pattern
+        actions = []
+        for i in range(5):
+            action = "edit_file" if i % 2 == 0 else "extract_function"
+            actions.append({
+                "step": i + 1,
+                "action": action,
+                "parameters": {},
+                "result": "failure",
+                "summary": f"{action} failed",
+                "error": "operation failed",
+            })
+
+        should_continue, reason, loop_detection = budget.check_continue(5, actions)
+
+        assert not should_continue
+        assert loop_detection is not None
+        assert loop_detection.detected
+        assert loop_detection.loop_type == LoopType.ERROR_CYCLE
+
+    def test_no_loop_with_progress(self):
+        """Test that successful actions don't trigger loop detection."""
+        budget = AdaptiveBudget(
+            base_budget=15,
+            use_enhanced_loop_detection=True,
+        )
+
+        actions = [
+            {"step": 1, "action": "read_file", "result": "success", "summary": "Read file"},
+            {"step": 2, "action": "edit_file", "result": "success", "summary": "Edited file"},
+            {"step": 3, "action": "run_check", "result": "success", "summary": "Check PASSED"},
+        ]
+
+        should_continue, reason, loop_detection = budget.check_continue(3, actions)
+
+        assert should_continue
+        assert "Continue" in reason
+        assert loop_detection is None
+
+    def test_legacy_fallback(self):
+        """Test fallback to legacy detection when enhanced is disabled."""
+        budget = AdaptiveBudget(
+            base_budget=15,
+            runaway_threshold=3,
+            use_enhanced_loop_detection=False,
+        )
+
+        assert budget.loop_detector is None
+
+        # Create identical failing actions
+        actions = [
+            {
+                "step": i,
+                "action": "edit_file",
+                "parameters": {"path": "test.py"},
+                "result": "failure",
+                "summary": "Edit failed",
+                "error": "text not found",
+            }
+            for i in range(1, 4)
+        ]
+
+        should_continue, reason, loop_detection = budget.check_continue(3, actions)
+
+        assert not should_continue
+        assert "Runaway" in reason
+        assert loop_detection is None  # No LoopDetection in legacy mode
+
+    def test_get_loop_suggestions(self):
+        """Test getting suggestions from last loop detection."""
+        budget = AdaptiveBudget(
+            base_budget=15,
+            runaway_threshold=3,
+            use_enhanced_loop_detection=True,
+        )
+
+        # No suggestions initially
+        assert budget.get_loop_suggestions() == []
+
+        # Trigger a loop
+        actions = [
+            {
+                "step": i,
+                "action": "edit_file",
+                "parameters": {},
+                "result": "failure",
+                "summary": "failed",
+                "error": "not found",
+            }
+            for i in range(1, 4)
+        ]
+
+        budget.check_continue(3, actions)
+
+        suggestions = budget.get_loop_suggestions()
+        assert len(suggestions) > 0
+        assert any("re-read" in s.lower() or "replace_lines" in s.lower() for s in suggestions)
+
+    def test_budget_exhaustion(self):
+        """Test budget exhaustion still works with enhanced detection."""
+        budget = AdaptiveBudget(
+            base_budget=3,
+            max_budget=3,
+            use_enhanced_loop_detection=True,
+        )
+
+        # Use varied actions that don't trigger loop detection
+        actions = [
+            {"step": 1, "action": "read_file", "result": "success", "summary": "Read config"},
+            {"step": 2, "action": "edit_file", "result": "success", "summary": "Edit code"},
+            {"step": 3, "action": "run_tests", "result": "success", "summary": "Tests passed"},
+        ]
+
+        should_continue, reason, loop_detection = budget.check_continue(3, actions)
+
+        assert not should_continue
+        assert "Budget exhausted" in reason
+
+    def test_step_outcome_includes_loop_info(self):
+        """Test that StepOutcome can include loop detection info."""
+        from agentforge.core.harness.minimal_context import StepOutcome
+
+        loop_detection = LoopDetection(
+            detected=True,
+            loop_type=LoopType.IDENTICAL_ACTION,
+            confidence=1.0,
+            description="Same action repeated",
+            suggestions=["Try something different"],
+        )
+
+        outcome = StepOutcome(
+            success=True,
+            action_name="edit_file",
+            action_params={},
+            result="failure",
+            summary="Failed",
+            should_continue=False,
+            tokens_used=100,
+            duration_ms=50,
+            loop_detected=loop_detection,
+        )
+
+        outcome_dict = outcome.to_dict()
+
+        assert "loop_detection" in outcome_dict
+        assert outcome_dict["loop_detection"]["type"] == "identical_action"
+        assert outcome_dict["loop_detection"]["suggestions"] == ["Try something different"]

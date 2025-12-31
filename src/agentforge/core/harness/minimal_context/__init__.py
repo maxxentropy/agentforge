@@ -22,7 +22,7 @@ from .token_budget import TokenBudget, TOKEN_BUDGET_LIMITS
 from .working_memory import WorkingMemoryManager, WorkingMemoryItem
 from .context_schemas import ContextSchema, FixViolationSchema, get_schema_for_task
 from .context_builder import ContextBuilder
-from .executor import MinimalContextExecutor, StepOutcome
+from .executor import MinimalContextExecutor, StepOutcome, AdaptiveBudget
 from .fix_workflow import MinimalContextFixWorkflow, create_minimal_fix_workflow
 
 # Enhanced Context Engineering (v2)
@@ -88,6 +88,7 @@ __all__ = [
     # Execution
     "MinimalContextExecutor",
     "StepOutcome",
+    "AdaptiveBudget",
     # Fix Workflow
     "MinimalContextFixWorkflow",
     "create_minimal_fix_workflow",

@@ -30,7 +30,8 @@ from .state_store import TaskStateStore, TaskState, TaskPhase
 from .context_builder import ContextBuilder
 from .working_memory import WorkingMemoryManager
 from .understanding import UnderstandingExtractor
-from .context_models import ActionResult
+from .context_models import ActionResult, ActionRecord
+from .loop_detector import LoopDetector, LoopDetection, LoopType
 
 
 @dataclass
@@ -45,9 +46,10 @@ class StepOutcome:
     tokens_used: int
     duration_ms: int
     error: Optional[str] = None
+    loop_detected: Optional[LoopDetection] = None  # Enhanced loop detection info
 
     def to_dict(self) -> Dict[str, Any]:
-        return {
+        result = {
             "success": self.success,
             "action_name": self.action_name,
             "action_params": self.action_params,
@@ -58,6 +60,14 @@ class StepOutcome:
             "duration_ms": self.duration_ms,
             "error": self.error,
         }
+        if self.loop_detected and self.loop_detected.detected:
+            result["loop_detection"] = {
+                "type": self.loop_detected.loop_type.value if self.loop_detected.loop_type else None,
+                "description": self.loop_detected.description,
+                "confidence": self.loop_detected.confidence,
+                "suggestions": self.loop_detected.suggestions,
+            }
+        return result
 
 
 # Type alias for action executors
@@ -69,10 +79,13 @@ class AdaptiveBudget:
     Adaptive step budget that prevents runaway while allowing complex tasks.
 
     Key behaviors:
-    1. RUNAWAY DETECTION: Stop after 3 consecutive identical failures
-    2. NO-PROGRESS DETECTION: Stop after 3 steps with zero meaningful progress
-    3. PROGRESS EXTENSION: Extend budget when making progress (file mods, violation reduction)
-    4. HARD CEILING: Never exceed max_budget (cost control)
+    1. LOOP DETECTION: Enhanced detection via LoopDetector (Phase 3)
+       - Identical action loops
+       - Semantic loops (different actions, same outcome)
+       - Error cycling (A->B->A patterns)
+       - No-progress loops
+    2. PROGRESS EXTENSION: Extend budget when making progress
+    3. HARD CEILING: Never exceed max_budget (cost control)
     """
 
     def __init__(
@@ -81,6 +94,7 @@ class AdaptiveBudget:
         max_budget: int = 50,
         runaway_threshold: int = 3,
         no_progress_threshold: int = 3,
+        use_enhanced_loop_detection: bool = True,
     ):
         self.base_budget = base_budget
         self.max_budget = max_budget
@@ -90,33 +104,60 @@ class AdaptiveBudget:
         self._no_progress_streak = 0
         self._last_violation_count: Optional[int] = None
 
+        # Enhanced loop detection (Phase 3)
+        self.use_enhanced_loop_detection = use_enhanced_loop_detection
+        self.loop_detector = LoopDetector(
+            identical_threshold=runaway_threshold,
+            semantic_threshold=runaway_threshold + 1,
+            cycle_threshold=2,
+            no_progress_threshold=no_progress_threshold,
+        ) if use_enhanced_loop_detection else None
+
+        # Store last loop detection for reporting
+        self._last_loop_detection: Optional[LoopDetection] = None
+
     def check_continue(
         self,
         step_number: int,
         recent_actions: List[Dict[str, Any]],
-    ) -> tuple[bool, str]:
+        facts: Optional[List[Any]] = None,
+    ) -> tuple[bool, str, Optional[LoopDetection]]:
         """
         Determine if execution should continue.
 
         Args:
             step_number: Current step number (1-indexed)
             recent_actions: Last N action records (dicts with action, parameters, result, summary)
+            facts: Optional list of facts for enhanced loop detection
 
         Returns:
-            (should_continue, reason)
+            (should_continue, reason, loop_detection)
         """
-        # 1. Runaway detection: repeated identical failures
-        if self._detect_runaway(recent_actions):
-            return False, "STOPPED: Runaway detected (same action failed 3+ times)"
+        self._last_loop_detection = None
+
+        # 1. Enhanced loop detection (if enabled)
+        if self.use_enhanced_loop_detection and self.loop_detector:
+            loop_result = self._check_enhanced_loops(recent_actions, facts)
+            if loop_result and loop_result.detected:
+                self._last_loop_detection = loop_result
+                return (
+                    False,
+                    f"STOPPED: {loop_result.loop_type.value.upper()} - {loop_result.description}",
+                    loop_result,
+                )
+        else:
+            # Fallback to legacy runaway detection
+            if self._detect_runaway_legacy(recent_actions):
+                return False, "STOPPED: Runaway detected (same action failed 3+ times)", None
 
         # 2. Update progress tracking
         progress_made = self._update_progress(recent_actions)
 
-        # 3. No-progress detection
+        # 3. No-progress detection (legacy, still useful alongside enhanced)
         if not progress_made:
             self._no_progress_streak += 1
             if self._no_progress_streak >= self.no_progress_threshold:
-                return False, f"STOPPED: No progress for {self._no_progress_streak} consecutive steps"
+                return False, f"STOPPED: No progress for {self._no_progress_streak} consecutive steps", None
         else:
             self._no_progress_streak = 0
 
@@ -125,12 +166,55 @@ class AdaptiveBudget:
 
         # 5. Check if within budget
         if step_number >= dynamic_budget:
-            return False, f"STOPPED: Budget exhausted ({step_number}/{dynamic_budget} steps)"
+            return False, f"STOPPED: Budget exhausted ({step_number}/{dynamic_budget} steps)", None
 
-        return True, f"Continue (step {step_number}/{dynamic_budget})"
+        return True, f"Continue (step {step_number}/{dynamic_budget})", None
 
-    def _detect_runaway(self, recent_actions: List[Dict[str, Any]]) -> bool:
-        """Detect runaway behavior: repeated identical failures."""
+    def _check_enhanced_loops(
+        self,
+        recent_actions: List[Dict[str, Any]],
+        facts: Optional[List[Any]] = None,
+    ) -> Optional[LoopDetection]:
+        """
+        Use enhanced LoopDetector for semantic loop detection.
+
+        Args:
+            recent_actions: Recent action dicts
+            facts: Optional facts for context
+
+        Returns:
+            LoopDetection result or None
+        """
+        if not self.loop_detector or not recent_actions:
+            return None
+
+        # Convert dicts to ActionRecord models
+        action_records = []
+        for i, action_dict in enumerate(recent_actions):
+            # Map string result to ActionResult enum
+            result_str = action_dict.get("result", "success")
+            result_enum = {
+                "success": ActionResult.SUCCESS,
+                "failure": ActionResult.FAILURE,
+                "partial": ActionResult.PARTIAL,
+            }.get(result_str, ActionResult.SUCCESS)
+
+            record = ActionRecord(
+                step=action_dict.get("step", i + 1),
+                action=action_dict.get("action", "unknown"),
+                target=action_dict.get("target"),
+                parameters=action_dict.get("parameters", {}),
+                result=result_enum,
+                summary=action_dict.get("summary", ""),
+                error=action_dict.get("error"),
+            )
+            action_records.append(record)
+
+        # Run enhanced detection
+        return self.loop_detector.check(action_records, facts)
+
+    def _detect_runaway_legacy(self, recent_actions: List[Dict[str, Any]]) -> bool:
+        """Legacy runaway detection: repeated identical failures."""
         if len(recent_actions) < self.runaway_threshold:
             return False
 
@@ -149,11 +233,20 @@ class AdaptiveBudget:
         first_params = last_n[0].get("parameters", {})
         for a in last_n[1:]:
             if a.get("parameters", {}) != first_params:
-                # Also check for same error message (catches semantic repetition)
                 if a.get("error") != last_n[0].get("error"):
                     return False
 
         return True
+
+    def get_last_loop_detection(self) -> Optional[LoopDetection]:
+        """Get the last loop detection result."""
+        return self._last_loop_detection
+
+    def get_loop_suggestions(self) -> List[str]:
+        """Get suggestions from the last loop detection."""
+        if self._last_loop_detection and self._last_loop_detection.detected:
+            return self._last_loop_detection.suggestions
+        return []
 
     def _update_progress(self, recent_actions: List[Dict[str, Any]]) -> bool:
         """
@@ -693,11 +786,13 @@ class MinimalContextExecutor:
             if not outcome.should_continue:
                 break
 
-            # Check adaptive budget
+            # Check adaptive budget with enhanced loop detection
             recent = self.state_store.get_recent_actions(task_id, limit=5)
             recent_dicts = [
                 {
+                    "step": a.step if hasattr(a, 'step') else i + 1,
                     "action": a.action,
+                    "target": a.target if hasattr(a, 'target') else None,
                     "parameters": a.parameters,
                     "result": a.result,
                     "summary": a.summary,
@@ -706,10 +801,48 @@ class MinimalContextExecutor:
                 for a in recent
             ]
 
-            should_continue, reason = budget.check_continue(i + 1, recent_dicts)
+            # Get facts from working memory for enhanced loop detection
+            facts = None
+            if budget.use_enhanced_loop_detection:
+                task_dir = self.state_store._task_dir(task_id)
+                memory_manager = WorkingMemoryManager(task_dir)
+                state = self.state_store.load(task_id)
+                if state:
+                    fact_dicts = memory_manager.get_facts(current_step=state.current_step)
+                    # Convert to simple objects for loop detector
+                    facts = fact_dicts  # Loop detector handles dict format
+
+            should_continue, reason, loop_detection = budget.check_continue(
+                i + 1, recent_dicts, facts
+            )
+
             if not should_continue:
                 # Log the reason for stopping
                 print(f"  {reason}")
+
+                # Add loop detection info to the last outcome
+                if loop_detection and loop_detection.detected:
+                    # Update the last outcome with loop info
+                    last_outcome = outcomes[-1]
+                    outcomes[-1] = StepOutcome(
+                        success=last_outcome.success,
+                        action_name=last_outcome.action_name,
+                        action_params=last_outcome.action_params,
+                        result=last_outcome.result,
+                        summary=last_outcome.summary,
+                        should_continue=False,
+                        tokens_used=last_outcome.tokens_used,
+                        duration_ms=last_outcome.duration_ms,
+                        error=last_outcome.error,
+                        loop_detected=loop_detection,
+                    )
+
+                    # Print suggestions if available
+                    if loop_detection.suggestions:
+                        print("  Suggestions:")
+                        for suggestion in loop_detection.suggestions[:3]:
+                            print(f"    - {suggestion}")
+
                 break
 
         return outcomes

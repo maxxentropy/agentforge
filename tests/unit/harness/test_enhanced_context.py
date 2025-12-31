@@ -1289,3 +1289,267 @@ class TestPhaseMachineIntegration:
 
         # phase_machine_state should be empty (legacy mode)
         assert loaded.phase_machine_state == {}
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Phase 5: Enhanced Context Builder Tests
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+class TestEnhancedContextBuilder:
+    """Tests for EnhancedContextBuilder integration."""
+
+    def test_build_from_task_state(self, tmp_path):
+        """Test building AgentContext from TaskState."""
+        from agentforge.core.harness.minimal_context import (
+            TaskStateStore,
+            EnhancedContextBuilder,
+        )
+        from agentforge.core.harness.minimal_context.phase_machine import (
+            PhaseMachine,
+        )
+
+        store = TaskStateStore(tmp_path)
+        builder = EnhancedContextBuilder(tmp_path, store)
+
+        # Create a task
+        task = store.create_task(
+            task_type="fix_violation",
+            goal="Fix complexity violation",
+            success_criteria=["Checks pass", "Tests pass"],
+            context_data={
+                "violation": {"rule": "max-complexity", "severity": "high"},
+                "precomputed": {"suggestions": ["extract_function"]},
+            },
+        )
+
+        # Initialize phase machine
+        machine = PhaseMachine()
+        task.set_phase_machine(machine)
+        store._save_state(task)
+
+        # Build context
+        context = builder.build_from_task_state(task.task_id)
+
+        assert context.task.task_id == task.task_id
+        assert context.task.goal == "Fix complexity violation"
+        assert context.state.current_step == 0
+        assert context.state.phase.current_phase == "init"
+        assert context.domain_context == {"rule": "max-complexity", "severity": "high"}
+
+    def test_phase_aware_actions(self, tmp_path):
+        """Test that actions are filtered by phase."""
+        from agentforge.core.harness.minimal_context import (
+            TaskStateStore,
+            EnhancedContextBuilder,
+        )
+        from agentforge.core.harness.minimal_context.phase_machine import (
+            PhaseMachine,
+            Phase,
+        )
+
+        store = TaskStateStore(tmp_path)
+        builder = EnhancedContextBuilder(tmp_path, store)
+
+        # Create a task
+        task = store.create_task(
+            task_type="fix_violation",
+            goal="Test phase actions",
+            success_criteria=["Pass"],
+        )
+
+        # Test INIT phase
+        machine = PhaseMachine()
+        task.set_phase_machine(machine)
+        store._save_state(task)
+
+        context = builder.build_from_task_state(task.task_id)
+        init_actions = [a.name for a in context.actions.available]
+
+        assert "read_file" in init_actions
+        assert "load_context" in init_actions
+        assert "extract_function" not in init_actions  # Not in init phase
+
+        # Test IMPLEMENT phase
+        machine._current_phase = Phase.IMPLEMENT
+        task.set_phase_machine(machine)
+        store._save_state(task)
+
+        context = builder.build_from_task_state(task.task_id)
+        impl_actions = [a.name for a in context.actions.available]
+
+        assert "extract_function" in impl_actions
+        assert "edit_file" in impl_actions
+        assert "complete" not in impl_actions  # Not in implement phase
+
+    def test_recommended_action(self, tmp_path):
+        """Test that recommended action is set correctly."""
+        from agentforge.core.harness.minimal_context import (
+            TaskStateStore,
+            EnhancedContextBuilder,
+        )
+        from agentforge.core.harness.minimal_context.phase_machine import (
+            PhaseMachine,
+            Phase,
+        )
+
+        store = TaskStateStore(tmp_path)
+        builder = EnhancedContextBuilder(tmp_path, store)
+
+        task = store.create_task(
+            task_type="fix_violation",
+            goal="Test recommendations",
+            success_criteria=["Pass"],
+        )
+
+        # INIT phase should recommend read_file
+        machine = PhaseMachine()
+        task.set_phase_machine(machine)
+        store._save_state(task)
+
+        context = builder.build_from_task_state(task.task_id)
+        assert context.actions.recommended == "read_file"
+
+        # IMPLEMENT phase should recommend extract_function
+        machine._current_phase = Phase.IMPLEMENT
+        task.set_phase_machine(machine)
+        store._save_state(task)
+
+        context = builder.build_from_task_state(task.task_id)
+        assert context.actions.recommended == "extract_function"
+
+    def test_blocked_actions(self, tmp_path):
+        """Test that blocked actions are identified."""
+        from agentforge.core.harness.minimal_context import (
+            TaskStateStore,
+            EnhancedContextBuilder,
+        )
+        from agentforge.core.harness.minimal_context.phase_machine import (
+            PhaseMachine,
+            Phase,
+        )
+
+        store = TaskStateStore(tmp_path)
+        builder = EnhancedContextBuilder(tmp_path, store)
+
+        task = store.create_task(
+            task_type="fix_violation",
+            goal="Test blocked actions",
+            success_criteria=["Pass"],
+        )
+
+        machine = PhaseMachine()
+        task.set_phase_machine(machine)
+        store._save_state(task)
+
+        context = builder.build_from_task_state(task.task_id)
+
+        # Complete should be blocked (not in verify phase)
+        blocked_names = [b.split(":")[0] for b in context.actions.blocked]
+        assert "complete" in blocked_names
+
+    def test_build_messages(self, tmp_path):
+        """Test building LLM messages."""
+        from agentforge.core.harness.minimal_context import (
+            TaskStateStore,
+            EnhancedContextBuilder,
+        )
+        from agentforge.core.harness.minimal_context.phase_machine import (
+            PhaseMachine,
+        )
+
+        store = TaskStateStore(tmp_path)
+        builder = EnhancedContextBuilder(tmp_path, store)
+
+        task = store.create_task(
+            task_type="fix_violation",
+            goal="Test messages",
+            success_criteria=["Pass"],
+        )
+
+        machine = PhaseMachine()
+        task.set_phase_machine(machine)
+        store._save_state(task)
+
+        messages = builder.build_messages(task.task_id)
+
+        assert len(messages) == 2
+        assert messages[0]["role"] == "system"
+        assert messages[1]["role"] == "user"
+
+        # Check system prompt has phase guidance
+        assert "CURRENT PHASE: INIT" in messages[0]["content"]
+
+        # Check user message has context
+        assert "# Task" in messages[1]["content"]
+        assert "# Available Actions" in messages[1]["content"]
+
+    def test_token_breakdown(self, tmp_path):
+        """Test token breakdown calculation."""
+        from agentforge.core.harness.minimal_context import (
+            TaskStateStore,
+            EnhancedContextBuilder,
+        )
+        from agentforge.core.harness.minimal_context.phase_machine import (
+            PhaseMachine,
+        )
+
+        store = TaskStateStore(tmp_path)
+        builder = EnhancedContextBuilder(tmp_path, store)
+
+        task = store.create_task(
+            task_type="fix_violation",
+            goal="Test tokens",
+            success_criteria=["Pass"],
+        )
+
+        machine = PhaseMachine()
+        task.set_phase_machine(machine)
+        store._save_state(task)
+
+        breakdown = builder.get_token_breakdown(task.task_id)
+
+        assert "total_tokens" in breakdown
+        assert "within_budget" in breakdown
+        assert breakdown["total_tokens"] > 0
+        assert breakdown["within_budget"] is True  # Should be within 6000 default
+
+    def test_executor_with_enhanced_builder(self, tmp_path):
+        """Test executor can use enhanced context builder."""
+        from agentforge.core.harness.minimal_context import (
+            TaskStateStore,
+            MinimalContextExecutor,
+            EnhancedContextBuilder,
+        )
+
+        store = TaskStateStore(tmp_path)
+
+        # Create executor with enhanced builder enabled
+        executor = MinimalContextExecutor(
+            project_path=tmp_path,
+            state_store=store,
+            use_enhanced_context_builder=True,
+        )
+
+        assert executor.use_enhanced_context_builder is True
+        assert isinstance(executor.context_builder, EnhancedContextBuilder)
+
+    def test_executor_with_legacy_builder(self, tmp_path):
+        """Test executor defaults to legacy context builder."""
+        from agentforge.core.harness.minimal_context import (
+            TaskStateStore,
+            MinimalContextExecutor,
+            ContextBuilder,
+        )
+
+        store = TaskStateStore(tmp_path)
+
+        # Create executor with default (legacy) builder
+        executor = MinimalContextExecutor(
+            project_path=tmp_path,
+            state_store=store,
+            use_enhanced_context_builder=False,
+        )
+
+        assert executor.use_enhanced_context_builder is False
+        assert isinstance(executor.context_builder, ContextBuilder)

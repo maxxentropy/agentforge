@@ -28,6 +28,7 @@ from agentforge.core.generate.provider import LLMProvider, get_provider
 
 from .state_store import TaskStateStore, TaskState, TaskPhase
 from .context_builder import ContextBuilder
+from .enhanced_context_builder import EnhancedContextBuilder
 from .working_memory import WorkingMemoryManager
 from .understanding import UnderstandingExtractor
 from .context_models import ActionResult, ActionRecord
@@ -338,6 +339,7 @@ class MinimalContextExecutor:
         max_tokens: int = 4096,
         enable_understanding_extraction: bool = True,
         use_phase_machine: bool = True,
+        use_enhanced_context_builder: bool = False,
     ):
         """
         Initialize the executor.
@@ -351,14 +353,21 @@ class MinimalContextExecutor:
             max_tokens: Maximum tokens for LLM response
             enable_understanding_extraction: Enable fact extraction from actions
             use_phase_machine: Use PhaseMachine for transitions (Phase 4)
+            use_enhanced_context_builder: Use EnhancedContextBuilder (Phase 5)
         """
         self.project_path = Path(project_path)
         self.provider = provider or get_provider()
         self.state_store = state_store or TaskStateStore(self.project_path)
-        self.context_builder = ContextBuilder(self.project_path, self.state_store)
         self.action_executors = action_executors or {}
         self.model = model
         self.max_tokens = max_tokens
+
+        # Context builder selection (Phase 5 of Enhanced Context Engineering)
+        self.use_enhanced_context_builder = use_enhanced_context_builder
+        if use_enhanced_context_builder:
+            self.context_builder = EnhancedContextBuilder(self.project_path, self.state_store)
+        else:
+            self.context_builder = ContextBuilder(self.project_path, self.state_store)
 
         # Understanding extraction (Phase 2 of Enhanced Context Engineering)
         self.enable_understanding_extraction = enable_understanding_extraction

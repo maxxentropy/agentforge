@@ -1,0 +1,88 @@
+# Implement Pipeline
+# Goal: Full implementation from request to delivery
+
+pipeline:
+  name: implement
+  description: "Full implementation from request to delivery"
+  goal_type: implement
+
+entry:
+  stage: intake
+  requires: []
+
+exit:
+  stage: deliver
+  produces:
+    - implementation
+    - tests
+    - documentation
+
+stages:
+  - name: intake
+    agent: requirements_analyst
+    input_contract: null
+    output_contract: intake_v1
+    human_review: false
+
+  - name: clarify
+    agent: requirements_analyst
+    input_contract: intake_v1
+    output_contract: clarification_v1
+    human_review: true
+    max_iterations: 3
+
+  - name: analyze
+    agent: software_architect
+    input_contract: clarification_v1
+    output_contract: analysis_v1
+    human_review: false
+
+  - name: spec
+    agent: software_architect
+    input_contract: analysis_v1
+    output_contract: specification_v1
+    human_review: true
+    max_iterations: 5
+
+  - name: red
+    agent: test_engineer
+    input_contract: specification_v1
+    output_contract: red_phase_v1
+    human_review: false
+    success_criteria: "all_tests_fail"
+
+  - name: green
+    agent: software_developer
+    input_contract: red_phase_v1
+    output_contract: green_phase_v1
+    human_review: false
+    success_criteria: "all_tests_pass"
+
+  - name: refactor
+    agent: code_reviewer
+    input_contract: green_phase_v1
+    output_contract: refactor_v1
+    human_review: true
+    max_iterations: 3
+
+  - name: deliver
+    agent: software_developer
+    input_contract: refactor_v1
+    output_contract: delivery_v1
+    human_review: false
+
+iteration:
+  review_points:
+    - clarify
+    - spec
+    - refactor
+  feedback_format: "revision_request"
+  max_total_iterations: 20
+
+verification:
+  run_at:
+    - after_each_stage
+    - before_human_review
+  contracts:
+    - stage_output_contract
+    - lineage_metadata

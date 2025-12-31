@@ -1,0 +1,1423 @@
+"""
+Minimal Context Fix Workflow
+============================
+
+Fix violation workflow using the minimal context architecture.
+Each step is a fresh conversation with bounded context.
+
+Test verification uses the violation's test_path field, which is computed
+at violation detection time from:
+1. Lineage metadata embedded in the source file (explicit, auditable)
+2. Convention-based detection (fallback for legacy files)
+"""
+
+import subprocess
+import yaml
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional
+
+from .state_store import TaskStateStore, TaskState, TaskPhase
+from .executor import MinimalContextExecutor, StepOutcome, AdaptiveBudget
+from .working_memory import WorkingMemoryManager
+
+from ..violation_tools import ViolationTools, VIOLATION_TOOL_DEFINITIONS
+from ..conformance_tools import ConformanceTools, CONFORMANCE_TOOL_DEFINITIONS
+from ..git_tools import GitTools, GIT_TOOL_DEFINITIONS
+from ..test_runner_tools import TestRunnerTools, TEST_TOOL_DEFINITIONS
+from ..python_tools import PythonTools, PYTHON_TOOL_DEFINITIONS
+from ..refactoring_tools import RefactoringTools, REFACTORING_TOOL_DEFINITIONS
+
+# Use the discovery provider as single source of truth for Python AST analysis
+from ...discovery.providers.python_provider import PythonProvider
+
+# Refactoring provider for validating extractions
+from ...refactoring.registry import get_refactoring_provider
+
+
+class MinimalContextFixWorkflow:
+    """
+    Fix violation workflow using minimal context architecture.
+
+    Key differences from FixViolationWorkflow:
+    - State persisted to disk, not in memory
+    - Each step is a fresh 2-message conversation
+    - Token usage bounded regardless of step count
+    - Resumable after crashes
+    """
+
+    def __init__(
+        self,
+        project_path: Path,
+        base_iterations: int = 15,
+        max_iterations: int = 50,
+        require_commit_approval: bool = True,
+    ):
+        """
+        Initialize workflow.
+
+        Args:
+            project_path: Project root
+            base_iterations: Initial step budget (extends with progress)
+            max_iterations: Hard ceiling for steps (cost control)
+            require_commit_approval: Require human approval for commits
+        """
+        self.project_path = Path(project_path)
+        self.base_iterations = base_iterations
+        self.max_iterations = max_iterations
+        self.require_commit_approval = require_commit_approval
+
+        # Initialize state store
+        self.state_store = TaskStateStore(project_path)
+
+        # Initialize tools
+        self.violation_tools = ViolationTools(project_path)
+        self.conformance_tools = ConformanceTools(project_path)
+        self.git_tools = GitTools(project_path, require_approval=require_commit_approval)
+        self.test_tools = TestRunnerTools(project_path)
+        self.python_tools = PythonTools(project_path)
+        self.refactoring_tools = RefactoringTools(project_path)
+
+        # Build action executors
+        self.action_executors = self._build_action_executors()
+
+        # Create executor
+        self.executor = MinimalContextExecutor(
+            project_path=project_path,
+            state_store=self.state_store,
+            action_executors=self.action_executors,
+        )
+
+    def _build_action_executors(self) -> Dict[str, Callable]:
+        """Build action executors for all tools."""
+        executors = {}
+
+        # Wrap tool executors to match action executor signature
+        def wrap_tool_executor(tool_executor):
+            def wrapper(action_name: str, params: Dict[str, Any], state: TaskState):
+                result = tool_executor(action_name, params)
+                return {
+                    "status": "success" if result.success else "failure",
+                    "summary": result.output[:200] if result.output else "",
+                    "error": result.error if hasattr(result, "error") else None,
+                    "output": result.output,
+                }
+            return wrapper
+
+        # Register tool executors
+        for name, executor in self.violation_tools.get_tool_executors().items():
+            executors[name] = wrap_tool_executor(executor)
+
+        for name, executor in self.conformance_tools.get_tool_executors().items():
+            executors[name] = wrap_tool_executor(executor)
+
+        for name, executor in self.git_tools.get_tool_executors().items():
+            executors[name] = wrap_tool_executor(executor)
+
+        for name, executor in self.test_tools.get_tool_executors().items():
+            executors[name] = wrap_tool_executor(executor)
+
+        for name, executor in self.python_tools.get_tool_executors().items():
+            executors[name] = wrap_tool_executor(executor)
+
+        for name, executor in self.refactoring_tools.get_tool_executors().items():
+            if name == "extract_function":
+                # Special handling for extract_function: auto-run check after success
+                executors[name] = self._wrap_extract_function(executor)
+            else:
+                executors[name] = wrap_tool_executor(executor)
+
+        # Add file read/edit actions - WRAPPED with test verification
+        # These actions can break tests, so we verify after each modification
+        executors["read_file"] = self._action_read_file  # read-only, no wrap needed
+        executors["edit_file"] = self._with_test_verification(self._action_edit_file)
+        executors["replace_lines"] = self._with_test_verification(self._action_replace_lines)
+        executors["insert_lines"] = self._with_test_verification(self._action_insert_lines)
+        executors["write_file"] = self._with_test_verification(self._action_write_file)
+        executors["run_check"] = self._action_run_check
+        executors["run_tests"] = self._action_run_tests
+        executors["load_context"] = self._action_load_context
+        executors["plan_fix"] = self._action_plan_fix
+
+        return executors
+
+    def _with_test_verification(self, action_fn: Callable) -> Callable:
+        """
+        Wrap a file-modifying action with test verification and auto-revert.
+
+        CORRECTNESS FIRST principle: We cannot go from "violation" to "broken".
+        After any file modification, tests must not get worse.
+
+        Pattern:
+        1. Run TARGETED tests BEFORE (establish baseline)
+        2. Save original file content
+        3. Execute the modification
+        4. Run TARGETED tests AFTER
+        5. If MORE failures than baseline: REVERT and return failure
+
+        This wrapper ensures the agent cannot break tests while trying to fix violations.
+        Test paths come from the violation's test_path field, which was computed at
+        detection time from lineage metadata or convention-based fallback.
+        """
+        def wrapper(action_name: str, params: Dict[str, Any], state: TaskState) -> Dict[str, Any]:
+            # Extract file path from params
+            file_path = (
+                params.get("path") or
+                params.get("file_path") or
+                state.context_data.get("file_path")
+            )
+
+            # Get test_path from violation context (computed at detection time)
+            # This uses lineage metadata if available, otherwise convention-based fallback
+            test_path = state.context_data.get("test_path")
+
+            # STEP 1: Establish baseline test state (TARGETED tests only)
+            baseline_result = self.test_tools.run_tests(
+                "run_tests",
+                {"test_path": test_path} if test_path else {}
+            )
+            baseline_passed = baseline_result.success
+            baseline_failures = self._count_test_failures(baseline_result.output)
+
+            # STEP 2: Save original content (for revert)
+            original_content = None
+            file_existed = False
+            if file_path:
+                full_path = self.project_path / file_path
+                if full_path.exists():
+                    file_existed = True
+                    original_content = full_path.read_text()
+
+            # STEP 3: Execute the modification
+            result = action_fn(action_name, params, state)
+
+            # If the action failed, no need for test verification
+            if result.get("status") == "failure":
+                return result
+
+            # STEP 4: Run TARGETED tests AFTER modification
+            after_result = self.test_tools.run_tests(
+                "run_tests",
+                {"test_path": test_path} if test_path else {}
+            )
+            after_failures = self._count_test_failures(after_result.output)
+
+            # STEP 5: Compare - did modification make things WORSE?
+            tests_got_worse = False
+            if baseline_passed and not after_result.success:
+                # Tests were passing, now failing
+                tests_got_worse = True
+            elif after_failures > baseline_failures:
+                # More failures than before
+                tests_got_worse = True
+
+            if tests_got_worse:
+                # REVERT the change
+                if file_path:
+                    full_path = self.project_path / file_path
+                    if original_content is not None:
+                        # Restore original content
+                        full_path.write_text(original_content)
+                    elif not file_existed and full_path.exists():
+                        # File was created, delete it
+                        full_path.unlink()
+
+                # Return failure with detailed explanation
+                return {
+                    "status": "failure",
+                    "error": "Modification broke tests - REVERTED",
+                    "summary": "✗ REVERTED - tests got worse",
+                    "output": (
+                        f"--- CORRECTNESS CHECK FAILED ---\n"
+                        f"✗ Modification introduced new test failures - changes REVERTED\n\n"
+                        f"Test path: {test_path or 'all tests'}\n"
+                        f"Before: {baseline_failures} failures\n"
+                        f"After: {after_failures} failures\n\n"
+                        f"Test output:\n{after_result.output[:800] if after_result.output else 'No output'}\n\n"
+                        f"The change was syntactically valid but broke behavior.\n"
+                        f"Original file content has been restored.\n"
+                        f"Try a different approach that preserves existing functionality."
+                    ),
+                }
+
+            # Tests didn't get worse - append verification status to result
+            test_status = "✓ Tests verified" if after_result.success else "○ No new failures"
+            result["summary"] = f"{result.get('summary', '')} | {test_status}"
+            result["output"] = (
+                f"{result.get('output', '')}\n\n"
+                f"--- CORRECTNESS VERIFIED ---\n"
+                f"{test_status} (tested: {test_path or 'all'}, before: {baseline_failures}, after: {after_failures})"
+            )
+
+            return result
+
+        return wrapper
+
+    def _action_read_file(
+        self,
+        action_name: str,
+        params: Dict[str, Any],
+        state: TaskState,
+    ) -> Dict[str, Any]:
+        """Read a file, focusing on the violation area if known."""
+        path = params.get("path") or params.get("file_path")
+        if not path:
+            return {"status": "failure", "error": "No path specified"}
+
+        full_path = self.project_path / path
+        if not full_path.exists():
+            return {"status": "failure", "error": f"File not found: {path}"}
+
+        try:
+            content = full_path.read_text()
+            lines = content.split("\n")
+
+            # Check if this is the violation file and we have a line number
+            violation_line = state.context_data.get("line_number")
+            violation_file = state.context_data.get("file_path")
+
+            output_content = content
+            if violation_line and violation_file and path == violation_file:
+                # Focus on the area around the violation
+                start_line = max(0, violation_line - 30)
+                end_line = min(len(lines), violation_line + 70)
+                focused_lines = lines[start_line:end_line]
+
+                # Add line numbers for clarity
+                numbered_lines = [
+                    f"{i + start_line + 1:4d}: {line}"
+                    for i, line in enumerate(focused_lines)
+                ]
+                output_content = "\n".join(numbered_lines)
+
+                # Highlight the violation line
+                summary = f"Read {path} lines {start_line+1}-{end_line} (violation at line {violation_line})"
+            else:
+                # Generic read - show first portion with line numbers
+                numbered_lines = [f"{i+1:4d}: {line}" for i, line in enumerate(lines[:100])]
+                output_content = "\n".join(numbered_lines)
+                if len(lines) > 100:
+                    output_content += f"\n... [{len(lines) - 100} more lines]"
+                summary = f"Read {len(content)} chars from {path}"
+
+            # Store in working memory for context
+            task_dir = self.state_store._task_dir(state.task_id)
+            memory = WorkingMemoryManager(task_dir)
+            memory.load_context(
+                f"full_file:{path}",
+                output_content[:5000],
+                state.current_step,
+                expires_after_steps=2,
+            )
+
+            return {
+                "status": "success",
+                "summary": summary,
+                "output": output_content[:3000],
+            }
+        except Exception as e:
+            return {"status": "failure", "error": str(e)}
+
+    def _action_edit_file(
+        self,
+        action_name: str,
+        params: Dict[str, Any],
+        state: TaskState,
+    ) -> Dict[str, Any]:
+        """Edit a file with fuzzy whitespace matching."""
+        path = params.get("path") or params.get("file_path") or state.context_data.get("file_path")
+        old_text = params.get("old_text")
+        new_text = params.get("new_text")
+
+        if not path:
+            return {"status": "failure", "error": "No path specified"}
+        if old_text is None or new_text is None:
+            return {"status": "failure", "error": "old_text and new_text required"}
+
+        full_path = self.project_path / path
+        if not full_path.exists():
+            return {"status": "failure", "error": f"File not found: {path}"}
+
+        try:
+            content = full_path.read_text()
+
+            # Try exact match first
+            if old_text in content:
+                new_content = content.replace(old_text, new_text, 1)
+                full_path.write_text(new_content)
+            else:
+                # Try fuzzy match with whitespace normalization
+                match_result = self._fuzzy_find_and_replace(content, old_text, new_text)
+                if match_result is None:
+                    # Show what we were looking for to help debugging
+                    old_preview = old_text[:100].replace('\n', '\\n')
+                    return {
+                        "status": "failure",
+                        "error": f"old_text not found in file. Looking for: {old_preview}..."
+                    }
+                new_content = match_result
+                full_path.write_text(new_content)
+
+            # Track modified file
+            if "files_modified" not in state.context_data:
+                state.context_data["files_modified"] = []
+            if path not in state.context_data["files_modified"]:
+                state.context_data["files_modified"].append(path)
+                self.state_store.update_context_data(state.task_id, "files_modified", state.context_data["files_modified"])
+
+            return {
+                "status": "success",
+                "summary": f"Edited {path}: replaced {len(old_text)} chars with {len(new_text)} chars",
+            }
+        except Exception as e:
+            return {"status": "failure", "error": str(e)}
+
+    def _fuzzy_find_and_replace(
+        self, content: str, old_text: str, new_text: str
+    ) -> Optional[str]:
+        """
+        Find old_text in content with fuzzy whitespace matching.
+
+        Strategy:
+        1. Normalize both to find the match location
+        2. Find the actual text span in the original
+        3. Replace with properly indented new_text
+        """
+        import re
+
+        # Normalize whitespace for matching
+        def normalize(s: str) -> str:
+            # Replace leading whitespace on each line with a marker
+            lines = s.split('\n')
+            return '\n'.join(line.lstrip() for line in lines)
+
+        norm_content = normalize(content)
+        norm_old = normalize(old_text)
+
+        if norm_old not in norm_content:
+            return None
+
+        # Find where the normalized text appears
+        norm_start = norm_content.find(norm_old)
+
+        # Map back to original content by counting newlines
+        content_lines = content.split('\n')
+        norm_lines_before = norm_content[:norm_start].count('\n')
+
+        # Find the actual start line in original content
+        start_line = norm_lines_before
+
+        # Count how many lines in old_text
+        old_lines = old_text.strip().split('\n')
+        num_lines = len(old_lines)
+
+        # Detect indentation from the first line of the match
+        if start_line < len(content_lines):
+            actual_line = content_lines[start_line]
+            leading_spaces = len(actual_line) - len(actual_line.lstrip())
+            base_indent = ' ' * leading_spaces
+        else:
+            base_indent = ''
+
+        # Re-indent new_text to match
+        new_lines = new_text.strip().split('\n')
+        if new_lines:
+            # Detect the indentation in new_text
+            first_new_line = new_lines[0]
+            new_indent = len(first_new_line) - len(first_new_line.lstrip())
+
+            # Adjust each line
+            adjusted_lines = []
+            for line in new_lines:
+                if line.strip():
+                    line_indent = len(line) - len(line.lstrip())
+                    relative_indent = line_indent - new_indent
+                    adjusted_lines.append(base_indent + ' ' * max(0, relative_indent) + line.lstrip())
+                else:
+                    adjusted_lines.append('')
+
+            new_text_adjusted = '\n'.join(adjusted_lines)
+        else:
+            new_text_adjusted = new_text
+
+        # Replace the lines
+        result_lines = (
+            content_lines[:start_line] +
+            new_text_adjusted.split('\n') +
+            content_lines[start_line + num_lines:]
+        )
+
+        return '\n'.join(result_lines)
+
+    def _action_replace_lines(
+        self,
+        action_name: str,
+        params: Dict[str, Any],
+        state: TaskState,
+    ) -> Dict[str, Any]:
+        """
+        Replace lines in a file by line number.
+
+        This is more robust than text-based replacement because
+        line numbers are unambiguous.
+
+        Parameters:
+            file_path: Path to the file
+            start_line: First line to replace (1-indexed, inclusive)
+            end_line: Last line to replace (1-indexed, inclusive)
+            new_content: New content to insert (will be auto-indented)
+        """
+        file_path = params.get("file_path") or params.get("path") or state.context_data.get("file_path")
+        start_line = params.get("start_line")
+        end_line = params.get("end_line")
+        new_content = params.get("new_content")
+
+        if not file_path:
+            return {"status": "failure", "error": "Missing file_path"}
+        if start_line is None or end_line is None:
+            return {"status": "failure", "error": "Missing start_line or end_line"}
+        if new_content is None:
+            return {"status": "failure", "error": "Missing new_content"}
+
+        full_path = self.project_path / file_path
+        if not full_path.exists():
+            return {"status": "failure", "error": f"File not found: {file_path}"}
+
+        try:
+            lines = full_path.read_text().split('\n')
+
+            # Validate line range
+            if start_line < 1 or end_line > len(lines) or start_line > end_line:
+                return {
+                    "status": "failure",
+                    "error": f"Invalid line range {start_line}-{end_line} (file has {len(lines)} lines)"
+                }
+
+            # Detect indentation from the first line being replaced
+            original_line = lines[start_line - 1]
+            base_indent = len(original_line) - len(original_line.lstrip())
+            indent_str = ' ' * base_indent
+
+            # Process new content - apply base indentation
+            new_lines = []
+            for line in new_content.split('\n'):
+                if line.strip():
+                    new_lines.append(indent_str + line.lstrip())
+                else:
+                    new_lines.append('')
+
+            # Replace lines
+            result_lines = lines[:start_line - 1] + new_lines + lines[end_line:]
+            new_source = '\n'.join(result_lines)
+
+            full_path.write_text(new_source)
+
+            # Track modified file
+            if "files_modified" not in state.context_data:
+                state.context_data["files_modified"] = []
+            if file_path not in state.context_data["files_modified"]:
+                state.context_data["files_modified"].append(file_path)
+                self.state_store.update_context_data(
+                    state.task_id, "files_modified", state.context_data["files_modified"]
+                )
+
+            return {
+                "status": "success",
+                "summary": f"Replaced lines {start_line}-{end_line} with {len(new_lines)} new lines",
+            }
+
+        except Exception as e:
+            return {"status": "failure", "error": str(e)}
+
+    def _action_insert_lines(
+        self,
+        action_name: str,
+        params: Dict[str, Any],
+        state: TaskState,
+    ) -> Dict[str, Any]:
+        """
+        Insert lines into a file at a specific line number.
+
+        This adds new lines WITHOUT removing existing lines.
+        Use this to add helper functions before a target function.
+
+        Parameters:
+            file_path: Path to the file
+            line_number: Line number to insert BEFORE (1-indexed)
+            new_content: Content to insert (will be auto-indented)
+            indent_level: Optional base indentation (spaces, default: detect from context)
+        """
+        file_path = params.get("file_path") or params.get("path") or state.context_data.get("file_path")
+        line_number = params.get("line_number") or params.get("before_line")
+        new_content = params.get("new_content") or params.get("content")
+        indent_level = params.get("indent_level")
+
+        if not file_path:
+            return {"status": "failure", "error": "Missing file_path"}
+        if line_number is None:
+            return {"status": "failure", "error": "Missing line_number"}
+        if not new_content:
+            return {"status": "failure", "error": "Missing new_content"}
+
+        full_path = self.project_path / file_path
+        if not full_path.exists():
+            return {"status": "failure", "error": f"File not found: {file_path}"}
+
+        try:
+            lines = full_path.read_text().split('\n')
+
+            # Validate line number
+            if line_number < 1 or line_number > len(lines) + 1:
+                return {
+                    "status": "failure",
+                    "error": f"Invalid line number {line_number} (file has {len(lines)} lines)"
+                }
+
+            # Detect indentation from context
+            if indent_level is None:
+                # Look at the line we're inserting before
+                context_line = lines[line_number - 1] if line_number <= len(lines) else ""
+                if context_line.strip():
+                    indent_level = len(context_line) - len(context_line.lstrip())
+                else:
+                    indent_level = 0
+
+            indent_str = ' ' * indent_level
+
+            # Process new content
+            new_lines = []
+            for line in new_content.split('\n'):
+                if line.strip():
+                    # Preserve relative indentation within the new content
+                    stripped = line.lstrip()
+                    line_indent = len(line) - len(stripped)
+                    new_lines.append(indent_str + ' ' * line_indent + stripped if line_indent else indent_str + stripped)
+                else:
+                    new_lines.append('')
+
+            # Add blank line after for separation
+            if new_lines and new_lines[-1].strip():
+                new_lines.append('')
+
+            # Insert lines
+            insert_index = line_number - 1
+            result_lines = lines[:insert_index] + new_lines + lines[insert_index:]
+            new_source = '\n'.join(result_lines)
+
+            full_path.write_text(new_source)
+
+            # Track modified file
+            if "files_modified" not in state.context_data:
+                state.context_data["files_modified"] = []
+            if file_path not in state.context_data["files_modified"]:
+                state.context_data["files_modified"].append(file_path)
+                self.state_store.update_context_data(
+                    state.task_id, "files_modified", state.context_data["files_modified"]
+                )
+
+            return {
+                "status": "success",
+                "summary": f"Inserted {len(new_lines)} lines before line {line_number}",
+            }
+
+        except Exception as e:
+            return {"status": "failure", "error": str(e)}
+
+    def _action_write_file(
+        self,
+        action_name: str,
+        params: Dict[str, Any],
+        state: TaskState,
+    ) -> Dict[str, Any]:
+        """
+        Write/create a file with the given content.
+
+        Parameters:
+            path: Path to the file (relative to project)
+            content: Content to write to the file
+        """
+        path = params.get("path") or params.get("file_path")
+        content = params.get("content")
+
+        if not path:
+            return {"status": "failure", "error": "Missing required parameter: path"}
+        if content is None:
+            return {"status": "failure", "error": "Missing required parameter: content"}
+
+        try:
+            full_path = self.project_path / path
+
+            # Create parent directories if needed
+            full_path.parent.mkdir(parents=True, exist_ok=True)
+
+            # Check if file exists (for message)
+            is_new = not full_path.exists()
+
+            # Write the content
+            full_path.write_text(content)
+
+            if is_new:
+                return {
+                    "status": "success",
+                    "summary": f"Created new file: {path} ({len(content)} chars)",
+                }
+            else:
+                return {
+                    "status": "success",
+                    "summary": f"Overwrote file: {path} ({len(content)} chars)",
+                }
+
+        except Exception as e:
+            return {"status": "failure", "error": str(e)}
+
+    def _wrap_extract_function(self, tool_executor: Callable) -> Callable:
+        """
+        Wrap extract_function to enforce CORRECTNESS FIRST:
+        1. Run tests BEFORE extraction to establish baseline
+        2. Save original content before extraction
+        3. Run extraction (syntax validated by tool)
+        4. RUN TESTS AFTER - if MORE tests fail than before, REVERT
+        5. Only then run conformance check
+        6. Refresh context with new line numbers
+        """
+        def wrapper(action_name: str, params: Dict[str, Any], state: TaskState):
+            file_path = params.get("file_path") or state.context_data.get("file_path")
+
+            # CORRECTNESS FIRST: Run tests BEFORE to establish baseline
+            baseline_result = self.test_tools.run_tests("run_tests", {})
+            baseline_passed = baseline_result.success
+
+            # Save original content before any changes
+            original_content = None
+            if file_path:
+                full_path = self.project_path / file_path
+                if full_path.exists():
+                    original_content = full_path.read_text()
+
+            # Execute the extraction (tool validates syntax with ast.parse)
+            result = tool_executor(action_name, params)
+
+            base_result = {
+                "status": "success" if result.success else "failure",
+                "summary": result.output[:200] if result.output else "",
+                "error": result.error if hasattr(result, "error") else None,
+                "output": result.output,
+            }
+
+            # If extraction succeeded syntactically, VERIFY WITH TESTS
+            if result.success and file_path:
+                # CORRECTNESS FIRST: Run tests AFTER extraction
+                after_result = self.test_tools.run_tests("run_tests", {})
+
+                # Compare: did extraction make things WORSE?
+                extraction_broke_tests = False
+                if baseline_passed and not after_result.success:
+                    # Tests were passing, now failing - extraction broke something
+                    extraction_broke_tests = True
+                elif not baseline_passed and not after_result.success:
+                    # Tests were already failing - check if we made it worse
+                    # Extract failure counts from output if possible
+                    baseline_failures = self._count_test_failures(baseline_result.output)
+                    after_failures = self._count_test_failures(after_result.output)
+                    if after_failures > baseline_failures:
+                        extraction_broke_tests = True
+
+                if extraction_broke_tests:
+                    # Extraction made things worse - REVERT
+                    if original_content is not None:
+                        full_path = self.project_path / file_path
+                        full_path.write_text(original_content)
+
+                    base_result["status"] = "failure"
+                    base_result["error"] = "Extraction broke tests - REVERTED"
+                    base_result["output"] = (
+                        f"{result.output}\n\n"
+                        f"--- CORRECTNESS CHECK FAILED ---\n"
+                        f"✗ Extraction introduced new test failures - changes REVERTED\n"
+                        f"Test output: {after_result.output[:500] if after_result.output else 'No output'}\n"
+                        f"The extraction was syntactically valid but broke behavior.\n"
+                        f"Try a different extraction range or approach."
+                    )
+                    base_result["summary"] = "✗ REVERTED - new test failures"
+                    return base_result
+
+                # Tests didn't get worse - run conformance check
+                check_id = state.context_data.get("check_id")
+                if check_id:
+                    check_result = self.conformance_tools.run_conformance_check(
+                        "run_conformance_check",
+                        {"check_id": check_id, "file_path": file_path}
+                    )
+
+                    # Update verification status
+                    checks_passing = check_result.success
+                    self.state_store.update_verification(
+                        state.task_id,
+                        checks_passing=1 if checks_passing else 0,
+                        checks_failing=0 if checks_passing else 1,
+                        tests_passing=after_result.success,
+                        details={
+                            "last_check": check_result.output[:500] if check_result.output else "",
+                            "tests_verified": True,
+                            "baseline_passed": baseline_passed,
+                        },
+                    )
+
+                    # Refresh context to get updated line numbers and suggestions
+                    source_function = params.get("source_function")
+                    if source_function:
+                        new_context = self._refresh_precomputed_context(
+                            file_path, source_function, state
+                        )
+                        if new_context:
+                            state.context_data["precomputed"] = new_context
+                            self.state_store.update_context_data(
+                                state.task_id, "precomputed", new_context
+                            )
+
+                    # Build result with verification info
+                    check_status = "✓ Check PASSED" if checks_passing else "○ Check still failing"
+                    check_summary = check_result.output[:300] if check_result.output else ""
+                    test_status = "✓ No new failures" if not extraction_broke_tests else "○ Pre-existing failures"
+                    base_result["output"] = (
+                        f"{base_result['output']}\n\n"
+                        f"--- CORRECTNESS VERIFIED ---\n"
+                        f"{test_status}\n\n"
+                        f"--- Conformance Check ---\n"
+                        f"{check_status}\n{check_summary}"
+                    )
+                    base_result["summary"] = f"{base_result['summary']} | {test_status} | {check_status}"
+
+                    if checks_passing:
+                        base_result["hint"] = "All checks passed! You can now use 'complete' action."
+
+            return base_result
+        return wrapper
+
+    def _count_test_failures(self, output: str) -> int:
+        """Extract failure count from pytest output."""
+        import re
+        if not output:
+            return 0
+        # Match patterns like "1 failed" or "5 failed"
+        match = re.search(r'(\d+) failed', output)
+        if match:
+            return int(match.group(1))
+        return 0
+
+    def _action_run_check(
+        self,
+        action_name: str,
+        params: Dict[str, Any],
+        state: TaskState,
+    ) -> Dict[str, Any]:
+        """Run conformance check - uses targeted check when check_id available."""
+        import re
+
+        file_path = params.get("file_path") or params.get("path") or state.context_data.get("file_path")
+        check_id = params.get("check_id") or state.context_data.get("check_id")
+
+        # Use targeted check if we have both check_id and file_path (much faster)
+        if check_id and file_path:
+            result = self.conformance_tools.run_conformance_check(
+                "run_conformance_check",
+                {"check_id": check_id, "file_path": file_path}
+            )
+        elif file_path:
+            result = self.conformance_tools.check_file("check_file", {"file_path": file_path})
+        else:
+            result = self.conformance_tools.run_full_check("run_full_check", {})
+
+        # Update verification status
+        passing = result.success
+        self.state_store.update_verification(
+            state.task_id,
+            checks_passing=1 if passing else 0,
+            checks_failing=0 if passing else 1,
+            tests_passing=state.verification.tests_passing,
+            details={"last_check": result.output[:500]},
+        )
+
+        # If check failed, ALWAYS refresh context - line numbers shift after extractions
+        # This ensures the agent has up-to-date extraction suggestions
+        if not passing and result.output and file_path:
+            # Parse output for various violation types:
+            # - "Function 'name' has complexity N" (cyclomatic)
+            # - "Function 'name' has N lines" (function length)
+            # - "Function 'name' has nesting depth N" (nesting)
+            patterns = [
+                r"Function '([^']+)' has complexity (\d+)",
+                r"Function '([^']+)' has (\d+) lines",
+                r"Function '([^']+)' has nesting depth (\d+)",
+            ]
+
+            new_function_name = None
+            for pattern in patterns:
+                match = re.search(pattern, result.output)
+                if match:
+                    new_function_name = match.group(1)
+                    break
+
+            if new_function_name:
+                # Always refresh context to get updated line numbers and suggestions
+                new_context = self._refresh_precomputed_context(
+                    file_path, new_function_name, state
+                )
+                if new_context:
+                    # Update the precomputed context in state
+                    state.context_data["precomputed"] = new_context
+                    self.state_store.update_context_data(
+                        state.task_id, "precomputed", new_context
+                    )
+
+        return {
+            "status": "success" if passing else "partial",
+            "summary": result.output[:200],
+            "output": result.output,
+        }
+
+    def _refresh_precomputed_context(
+        self,
+        file_path: str,
+        function_name: str,
+        state: TaskState,
+    ) -> Optional[Dict[str, Any]]:
+        """Refresh pre-computed context for a new function after extraction.
+
+        Uses PythonProvider with violation-type-specific context.
+        """
+        full_path = self.project_path / file_path
+        if not full_path.exists():
+            return None
+
+        try:
+            provider = PythonProvider()
+
+            # Get function location
+            location = provider.get_function_location(full_path, function_name)
+            if not location:
+                return None
+
+            # Get function source
+            func_source = provider.get_function_source(full_path, function_name)
+
+            # Get the check_id from state to provide violation-specific context
+            check_id = state.context_data.get("check_id", "")
+
+            # Get violation-type-specific context
+            violation_context = provider.get_violation_context(
+                full_path, function_name, check_id
+            )
+
+            result = {
+                "violating_function": function_name,
+                "function_lines": f"{location[0]}-{location[1]}",
+                "function_source": func_source,
+            }
+
+            if "error" not in violation_context:
+                if violation_context.get("metrics"):
+                    result["analysis"] = violation_context["metrics"]
+                if violation_context.get("suggestions"):
+                    result["extraction_suggestions"] = violation_context["suggestions"]
+                if violation_context.get("strategy"):
+                    result["fix_strategy"] = violation_context["strategy"]
+
+            return result
+        except Exception:
+            return None
+
+    def _action_run_tests(
+        self,
+        action_name: str,
+        params: Dict[str, Any],
+        state: TaskState,
+    ) -> Dict[str, Any]:
+        """Run tests."""
+        path = params.get("path")
+        if path:
+            result = self.test_tools.run_single_test("run_single_test", {"test_path": path})
+        else:
+            # Run affected tests based on modified files
+            files = state.context_data.get("files_modified", [])
+            if files:
+                result = self.test_tools.run_affected_tests("run_affected_tests", {"files": files})
+            else:
+                result = self.test_tools.run_tests("run_tests", {})
+
+        # Update verification status
+        tests_passed = result.success
+        self.state_store.update_verification(
+            state.task_id,
+            checks_passing=state.verification.checks_passing,
+            checks_failing=state.verification.checks_failing,
+            tests_passing=tests_passed,
+            details={"last_test": result.output[:500]},
+        )
+
+        return {
+            "status": "success" if tests_passed else "failure",
+            "summary": result.output[:200],
+            "output": result.output,
+        }
+
+    def _action_load_context(
+        self,
+        action_name: str,
+        params: Dict[str, Any],
+        state: TaskState,
+    ) -> Dict[str, Any]:
+        """Load additional context into working memory."""
+        # Support multiple parameter formats
+        item = params.get("item", "")
+        path = params.get("path") or params.get("file_path") or params.get("file")
+
+        # If path provided directly, treat as file load
+        if path:
+            item = f"full_file:{path}"
+
+        # If no item specified, try to infer from other params
+        if not item:
+            # Maybe they passed a query - redirect to read_file
+            query = params.get("query", "")
+            if query:
+                # Try to extract a file path from query
+                return {"status": "failure", "error": f"Use 'read_file' action to read files, not 'load_context'. Try: read_file with path parameter."}
+
+        task_dir = self.state_store._task_dir(state.task_id)
+        memory = WorkingMemoryManager(task_dir)
+
+        if item.startswith("full_file:"):
+            path = item[10:]
+            full_path = self.project_path / path
+            if full_path.exists():
+                content = full_path.read_text()
+                memory.load_context(item, content[:5000], state.current_step, expires_after_steps=3)
+                return {"status": "success", "summary": f"Loaded {path} into context"}
+            else:
+                return {"status": "failure", "error": f"File not found: {path}"}
+
+        return {"status": "failure", "error": f"Unknown context item format. Use 'read_file' to read files or 'load_context' with item='full_file:path/to/file.py'"}
+
+    def _action_plan_fix(
+        self,
+        action_name: str,
+        params: Dict[str, Any],
+        state: TaskState,
+    ) -> Dict[str, Any]:
+        """Record fix plan and advance to implement phase."""
+        diagnosis = params.get("diagnosis", "")
+        approach = params.get("approach", "")
+
+        self.state_store.update_context_data(state.task_id, "diagnosis", diagnosis)
+        self.state_store.update_context_data(state.task_id, "approach", approach)
+        self.state_store.update_phase(state.task_id, TaskPhase.IMPLEMENT)
+
+        return {
+            "status": "success",
+            "summary": f"Plan recorded: {approach[:100]}",
+        }
+
+    def _precompute_violation_context(
+        self,
+        violation_data: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """
+        Pre-compute rich context for a violation fix using deterministic tools.
+
+        This runs BEFORE the agent starts, using code-based analysis (not LLM).
+        Uses PythonProvider as the single source of truth for AST analysis.
+
+        Returns:
+            Dict with pre-computed context including:
+            - function_source: Full source of the violating function
+            - analysis: Complexity metrics, branches, nesting
+            - extraction_suggestions: Where to extract helpers
+            - check_definition: What the check requires
+            - surrounding_context: Related code (imports, class context)
+        """
+        precomputed = {}
+
+        file_path = violation_data.get("file_path")
+        line_number = violation_data.get("line_number")
+        check_id = violation_data.get("check_id")
+
+        if not file_path:
+            return precomputed
+
+        full_path = self.project_path / file_path
+        if not full_path.exists():
+            return precomputed
+
+        # Read the full file
+        try:
+            source = full_path.read_text()
+            lines = source.split('\n')
+        except Exception:
+            return precomputed
+
+        # For Python files, use the PythonProvider for unified AST analysis
+        if file_path.endswith('.py'):
+            provider = PythonProvider()
+
+            # Find which function contains the violation line using provider's AST
+            try:
+                import ast
+                tree = provider.parse_file(full_path)
+                if tree is None:
+                    return precomputed
+
+                violating_function = None
+                for node in ast.walk(tree):
+                    if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                        if line_number and node.lineno <= line_number <= (node.end_lineno or len(lines)):
+                            violating_function = node.name
+                            break
+
+                if violating_function:
+                    precomputed["violating_function"] = violating_function
+
+                    # Get violation-type-specific context from provider
+                    # This tailors suggestions to the specific violation type
+                    violation_context = provider.get_violation_context(
+                        full_path, violating_function, check_id or ""
+                    )
+
+                    if "error" not in violation_context:
+                        # Include location
+                        if violation_context.get("location"):
+                            loc = violation_context["location"]
+                            precomputed["function_lines"] = f"{loc['start']}-{loc['end']}"
+
+                        # Include metrics
+                        if violation_context.get("metrics"):
+                            precomputed["analysis"] = violation_context["metrics"]
+
+                        # Include violation-specific suggestions and strategy
+                        if violation_context.get("suggestions"):
+                            # Validate suggestions with refactoring provider
+                            # Only include suggestions that can actually be extracted
+                            raw_suggestions = violation_context["suggestions"]
+                            validated_suggestions = self._validate_extraction_suggestions(
+                                full_path, raw_suggestions
+                            )
+                            if validated_suggestions:
+                                precomputed["extraction_suggestions"] = validated_suggestions
+                            elif raw_suggestions:
+                                # All suggestions were rejected - explain why
+                                precomputed["extraction_not_possible"] = (
+                                    "All suggested extractions were rejected by the refactoring "
+                                    "tool. The code contains early returns, break/continue statements, "
+                                    "or other control flow that makes simple extraction unsafe. "
+                                    "Consider restructuring the code (e.g., using result variables "
+                                    "instead of early returns) before extracting."
+                                )
+                        if violation_context.get("strategy"):
+                            precomputed["fix_strategy"] = violation_context["strategy"]
+
+                    # Include the full function source - this is critical
+                    func_source = provider.get_function_source(full_path, violating_function)
+                    if func_source:
+                        precomputed["function_source"] = func_source
+
+                    # Include surrounding context (class definition if method)
+                    for node in ast.walk(tree):
+                        if isinstance(node, ast.ClassDef):
+                            for item in node.body:
+                                if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                                    if item.name == violating_function:
+                                        precomputed["parent_class"] = node.name
+                                        # Include class header and other method signatures
+                                        class_methods = []
+                                        for m in node.body:
+                                            if isinstance(m, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                                                class_methods.append({
+                                                    "name": m.name,
+                                                    "line": m.lineno,
+                                                    "end_line": m.end_lineno,
+                                                })
+                                        precomputed["class_methods"] = class_methods
+                                        break
+
+            except SyntaxError:
+                pass  # File has syntax errors, skip AST analysis
+
+        # Get check definition using conformance tools
+        if check_id:
+            try:
+                check_result = self.conformance_tools.get_check_definition(
+                    "get_check_definition",
+                    {"check_id": check_id}
+                )
+                if check_result.success:
+                    precomputed["check_definition"] = check_result.output
+            except Exception:
+                pass
+
+        # Include file context around violation
+        if line_number and lines:
+            start = max(0, line_number - 10)
+            end = min(len(lines), line_number + 10)
+            context_lines = []
+            for i in range(start, end):
+                marker = ">>> " if i + 1 == line_number else "    "
+                context_lines.append(f"{marker}{i + 1:4d}: {lines[i]}")
+            precomputed["file_context"] = "\n".join(context_lines)
+
+        return precomputed
+
+    def _validate_extraction_suggestions(
+        self,
+        file_path: Path,
+        suggestions: List[Dict[str, Any]],
+    ) -> List[Dict[str, Any]]:
+        """
+        Validate extraction suggestions with the refactoring provider.
+
+        Uses rope (for Python) to verify each suggested extraction is actually
+        possible without breaking control flow. This prevents the agent from
+        repeatedly attempting invalid extractions.
+
+        Args:
+            file_path: Path to the source file
+            suggestions: List of extraction suggestions with start_line/end_line
+
+        Returns:
+            List of validated suggestions (only those that can actually be extracted)
+        """
+        provider = get_refactoring_provider(file_path, self.project_path)
+        if provider is None:
+            # No refactoring provider for this file type - return suggestions as-is
+            return suggestions
+
+        validated = []
+        try:
+            for suggestion in suggestions:
+                start_line = suggestion.get("start_line")
+                end_line = suggestion.get("end_line")
+
+                if start_line is None or end_line is None:
+                    continue
+
+                # Check if rope can extract this range
+                can_extract = provider.can_extract_function(
+                    file_path, start_line, end_line
+                )
+
+                if can_extract.can_extract:
+                    # Add validation status to suggestion
+                    suggestion["validated"] = True
+                    validated.append(suggestion)
+                else:
+                    # Log why it was rejected (for debugging)
+                    # but don't include in suggestions to agent
+                    pass
+        finally:
+            provider.close()
+
+        return validated
+
+    def fix_violation(
+        self,
+        violation_id: str,
+        on_step: Optional[Callable[[StepOutcome], None]] = None,
+    ) -> Dict[str, Any]:
+        """
+        Attempt to fix a violation using minimal context architecture.
+
+        Args:
+            violation_id: Violation ID to fix
+            on_step: Optional callback after each step
+
+        Returns:
+            Dict with fix results
+        """
+        import yaml
+
+        # Normalize violation ID
+        if not violation_id.startswith("V-"):
+            violation_id = f"V-{violation_id}"
+
+        # Read violation data directly from YAML (structured, auditable)
+        violations_dir = self.project_path / ".agentforge" / "violations"
+        violation_file = violations_dir / f"{violation_id}.yaml"
+
+        if not violation_file.exists():
+            return {
+                "success": False,
+                "error": f"Violation not found: {violation_id}",
+                "violation_id": violation_id,
+            }
+
+        try:
+            with open(violation_file) as f:
+                violation_data = yaml.safe_load(f)
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"Failed to read violation YAML: {e}",
+                "violation_id": violation_id,
+            }
+
+        # Extract structured context from YAML
+        violation_context = {
+            "violation_id": violation_data.get("violation_id", violation_id),
+            "check_id": violation_data.get("check_id"),
+            "file_path": violation_data.get("file_path"),
+            "line_number": violation_data.get("line_number"),
+            "severity": violation_data.get("severity"),
+            "message": violation_data.get("message"),
+            "fix_hint": violation_data.get("fix_hint"),
+            "contract_id": violation_data.get("contract_id"),
+        }
+
+        # Pre-compute rich context using deterministic tools (no LLM)
+        # This gives the agent everything it needs to make good edits
+        precomputed = self._precompute_violation_context(violation_data)
+
+        # Build context_data with both violation info and pre-computed analysis
+        context_data = {
+            # Basic violation info
+            "violation_id": violation_id,
+            "check_id": violation_context.get("check_id"),
+            "file_path": violation_context.get("file_path"),
+            "line_number": violation_context.get("line_number"),
+            "severity": violation_context.get("severity"),
+            "message": violation_context.get("message"),
+            "fix_hint": violation_context.get("fix_hint"),
+            "contract_id": violation_context.get("contract_id"),
+            # Test path for verification (from lineage metadata or convention fallback)
+            "test_path": violation_data.get("test_path"),
+            # Pre-computed analysis (from AST, not LLM)
+            "precomputed": precomputed,
+        }
+
+        # Create task in state store
+        task_state = self.state_store.create_task(
+            task_type="fix_violation",
+            goal=f"Fix conformance violation {violation_id}",
+            success_criteria=[
+                "Conformance check passes for the affected file",
+                "All existing tests continue to pass",
+                "Minimal changes made to fix the issue",
+            ],
+            constraints=[
+                "Only modify files directly related to the violation",
+                "Follow existing code patterns",
+                "Do not introduce new violations",
+            ],
+            context_data=context_data,
+            task_id=f"fix-{violation_id}",
+        )
+
+        # Run until complete with adaptive budget
+        budget = AdaptiveBudget(
+            base_budget=self.base_iterations,
+            max_budget=self.max_iterations,
+        )
+        outcomes = self.executor.run_until_complete(
+            task_id=task_state.task_id,
+            max_iterations=self.max_iterations,
+            on_step=on_step,
+            adaptive_budget=budget,
+        )
+
+        # Load final state
+        final_state = self.state_store.load(task_state.task_id)
+
+        return {
+            "success": final_state.phase == TaskPhase.COMPLETE,
+            "violation_id": violation_id,
+            "task_id": task_state.task_id,
+            "phase": final_state.phase.value,
+            "steps_taken": len(outcomes),
+            "total_tokens": sum(o.tokens_used for o in outcomes),
+            "files_modified": final_state.context_data.get("files_modified", []),
+            "tests_passed": final_state.verification.tests_passing,
+            "conformance_passed": final_state.verification.checks_failing == 0,
+            "error": final_state.error,
+        }
+
+    def resume_task(
+        self,
+        task_id: str,
+        on_step: Optional[Callable[[StepOutcome], None]] = None,
+    ) -> Dict[str, Any]:
+        """
+        Resume an existing task.
+
+        Args:
+            task_id: Task ID to resume
+            on_step: Optional callback after each step
+
+        Returns:
+            Dict with fix results
+        """
+        state = self.state_store.load(task_id)
+        if not state:
+            return {
+                "success": False,
+                "error": f"Task not found: {task_id}",
+            }
+
+        if state.phase in [TaskPhase.COMPLETE, TaskPhase.FAILED, TaskPhase.ESCALATED]:
+            return {
+                "success": state.phase == TaskPhase.COMPLETE,
+                "task_id": task_id,
+                "phase": state.phase.value,
+                "error": "Task already complete",
+            }
+
+        # Continue execution with adaptive budget
+        remaining_budget = max(self.base_iterations, self.max_iterations - state.current_step)
+        budget = AdaptiveBudget(
+            base_budget=self.base_iterations,
+            max_budget=remaining_budget,
+        )
+        outcomes = self.executor.run_until_complete(
+            task_id=task_id,
+            max_iterations=remaining_budget,
+            on_step=on_step,
+            adaptive_budget=budget,
+        )
+
+        # Load final state
+        final_state = self.state_store.load(task_id)
+
+        return {
+            "success": final_state.phase == TaskPhase.COMPLETE,
+            "task_id": task_id,
+            "phase": final_state.phase.value,
+            "steps_taken": len(outcomes),
+            "total_tokens": sum(o.tokens_used for o in outcomes),
+            "files_modified": final_state.context_data.get("files_modified", []),
+            "tests_passed": final_state.verification.tests_passing,
+            "conformance_passed": final_state.verification.checks_failing == 0,
+            "error": final_state.error,
+        }
+
+
+def create_minimal_fix_workflow(
+    project_path: Path,
+    require_commit_approval: bool = True,
+    base_iterations: int = 15,
+    max_iterations: int = 50,
+) -> MinimalContextFixWorkflow:
+    """
+    Factory function to create a MinimalContextFixWorkflow.
+
+    Args:
+        project_path: Project root directory
+        require_commit_approval: Require human approval for commits
+        base_iterations: Initial step budget (extends with progress)
+        max_iterations: Hard ceiling for steps (cost control)
+
+    Returns:
+        Configured MinimalContextFixWorkflow
+    """
+    return MinimalContextFixWorkflow(
+        project_path=project_path,
+        base_iterations=base_iterations,
+        max_iterations=max_iterations,
+        require_commit_approval=require_commit_approval,
+    )

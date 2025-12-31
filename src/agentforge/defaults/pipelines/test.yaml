@@ -1,0 +1,38 @@
+# Test Pipeline
+# Goal: Write tests for an existing specification
+
+pipeline:
+  name: test
+  description: "Write tests for existing specification"
+  goal_type: test
+
+entry:
+  stage: red
+  requires:
+    - specification
+
+exit:
+  stage: red
+  produces:
+    - tests
+
+stages:
+  - name: red
+    agent: test_engineer
+    input_contract: specification_v1
+    output_contract: red_phase_v1
+    human_review: true
+    max_iterations: 3
+    success_criteria: "all_tests_fail"
+
+iteration:
+  review_points:
+    - red
+  feedback_format: "test_feedback"
+  max_total_iterations: 5
+
+continuation:
+  prompt: "Would you like to continue to implementation?"
+  next_pipeline: implement_from_tests
+  provides:
+    - tests

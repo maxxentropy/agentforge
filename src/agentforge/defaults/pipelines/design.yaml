@@ -1,0 +1,55 @@
+# Design Pipeline
+# Goal: Create a validated specification for a feature
+
+pipeline:
+  name: design
+  description: "Design a solution, iterate on specification"
+  goal_type: design
+
+entry:
+  stage: intake
+  requires: []
+
+exit:
+  stage: spec
+  produces:
+    - specification
+
+stages:
+  - name: intake
+    agent: requirements_analyst
+    input_contract: null
+    output_contract: intake_v1
+    human_review: false
+
+  - name: clarify
+    agent: requirements_analyst
+    input_contract: intake_v1
+    output_contract: clarification_v1
+    human_review: true
+    max_iterations: 3
+
+  - name: analyze
+    agent: software_architect
+    input_contract: clarification_v1
+    output_contract: analysis_v1
+    human_review: false
+
+  - name: spec
+    agent: software_architect
+    input_contract: analysis_v1
+    output_contract: specification_v1
+    human_review: true
+    max_iterations: 5
+
+iteration:
+  review_points:
+    - spec
+  feedback_format: "revision_request"
+  max_total_iterations: 10
+
+continuation:
+  prompt: "Would you like to continue to implementation?"
+  next_pipeline: implement
+  provides:
+    - specification

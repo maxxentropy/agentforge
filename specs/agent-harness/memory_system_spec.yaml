@@ -1,0 +1,119 @@
+metadata:
+  version: '1.0'
+  status: draft
+  feature_name: Memory System for Agent Harness
+  created_date: '2025-12-31'
+  description: |
+    4-tier memory hierarchy for agent context persistence.
+    Integrates with Session Manager from Phase 1.
+
+components:
+  - name: memory_domain
+    description: Domain entities for memory system
+    module: tools.harness.memory_domain
+    test_file: tests/unit/harness/test_memory_domain.py
+    impl_file: tools/harness/memory_domain.py
+    methods:
+      - name: MemoryTier
+        behavior: Enum with SESSION, TASK, PROJECT, ORGANIZATION values
+        errors: []
+      - name: MemoryEntry.create
+        behavior: Factory method creating entry with timestamp and metadata
+        errors: []
+      - name: MemoryEntry.is_expired
+        behavior: Returns True if entry has TTL and is past expiration
+        errors: []
+      - name: MemoryEntry.to_dict
+        behavior: Serializes entry to dictionary for YAML storage
+        errors: []
+      - name: MemoryEntry.from_dict
+        behavior: Deserializes entry from dictionary
+        errors: []
+
+  - name: memory_store
+    description: Persistence layer for memory tiers
+    module: tools.harness.memory_store
+    test_file: tests/unit/harness/test_memory_store.py
+    impl_file: tools/harness/memory_store.py
+    methods:
+      - name: MemoryStore.__init__
+        behavior: Initializes store with configurable paths for each tier
+        errors: []
+      - name: MemoryStore.get
+        behavior: Retrieves value by key from specified tier, returns None if not found
+        errors: []
+      - name: MemoryStore.set
+        behavior: Stores value at key in specified tier, auto-saves for persistent tiers
+        errors:
+          - MemoryWriteError
+      - name: MemoryStore.delete
+        behavior: Removes key from specified tier
+        errors: []
+      - name: MemoryStore.list_keys
+        behavior: Returns list of keys in tier, optionally filtered by prefix
+        errors: []
+      - name: MemoryStore.clear_tier
+        behavior: Clears all entries from specified tier
+        errors: []
+      - name: MemoryStore._load_tier
+        behavior: Loads tier data from YAML file, handles missing/corrupted files gracefully
+        errors: []
+      - name: MemoryStore._save_tier
+        behavior: Persists tier data to YAML using atomic writes
+        errors:
+          - MemoryWriteError
+
+  - name: memory_manager
+    description: High-level memory operations with search and context assembly
+    module: tools.harness.memory_manager
+    test_file: tests/unit/harness/test_memory_manager.py
+    impl_file: tools/harness/memory_manager.py
+    methods:
+      - name: MemoryManager.__init__
+        behavior: Initializes manager with store and optional session context
+        errors: []
+      - name: MemoryManager.get
+        behavior: Gets value from tier, with fallback to lower tiers if not found
+        errors: []
+      - name: MemoryManager.set
+        behavior: Sets value in tier with optional TTL and metadata
+        errors: []
+      - name: MemoryManager.merge
+        behavior: Merges partial value into existing entry (dict update)
+        errors: []
+      - name: MemoryManager.search
+        behavior: Searches across tiers for entries matching query (keyword-based)
+        errors: []
+      - name: MemoryManager.get_context
+        behavior: Assembles context from all tiers up to max_tokens limit
+        errors: []
+      - name: MemoryManager.link_session
+        behavior: Associates memory manager with a session for tier 1 operations
+        errors: []
+      - name: MemoryManager.link_task
+        behavior: Associates memory manager with a task for tier 2 operations
+        errors: []
+
+constraints:
+  - All persistent tiers (2-4) use YAML format
+  - Atomic writes with temp files for crash safety
+  - Tier 1 (session) is in-memory only
+  - Tier 2 stored in .agentforge/tasks/{task_id}/memory.yaml
+  - Tier 3 stored in .agentforge/project_memory.yaml
+  - Tier 4 stored in ~/.agentforge/org_memory.yaml
+  - Must handle missing/corrupted files gracefully
+  - Memory entries support optional TTL for expiration
+
+glossary:
+  - term: Session Memory (Tier 1)
+    definition: Ephemeral memory cleared each session. Contains scratch notes, working state.
+  - term: Task Memory (Tier 2)
+    definition: Persistent across sessions for a single task. Contains feature list, progress, attempts.
+  - term: Project Memory (Tier 3)
+    definition: Persistent for the project. Contains codebase profile, contracts, patterns.
+  - term: Organization Memory (Tier 4)
+    definition: Persistent across projects. Contains failure patterns, recovery strategies.
+  - term: Memory Entry
+    definition: A key-value pair with metadata (timestamp, TTL, source tier).
+  - term: Context Assembly
+    definition: Process of gathering relevant memories into a token-budgeted prompt context.

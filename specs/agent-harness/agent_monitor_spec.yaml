@@ -1,0 +1,317 @@
+# Agent Monitor Specification
+# Phase 4 of Agent Harness Implementation
+
+name: agent_monitor
+version: "1.0"
+description: |
+  Self-monitoring component to detect pathological agent behaviors
+  and provide health assessments.
+
+  Detects: loops, drift, thrashing, context pressure, progress stalls.
+  Provides: health status, recommendations for recovery/escalation.
+
+components:
+  - name: monitor_domain
+    description: Domain entities for observations and detections
+    location: tools/harness/monitor_domain.py
+    test_location: tests/unit/harness/test_monitor_domain.py
+    entities:
+      - name: ObservationType
+        type: Enum
+        values: [ACTION, OUTPUT, VERIFICATION, STATE_CHANGE, ERROR]
+        description: Types of observable agent events
+
+      - name: Observation
+        description: A single observed agent event
+        fields:
+          - name: type
+            type: ObservationType
+          - name: timestamp
+            type: datetime
+          - name: data
+            type: dict
+            description: Event-specific data
+          - name: context
+            type: Optional[str]
+            description: Additional context about the observation
+
+      - name: HealthStatus
+        type: Enum
+        values: [HEALTHY, DEGRADED, CRITICAL]
+        description: Overall agent health status
+
+      - name: Recommendation
+        type: Enum
+        values: [CONTINUE, CHECKPOINT, ESCALATE, ABORT]
+        description: Recommended action based on health
+
+      - name: LoopDetection
+        description: Result of loop detection analysis
+        fields:
+          - name: detected
+            type: bool
+          - name: pattern
+            type: Optional[str]
+            description: Description of the loop pattern
+          - name: count
+            type: int
+            description: Number of repetitions detected
+          - name: observations
+            type: list[Observation]
+            description: The observations that form the loop
+
+      - name: ThrashingDetection
+        description: Result of thrashing detection analysis
+        fields:
+          - name: detected
+            type: bool
+          - name: pattern
+            type: Optional[str]
+          - name: affected_files
+            type: list[str]
+          - name: alternation_count
+            type: int
+
+      - name: AgentHealth
+        description: Complete health assessment of agent
+        fields:
+          - name: status
+            type: HealthStatus
+          - name: issues
+            type: list[str]
+            description: List of detected problems
+          - name: recommendation
+            type: Recommendation
+          - name: loop_detection
+            type: Optional[LoopDetection]
+          - name: thrashing_detection
+            type: Optional[ThrashingDetection]
+          - name: drift_score
+            type: float
+            description: 0.0-1.0, higher means more drift
+          - name: context_pressure
+            type: float
+            description: 0.0-1.0, higher means more pressure
+          - name: progress_score
+            type: float
+            description: 0.0-1.0, higher means more progress
+
+  - name: agent_monitor
+    description: Main monitoring component with observation and detection
+    location: tools/harness/agent_monitor.py
+    test_location: tests/unit/harness/test_agent_monitor.py
+    class: AgentMonitor
+    config:
+      history_window: 100
+      loop_threshold: 3
+      drift_threshold: 0.5
+      thrash_threshold: 3
+      stall_threshold: 5
+    methods:
+      - name: __init__
+        description: Initialize monitor with optional config
+        params:
+          - name: config
+            type: Optional[MonitorConfig]
+            default: null
+
+      - name: observe_action
+        description: Record an agent action
+        params:
+          - name: action
+            type: str
+          - name: details
+            type: Optional[dict]
+            default: null
+        behavior: |
+          Creates ACTION observation, adds to history window.
+          Triggers incremental loop/thrash detection.
+
+      - name: observe_output
+        description: Record agent output
+        params:
+          - name: output
+            type: str
+          - name: output_type
+            type: str
+            description: Type of output (file, message, etc.)
+
+      - name: observe_verification
+        description: Record verification result
+        params:
+          - name: passed
+            type: bool
+          - name: details
+            type: Optional[dict]
+        behavior: |
+          Tracks verification success/failure for progress scoring.
+
+      - name: observe_state_change
+        description: Record state transition
+        params:
+          - name: old_state
+            type: str
+          - name: new_state
+            type: str
+        behavior: |
+          Tracks state transitions for loop/thrash detection.
+
+      - name: observe_error
+        description: Record an error occurrence
+        params:
+          - name: error_type
+            type: str
+          - name: message
+            type: str
+          - name: details
+            type: Optional[dict]
+
+      - name: detect_loop
+        description: Check for repetitive action patterns
+        returns: Optional[LoopDetection]
+        behavior: |
+          Analyzes recent observations for:
+          - Same action repeated N+ times consecutively
+          - Same error occurring N+ times
+          - State returning to previous state repeatedly
+
+      - name: detect_drift
+        description: Calculate drift score from original task
+        params:
+          - name: original_task
+            type: str
+            description: The original task description
+        returns: float
+        behavior: |
+          Compares recent observations against original task.
+          Returns 0.0-1.0 where higher means more drift.
+          Uses keyword overlap for initial implementation.
+
+      - name: detect_thrashing
+        description: Check for back-and-forth patterns
+        returns: Optional[ThrashingDetection]
+        behavior: |
+          Analyzes for:
+          - Same lines modified repeatedly (>N times)
+          - Alternating between two states
+          - Undo/redo patterns in file changes
+
+      - name: get_context_pressure
+        description: Calculate context window pressure
+        params:
+          - name: tokens_used
+            type: int
+          - name: token_budget
+            type: int
+        returns: float
+        behavior: |
+          Returns tokens_used / token_budget as 0.0-1.0.
+
+      - name: get_progress_score
+        description: Calculate progress based on verifications
+        returns: float
+        behavior: |
+          Looks at recent verification results.
+          Returns 0.0-1.0 where higher means more progress.
+          Considers: successful verifications, phase advancement.
+
+      - name: get_health
+        description: Complete health assessment
+        params:
+          - name: original_task
+            type: Optional[str]
+            default: null
+          - name: tokens_used
+            type: int
+            default: 0
+          - name: token_budget
+            type: int
+            default: 100000
+        returns: AgentHealth
+        behavior: |
+          Runs all detections and returns comprehensive health.
+          Determines overall status and recommendation.
+
+      - name: clear_history
+        description: Clear observation history
+        behavior: Resets the sliding window of observations.
+
+      - name: get_recent_observations
+        description: Get recent observations
+        params:
+          - name: count
+            type: int
+            default: 10
+          - name: type_filter
+            type: Optional[ObservationType]
+            default: null
+        returns: list[Observation]
+
+detection_algorithms:
+  loop_detection:
+    description: |
+      1. Group observations by action signature
+      2. Check for N+ consecutive identical actions
+      3. Check for N+ identical errors
+      4. Check for state cycle (A->B->A->B pattern)
+    threshold: 3 consecutive matches
+
+  drift_detection:
+    description: |
+      1. Extract keywords from original task
+      2. Extract keywords from recent observations
+      3. Calculate Jaccard similarity
+      4. Drift = 1 - similarity
+    threshold: 0.5 drift score triggers warning
+
+  thrashing_detection:
+    description: |
+      1. Track file modifications by path
+      2. Detect files modified N+ times
+      3. Detect alternating content patterns
+      4. Detect revert patterns (content A -> B -> A)
+    threshold: 3 modifications to same location
+
+  progress_scoring:
+    description: |
+      1. Count successful verifications in window
+      2. Count failed verifications in window
+      3. Score = successes / (successes + failures)
+      4. Bonus for phase advancement
+    low_progress_threshold: 0.2
+
+health_determination:
+  healthy:
+    - No loop detected
+    - Drift score < 0.3
+    - No thrashing detected
+    - Context pressure < 0.8
+    - Progress score > 0.3
+    - Recommendation: CONTINUE
+
+  degraded:
+    - Loop detected but count < 5
+    - OR drift score 0.3-0.5
+    - OR thrashing detected but count < 5
+    - OR context pressure 0.8-0.95
+    - OR progress score 0.1-0.3
+    - Recommendation: CHECKPOINT
+
+  critical:
+    - Loop count >= 5
+    - OR drift score > 0.5
+    - OR thrashing count >= 5
+    - OR context pressure > 0.95
+    - OR progress score < 0.1
+    - Recommendation: ESCALATE or ABORT
+
+constraints:
+  - Must be lightweight (minimal overhead per observation)
+  - Must maintain bounded history (sliding window)
+  - Must not block agent execution
+  - Detection methods must be deterministic
+  - All scores normalized to 0.0-1.0 range
+
+related_files:
+  - tools/harness/session_manager.py
+  - tools/workflows/domain.py

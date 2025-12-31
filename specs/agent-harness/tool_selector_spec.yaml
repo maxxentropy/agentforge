@@ -1,0 +1,294 @@
+# Tool Selector Specification
+# Phase 3 of Agent Harness Implementation
+
+name: tool_selector
+version: "1.0"
+description: |
+  Phase-appropriate tool selection for focused agent tooling.
+
+  Instead of giving an agent 50 tools, provide only the 3-5 tools
+  appropriate for the current workflow phase. A "red" phase agent
+  gets test-writing tools, not deployment tools.
+
+components:
+  - name: tool_domain
+    description: Domain entities for tool definitions and profiles
+    location: tools/harness/tool_domain.py
+    test_location: tests/unit/harness/test_tool_domain.py
+    entities:
+      - name: ToolDefinition
+        description: Definition of a single tool available to agents
+        fields:
+          - name: name
+            type: str
+            description: Unique identifier for the tool
+          - name: description
+            type: str
+            description: Human-readable description for agent understanding
+          - name: parameters
+            type: dict
+            description: JSON schema for tool parameters
+          - name: handler
+            type: Optional[str]
+            description: Callable reference or MCP server reference
+          - name: requires_approval
+            type: bool
+            default: false
+            description: Whether tool execution requires human approval
+          - name: category
+            type: str
+            description: Tool category (file, test, build, etc.)
+        methods:
+          - name: to_dict
+            returns: dict
+            description: Serialize to dictionary for API response
+          - name: from_dict
+            params: [data: dict]
+            returns: ToolDefinition
+            description: Deserialize from dictionary
+
+      - name: ToolProfile
+        description: Collection of tools for a specific workflow phase
+        fields:
+          - name: workflow
+            type: str
+            description: Workflow name (spec, tdflow, custom)
+          - name: phase
+            type: str
+            description: Phase within workflow (red, green, refactor, etc.)
+          - name: tools
+            type: list[str]
+            description: List of tool names available in this phase
+          - name: description
+            type: Optional[str]
+            description: Description of this profile's purpose
+        methods:
+          - name: to_dict
+            returns: dict
+          - name: from_dict
+            params: [data: dict]
+            returns: ToolProfile
+
+      - name: DomainTools
+        description: Domain-specific tool set (Python, .NET, TypeScript)
+        fields:
+          - name: domain
+            type: str
+            description: Domain identifier (python, dotnet, typescript)
+          - name: tools
+            type: list[str]
+            description: List of tool names for this domain
+          - name: detection_patterns
+            type: list[str]
+            description: File patterns to detect this domain
+
+  - name: tool_registry
+    description: Central registry for tool definitions and profiles
+    location: tools/harness/tool_registry.py
+    test_location: tests/unit/harness/test_tool_registry.py
+    class: ToolRegistry
+    methods:
+      - name: __init__
+        description: Initialize registry with optional config path
+        params:
+          - name: config_path
+            type: Optional[Path]
+            default: null
+
+      - name: register_tool
+        description: Register a tool definition
+        params:
+          - name: tool
+            type: ToolDefinition
+        raises:
+          - DuplicateToolError if tool with same name exists
+
+      - name: register_profile
+        description: Register a workflow phase profile
+        params:
+          - name: profile
+            type: ToolProfile
+
+      - name: register_domain_tools
+        description: Register domain-specific tools
+        params:
+          - name: domain
+            type: str
+          - name: tools
+            type: list[str]
+
+      - name: get_tool
+        description: Get tool definition by name
+        params:
+          - name: name
+            type: str
+        returns: Optional[ToolDefinition]
+
+      - name: get_profile
+        description: Get profile for workflow/phase combination
+        params:
+          - name: workflow
+            type: str
+          - name: phase
+            type: str
+        returns: Optional[ToolProfile]
+
+      - name: list_tools
+        description: List all registered tool names
+        returns: list[str]
+
+      - name: list_profiles
+        description: List all registered profiles
+        returns: list[ToolProfile]
+
+      - name: load_from_yaml
+        description: Load tools and profiles from YAML config
+        params:
+          - name: path
+            type: Path
+
+      - name: save_to_yaml
+        description: Save current registry to YAML
+        params:
+          - name: path
+            type: Path
+
+  - name: tool_selector
+    description: Main selector that composes tools for a given context
+    location: tools/harness/tool_selector.py
+    test_location: tests/unit/harness/test_tool_selector.py
+    class: ToolSelector
+    methods:
+      - name: __init__
+        description: Initialize selector with registry
+        params:
+          - name: registry
+            type: ToolRegistry
+          - name: project_domain
+            type: Optional[str]
+            default: null
+
+      - name: get_tools
+        description: Get tools for a workflow/phase/domain combination
+        params:
+          - name: workflow
+            type: str
+          - name: phase
+            type: str
+          - name: domain
+            type: Optional[str]
+            default: null
+        returns: list[ToolDefinition]
+        behavior: |
+          1. Get base tools (always available)
+          2. Get phase tools from profile
+          3. Get domain tools if domain specified
+          4. Get custom tools if any registered
+          5. Deduplicate by name (phase overrides base)
+          6. Return combined list
+
+      - name: detect_domain
+        description: Auto-detect project domain from codebase
+        params:
+          - name: project_path
+            type: Path
+        returns: Optional[str]
+        behavior: |
+          Check for domain indicators:
+          - Python: pyproject.toml, requirements.txt, setup.py
+          - .NET: *.csproj, *.sln
+          - TypeScript: package.json with typescript dependency
+
+      - name: get_tool_names
+        description: Get just tool names for a context (for lighter payloads)
+        params:
+          - name: workflow
+            type: str
+          - name: phase
+            type: str
+          - name: domain
+            type: Optional[str]
+        returns: list[str]
+
+      - name: validate_tool_access
+        description: Check if a tool is allowed in current context
+        params:
+          - name: tool_name
+            type: str
+          - name: workflow
+            type: str
+          - name: phase
+            type: str
+        returns: bool
+
+default_profiles:
+  spec_workflow:
+    - phase: intake
+      tools: [file_read, directory_list, search_code, write_yaml]
+    - phase: clarify
+      tools: [file_read, ask_user, write_yaml]
+    - phase: analyze
+      tools: [file_read, search_code, discover_patterns, write_yaml]
+    - phase: draft
+      tools: [file_read, write_markdown, write_code]
+    - phase: validate
+      tools: [conformance_check, write_yaml]
+
+  tdflow_workflow:
+    - phase: red
+      tools: [file_read, write_test, run_test]
+    - phase: green
+      tools: [file_read, write_code, run_test, conformance_check]
+    - phase: refactor
+      tools: [file_read, modify_code, run_test, conformance_check]
+    - phase: verify
+      tools: [run_test, conformance_check, write_yaml]
+
+domain_tools:
+  python:
+    tools: [pytest, ruff_check, ruff_format, mypy]
+    detection: ["pyproject.toml", "requirements.txt", "setup.py", "*.py"]
+
+  dotnet:
+    tools: [dotnet_build, dotnet_test, dotnet_format]
+    detection: ["*.csproj", "*.sln", "*.cs"]
+
+  typescript:
+    tools: [npm_test, eslint, prettier]
+    detection: ["package.json", "tsconfig.json", "*.ts", "*.tsx"]
+
+base_tools:
+  - name: file_read
+    description: Read contents of a file
+    category: file
+    requires_approval: false
+
+  - name: write_file
+    description: Write content to a file
+    category: file
+    requires_approval: false
+
+  - name: directory_list
+    description: List contents of a directory
+    category: file
+    requires_approval: false
+
+constraints:
+  - Tool definitions must be serializable to YAML
+  - Must be extensible for new workflows/phases
+  - Must handle missing domain gracefully (fall back to base tools)
+  - Phase-specific tools override base tools with same name
+  - Custom tools in .agentforge/tool_profiles.yaml override defaults
+
+errors:
+  - name: DuplicateToolError
+    description: Raised when registering a tool with an existing name
+  - name: UnknownWorkflowError
+    description: Raised when requesting tools for unknown workflow
+  - name: UnknownPhaseError
+    description: Raised when requesting tools for unknown phase
+
+related_files:
+  - tools/workflows/domain.py
+  - contracts/
+  - .agentforge/codebase_profile.yaml

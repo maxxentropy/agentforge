@@ -1,0 +1,360 @@
+# Human Escalation Specification
+# Phase 6 of Agent Harness Implementation
+
+name: human_escalation
+version: "1.0"
+description: |
+  Human-in-the-loop escalation system for agent intervention.
+
+  Provides mechanisms for:
+  - Detecting when human intervention is needed
+  - Notifying humans through multiple channels
+  - Capturing human decisions and feedback
+  - Resuming agent work after intervention
+  - Tracking escalation history for learning
+
+components:
+  - name: escalation_domain
+    description: Domain entities for human escalation
+    location: tools/harness/escalation_domain.py
+    test_location: tests/unit/harness/test_escalation_domain.py
+    entities:
+      - name: EscalationPriority
+        type: Enum
+        values: [LOW, MEDIUM, HIGH, CRITICAL]
+        description: Urgency level for escalations
+
+      - name: EscalationStatus
+        type: Enum
+        values: [PENDING, ACKNOWLEDGED, IN_PROGRESS, RESOLVED, EXPIRED, CANCELLED]
+        description: Current status of an escalation
+
+      - name: EscalationChannel
+        type: Enum
+        values: [CLI, FILE, WEBHOOK, EMAIL]
+        description: Channels for human notification
+
+      - name: ResolutionType
+        type: Enum
+        values: [APPROVED, REJECTED, MODIFIED, DEFERRED, TIMEOUT]
+        description: How an escalation was resolved
+
+      - name: Escalation
+        description: A request for human intervention
+        fields:
+          - name: id
+            type: str
+            description: Unique escalation identifier
+          - name: session_id
+            type: str
+          - name: created_at
+            type: datetime
+          - name: priority
+            type: EscalationPriority
+          - name: status
+            type: EscalationStatus
+          - name: reason
+            type: str
+            description: Why escalation was triggered
+          - name: context
+            type: dict
+            description: Relevant state and history
+          - name: recommended_actions
+            type: list[str]
+            description: Suggested actions for human
+          - name: timeout_seconds
+            type: Optional[int]
+            description: Auto-resolve after timeout
+          - name: acknowledged_at
+            type: Optional[datetime]
+          - name: resolved_at
+            type: Optional[datetime]
+
+      - name: EscalationResolution
+        description: Human's response to an escalation
+        fields:
+          - name: escalation_id
+            type: str
+          - name: resolution_type
+            type: ResolutionType
+          - name: decision
+            type: str
+            description: Human's decision or instruction
+          - name: notes
+            type: Optional[str]
+          - name: resolved_by
+            type: Optional[str]
+            description: Identifier for who resolved
+          - name: resolved_at
+            type: datetime
+
+      - name: EscalationRule
+        description: Rules for when to trigger escalation
+        fields:
+          - name: name
+            type: str
+          - name: triggers
+            type: list[str]
+            description: Conditions that trigger this rule
+          - name: priority
+            type: EscalationPriority
+          - name: channels
+            type: list[EscalationChannel]
+          - name: timeout_seconds
+            type: int
+            default: 3600
+          - name: auto_resolve_action
+            type: Optional[str]
+            description: Action to take on timeout
+
+  - name: escalation_manager
+    description: Manages escalation lifecycle
+    location: tools/harness/escalation_manager.py
+    test_location: tests/unit/harness/test_escalation_manager.py
+    class: EscalationManager
+    methods:
+      - name: __init__
+        params:
+          - name: storage_path
+            type: Path
+            description: Directory for escalation storage
+          - name: default_timeout
+            type: int
+            default: 3600
+            description: Default timeout in seconds
+          - name: channels
+            type: Optional[list[EscalationChannel]]
+            default: null
+            description: Active notification channels
+
+      - name: create_escalation
+        description: Create a new escalation request
+        params:
+          - name: session_id
+            type: str
+          - name: reason
+            type: str
+          - name: context
+            type: dict
+          - name: priority
+            type: EscalationPriority
+            default: MEDIUM
+          - name: recommended_actions
+            type: Optional[list[str]]
+            default: null
+          - name: timeout_seconds
+            type: Optional[int]
+            default: null
+        returns: Escalation
+        behavior: |
+          1. Generate unique escalation ID
+          2. Create escalation record
+          3. Persist to storage
+          4. Send notifications via configured channels
+
+      - name: acknowledge_escalation
+        description: Mark escalation as seen by human
+        params:
+          - name: escalation_id
+            type: str
+          - name: acknowledged_by
+            type: Optional[str]
+            default: null
+        returns: bool
+
+      - name: resolve_escalation
+        description: Record human's resolution
+        params:
+          - name: escalation_id
+            type: str
+          - name: resolution_type
+            type: ResolutionType
+          - name: decision
+            type: str
+          - name: notes
+            type: Optional[str]
+            default: null
+          - name: resolved_by
+            type: Optional[str]
+            default: null
+        returns: EscalationResolution
+
+      - name: get_escalation
+        description: Get escalation by ID
+        params:
+          - name: escalation_id
+            type: str
+        returns: Optional[Escalation]
+
+      - name: list_escalations
+        description: List escalations with filters
+        params:
+          - name: session_id
+            type: Optional[str]
+            default: null
+          - name: status
+            type: Optional[EscalationStatus]
+            default: null
+          - name: priority
+            type: Optional[EscalationPriority]
+            default: null
+        returns: list[Escalation]
+
+      - name: get_pending_escalations
+        description: Get all unresolved escalations
+        params:
+          - name: session_id
+            type: Optional[str]
+            default: null
+        returns: list[Escalation]
+
+      - name: check_timeouts
+        description: Check and resolve expired escalations
+        returns: list[Escalation]
+        behavior: |
+          1. Find escalations past timeout
+          2. Apply auto_resolve_action if configured
+          3. Mark as EXPIRED
+          4. Return list of expired escalations
+
+      - name: cancel_escalation
+        description: Cancel a pending escalation
+        params:
+          - name: escalation_id
+            type: str
+          - name: reason
+            type: str
+        returns: bool
+
+  - name: escalation_notifier
+    description: Sends notifications through configured channels
+    location: tools/harness/escalation_notifier.py
+    test_location: tests/unit/harness/test_escalation_notifier.py
+    class: EscalationNotifier
+    methods:
+      - name: __init__
+        params:
+          - name: channels
+            type: list[EscalationChannel]
+          - name: config
+            type: Optional[dict]
+            default: null
+            description: Channel-specific configuration
+
+      - name: notify
+        description: Send notification for an escalation
+        params:
+          - name: escalation
+            type: Escalation
+        returns: dict
+        behavior: |
+          Returns dict mapping channel to success/failure.
+          Attempts all configured channels.
+
+      - name: notify_cli
+        description: Display escalation in CLI
+        params:
+          - name: escalation
+            type: Escalation
+        returns: bool
+        behavior: |
+          Formats and prints escalation to stdout.
+          Uses color coding by priority.
+
+      - name: notify_file
+        description: Write escalation to file
+        params:
+          - name: escalation
+            type: Escalation
+          - name: file_path
+            type: Optional[Path]
+            default: null
+        returns: bool
+        behavior: |
+          Writes escalation to JSON file.
+          Default path: .agentforge/escalations/{id}.json
+
+      - name: notify_webhook
+        description: Send escalation via webhook
+        params:
+          - name: escalation
+            type: Escalation
+          - name: webhook_url
+            type: Optional[str]
+            default: null
+        returns: bool
+        behavior: |
+          POST escalation data to webhook URL.
+          Uses configured URL if not provided.
+
+      - name: format_escalation
+        description: Format escalation for display
+        params:
+          - name: escalation
+            type: Escalation
+          - name: format
+            type: str
+            default: "text"
+        returns: str
+        behavior: |
+          Formats: "text", "json", "markdown"
+
+      - name: get_priority_color
+        description: Get ANSI color code for priority
+        params:
+          - name: priority
+            type: EscalationPriority
+        returns: str
+
+default_rules:
+  - name: unrecoverable_error
+    triggers: ["unrecoverable", "fatal", "critical error"]
+    priority: CRITICAL
+    channels: [CLI, FILE]
+    timeout_seconds: 7200
+    auto_resolve_action: abort
+
+  - name: permission_required
+    triggers: ["permission", "authorization", "approval needed"]
+    priority: HIGH
+    channels: [CLI, FILE]
+    timeout_seconds: 3600
+    auto_resolve_action: defer
+
+  - name: clarification_needed
+    triggers: ["ambiguous", "unclear", "clarification"]
+    priority: MEDIUM
+    channels: [CLI]
+    timeout_seconds: 1800
+    auto_resolve_action: defer
+
+  - name: review_requested
+    triggers: ["review", "verification", "check"]
+    priority: LOW
+    channels: [FILE]
+    timeout_seconds: 86400
+    auto_resolve_action: approve
+
+constraints:
+  - Escalations must persist across restarts
+  - Pending escalations should block agent progress
+  - Timeouts must be enforced automatically
+  - All resolutions must be logged
+  - CLI notifications must be visually distinct
+  - File notifications must be atomic writes
+
+integration:
+  - component: recovery_executor
+    method: escalate
+    description: |
+      RecoveryExecutor.escalate() should create escalation via EscalationManager
+
+  - component: session_manager
+    method: pause
+    description: |
+      Sessions should pause while escalations are pending
+
+related_files:
+  - tools/harness/recovery_executor.py
+  - tools/harness/session_manager.py
+  - tools/harness/agent_monitor.py

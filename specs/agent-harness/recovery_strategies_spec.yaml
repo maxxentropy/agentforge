@@ -1,0 +1,326 @@
+# Recovery Strategies Specification
+# Phase 5 of Agent Harness Implementation
+
+name: recovery_strategies
+version: "1.0"
+description: |
+  Automated recovery strategies that respond to agent health issues.
+
+  Provides a toolkit of recovery actions:
+  - Checkpoint: Save state before risky operations
+  - Rollback: Undo recent changes to restore known-good state
+  - Summarize: Compress context to reduce token pressure
+  - Reset: Clear problematic state and restart from clean point
+  - Escalate: Trigger human intervention for unrecoverable issues
+
+components:
+  - name: recovery_domain
+    description: Domain entities for recovery operations
+    location: tools/harness/recovery_domain.py
+    test_location: tests/unit/harness/test_recovery_domain.py
+    entities:
+      - name: RecoveryAction
+        type: Enum
+        values: [CHECKPOINT, ROLLBACK, SUMMARIZE, RESET, ESCALATE, RETRY, SKIP]
+        description: Types of recovery actions
+
+      - name: RecoveryResult
+        type: Enum
+        values: [SUCCESS, PARTIAL, FAILED, SKIPPED]
+        description: Outcome of a recovery attempt
+
+      - name: Checkpoint
+        description: Saved state snapshot
+        fields:
+          - name: id
+            type: str
+            description: Unique checkpoint identifier
+          - name: timestamp
+            type: datetime
+          - name: session_id
+            type: str
+          - name: phase
+            type: str
+            description: Workflow phase at checkpoint
+          - name: state
+            type: dict
+            description: Serialized state data
+          - name: file_backups
+            type: list[str]
+            description: Paths to backed-up files
+          - name: description
+            type: Optional[str]
+
+      - name: RecoveryAttempt
+        description: Record of a recovery operation
+        fields:
+          - name: action
+            type: RecoveryAction
+          - name: timestamp
+            type: datetime
+          - name: trigger
+            type: str
+            description: What triggered this recovery (loop, drift, etc.)
+          - name: result
+            type: RecoveryResult
+          - name: details
+            type: Optional[dict]
+          - name: error
+            type: Optional[str]
+
+      - name: RecoveryPolicy
+        description: Rules for when to apply recovery actions
+        fields:
+          - name: name
+            type: str
+          - name: triggers
+            type: list[str]
+            description: Health issues that trigger this policy
+          - name: actions
+            type: list[RecoveryAction]
+            description: Ordered list of actions to try
+          - name: max_attempts
+            type: int
+            default: 3
+          - name: cooldown_seconds
+            type: int
+            default: 60
+            description: Minimum time between recovery attempts
+
+  - name: checkpoint_manager
+    description: Manages state checkpoints for rollback capability
+    location: tools/harness/checkpoint_manager.py
+    test_location: tests/unit/harness/test_checkpoint_manager.py
+    class: CheckpointManager
+    methods:
+      - name: __init__
+        params:
+          - name: storage_path
+            type: Path
+            description: Directory for checkpoint storage
+          - name: max_checkpoints
+            type: int
+            default: 10
+
+      - name: create_checkpoint
+        description: Create a new checkpoint
+        params:
+          - name: session_id
+            type: str
+          - name: phase
+            type: str
+          - name: state
+            type: dict
+          - name: files_to_backup
+            type: Optional[list[Path]]
+            default: null
+          - name: description
+            type: Optional[str]
+            default: null
+        returns: Checkpoint
+
+      - name: restore_checkpoint
+        description: Restore state from a checkpoint
+        params:
+          - name: checkpoint_id
+            type: str
+        returns: bool
+        behavior: |
+          1. Load checkpoint data
+          2. Restore backed-up files
+          3. Return state dict for caller to apply
+
+      - name: list_checkpoints
+        description: List available checkpoints
+        params:
+          - name: session_id
+            type: Optional[str]
+            default: null
+        returns: list[Checkpoint]
+
+      - name: get_checkpoint
+        description: Get a specific checkpoint
+        params:
+          - name: checkpoint_id
+            type: str
+        returns: Optional[Checkpoint]
+
+      - name: delete_checkpoint
+        description: Delete a checkpoint
+        params:
+          - name: checkpoint_id
+            type: str
+        returns: bool
+
+      - name: cleanup_old_checkpoints
+        description: Remove checkpoints beyond max limit
+        params:
+          - name: session_id
+            type: str
+        behavior: Keeps most recent max_checkpoints, deletes rest
+
+  - name: recovery_executor
+    description: Executes recovery strategies based on health status
+    location: tools/harness/recovery_executor.py
+    test_location: tests/unit/harness/test_recovery_executor.py
+    class: RecoveryExecutor
+    methods:
+      - name: __init__
+        params:
+          - name: checkpoint_manager
+            type: CheckpointManager
+          - name: policies
+            type: Optional[list[RecoveryPolicy]]
+            default: null
+
+      - name: execute_recovery
+        description: Execute appropriate recovery based on health
+        params:
+          - name: health
+            type: AgentHealth
+          - name: session_id
+            type: str
+          - name: current_state
+            type: dict
+        returns: RecoveryAttempt
+        behavior: |
+          1. Match health issues to policies
+          2. Check cooldown periods
+          3. Execute actions in order until one succeeds
+          4. Record attempt result
+
+      - name: execute_action
+        description: Execute a single recovery action
+        params:
+          - name: action
+            type: RecoveryAction
+          - name: context
+            type: dict
+        returns: RecoveryAttempt
+
+      - name: checkpoint
+        description: Create a checkpoint
+        params:
+          - name: session_id
+            type: str
+          - name: phase
+            type: str
+          - name: state
+            type: dict
+          - name: files
+            type: Optional[list[Path]]
+        returns: RecoveryAttempt
+
+      - name: rollback
+        description: Rollback to last checkpoint
+        params:
+          - name: session_id
+            type: str
+        returns: RecoveryAttempt
+
+      - name: summarize_context
+        description: Compress context to reduce token pressure
+        params:
+          - name: context
+            type: str
+          - name: max_tokens
+            type: int
+        returns: RecoveryAttempt
+        behavior: |
+          Uses simple summarization:
+          1. Keep first N tokens (task description)
+          2. Keep last M tokens (recent activity)
+          3. Summarize middle section
+
+      - name: reset_state
+        description: Clear problematic state
+        params:
+          - name: session_id
+            type: str
+          - name: preserve_keys
+            type: list[str]
+            description: State keys to preserve during reset
+        returns: RecoveryAttempt
+
+      - name: escalate
+        description: Trigger human escalation
+        params:
+          - name: reason
+            type: str
+          - name: context
+            type: dict
+        returns: RecoveryAttempt
+        behavior: |
+          Creates escalation record with:
+          - Reason for escalation
+          - Current state snapshot
+          - Recent observations
+          - Recommended actions
+
+      - name: get_recovery_history
+        description: Get recent recovery attempts
+        params:
+          - name: session_id
+            type: Optional[str]
+            default: null
+          - name: limit
+            type: int
+            default: 10
+        returns: list[RecoveryAttempt]
+
+      - name: register_policy
+        description: Add a new recovery policy
+        params:
+          - name: policy
+            type: RecoveryPolicy
+
+      - name: get_policy_for_issue
+        description: Find matching policy for an issue
+        params:
+          - name: issue
+            type: str
+        returns: Optional[RecoveryPolicy]
+
+default_policies:
+  - name: loop_recovery
+    triggers: ["loop", "Loop detected", "Repeated action"]
+    actions: [CHECKPOINT, ROLLBACK, RESET]
+    max_attempts: 3
+    cooldown_seconds: 30
+
+  - name: drift_recovery
+    triggers: ["drift", "High drift", "Moderate drift"]
+    actions: [CHECKPOINT, SUMMARIZE, ESCALATE]
+    max_attempts: 2
+    cooldown_seconds: 60
+
+  - name: thrashing_recovery
+    triggers: ["thrashing", "Thrashing detected", "Files modified repeatedly"]
+    actions: [CHECKPOINT, ROLLBACK]
+    max_attempts: 3
+    cooldown_seconds: 30
+
+  - name: context_pressure_recovery
+    triggers: ["context pressure", "Critical context", "High context"]
+    actions: [SUMMARIZE, CHECKPOINT]
+    max_attempts: 2
+    cooldown_seconds: 120
+
+  - name: stall_recovery
+    triggers: ["progress", "low progress", "Very low progress"]
+    actions: [RETRY, ESCALATE]
+    max_attempts: 2
+    cooldown_seconds: 60
+
+constraints:
+  - Checkpoints must be atomic (all-or-nothing)
+  - Rollback must restore files atomically
+  - Recovery attempts must be logged for audit
+  - Cooldown periods must be respected
+  - Max attempts per issue type must be enforced
+  - Escalation must always succeed (fallback)
+
+related_files:
+  - tools/harness/agent_monitor.py
+  - tools/harness/session_manager.py
+  - tools/harness/memory_store.py

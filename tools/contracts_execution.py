@@ -75,6 +75,12 @@ def execute_check(check: Dict[str, Any], repo_root,
 
     if file_paths is None:
         file_paths = _get_files_for_check(check, repo_root)
+    else:
+        # Ensure file_paths are Path objects (CLI may pass strings)
+        file_paths = [
+            f if isinstance(f, Path) else repo_root / f
+            for f in file_paths
+        ]
 
     ctx = CheckContext(
         check_id=check_id, check_name=check_name, severity=severity,
@@ -108,6 +114,17 @@ def _get_files_for_check(check: Dict[str, Any], repo_root: Path) -> List[Path]:
     paths = applies_to.get("paths", ["**/*"])
     exclude_paths = applies_to.get("exclude_paths", [])
 
+    # Global exclusions - internal directories that should never be checked
+    global_excludes = [
+        ".agentforge/**",  # Internal tracking (violations, logs, backups)
+        ".git/**",
+        "__pycache__/**",
+        "*.pyc",
+        ".venv/**",
+        "venv/**",
+        "node_modules/**",
+    ]
+
     all_files = []
     for pattern in paths:
         all_files.extend(repo_root.glob(pattern))
@@ -117,7 +134,10 @@ def _get_files_for_check(check: Dict[str, Any], repo_root: Path) -> List[Path]:
         if not f.is_file():
             continue
         relative = str(f.relative_to(repo_root))
+        # Check both per-check exclusions and global exclusions
         excluded = any(fnmatch.fnmatch(relative, exc) for exc in exclude_paths)
+        if not excluded:
+            excluded = any(fnmatch.fnmatch(relative, exc) for exc in global_excludes)
         if not excluded:
             result.append(f)
 

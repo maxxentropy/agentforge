@@ -63,11 +63,12 @@ template:
       - name: output_format
         content: |
           # Output Format
-          
+
           Output a YAML document matching this structure:
-          
+
           ```yaml
           metadata:
+            spec_id: "feature-name-v1"  # REQUIRED: Unique ID for audit trail (lowercase, hyphens only)
             version: "1.0"
             status: draft
             feature_name: "Feature Name"

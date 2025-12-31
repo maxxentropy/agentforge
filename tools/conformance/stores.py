@@ -133,6 +133,7 @@ class ViolationStore:
                 datetime.fromisoformat(data["exemption_expired_at"])
                 if data.get("exemption_expired_at") else None
             ),
+            test_path=data.get("test_path"),
         )
 
     def _violation_to_dict(self, violation: Violation) -> Dict:
@@ -167,6 +168,9 @@ class ViolationStore:
             data["exemption_id"] = violation.exemption_id
         if violation.exemption_expired_at:
             data["exemption_expired_at"] = violation.exemption_expired_at.isoformat()
+        # Test path for verification during fixes (from lineage or convention)
+        if violation.test_path:
+            data["test_path"] = violation.test_path
 
         return data
 

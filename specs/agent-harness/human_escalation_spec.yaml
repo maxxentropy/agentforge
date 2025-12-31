@@ -1,6 +1,7 @@
 # Human Escalation Specification
 # Phase 6 of Agent Harness Implementation
 
+spec_id: human-escalation-v1
 name: human_escalation
 version: "1.0"
 description: |

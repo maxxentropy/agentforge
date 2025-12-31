@@ -1,6 +1,7 @@
 # Tool Selector Specification
 # Phase 3 of Agent Harness Implementation
 
+spec_id: tool-selector-v1
 name: tool_selector
 version: "1.0"
 description: |

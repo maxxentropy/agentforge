@@ -3,11 +3,18 @@ RED Phase Executor
 ==================
 
 Generates failing tests from specification.
+
+Supports two generation modes:
+1. LLM-based: Uses GenerationEngine for intelligent test generation
+2. Template-based: Falls back to templates when no LLM is available
+
+All generated test files include lineage metadata for audit trail.
 """
 
+import asyncio
 import time
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, TYPE_CHECKING
 
 import yaml
 
@@ -20,6 +27,10 @@ from tools.tdflow.domain import (
     TestFile,
 )
 from tools.tdflow.runners.base import TestRunner
+from tools.lineage import generate_lineage_header
+
+if TYPE_CHECKING:
+    from tools.generate.engine import GenerationEngine
 
 
 class RedPhaseExecutor:
@@ -28,22 +39,29 @@ class RedPhaseExecutor:
 
     Steps:
     1. Load component spec
-    2. Generate test file via LLM
+    2. Generate test file via LLM (or templates if unavailable)
     3. Write test file
     4. Run tests
     5. Verify tests FAIL
     """
 
-    def __init__(self, session: TDFlowSession, runner: TestRunner):
+    def __init__(
+        self,
+        session: TDFlowSession,
+        runner: TestRunner,
+        generator: Optional["GenerationEngine"] = None,
+    ):
         """
         Initialize RED phase executor.
 
         Args:
             session: Current TDFLOW session
             runner: Test runner for the project
+            generator: Optional LLM generation engine for intelligent test generation
         """
         self.session = session
         self.runner = runner
+        self.generator = generator
         self._spec_data: Optional[Dict[str, Any]] = None
 
     def execute(self, component: ComponentProgress) -> PhaseResult:
@@ -174,9 +192,10 @@ class RedPhaseExecutor:
         spec: Dict[str, Any],
     ) -> Optional[str]:
         """
-        Generate test content via LLM.
+        Generate test content via LLM or templates.
 
-        Uses tdflow.red.v1 prompt contract.
+        When a generator is available, uses LLM for intelligent test generation.
+        Otherwise, falls back to template-based generation.
 
         Args:
             component: Component to test
@@ -185,11 +204,57 @@ class RedPhaseExecutor:
         Returns:
             Test file content or None
         """
-        # Build test template based on framework
+        # Try LLM generation first if available
+        if self.generator:
+            llm_result = self._generate_tests_with_llm(component, spec)
+            if llm_result:
+                return llm_result
+
+        # Fall back to template generation
         if self.session.test_framework in ("xunit", "nunit", "mstest"):
             return self._generate_csharp_tests(component, spec)
         else:
             return self._generate_python_tests(component, spec)
+
+    def _generate_tests_with_llm(
+        self,
+        component: ComponentProgress,
+        spec: Dict[str, Any],
+    ) -> Optional[str]:
+        """
+        Generate tests using LLM via GenerationEngine.
+
+        Args:
+            component: Component to test
+            spec: Component specification
+
+        Returns:
+            Test file content or None if generation fails
+        """
+        if not self.generator:
+            return None
+
+        try:
+            from tools.generate.domain import GenerationContext, GenerationPhase
+
+            # Build generation context
+            context = GenerationContext.for_red(
+                spec=self._spec_data or {},
+                component_name=component.name,
+            )
+
+            # Run generation (async -> sync)
+            result = asyncio.run(self.generator.generate(context, dry_run=False))
+
+            if result.success and result.files:
+                # Return the first generated file's content
+                return result.files[0].content
+
+            return None
+
+        except Exception:
+            # Fall back to template generation
+            return None
 
     def _generate_csharp_tests(
         self,
@@ -199,16 +264,47 @@ class RedPhaseExecutor:
         """
         Generate C# test file from specification.
 
+        Includes lineage metadata for audit trail linking test -> spec -> impl.
+
         Args:
             component: Component to test
             spec: Component specification
 
         Returns:
-            C# test file content
+            C# test file content with lineage header
         """
         class_name = spec.get("name", component.name)
         namespace = spec.get("namespace", "Tests.Unit")
         methods = spec.get("methods", [])
+
+        # Extract IDs for lineage (lynch pin of audit trail)
+        # spec_id can be in metadata.spec_id (new format) or top-level spec_id (legacy)
+        metadata = self._spec_data.get("metadata", {})
+        spec_id = (
+            metadata.get("spec_id")
+            or self._spec_data.get("spec_id")
+            or self._spec_data.get("name", "unknown")
+        )
+        component_id = spec.get("id", class_name)
+        method_ids = [m.get("id", m.get("name", "")) for m in methods]
+
+        # Get paths for lineage
+        spec_file = str(self.session.spec_file.relative_to(self.runner.project_path))
+        test_path = str(self._get_test_path(component).relative_to(self.runner.project_path))
+        impl_path = spec.get("location", spec.get("impl_file", f"{namespace.replace('.', '/')}/{class_name}.cs"))
+
+        # Generate lineage header (C# uses //)
+        lineage_header = generate_lineage_header(
+            generator="tdflow.red.v1",
+            spec_file=spec_file,
+            spec_id=spec_id,
+            component_id=component_id,
+            method_ids=method_ids,
+            test_path=test_path,
+            impl_path=impl_path,
+            session_id=self.session.session_id,
+            comment_prefix="//",
+        )
 
         # Build test methods
         test_methods = []
@@ -256,9 +352,7 @@ class RedPhaseExecutor:
 
         tests_content = "\n".join(test_methods)
 
-        return f"""// Generated from specification by TDFLOW
-// Component: {class_name}
-// Phase: RED - These tests should FAIL until implementation exists
+        return f"""{lineage_header}
 
 using Xunit;
 using FluentAssertions;
@@ -286,16 +380,47 @@ public class {class_name}Tests
         """
         Generate Python test file from specification.
 
+        Includes lineage metadata for audit trail linking test -> spec -> impl.
+
         Args:
             component: Component to test
             spec: Component specification
 
         Returns:
-            Python test file content
+            Python test file content with lineage header
         """
         class_name = spec.get("name", component.name)
         module = spec.get("module", "src")
         methods = spec.get("methods", [])
+
+        # Extract IDs for lineage (lynch pin of audit trail)
+        # spec_id can be in metadata.spec_id (new format) or top-level spec_id (legacy)
+        metadata = self._spec_data.get("metadata", {})
+        spec_id = (
+            metadata.get("spec_id")
+            or self._spec_data.get("spec_id")
+            or self._spec_data.get("name", "unknown")
+        )
+        component_id = spec.get("id", self._to_snake_case(component.name))
+        method_ids = [m.get("id", m.get("name", "")) for m in methods]
+
+        # Get paths for lineage
+        spec_file = str(self.session.spec_file.relative_to(self.runner.project_path))
+        test_path = str(self._get_test_path(component).relative_to(self.runner.project_path))
+        impl_path = spec.get("location", spec.get("impl_file", f"{module}/{class_name}.py"))
+
+        # Generate lineage header
+        lineage_header = generate_lineage_header(
+            generator="tdflow.red.v1",
+            spec_file=spec_file,
+            spec_id=spec_id,
+            component_id=component_id,
+            method_ids=method_ids,
+            test_path=test_path,  # This file
+            impl_path=impl_path,  # Where implementation will go
+            session_id=self.session.session_id,
+            comment_prefix="#",
+        )
 
         # Build test methods
         test_methods = []
@@ -345,7 +470,8 @@ public class {class_name}Tests
 
         tests_content = "\n".join(test_methods)
 
-        return f'''# Generated from specification by TDFLOW
+        return f'''{lineage_header}
+#
 # Component: {class_name}
 # Phase: RED - These tests should FAIL until implementation exists
 
@@ -369,6 +495,8 @@ class Test{class_name}:
         """
         Determine test file path based on framework.
 
+        Uses test_file from spec if provided, otherwise generates path.
+
         Args:
             component: Component being tested
 
@@ -376,6 +504,11 @@ class Test{class_name}:
             Path for test file
         """
         project_root = self.runner.project_path
+
+        # Use test_file from spec if provided
+        spec = self._load_component_spec(component.name)
+        if spec and spec.get("test_file"):
+            return project_root / spec["test_file"]
 
         if self.session.test_framework in ("xunit", "nunit", "mstest"):
             # Look for existing test project
@@ -400,6 +533,8 @@ class Test{class_name}:
         """
         Convert PascalCase/camelCase to snake_case.
 
+        Handles compound names with dots (e.g., "TokenBudget.record_usage").
+
         Args:
             name: Name to convert
 
@@ -407,6 +542,10 @@ class Test{class_name}:
             snake_case name
         """
         import re
+
+        # Handle compound names with dots - take just the method part
+        if "." in name:
+            name = name.split(".")[-1]
 
         # Insert underscore before capitals
         s1 = re.sub(r"(.)([A-Z][a-z]+)", r"\1_\2", name)

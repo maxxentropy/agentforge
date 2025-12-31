@@ -2,6 +2,7 @@
 # Machine-readable format for validation and tracking
 
 schema_version: "1.0"
+spec_id: brownfield-discovery-v1
 document_type: specification
 chunk_id: 4
 title: Brownfield Discovery

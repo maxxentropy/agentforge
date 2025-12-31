@@ -1,6 +1,7 @@
 # Recovery Strategies Specification
 # Phase 5 of Agent Harness Implementation
 
+spec_id: recovery-strategies-v1
 name: recovery_strategies
 version: "1.0"
 description: |

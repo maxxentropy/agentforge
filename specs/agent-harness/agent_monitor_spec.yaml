@@ -1,6 +1,7 @@
 # Agent Monitor Specification
 # Phase 4 of Agent Harness Implementation
 
+spec_id: agent-monitor-v1
 name: agent_monitor
 version: "1.0"
 description: |

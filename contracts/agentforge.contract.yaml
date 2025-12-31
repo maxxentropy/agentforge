@@ -282,6 +282,38 @@ checks:
     fix_hint: "Use pathlib.Path: path.exists(), path.is_file(), path / 'subdir'"
 
   # ===========================================================================
+  # LINEAGE AUDIT TRAIL - Enforces traceability
+  # ===========================================================================
+
+  # Files should have lineage metadata linking them to specs
+  - id: missing-lineage
+    name: "Missing Lineage Metadata"
+    description: |
+      Generated files should have lineage metadata in their header comments.
+      This provides an audit trail from spec -> test -> implementation.
+      Files without lineage cannot be properly verified during refactoring.
+    type: custom
+    severity: info  # Start as info, escalate after migration
+    enabled: true
+    config:
+      module: builtin_checks
+      function: check_lineage_metadata
+    applies_to:
+      paths:
+        - "tools/**/*.py"
+        - "tests/**/*.py"
+      exclude_paths:
+        - "**/__init__.py"
+        - "**/conftest.py"
+    fix_hint: |
+      Add lineage header to file:
+      # @spec_file: specs/your-spec.yaml
+      # @spec_id: your-spec-id
+      # @component_id: component-name
+      # @test_path: tests/path/to/test.py
+      Or regenerate file through TDFLOW to get proper lineage.
+
+  # ===========================================================================
   # TIER 3: TOOL-DEPENDENT - Disabled until tools available
   # ===========================================================================
 

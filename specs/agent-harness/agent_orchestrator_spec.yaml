@@ -1,6 +1,7 @@
 # Agent Orchestrator Specification
 # Phase 7 of Agent Harness Implementation (Final)
 
+spec_id: agent-orchestrator-v1
 name: agent_orchestrator
 version: "1.0"
 description: |

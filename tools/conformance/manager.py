@@ -161,7 +161,13 @@ class ConformanceManager:
             existing.last_seen_at = now
             if existing.status in (ViolationStatus.RESOLVED, ViolationStatus.STALE):
                 existing.reopen()
+            # Update test_path if not set (for existing violations created before this feature)
+            if not existing.test_path:
+                existing.test_path = Violation.compute_test_path(result["file"], self.repo_root)
             return existing
+
+        # Compute test_path at detection time - this tells fix workflow which tests to run
+        test_path = Violation.compute_test_path(result["file"], self.repo_root)
 
         # Create new violation
         return Violation(
@@ -178,6 +184,7 @@ class ConformanceManager:
             column_number=result.get("column"),
             rule_id=result.get("rule_id"),
             fix_hint=result.get("fix_hint"),
+            test_path=test_path,
         )
 
     def _mark_unseen_violations(

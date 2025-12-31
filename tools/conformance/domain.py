@@ -124,6 +124,9 @@ class Violation:
     resolution: Optional[Dict] = None
     exemption_id: Optional[str] = None
     exemption_expired_at: Optional[datetime] = None
+    # Test path for verification during fixes - computed at detection time
+    # This is the path to run pytest on to verify changes don't break tests
+    test_path: Optional[str] = None
 
     @staticmethod
     def generate_id(
@@ -157,6 +160,81 @@ class Violation:
         composite = f"{contract_id}|{check_id}|{normalized_path}|{line_str}|{rule_str}"
         hash_digest = hashlib.sha256(composite.encode()).hexdigest()[:12]
         return f"V-{hash_digest}"
+
+    @staticmethod
+    def compute_test_path(file_path: str, project_root: "Path") -> Optional[str]:
+        """
+        Compute the test path for verifying changes to a file.
+
+        This is called at violation detection time and stored with the violation.
+        The test_path tells the fix workflow which tests to run to verify
+        that changes don't break existing functionality.
+
+        Strategy (in order of preference):
+        1. Read lineage metadata from file (explicit, auditable)
+        2. Fall back to convention-based detection (legacy files)
+
+        Args:
+            file_path: Path to the file with the violation (relative to project)
+            project_root: Project root path for existence checks
+
+        Returns:
+            Test path to run, or None for no specific tests
+        """
+        from pathlib import Path as P
+
+        # STRATEGY 1: Try to read lineage metadata from the file
+        # This is the preferred path - explicit linkage from the spec/generation chain
+        try:
+            from tools.lineage import parse_lineage_from_file
+            full_path = project_root / file_path
+            if full_path.exists():
+                lineage = parse_lineage_from_file(full_path)
+                if lineage and lineage.test_path:
+                    # Lineage provides explicit test path - use it
+                    return lineage.test_path
+        except ImportError:
+            pass  # Lineage module not available, use fallback
+
+        # STRATEGY 2: Convention-based detection (fallback for legacy files)
+        # TODO: Log warning when falling back so we can track migration progress
+
+        # Test files run themselves
+        if file_path.startswith("tests/") and "/test_" in file_path:
+            if (project_root / file_path).exists():
+                return file_path
+
+        # conftest.py runs the containing directory
+        if file_path.endswith("conftest.py"):
+            parent = str(P(file_path).parent)
+            if (project_root / parent).exists():
+                return parent
+
+        # Source files - find corresponding test directory
+        # Convention: tools/X/... -> tests/unit/tools/X/
+        if file_path.startswith("tools/"):
+            parts = file_path.split("/")
+            if len(parts) >= 2:
+                # tools/conformance/... -> tests/unit/tools/conformance/
+                test_dir = f"tests/unit/tools/{parts[1]}/"
+                if (project_root / test_dir).exists():
+                    return test_dir
+                # Fallback to tools test directory
+                fallback = "tests/unit/tools/"
+                if (project_root / fallback).exists():
+                    return fallback
+
+        # CLI files -> integration tests
+        if file_path.startswith("cli/"):
+            test_dir = "tests/integration/cli/"
+            if (project_root / test_dir).exists():
+                return test_dir
+            fallback = "tests/integration/"
+            if (project_root / fallback).exists():
+                return fallback
+
+        # No specific test path - will run all tests (or skip verification)
+        return None
 
     def mark_resolved(self, reason: str, resolved_by: str = "system") -> None:
         """Mark violation as resolved."""

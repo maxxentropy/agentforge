@@ -19,11 +19,22 @@ properties:
   metadata:
     type: object
     required:
+      - spec_id
       - version
       - status
       - feature_name
       - created_date
     properties:
+      spec_id:
+        type: string
+        pattern: "^[a-z0-9-]+$"
+        minLength: 3
+        maxLength: 64
+        description: |
+          Unique specification identifier. This is the lynch pin of the audit trail,
+          linking spec → test → implementation → violation.
+          Format: lowercase alphanumeric with hyphens (e.g., "user-auth-oauth2", "memory-system-v1")
+          Should be deterministic and human-readable.
       version:
         type: string
         pattern: "^\\d+\\.\\d+(\\.\\d+)?$"

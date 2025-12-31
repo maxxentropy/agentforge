@@ -11,12 +11,17 @@ Key principles:
 - Token-efficient serialization to YAML
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+
+def _utc_now() -> datetime:
+    """Get current UTC time (Python 3.12+ compatible)."""
+    return datetime.now(timezone.utc)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -130,7 +135,7 @@ class TaskSpec(BaseModel):
     goal: str
     success_criteria: List[str]
     constraints: List[str] = Field(default_factory=list)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=_utc_now)
 
 
 class ViolationSpec(BaseModel):
@@ -263,7 +268,7 @@ class StateSpec(BaseModel):
     understanding: Understanding = Field(default_factory=Understanding)
     recent_actions: List[ActionRecord] = Field(default_factory=list)
     files_modified: List[str] = Field(default_factory=list)
-    last_updated: datetime = Field(default_factory=datetime.utcnow)
+    last_updated: datetime = Field(default_factory=_utc_now)
     error: Optional[str] = None
 
 

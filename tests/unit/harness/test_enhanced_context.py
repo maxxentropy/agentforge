@@ -1514,8 +1514,8 @@ class TestEnhancedContextBuilder:
         assert breakdown["total_tokens"] > 0
         assert breakdown["within_budget"] is True  # Should be within 6000 default
 
-    def test_executor_with_enhanced_builder(self, tmp_path):
-        """Test executor can use enhanced context builder."""
+    def test_executor_uses_enhanced_builder(self, tmp_path):
+        """Test executor always uses enhanced context builder."""
         from agentforge.core.harness.minimal_context import (
             TaskStateStore,
             MinimalContextExecutor,
@@ -1524,7 +1524,7 @@ class TestEnhancedContextBuilder:
 
         store = TaskStateStore(tmp_path)
 
-        # Create executor with enhanced builder enabled
+        # Create executor - enhanced builder is always used
         executor = MinimalContextExecutor(
             project_path=tmp_path,
             state_store=store,
@@ -1534,89 +1534,42 @@ class TestEnhancedContextBuilder:
         assert executor.use_enhanced_context_builder is True
         assert isinstance(executor.context_builder, EnhancedContextBuilder)
 
-    def test_executor_with_legacy_builder(self, tmp_path):
-        """Test executor defaults to legacy context builder."""
-        from agentforge.core.harness.minimal_context import (
-            TaskStateStore,
-            MinimalContextExecutor,
-            ContextBuilder,
-        )
-
-        store = TaskStateStore(tmp_path)
-
-        # Create executor with default (legacy) builder
-        executor = MinimalContextExecutor(
-            project_path=tmp_path,
-            state_store=store,
-            use_enhanced_context_builder=False,
-        )
-
-        assert executor.use_enhanced_context_builder is False
-        assert isinstance(executor.context_builder, ContextBuilder)
-
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # Phase 6: Feature Flag Migration Tests
 # ═══════════════════════════════════════════════════════════════════════════════
 
 
-class TestFeatureFlagMigration:
-    """Tests for unified use_enhanced_context feature flag."""
+class TestEnhancedContextAlwaysEnabled:
+    """Tests that enhanced context features are always enabled."""
 
-    def test_workflow_enhanced_context_flag(self, tmp_path):
-        """Test that use_enhanced_context flag configures executor correctly."""
+    def test_workflow_has_enhanced_context_enabled(self, tmp_path):
+        """Test that workflow always uses enhanced context."""
         from agentforge.core.harness.minimal_context import (
             MinimalContextFixWorkflow,
             EnhancedContextBuilder,
         )
 
-        # Create workflow with enhanced context enabled
-        workflow = MinimalContextFixWorkflow(
-            project_path=tmp_path,
-            use_enhanced_context=True,
-        )
+        # Create workflow - enhanced context is always enabled
+        workflow = MinimalContextFixWorkflow(project_path=tmp_path)
 
-        assert workflow.use_enhanced_context is True
         assert workflow.executor.use_phase_machine is True
         assert workflow.executor.use_enhanced_context_builder is True
         assert workflow.executor.enable_understanding_extraction is True
         assert isinstance(workflow.executor.context_builder, EnhancedContextBuilder)
 
-    def test_workflow_legacy_mode(self, tmp_path):
-        """Test that legacy mode uses original components."""
-        from agentforge.core.harness.minimal_context import (
-            MinimalContextFixWorkflow,
-            ContextBuilder,
-        )
-
-        # Create workflow with legacy mode (default)
-        workflow = MinimalContextFixWorkflow(
-            project_path=tmp_path,
-            use_enhanced_context=False,
-        )
-
-        assert workflow.use_enhanced_context is False
-        # Phase machine and understanding extraction are still on by default
-        assert workflow.executor.use_phase_machine is True
-        assert workflow.executor.enable_understanding_extraction is True
-        # But enhanced context builder is off
-        assert workflow.executor.use_enhanced_context_builder is False
-        assert isinstance(workflow.executor.context_builder, ContextBuilder)
-
-    def test_factory_function_with_enhanced_context(self, tmp_path):
-        """Test factory function supports enhanced context flag."""
+    def test_factory_function_creates_enhanced_workflow(self, tmp_path):
+        """Test factory function creates workflow with enhanced context."""
         from agentforge.core.harness.minimal_context import (
             create_minimal_fix_workflow,
             EnhancedContextBuilder,
         )
 
-        workflow = create_minimal_fix_workflow(
-            project_path=tmp_path,
-            use_enhanced_context=True,
-        )
+        workflow = create_minimal_fix_workflow(project_path=tmp_path)
 
-        assert workflow.use_enhanced_context is True
         assert isinstance(workflow.executor.context_builder, EnhancedContextBuilder)
+        assert workflow.executor.use_phase_machine is True
+        assert workflow.executor.use_enhanced_context_builder is True
 
     def test_enhanced_token_limits_exported(self):
         """Test that ENHANCED_TOKEN_LIMITS is exported and correct."""
@@ -1625,7 +1578,7 @@ class TestFeatureFlagMigration:
             ENHANCED_TOKEN_LIMITS,
         )
 
-        # Check legacy limits
+        # Check legacy limits (for reference)
         assert sum(TOKEN_BUDGET_LIMITS.values()) == 8000
 
         # Check enhanced limits are reduced
@@ -1639,32 +1592,30 @@ class TestFeatureFlagMigration:
         assert "understanding" in ENHANCED_TOKEN_LIMITS
         assert "precomputed" in ENHANCED_TOKEN_LIMITS
 
-    def test_enhanced_context_preserves_iterations(self, tmp_path):
-        """Test that enhanced context doesn't affect iteration settings."""
-        from agentforge.core.harness.minimal_context import (
-            MinimalContextFixWorkflow,
-        )
+    def test_workflow_preserves_custom_iterations(self, tmp_path):
+        """Test that custom iteration settings are preserved."""
+        from agentforge.core.harness.minimal_context import MinimalContextFixWorkflow
 
         workflow = MinimalContextFixWorkflow(
             project_path=tmp_path,
             base_iterations=20,
             max_iterations=100,
-            use_enhanced_context=True,
         )
 
         assert workflow.base_iterations == 20
         assert workflow.max_iterations == 100
 
-    def test_module_docstring_has_migration_guide(self):
-        """Test that module docstring includes migration guide."""
+    def test_module_docstring_documents_features(self):
+        """Test that module docstring documents enhanced features."""
         import agentforge.core.harness.minimal_context as mc
 
         docstring = mc.__doc__
 
-        assert "Migration Guide" in docstring
-        assert "use_enhanced_context=True" in docstring
+        assert "Enhanced Context Engineering" in docstring
         assert "PhaseMachine" in docstring
         assert "EnhancedContextBuilder" in docstring
+        assert "Token Budget Enforcement" in docstring
+        assert "Fact Compaction" in docstring
 
 
 class TestTokenBudgetEnforcement:

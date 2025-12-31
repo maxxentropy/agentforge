@@ -8,41 +8,35 @@ Key principle: Each step is a fresh conversation with exactly 2 messages:
 1. System prompt (phase-appropriate)
 2. Current context (built from persisted state)
 
-Context size: 4-8K tokens ALWAYS, regardless of step number.
+Context size: ~5000 tokens per step.
 
-Enhanced Context Engineering (v2):
-- Pydantic v2 models for validated, typed context
-- Fact-based understanding instead of raw tool output
-- Enhanced loop detection with semantic analysis
-- Explicit phase machine with guards and transitions
+Enhanced Context Engineering (v2) - Always Enabled
+--------------------------------------------------
+All enhanced features are now the default:
 
-Migration Guide
----------------
-To enable Enhanced Context Engineering in your workflow:
+- **PhaseMachine**: Explicit phase transitions with guards
+- **EnhancedContextBuilder**: Pydantic v2 models for validated, typed context
+- **Understanding Extraction**: Fact-based reasoning instead of raw tool output
+- **Enhanced Loop Detection**: Semantic analysis (identical actions, error cycles)
+- **Token Budget Enforcement**: Progressive compaction when over budget
+- **Fact Compaction**: Proactive pruning (max 20 facts, prioritized by value)
+- **Value Hints**: Precomputed context mapped to action parameter hints
 
+Usage
+-----
     from agentforge.core.harness.minimal_context import (
         MinimalContextFixWorkflow,
         create_minimal_fix_workflow,
     )
 
-    # Option 1: Direct instantiation
-    workflow = MinimalContextFixWorkflow(
-        project_path=Path("."),
-        use_enhanced_context=True,  # Enable all enhancements
-    )
+    # Direct instantiation
+    workflow = MinimalContextFixWorkflow(project_path=Path("."))
 
-    # Option 2: Factory function (coming soon)
-    workflow = create_minimal_fix_workflow(
-        project_path=Path("."),
-        use_enhanced_context=True,
-    )
+    # Factory function
+    workflow = create_minimal_fix_workflow(project_path=Path("."))
 
-Enhanced mode enables:
-- PhaseMachine for explicit phase transitions with guards
-- EnhancedContextBuilder with typed Pydantic models
-- Understanding extraction (facts from tool outputs)
-- Enhanced loop detection (semantic analysis)
-- Reduced token usage (~5000 vs 8000 tokens)
+    # Fix a violation
+    result = workflow.fix_violation("V-abc123")
 """
 
 from .state_store import TaskStateStore, TaskState, TaskPhase

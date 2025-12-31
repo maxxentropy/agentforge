@@ -11,12 +11,17 @@ Enhanced with fact storage for the Understanding Extraction system.
 
 import yaml
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .context_models import Fact, Understanding
+
+
+def _utc_now() -> datetime:
+    """Get current UTC time (Python 3.12+ compatible)."""
+    return datetime.now(timezone.utc)
 
 
 @dataclass
@@ -25,7 +30,7 @@ class WorkingMemoryItem:
     item_type: str  # "action_result", "loaded_context", "note"
     key: str  # Unique identifier
     content: Any
-    added_at: datetime = field(default_factory=datetime.utcnow)
+    added_at: datetime = field(default_factory=_utc_now)
     step: Optional[int] = None
     expires_after_steps: Optional[int] = None
     pinned: bool = False

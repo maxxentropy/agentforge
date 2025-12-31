@@ -46,13 +46,14 @@ class MinimalContextFixWorkflow:
     - Token usage bounded regardless of step count
     - Resumable after crashes
 
-    Enhanced Context Engineering (v2):
-    When use_enhanced_context=True:
-    - Uses PhaseMachine for explicit phase transitions with guards
-    - Uses EnhancedContextBuilder with Pydantic models
-    - Extracts facts from tool outputs instead of storing raw data
+    Enhanced Context Engineering (v2) features (always enabled):
+    - PhaseMachine for explicit phase transitions with guards
+    - EnhancedContextBuilder with Pydantic models
+    - Fact extraction from tool outputs instead of raw data
     - Enhanced loop detection with semantic analysis
-    - Targets 5000 tokens per step (vs 8000 in legacy mode)
+    - Proactive fact compaction (max 20 facts)
+    - Token budget enforcement with progressive compaction
+    - Targets 5000 tokens per step
     """
 
     def __init__(
@@ -61,7 +62,6 @@ class MinimalContextFixWorkflow:
         base_iterations: int = 15,
         max_iterations: int = 50,
         require_commit_approval: bool = True,
-        use_enhanced_context: bool = False,
     ):
         """
         Initialize workflow.
@@ -71,18 +71,11 @@ class MinimalContextFixWorkflow:
             base_iterations: Initial step budget (extends with progress)
             max_iterations: Hard ceiling for steps (cost control)
             require_commit_approval: Require human approval for commits
-            use_enhanced_context: Enable Enhanced Context Engineering (Phase 6)
-                When True, enables:
-                - PhaseMachine for phase transitions
-                - EnhancedContextBuilder with typed models
-                - Understanding extraction from tool outputs
-                - Enhanced loop detection
         """
         self.project_path = Path(project_path)
         self.base_iterations = base_iterations
         self.max_iterations = max_iterations
         self.require_commit_approval = require_commit_approval
-        self.use_enhanced_context = use_enhanced_context
 
         # Initialize state store
         self.state_store = TaskStateStore(project_path)
@@ -98,14 +91,14 @@ class MinimalContextFixWorkflow:
         # Build action executors
         self.action_executors = self._build_action_executors()
 
-        # Create executor with enhanced context settings
+        # Create executor with all enhanced context features enabled
         self.executor = MinimalContextExecutor(
             project_path=project_path,
             state_store=self.state_store,
             action_executors=self.action_executors,
-            enable_understanding_extraction=use_enhanced_context or True,  # Always on
-            use_phase_machine=use_enhanced_context or True,  # Always on
-            use_enhanced_context_builder=use_enhanced_context,  # Only with flag
+            enable_understanding_extraction=True,
+            use_phase_machine=True,
+            use_enhanced_context_builder=True,
         )
 
     def _build_action_executors(self) -> Dict[str, Callable]:
@@ -1427,17 +1420,22 @@ def create_minimal_fix_workflow(
     require_commit_approval: bool = True,
     base_iterations: int = 15,
     max_iterations: int = 50,
-    use_enhanced_context: bool = False,
 ) -> MinimalContextFixWorkflow:
     """
     Factory function to create a MinimalContextFixWorkflow.
+
+    Enhanced Context Engineering features are always enabled:
+    - PhaseMachine for phase transitions
+    - EnhancedContextBuilder with Pydantic models
+    - Understanding extraction from tool outputs
+    - Enhanced loop detection
+    - Token budget enforcement
 
     Args:
         project_path: Project root directory
         require_commit_approval: Require human approval for commits
         base_iterations: Initial step budget (extends with progress)
         max_iterations: Hard ceiling for steps (cost control)
-        use_enhanced_context: Enable Enhanced Context Engineering (Phase 6)
 
     Returns:
         Configured MinimalContextFixWorkflow
@@ -1447,5 +1445,4 @@ def create_minimal_fix_workflow(
         base_iterations=base_iterations,
         max_iterations=max_iterations,
         require_commit_approval=require_commit_approval,
-        use_enhanced_context=use_enhanced_context,
     )

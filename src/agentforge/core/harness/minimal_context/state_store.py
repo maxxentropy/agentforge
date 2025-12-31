@@ -20,13 +20,20 @@ Directory structure:
 import uuid
 import yaml
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
+
+
 from pathlib import Path
 from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .phase_machine import PhaseMachine
+
+
+def _utc_now() -> datetime:
+    """Get current UTC time (Python 3.12+ compatible)."""
+    return datetime.now(timezone.utc)
 
 
 class TaskPhase(str, Enum):
@@ -51,7 +58,7 @@ class ActionRecord:
     parameters: Dict[str, Any]
     result: str  # "success", "failure", "partial"
     summary: str
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=_utc_now)
     duration_ms: Optional[int] = None
     error: Optional[str] = None
 
@@ -124,13 +131,13 @@ class TaskState:
     goal: str
     success_criteria: List[str]
     constraints: List[str] = field(default_factory=list)
-    created_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=_utc_now)
 
     # Mutable (from state.yaml)
     phase: TaskPhase = TaskPhase.INIT
     current_step: int = 0
     verification: VerificationStatus = field(default_factory=VerificationStatus)
-    last_updated: datetime = field(default_factory=datetime.utcnow)
+    last_updated: datetime = field(default_factory=_utc_now)
     error: Optional[str] = None
 
     # Task-type specific data
@@ -294,7 +301,7 @@ class TaskStateStore:
 
     def _save_state(self, state: TaskState) -> None:
         """Save mutable state to disk."""
-        state.last_updated = datetime.utcnow()
+        state.last_updated = _utc_now()
         task_dir = self._task_dir(state.task_id)
         with open(task_dir / "state.yaml", "w") as f:
             yaml.dump(state.to_state_dict(), f, default_flow_style=False)
@@ -406,7 +413,7 @@ class TaskStateStore:
                 checks_failing=checks_failing,
                 tests_passing=tests_passing,
                 ready_for_completion=(checks_failing == 0 and tests_passing),
-                last_check_time=datetime.utcnow(),
+                last_check_time=_utc_now(),
                 details=details or {},
             )
             self._save_state(state)

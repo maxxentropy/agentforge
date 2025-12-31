@@ -1,0 +1,328 @@
+# Agent Orchestrator Specification
+# Phase 7 of Agent Harness Implementation (Final)
+
+name: agent_orchestrator
+version: "1.0"
+description: |
+  Main orchestrator that coordinates all Agent Harness components.
+
+  Provides a unified interface for:
+  - Managing agent sessions
+  - Coordinating tool execution
+  - Monitoring agent health
+  - Executing recovery strategies
+  - Handling human escalations
+  - Integrating memory across tiers
+
+  This is the top-level component that ties together all harness functionality.
+
+components:
+  - name: orchestrator_domain
+    description: Domain entities for orchestration
+    location: tools/harness/orchestrator_domain.py
+    test_location: tests/unit/harness/test_orchestrator_domain.py
+    entities:
+      - name: OrchestratorState
+        type: Enum
+        values: [IDLE, RUNNING, PAUSED, RECOVERING, WAITING_FOR_HUMAN, COMPLETED, FAILED]
+        description: Current state of the orchestrator
+
+      - name: ExecutionMode
+        type: Enum
+        values: [AUTONOMOUS, SUPERVISED, INTERACTIVE]
+        description: How much human oversight is required
+
+      - name: AgentTask
+        description: A unit of work for the agent
+        fields:
+          - name: id
+            type: str
+          - name: description
+            type: str
+          - name: context
+            type: dict
+          - name: priority
+            type: int
+            default: 0
+          - name: created_at
+            type: datetime
+          - name: started_at
+            type: Optional[datetime]
+          - name: completed_at
+            type: Optional[datetime]
+          - name: status
+            type: str
+            default: "pending"
+
+      - name: ExecutionResult
+        description: Result of an agent execution step
+        fields:
+          - name: task_id
+            type: str
+          - name: success
+            type: bool
+          - name: output
+            type: Optional[str]
+          - name: error
+            type: Optional[str]
+          - name: duration_seconds
+            type: float
+          - name: tools_used
+            type: list[str]
+          - name: tokens_consumed
+            type: int
+            default: 0
+
+      - name: OrchestratorConfig
+        description: Configuration for orchestrator behavior
+        fields:
+          - name: execution_mode
+            type: ExecutionMode
+            default: AUTONOMOUS
+          - name: max_iterations
+            type: int
+            default: 100
+          - name: health_check_interval
+            type: int
+            default: 10
+            description: Check health every N iterations
+          - name: auto_checkpoint
+            type: bool
+            default: True
+          - name: checkpoint_interval
+            type: int
+            default: 20
+            description: Create checkpoint every N iterations
+          - name: recovery_enabled
+            type: bool
+            default: True
+          - name: escalation_enabled
+            type: bool
+            default: True
+
+  - name: agent_orchestrator
+    description: Main orchestrator coordinating all components
+    location: tools/harness/agent_orchestrator.py
+    test_location: tests/unit/harness/test_agent_orchestrator.py
+    class: AgentOrchestrator
+    methods:
+      - name: __init__
+        params:
+          - name: session_manager
+            type: SessionManager
+          - name: memory_store
+            type: MemoryStore
+          - name: tool_selector
+            type: ToolSelector
+          - name: agent_monitor
+            type: AgentMonitor
+          - name: recovery_executor
+            type: RecoveryExecutor
+          - name: escalation_manager
+            type: EscalationManager
+          - name: config
+            type: Optional[OrchestratorConfig]
+            default: null
+
+      - name: start_session
+        description: Initialize a new agent session
+        params:
+          - name: task_description
+            type: str
+          - name: context
+            type: Optional[dict]
+            default: null
+          - name: execution_mode
+            type: Optional[ExecutionMode]
+            default: null
+        returns: str
+        behavior: |
+          1. Create new session via SessionManager
+          2. Initialize memory context
+          3. Select tools for workflow phase
+          4. Return session ID
+
+      - name: resume_session
+        description: Resume a paused session
+        params:
+          - name: session_id
+            type: str
+        returns: bool
+        behavior: |
+          1. Load session state
+          2. Restore memory context
+          3. Return True if successful
+
+      - name: execute_step
+        description: Execute one iteration of agent work
+        params:
+          - name: session_id
+            type: str
+          - name: input_data
+            type: Optional[dict]
+            default: null
+        returns: ExecutionResult
+        behavior: |
+          1. Check for pending escalations
+          2. Get available tools for current phase
+          3. Execute agent logic (placeholder for LLM call)
+          4. Record observation to monitor
+          5. Update memory with results
+          6. Check health and recover if needed
+          7. Create checkpoint if interval reached
+
+      - name: run_until_complete
+        description: Run agent until task completion or limit
+        params:
+          - name: session_id
+            type: str
+          - name: max_iterations
+            type: Optional[int]
+            default: null
+        returns: ExecutionResult
+        behavior: |
+          1. Loop executing steps
+          2. Check for completion condition
+          3. Handle interrupts (pause, escalation)
+          4. Return final result
+
+      - name: pause_session
+        description: Pause agent execution
+        params:
+          - name: session_id
+            type: str
+          - name: reason
+            type: str
+        returns: bool
+
+      - name: get_status
+        description: Get current orchestrator status
+        params:
+          - name: session_id
+            type: str
+        returns: dict
+        behavior: |
+          Returns dict with:
+          - state: OrchestratorState
+          - iteration_count: int
+          - health_status: AgentHealth
+          - pending_escalations: int
+          - last_checkpoint_id: Optional[str]
+
+      - name: get_available_tools
+        description: Get tools available for current session
+        params:
+          - name: session_id
+            type: str
+        returns: list[str]
+
+      - name: handle_health_check
+        description: Check health and trigger recovery if needed
+        params:
+          - name: session_id
+            type: str
+        returns: Optional[RecoveryAttempt]
+        behavior: |
+          1. Get health from monitor
+          2. If issues found, execute recovery
+          3. Return recovery attempt if any
+
+      - name: handle_escalation
+        description: Process pending escalation
+        params:
+          - name: session_id
+            type: str
+          - name: resolution
+            type: EscalationResolution
+        returns: bool
+        behavior: |
+          1. Apply resolution to session
+          2. Update session state
+          3. Resume if appropriate
+
+      - name: complete_session
+        description: Mark session as completed
+        params:
+          - name: session_id
+            type: str
+          - name: result
+            type: ExecutionResult
+        returns: bool
+
+      - name: fail_session
+        description: Mark session as failed
+        params:
+          - name: session_id
+            type: str
+          - name: error
+            type: str
+        returns: bool
+
+      - name: get_session_history
+        description: Get execution history for session
+        params:
+          - name: session_id
+            type: str
+        returns: list[ExecutionResult]
+
+      - name: cleanup
+        description: Clean up old sessions and checkpoints
+        params:
+          - name: max_age_days
+            type: int
+            default: 30
+        returns: int
+        behavior: Returns count of cleaned items
+
+integration:
+  - component: session_manager
+    usage: |
+      - Create/load/save sessions
+      - Track session state transitions
+      - Persist session data
+
+  - component: memory_store
+    usage: |
+      - Store task context
+      - Retrieve relevant memories
+      - Track conversation history
+
+  - component: tool_selector
+    usage: |
+      - Get tools for current phase
+      - Validate tool access
+      - Track tool usage
+
+  - component: agent_monitor
+    usage: |
+      - Record observations
+      - Check agent health
+      - Detect issues (loops, drift, etc.)
+
+  - component: recovery_executor
+    usage: |
+      - Execute recovery when health issues detected
+      - Create checkpoints
+      - Rollback if needed
+
+  - component: escalation_manager
+    usage: |
+      - Create escalations for human intervention
+      - Check for pending escalations
+      - Apply resolutions
+
+constraints:
+  - Orchestrator must be stateless (state lives in session)
+  - All component interactions must be logged
+  - Health checks must not block execution
+  - Recovery must preserve session continuity
+  - Escalations must pause execution until resolved
+  - Checkpoints must be atomic
+
+related_files:
+  - tools/harness/session_manager.py
+  - tools/harness/memory_store.py
+  - tools/harness/tool_selector.py
+  - tools/harness/agent_monitor.py
+  - tools/harness/recovery_executor.py
+  - tools/harness/escalation_manager.py

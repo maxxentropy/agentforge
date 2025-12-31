@@ -117,6 +117,13 @@ class ContextBuilder:
             )
         sections["loaded_context"] = estimate_tokens(loaded_context_yaml)
 
+        # 8. Understanding/Facts (Enhanced Context Engineering)
+        facts_context = memory_manager.get_facts_for_context(current_step=state.current_step)
+        facts_yaml = ""
+        if facts_context:
+            facts_yaml = yaml.dump(facts_context, default_flow_style=False)
+        sections["understanding"] = estimate_tokens(facts_yaml)
+
         # Build user message
         user_message = self._format_user_message(
             task_frame=task_frame,
@@ -125,6 +132,7 @@ class ContextBuilder:
             verification=verification_yaml,
             available_actions=actions_yaml,
             loaded_context=loaded_context_yaml,
+            understanding=facts_yaml,
         )
 
         total_tokens = sum(sections.values())
@@ -144,6 +152,7 @@ class ContextBuilder:
         verification: str,
         available_actions: str,
         loaded_context: str = "",
+        understanding: str = "",
     ) -> str:
         """Format the complete user message."""
         parts = [
@@ -158,6 +167,16 @@ class ContextBuilder:
             "```",
             "",
         ]
+
+        # Understanding section (facts extracted from previous actions)
+        if understanding and understanding.strip():
+            parts.extend([
+                "# Understanding",
+                "```yaml",
+                understanding.strip(),
+                "```",
+                "",
+            ])
 
         if recent_actions and recent_actions.strip() != "[]":
             parts.extend([

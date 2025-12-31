@@ -5,13 +5,18 @@ Working Memory Manager
 Manages the bounded rolling buffer of recent context items.
 Items are automatically evicted (FIFO) when the buffer is full,
 unless marked as pinned.
+
+Enhanced with fact storage for the Understanding Extraction system.
 """
 
 import yaml
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .context_models import Fact, Understanding
 
 
 @dataclass
@@ -374,3 +379,182 @@ class WorkingMemoryManager:
                 self._save(items)
                 return True
         return False
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # Fact Storage (Enhanced Context Engineering)
+    # ═══════════════════════════════════════════════════════════════════════════
+
+    def add_fact(
+        self,
+        fact_id: str,
+        category: str,
+        statement: str,
+        confidence: float,
+        source: str,
+        step: int,
+        supersedes: Optional[str] = None,
+    ) -> None:
+        """
+        Add a fact to working memory.
+
+        Facts are stored with item_type="fact" and are used by the
+        Understanding Extraction system.
+
+        Args:
+            fact_id: Unique identifier for the fact
+            category: Fact category (code_structure, inference, pattern, verification, error)
+            statement: The fact statement
+            confidence: Confidence score 0.0-1.0
+            source: What produced this fact
+            step: Step when fact was established
+            supersedes: ID of fact this replaces (if any)
+        """
+        content = {
+            "id": fact_id,
+            "category": category,
+            "statement": statement,
+            "confidence": confidence,
+            "source": source,
+            "supersedes": supersedes,
+        }
+        # Facts don't expire by step count but can be superseded
+        self.add(
+            item_type="fact",
+            key=f"fact:{fact_id}",
+            content=content,
+            step=step,
+            pinned=confidence >= 0.9,  # High-confidence facts are pinned
+        )
+
+    def add_facts_from_list(self, facts: List["Fact"], step: int) -> None:
+        """
+        Add multiple facts from Fact model objects.
+
+        Args:
+            facts: List of Fact model objects
+            step: Current step number
+        """
+        for fact in facts:
+            self.add_fact(
+                fact_id=fact.id,
+                category=fact.category.value if hasattr(fact.category, 'value') else str(fact.category),
+                statement=fact.statement,
+                confidence=fact.confidence,
+                source=fact.source,
+                step=step,
+                supersedes=fact.supersedes,
+            )
+
+    def get_facts(
+        self,
+        current_step: Optional[int] = None,
+        category: Optional[str] = None,
+        min_confidence: float = 0.0,
+    ) -> List[Dict[str, Any]]:
+        """
+        Get facts from working memory.
+
+        Args:
+            current_step: For filtering expired items
+            category: Optional category filter
+            min_confidence: Minimum confidence threshold
+
+        Returns:
+            List of fact dicts
+        """
+        items = self.get_by_type("fact", current_step)
+
+        facts = []
+        superseded_ids = set()
+
+        # First pass: collect superseded IDs
+        for item in items:
+            if item.content.get("supersedes"):
+                superseded_ids.add(item.content["supersedes"])
+
+        # Second pass: filter facts
+        for item in items:
+            fact_id = item.content.get("id")
+            if fact_id in superseded_ids:
+                continue  # Skip superseded facts
+
+            if category and item.content.get("category") != category:
+                continue
+
+            if item.content.get("confidence", 0) < min_confidence:
+                continue
+
+            facts.append({
+                "id": fact_id,
+                "category": item.content.get("category"),
+                "statement": item.content.get("statement"),
+                "confidence": item.content.get("confidence"),
+                "source": item.content.get("source"),
+                "step": item.step,
+            })
+
+        # Sort by step (most recent first) then by confidence
+        facts.sort(key=lambda f: (-f.get("step", 0), -f.get("confidence", 0)))
+
+        return facts
+
+    def get_high_confidence_facts(
+        self,
+        current_step: Optional[int] = None,
+        threshold: float = 0.8,
+        limit: int = 10,
+    ) -> List[Dict[str, Any]]:
+        """
+        Get high-confidence facts for context inclusion.
+
+        Args:
+            current_step: For filtering expired items
+            threshold: Minimum confidence threshold
+            limit: Maximum facts to return
+
+        Returns:
+            List of fact dicts sorted by confidence
+        """
+        facts = self.get_facts(current_step, min_confidence=threshold)
+        return facts[:limit]
+
+    def get_facts_for_context(
+        self,
+        current_step: Optional[int] = None,
+    ) -> Dict[str, List[str]]:
+        """
+        Get facts formatted for context builder.
+
+        Returns facts grouped by category with just the statements.
+
+        Args:
+            current_step: For filtering expired items
+
+        Returns:
+            Dict mapping category -> list of statements
+        """
+        facts = self.get_high_confidence_facts(current_step, threshold=0.7, limit=15)
+
+        by_category: Dict[str, List[str]] = {}
+        for fact in facts:
+            cat = fact.get("category", "other")
+            if cat not in by_category:
+                by_category[cat] = []
+            statement = fact.get("statement", "")
+            conf = fact.get("confidence", 0)
+            by_category[cat].append(f"{statement} (conf: {conf:.2f})")
+
+        return by_category
+
+    def clear_facts(self) -> int:
+        """
+        Clear all facts from working memory.
+
+        Returns:
+            Number of facts cleared
+        """
+        items = self._load()
+        original_count = len([i for i in items if i.item_type == "fact"])
+        items = [i for i in items if i.item_type != "fact"]
+        self._save(items)
+        return original_count

@@ -664,3 +664,192 @@ class TestPhaseContext:
 
         assert ctx.has_fact_of_type("code_structure")
         assert not ctx.has_fact_of_type("verification")
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Integration Tests (Phase 2)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+import tempfile
+from pathlib import Path
+
+from agentforge.core.harness.minimal_context.working_memory import WorkingMemoryManager
+
+
+class TestWorkingMemoryFactStorage:
+    """Tests for fact storage in WorkingMemoryManager."""
+
+    def test_add_and_get_fact(self):
+        """Test adding and retrieving facts."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            mgr = WorkingMemoryManager(Path(tmpdir))
+
+            mgr.add_fact(
+                fact_id="fact_001",
+                category="verification",
+                statement="Check passed",
+                confidence=0.95,
+                source="run_check:test",
+                step=1,
+            )
+
+            facts = mgr.get_facts()
+            assert len(facts) == 1
+            assert facts[0]["statement"] == "Check passed"
+            assert facts[0]["confidence"] == 0.95
+
+    def test_supersession(self):
+        """Test fact supersession in working memory."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            mgr = WorkingMemoryManager(Path(tmpdir))
+
+            # Add old fact
+            mgr.add_fact(
+                fact_id="fact_001",
+                category="verification",
+                statement="Check failed",
+                confidence=1.0,
+                source="run_check",
+                step=1,
+            )
+
+            # Add new fact that supersedes
+            mgr.add_fact(
+                fact_id="fact_002",
+                category="verification",
+                statement="Check passed",
+                confidence=1.0,
+                source="run_check",
+                step=2,
+                supersedes="fact_001",
+            )
+
+            # Only new fact should be returned
+            facts = mgr.get_facts()
+            assert len(facts) == 1
+            assert facts[0]["id"] == "fact_002"
+
+    def test_get_facts_for_context(self):
+        """Test getting facts formatted for context."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            mgr = WorkingMemoryManager(Path(tmpdir))
+
+            mgr.add_fact(
+                fact_id="fact_001",
+                category="verification",
+                statement="Check passed",
+                confidence=0.9,
+                source="run_check",
+                step=1,
+            )
+
+            mgr.add_fact(
+                fact_id="fact_002",
+                category="error",
+                statement="Edit failed",
+                confidence=0.85,
+                source="edit_file",
+                step=2,
+            )
+
+            ctx_facts = mgr.get_facts_for_context()
+
+            # Should be grouped by category
+            assert "verification" in ctx_facts
+            assert "error" in ctx_facts
+            assert len(ctx_facts["verification"]) == 1
+            assert "Check passed" in ctx_facts["verification"][0]
+
+    def test_high_confidence_pinning(self):
+        """Test that high-confidence facts are pinned."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            mgr = WorkingMemoryManager(Path(tmpdir), max_items=2)
+
+            # Add high-confidence fact (should be pinned)
+            mgr.add_fact(
+                fact_id="high_conf",
+                category="verification",
+                statement="Definitely true",
+                confidence=0.95,
+                source="test",
+                step=1,
+            )
+
+            # Add low-confidence facts (should be evictable)
+            for i in range(5):
+                mgr.add_fact(
+                    fact_id=f"low_conf_{i}",
+                    category="inference",
+                    statement=f"Maybe true {i}",
+                    confidence=0.5,
+                    source="test",
+                    step=i + 2,
+                )
+
+            # High-confidence fact should still be there
+            facts = mgr.get_facts(min_confidence=0.9)
+            assert len(facts) >= 1
+            high_conf_facts = [f for f in facts if f["id"] == "high_conf"]
+            assert len(high_conf_facts) == 1
+
+    def test_add_facts_from_list(self):
+        """Test adding facts from Fact model objects."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            mgr = WorkingMemoryManager(Path(tmpdir))
+
+            facts = [
+                Fact(
+                    id="fact_001",
+                    category=FactCategory.VERIFICATION,
+                    statement="Check passed",
+                    confidence=0.95,
+                    source="run_check",
+                    step=1,
+                ),
+                Fact(
+                    id="fact_002",
+                    category=FactCategory.ERROR,
+                    statement="Edit failed",
+                    confidence=0.8,
+                    source="edit_file",
+                    step=2,
+                ),
+            ]
+
+            mgr.add_facts_from_list(facts, step=1)
+
+            stored = mgr.get_facts()
+            assert len(stored) == 2
+
+    def test_clear_facts(self):
+        """Test clearing all facts."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            mgr = WorkingMemoryManager(Path(tmpdir))
+
+            mgr.add_fact(
+                fact_id="fact_001",
+                category="verification",
+                statement="Test",
+                confidence=0.9,
+                source="test",
+                step=1,
+            )
+
+            # Also add a regular action result
+            mgr.add_action_result(
+                action="test",
+                result="success",
+                summary="Test action",
+                step=1,
+            )
+
+            cleared = mgr.clear_facts()
+            assert cleared == 1
+
+            # Facts should be gone
+            facts = mgr.get_facts()
+            assert len(facts) == 0
+
+            # Action results should still be there
+            actions = mgr.get_action_results()
+            assert len(actions) == 1

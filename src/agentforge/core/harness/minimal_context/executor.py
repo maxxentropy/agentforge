@@ -10,6 +10,8 @@ Key guarantees:
 - No step exceeds 8K tokens
 - All state recoverable from disk after crash
 - Rate limits never exceeded
+
+Enhanced with Understanding Extraction for fact-based context.
 """
 
 import asyncio
@@ -27,6 +29,8 @@ from agentforge.core.generate.provider import LLMProvider, get_provider
 from .state_store import TaskStateStore, TaskState, TaskPhase
 from .context_builder import ContextBuilder
 from .working_memory import WorkingMemoryManager
+from .understanding import UnderstandingExtractor
+from .context_models import ActionResult
 
 
 @dataclass
@@ -238,6 +242,7 @@ class MinimalContextExecutor:
         action_executors: Optional[Dict[str, ActionExecutor]] = None,
         model: str = "claude-sonnet-4-20250514",
         max_tokens: int = 4096,
+        enable_understanding_extraction: bool = True,
     ):
         """
         Initialize the executor.
@@ -249,6 +254,7 @@ class MinimalContextExecutor:
             action_executors: Dict mapping action names to executor functions
             model: Model to use for LLM calls
             max_tokens: Maximum tokens for LLM response
+            enable_understanding_extraction: Enable fact extraction from actions
         """
         self.project_path = Path(project_path)
         self.provider = provider or get_provider()
@@ -257,6 +263,10 @@ class MinimalContextExecutor:
         self.action_executors = action_executors or {}
         self.model = model
         self.max_tokens = max_tokens
+
+        # Understanding extraction (Phase 2 of Enhanced Context Engineering)
+        self.enable_understanding_extraction = enable_understanding_extraction
+        self.understanding_extractor = UnderstandingExtractor() if enable_understanding_extraction else None
 
     def register_action(self, name: str, executor: ActionExecutor) -> None:
         """Register an action executor."""
@@ -348,6 +358,15 @@ class MinimalContextExecutor:
                 step=step,
                 target=action_params.get("path") or action_params.get("file_path"),
             )
+
+            # Extract facts from action result (Enhanced Context Engineering)
+            if self.enable_understanding_extraction and self.understanding_extractor:
+                self._extract_and_store_facts(
+                    action_name=action_name,
+                    action_result=action_result,
+                    step=step,
+                    memory_manager=memory_manager,
+                )
 
             # 7. Determine if we should continue
             should_continue = self._should_continue(action_name, action_result, state)
@@ -584,6 +603,59 @@ class MinimalContextExecutor:
             return False
 
         return True
+
+    def _extract_and_store_facts(
+        self,
+        action_name: str,
+        action_result: Dict[str, Any],
+        step: int,
+        memory_manager: WorkingMemoryManager,
+    ) -> None:
+        """
+        Extract facts from action result and store in working memory.
+
+        This is part of the Enhanced Context Engineering system - instead of
+        storing raw action outputs, we extract typed facts that can be used
+        to build more compact context.
+
+        Args:
+            action_name: Name of the action that was executed
+            action_result: Result dict from action execution
+            step: Current step number
+            memory_manager: Working memory manager for the task
+        """
+        if not self.understanding_extractor:
+            return
+
+        # Convert status string to ActionResult enum
+        status = action_result.get("status", "success")
+        result_enum = {
+            "success": ActionResult.SUCCESS,
+            "failure": ActionResult.FAILURE,
+            "partial": ActionResult.PARTIAL,
+        }.get(status, ActionResult.SUCCESS)
+
+        # Get the output text (summary + error if present)
+        output = action_result.get("summary", "")
+        if action_result.get("error"):
+            output += f"\nError: {action_result['error']}"
+
+        # Also include raw_output if available (from tool execution)
+        if action_result.get("raw_output"):
+            output += f"\n{action_result['raw_output']}"
+
+        # Extract facts using the rule-based extractor
+        facts = self.understanding_extractor.extract(
+            tool_name=action_name,
+            output=output,
+            result=result_enum,
+            step=step,
+            use_llm_fallback=False,  # Rule-based only for now
+        )
+
+        # Store extracted facts in working memory
+        if facts:
+            memory_manager.add_facts_from_list(facts, step=step)
 
     def run_until_complete(
         self,

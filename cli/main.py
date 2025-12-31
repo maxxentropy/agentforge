@@ -43,6 +43,8 @@ from cli.click_commands.discover import discover
 from cli.click_commands.bridge import bridge
 from cli.click_commands.tdflow import tdflow
 from cli.click_commands.ci import ci
+from cli.click_commands.generate import generate
+from cli.click_commands.agent import agent
 
 # Register spec workflow commands
 cli.add_command(intake)
@@ -67,6 +69,8 @@ cli.add_command(discover)
 cli.add_command(bridge)
 cli.add_command(tdflow)
 cli.add_command(ci)
+cli.add_command(generate)
+cli.add_command(agent)
 
 
 def main():

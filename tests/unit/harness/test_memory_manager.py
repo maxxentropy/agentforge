@@ -127,8 +127,9 @@ class TestMemoryManagerSet:
         manager = MemoryManager(mock_store)
         manager.set("test_key", "test_value", MemoryTier.TASK, ttl=ttl, metadata=metadata)
 
+        # TTL is converted from timedelta to seconds (int)
         mock_entry_class.create.assert_called_once_with(
-            key="test_key", value="test_value", ttl=ttl, metadata=metadata
+            key="test_key", value="test_value", ttl=3600, metadata=metadata
         )
         mock_store.set.assert_called_once_with("test_key", mock_entry, MemoryTier.TASK)
 

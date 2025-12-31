@@ -72,7 +72,8 @@ class MemoryManager:
             ttl: Optional time-to-live for the entry
             metadata: Optional metadata for the entry
         """
-        entry = MemoryEntry.create(key=key, value=value, ttl=ttl, metadata=metadata)
+        ttl_seconds = int(ttl.total_seconds()) if ttl else None
+        entry = MemoryEntry.create(key=key, value=value, ttl=ttl_seconds, metadata=metadata)
         self.store.set(key, entry, tier)
     
     def merge(self, key: str, partial_value: Dict[str, Any], tier: MemoryTier,
@@ -93,7 +94,8 @@ class MemoryManager:
         
         if existing_entry is None or existing_entry.is_expired():
             # Create new entry
-            entry = MemoryEntry.create(key=key, value=partial_value, ttl=ttl, metadata=metadata)
+            ttl_seconds = int(ttl.total_seconds()) if ttl else None
+            entry = MemoryEntry.create(key=key, value=partial_value, ttl=ttl_seconds, metadata=metadata)
             self.store.set(key, entry, tier)
         else:
             # Merge into existing

@@ -7,7 +7,8 @@
 
 import time
 from datetime import datetime
-from typing import Optional, Any
+from pathlib import Path
+from typing import Optional, Any, TYPE_CHECKING
 
 from .orchestrator_domain import (
     OrchestratorState,
@@ -20,6 +21,10 @@ from .monitor_domain import HealthStatus
 from .recovery_domain import RecoveryAttempt
 from .escalation_domain import EscalationResolution, ResolutionType
 
+if TYPE_CHECKING:
+    from .llm_executor import LLMExecutor
+    from .llm_executor_domain import ExecutionContext
+
 
 class AgentOrchestrator:
     """Main orchestrator coordinating all Agent Harness components.
@@ -29,6 +34,7 @@ class AgentOrchestrator:
     - MemoryManager: tiered memory with get/set
     - AgentMonitor: observe_* methods and get_health with task context
     - ToolSelector: get_tool_names with workflow/phase/domain
+    - LLMExecutor: optional component for agent decision-making
     """
 
     def __init__(
@@ -39,7 +45,9 @@ class AgentOrchestrator:
         agent_monitor,
         recovery_executor,
         escalation_manager,
-        config: Optional[OrchestratorConfig] = None
+        config: Optional[OrchestratorConfig] = None,
+        llm_executor: Optional["LLMExecutor"] = None,
+        working_dir: Optional[Path] = None
     ):
         """Initialize orchestrator with all components.
 
@@ -51,6 +59,8 @@ class AgentOrchestrator:
             recovery_executor: Executes recovery strategies (RecoveryExecutor)
             escalation_manager: Manages human escalations (EscalationManager)
             config: Orchestrator configuration
+            llm_executor: Optional LLM executor for agent decisions
+            working_dir: Working directory for tool execution
         """
         self.session_manager = session_manager
         self.memory_manager = memory_manager
@@ -59,6 +69,8 @@ class AgentOrchestrator:
         self.recovery_executor = recovery_executor
         self.escalation_manager = escalation_manager
         self.config = config or OrchestratorConfig()
+        self.llm_executor = llm_executor
+        self.working_dir = working_dir or Path.cwd()
 
         # Track session states (orchestrator-specific tracking)
         self._session_states: dict[str, OrchestratorState] = {}
@@ -67,6 +79,8 @@ class AgentOrchestrator:
         # Store task descriptions per session for health checks
         self._session_tasks: dict[str, str] = {}
         self._session_contexts: dict[str, dict] = {}
+        # Store LLM execution contexts per session
+        self._llm_contexts: dict[str, "ExecutionContext"] = {}
 
     def start_session(
         self,
@@ -121,10 +135,51 @@ class AgentOrchestrator:
                 ttl=timedelta(hours=24)
             )
 
+        # Initialize LLM execution context if executor available
+        if self.llm_executor:
+            self._init_llm_context(
+                session_id=session_id,
+                task_description=task_description,
+                current_phase=initial_phase,
+                token_budget=token_budget,
+                memory_context=context or {}
+            )
+
         # Save session
         self.session_manager.save()
 
         return session_id
+
+    def _init_llm_context(
+        self,
+        session_id: str,
+        task_description: str,
+        current_phase: str,
+        token_budget: int,
+        memory_context: dict
+    ) -> None:
+        """Initialize LLM execution context for a session.
+
+        Args:
+            session_id: Session ID
+            task_description: Task to execute
+            current_phase: Current workflow phase
+            token_budget: Token budget
+            memory_context: Memory context dict
+        """
+        from .llm_executor_domain import ExecutionContext
+
+        # Get available tools
+        tools = self.get_available_tools(session_id) if hasattr(self, '_session_states') else []
+
+        self._llm_contexts[session_id] = ExecutionContext(
+            session_id=session_id,
+            task_description=task_description,
+            current_phase=current_phase,
+            available_tools=tools,
+            memory_context=memory_context,
+            token_budget=token_budget
+        )
 
     def resume_session(self, session_id: str) -> bool:
         """Resume a paused session.
@@ -221,21 +276,97 @@ class AgentOrchestrator:
         if self.config.auto_checkpoint and iteration % self.config.checkpoint_interval == 0:
             self._create_checkpoint(session_id)
 
-        duration = time.time() - start_time
-
-        result = ExecutionResult(
-            task_id=f"{session_id}:step:{iteration}",
-            success=True,
-            output=f"Step {iteration} completed",
-            error=None,
-            duration_seconds=duration,
-            tools_used=tools[:2] if tools else []  # Simulate tool usage
-        )
+        # Execute step using LLM executor if available
+        if self.llm_executor and session_id in self._llm_contexts:
+            result = self._execute_llm_step(session_id, tools, iteration, start_time)
+        else:
+            # Fallback: no LLM executor, just return placeholder result
+            duration = time.time() - start_time
+            result = ExecutionResult(
+                task_id=f"{session_id}:step:{iteration}",
+                success=True,
+                output=f"Step {iteration} completed (no LLM executor)",
+                error=None,
+                duration_seconds=duration,
+                tools_used=tools[:2] if tools else []
+            )
 
         # Store in history
         self._session_history.setdefault(session_id, []).append(result)
 
         return result
+
+    def _execute_llm_step(
+        self,
+        session_id: str,
+        tools: list[str],
+        iteration: int,
+        start_time: float
+    ) -> ExecutionResult:
+        """Execute a step using the LLM executor.
+
+        Args:
+            session_id: Session ID
+            tools: Available tools
+            iteration: Current iteration
+            start_time: Step start time
+
+        Returns:
+            ExecutionResult
+        """
+        from .llm_executor_domain import ActionType
+
+        llm_context = self._llm_contexts[session_id]
+        llm_context.available_tools = tools
+
+        # Execute step via LLM
+        step_result = self.llm_executor.execute_step(llm_context)
+
+        duration = time.time() - start_time
+
+        if not step_result.success:
+            self._session_states[session_id] = OrchestratorState.FAILED
+            return ExecutionResult(
+                task_id=f"{session_id}:step:{iteration}",
+                success=False,
+                output=None,
+                error=step_result.error,
+                duration_seconds=duration,
+                tools_used=[]
+            )
+
+        # Record observation for monitoring
+        action = step_result.action
+        if action:
+            self.agent_monitor.observe_output(output=action.reasoning)
+
+            # Check action type for state transitions
+            if action.action_type == ActionType.COMPLETE:
+                self._session_states[session_id] = OrchestratorState.COMPLETED
+            elif action.action_type == ActionType.ESCALATE:
+                self._session_states[session_id] = OrchestratorState.WAITING_FOR_HUMAN
+                # Create escalation
+                from .escalation_domain import EscalationPriority
+                self.escalation_manager.create_escalation(
+                    session_id=session_id,
+                    reason=action.reasoning,
+                    context={"iteration": iteration},
+                    priority=EscalationPriority.NORMAL
+                )
+            elif action.action_type == ActionType.ASK_USER:
+                self._session_states[session_id] = OrchestratorState.WAITING_FOR_HUMAN
+
+        # Collect tool names used
+        tools_used = [r.tool_name for r in step_result.tool_results]
+
+        return ExecutionResult(
+            task_id=f"{session_id}:step:{iteration}",
+            success=True,
+            output=action.response if action else "Step completed",
+            error=None,
+            duration_seconds=duration,
+            tools_used=tools_used
+        )
 
     def run_until_complete(
         self,

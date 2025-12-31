@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
 
-# Hard limits for each context section
+# Hard limits for each context section (legacy)
 TOKEN_BUDGET_LIMITS = {
     "system_prompt": 1000,
     "task_frame": 500,
@@ -20,6 +20,20 @@ TOKEN_BUDGET_LIMITS = {
     "available_actions": 800,
     # ─────────────────────────
     # Total: 8000 max
+}
+
+# Enhanced token budget (Phase 6) - 40% reduction via fact-based context
+ENHANCED_TOKEN_LIMITS = {
+    "system_prompt": 800,       # Reduced - more focused prompts
+    "task_frame": 200,          # Reduced - typed specs are compact
+    "understanding": 600,       # NEW - facts, not raw data
+    "verification": 100,        # Reduced - just status
+    "precomputed": 2000,        # AST analysis (critical for refactoring)
+    "recent_actions": 400,      # Reduced - typed ActionRecords
+    "available_actions": 400,   # Reduced - phase-filtered
+    "domain_context": 500,      # Task-specific context
+    # ─────────────────────────
+    # Total: 5000 max (down from 8000)
 }
 
 # Approximate tokens per character (conservative estimate)

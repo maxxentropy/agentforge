@@ -15,10 +15,38 @@ Enhanced Context Engineering (v2):
 - Fact-based understanding instead of raw tool output
 - Enhanced loop detection with semantic analysis
 - Explicit phase machine with guards and transitions
+
+Migration Guide
+---------------
+To enable Enhanced Context Engineering in your workflow:
+
+    from agentforge.core.harness.minimal_context import (
+        MinimalContextFixWorkflow,
+        create_minimal_fix_workflow,
+    )
+
+    # Option 1: Direct instantiation
+    workflow = MinimalContextFixWorkflow(
+        project_path=Path("."),
+        use_enhanced_context=True,  # Enable all enhancements
+    )
+
+    # Option 2: Factory function (coming soon)
+    workflow = create_minimal_fix_workflow(
+        project_path=Path("."),
+        use_enhanced_context=True,
+    )
+
+Enhanced mode enables:
+- PhaseMachine for explicit phase transitions with guards
+- EnhancedContextBuilder with typed Pydantic models
+- Understanding extraction (facts from tool outputs)
+- Enhanced loop detection (semantic analysis)
+- Reduced token usage (~5000 vs 8000 tokens)
 """
 
 from .state_store import TaskStateStore, TaskState, TaskPhase
-from .token_budget import TokenBudget, TOKEN_BUDGET_LIMITS
+from .token_budget import TokenBudget, TOKEN_BUDGET_LIMITS, ENHANCED_TOKEN_LIMITS
 from .working_memory import WorkingMemoryManager, WorkingMemoryItem
 from .context_schemas import ContextSchema, FixViolationSchema, get_schema_for_task
 from .context_builder import ContextBuilder
@@ -77,6 +105,7 @@ __all__ = [
     # Token Budget
     "TokenBudget",
     "TOKEN_BUDGET_LIMITS",
+    "ENHANCED_TOKEN_LIMITS",
     # Working Memory
     "WorkingMemoryManager",
     "WorkingMemoryItem",

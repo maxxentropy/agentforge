@@ -1,0 +1,104 @@
+"""
+TDFLOW CLI Commands
+===================
+
+Commands for the Test-Driven Flow workflow.
+"""
+
+import click
+from pathlib import Path
+
+
+@click.group("tdflow", help="Test-Driven Flow workflow commands")
+def tdflow():
+    """Test-Driven Flow (TDFLOW) commands."""
+    pass
+
+
+@tdflow.command("start")
+@click.option(
+    "--spec",
+    "-s",
+    type=click.Path(exists=True),
+    required=True,
+    help="Path to specification.yaml",
+)
+@click.option(
+    "--framework",
+    "-f",
+    type=click.Choice(["xunit", "nunit", "mstest", "pytest"]),
+    default="xunit",
+    help="Test framework",
+)
+@click.option(
+    "--coverage",
+    "-c",
+    type=float,
+    default=80.0,
+    help="Coverage threshold percentage",
+)
+def start(spec: str, framework: str, coverage: float):
+    """Start a new TDFLOW session from specification."""
+    from cli.commands.tdflow import run_start
+
+    run_start(Path(spec), framework, coverage)
+
+
+@tdflow.command("red")
+@click.option("--component", "-c", help="Specific component (default: next pending)")
+def red(component: str):
+    """Execute RED phase: generate failing tests."""
+    from cli.commands.tdflow import run_red
+
+    run_red(component)
+
+
+@tdflow.command("green")
+@click.option("--component", "-c", help="Specific component")
+def green(component: str):
+    """Execute GREEN phase: generate implementation."""
+    from cli.commands.tdflow import run_green
+
+    run_green(component)
+
+
+@tdflow.command("refactor")
+@click.option("--component", "-c", help="Specific component")
+def refactor(component: str):
+    """Execute REFACTOR phase: clean up implementation."""
+    from cli.commands.tdflow import run_refactor
+
+    run_refactor(component)
+
+
+@tdflow.command("verify")
+@click.option("--component", "-c", help="Specific component (default: all)")
+def verify(component: str):
+    """Verify implementation meets specification."""
+    from cli.commands.tdflow import run_verify
+
+    run_verify(component)
+
+
+@tdflow.command("status")
+def status():
+    """Show current session status."""
+    from cli.commands.tdflow import run_status
+
+    run_status()
+
+
+@tdflow.command("resume")
+def resume():
+    """Resume interrupted session."""
+    from cli.commands.tdflow import run_resume
+
+    run_resume()
+
+
+@tdflow.command("list")
+def list_sessions():
+    """List all TDFLOW sessions."""
+    from cli.commands.tdflow import run_list
+
+    run_list()

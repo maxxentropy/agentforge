@@ -10,6 +10,7 @@ from cli.click_commands.workspace import workspace
 from cli.click_commands.config import config
 from cli.click_commands.contracts import contracts, exemptions
 from cli.click_commands.conformance import conformance
+from cli.click_commands.tdflow import tdflow
 
 __all__ = [
     # Spec workflow
@@ -17,5 +18,5 @@ __all__ = [
     # Utilities
     'context', 'verify', 'render_spec',
     # Groups
-    'workspace', 'config', 'contracts', 'exemptions', 'conformance',
+    'workspace', 'config', 'contracts', 'exemptions', 'conformance', 'tdflow',
 ]

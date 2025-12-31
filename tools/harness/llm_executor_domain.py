@@ -69,6 +69,24 @@ class ToolCall:
 
         return ToolCategory.SHELL  # Default
 
+    def to_dict(self) -> Dict[str, Any]:
+        """Serialize to YAML-compatible dict."""
+        return {
+            "name": self.name,
+            "parameters": self.parameters,
+            "category": self.category.value if self.category else None
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "ToolCall":
+        """Deserialize from dict."""
+        category = ToolCategory(data["category"]) if data.get("category") else None
+        return cls(
+            name=data["name"],
+            parameters=data.get("parameters", {}),
+            category=category
+        )
+
 
 @dataclass
 class ToolResult:
@@ -98,6 +116,31 @@ class ToolResult:
             success=False,
             error=error,
             duration_seconds=duration,
+        )
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Serialize to YAML-compatible dict."""
+        # Ensure output is serializable (convert to string if needed)
+        output_value = self.output
+        if output_value is not None and not isinstance(output_value, (str, int, float, bool, list, dict)):
+            output_value = str(output_value)
+        return {
+            "tool_name": self.tool_name,
+            "success": self.success,
+            "output": output_value,
+            "error": self.error,
+            "duration_seconds": self.duration_seconds
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "ToolResult":
+        """Deserialize from dict."""
+        return cls(
+            tool_name=data["tool_name"],
+            success=data["success"],
+            output=data.get("output"),
+            error=data.get("error"),
+            duration_seconds=data.get("duration_seconds", 0.0)
         )
 
 
@@ -154,6 +197,27 @@ class AgentAction:
             reasoning=reason,
         )
 
+    def to_dict(self) -> Dict[str, Any]:
+        """Serialize to YAML-compatible dict."""
+        return {
+            "action_type": self.action_type.value,
+            "reasoning": self.reasoning,
+            "tool_calls": [tc.to_dict() for tc in self.tool_calls],
+            "response": self.response,
+            "metadata": self.metadata
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "AgentAction":
+        """Deserialize from dict."""
+        return cls(
+            action_type=ActionType(data["action_type"]),
+            reasoning=data.get("reasoning", ""),
+            tool_calls=[ToolCall.from_dict(tc) for tc in data.get("tool_calls", [])],
+            response=data.get("response"),
+            metadata=data.get("metadata", {})
+        )
+
 
 @dataclass
 class ConversationMessage:
@@ -187,6 +251,27 @@ class ConversationMessage:
             for r in results
         )
         return cls(role="tool_result", content=content, tool_results=results)
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Serialize to YAML-compatible dict."""
+        return {
+            "role": self.role,
+            "content": self.content,
+            "timestamp": self.timestamp.isoformat(),
+            "tool_calls": [tc.to_dict() for tc in self.tool_calls] if self.tool_calls else None,
+            "tool_results": [tr.to_dict() for tr in self.tool_results] if self.tool_results else None
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "ConversationMessage":
+        """Deserialize from dict."""
+        return cls(
+            role=data["role"],
+            content=data["content"],
+            timestamp=datetime.fromisoformat(data["timestamp"]) if data.get("timestamp") else datetime.utcnow(),
+            tool_calls=[ToolCall.from_dict(tc) for tc in data["tool_calls"]] if data.get("tool_calls") else None,
+            tool_results=[ToolResult.from_dict(tr) for tr in data["tool_results"]] if data.get("tool_results") else None
+        )
 
 
 @dataclass
@@ -231,6 +316,35 @@ class ExecutionContext:
         """Add tool results to history."""
         self.conversation_history.append(
             ConversationMessage.tool_result_message(results)
+        )
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Serialize to YAML-compatible dict."""
+        return {
+            "session_id": self.session_id,
+            "task_description": self.task_description,
+            "current_phase": self.current_phase,
+            "available_tools": self.available_tools,
+            "conversation_history": [msg.to_dict() for msg in self.conversation_history],
+            "memory_context": self.memory_context,
+            "iteration": self.iteration,
+            "tokens_used": self.tokens_used,
+            "token_budget": self.token_budget
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "ExecutionContext":
+        """Deserialize from dict."""
+        return cls(
+            session_id=data["session_id"],
+            task_description=data["task_description"],
+            current_phase=data["current_phase"],
+            available_tools=data["available_tools"],
+            conversation_history=[ConversationMessage.from_dict(m) for m in data.get("conversation_history", [])],
+            memory_context=data.get("memory_context", {}),
+            iteration=data.get("iteration", 0),
+            tokens_used=data.get("tokens_used", 0),
+            token_budget=data.get("token_budget", 100000)
         )
 
 
@@ -281,6 +395,31 @@ class StepResult:
             should_continue=False,
         )
 
+    def to_dict(self) -> Dict[str, Any]:
+        """Serialize to YAML-compatible dict."""
+        return {
+            "success": self.success,
+            "action": self.action.to_dict() if self.action else None,
+            "tool_results": [tr.to_dict() for tr in self.tool_results],
+            "tokens_used": self.tokens_used,
+            "duration_seconds": self.duration_seconds,
+            "error": self.error,
+            "should_continue": self.should_continue
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "StepResult":
+        """Deserialize from dict."""
+        return cls(
+            success=data["success"],
+            action=AgentAction.from_dict(data["action"]) if data.get("action") else None,
+            tool_results=[ToolResult.from_dict(tr) for tr in data.get("tool_results", [])],
+            tokens_used=data.get("tokens_used", 0),
+            duration_seconds=data.get("duration_seconds", 0.0),
+            error=data.get("error"),
+            should_continue=data.get("should_continue", True)
+        )
+
 
 @dataclass
 class TokenUsage:
@@ -293,6 +432,21 @@ class TokenUsage:
     def total_tokens(self) -> int:
         """Total tokens used."""
         return self.prompt_tokens + self.completion_tokens
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Serialize to YAML-compatible dict."""
+        return {
+            "prompt_tokens": self.prompt_tokens,
+            "completion_tokens": self.completion_tokens
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "TokenUsage":
+        """Deserialize from dict."""
+        return cls(
+            prompt_tokens=data.get("prompt_tokens", 0),
+            completion_tokens=data.get("completion_tokens", 0)
+        )
 
 
 # Exceptions

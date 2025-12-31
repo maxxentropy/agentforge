@@ -24,6 +24,7 @@ from .escalation_domain import EscalationResolution, ResolutionType
 if TYPE_CHECKING:
     from .llm_executor import LLMExecutor
     from .llm_executor_domain import ExecutionContext
+    from .execution_context_store import ExecutionContextStore
 
 
 class AgentOrchestrator:
@@ -47,7 +48,8 @@ class AgentOrchestrator:
         escalation_manager,
         config: Optional[OrchestratorConfig] = None,
         llm_executor: Optional["LLMExecutor"] = None,
-        working_dir: Optional[Path] = None
+        working_dir: Optional[Path] = None,
+        execution_store: Optional["ExecutionContextStore"] = None
     ):
         """Initialize orchestrator with all components.
 
@@ -61,6 +63,7 @@ class AgentOrchestrator:
             config: Orchestrator configuration
             llm_executor: Optional LLM executor for agent decisions
             working_dir: Working directory for tool execution
+            execution_store: Optional store for persisting execution context
         """
         self.session_manager = session_manager
         self.memory_manager = memory_manager
@@ -71,6 +74,12 @@ class AgentOrchestrator:
         self.config = config or OrchestratorConfig()
         self.llm_executor = llm_executor
         self.working_dir = working_dir or Path.cwd()
+
+        # Initialize execution store for YAML persistence
+        if execution_store is None and llm_executor is not None:
+            from .execution_context_store import ExecutionContextStore
+            execution_store = ExecutionContextStore(self.working_dir / ".agentforge" / "sessions")
+        self.execution_store = execution_store
 
         # Track session states (orchestrator-specific tracking)
         self._session_states: dict[str, OrchestratorState] = {}
@@ -358,6 +367,14 @@ class AgentOrchestrator:
 
         # Collect tool names used
         tools_used = [r.tool_name for r in step_result.tool_results]
+
+        # Persist context and step result to YAML for auditability
+        if self.execution_store:
+            try:
+                self.execution_store.save_context(llm_context)
+                self.execution_store.append_step(session_id, step_result)
+            except Exception:
+                pass  # Don't fail execution if persistence fails
 
         return ExecutionResult(
             task_id=f"{session_id}:step:{iteration}",

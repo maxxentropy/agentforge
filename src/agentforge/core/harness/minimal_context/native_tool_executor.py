@@ -1,0 +1,362 @@
+# @spec_file: specs/minimal-context-architecture/05-llm-integration.yaml
+# @spec_id: llm-integration-v1
+# @component_id: native-tool-executor
+# @test_path: tests/unit/harness/test_native_tool_executor.py
+
+"""
+Native Tool Executor
+====================
+
+Adapter that bridges LLM native tool calls to registered action executors.
+
+This enables the executor to use Anthropic's native tool_use API instead
+of parsing YAML from text responses. Benefits:
+- Structured inputs validated by JSON Schema
+- No parsing errors or ambiguity
+- Direct tool call IDs for result correlation
+- Better error handling
+
+Usage:
+    ```python
+    from agentforge.core.harness.minimal_context.native_tool_executor import (
+        NativeToolExecutor,
+    )
+
+    # Create executor with registered actions
+    executor = NativeToolExecutor()
+    executor.register_action("read_file", read_file_handler)
+    executor.register_action("write_file", write_file_handler)
+
+    # Use with LLM client
+    response = llm_client.complete_with_tools(
+        system=system_prompt,
+        messages=messages,
+        tools=get_tools_for_task("fix_violation"),
+        tool_executor=executor,
+    )
+    ```
+"""
+
+import logging
+import traceback
+from typing import Any, Callable, Dict, Optional
+
+from ...llm.interface import ToolCall, ToolExecutor, ToolResult
+
+logger = logging.getLogger(__name__)
+
+
+# Type alias for action handlers
+ActionHandler = Callable[[Dict[str, Any]], Any]
+
+
+class NativeToolExecutor(ToolExecutor):
+    """
+    Executes LLM tool calls by delegating to registered action handlers.
+
+    This adapter bridges the gap between the LLM's native tool_use format
+    and the executor's action handler system.
+
+    Attributes:
+        actions: Dict mapping tool names to handler functions
+        context: Optional shared context dict passed to handlers
+    """
+
+    def __init__(
+        self,
+        actions: Optional[Dict[str, ActionHandler]] = None,
+        context: Optional[Dict[str, Any]] = None,
+    ):
+        """
+        Initialize the executor.
+
+        Args:
+            actions: Initial action handlers dict
+            context: Shared context for handlers
+        """
+        self.actions: Dict[str, ActionHandler] = actions or {}
+        self.context: Dict[str, Any] = context or {}
+        self._execution_log: list = []
+
+    def register_action(self, name: str, handler: ActionHandler) -> None:
+        """
+        Register an action handler.
+
+        Args:
+            name: Tool/action name (e.g., "read_file")
+            handler: Function that takes params dict and returns result
+        """
+        self.actions[name] = handler
+        logger.debug(f"Registered action handler: {name}")
+
+    def register_actions(self, handlers: Dict[str, ActionHandler]) -> None:
+        """
+        Register multiple action handlers.
+
+        Args:
+            handlers: Dict mapping names to handler functions
+        """
+        for name, handler in handlers.items():
+            self.register_action(name, handler)
+
+    def execute(self, tool_call: ToolCall) -> ToolResult:
+        """
+        Execute a tool call from the LLM.
+
+        Finds the registered handler for the tool and executes it
+        with the provided input parameters.
+
+        Args:
+            tool_call: The tool call from the LLM
+
+        Returns:
+            ToolResult with execution outcome
+        """
+        tool_name = tool_call.name
+        tool_input = tool_call.input
+        tool_id = tool_call.id
+
+        logger.debug(f"Executing tool: {tool_name} (id={tool_id})")
+
+        # Check if action is registered
+        if tool_name not in self.actions:
+            error_msg = f"Unknown tool: {tool_name}. Available: {list(self.actions.keys())}"
+            logger.error(error_msg)
+            self._log_execution(tool_call, error=error_msg)
+            return ToolResult(
+                tool_use_id=tool_id,
+                content=error_msg,
+                is_error=True,
+            )
+
+        # Get handler and execute
+        handler = self.actions[tool_name]
+
+        try:
+            # Inject context if handler accepts it
+            params = dict(tool_input)
+            if self.context:
+                params["_context"] = self.context
+
+            result = handler(params)
+
+            # Convert result to string if needed
+            if result is None:
+                result_str = "Success"
+            elif isinstance(result, str):
+                result_str = result
+            elif isinstance(result, dict):
+                # Format dict nicely
+                import json
+                result_str = json.dumps(result, indent=2, default=str)
+            else:
+                result_str = str(result)
+
+            self._log_execution(tool_call, result=result_str)
+
+            return ToolResult(
+                tool_use_id=tool_id,
+                content=result_str,
+                is_error=False,
+            )
+
+        except Exception as e:
+            error_msg = f"Tool execution failed: {e}\n{traceback.format_exc()}"
+            logger.error(f"Error executing {tool_name}: {e}")
+            self._log_execution(tool_call, error=error_msg)
+            return ToolResult(
+                tool_use_id=tool_id,
+                content=error_msg,
+                is_error=True,
+            )
+
+    def _log_execution(
+        self,
+        tool_call: ToolCall,
+        result: Optional[str] = None,
+        error: Optional[str] = None,
+    ) -> None:
+        """Log tool execution for audit trail."""
+        self._execution_log.append({
+            "tool_id": tool_call.id,
+            "tool_name": tool_call.name,
+            "input": tool_call.input,
+            "result": result,
+            "error": error,
+            "success": error is None,
+        })
+
+    def get_execution_log(self) -> list:
+        """Get the execution log for audit purposes."""
+        return list(self._execution_log)
+
+    def clear_execution_log(self) -> None:
+        """Clear the execution log."""
+        self._execution_log.clear()
+
+    def has_action(self, name: str) -> bool:
+        """Check if an action is registered."""
+        return name in self.actions
+
+    def list_actions(self) -> list:
+        """List all registered action names."""
+        return sorted(self.actions.keys())
+
+
+class ActionResult:
+    """
+    Structured result from an action handler.
+
+    Provides a standard way for handlers to return results
+    with metadata.
+    """
+
+    def __init__(
+        self,
+        success: bool,
+        data: Any = None,
+        message: str = "",
+        metadata: Optional[Dict[str, Any]] = None,
+    ):
+        """
+        Initialize action result.
+
+        Args:
+            success: Whether the action succeeded
+            data: Result data (varies by action)
+            message: Human-readable message
+            metadata: Additional metadata
+        """
+        self.success = success
+        self.data = data
+        self.message = message
+        self.metadata = metadata or {}
+
+    def to_string(self) -> str:
+        """Convert to string for tool result."""
+        if self.success:
+            if self.data is not None:
+                if isinstance(self.data, str):
+                    return self.data
+                import json
+                return json.dumps(self.data, indent=2, default=str)
+            return self.message or "Success"
+        else:
+            return f"Error: {self.message}"
+
+    def __repr__(self) -> str:
+        return f"ActionResult(success={self.success}, message={self.message!r})"
+
+
+# Standard action handlers for common tools
+
+
+def create_read_file_handler(project_path=None):
+    """
+    Create a read_file action handler.
+
+    Args:
+        project_path: Optional base path for relative paths
+
+    Returns:
+        Handler function
+    """
+    from pathlib import Path
+
+    base_path = Path(project_path) if project_path else Path.cwd()
+
+    def handler(params: Dict[str, Any]) -> str:
+        path = params.get("path", "")
+        if not path:
+            raise ValueError("path parameter required")
+
+        file_path = Path(path)
+        if not file_path.is_absolute():
+            file_path = base_path / file_path
+
+        if not file_path.exists():
+            raise FileNotFoundError(f"File not found: {file_path}")
+
+        return file_path.read_text()
+
+    return handler
+
+
+def create_write_file_handler(project_path=None):
+    """
+    Create a write_file action handler.
+
+    Args:
+        project_path: Optional base path for relative paths
+
+    Returns:
+        Handler function
+    """
+    from pathlib import Path
+
+    base_path = Path(project_path) if project_path else Path.cwd()
+
+    def handler(params: Dict[str, Any]) -> str:
+        path = params.get("path", "")
+        content = params.get("content", "")
+
+        if not path:
+            raise ValueError("path parameter required")
+
+        file_path = Path(path)
+        if not file_path.is_absolute():
+            file_path = base_path / file_path
+
+        # Create parent directories if needed
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+
+        file_path.write_text(content)
+        return f"Wrote {len(content)} bytes to {file_path}"
+
+    return handler
+
+
+def create_complete_handler():
+    """
+    Create a complete action handler.
+
+    Returns:
+        Handler function
+    """
+    def handler(params: Dict[str, Any]) -> str:
+        summary = params.get("summary", "Task completed")
+        return f"COMPLETE: {summary}"
+
+    return handler
+
+
+def create_escalate_handler():
+    """
+    Create an escalate action handler.
+
+    Returns:
+        Handler function
+    """
+    def handler(params: Dict[str, Any]) -> str:
+        reason = params.get("reason", "Unknown reason")
+        return f"ESCALATE: {reason}"
+
+    return handler
+
+
+def create_standard_handlers(project_path=None) -> Dict[str, ActionHandler]:
+    """
+    Create standard action handlers for common tools.
+
+    Args:
+        project_path: Base path for file operations
+
+    Returns:
+        Dict of action name to handler
+    """
+    return {
+        "read_file": create_read_file_handler(project_path),
+        "write_file": create_write_file_handler(project_path),
+        "complete": create_complete_handler(),
+        "escalate": create_escalate_handler(),
+    }

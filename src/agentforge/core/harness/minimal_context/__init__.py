@@ -101,10 +101,16 @@ from .executor_v2 import (
     MinimalContextExecutorV2,
     create_executor_v2,
     should_use_v2,
+    should_use_native_tools,
 )
 from .template_context_builder import (
     TemplateContextBuilder,
     TemplateStepContext,
+)
+from .native_tool_executor import (
+    NativeToolExecutor,
+    ActionResult as NativeActionResult,
+    create_standard_handlers,
 )
 
 __all__ = [
@@ -181,6 +187,11 @@ __all__ = [
     "MinimalContextExecutorV2",
     "create_executor_v2",
     "should_use_v2",
+    "should_use_native_tools",
     "TemplateContextBuilder",
     "TemplateStepContext",
+    # Native Tool Execution
+    "NativeToolExecutor",
+    "NativeActionResult",
+    "create_standard_handlers",
 ]

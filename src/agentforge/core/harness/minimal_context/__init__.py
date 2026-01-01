@@ -96,6 +96,13 @@ from .phase_machine import (
     PhaseMachine,
 )
 
+# Context Management V2 (with AGENT.md config, fingerprints, templates, audit)
+from .executor_v2 import (
+    MinimalContextExecutorV2,
+    create_executor_v2,
+    should_use_v2,
+)
+
 __all__ = [
     # State
     "TaskStateStore",
@@ -164,4 +171,10 @@ __all__ = [
     "Transition",
     "PhaseConfig",
     "PhaseMachine",
+    # ═══════════════════════════════════════════════════════════════════════════
+    # Context Management V2 (AGENT.md, fingerprints, templates, audit)
+    # ═══════════════════════════════════════════════════════════════════════════
+    "MinimalContextExecutorV2",
+    "create_executor_v2",
+    "should_use_v2",
 ]

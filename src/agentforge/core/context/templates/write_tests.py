@@ -1,4 +1,4 @@
-# @spec_file: specs/minimal-context-architecture-specs/specs/minimal-context-architecture/04-context-templates.yaml
+# @spec_file: specs/minimal-context-architecture/04-context-templates.yaml
 # @spec_id: context-templates-v1
 # @component_id: context-template-write-tests
 # @test_path: tests/unit/context/test_templates.py

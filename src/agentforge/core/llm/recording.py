@@ -1,4 +1,4 @@
-# @spec_file: specs/minimal-context-architecture-specs/specs/minimal-context-architecture/05-llm-integration.yaml
+# @spec_file: specs/minimal-context-architecture/05-llm-integration.yaml
 # @spec_id: llm-integration-v1
 # @component_id: llm-recording
 # @test_path: tests/unit/llm/test_recording.py

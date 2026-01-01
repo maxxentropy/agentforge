@@ -1,4 +1,4 @@
-# @spec_file: specs/minimal-context-architecture-specs/specs/minimal-context-architecture/05-llm-integration.yaml
+# @spec_file: specs/minimal-context-architecture/05-llm-integration.yaml
 # @spec_id: llm-integration-v1
 # @component_id: llm-tools
 # @impl_path: src/agentforge/core/llm/tools.py

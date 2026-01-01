@@ -1,0 +1,299 @@
+# Context Templates Specification
+
+spec_id: context-templates-v1
+component: ContextTemplates
+location: src/agentforge/core/context/templates/
+test_location: tests/unit/context/test_templates.py
+
+## Purpose
+
+Task-type specific templates that define what context is needed for each phase.
+Enables multi-task support without hardcoding context structure.
+
+## Tiered Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ TIER 1: ALWAYS PRESENT (~800 tokens)                            │
+│ • Fingerprint (500) - Project identity, patterns                │
+│ • Task frame (200) - Goal, success criteria                     │
+│ • Phase state (100) - Current phase, step count                 │
+│ Never compacted. Every call gets these.                         │
+├─────────────────────────────────────────────────────────────────┤
+│ TIER 2: PHASE-DEPENDENT (~1500 tokens)                          │
+│ Varies by task type AND current phase.                          │
+│ Examples: violation_details, target_source, extraction_hints    │
+│ Compactable under pressure.                                     │
+├─────────────────────────────────────────────────────────────────┤
+│ TIER 3: ON-DEMAND (~1000 tokens)                                │
+│ • Historical facts (high-confidence only)                       │
+│ • Additional context (fetched if needed)                        │
+│ Aggressively compactable.                                       │
+├─────────────────────────────────────────────────────────────────┤
+│ TIER 4: NEVER IN CONTEXT                                        │
+│ • Raw tool output (extract facts instead)                       │
+│ • Full file contents (only relevant sections)                   │
+│ • Old action history (keep last 2-3)                            │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+## Base Template
+
+```python
+class ContextSection(BaseModel):
+    name: str
+    source: str           # Where to get data
+    max_tokens: int
+    compaction: str       # never|normal|aggressive
+    required: bool = False
+
+class TierDefinition(BaseModel):
+    name: str
+    sections: List[ContextSection]
+    max_tokens: int
+
+class BaseContextTemplate(ABC):
+    # Tier 1 - same for all task types
+    TIER1_ALWAYS = TierDefinition(
+        name="always",
+        max_tokens=800,
+        sections=[
+            ContextSection("fingerprint", "project_fingerprint", 500, "never", True),
+            ContextSection("task_frame", "task_definition", 200, "never", True),
+            ContextSection("phase_state", "phase_machine", 100, "never", True),
+        ]
+    )
+    
+    # Tier 3 - same for all task types
+    TIER3_ON_DEMAND = TierDefinition(
+        name="on_demand",
+        max_tokens=1000,
+        sections=[
+            ContextSection("historical_facts", "fact_store", 500, "aggressive"),
+            ContextSection("additional_context", "on_demand_fetch", 500, "aggressive"),
+        ]
+    )
+    
+    @abstractmethod
+    def task_type(self) -> str: ...
+    
+    @abstractmethod
+    def get_tier2_for_phase(self, phase: str) -> TierDefinition: ...
+    
+    @abstractmethod
+    def get_system_prompt(self) -> str: ...
+```
+
+## Task-Type Templates
+
+### fix_violation
+
+```yaml
+task_type: fix_violation
+phases: [init, analyze, implement, verify]
+
+tier2_by_phase:
+  init:
+    max_tokens: 1000
+    sections:
+      - violation_summary (500)
+      - quick_analysis (500)
+      
+  analyze:
+    max_tokens: 1500
+    sections:
+      - violation_details (300, required)
+      - check_definition (200)
+      - file_overview (500)
+      - related_patterns (500)
+      
+  implement:
+    max_tokens: 2000
+    sections:
+      - target_function_source (1000, required, truncate_middle)
+      - extraction_suggestions (500, required)
+      - action_hints (200)
+      - similar_fixes (300)
+      
+  verify:
+    max_tokens: 800
+    sections:
+      - verification_command (100, required)
+      - recent_results (400)
+      - remaining_issues (300)
+
+system_prompt: |
+  You are an expert code refactoring agent.
+  RULES: 1. One action per response 2. Prefer semantic tools 3. If check passes → complete
+  FORMAT: ```yaml\naction: name\nparameters:\n  key: value\n```
+```
+
+### implement_feature
+
+```yaml
+task_type: implement_feature
+phases: [init, analyze, implement, verify]
+
+tier2_by_phase:
+  analyze:
+    max_tokens: 1500
+    sections:
+      - spec_requirements (500, required)
+      - acceptance_criteria (300, required)
+      - existing_tests (400)
+      - related_code (300)
+      
+  implement:
+    max_tokens: 2000
+    sections:
+      - failing_tests (600, required)
+      - target_location (200)
+      - similar_patterns (500)
+      - interface_definition (400)
+      
+  verify:
+    max_tokens: 800
+    sections:
+      - test_expectations (300, required)
+      - coverage_delta (200)
+      - remaining_failures (300)
+```
+
+### write_tests
+
+```yaml
+task_type: write_tests
+phases: [init, analyze, implement, verify]
+
+tier2_by_phase:
+  analyze:
+    max_tokens: 1500
+    sections:
+      - acceptance_criteria (400, required)
+      - testable_interface (300, required)
+      - existing_test_patterns (400)
+      - coverage_gaps (400)
+      
+  implement:
+    max_tokens: 2000
+    sections:
+      - test_template (500)
+      - assertion_hints (300)
+      - fixture_examples (400)
+      - edge_cases (400)
+      
+  verify:
+    max_tokens: 600
+    sections:
+      - tests_must_fail (300, required)  # TDD red phase
+      - failure_reasons (300)
+```
+
+### discovery
+
+```yaml
+task_type: discovery
+phases: [scan, analyze, synthesize]
+
+tier2_by_phase:
+  scan:
+    max_tokens: 1500
+    sections:
+      - file_structure (800)
+      - entry_points (300)
+      - config_files (400)
+      
+  analyze:
+    max_tokens: 2000
+    sections:
+      - dependency_graph (600)
+      - pattern_candidates (500)
+      - architecture_hints (400)
+      - zone_detection (500)
+      
+  synthesize:
+    max_tokens: 1000
+    sections:
+      - discovered_patterns (500)
+      - zone_boundaries (300)
+      - recommendations (200)
+```
+
+### bridge
+
+```yaml
+task_type: bridge
+phases: [analyze, map, validate]
+
+tier2_by_phase:
+  analyze:
+    max_tokens: 1500
+    sections:
+      - existing_code_structure (600)
+      - target_contracts (400)
+      - mapping_rules (300)
+      
+  map:
+    max_tokens: 2000
+    sections:
+      - candidate_mappings (700)
+      - conflict_analysis (300)
+      - transformation_hints (500)
+      
+  validate:
+    max_tokens: 800
+    sections:
+      - mapping_coverage (300)
+      - unmapped_elements (400)
+      - validation_results (300)
+```
+
+## Template Registry
+
+```python
+def get_template_for_task(task_type: str) -> BaseContextTemplate:
+    """Get the appropriate template for a task type."""
+    templates = {
+        "fix_violation": FixViolationTemplate(),
+        "implement_feature": ImplementFeatureTemplate(),
+        "write_tests": WriteTestsTemplate(),
+        "discovery": DiscoveryTemplate(),
+        "bridge": BridgeTemplate(),
+        "code_review": CodeReviewTemplate(),
+        "refactor": RefactorTemplate(),
+    }
+    if task_type not in templates:
+        raise ValueError(f"Unknown task type: {task_type}")
+    return templates[task_type]
+```
+
+## Test Cases
+
+```yaml
+tests:
+  - name: test_tier1_always_present
+    setup: Build context for any task type
+    assert: fingerprint, task_frame, phase_state all present
+    
+  - name: test_tier2_varies_by_phase
+    setup: Build context for implement vs verify phase
+    assert: Different sections included
+    
+  - name: test_required_sections_error
+    setup: Build context without required data
+    assert: Raises error for missing required section
+    
+  - name: test_max_tokens_respected
+    setup: Build with large precomputed data
+    assert: Tier2 content truncated to max_tokens
+    
+  - name: test_system_prompt_minimal
+    setup: Get system prompt from any template
+    assert: len(prompt) < 200 tokens
+```
+
+## Links
+
+- Implementation: `src/agentforge/core/context/templates/`
+- Tests: `tests/unit/context/test_templates.py`
+- Related: [05-llm-integration.yaml](./05-llm-integration.yaml)

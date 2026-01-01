@@ -1,0 +1,203 @@
+# Dynamic Fingerprint Generator Specification
+
+spec_id: fingerprint-v1
+component: FingerprintGenerator
+location: src/agentforge/core/context/fingerprint.py
+test_location: tests/unit/context/test_fingerprint.py
+
+## Purpose
+
+Generates dynamic, task-relevant project fingerprints that replace static system prompts.
+Cached per project, invalidated on significant file changes.
+~500 tokens of high-signal, project-specific context.
+
+## Schema
+
+```yaml
+ProjectFingerprint:
+  identity:
+    name: str                 # Project directory name
+    path: str                 # Absolute path
+    hash: str                 # For cache invalidation (16 chars)
+    generated_at: datetime
+    
+  technical:
+    language: str             # python|typescript|csharp|etc
+    version: str?             # Language version if detectable
+    frameworks: List[str]     # [pydantic, fastapi, pytest]
+    build_system: str?        # hatch|poetry|npm|dotnet
+    test_framework: str       # pytest|jest|xunit
+    
+  patterns:
+    architecture: str?        # clean_architecture|mvc|layered
+    naming: str               # snake_case|camelCase
+    imports: str              # absolute|relative
+    error_handling: str       # exceptions|result_types
+    testing: str              # pytest|unittest|jest
+    docstrings: str           # google|numpy|sphinx
+    
+  structure:
+    source_root: str          # src|lib|app
+    test_root: str            # tests|test|spec
+    config_files: List[str]   # [pyproject.toml, ...]
+    entry_points: List[str]   # [src/main.py, ...]
+    
+  # Added per-task (not cached)
+  task_constraints: Dict[str, Any]
+  success_criteria: List[str]
+```
+
+## Detection Strategies
+
+### Language Detection
+
+| Indicator | Language |
+|-----------|----------|
+| pyproject.toml, setup.py | Python |
+| package.json | JavaScript/TypeScript |
+| tsconfig.json | TypeScript |
+| *.csproj, *.sln | C# |
+| Cargo.toml | Rust |
+| go.mod | Go |
+
+### Framework Detection (Python)
+
+| Pattern in pyproject.toml | Framework |
+|---------------------------|-----------|
+| `pydantic` | pydantic |
+| `fastapi` | fastapi |
+| `click` | click |
+| `pytest` | pytest |
+| `django` | django |
+
+### Architecture Detection
+
+| Directory Structure | Architecture |
+|---------------------|--------------|
+| src/domain + src/infrastructure | clean_architecture |
+| models + views + controllers | mvc |
+| src/layer1 + src/layer2 | layered |
+
+## Implementation
+
+```python
+class FingerprintGenerator:
+    _cache: Dict[str, ProjectFingerprint] = {}
+    _cache_hashes: Dict[str, str] = {}
+    
+    def __init__(self, project_path: Path):
+        self.project_path = Path(project_path)
+    
+    def generate(self, force_refresh: bool = False) -> ProjectFingerprint:
+        """Generate or return cached fingerprint."""
+        # Check cache validity via hash
+        # Generate if needed
+        # Cache and return
+    
+    def with_task_context(
+        self,
+        task_type: str,
+        constraints: Dict[str, Any],
+        success_criteria: List[str],
+    ) -> ProjectFingerprint:
+        """Add task-specific context to fingerprint."""
+        # Get base fingerprint
+        # Return copy with task_constraints and success_criteria
+    
+    def _compute_project_hash(self) -> str:
+        """Hash significant files for cache invalidation."""
+        # Hash: pyproject.toml, package.json, .agentforge/AGENT.md
+        # Include modification times
+    
+    def _detect_technical(self) -> TechnicalProfile:
+        """Detect language, frameworks, etc."""
+    
+    def _detect_patterns(self) -> DetectedPatterns:
+        """Analyze code for patterns."""
+    
+    def _detect_structure(self) -> ProjectStructure:
+        """Map project structure."""
+```
+
+## Cache Invalidation
+
+Hash computed from:
+- pyproject.toml / package.json / *.csproj
+- setup.py / setup.cfg
+- .agentforge/AGENT.md
+- File modification times
+
+Invalidate when hash changes.
+
+## Output Format
+
+```yaml
+# ~500 tokens when serialized
+project:
+  name: agentforge
+  language: python
+  framework: click, pydantic, pytest
+
+patterns:
+  architecture: clean_architecture
+  naming: snake_case
+  testing: pytest
+
+constraints:
+  task_type: fix_violation
+  correctness_first: true
+  test_verification: required
+
+success:
+  - "Conformance check passes"
+  - "All tests pass"
+```
+
+## Test Cases
+
+```yaml
+tests:
+  - name: test_python_detection
+    setup: Project with pyproject.toml
+    assert: language == "python"
+    
+  - name: test_framework_detection
+    setup: pyproject.toml with pydantic, pytest
+    assert: frameworks contains both
+    
+  - name: test_cache_hit
+    setup: Generate twice without changes
+    assert: Second call returns cached (same object)
+    
+  - name: test_cache_invalidation
+    setup: Generate, modify pyproject.toml, generate
+    assert: New fingerprint generated
+    
+  - name: test_with_task_context
+    setup: Base fingerprint + task constraints
+    assert: task_constraints populated, base unchanged
+    
+  - name: test_token_estimate
+    setup: Generate fingerprint
+    assert: estimate_tokens() < 600
+```
+
+## Integration
+
+```python
+# Usage in executor
+fingerprint = FingerprintGenerator(project_path).with_task_context(
+    task_type="fix_violation",
+    constraints={"correctness_first": True},
+    success_criteria=["Check passes", "Tests pass"],
+)
+
+# Include in context
+context["fingerprint"] = fingerprint.to_context_yaml()
+```
+
+## Links
+
+- Implementation: `src/agentforge/core/context/fingerprint.py`
+- Tests: `tests/unit/context/test_fingerprint.py`
+- Related: [02-agent-config.yaml](./02-agent-config.yaml)

@@ -1,0 +1,261 @@
+# Compaction Manager Specification
+
+spec_id: compaction-v1
+component: CompactionManager
+location: src/agentforge/core/context/compaction.py
+test_location: tests/unit/context/test_compaction.py
+
+## Purpose
+
+Progressive context compaction to fit within token budget.
+Sacrifices low-value content first, preserves critical context.
+
+## Strategy
+
+```
+COMPACTION ORDER (low value → high value)
+─────────────────────────────────────────
+Phase 1: Truncate precomputed analysis
+Phase 2: Reduce facts to high-confidence
+Phase 3: Reduce actions to top N
+Phase 4: Truncate domain context
+Phase 5: Reduce recent actions to 1
+Phase 6: Remove precomputed entirely
+Phase 7: LLM summarization (last resort)
+```
+
+## Compaction Strategies
+
+| Strategy | Description | Use For |
+|----------|-------------|---------|
+| TRUNCATE | Cut to max chars | Long strings |
+| TRUNCATE_MIDDLE | Keep start + end | Source code |
+| KEEP_LAST | Keep N most recent | Action history |
+| KEEP_FIRST | Keep N highest priority | Actions, facts |
+| REMOVE | Delete entirely | Optional sections |
+| SUMMARIZE | LLM summarization | Last resort |
+
+## Compaction Rules
+
+```python
+@dataclass
+class CompactionRule:
+    section: str              # Dot notation: "precomputed.analysis"
+    strategy: CompactionStrategy
+    param: Optional[int]      # Strategy-specific
+    priority: int             # Lower = compact first
+
+DEFAULT_RULES = [
+    # Phase 1: Truncate precomputed
+    CompactionRule("precomputed.analysis", TRUNCATE, 500, priority=1),
+    CompactionRule("precomputed.source", TRUNCATE_MIDDLE, 800, priority=2),
+    
+    # Phase 2: Reduce facts
+    CompactionRule("understanding.facts", KEEP_FIRST, 10, priority=3),
+    
+    # Phase 3: Reduce actions
+    CompactionRule("actions.available", KEEP_FIRST, 5, priority=4),
+    CompactionRule("actions.blocked", KEEP_FIRST, 2, priority=5),
+    
+    # Phase 4: Truncate domain
+    CompactionRule("domain_context", TRUNCATE, 300, priority=6),
+    
+    # Phase 5: Reduce recent
+    CompactionRule("recent_actions", KEEP_LAST, 1, priority=7),
+    
+    # Phase 6: Remove precomputed
+    CompactionRule("precomputed", REMOVE, None, priority=8),
+]
+```
+
+## Preserved Sections
+
+These are NEVER compacted:
+
+| Section | Reason |
+|---------|--------|
+| fingerprint | Project identity essential |
+| task_frame | Goal/criteria essential |
+| phase_state | Phase context essential |
+| verification_status | Correctness first |
+
+## Implementation
+
+```python
+class CompactionManager:
+    def __init__(
+        self,
+        threshold: float = 0.90,       # Trigger at 90%
+        llm_client: Optional[...] = None,  # For summarization
+        rules: Optional[List[CompactionRule]] = None,
+    ):
+        self.threshold = threshold
+        self.llm_client = llm_client
+        self.rules = sorted(rules or DEFAULT_RULES, key=lambda r: r.priority)
+    
+    def needs_compaction(self, context: Dict, budget: int) -> bool:
+        """Check if compaction needed."""
+        return self._estimate_tokens(context) / budget > self.threshold
+    
+    def compact(
+        self,
+        context: Dict,
+        budget: int,
+        preserve: List[str] = None,
+    ) -> Tuple[Dict, Dict]:
+        """
+        Compact context to fit budget.
+        
+        Returns:
+            (compacted_context, audit_info)
+        """
+        preserve = preserve or ["fingerprint", "task_frame", "phase_state"]
+        audit = {"original_tokens": ..., "rules_applied": []}
+        
+        result = dict(context)
+        
+        for rule in self.rules:
+            if any(rule.section.startswith(p) for p in preserve):
+                continue
+            
+            if self._estimate_tokens(result) <= budget:
+                break
+            
+            result, applied = self._apply_rule(result, rule)
+            if applied:
+                audit["rules_applied"].append({
+                    "section": rule.section,
+                    "strategy": rule.strategy,
+                    "tokens_after": self._estimate_tokens(result),
+                })
+        
+        # Last resort: LLM summarization
+        if self._estimate_tokens(result) > budget and self.llm_client:
+            result = self._llm_summarize(result, budget)
+            audit["rules_applied"].append({"strategy": "llm_summarize"})
+        
+        audit["final_tokens"] = self._estimate_tokens(result)
+        return result, audit
+```
+
+## Truncation Strategies
+
+### TRUNCATE
+
+```python
+def truncate(value: str, max_tokens: int) -> str:
+    max_chars = max_tokens * 4
+    if len(value) > max_chars:
+        return value[:max_chars] + "... (truncated)"
+    return value
+```
+
+### TRUNCATE_MIDDLE
+
+```python
+def truncate_middle(value: str, max_tokens: int) -> str:
+    max_chars = max_tokens * 4
+    if len(value) > max_chars:
+        keep = max_chars // 2
+        return value[:keep] + "\n...(middle truncated)...\n" + value[-keep:]
+    return value
+```
+
+### KEEP_FIRST / KEEP_LAST
+
+```python
+def keep_first(items: List, n: int) -> List:
+    return items[:n]
+
+def keep_last(items: List, n: int) -> List:
+    return items[-n:]
+```
+
+## LLM Summarization
+
+Used only as last resort when rules-based compaction insufficient:
+
+```python
+def _llm_summarize(self, context: Dict, budget: int) -> Dict:
+    response = self.llm_client.complete(
+        system="Summarize concisely, preserve key facts and decisions.",
+        messages=[{
+            "role": "user",
+            "content": f"Summarize to fit {budget} tokens:\n{yaml.dump(context)}"
+        }],
+    )
+    return yaml.safe_load(response.content)
+```
+
+**Note**: LLM summarization is expensive. Configure risk_tolerance to control:
+- `conservative`: Never use LLM summarization
+- `moderate`: Use if rules-based fails
+- `aggressive`: Use proactively for better compression
+
+## Audit Trail
+
+Every compaction is logged:
+
+```yaml
+compaction_audit:
+  original_tokens: 5200
+  budget: 4000
+  rules_applied:
+    - section: precomputed.analysis
+      strategy: truncate
+      param: 500
+      tokens_after: 4800
+    - section: understanding.facts
+      strategy: keep_first
+      param: 10
+      tokens_after: 4200
+    - section: actions.available
+      strategy: keep_first
+      param: 5
+      tokens_after: 3900
+  final_tokens: 3900
+  headroom: 100
+```
+
+## Test Cases
+
+```yaml
+tests:
+  - name: test_no_compaction_under_threshold
+    setup: Context at 80% of budget
+    assert: needs_compaction() returns False
+    
+  - name: test_compaction_triggers_at_threshold
+    setup: Context at 95% of budget
+    assert: needs_compaction() returns True
+    
+  - name: test_preserved_sections_untouched
+    setup: Compact with fingerprint in preserve list
+    assert: fingerprint unchanged
+    
+  - name: test_rules_applied_in_order
+    setup: Context over budget
+    assert: audit shows rules in priority order
+    
+  - name: test_truncate_strategy
+    setup: String over max_tokens
+    assert: Truncated with marker
+    
+  - name: test_truncate_middle_strategy
+    setup: Source code over max_tokens
+    assert: Middle removed, start+end preserved
+    
+  - name: test_keep_first_strategy
+    setup: List with 20 items, keep 5
+    assert: First 5 items retained
+    
+  - name: test_compaction_stops_at_budget
+    setup: Apply rules until under budget
+    assert: Not all rules applied if budget met early
+```
+
+## Links
+
+- Implementation: `src/agentforge/core/context/compaction.py`
+- Tests: `tests/unit/context/test_compaction.py`
+- Related: [07-audit.yaml](./07-audit.yaml)

@@ -1,0 +1,358 @@
+# Migration Plan
+
+spec_id: migration-v1
+status: Planning
+estimated_duration: 5 weeks
+
+## Overview
+
+Migration from current minimal context implementation to full architecture with:
+- AGENT.md configuration chain
+- Dynamic fingerprints
+- Native API tools
+- Extended thinking
+- Full audit trail
+
+## Current State
+
+### Existing Implementation
+
+| Component | Location | Status |
+|-----------|----------|--------|
+| context_models.py | minimal_context/ | ✅ Solid |
+| enhanced_context_builder.py | minimal_context/ | ✅ Has compaction |
+| executor.py | minimal_context/ | ⚠️ Text-based tools |
+| phase_machine.py | minimal_context/ | ✅ Solid |
+| loop_detector.py | minimal_context/ | ✅ Solid |
+| understanding.py | minimal_context/ | ✅ Has fact extraction |
+
+### Gaps to Address
+
+| Gap | Priority | Spec Reference |
+|-----|----------|----------------|
+| No AGENT.md support | P0 | 02-agent-config.yaml |
+| Static fingerprints | P0 | 03-fingerprint.yaml |
+| Text-based tool parsing | P0 | 05-llm-integration.yaml |
+| No extended thinking | P1 | 05-llm-integration.yaml |
+| No context templates | P1 | 04-context-templates.yaml |
+| Limited audit trail | P2 | 07-audit.yaml |
+
+## Phase 1: Foundation (Week 1-2)
+
+### Deliverables
+
+| Task | Files | Dependencies |
+|------|-------|--------------|
+| Create context/ directory | New | None |
+| AgentConfigLoader | agent_config.py | None |
+| FingerprintGenerator | fingerprint.py | None |
+| Unit tests | test_agent_config.py, test_fingerprint.py | Implementation |
+
+### AgentConfigLoader Tasks
+
+```
+□ Define AgentConfig Pydantic model
+□ Implement YAML frontmatter parser
+□ Implement hierarchy loader
+□ Implement merge logic
+□ Add caching
+□ Write unit tests
+□ Integration test with existing executor
+```
+
+### FingerprintGenerator Tasks
+
+```
+□ Define ProjectFingerprint model
+□ Implement language detection
+□ Implement framework detection
+□ Implement pattern detection
+□ Implement structure detection
+□ Add caching with hash invalidation
+□ Write unit tests
+```
+
+### Success Criteria
+
+- [ ] AgentConfig loads from ~/.agentforge/AGENT.md
+- [ ] Project AGENT.md overrides global
+- [ ] Fingerprint detects Python projects correctly
+- [ ] Fingerprint cached, invalidates on change
+- [ ] 90%+ test coverage
+
+## Phase 2: LLM Integration (Week 2-3)
+
+### Deliverables
+
+| Task | Files | Dependencies |
+|------|-------|--------------|
+| Create llm/ directory | New | None |
+| AnthropicLLMClient | llm/client.py | None |
+| Tool definitions | llm/tools.py | None |
+| Thinking support | llm/thinking.py | client.py |
+| Integration tests | test_llm_integration.py | All above |
+
+### Native Tools Migration
+
+```
+BEFORE (text-based):
+─────────────────────
+response = call_llm(prompt)
+match = re.search(r"```action\n(.*?)```", response)
+action = yaml.safe_load(match.group(1))
+
+AFTER (native):
+────────────────
+response = client.complete(
+    system=system,
+    messages=messages,
+    tools=tools,  # Native tool definitions
+)
+for tool_call in response.tool_calls:
+    execute(tool_call["name"], tool_call["input"])
+```
+
+### Tasks
+
+```
+□ Implement AnthropicLLMClient
+□ Add native tools parameter
+□ Add extended thinking parameter
+□ Implement tool execution loop
+□ Add streaming support
+□ Add usage tracking
+□ Write unit tests (mock API)
+□ Write integration tests (real API)
+```
+
+### Success Criteria
+
+- [ ] Native tool calls work correctly
+- [ ] Extended thinking captured in response
+- [ ] Usage stats tracked accurately
+- [ ] Streaming works for long responses
+- [ ] Backward compatible with existing tests
+
+## Phase 3: Context Templates (Week 3-4)
+
+### Deliverables
+
+| Task | Files | Dependencies |
+|------|-------|--------------|
+| Create templates/ directory | New | None |
+| BaseContextTemplate | templates/base.py | None |
+| FixViolationTemplate | templates/fix_violation.py | base.py |
+| Other task templates | templates/*.py | base.py |
+| Template tests | test_templates.py | All above |
+
+### Tasks
+
+```
+□ Define ContextSection model
+□ Define TierDefinition model
+□ Implement BaseContextTemplate ABC
+□ Implement FixViolationTemplate
+□ Implement ImplementFeatureTemplate
+□ Implement WriteTestsTemplate
+□ Implement DiscoveryTemplate
+□ Implement BridgeTemplate
+□ Add template registry
+□ Write unit tests
+```
+
+### Success Criteria
+
+- [ ] All task types have templates
+- [ ] Tier 1 always present
+- [ ] Tier 2 varies by phase
+- [ ] System prompts < 200 tokens
+- [ ] Templates integrate with existing models
+
+## Phase 4: Integration (Week 4-5)
+
+### Deliverables
+
+| Task | Files | Dependencies |
+|------|-------|--------------|
+| CompactionManager | compaction.py | None |
+| ContextAuditLogger | audit.py | None |
+| Executor integration | executor.py (update) | All above |
+| Full integration tests | test_integration.py | All above |
+
+### Integration Tasks
+
+```
+□ Implement CompactionManager
+□ Implement ContextAuditLogger
+□ Update MinimalContextExecutor to use:
+  - AgentConfigLoader
+  - FingerprintGenerator
+  - Context templates
+  - Native LLM client
+  - CompactionManager
+  - AuditLogger
+□ Write integration tests
+□ Performance benchmarking
+□ Token usage comparison (before/after)
+```
+
+### Migration Steps for Executor
+
+```python
+# 1. Add new dependencies
+from ...context.agent_config import AgentConfigLoader
+from ...context.fingerprint import FingerprintGenerator
+from ...context.templates import get_template_for_task
+from ...context.compaction import CompactionManager
+from ...context.audit import ContextAuditLogger
+from ...llm.client import AnthropicLLMClient
+
+# 2. Initialize in __init__
+self.config_loader = AgentConfigLoader(project_path)
+self.fingerprint_generator = FingerprintGenerator(project_path)
+self.template = get_template_for_task(task_type)
+self.llm_client = AnthropicLLMClient()
+self.compaction_manager = CompactionManager()
+
+# 3. Update execute_step to use new flow
+def execute_step(self, ...):
+    # Load config
+    config = self.config_loader.load(task_type)
+    
+    # Generate fingerprint
+    fingerprint = self.fingerprint_generator.with_task_context(...)
+    
+    # Build context via template
+    context = self.template.build_context(...)
+    
+    # Compact if needed
+    if self.compaction_manager.needs_compaction(context, budget):
+        context, audit = self.compaction_manager.compact(context, budget)
+    
+    # Call LLM with native tools
+    response = self.llm_client.complete(
+        system=self.template.get_system_prompt(),
+        messages=[{"role": "user", "content": yaml.dump(context)}],
+        tools=self.tools,
+        thinking=self.thinking_config,
+    )
+    
+    # Log for audit
+    self.audit_logger.log_step(...)
+```
+
+### Success Criteria
+
+- [ ] All tests pass (existing + new)
+- [ ] Token usage reduced 40%+ vs before
+- [ ] Prompt caching hit rate > 80%
+- [ ] Full audit trail for all executions
+- [ ] No regressions in fix_violation success rate
+
+## Phase 5: Validation (Week 5)
+
+### Tasks
+
+```
+□ Run against real violation suite
+□ Compare results before/after
+□ Measure token usage improvement
+□ Verify audit completeness
+□ Document any behavior changes
+□ Update all documentation
+□ Clean up deprecated code paths
+```
+
+### Metrics to Track
+
+| Metric | Target | Measurement |
+|--------|--------|-------------|
+| Token usage | -40% | Before/after comparison |
+| Cache hit rate | >80% | API stats |
+| Success rate | ≥ baseline | Violation fix suite |
+| Step efficiency | -20% steps | Average steps to complete |
+| Audit coverage | 100% | All steps logged |
+
+## Rollback Plan
+
+If issues arise, the migration is reversible:
+
+```python
+class MinimalContextExecutor:
+    def __init__(self, ..., use_new_context: bool = True):
+        if use_new_context:
+            # New architecture
+            self.config_loader = AgentConfigLoader(...)
+            ...
+        else:
+            # Legacy path
+            self.config_loader = None
+            ...
+```
+
+Feature flag allows gradual rollout and quick rollback.
+
+## File Changes Summary
+
+### New Files
+
+```
+src/agentforge/core/context/
+├── __init__.py
+├── agent_config.py
+├── fingerprint.py
+├── compaction.py
+├── audit.py
+└── templates/
+    ├── __init__.py
+    ├── base.py
+    ├── fix_violation.py
+    ├── implement_feature.py
+    ├── write_tests.py
+    ├── discovery.py
+    └── bridge.py
+
+src/agentforge/core/llm/
+├── __init__.py
+├── client.py
+├── tools.py
+└── response.py
+
+tests/unit/context/
+├── test_agent_config.py
+├── test_fingerprint.py
+├── test_compaction.py
+├── test_audit.py
+└── test_templates.py
+
+tests/unit/llm/
+├── test_client.py
+└── test_tools.py
+
+tests/integration/context/
+└── test_full_context_flow.py
+```
+
+### Modified Files
+
+```
+src/agentforge/core/harness/minimal_context/
+├── executor.py          # Integrate new components
+└── enhanced_context_builder.py  # May be deprecated
+```
+
+## Dependencies
+
+```toml
+# pyproject.toml additions
+[project.dependencies]
+anthropic = ">=0.30.0"  # Already present
+pydantic = ">=2.0.0"    # Already present
+# No new dependencies required
+```
+
+## Links
+
+- Specs: All files in specs/minimal-context-architecture/
+- Assessment: docs/architecture/context_engineering_assessment.md
+- Existing code: src/agentforge/core/harness/minimal_context/

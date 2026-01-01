@@ -1,0 +1,314 @@
+# Transparency and Audit Specification
+
+spec_id: audit-v1
+component: ContextAuditLogger
+location: src/agentforge/core/context/audit.py
+test_location: tests/unit/context/test_audit.py
+
+## Purpose
+
+Full transparency in agent thinking through comprehensive audit logging:
+- Context snapshots per step
+- Token breakdowns
+- Compaction decisions
+- Extended thinking content
+- Reproducibility via hashing
+
+## Prime Directive
+
+> Total transparency in the thinking process
+
+Every decision the agent makes must be traceable. This is non-negotiable.
+
+## Audit Directory Structure
+
+```
+{project}/.agentforge/context_audit/
+└── {task_id}/
+    ├── summary.yaml           # Task completion summary
+    ├── step_1.yaml            # Step audit entry
+    ├── step_1_context.yaml    # Full context snapshot
+    ├── step_1_thinking.md     # Extended thinking (if enabled)
+    ├── step_2.yaml
+    ├── step_2_context.yaml
+    └── ...
+```
+
+## Step Audit Entry
+
+```yaml
+# step_4.yaml
+task_id: fix-V-abc123
+step: 4
+timestamp: 2025-01-15T10:30:00Z
+
+# Token breakdown per section
+token_breakdown:
+  fingerprint: 487
+  task_frame: 312
+  understanding: 398
+  precomputed: 1203
+  actions: 287
+  recent: 156
+  directive: 89
+  
+total_tokens: 2932
+
+# Compaction info (if applied)
+compaction:
+  applied: true
+  original_tokens: 5200
+  rules_applied:
+    - section: precomputed.analysis
+      strategy: truncate
+  final_tokens: 3900
+
+# Context hash for reproducibility
+context_hash: "sha256:abc123def456..."
+
+# Sections present in context
+sections_present:
+  - fingerprint
+  - task_frame
+  - phase_state
+  - understanding
+  - precomputed
+  - actions
+  - recent
+
+# Thinking reference (if enabled)
+thinking_file: step_4_thinking.md
+thinking_tokens: 3500
+
+# Response info
+response_tokens: 450
+```
+
+## Task Summary
+
+```yaml
+# summary.yaml
+task_id: fix-V-abc123
+completed_at: 2025-01-15T10:45:00Z
+
+# Execution stats
+total_steps: 8
+final_status: completed  # completed|failed|escalated
+
+# Token usage
+total_input_tokens: 25000
+total_output_tokens: 3600
+cached_tokens: 12000
+effective_tokens: 17200  # input - (cached * 0.9)
+
+# Compaction stats
+compaction_events: 3
+total_tokens_saved: 4500
+
+# Thinking stats (if enabled)
+thinking_enabled: true
+total_thinking_tokens: 28000
+```
+
+## Implementation
+
+```python
+class ContextAuditLogger:
+    def __init__(self, project_path: Path, task_id: str):
+        self.project_path = Path(project_path)
+        self.task_id = task_id
+        self.audit_dir = (
+            project_path / ".agentforge" / "context_audit" / task_id
+        )
+        self.audit_dir.mkdir(parents=True, exist_ok=True)
+    
+    def log_step(
+        self,
+        step: int,
+        context: Dict[str, Any],
+        token_breakdown: Dict[str, int],
+        compaction: Optional[Dict] = None,
+        thinking: Optional[str] = None,
+        response: Optional[str] = None,
+    ) -> None:
+        """Log complete step audit."""
+        audit_entry = {
+            "task_id": self.task_id,
+            "step": step,
+            "timestamp": datetime.utcnow().isoformat(),
+            "token_breakdown": token_breakdown,
+            "total_tokens": sum(token_breakdown.values()),
+            "context_hash": self._hash_context(context),
+            "sections_present": list(context.keys()),
+        }
+        
+        if compaction:
+            audit_entry["compaction"] = compaction
+        
+        if thinking:
+            thinking_path = self.audit_dir / f"step_{step}_thinking.md"
+            thinking_path.write_text(thinking)
+            audit_entry["thinking_file"] = thinking_path.name
+            audit_entry["thinking_tokens"] = len(thinking) // 4
+        
+        if response:
+            audit_entry["response_tokens"] = len(response) // 4
+        
+        # Save audit entry
+        self._save_yaml(f"step_{step}.yaml", audit_entry)
+        
+        # Save full context snapshot
+        self._save_yaml(f"step_{step}_context.yaml", context)
+    
+    def log_task_summary(
+        self,
+        total_steps: int,
+        final_status: str,
+        total_tokens: int,
+        cached_tokens: int,
+    ) -> None:
+        """Log task completion summary."""
+        summary = {
+            "task_id": self.task_id,
+            "completed_at": datetime.utcnow().isoformat(),
+            "total_steps": total_steps,
+            "final_status": final_status,
+            "total_input_tokens": total_tokens,
+            "cached_tokens": cached_tokens,
+            "effective_tokens": total_tokens - int(cached_tokens * 0.9),
+        }
+        self._save_yaml("summary.yaml", summary)
+    
+    def _hash_context(self, context: Dict) -> str:
+        """Compute reproducibility hash."""
+        content = json.dumps(context, sort_keys=True, default=str)
+        return hashlib.sha256(content.encode()).hexdigest()[:16]
+    
+    # Retrieval methods
+    def get_step_audit(self, step: int) -> Optional[Dict]: ...
+    def get_step_context(self, step: int) -> Optional[Dict]: ...
+    def get_thinking(self, step: int) -> Optional[str]: ...
+```
+
+## Extended Thinking Logging
+
+When extended thinking is enabled, thinking blocks are saved separately:
+
+```markdown
+<!-- step_4_thinking.md -->
+# Step 4 Thinking
+
+Let me analyze the extraction suggestions...
+
+The first suggestion at lines 67-78 handles error cases. This looks like a good candidate because:
+1. It's a self-contained block
+2. It has clear inputs (the error object)
+3. It will reduce complexity by 4 points
+
+However, I need to verify that extracting this block won't break the control flow. The function returns early in this block, so the extracted function will need to return a signal...
+
+I'll proceed with extract_function using the suggested parameters.
+```
+
+## Reproducibility
+
+Context hashes enable:
+1. **Debugging**: Compare contexts that produced different results
+2. **Replay**: Reproduce exact context for a step
+3. **Verification**: Ensure no context drift
+
+```python
+# Reproduce a step
+audit = logger.get_step_audit(4)
+context = logger.get_step_context(4)
+
+# Verify hash matches
+assert logger._hash_context(context) == audit["context_hash"]
+
+# Replay with same context
+response = llm_client.complete(
+    system=template.get_system_prompt(),
+    messages=[{"role": "user", "content": yaml.dump(context)}],
+)
+```
+
+## Retention Policy
+
+```yaml
+retention:
+  # Keep full audit for recent tasks
+  full_audit_days: 7
+  
+  # Keep summaries longer
+  summary_retention_days: 90
+  
+  # Thinking content (large)
+  thinking_retention_days: 3
+  
+  # Archive to compressed storage
+  archive_after_days: 30
+```
+
+## Test Cases
+
+```yaml
+tests:
+  - name: test_step_audit_created
+    setup: Log a step
+    assert: step_N.yaml exists with required fields
+    
+  - name: test_context_snapshot_saved
+    setup: Log a step
+    assert: step_N_context.yaml exists
+    
+  - name: test_thinking_saved_separately
+    setup: Log step with thinking content
+    assert: step_N_thinking.md exists
+    
+  - name: test_hash_reproducible
+    setup: Hash same context twice
+    assert: Same hash produced
+    
+  - name: test_hash_changes_on_diff
+    setup: Hash different contexts
+    assert: Different hashes
+    
+  - name: test_summary_aggregates
+    setup: Log multiple steps, then summary
+    assert: Summary has correct totals
+    
+  - name: test_retrieval_methods
+    setup: Log and retrieve
+    assert: Retrieved matches logged
+```
+
+## Integration
+
+```python
+# In executor
+audit_logger = ContextAuditLogger(project_path, task_id)
+
+# Log each step
+audit_logger.log_step(
+    step=state.current_step,
+    context=context_dict,
+    token_breakdown=compute_token_breakdown(context_dict),
+    compaction=compaction_audit,
+    thinking=response.thinking,
+    response=response.content,
+)
+
+# Log completion
+audit_logger.log_task_summary(
+    total_steps=state.current_step,
+    final_status="completed",
+    total_tokens=llm_client.get_usage_stats()["total_input_tokens"],
+    cached_tokens=llm_client.get_usage_stats()["cached_tokens"],
+)
+```
+
+## Links
+
+- Implementation: `src/agentforge/core/context/audit.py`
+- Tests: `tests/unit/context/test_audit.py`
+- Related: [06-compaction.yaml](./06-compaction.yaml)

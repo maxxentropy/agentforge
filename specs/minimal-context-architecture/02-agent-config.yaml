@@ -1,0 +1,191 @@
+# AGENT.md Configuration Chain Specification
+
+spec_id: agent-config-v1
+component: AgentConfigLoader
+location: src/agentforge/core/context/agent_config.py
+test_location: tests/unit/context/test_agent_config.py
+
+## Purpose
+
+Loads and merges AGENT.md configuration files from hierarchical chain.
+Replaces static system prompts with user-controllable, project-specific configuration.
+
+## Hierarchy
+
+```
+~/.agentforge/AGENT.md           # Global (user preferences)
+{project}/.agentforge/AGENT.md   # Project-specific
+{project}/.agentforge/tasks/{task_type}.md  # Task-type overrides
+```
+
+Later files override earlier. Lists accumulate (constraints, patterns).
+
+## Schema
+
+```yaml
+AgentConfig:
+  preferences:
+    communication_style: str  # technical|conversational|concise
+    risk_tolerance: str       # conservative|moderate|aggressive
+    verbosity: str            # minimal|normal|verbose
+    
+  defaults:
+    max_steps: int            # Default: 20
+    require_tests: bool       # Default: true
+    auto_commit: bool         # Default: false
+    thinking_enabled: bool    # Default: true
+    thinking_budget: int      # Default: 8000
+    
+  project:                    # Optional, project-level only
+    name: str
+    language: str
+    test_command: str
+    build_command: str?
+    lint_command: str?
+    
+  patterns:
+    docstrings: str           # google|numpy|sphinx
+    naming: str               # snake_case|camelCase
+    imports: str              # absolute|relative
+    architecture: str?        # clean_architecture|mvc|layered
+    
+  constraints: List[str]      # Accumulates across hierarchy
+  
+  instructions: str?          # Free-form, from markdown body
+  
+  sources: List[str]          # Which files contributed (metadata)
+```
+
+## File Format
+
+Markdown with YAML frontmatter:
+
+```markdown
+---
+preferences:
+  communication_style: concise
+  
+defaults:
+  max_steps: 25
+  
+constraints:
+  - "Always run tests before completion"
+---
+
+# Additional Instructions
+
+Any markdown content here becomes the `instructions` field.
+```
+
+## Implementation
+
+```python
+class AgentConfigLoader:
+    GLOBAL_PATH = Path.home() / ".agentforge" / "AGENT.md"
+    PROJECT_PATH = ".agentforge/AGENT.md"
+    TASK_PATH_TEMPLATE = ".agentforge/tasks/{task_type}.md"
+    
+    def __init__(self, project_path: Path):
+        self.project_path = Path(project_path)
+        self._cache: Dict[str, AgentConfig] = {}
+    
+    def load(self, task_type: Optional[str] = None) -> AgentConfig:
+        """Load merged config. Caches by project+task_type."""
+        # 1. Load global if exists
+        # 2. Merge project if exists  
+        # 3. Merge task-type if exists
+        # Return merged AgentConfig
+    
+    def invalidate_cache(self) -> None:
+        """Clear cache (call on file changes)."""
+```
+
+## Merge Rules
+
+| Field Type | Merge Behavior |
+|------------|----------------|
+| Scalar | Later overrides |
+| Dict | Deep merge (later wins per key) |
+| List | Concatenate (accumulate) |
+| Optional | Later overrides if present |
+
+## Test Cases
+
+```yaml
+tests:
+  - name: test_load_global_only
+    setup: Create ~/.agentforge/AGENT.md
+    assert: Config loaded with global values
+    
+  - name: test_project_overrides_global
+    setup: Create both global and project AGENT.md
+    assert: Project values override global
+    
+  - name: test_constraints_accumulate
+    setup: Global has constraint A, project has B
+    assert: Merged config has both A and B
+    
+  - name: test_task_type_override
+    setup: Create tasks/fix_violation.md
+    assert: Task-specific values applied
+    
+  - name: test_markdown_body_becomes_instructions
+    setup: AGENT.md with markdown after frontmatter
+    assert: instructions field populated
+    
+  - name: test_cache_invalidation
+    setup: Load, modify file, invalidate, reload
+    assert: New values reflected
+```
+
+## Example Files
+
+### Global (~/.agentforge/AGENT.md)
+
+```markdown
+---
+preferences:
+  communication_style: technical
+  risk_tolerance: conservative
+
+defaults:
+  max_steps: 20
+  require_tests: true
+  thinking_enabled: true
+
+constraints:
+  - "Verify tests pass before completion"
+  - "Prefer small, focused changes"
+---
+
+When uncertain, escalate rather than guess.
+```
+
+### Project (project/.agentforge/AGENT.md)
+
+```markdown
+---
+project:
+  name: my-api
+  language: python
+  test_command: "pytest -xvs"
+
+patterns:
+  architecture: clean_architecture
+  docstrings: google
+
+constraints:
+  - "Never modify /vendor files"
+  - "All public functions need type hints"
+---
+
+This is a FastAPI application. Be careful with:
+- Database transactions
+- Cache invalidation
+```
+
+## Links
+
+- Implementation: `src/agentforge/core/context/agent_config.py`
+- Tests: `tests/unit/context/test_agent_config.py`
+- Related: [03-fingerprint.yaml](./03-fingerprint.yaml)

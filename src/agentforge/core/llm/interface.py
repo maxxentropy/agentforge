@@ -1,5 +1,5 @@
-# @spec_file: .agentforge/specs/core-llm-v1.yaml
-# @spec_id: core-llm-v1
+# @spec_file: specs/minimal-context-architecture-specs/specs/minimal-context-architecture/05-llm-integration.yaml
+# @spec_id: llm-integration-v1
 # @component_id: llm-interface
 # @test_path: tests/unit/llm/test_interface.py
 

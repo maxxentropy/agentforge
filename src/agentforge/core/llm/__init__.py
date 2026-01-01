@@ -1,7 +1,7 @@
-# @spec_file: .agentforge/specs/core-llm-v1.yaml
-# @spec_id: core-llm-v1
+# @spec_file: specs/minimal-context-architecture-specs/specs/minimal-context-architecture/05-llm-integration.yaml
+# @spec_id: llm-integration-v1
 # @component_id: llm-package
-# @test_path: tests/unit/llm/test_package.py
+# @test_path: tests/unit/llm/
 
 """
 LLM Client Package
@@ -69,6 +69,26 @@ from .simulated import (
 # Real client (lazy import to avoid anthropic dependency when not needed)
 # Use LLMClientFactory.create(mode="real") instead of direct import
 
+# Tool definitions
+from .tools import (
+    get_tools_for_task,
+    get_tool_by_name,
+    get_tools_by_category,
+    list_task_types,
+    list_all_tools,
+    # Tool collections
+    BASE_TOOLS,
+    REFACTORING_TOOLS,
+    DISCOVERY_TOOLS,
+    TESTING_TOOLS,
+    REVIEW_TOOLS,
+    # Individual tools (commonly used)
+    READ_FILE,
+    WRITE_FILE,
+    COMPLETE,
+    ESCALATE,
+)
+
 
 __all__ = [
     # Core interfaces
@@ -91,4 +111,19 @@ __all__ = [
     "PatternMatchingStrategy",
     "SequentialStrategy",
     "create_simple_client",
+    # Tools
+    "get_tools_for_task",
+    "get_tool_by_name",
+    "get_tools_by_category",
+    "list_task_types",
+    "list_all_tools",
+    "BASE_TOOLS",
+    "REFACTORING_TOOLS",
+    "DISCOVERY_TOOLS",
+    "TESTING_TOOLS",
+    "REVIEW_TOOLS",
+    "READ_FILE",
+    "WRITE_FILE",
+    "COMPLETE",
+    "ESCALATE",
 ]

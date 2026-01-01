@@ -172,7 +172,8 @@ class Violation:
 
         Strategy (in order of preference):
         1. Read lineage metadata from file (explicit, auditable)
-        2. Fall back to convention-based detection (legacy files)
+        2. Read from codebase_profile.yaml test linkage (brownfield discovery)
+        3. Fall back to convention-based detection (legacy files)
 
         Args:
             file_path: Path to the file with the violation (relative to project)
@@ -196,8 +197,24 @@ class Violation:
         except ImportError:
             pass  # Lineage module not available, use fallback
 
-        # STRATEGY 2: Convention-based detection (fallback for legacy files)
-        # TODO: Log warning when falling back so we can track migration progress
+        # STRATEGY 2: Read from codebase_profile.yaml test linkage
+        # This is populated by brownfield discovery and gives explicit mappings
+        try:
+            import yaml
+            profile_path = project_root / ".agentforge" / "codebase_profile.yaml"
+            if profile_path.exists():
+                profile_data = yaml.safe_load(profile_path.read_text())
+                test_analysis = profile_data.get("test_analysis")
+                if test_analysis and "linkages" in test_analysis:
+                    linkages = test_analysis["linkages"]
+                    # linkages is a dict: {source_path: [test_paths]}
+                    if file_path in linkages and linkages[file_path]:
+                        # Return the first (primary) test path
+                        return linkages[file_path][0]
+        except Exception:
+            pass  # Profile not available or malformed, use fallback
+
+        # STRATEGY 3: Convention-based detection (fallback for legacy files)
 
         # Test files run themselves
         if file_path.startswith("tests/") and "/test_" in file_path:

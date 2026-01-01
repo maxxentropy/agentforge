@@ -42,6 +42,7 @@ class ProfileGenerator:
         dependencies: List[DependencyInfo],
         phases_completed: List[str],
         duration_seconds: float,
+        test_analysis: Optional[TestAnalysis] = None,
     ) -> CodebaseProfile:
         """
         Generate a CodebaseProfile from analysis results.
@@ -53,6 +54,7 @@ class ProfileGenerator:
             dependencies: Project dependencies
             phases_completed: List of completed discovery phases
             duration_seconds: Total discovery duration
+            test_analysis: Results from test linkage analysis
 
         Returns:
             Complete CodebaseProfile
@@ -88,6 +90,7 @@ class ProfileGenerator:
             patterns=patterns,
             architecture=architecture,
             dependencies=dependencies,
+            test_analysis=test_analysis,
         )
 
         return self._profile
@@ -217,6 +220,7 @@ class ProfileGenerator:
                 }
                 for dep in profile.dependencies
             ] if profile.dependencies else [],
+            "test_analysis": profile.test_analysis.to_dict() if profile.test_analysis else None,
         }
 
     @classmethod

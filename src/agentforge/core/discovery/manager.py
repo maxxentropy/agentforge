@@ -14,7 +14,7 @@ from enum import Enum
 from .domain import (
     CodebaseProfile, DiscoveryPhase, Detection, DetectionSource,
     LanguageInfo, DependencyInfo, OnboardingProgress, OnboardingStatus,
-    Zone, Interaction, ZoneProfile, ZoneDetectionMode,
+    Zone, Interaction, ZoneProfile, ZoneDetectionMode, TestAnalysis,
 )
 from .providers.base import LanguageProvider
 from .providers.python_provider import PythonProvider
@@ -22,7 +22,10 @@ from .providers.dotnet_provider import DotNetProvider
 from .analyzers.structure import StructureAnalyzer, StructureAnalysisResult
 from .analyzers.patterns import PatternAnalyzer, PatternAnalysisResult
 from .analyzers.interactions import InteractionDetector
+from .analyzers.test_linkage import TestLinkageAnalyzer
 from .generators.profile import ProfileGenerator
+from .generators.as_built_spec import AsBuiltSpecGenerator
+from .generators.lineage_embedder import LineageEmbedder
 from .zones.detector import ZoneDetector
 from .zones.merger import ZoneMerger
 
@@ -61,6 +64,8 @@ class DiscoveryResult:
     total_duration_seconds: float
     errors: List[str] = field(default_factory=list)
     warnings: List[str] = field(default_factory=list)
+    spec_paths: List[Path] = field(default_factory=list)  # As-built spec files
+    lineage_embedded: int = 0  # Number of files with lineage embedded
 
 
 class DiscoveryManager:
@@ -106,11 +111,14 @@ class DiscoveryManager:
         self._dependencies: List[DependencyInfo] = []
         self._structure_result: Optional[StructureAnalysisResult] = None
         self._pattern_result: Optional[PatternAnalysisResult] = None
+        self._test_analysis: Optional["TestAnalysis"] = None  # type: ignore
 
     def discover(
         self,
         phases: Optional[List[DiscoveryPhase]] = None,
         save_profile: bool = True,
+        generate_specs: bool = False,
+        embed_lineage: bool = False,
     ) -> DiscoveryResult:
         """
         Run discovery process.
@@ -118,6 +126,8 @@ class DiscoveryManager:
         Args:
             phases: Specific phases to run, or None for all phases
             save_profile: Whether to save profile to disk
+            generate_specs: Whether to generate as-built specs (Artifact Parity)
+            embed_lineage: Whether to embed lineage metadata in source files
 
         Returns:
             DiscoveryResult with profile and phase results
@@ -131,6 +141,7 @@ class DiscoveryManager:
                 DiscoveryPhase.STRUCTURE,
                 DiscoveryPhase.PATTERNS,
                 DiscoveryPhase.ARCHITECTURE,
+                DiscoveryPhase.TESTS,
             ]
 
         errors = []
@@ -162,10 +173,23 @@ class DiscoveryManager:
 
         if not errors or self._has_minimum_results():
             try:
-                self._report_progress("Generating profile...", 90)
+                self._report_progress("Generating profile...", 85)
                 profile, profile_path = self._generate_profile(save_profile)
             except Exception as e:
                 errors.append(f"Profile generation: {str(e)}")
+
+        # Generate as-built specs (Artifact Parity)
+        spec_paths: List[Path] = []
+        lineage_embedded = 0
+
+        if generate_specs and self._test_analysis:
+            try:
+                self._report_progress("Generating as-built specs...", 92)
+                spec_paths, lineage_embedded = self._generate_as_built_specs(
+                    embed_lineage=embed_lineage
+                )
+            except Exception as e:
+                warnings.append(f"As-built spec generation: {str(e)}")
 
         total_duration = time.time() - start_time
         self._report_progress("Discovery complete", 100)
@@ -178,6 +202,8 @@ class DiscoveryManager:
             total_duration_seconds=total_duration,
             errors=errors,
             warnings=warnings,
+            spec_paths=spec_paths,
+            lineage_embedded=lineage_embedded,
         )
 
     def _run_phase(self, phase: DiscoveryPhase) -> PhaseResult:
@@ -193,6 +219,8 @@ class DiscoveryManager:
                 result = self._extract_patterns()
             elif phase == DiscoveryPhase.ARCHITECTURE:
                 result = self._map_architecture()
+            elif phase == DiscoveryPhase.TESTS:
+                result = self._analyze_tests()
             else:
                 return PhaseResult(
                     phase=phase,
@@ -350,6 +378,36 @@ class DiscoveryManager:
 
         return architecture
 
+    def _analyze_tests(self) -> TestAnalysis:
+        """Phase 5: Analyze tests and build source-to-test linkage."""
+        # Get test directories from structure analysis
+        test_dirs = ["tests", "test"]
+        source_dirs = ["src", "tools", "lib"]
+
+        if self._structure_result:
+            # Use detected test directories
+            if self._structure_result.test_directories:
+                test_dirs = [
+                    str(Path(d).relative_to(self.root_path))
+                    if Path(d).is_absolute() else d
+                    for d in self._structure_result.test_directories
+                ]
+
+        analyzer = TestLinkageAnalyzer(
+            root_path=self.root_path,
+            test_directories=test_dirs,
+            source_directories=source_dirs,
+        )
+
+        self._test_analysis = analyzer.analyze()
+
+        if self.verbose:
+            print(f"  Test linkage: {len(self._test_analysis.linkages)} source files mapped")
+            print(f"  Test files: {self._test_analysis.inventory.total_test_files}")
+            print(f"  Coverage estimate: {self._test_analysis.estimated_coverage:.0%}")
+
+        return self._test_analysis
+
     def _has_minimum_results(self) -> bool:
         """Check if we have minimum results to generate a profile."""
         return (
@@ -403,6 +461,7 @@ class DiscoveryManager:
             dependencies=self._dependencies,
             phases_completed=phases_completed,
             duration_seconds=total_duration,
+            test_analysis=self._test_analysis,
         )
 
         profile_path = None
@@ -412,6 +471,58 @@ class DiscoveryManager:
                 print(f"  Profile saved to: {profile_path}")
 
         return profile, profile_path
+
+    def _generate_as_built_specs(
+        self,
+        embed_lineage: bool = False,
+    ) -> tuple[List[Path], int]:
+        """
+        Generate as-built specs from test analysis results.
+
+        This implements the Artifact Parity Principle - brownfield code
+        gets the same spec structure as greenfield code.
+
+        Args:
+            embed_lineage: Whether to embed lineage metadata in source files
+
+        Returns:
+            Tuple of (spec_paths, files_with_lineage_embedded)
+        """
+        if not self._test_analysis or not self._test_analysis.linkages:
+            return [], 0
+
+        generator = AsBuiltSpecGenerator(self.root_path)
+        specs = generator.generate_from_test_analysis(
+            self._test_analysis,
+            zone_name="main",
+        )
+
+        if not specs:
+            return [], 0
+
+        # Save specs to disk
+        spec_paths = generator.save_specs(specs)
+
+        if self.verbose:
+            print(f"  Generated {len(specs)} as-built spec(s)")
+            for path in spec_paths:
+                print(f"    - {path.name}")
+
+        # Optionally embed lineage metadata
+        files_embedded = 0
+        if embed_lineage:
+            lineage_updates = generator.generate_lineage_updates(specs)
+
+            embedder = LineageEmbedder(self.root_path)
+            results = embedder.embed_all(lineage_updates)
+
+            files_embedded = sum(1 for r in results if r.success and r.action in ("added", "updated"))
+
+            if self.verbose:
+                summary = embedder.summary()
+                print(f"  Lineage embedded: {summary['added']} added, {summary['updated']} updated")
+
+        return spec_paths, files_embedded
 
     def _report_progress(self, message: str, percentage: float) -> None:
         """Report progress to callback if available."""

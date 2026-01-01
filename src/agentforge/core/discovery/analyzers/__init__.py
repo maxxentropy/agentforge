@@ -8,5 +8,6 @@ and conventions in existing codebases.
 
 from .structure import StructureAnalyzer
 from .patterns import PatternAnalyzer
+from .test_linkage import TestLinkageAnalyzer
 
-__all__ = ["StructureAnalyzer", "PatternAnalyzer"]
+__all__ = ["StructureAnalyzer", "PatternAnalyzer", "TestLinkageAnalyzer"]

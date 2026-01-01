@@ -10,10 +10,15 @@ Context Management Package
 Tools for managing agent context efficiently:
 - AgentConfigLoader: Load and merge AGENT.md configuration hierarchy
 - FingerprintGenerator: Generate compact project fingerprints (~500 tokens)
+- Context Templates: Task-type specific context definitions
 
 Usage:
     ```python
-    from agentforge.core.context import AgentConfigLoader, FingerprintGenerator
+    from agentforge.core.context import (
+        AgentConfigLoader,
+        FingerprintGenerator,
+        get_template_for_task,
+    )
 
     # Load configuration
     config_loader = AgentConfigLoader(project_path)
@@ -27,8 +32,16 @@ Usage:
         success_criteria=["Tests pass"],
     )
 
-    # Get compact YAML for LLM context
-    context_yaml = fingerprint.to_context_yaml()
+    # Get template for task type
+    template = get_template_for_task("fix_violation")
+    context = template.build_context_dict(
+        fingerprint=fingerprint,
+        task_spec=task_spec,
+        state_spec=state_spec,
+        phase="analyze",
+        precomputed={...},
+        domain_context={...},
+    )
     ```
 """
 
@@ -51,6 +64,32 @@ from .fingerprint import (
     TechnicalProfile,
 )
 
+# Context templates
+from .templates import (
+    BaseContextTemplate,
+    CompactionLevel,
+    ContextSection,
+    FixViolationTemplate,
+    ImplementFeatureTemplate,
+    PhaseContextDef,
+    TierDefinition,
+    get_template_class,
+    get_template_for_task,
+    list_task_types,
+    register_template,
+)
+
+# Compaction
+from .compaction import (
+    CompactionAudit,
+    CompactionManager,
+    CompactionRule,
+    CompactionStrategy,
+)
+
+# Audit
+from .audit import ContextAuditLogger
+
 __all__ = [
     # Agent config
     "AgentConfig",
@@ -65,4 +104,23 @@ __all__ = [
     "TechnicalProfile",
     "DetectedPatterns",
     "ProjectStructure",
+    # Templates
+    "BaseContextTemplate",
+    "FixViolationTemplate",
+    "ImplementFeatureTemplate",
+    "CompactionLevel",
+    "ContextSection",
+    "TierDefinition",
+    "PhaseContextDef",
+    "get_template_for_task",
+    "get_template_class",
+    "register_template",
+    "list_task_types",
+    # Compaction
+    "CompactionManager",
+    "CompactionRule",
+    "CompactionStrategy",
+    "CompactionAudit",
+    # Audit
+    "ContextAuditLogger",
 ]

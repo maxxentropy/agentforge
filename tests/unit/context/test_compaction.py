@@ -1,0 +1,340 @@
+# @spec_file: .agentforge/specs/core-context-v1.yaml
+# @spec_id: compaction-v1
+# @component_id: compaction-tests
+
+"""
+Tests for CompactionManager.
+"""
+
+import pytest
+
+from agentforge.core.context.compaction import (
+    CompactionAudit,
+    CompactionManager,
+    CompactionRule,
+    CompactionStrategy,
+    DEFAULT_RULES,
+    PRESERVED_SECTIONS,
+)
+
+
+class TestCompactionManager:
+    """Tests for CompactionManager."""
+
+    @pytest.fixture
+    def manager(self):
+        """Create a compaction manager with standard settings."""
+        return CompactionManager(threshold=0.90, max_budget=1000)
+
+    @pytest.fixture
+    def sample_context(self):
+        """Create a sample context that needs compaction."""
+        return {
+            "fingerprint": "project: test\nlanguage: python",
+            "task": {"id": "test-001", "goal": "Fix the bug"},
+            "phase": {"current": "implement", "step": 3},
+            "target_source": "def foo():\n" + "    pass\n" * 100,  # Long source
+            "similar_fixes": [{"name": f"fix{i}"} for i in range(20)],
+            "understanding": [{"fact": f"fact{i}"} for i in range(30)],
+            "recent": [{"action": f"action{i}"} for i in range(10)],
+            "additional": {"extra": "data" * 50},
+        }
+
+    def test_estimate_tokens(self, manager):
+        """Token estimation works correctly."""
+        context = {"key": "value" * 100}
+        tokens = manager.estimate_tokens(context)
+
+        # Should be approximately len(yaml_output) / 4
+        assert tokens > 0
+        assert tokens < 200
+
+    def test_no_compaction_under_threshold(self, manager):
+        """No compaction needed when under threshold."""
+        # Small context well under budget
+        context = {"fingerprint": "small", "task": "test"}
+        assert not manager.needs_compaction(context)
+
+    def test_compaction_triggers_at_threshold(self, manager):
+        """Compaction triggers when over threshold."""
+        # Large context over budget
+        context = {"data": "x" * 5000}  # ~1250 tokens
+        assert manager.needs_compaction(context)
+
+    def test_preserved_sections_untouched(self, manager, sample_context):
+        """Preserved sections are never compacted."""
+        result, audit = manager.compact(sample_context)
+
+        # fingerprint, task, phase should be unchanged
+        assert result["fingerprint"] == sample_context["fingerprint"]
+        assert result["task"] == sample_context["task"]
+        assert result["phase"] == sample_context["phase"]
+
+    def test_custom_preserve_list(self, manager, sample_context):
+        """Custom preserve list is respected."""
+        result, audit = manager.compact(
+            sample_context,
+            preserve=["understanding"],  # Add understanding to preserve
+        )
+
+        # understanding should be unchanged
+        assert result["understanding"] == sample_context["understanding"]
+
+    def test_rules_applied_in_order(self, manager, sample_context):
+        """Rules are applied in priority order."""
+        result, audit = manager.compact(sample_context)
+
+        if len(audit.rules_applied) > 1:
+            # Check priorities are in order
+            for i in range(len(audit.rules_applied) - 1):
+                rule_i = next(
+                    (r for r in DEFAULT_RULES if r.section == audit.rules_applied[i]["section"]),
+                    None,
+                )
+                rule_j = next(
+                    (r for r in DEFAULT_RULES if r.section == audit.rules_applied[i + 1]["section"]),
+                    None,
+                )
+                if rule_i and rule_j:
+                    assert rule_i.priority <= rule_j.priority
+
+    def test_compaction_stops_at_budget(self, manager):
+        """Compaction stops once budget is met."""
+        # Context slightly over budget
+        context = {
+            "fingerprint": "x",
+            "task": "y",
+            "phase": "z",
+            "data": ["item"] * 50,  # Will need compaction
+        }
+
+        manager_tight = CompactionManager(threshold=0.90, max_budget=500)
+        result, audit = manager_tight.compact(context)
+
+        # Should stop once under budget
+        assert manager_tight.estimate_tokens(result) <= manager_tight.max_budget
+
+
+class TestCompactionStrategies:
+    """Tests for individual compaction strategies."""
+
+    @pytest.fixture
+    def manager(self):
+        return CompactionManager(threshold=0.90, max_budget=100)
+
+    def test_truncate_strategy(self, manager):
+        """TRUNCATE cuts string to max chars."""
+        long_string = "x" * 5000
+        result = manager._truncate(long_string, max_tokens=100)
+
+        assert len(result) < len(long_string)
+        assert result.endswith("... (truncated)")
+
+    def test_truncate_no_change_if_under(self, manager):
+        """TRUNCATE doesn't change short strings."""
+        short_string = "hello"
+        result = manager._truncate(short_string, max_tokens=100)
+
+        assert result == short_string
+
+    def test_truncate_middle_strategy(self, manager):
+        """TRUNCATE_MIDDLE keeps start and end."""
+        long_string = "START" + "x" * 5000 + "END"
+        result = manager._truncate_middle(long_string, max_tokens=100)
+
+        assert "START" in result[:50]
+        assert "END" in result[-50:]
+        assert "(middle truncated)" in result
+
+    def test_keep_first_strategy(self):
+        """KEEP_FIRST keeps first N items."""
+        # Use very low budget to ensure compaction triggers
+        manager = CompactionManager(
+            threshold=0.10,  # Very low threshold
+            max_budget=10,   # Very low budget
+            rules=[
+                CompactionRule("items", CompactionStrategy.KEEP_FIRST, 3, priority=1),
+            ],
+        )
+
+        # Create a large list to exceed budget
+        context = {"items": [{"data": f"item{i}" * 10} for i in range(20)]}
+        result, _ = manager.compact(context)
+
+        # Should be truncated to first 3
+        assert len(result["items"]) == 3
+        assert result["items"][0]["data"].startswith("item0")
+
+    def test_keep_last_strategy(self):
+        """KEEP_LAST keeps last N items."""
+        # Use very low budget to ensure compaction triggers
+        manager = CompactionManager(
+            threshold=0.10,  # Very low threshold
+            max_budget=10,   # Very low budget
+            rules=[
+                CompactionRule("items", CompactionStrategy.KEEP_LAST, 3, priority=1),
+            ],
+        )
+
+        # Create a large list to exceed budget
+        context = {"items": [{"data": f"item{i}" * 10} for i in range(20)]}
+        result, _ = manager.compact(context)
+
+        # Should be truncated to last 3
+        assert len(result["items"]) == 3
+        assert result["items"][-1]["data"].startswith("item19")
+
+    def test_remove_strategy(self):
+        """REMOVE deletes the section entirely."""
+        # Use very low budget to ensure compaction triggers
+        manager = CompactionManager(
+            threshold=0.10,  # Very low threshold
+            max_budget=10,   # Very low budget
+            rules=[
+                CompactionRule("optional", CompactionStrategy.REMOVE, None, priority=1),
+            ],
+        )
+
+        # Create large context to exceed budget
+        context = {"required": "keep", "optional": "x" * 500}
+        result, _ = manager.compact(context)
+
+        assert "required" in result
+        assert "optional" not in result
+
+
+class TestCompactionAudit:
+    """Tests for CompactionAudit."""
+
+    def test_audit_to_dict(self):
+        """Audit converts to dictionary correctly."""
+        audit = CompactionAudit(
+            original_tokens=5000,
+            final_tokens=3000,
+            budget=4000,
+            rules_applied=[
+                {"section": "data", "strategy": "truncate", "tokens_after": 3000}
+            ],
+        )
+
+        result = audit.to_dict()
+
+        assert result["applied"] is True
+        assert result["original_tokens"] == 5000
+        assert result["final_tokens"] == 3000
+        assert result["tokens_saved"] == 2000
+
+    def test_audit_no_rules_applied(self):
+        """Audit shows not applied when no rules used."""
+        audit = CompactionAudit(
+            original_tokens=1000,
+            final_tokens=1000,
+            budget=4000,
+            rules_applied=[],
+        )
+
+        result = audit.to_dict()
+
+        assert result["applied"] is False
+        assert result["tokens_saved"] == 0
+
+
+class TestCompactionRule:
+    """Tests for CompactionRule."""
+
+    def test_rule_ordering(self):
+        """Rules sort by priority."""
+        rules = [
+            CompactionRule("c", CompactionStrategy.REMOVE, None, priority=3),
+            CompactionRule("a", CompactionStrategy.REMOVE, None, priority=1),
+            CompactionRule("b", CompactionStrategy.REMOVE, None, priority=2),
+        ]
+
+        sorted_rules = sorted(rules)
+
+        assert [r.section for r in sorted_rules] == ["a", "b", "c"]
+
+    def test_default_rules_exist(self):
+        """Default rules are defined."""
+        assert len(DEFAULT_RULES) > 0
+
+        # Check rules have required fields
+        for rule in DEFAULT_RULES:
+            assert rule.section
+            assert rule.strategy
+            assert rule.priority >= 0
+
+
+class TestPreservedSections:
+    """Tests for preserved section handling."""
+
+    def test_preserved_sections_defined(self):
+        """Preserved sections are defined."""
+        assert "fingerprint" in PRESERVED_SECTIONS
+        assert "task" in PRESERVED_SECTIONS
+        assert "phase" in PRESERVED_SECTIONS
+
+    def test_nested_section_preserved(self):
+        """Nested sections under preserved are protected."""
+        manager = CompactionManager(
+            threshold=0.50,
+            max_budget=50,
+            rules=[
+                CompactionRule(
+                    "fingerprint.identity", CompactionStrategy.REMOVE, None, priority=1
+                ),
+            ],
+        )
+
+        context = {"fingerprint": {"identity": "test", "language": "python"}}
+        result, _ = manager.compact(context, preserve=["fingerprint"])
+
+        # Nested section should be preserved
+        assert "identity" in result["fingerprint"]
+
+
+class TestDotNotation:
+    """Tests for dot notation in section paths."""
+
+    def test_nested_section_compaction(self):
+        """Nested sections can be compacted."""
+        manager = CompactionManager(
+            threshold=0.50,
+            max_budget=100,
+            rules=[
+                CompactionRule(
+                    "precomputed.analysis", CompactionStrategy.TRUNCATE, 50, priority=1
+                ),
+            ],
+        )
+
+        context = {
+            "precomputed": {
+                "analysis": "x" * 1000,
+                "other": "keep",
+            }
+        }
+        result, audit = manager.compact(context)
+
+        # analysis should be truncated
+        assert len(result["precomputed"]["analysis"]) < 1000
+        # other should be unchanged
+        assert result["precomputed"]["other"] == "keep"
+
+    def test_missing_nested_section_skipped(self):
+        """Missing nested sections are skipped gracefully."""
+        manager = CompactionManager(
+            threshold=0.50,
+            max_budget=100,
+            rules=[
+                CompactionRule(
+                    "precomputed.missing", CompactionStrategy.REMOVE, None, priority=1
+                ),
+            ],
+        )
+
+        context = {"precomputed": {"existing": "data"}}
+        result, audit = manager.compact(context)
+
+        # Should not fail, should return unchanged
+        assert result["precomputed"]["existing"] == "data"

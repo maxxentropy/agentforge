@@ -34,7 +34,7 @@ Usage:
 
 import hashlib
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, ClassVar, Dict, List, Optional
 
@@ -48,7 +48,7 @@ class ProjectIdentity(BaseModel):
     name: str
     path: str
     content_hash: str = Field(description="For cache invalidation")
-    generated_at: datetime = Field(default_factory=datetime.utcnow)
+    generated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class TechnicalProfile(BaseModel):

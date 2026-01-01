@@ -1,0 +1,36 @@
+# Mutation Testing Configuration for AgentForge
+# Uses mutmut: pip install mutmut
+#
+# Run mutation testing:
+#   mutmut run --paths-to-mutate src/agentforge/core/harness/minimal_context/
+#
+# View results:
+#   mutmut results
+#   mutmut show <mutation_id>
+#
+# Generate HTML report:
+#   mutmut html
+
+[mutmut]
+# Critical paths to test for mutation
+paths_to_mutate = [
+    "src/agentforge/core/harness/minimal_context/step_outcome.py",
+    "src/agentforge/core/harness/minimal_context/adaptive_budget.py",
+    "src/agentforge/core/harness/minimal_context/loop_detector.py",
+    "src/agentforge/core/harness/minimal_context/phase_machine.py",
+    "src/agentforge/core/harness/minimal_context/state_store.py",
+    "src/agentforge/core/context/compaction.py",
+    "src/agentforge/core/context/audit.py",
+]
+
+# Tests that verify the critical paths
+tests_dir = "tests/unit/harness/"
+
+# Runner configuration
+runner = "python -m pytest -x -q"
+
+# Files/patterns to skip during mutation
+dict_synonyms = ["Enum", "dataclass"]
+
+# Backup location for original files
+backup = true

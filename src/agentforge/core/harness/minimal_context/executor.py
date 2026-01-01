@@ -26,6 +26,11 @@ Features:
 - Enhanced loop detection
 - Phase machine for state transitions
 - Understanding extraction for fact-based reasoning
+
+Module Structure:
+- step_outcome.py: StepOutcome dataclass
+- adaptive_budget.py: AdaptiveBudget class
+- executor.py: MinimalContextExecutor (this file)
 """
 
 import asyncio
@@ -34,7 +39,6 @@ import os
 import re
 import time
 import yaml
-from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
@@ -61,258 +65,17 @@ from .template_context_builder import TemplateContextBuilder
 from .working_memory import WorkingMemoryManager
 from .understanding import UnderstandingExtractor
 from .context_models import ActionResult, ActionRecord, AgentResponse, Fact, FactCategory, ActionDef
-from .loop_detector import LoopDetector, LoopDetection, LoopType
+from .loop_detector import LoopDetection
 from .phase_machine import PhaseMachine, Phase, PhaseContext
 from .native_tool_executor import NativeToolExecutor, create_standard_handlers
 
-
-@dataclass
-class StepOutcome:
-    """Result of executing a single step."""
-    success: bool
-    action_name: str
-    action_params: Dict[str, Any]
-    result: str  # "success", "failure", "partial"
-    summary: str
-    should_continue: bool
-    tokens_used: int
-    duration_ms: int
-    error: Optional[str] = None
-    loop_detected: Optional[LoopDetection] = None
-
-    def to_dict(self) -> Dict[str, Any]:
-        result = {
-            "success": self.success,
-            "action_name": self.action_name,
-            "action_params": self.action_params,
-            "result": self.result,
-            "summary": self.summary,
-            "should_continue": self.should_continue,
-            "tokens_used": self.tokens_used,
-            "duration_ms": self.duration_ms,
-            "error": self.error,
-        }
-        if self.loop_detected and self.loop_detected.detected:
-            result["loop_detection"] = {
-                "type": self.loop_detected.loop_type.value if self.loop_detected.loop_type else None,
-                "description": self.loop_detected.description,
-                "confidence": self.loop_detected.confidence,
-                "suggestions": self.loop_detected.suggestions,
-            }
-        return result
+# Import decomposed modules
+from .step_outcome import StepOutcome
+from .adaptive_budget import AdaptiveBudget
 
 
 # Type alias for action executors
 ActionExecutor = Callable[[str, Dict[str, Any], TaskState], Dict[str, Any]]
-
-
-class AdaptiveBudget:
-    """
-    Adaptive step budget that prevents runaway while allowing complex tasks.
-
-    Key behaviors:
-    1. LOOP DETECTION: Enhanced detection via LoopDetector
-       - Identical action loops
-       - Semantic loops (different actions, same outcome)
-       - Error cycling (A->B->A patterns)
-       - No-progress loops
-    2. PROGRESS EXTENSION: Extend budget when making progress
-    3. HARD CEILING: Never exceed max_budget (cost control)
-    """
-
-    def __init__(
-        self,
-        base_budget: int = 15,
-        max_budget: int = 50,
-        runaway_threshold: int = 3,
-        no_progress_threshold: int = 3,
-        use_enhanced_loop_detection: bool = True,
-    ):
-        self.base_budget = base_budget
-        self.max_budget = max_budget
-        self.runaway_threshold = runaway_threshold
-        self.no_progress_threshold = no_progress_threshold
-        self._progress_count = 0
-        self._no_progress_streak = 0
-        self._last_violation_count: Optional[int] = None
-
-        # Enhanced loop detection
-        self.use_enhanced_loop_detection = use_enhanced_loop_detection
-        self.loop_detector = LoopDetector(
-            identical_threshold=runaway_threshold,
-            semantic_threshold=runaway_threshold + 1,
-            cycle_threshold=2,
-            no_progress_threshold=no_progress_threshold,
-        ) if use_enhanced_loop_detection else None
-
-        self._last_loop_detection: Optional[LoopDetection] = None
-
-    def check_continue(
-        self,
-        step_number: int,
-        recent_actions: List[Dict[str, Any]],
-        facts: Optional[List[Any]] = None,
-    ) -> tuple[bool, str, Optional[LoopDetection]]:
-        """
-        Determine if execution should continue.
-
-        Args:
-            step_number: Current step number (1-indexed)
-            recent_actions: Last N action records
-            facts: Optional list of facts for enhanced loop detection
-
-        Returns:
-            (should_continue, reason, loop_detection)
-        """
-        self._last_loop_detection = None
-
-        # 1. Enhanced loop detection
-        if self.use_enhanced_loop_detection and self.loop_detector:
-            loop_result = self._check_enhanced_loops(recent_actions, facts)
-            if loop_result and loop_result.detected:
-                self._last_loop_detection = loop_result
-                return (
-                    False,
-                    f"STOPPED: {loop_result.loop_type.value.upper()} - {loop_result.description}",
-                    loop_result,
-                )
-        else:
-            if self._detect_runaway_legacy(recent_actions):
-                return False, "STOPPED: Runaway detected (same action failed 3+ times)", None
-
-        # 2. Update progress tracking
-        progress_made = self._update_progress(recent_actions)
-
-        # 3. No-progress detection
-        if not progress_made:
-            self._no_progress_streak += 1
-            if self._no_progress_streak >= self.no_progress_threshold:
-                return False, f"STOPPED: No progress for {self._no_progress_streak} consecutive steps", None
-        else:
-            self._no_progress_streak = 0
-
-        # 4. Calculate dynamic budget
-        dynamic_budget = self._calculate_budget()
-
-        # 5. Check if within budget
-        if step_number >= dynamic_budget:
-            return False, f"STOPPED: Budget exhausted ({step_number}/{dynamic_budget} steps)", None
-
-        return True, f"Continue (step {step_number}/{dynamic_budget})", None
-
-    def _check_enhanced_loops(
-        self,
-        recent_actions: List[Dict[str, Any]],
-        facts: Optional[List[Any]] = None,
-    ) -> Optional[LoopDetection]:
-        """Use enhanced LoopDetector for semantic loop detection."""
-        if not self.loop_detector or not recent_actions:
-            return None
-
-        action_records = []
-        for i, action_dict in enumerate(recent_actions):
-            result_str = action_dict.get("result", "success")
-            result_enum = {
-                "success": ActionResult.SUCCESS,
-                "failure": ActionResult.FAILURE,
-                "partial": ActionResult.PARTIAL,
-            }.get(result_str, ActionResult.SUCCESS)
-
-            record = ActionRecord(
-                step=action_dict.get("step", i + 1),
-                action=action_dict.get("action", "unknown"),
-                target=action_dict.get("target"),
-                parameters=action_dict.get("parameters", {}),
-                result=result_enum,
-                summary=action_dict.get("summary", ""),
-                error=action_dict.get("error"),
-            )
-            action_records.append(record)
-
-        return self.loop_detector.check(action_records, facts)
-
-    def _detect_runaway_legacy(self, recent_actions: List[Dict[str, Any]]) -> bool:
-        """Legacy runaway detection: repeated identical failures."""
-        if len(recent_actions) < self.runaway_threshold:
-            return False
-
-        last_n = recent_actions[-self.runaway_threshold:]
-
-        if not all(a.get("result") == "failure" for a in last_n):
-            return False
-
-        actions = [a.get("action") for a in last_n]
-        if len(set(actions)) != 1:
-            return False
-
-        first_params = last_n[0].get("parameters", {})
-        for a in last_n[1:]:
-            if a.get("parameters", {}) != first_params:
-                if a.get("error") != last_n[0].get("error"):
-                    return False
-
-        return True
-
-    def get_last_loop_detection(self) -> Optional[LoopDetection]:
-        """Get the last loop detection result."""
-        return self._last_loop_detection
-
-    def get_loop_suggestions(self) -> List[str]:
-        """Get suggestions from the last loop detection."""
-        if self._last_loop_detection and self._last_loop_detection.detected:
-            return self._last_loop_detection.suggestions
-        return []
-
-    def _update_progress(self, recent_actions: List[Dict[str, Any]]) -> bool:
-        """Check if the most recent action made progress."""
-        if not recent_actions:
-            return False
-
-        latest = recent_actions[-1]
-        result = latest.get("result", "failure")
-        action = latest.get("action", "")
-        summary = latest.get("summary", "")
-
-        if result == "success" and action in [
-            "write_file", "edit_file", "replace_lines", "insert_lines", "extract_function"
-        ]:
-            self._progress_count += 1
-            return True
-
-        if "Check PASSED" in summary or "✓" in summary:
-            self._progress_count += 3
-            return True
-
-        if result == "success" and action in ["read_file", "load_context"]:
-            return True
-
-        if action == "run_check" and "Violations" in summary:
-            current_count = self._parse_violation_count(summary)
-            if current_count is not None:
-                if self._last_violation_count is not None:
-                    if current_count < self._last_violation_count:
-                        self._progress_count += 2
-                        self._last_violation_count = current_count
-                        return True
-                self._last_violation_count = current_count
-
-        return False
-
-    def _parse_violation_count(self, summary: str) -> Optional[int]:
-        """Parse violation count from run_check summary."""
-        match = re.search(r'Violations?\s*\((\d+)\)', summary)
-        if match:
-            return int(match.group(1))
-        match = re.search(r'(\d+)\s+violations?', summary, re.IGNORECASE)
-        if match:
-            return int(match.group(1))
-        return None
-
-    def _calculate_budget(self) -> int:
-        """Calculate dynamic budget based on progress."""
-        extension = self._progress_count * 3
-        dynamic_budget = min(self.base_budget + extension, self.max_budget)
-        return dynamic_budget
 
 
 class MinimalContextExecutor:

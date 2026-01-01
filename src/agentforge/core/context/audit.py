@@ -52,7 +52,7 @@ Usage:
 
 import hashlib
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -113,7 +113,7 @@ class ContextAuditLogger:
         audit_entry: Dict[str, Any] = {
             "task_id": self.task_id,
             "step": step,
-            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
             "token_breakdown": token_breakdown,
             "total_tokens": sum(token_breakdown.values()),
             "context_hash": self._hash_context(context),
@@ -170,7 +170,7 @@ class ContextAuditLogger:
 
         summary: Dict[str, Any] = {
             "task_id": self.task_id,
-            "completed_at": datetime.utcnow().isoformat() + "Z",
+            "completed_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
             "total_steps": total_steps,
             "final_status": final_status,
             "total_input_tokens": total_tokens,

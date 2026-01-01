@@ -28,14 +28,38 @@ Usage:
             context,
             preserve=["fingerprint", "task", "phase"],
         )
+
+    # With LLM summarization (last resort)
+    manager = CompactionManager(
+        threshold=0.90,
+        max_budget=4000,
+        summarizer=my_llm_summarizer,
+    )
     ```
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Protocol, Tuple
 
 import yaml
+
+
+class Summarizer(Protocol):
+    """Protocol for LLM-based summarization."""
+
+    def summarize(self, content: str, max_tokens: int) -> str:
+        """
+        Summarize content to fit within token budget.
+
+        Args:
+            content: Text content to summarize
+            max_tokens: Maximum tokens for the summary
+
+        Returns:
+            Summarized text
+        """
+        ...
 
 
 class CompactionStrategy(str, Enum):
@@ -112,6 +136,9 @@ class CompactionManager:
 
     Applies compaction rules in priority order until context fits
     within budget. Preserves critical sections.
+
+    The SUMMARIZE strategy requires an LLM summarizer to be provided.
+    If no summarizer is set, SUMMARIZE rules are skipped.
     """
 
     def __init__(
@@ -119,6 +146,7 @@ class CompactionManager:
         threshold: float = 0.90,
         max_budget: int = 4000,
         rules: Optional[List[CompactionRule]] = None,
+        summarizer: Optional[Summarizer] = None,
     ):
         """
         Initialize compaction manager.
@@ -127,10 +155,13 @@ class CompactionManager:
             threshold: Trigger compaction when usage exceeds this ratio
             max_budget: Maximum token budget
             rules: Custom compaction rules (uses defaults if not provided)
+            summarizer: Optional LLM summarizer for SUMMARIZE strategy
         """
         self.threshold = threshold
         self.max_budget = max_budget
         self.rules = sorted(rules or DEFAULT_RULES, key=lambda r: r.priority)
+        self.summarizer = summarizer
+        self._summarization_calls = 0  # Track summarization usage
 
     def estimate_tokens(self, context: Dict[str, Any]) -> int:
         """Estimate total tokens in a context dictionary."""
@@ -273,6 +304,41 @@ class CompactionManager:
             del result_parent[key]
             return result, True
 
+        elif rule.strategy == CompactionStrategy.SUMMARIZE:
+            # SUMMARIZE requires an LLM summarizer
+            if self.summarizer is None:
+                return context, False
+
+            if isinstance(value, str) and len(value) > (rule.param or 200) * 4:
+                target_tokens = rule.param or 200
+                try:
+                    summarized = self.summarizer.summarize(value, target_tokens)
+                    result_parent[key] = f"[Summarized]\n{summarized}"
+                    self._summarization_calls += 1
+                    return result, True
+                except Exception:
+                    # Fall back to truncation if summarization fails
+                    result_parent[key] = self._truncate(value, target_tokens)
+                    return result, True
+
+            elif isinstance(value, list) and len(value) > 3:
+                # Summarize list of items (e.g., action history)
+                target_tokens = rule.param or 200
+                list_text = "\n".join(
+                    f"- {item}" if isinstance(item, str)
+                    else f"- {yaml.dump(item, default_flow_style=True).strip()}"
+                    for item in value
+                )
+                try:
+                    summarized = self.summarizer.summarize(list_text, target_tokens)
+                    result_parent[key] = f"[Summarized from {len(value)} items]\n{summarized}"
+                    self._summarization_calls += 1
+                    return result, True
+                except Exception:
+                    # Fall back to keeping first few items
+                    result_parent[key] = value[:3]
+                    return result, True
+
         return context, False
 
     def _truncate(self, value: str, max_tokens: int) -> str:
@@ -297,3 +363,101 @@ class CompactionManager:
             section_yaml = yaml.dump({key: value}, default_flow_style=False)
             breakdown[key] = len(section_yaml) // 4
         return breakdown
+
+    def set_summarizer(self, summarizer: Summarizer) -> None:
+        """
+        Set the LLM summarizer for SUMMARIZE strategy.
+
+        Args:
+            summarizer: Object implementing the Summarizer protocol
+        """
+        self.summarizer = summarizer
+
+    def get_summarization_stats(self) -> Dict[str, int]:
+        """Get summarization usage statistics."""
+        return {
+            "summarization_calls": self._summarization_calls,
+        }
+
+    def reset_stats(self) -> None:
+        """Reset usage statistics."""
+        self._summarization_calls = 0
+
+
+class SimpleLLMSummarizer:
+    """
+    Simple LLM-based summarizer using the AgentForge LLM client.
+
+    This is a reference implementation of the Summarizer protocol.
+    For production use, consider caching and rate limiting.
+    """
+
+    def __init__(
+        self,
+        model: str = "claude-sonnet-4-20250514",
+        system_prompt: Optional[str] = None,
+    ):
+        """
+        Initialize the summarizer.
+
+        Args:
+            model: Model to use for summarization
+            system_prompt: Custom system prompt (uses default if not provided)
+        """
+        self.model = model
+        self.system_prompt = system_prompt or (
+            "You are a context summarizer. Your task is to condense the provided "
+            "content into a brief summary that preserves the most important information. "
+            "Focus on key facts, decisions, and outcomes. Be concise but accurate."
+        )
+        self._client = None
+
+    def _get_client(self):
+        """Lazy-load the LLM client."""
+        if self._client is None:
+            try:
+                from ..llm import LLMClientFactory
+                self._client = LLMClientFactory.create(model=self.model)
+            except ImportError:
+                raise RuntimeError(
+                    "LLM client not available. Install agentforge with LLM support."
+                )
+        return self._client
+
+    def summarize(self, content: str, max_tokens: int) -> str:
+        """
+        Summarize content using an LLM.
+
+        Args:
+            content: Text content to summarize
+            max_tokens: Maximum tokens for the summary
+
+        Returns:
+            Summarized text
+        """
+        client = self._get_client()
+
+        prompt = (
+            f"Summarize the following content in approximately {max_tokens} tokens "
+            f"(about {max_tokens * 4} characters). Preserve the most important "
+            f"information:\n\n{content}"
+        )
+
+        response = client.complete(
+            system=self.system_prompt,
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=max_tokens * 2,  # Allow some buffer
+        )
+
+        return response.content or content[:max_tokens * 4]
+
+
+# Rules that include summarization as a last resort
+SUMMARIZE_RULES: List[CompactionRule] = [
+    # Phase 1-6: Same as default rules
+    *DEFAULT_RULES,
+    # Phase 7: Summarize large sections as last resort
+    CompactionRule("action_history", CompactionStrategy.SUMMARIZE, 150, priority=11),
+    CompactionRule("context_analysis", CompactionStrategy.SUMMARIZE, 200, priority=12),
+    CompactionRule("understanding", CompactionStrategy.SUMMARIZE, 100, priority=13),
+]

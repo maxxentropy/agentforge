@@ -39,7 +39,7 @@ Usage:
 """
 
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -120,7 +120,7 @@ class AgentConfig(BaseModel):
 
     # Metadata
     sources: List[str] = Field(default_factory=list)
-    loaded_at: datetime = Field(default_factory=datetime.utcnow)
+    loaded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     def get_constraint_text(self) -> str:
         """Get constraints as formatted text for context."""
@@ -234,7 +234,7 @@ class AgentConfigLoader:
                 config.sources.append(str(task_path))
 
         # Update metadata
-        config.loaded_at = datetime.utcnow()
+        config.loaded_at = datetime.now(timezone.utc)
 
         # Cache and return
         self._cache[cache_key] = config

@@ -1,4 +1,4 @@
-# @spec_file: .agentforge/specs/core-context-v1.yaml
+# @spec_file: specs/minimal-context-architecture/06-compaction.yaml
 # @spec_id: compaction-v1
 # @component_id: compaction-tests
 
@@ -338,3 +338,205 @@ class TestDotNotation:
 
         # Should not fail, should return unchanged
         assert result["precomputed"]["existing"] == "data"
+
+
+class TestSummarizeStrategy:
+    """Tests for SUMMARIZE compaction strategy."""
+
+    def test_summarize_without_summarizer_skipped(self):
+        """SUMMARIZE is skipped when no summarizer is set."""
+        manager = CompactionManager(
+            threshold=0.10,
+            max_budget=10,
+            rules=[
+                CompactionRule("content", CompactionStrategy.SUMMARIZE, 50, priority=1),
+            ],
+            summarizer=None,  # No summarizer
+        )
+
+        context = {"content": "x" * 5000}
+        result, audit = manager.compact(context)
+
+        # Should be unchanged since no summarizer
+        assert result["content"] == context["content"]
+        assert len(audit.rules_applied) == 0
+
+    def test_summarize_with_mock_summarizer(self):
+        """SUMMARIZE calls summarizer and uses result."""
+
+        class MockSummarizer:
+            def summarize(self, content: str, max_tokens: int) -> str:
+                return f"Summary of {len(content)} chars"
+
+        manager = CompactionManager(
+            threshold=0.10,
+            max_budget=10,
+            rules=[
+                CompactionRule("content", CompactionStrategy.SUMMARIZE, 50, priority=1),
+            ],
+            summarizer=MockSummarizer(),
+        )
+
+        context = {"content": "x" * 5000}
+        result, audit = manager.compact(context)
+
+        assert "[Summarized]" in result["content"]
+        assert "5000 chars" in result["content"]
+        assert manager._summarization_calls == 1
+
+    def test_summarize_list_content(self):
+        """SUMMARIZE handles list content."""
+
+        class MockSummarizer:
+            def summarize(self, content: str, max_tokens: int) -> str:
+                return "Summarized list items"
+
+        manager = CompactionManager(
+            threshold=0.10,
+            max_budget=10,
+            rules=[
+                CompactionRule("items", CompactionStrategy.SUMMARIZE, 50, priority=1),
+            ],
+            summarizer=MockSummarizer(),
+        )
+
+        context = {"items": [f"item{i}" for i in range(20)]}
+        result, audit = manager.compact(context)
+
+        assert "[Summarized from 20 items]" in result["items"]
+        assert "Summarized list items" in result["items"]
+
+    def test_summarize_fallback_on_error(self):
+        """SUMMARIZE falls back to truncation on error."""
+
+        class FailingSummarizer:
+            def summarize(self, content: str, max_tokens: int) -> str:
+                raise RuntimeError("Summarization failed")
+
+        manager = CompactionManager(
+            threshold=0.10,
+            max_budget=10,
+            rules=[
+                CompactionRule("content", CompactionStrategy.SUMMARIZE, 50, priority=1),
+            ],
+            summarizer=FailingSummarizer(),
+        )
+
+        context = {"content": "x" * 5000}
+        result, audit = manager.compact(context)
+
+        # Should fall back to truncation
+        assert "... (truncated)" in result["content"]
+        assert len(result["content"]) < 5000
+
+    def test_set_summarizer_method(self):
+        """set_summarizer method works correctly."""
+
+        class MockSummarizer:
+            def summarize(self, content: str, max_tokens: int) -> str:
+                return "summary"
+
+        manager = CompactionManager(threshold=0.90, max_budget=1000)
+        assert manager.summarizer is None
+
+        manager.set_summarizer(MockSummarizer())
+        assert manager.summarizer is not None
+
+    def test_get_summarization_stats(self):
+        """get_summarization_stats returns correct values."""
+
+        class MockSummarizer:
+            def summarize(self, content: str, max_tokens: int) -> str:
+                return "summary"
+
+        manager = CompactionManager(
+            threshold=0.10,
+            max_budget=10,
+            rules=[
+                CompactionRule("content", CompactionStrategy.SUMMARIZE, 50, priority=1),
+            ],
+            summarizer=MockSummarizer(),
+        )
+
+        # Initial state
+        stats = manager.get_summarization_stats()
+        assert stats["summarization_calls"] == 0
+
+        # After compaction
+        context = {"content": "x" * 5000}
+        manager.compact(context)
+
+        stats = manager.get_summarization_stats()
+        assert stats["summarization_calls"] == 1
+
+    def test_reset_stats(self):
+        """reset_stats clears summarization counter."""
+
+        class MockSummarizer:
+            def summarize(self, content: str, max_tokens: int) -> str:
+                return "summary"
+
+        manager = CompactionManager(
+            threshold=0.10,
+            max_budget=10,
+            rules=[
+                CompactionRule("content", CompactionStrategy.SUMMARIZE, 50, priority=1),
+            ],
+            summarizer=MockSummarizer(),
+        )
+
+        context = {"content": "x" * 5000}
+        manager.compact(context)
+        assert manager._summarization_calls == 1
+
+        manager.reset_stats()
+        assert manager._summarization_calls == 0
+
+    def test_summarize_short_content_not_changed(self):
+        """SUMMARIZE doesn't change content under threshold."""
+
+        class MockSummarizer:
+            def summarize(self, content: str, max_tokens: int) -> str:
+                return "should not be called"
+
+        manager = CompactionManager(
+            threshold=0.10,
+            max_budget=10,
+            rules=[
+                CompactionRule("content", CompactionStrategy.SUMMARIZE, 500, priority=1),  # 500 tokens = 2000 chars
+            ],
+            summarizer=MockSummarizer(),
+        )
+
+        # Content is short (100 chars < 2000 char threshold)
+        context = {"content": "x" * 100}
+        result, audit = manager.compact(context)
+
+        # Should not be summarized
+        assert result["content"] == "x" * 100
+        assert manager._summarization_calls == 0
+
+
+class TestSummarizeRules:
+    """Tests for SUMMARIZE_RULES constant."""
+
+    def test_summarize_rules_includes_defaults(self):
+        """SUMMARIZE_RULES includes all default rules."""
+        from agentforge.core.context.compaction import SUMMARIZE_RULES, DEFAULT_RULES
+
+        default_sections = {r.section for r in DEFAULT_RULES}
+        summarize_sections = {r.section for r in SUMMARIZE_RULES}
+
+        # All default sections should be present
+        assert default_sections.issubset(summarize_sections)
+
+    def test_summarize_rules_has_summarize_strategies(self):
+        """SUMMARIZE_RULES includes SUMMARIZE strategy rules."""
+        from agentforge.core.context.compaction import SUMMARIZE_RULES
+
+        summarize_rules = [r for r in SUMMARIZE_RULES if r.strategy == CompactionStrategy.SUMMARIZE]
+
+        assert len(summarize_rules) > 0
+        # Summarize rules should have lower priority (run later)
+        for rule in summarize_rules:
+            assert rule.priority > 10  # After default rules

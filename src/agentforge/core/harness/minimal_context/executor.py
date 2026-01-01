@@ -1,7 +1,7 @@
-# @spec_file: .agentforge/specs/core-harness-minimal-context-v1.yaml
-# @spec_id: core-harness-minimal-context-v1
-# @component_id: harness-minimal_context-executor
-# @test_path: tests/unit/harness/test_action_parser.py
+# @spec_file: specs/minimal-context-architecture/05-llm-integration.yaml
+# @spec_id: llm-integration-v1
+# @component_id: minimal-context-executor
+# @test_path: tests/unit/harness/test_minimal_context.py
 
 """
 Minimal Context Executor
@@ -12,15 +12,25 @@ Each step is a fresh conversation with exactly 2 messages.
 
 Key guarantees:
 - Step 1 and Step 100 use same token count (±10%)
-- No step exceeds 8K tokens
+- No step exceeds ~4K tokens
 - All state recoverable from disk after crash
 - Rate limits never exceeded
 
-Enhanced with Understanding Extraction for fact-based context.
+Features:
+- Template-based context building (TemplateContextBuilder)
+- AGENT.md configuration hierarchy
+- Dynamic project fingerprinting
+- Full audit trail with context snapshots
+- Progressive compaction for token efficiency
+- Native tool calls (Anthropic tool_use API)
+- Enhanced loop detection
+- Phase machine for state transitions
+- Understanding extraction for fact-based reasoning
 """
 
 import asyncio
 import inspect
+import os
 import re
 import time
 import yaml
@@ -31,14 +41,29 @@ from typing import Any, Callable, Dict, List, Optional
 
 from agentforge.core.generate.provider import LLMProvider, get_provider
 
+from ...context import (
+    AgentConfigLoader,
+    CompactionManager,
+    ContextAuditLogger,
+    FingerprintGenerator,
+    get_template_for_task,
+)
+from ...llm import (
+    LLMClient,
+    LLMClientFactory,
+    LLMResponse,
+    ThinkingConfig,
+    ToolCall,
+    get_tools_for_task,
+)
 from .state_store import TaskStateStore, TaskState, TaskPhase
-from .context_builder import ContextBuilder
-from .enhanced_context_builder import EnhancedContextBuilder
+from .template_context_builder import TemplateContextBuilder
 from .working_memory import WorkingMemoryManager
 from .understanding import UnderstandingExtractor
 from .context_models import ActionResult, ActionRecord, AgentResponse, Fact, FactCategory, ActionDef
 from .loop_detector import LoopDetector, LoopDetection, LoopType
 from .phase_machine import PhaseMachine, Phase, PhaseContext
+from .native_tool_executor import NativeToolExecutor, create_standard_handlers
 
 
 @dataclass
@@ -53,7 +78,7 @@ class StepOutcome:
     tokens_used: int
     duration_ms: int
     error: Optional[str] = None
-    loop_detected: Optional[LoopDetection] = None  # Enhanced loop detection info
+    loop_detected: Optional[LoopDetection] = None
 
     def to_dict(self) -> Dict[str, Any]:
         result = {
@@ -86,7 +111,7 @@ class AdaptiveBudget:
     Adaptive step budget that prevents runaway while allowing complex tasks.
 
     Key behaviors:
-    1. LOOP DETECTION: Enhanced detection via LoopDetector (Phase 3)
+    1. LOOP DETECTION: Enhanced detection via LoopDetector
        - Identical action loops
        - Semantic loops (different actions, same outcome)
        - Error cycling (A->B->A patterns)
@@ -111,7 +136,7 @@ class AdaptiveBudget:
         self._no_progress_streak = 0
         self._last_violation_count: Optional[int] = None
 
-        # Enhanced loop detection (Phase 3)
+        # Enhanced loop detection
         self.use_enhanced_loop_detection = use_enhanced_loop_detection
         self.loop_detector = LoopDetector(
             identical_threshold=runaway_threshold,
@@ -120,7 +145,6 @@ class AdaptiveBudget:
             no_progress_threshold=no_progress_threshold,
         ) if use_enhanced_loop_detection else None
 
-        # Store last loop detection for reporting
         self._last_loop_detection: Optional[LoopDetection] = None
 
     def check_continue(
@@ -134,7 +158,7 @@ class AdaptiveBudget:
 
         Args:
             step_number: Current step number (1-indexed)
-            recent_actions: Last N action records (dicts with action, parameters, result, summary)
+            recent_actions: Last N action records
             facts: Optional list of facts for enhanced loop detection
 
         Returns:
@@ -142,7 +166,7 @@ class AdaptiveBudget:
         """
         self._last_loop_detection = None
 
-        # 1. Enhanced loop detection (if enabled)
+        # 1. Enhanced loop detection
         if self.use_enhanced_loop_detection and self.loop_detector:
             loop_result = self._check_enhanced_loops(recent_actions, facts)
             if loop_result and loop_result.detected:
@@ -153,14 +177,13 @@ class AdaptiveBudget:
                     loop_result,
                 )
         else:
-            # Fallback to legacy runaway detection
             if self._detect_runaway_legacy(recent_actions):
                 return False, "STOPPED: Runaway detected (same action failed 3+ times)", None
 
         # 2. Update progress tracking
         progress_made = self._update_progress(recent_actions)
 
-        # 3. No-progress detection (legacy, still useful alongside enhanced)
+        # 3. No-progress detection
         if not progress_made:
             self._no_progress_streak += 1
             if self._no_progress_streak >= self.no_progress_threshold:
@@ -182,23 +205,12 @@ class AdaptiveBudget:
         recent_actions: List[Dict[str, Any]],
         facts: Optional[List[Any]] = None,
     ) -> Optional[LoopDetection]:
-        """
-        Use enhanced LoopDetector for semantic loop detection.
-
-        Args:
-            recent_actions: Recent action dicts
-            facts: Optional facts for context
-
-        Returns:
-            LoopDetection result or None
-        """
+        """Use enhanced LoopDetector for semantic loop detection."""
         if not self.loop_detector or not recent_actions:
             return None
 
-        # Convert dicts to ActionRecord models
         action_records = []
         for i, action_dict in enumerate(recent_actions):
-            # Map string result to ActionResult enum
             result_str = action_dict.get("result", "success")
             result_enum = {
                 "success": ActionResult.SUCCESS,
@@ -217,7 +229,6 @@ class AdaptiveBudget:
             )
             action_records.append(record)
 
-        # Run enhanced detection
         return self.loop_detector.check(action_records, facts)
 
     def _detect_runaway_legacy(self, recent_actions: List[Dict[str, Any]]) -> bool:
@@ -227,16 +238,13 @@ class AdaptiveBudget:
 
         last_n = recent_actions[-self.runaway_threshold:]
 
-        # All must be failures
         if not all(a.get("result") == "failure" for a in last_n):
             return False
 
-        # All must have same action
         actions = [a.get("action") for a in last_n]
         if len(set(actions)) != 1:
             return False
 
-        # All must have same parameters (or same error for read failures)
         first_params = last_n[0].get("parameters", {})
         for a in last_n[1:]:
             if a.get("parameters", {}) != first_params:
@@ -256,15 +264,7 @@ class AdaptiveBudget:
         return []
 
     def _update_progress(self, recent_actions: List[Dict[str, Any]]) -> bool:
-        """
-        Check if the most recent action made progress.
-
-        Progress indicators:
-        - Successful file modification (write_file, edit_file, replace_lines, extract_function)
-        - Successful file read (counts as exploration progress)
-        - Violation count decreased (parsed from run_check summary)
-        - Check passed
-        """
+        """Check if the most recent action made progress."""
         if not recent_actions:
             return False
 
@@ -273,23 +273,19 @@ class AdaptiveBudget:
         action = latest.get("action", "")
         summary = latest.get("summary", "")
 
-        # File modification = definite progress
         if result == "success" and action in [
             "write_file", "edit_file", "replace_lines", "insert_lines", "extract_function"
         ]:
             self._progress_count += 1
             return True
 
-        # Check passed = major progress
         if "Check PASSED" in summary or "✓" in summary:
             self._progress_count += 3
             return True
 
-        # Successful file read = exploration progress (doesn't extend budget, but resets no-progress)
         if result == "success" and action in ["read_file", "load_context"]:
-            return True  # Counts as activity, not as budget extension
+            return True
 
-        # Violation count decreased = progress
         if action == "run_check" and "Violations" in summary:
             current_count = self._parse_violation_count(summary)
             if current_count is not None:
@@ -304,8 +300,6 @@ class AdaptiveBudget:
 
     def _parse_violation_count(self, summary: str) -> Optional[int]:
         """Parse violation count from run_check summary."""
-        import re
-        # Look for patterns like "Violations (4):" or "4 violations"
         match = re.search(r'Violations?\s*\((\d+)\)', summary)
         if match:
             return int(match.group(1))
@@ -316,7 +310,6 @@ class AdaptiveBudget:
 
     def _calculate_budget(self) -> int:
         """Calculate dynamic budget based on progress."""
-        # Extend budget based on progress: +3 steps per progress unit
         extension = self._progress_count * 3
         dynamic_budget = min(self.base_budget + extension, self.max_budget)
         return dynamic_budget
@@ -328,66 +321,138 @@ class MinimalContextExecutor:
 
     Each step:
     1. Loads current state from disk
-    2. Builds minimal context (always 4-8K tokens)
+    2. Builds minimal context via templates (~4K tokens)
     3. Calls LLM with fresh 2-message conversation
     4. Parses and executes the action
     5. Updates state on disk
+    6. Logs to audit trail
+
+    Features:
+    - Template-based context building
+    - AGENT.md configuration
+    - Dynamic fingerprinting
+    - Audit logging
+    - Progressive compaction
+    - Native tool support
+    - Enhanced loop detection
+    - Phase machine integration
     """
 
     def __init__(
         self,
         project_path: Path,
+        task_type: str = "fix_violation",
         provider: Optional[LLMProvider] = None,
         state_store: Optional[TaskStateStore] = None,
         action_executors: Optional[Dict[str, ActionExecutor]] = None,
         model: str = "claude-sonnet-4-20250514",
         max_tokens: int = 4096,
-        enable_understanding_extraction: bool = True,
-        use_phase_machine: bool = True,
-        use_enhanced_context_builder: bool = False,
+        config_loader: Optional[AgentConfigLoader] = None,
+        fingerprint_generator: Optional[FingerprintGenerator] = None,
+        compaction_enabled: bool = True,
+        audit_enabled: bool = True,
     ):
         """
         Initialize the executor.
 
         Args:
             project_path: Project root path
+            task_type: Type of task (fix_violation, implement_feature, etc.)
             provider: LLM provider (uses default if not provided)
             state_store: Task state store (created if not provided)
             action_executors: Dict mapping action names to executor functions
             model: Model to use for LLM calls
             max_tokens: Maximum tokens for LLM response
-            enable_understanding_extraction: Enable fact extraction from actions
-            use_phase_machine: Use PhaseMachine for transitions (Phase 4)
-            use_enhanced_context_builder: Use EnhancedContextBuilder (Phase 5)
+            config_loader: Optional custom config loader
+            fingerprint_generator: Optional custom fingerprint generator
+            compaction_enabled: Enable progressive compaction
+            audit_enabled: Enable audit logging
         """
-        self.project_path = Path(project_path)
+        self.project_path = Path(project_path).resolve()
+        self.task_type = task_type
         self.provider = provider or get_provider()
         self.state_store = state_store or TaskStateStore(self.project_path)
         self.action_executors = action_executors or {}
         self.model = model
         self.max_tokens = max_tokens
 
-        # Context builder selection (Phase 5 of Enhanced Context Engineering)
-        self.use_enhanced_context_builder = use_enhanced_context_builder
-        if use_enhanced_context_builder:
-            self.context_builder = EnhancedContextBuilder(self.project_path, self.state_store)
+        # Configuration
+        self.config_loader = config_loader or AgentConfigLoader(self.project_path)
+        self.config = self.config_loader.load(task_type=task_type)
+
+        # Fingerprinting
+        self.fingerprint_generator = fingerprint_generator or FingerprintGenerator(
+            self.project_path
+        )
+
+        # Get template for task type
+        try:
+            self.template = get_template_for_task(task_type)
+        except ValueError:
+            self.template = get_template_for_task("fix_violation")
+
+        # Template-based context builder
+        self.context_builder = TemplateContextBuilder(
+            project_path=self.project_path,
+            state_store=self.state_store,
+            task_type=task_type,
+            fingerprint_generator=self.fingerprint_generator,
+        )
+
+        # Compaction
+        self.compaction_enabled = compaction_enabled
+        if compaction_enabled:
+            self.compaction_manager = CompactionManager(
+                threshold=0.90,
+                max_budget=getattr(self.config.defaults, "token_budget", 4000),
+            )
         else:
-            self.context_builder = ContextBuilder(self.project_path, self.state_store)
+            self.compaction_manager = None
 
-        # Understanding extraction (Phase 2 of Enhanced Context Engineering)
-        self.enable_understanding_extraction = enable_understanding_extraction
-        self.understanding_extractor = UnderstandingExtractor() if enable_understanding_extraction else None
+        # Audit logging
+        self.audit_enabled = audit_enabled and os.environ.get(
+            "AGENTFORGE_AUDIT_ENABLED", "true"
+        ).lower() != "false"
+        self.current_audit_logger: Optional[ContextAuditLogger] = None
 
-        # Phase machine (Phase 4 of Enhanced Context Engineering)
-        self.use_phase_machine = use_phase_machine
+        # Compaction tracking
+        self._compaction_events = 0
+        self._tokens_saved = 0
+
+        # Understanding extraction
+        self.understanding_extractor = UnderstandingExtractor()
+
+        # Phase machine enabled by default
+        self.use_phase_machine = True
+
+        # Native tool executor
+        self.native_tool_executor = NativeToolExecutor(
+            actions=create_standard_handlers(self.project_path),
+            context={"project_path": str(self.project_path)},
+        )
 
     def register_action(self, name: str, executor: ActionExecutor) -> None:
         """Register an action executor."""
         self.action_executors[name] = executor
+        # Also register with native tool executor using compatible wrapper
+        self.native_tool_executor.register_action(name, executor)
 
     def register_actions(self, executors: Dict[str, ActionExecutor]) -> None:
         """Register multiple action executors."""
         self.action_executors.update(executors)
+        self.native_tool_executor.register_actions(executors)
+
+    def get_fingerprint(
+        self,
+        constraints: Optional[Dict[str, Any]] = None,
+        success_criteria: Optional[List[str]] = None,
+    ):
+        """Get project fingerprint with task context."""
+        return self.fingerprint_generator.with_task_context(
+            task_type=self.task_type,
+            constraints=constraints or {},
+            success_criteria=success_criteria or [],
+        )
 
     def _build_phase_context(
         self,
@@ -396,24 +461,11 @@ class MinimalContextExecutor:
         last_action: Optional[str] = None,
         last_action_result: Optional[str] = None,
     ) -> PhaseContext:
-        """
-        Build PhaseContext for guard evaluation.
-
-        Args:
-            machine: Current phase machine
-            state: Current task state
-            last_action: Most recent action name
-            last_action_result: Most recent action result
-
-        Returns:
-            PhaseContext for transitions
-        """
-        # Get facts from working memory and convert to Fact objects
+        """Build PhaseContext for guard evaluation."""
         task_dir = self.state_store._task_dir(state.task_id)
         memory_manager = WorkingMemoryManager(task_dir)
         fact_dicts = memory_manager.get_facts(current_step=state.current_step)
 
-        # Convert dicts to Fact objects (required by PhaseContext.has_fact_of_type)
         facts = [
             Fact(
                 id=f.get("id", ""),
@@ -445,15 +497,7 @@ class MinimalContextExecutor:
         action_result: Dict[str, Any],
         state: TaskState,
     ) -> None:
-        """
-        Handle phase transitions using PhaseMachine when enabled.
-
-        Args:
-            task_id: Task identifier
-            action_name: Executed action name
-            action_result: Action result dict
-            state: Current task state
-        """
+        """Handle phase transitions using PhaseMachine."""
         if not self.use_phase_machine:
             # Legacy behavior
             if action_name == "complete" and action_result.get("status") == "success":
@@ -469,10 +513,7 @@ class MinimalContextExecutor:
                 self.state_store.set_error(task_id, action_result.get("error", "Unknown error"))
             return
 
-        # Enhanced behavior with PhaseMachine
         machine = state.get_phase_machine()
-
-        # Build context for guard evaluation
         context = self._build_phase_context(
             machine=machine,
             state=state,
@@ -480,10 +521,8 @@ class MinimalContextExecutor:
             last_action_result=action_result.get("status"),
         )
 
-        # Record the step in the phase
         machine.advance_step()
 
-        # Check for explicit action-triggered transitions
         target_phase = None
 
         if action_name == "complete" and action_result.get("status") == "success":
@@ -497,27 +536,51 @@ class MinimalContextExecutor:
             target_phase = Phase.FAILED
             self.state_store.set_error(task_id, action_result.get("error", "Unknown error"))
         else:
-            # Check for auto-transition based on phase success conditions
             target_phase = machine.should_auto_transition(context)
 
-        # Attempt the transition if we have a target
         if target_phase:
             if machine.can_transition(target_phase, context):
                 machine.transition(target_phase, context)
-                # Update both legacy phase and phase machine state
                 legacy_phase = TaskPhase(target_phase.value)
                 self.state_store.update_phase(task_id, legacy_phase)
                 self.state_store.update_phase_machine(task_id, machine)
             elif target_phase in (Phase.COMPLETE, Phase.ESCALATED, Phase.FAILED):
-                # Terminal transitions should always succeed
                 machine._current_phase = target_phase
                 machine._steps_in_phase = 0
                 legacy_phase = TaskPhase(target_phase.value)
                 self.state_store.update_phase(task_id, legacy_phase)
                 self.state_store.update_phase_machine(task_id, machine)
         else:
-            # Just persist the advanced step count
             self.state_store.update_phase_machine(task_id, machine)
+
+    def _log_step(self, outcome: StepOutcome, task_id: str) -> None:
+        """Log step to audit trail."""
+        if not self.current_audit_logger:
+            return
+
+        state = self.state_store.load(task_id)
+        if not state:
+            return
+
+        context = {
+            "step": state.current_step,
+            "phase": state.phase.value,
+            "action": outcome.action_name,
+            "action_params": outcome.action_params,
+            "result": outcome.result,
+        }
+
+        token_breakdown = {
+            "action": len(str(outcome.action_params)) // 4,
+            "result": len(outcome.summary) // 4,
+        }
+
+        self.current_audit_logger.log_step(
+            step=state.current_step,
+            context=context,
+            token_breakdown=token_breakdown,
+            response=outcome.summary,
+        )
 
     def execute_step(self, task_id: str) -> StepOutcome:
         """
@@ -602,8 +665,8 @@ class MinimalContextExecutor:
                 target=action_params.get("path") or action_params.get("file_path"),
             )
 
-            # Extract facts from action result (Enhanced Context Engineering)
-            if self.enable_understanding_extraction and self.understanding_extractor:
+            # Extract facts from action result
+            if self.understanding_extractor:
                 self._extract_and_store_facts(
                     action_name=action_name,
                     action_result=action_result,
@@ -614,7 +677,7 @@ class MinimalContextExecutor:
             # 7. Determine if we should continue
             should_continue = self._should_continue(action_name, action_result, state)
 
-            # Update phase using PhaseMachine (Phase 4) or legacy logic
+            # Update phase using PhaseMachine
             self._handle_phase_transition(task_id, action_name, action_result, state)
 
             return StepOutcome(
@@ -642,22 +705,11 @@ class MinimalContextExecutor:
             )
 
     def _call_llm(self, messages: List[Dict[str, str]]) -> tuple:
-        """
-        Call the LLM provider.
-
-        Args:
-            messages: List of message dicts (exactly 2: system + user)
-
-        Returns:
-            Tuple of (response_text, tokens_used)
-        """
-        # Convert to single prompt for provider
+        """Call the LLM provider."""
         prompt = self._messages_to_prompt(messages)
 
-        # Call provider - handle both sync and async
         result = self.provider.generate(prompt, self.max_tokens)
 
-        # Handle async coroutine if returned
         if inspect.iscoroutine(result):
             try:
                 loop = asyncio.get_running_loop()
@@ -674,7 +726,6 @@ class MinimalContextExecutor:
         else:
             response = result
 
-        # Handle response format - may return (text, TokenUsage) tuple
         if isinstance(response, tuple) and len(response) == 2:
             response_text, token_usage = response
             if hasattr(token_usage, 'prompt_tokens') and hasattr(token_usage, 'completion_tokens'):
@@ -700,30 +751,8 @@ class MinimalContextExecutor:
         return "\n".join(parts)
 
     def _parse_action(self, response_text: str) -> tuple:
-        """
-        Parse and validate action from LLM response.
-
-        Expects format:
-        ```action
-        name: action_name
-        parameters:
-          param1: value1
-        ```
-
-        or YAML format:
-        ```yaml
-        action: action_name
-        parameters:
-          param1: value1
-        ```
-
-        Args:
-            response_text: LLM response
-
-        Returns:
-            Tuple of (action_name, action_params)
-        """
-        # Look for action block (```action ... ```)
+        """Parse and validate action from LLM response."""
+        # Look for action block
         action_match = re.search(
             r"```action\s*\n(.*?)```",
             response_text,
@@ -736,7 +765,7 @@ class MinimalContextExecutor:
             if result:
                 return result
 
-        # Look for yaml block (```yaml ... ```)
+        # Look for yaml block
         yaml_match = re.search(
             r"```yaml\s*\n(.*?)```",
             response_text,
@@ -758,7 +787,6 @@ class MinimalContextExecutor:
         if simple_match:
             return simple_match.group(1), {}
 
-        # Default: treat as completion attempt
         if "complete" in response_text.lower():
             return "complete", {}
 
@@ -769,24 +797,12 @@ class MinimalContextExecutor:
         yaml_content: str,
         block_type: str,
     ) -> Optional[tuple]:
-        """
-        Parse YAML content and validate against AgentResponse schema.
-
-        Args:
-            yaml_content: YAML string to parse
-            block_type: Type of block ("action" or "yaml")
-
-        Returns:
-            Tuple of (action_name, action_params) or None if invalid
-        """
+        """Parse YAML content and validate against AgentResponse schema."""
         try:
             action_data = yaml.safe_load(yaml_content)
             if not isinstance(action_data, dict):
                 return None
 
-            # Handle different formats:
-            # Format 1: { name: "action", parameters: {...} }
-            # Format 2: { action: "action", parameters: {...} }
             name = action_data.get("name") or action_data.get("action")
             if not name:
                 return None
@@ -794,7 +810,6 @@ class MinimalContextExecutor:
             params = action_data.get("parameters", {}) or {}
             reasoning = action_data.get("reasoning")
 
-            # Validate against AgentResponse schema
             try:
                 validated = AgentResponse(
                     action=name,
@@ -803,7 +818,6 @@ class MinimalContextExecutor:
                 )
                 return validated.action, validated.parameters
             except Exception as e:
-                # Validation failed - log the issue
                 import logging
                 logger = logging.getLogger(__name__)
                 logger.warning(
@@ -818,69 +832,13 @@ class MinimalContextExecutor:
             logger.warning(f"YAML parsing failed: {e}")
             return None
 
-    def _validate_response_parameters(
-        self,
-        action_name: str,
-        action_params: Dict[str, Any],
-        available_actions: List[ActionDef],
-    ) -> List[str]:
-        """
-        Validate that response parameters match the expected schema.
-
-        Returns list of validation issues (empty if valid).
-        """
-        issues = []
-
-        # Find the action definition
-        action_def = next(
-            (a for a in available_actions if a.name == action_name),
-            None,
-        )
-
-        if not action_def:
-            issues.append(f"Action '{action_name}' not in available actions")
-            return issues
-
-        # Check for required parameters
-        expected_params = set(action_def.parameters.keys())
-        provided_params = set(action_params.keys())
-
-        # Missing required params (all params are considered required for now)
-        missing = expected_params - provided_params
-        # Extra params not in schema
-        extra = provided_params - expected_params
-
-        if missing:
-            issues.append(
-                f"Action '{action_name}' missing parameters: {missing}. "
-                f"Expected: {expected_params}"
-            )
-
-        if extra:
-            issues.append(
-                f"Action '{action_name}' has unexpected parameters: {extra}. "
-                f"This may indicate LLM is not following the schema."
-            )
-
-        return issues
-
     def _execute_action(
         self,
         action_name: str,
         action_params: Dict[str, Any],
         state: TaskState,
     ) -> Dict[str, Any]:
-        """
-        Execute an action.
-
-        Args:
-            action_name: Name of action to execute
-            action_params: Action parameters
-            state: Current task state
-
-        Returns:
-            Dict with status, summary, and optional error
-        """
+        """Execute an action."""
         executor = self.action_executors.get(action_name)
 
         if not executor:
@@ -905,7 +863,6 @@ class MinimalContextExecutor:
                 }
 
             if action_name == "cannot_fix":
-                # Agent determined the violation cannot be automatically fixed
                 reason = action_params.get("reason", "No reason provided")
                 return {
                     "status": "success",
@@ -941,15 +898,12 @@ class MinimalContextExecutor:
         state: TaskState,
     ) -> bool:
         """Determine if execution should continue."""
-        # Terminal actions
         if action_name in ["complete", "escalate", "cannot_fix"]:
             return False
 
-        # Fatal failures
         if action_result.get("fatal"):
             return False
 
-        # Check phase
         if state.phase in [TaskPhase.COMPLETE, TaskPhase.FAILED, TaskPhase.ESCALATED]:
             return False
 
@@ -962,23 +916,10 @@ class MinimalContextExecutor:
         step: int,
         memory_manager: WorkingMemoryManager,
     ) -> None:
-        """
-        Extract facts from action result and store in working memory.
-
-        This is part of the Enhanced Context Engineering system - instead of
-        storing raw action outputs, we extract typed facts that can be used
-        to build more compact context.
-
-        Args:
-            action_name: Name of the action that was executed
-            action_result: Result dict from action execution
-            step: Current step number
-            memory_manager: Working memory manager for the task
-        """
+        """Extract facts from action result and store in working memory."""
         if not self.understanding_extractor:
             return
 
-        # Convert status string to ActionResult enum
         status = action_result.get("status", "success")
         result_enum = {
             "success": ActionResult.SUCCESS,
@@ -986,25 +927,20 @@ class MinimalContextExecutor:
             "partial": ActionResult.PARTIAL,
         }.get(status, ActionResult.SUCCESS)
 
-        # Get the output text (summary + error if present)
         output = action_result.get("summary", "")
         if action_result.get("error"):
             output += f"\nError: {action_result['error']}"
-
-        # Also include raw_output if available (from tool execution)
         if action_result.get("raw_output"):
             output += f"\n{action_result['raw_output']}"
 
-        # Extract facts using the rule-based extractor
         facts = self.understanding_extractor.extract(
             tool_name=action_name,
             output=output,
             result=result_enum,
             step=step,
-            use_llm_fallback=False,  # Rule-based only for now
+            use_llm_fallback=False,
         )
 
-        # Store extracted facts in working memory
         if facts:
             memory_manager.add_facts_from_list(facts, step=step)
 
@@ -1027,6 +963,17 @@ class MinimalContextExecutor:
         Returns:
             List of all step outcomes
         """
+        # Initialize audit logger
+        if self.audit_enabled:
+            self.current_audit_logger = ContextAuditLogger(
+                project_path=self.project_path,
+                task_id=task_id,
+            )
+
+        # Reset compaction tracking
+        self._compaction_events = 0
+        self._tokens_saved = 0
+
         outcomes = []
         budget = adaptive_budget or AdaptiveBudget(
             base_budget=15,
@@ -1037,10 +984,12 @@ class MinimalContextExecutor:
             outcome = self.execute_step(task_id)
             outcomes.append(outcome)
 
+            # Log step
+            self._log_step(outcome, task_id)
+
             if on_step:
                 on_step(outcome)
 
-            # Check if action signals completion
             if not outcome.should_continue:
                 break
 
@@ -1059,7 +1008,6 @@ class MinimalContextExecutor:
                 for a in recent
             ]
 
-            # Get facts from working memory for enhanced loop detection
             facts = None
             if budget.use_enhanced_loop_detection:
                 task_dir = self.state_store._task_dir(task_id)
@@ -1067,7 +1015,6 @@ class MinimalContextExecutor:
                 state = self.state_store.load(task_id)
                 if state:
                     fact_dicts = memory_manager.get_facts(current_step=state.current_step)
-                    # Convert dicts to Fact objects for loop detector
                     facts = [
                         Fact(
                             id=f.get("id", ""),
@@ -1084,9 +1031,7 @@ class MinimalContextExecutor:
                 i + 1, recent_dicts, facts
             )
 
-            # Before stopping due to loop detection, check if phase transition is possible
-            # This allows the agent to transition from ANALYZE to IMPLEMENT even after
-            # several read-only operations (which is expected behavior)
+            # Allow phase transition even if loop detected
             if not should_continue and loop_detection and loop_detection.detected:
                 state = self.state_store.load(task_id)
                 if state and self.use_phase_machine:
@@ -1097,21 +1042,16 @@ class MinimalContextExecutor:
                         last_action=outcome.action_name,
                         last_action_result=outcome.result,
                     )
-                    # Check if we can transition to a new phase
                     target_phase = machine.should_auto_transition(phase_context)
                     if target_phase and target_phase != machine.current_phase:
-                        # Allow continuation - phase transition pending
                         should_continue = True
                         reason = f"Phase transition to {target_phase.value} pending"
                         print(f"  (Loop detected but phase transition to {target_phase.value} is possible)")
 
             if not should_continue:
-                # Log the reason for stopping
                 print(f"  {reason}")
 
-                # Add loop detection info to the last outcome
                 if loop_detection and loop_detection.detected:
-                    # Update the last outcome with loop info
                     last_outcome = outcomes[-1]
                     outcomes[-1] = StepOutcome(
                         success=last_outcome.success,
@@ -1126,7 +1066,6 @@ class MinimalContextExecutor:
                         loop_detected=loop_detection,
                     )
 
-                    # Print suggestions if available
                     if loop_detection.suggestions:
                         print("  Suggestions:")
                         for suggestion in loop_detection.suggestions[:3]:
@@ -1134,27 +1073,275 @@ class MinimalContextExecutor:
 
                 break
 
+        # Log task summary
+        if self.current_audit_logger and outcomes:
+            last_outcome = outcomes[-1]
+            if last_outcome.action_name == "complete":
+                final_status = "completed"
+            elif last_outcome.action_name in ("escalate", "cannot_fix"):
+                final_status = "escalated"
+            elif last_outcome.error:
+                final_status = "failed"
+            else:
+                final_status = "stopped"
+
+            total_tokens = sum(o.tokens_used for o in outcomes)
+            self.current_audit_logger.log_task_summary(
+                total_steps=len(outcomes),
+                final_status=final_status,
+                total_tokens=total_tokens,
+                cached_tokens=0,
+                compaction_events=self._compaction_events,
+                tokens_saved=self._tokens_saved,
+            )
+
         return outcomes
 
+    def run_task_native(
+        self,
+        task_id: str,
+        domain_context: Optional[Dict[str, Any]] = None,
+        llm_client: Optional[LLMClient] = None,
+        max_steps: Optional[int] = None,
+        on_step: Optional[Callable[[StepOutcome], None]] = None,
+    ) -> Dict[str, Any]:
+        """
+        Run a complete task using native Anthropic tool calls.
 
-def create_minimal_executor(
+        This method uses the Anthropic API's native tool_use feature
+        instead of parsing YAML from text responses.
+
+        Args:
+            task_id: Task identifier
+            domain_context: Domain-specific context (violation info, etc.)
+            llm_client: Optional LLM client (creates one if not provided)
+            max_steps: Override max steps (uses config if not provided)
+            on_step: Optional callback after each step
+
+        Returns:
+            Dict with task results and audit info
+        """
+        # Initialize audit logger
+        if self.audit_enabled:
+            self.current_audit_logger = ContextAuditLogger(
+                project_path=self.project_path,
+                task_id=task_id,
+            )
+
+        # Reset compaction tracking
+        self._compaction_events = 0
+        self._tokens_saved = 0
+
+        effective_max_steps = max_steps or self.config.defaults.max_steps
+
+        tools = get_tools_for_task(self.task_type)
+        client = llm_client or LLMClientFactory.create()
+
+        # Initialize state
+        state = self.state_store.load(task_id)
+        if state is None:
+            state = self.state_store.create_task(
+                task_type=self.task_type,
+                goal="Execute task with native tools",
+                success_criteria=["Task completes successfully"],
+                context_data=domain_context or {},
+                task_id=task_id,
+            )
+        elif domain_context:
+            for key, value in domain_context.items():
+                self.state_store.update_context_data(task_id, key, value)
+
+        # Configure thinking if enabled
+        thinking_config = None
+        if self.config.defaults.thinking_enabled:
+            thinking_config = ThinkingConfig(
+                enabled=True,
+                budget_tokens=self.config.defaults.thinking_budget,
+            )
+
+        outcomes: List[StepOutcome] = []
+        step_num = 0
+
+        while step_num < effective_max_steps:
+            step_num += 1
+
+            context = self.context_builder.build(task_id=task_id)
+            system_prompt = context.system_prompt
+            messages = [{"role": "user", "content": context.user_message}]
+
+            response = client.complete(
+                system=system_prompt,
+                messages=messages,
+                tools=tools,
+                thinking=thinking_config,
+            )
+
+            outcome = self._process_native_response(
+                response=response,
+                task_id=task_id,
+                step=step_num,
+            )
+            outcomes.append(outcome)
+
+            self._log_step(outcome, task_id)
+
+            if on_step:
+                on_step(outcome)
+
+            if outcome.action_name in ("complete", "escalate", "cannot_fix"):
+                break
+
+            if outcome.error:
+                break
+
+            self._update_phase_from_action(task_id, outcome.action_name)
+
+        # Determine final status
+        if outcomes:
+            last_outcome = outcomes[-1]
+            if last_outcome.action_name == "complete":
+                final_status = "completed"
+            elif last_outcome.action_name in ("escalate", "cannot_fix"):
+                final_status = "escalated"
+            elif last_outcome.error:
+                final_status = "failed"
+            else:
+                final_status = "stopped"
+        else:
+            final_status = "no_outcomes"
+
+        # Log task summary
+        if self.current_audit_logger:
+            total_tokens = sum(o.tokens_used for o in outcomes)
+            self.current_audit_logger.log_task_summary(
+                total_steps=len(outcomes),
+                final_status=final_status,
+                total_tokens=total_tokens,
+                cached_tokens=0,
+                compaction_events=self._compaction_events,
+                tokens_saved=self._tokens_saved,
+            )
+
+        return {
+            "task_id": task_id,
+            "status": final_status,
+            "steps": len(outcomes),
+            "outcomes": [o.to_dict() for o in outcomes],
+            "compaction_events": self._compaction_events,
+            "tokens_saved": self._tokens_saved,
+            "native_tools": True,
+        }
+
+    def _process_native_response(
+        self,
+        response: LLMResponse,
+        task_id: str,
+        step: int,
+    ) -> StepOutcome:
+        """Process LLM response with native tool calls."""
+        tokens_used = response.total_tokens
+
+        if not response.has_tool_calls:
+            return StepOutcome(
+                success=True,
+                action_name="unknown",
+                action_params={},
+                result=response.content or "",
+                summary=response.content[:200] if response.content else "No response",
+                should_continue=False,
+                tokens_used=tokens_used,
+                duration_ms=0,
+                error=None,
+            )
+
+        tool_call = response.get_first_tool_call()
+        if not tool_call:
+            return StepOutcome(
+                success=False,
+                action_name="unknown",
+                action_params={},
+                result="No tool call found",
+                summary="No tool call found",
+                should_continue=False,
+                tokens_used=tokens_used,
+                duration_ms=0,
+                error="No tool call found",
+            )
+
+        tool_result = self.native_tool_executor.execute(tool_call)
+        is_terminal = tool_call.name in ("complete", "escalate", "cannot_fix")
+
+        return StepOutcome(
+            success=not tool_result.is_error,
+            action_name=tool_call.name,
+            action_params=tool_call.input,
+            result=tool_result.content or "",
+            summary=tool_result.content[:200] if tool_result.content else "",
+            should_continue=not is_terminal and not tool_result.is_error,
+            tokens_used=tokens_used,
+            duration_ms=0,
+            error=tool_result.content if tool_result.is_error else None,
+        )
+
+    def _update_phase_from_action(self, task_id: str, action_name: str) -> None:
+        """Update task phase based on action taken."""
+        state = self.state_store.load(task_id)
+        if not state:
+            return
+
+        phase_map = {
+            "read_file": TaskPhase.ANALYZE,
+            "analyze_dependencies": TaskPhase.ANALYZE,
+            "detect_patterns": TaskPhase.ANALYZE,
+            "write_file": TaskPhase.IMPLEMENT,
+            "edit_file": TaskPhase.IMPLEMENT,
+            "run_check": TaskPhase.VERIFY,
+            "run_single_test": TaskPhase.VERIFY,
+        }
+
+        new_phase = phase_map.get(action_name)
+        if new_phase and new_phase != state.phase:
+            self.state_store.update_phase(task_id, new_phase)
+
+    def get_native_tool_executor(self) -> NativeToolExecutor:
+        """Get the native tool executor for direct access."""
+        return self.native_tool_executor
+
+
+def create_executor(
     project_path: Path,
+    task_type: str = "fix_violation",
     action_executors: Optional[Dict[str, ActionExecutor]] = None,
-    model: str = "claude-sonnet-4-20250514",
+    **kwargs,
 ) -> MinimalContextExecutor:
     """
-    Factory function to create a minimal context executor.
+    Factory function to create an executor.
 
     Args:
         project_path: Project root path
+        task_type: Task type
         action_executors: Optional action executors
-        model: Model to use
+        **kwargs: Additional executor options
 
     Returns:
         Configured MinimalContextExecutor
     """
-    return MinimalContextExecutor(
+    executor = MinimalContextExecutor(
         project_path=project_path,
-        action_executors=action_executors or {},
-        model=model,
+        task_type=task_type,
+        **kwargs,
     )
+
+    if action_executors:
+        executor.register_actions(action_executors)
+
+    return executor
+
+
+def should_use_native_tools() -> bool:
+    """
+    Check if native tools should be used based on environment.
+
+    Returns True if AGENTFORGE_NATIVE_TOOLS=true
+    """
+    return os.environ.get("AGENTFORGE_NATIVE_TOOLS", "false").lower() == "true"

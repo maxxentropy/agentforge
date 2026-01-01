@@ -1,6 +1,6 @@
-# @spec_file: .agentforge/specs/core-harness-minimal-context-v1.yaml
-# @spec_id: core-harness-minimal-context-v1
-# @component_id: harness-minimal_context-fix_workflow
+# @spec_file: specs/minimal-context-architecture/05-llm-integration.yaml
+# @spec_id: llm-integration-v1
+# @component_id: fix-workflow
 # @test_path: tests/unit/harness/test_enhanced_context.py
 
 """
@@ -9,6 +9,13 @@ Minimal Context Fix Workflow
 
 Fix violation workflow using the minimal context architecture.
 Each step is a fresh conversation with bounded context.
+
+Features:
+- Template-based context building (TemplateContextBuilder)
+- AGENT.md configuration hierarchy
+- Dynamic project fingerprints
+- Full audit trail with context snapshots
+- Progressive compaction for token efficiency
 
 Test verification uses the violation's test_path field, which is computed
 at violation detection time from:
@@ -43,7 +50,7 @@ from ...refactoring.registry import get_refactoring_provider
 
 class MinimalContextFixWorkflow:
     """
-    Fix violation workflow using minimal context architecture.
+    Fix violation workflow using minimal context architecture v2.
 
     Key differences from FixViolationWorkflow:
     - State persisted to disk, not in memory
@@ -51,14 +58,16 @@ class MinimalContextFixWorkflow:
     - Token usage bounded regardless of step count
     - Resumable after crashes
 
-    Enhanced Context Engineering (v2) features (always enabled):
+    V2 Architecture features (always enabled):
+    - TemplateContextBuilder with task-type specific templates
+    - AGENT.md configuration hierarchy
+    - Dynamic project fingerprinting
+    - Full audit trail with context snapshots
+    - Progressive compaction for token efficiency
     - PhaseMachine for explicit phase transitions with guards
-    - EnhancedContextBuilder with Pydantic models
-    - Fact extraction from tool outputs instead of raw data
     - Enhanced loop detection with semantic analysis
-    - Proactive fact compaction (max 20 facts)
-    - Token budget enforcement with progressive compaction
-    - Targets 5000 tokens per step
+    - Fact extraction from tool outputs instead of raw data
+    - Targets ~4000 tokens per step
     """
 
     def __init__(
@@ -96,15 +105,22 @@ class MinimalContextFixWorkflow:
         # Build action executors
         self.action_executors = self._build_action_executors()
 
-        # Create executor with all enhanced context features enabled
+        # Create executor with template-based context building
+        # Provides: AGENT.md config, fingerprints, templates, audit logging
         self.executor = MinimalContextExecutor(
             project_path=project_path,
-            state_store=self.state_store,
-            action_executors=self.action_executors,
-            enable_understanding_extraction=True,
-            use_phase_machine=True,
-            use_enhanced_context_builder=True,
+            task_type="fix_violation",
+            compaction_enabled=True,
+            audit_enabled=True,
         )
+
+        # Register action executors with the executor
+        self.executor.register_actions(self.action_executors)
+
+        # Share state store between workflow and executor
+        # This ensures task state is shared across all components
+        self.executor.state_store = self.state_store
+        self.executor.context_builder.state_store = self.state_store
 
     def _build_action_executors(self) -> Dict[str, Callable]:
         """Build action executors for all tools."""
@@ -1542,14 +1558,16 @@ def create_minimal_fix_workflow(
     max_iterations: int = 50,
 ) -> MinimalContextFixWorkflow:
     """
-    Factory function to create a MinimalContextFixWorkflow.
+    Factory function to create a MinimalContextFixWorkflow using v2 architecture.
 
-    Enhanced Context Engineering features are always enabled:
+    V2 Architecture features are always enabled:
+    - TemplateContextBuilder with task-type specific templates
+    - AGENT.md configuration hierarchy
+    - Dynamic project fingerprinting
+    - Full audit trail with context snapshots
+    - Progressive compaction for token efficiency
     - PhaseMachine for phase transitions
-    - EnhancedContextBuilder with Pydantic models
-    - Understanding extraction from tool outputs
     - Enhanced loop detection
-    - Token budget enforcement
 
     Args:
         project_path: Project root directory
@@ -1558,7 +1576,7 @@ def create_minimal_fix_workflow(
         max_iterations: Hard ceiling for steps (cost control)
 
     Returns:
-        Configured MinimalContextFixWorkflow
+        Configured MinimalContextFixWorkflow with v2 executor
     """
     return MinimalContextFixWorkflow(
         project_path=project_path,

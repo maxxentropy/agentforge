@@ -1,7 +1,7 @@
-# @spec_file: .agentforge/specs/harness-minimal-context-v1.yaml
-# @spec_id: harness-minimal-context-v1
-# @component_id: harness-minimal_context-fix_workflow
-# @impl_path: tools/harness/minimal_context/fix_workflow.py
+# @spec_file: specs/minimal-context-architecture/05-llm-integration.yaml
+# @spec_id: llm-integration-v1
+# @component_id: enhanced-context-tests
+# @impl_path: src/agentforge/core/harness/minimal_context/
 
 """
 Tests for Enhanced Context Engineering
@@ -1238,7 +1238,6 @@ class TestPhaseMachineIntegration:
         executor = MinimalContextExecutor(
             project_path=tmp_path,
             state_store=store,
-            use_phase_machine=True,
         )
 
         # Create a task with some context
@@ -1290,7 +1289,6 @@ class TestPhaseMachineIntegration:
         executor = MinimalContextExecutor(
             project_path=tmp_path,
             state_store=store,
-            use_phase_machine=True,
         )
 
         # Create a task
@@ -1320,11 +1318,10 @@ class TestPhaseMachineIntegration:
         loaded_machine = loaded.get_phase_machine()
         assert loaded_machine.current_phase == Phase.COMPLETE
 
-    def test_legacy_mode_fallback(self, tmp_path):
-        """Test that use_phase_machine=False uses legacy behavior."""
+    def test_phase_machine_always_enabled(self, tmp_path):
+        """Test that phase machine is always enabled in the unified executor."""
         from agentforge.core.harness.minimal_context import (
             TaskStateStore,
-            TaskPhase,
             MinimalContextExecutor,
         )
 
@@ -1332,52 +1329,36 @@ class TestPhaseMachineIntegration:
         executor = MinimalContextExecutor(
             project_path=tmp_path,
             state_store=store,
-            use_phase_machine=False,  # Legacy mode
         )
 
-        # Create a task (no machine initialization)
-        task = store.create_task(
-            task_type="test",
-            goal="Test legacy mode",
-            success_criteria=["Escalate"],
-        )
-
-        # Simulate "escalate" action
-        executor._handle_phase_transition(
-            task_id=task.task_id,
-            action_name="escalate",
-            action_result={"status": "success"},
-            state=task,
-        )
-
-        # Verify legacy phase updated
-        loaded = store.load(task.task_id)
-        assert loaded.phase == TaskPhase.ESCALATED
-
-        # phase_machine_state should be empty (legacy mode)
-        assert loaded.phase_machine_state == {}
+        # Verify phase machine is always enabled
+        assert executor.use_phase_machine is True
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# Phase 5: Enhanced Context Builder Tests
+# Template Context Builder Tests
 # ═══════════════════════════════════════════════════════════════════════════════
 
 
-class TestEnhancedContextBuilder:
-    """Tests for EnhancedContextBuilder integration."""
+class TestTemplateContextBuilderIntegration:
+    """Tests for TemplateContextBuilder integration."""
 
     def test_build_from_task_state(self, tmp_path):
-        """Test building AgentContext from TaskState."""
+        """Test building context from TaskState."""
         from agentforge.core.harness.minimal_context import (
             TaskStateStore,
-            EnhancedContextBuilder,
+            TemplateContextBuilder,
         )
         from agentforge.core.harness.minimal_context.phase_machine import (
             PhaseMachine,
         )
 
         store = TaskStateStore(tmp_path)
-        builder = EnhancedContextBuilder(tmp_path, store)
+        builder = TemplateContextBuilder(
+            project_path=tmp_path,
+            state_store=store,
+            task_type="fix_violation",
+        )
 
         # Create a task
         task = store.create_task(
@@ -1396,142 +1377,42 @@ class TestEnhancedContextBuilder:
         store._save_state(task)
 
         # Build context
-        context = builder.build_from_task_state(task.task_id)
+        context = builder.build(task.task_id)
 
-        assert context.task.task_id == task.task_id
-        assert context.task.goal == "Fix complexity violation"
-        assert context.state.current_step == 0
-        assert context.state.phase.current_phase == "init"
-        assert context.domain_context == {"rule": "max-complexity", "severity": "high"}
-
-    def test_phase_aware_actions(self, tmp_path):
-        """Test that actions are filtered by phase."""
-        from agentforge.core.harness.minimal_context import (
-            TaskStateStore,
-            EnhancedContextBuilder,
-        )
-        from agentforge.core.harness.minimal_context.phase_machine import (
-            PhaseMachine,
-            Phase,
-        )
-
-        store = TaskStateStore(tmp_path)
-        builder = EnhancedContextBuilder(tmp_path, store)
-
-        # Create a task
-        task = store.create_task(
-            task_type="fix_violation",
-            goal="Test phase actions",
-            success_criteria=["Pass"],
-        )
-
-        # Test INIT phase
-        machine = PhaseMachine()
-        task.set_phase_machine(machine)
-        store._save_state(task)
-
-        context = builder.build_from_task_state(task.task_id)
-        init_actions = [a.name for a in context.actions.available]
-
-        assert "read_file" in init_actions
-        assert "load_context" in init_actions
-        assert "extract_function" not in init_actions  # Not in init phase
-
-        # Test IMPLEMENT phase
-        machine._current_phase = Phase.IMPLEMENT
-        task.set_phase_machine(machine)
-        store._save_state(task)
-
-        context = builder.build_from_task_state(task.task_id)
-        impl_actions = [a.name for a in context.actions.available]
-
-        assert "extract_function" in impl_actions
-        assert "edit_file" in impl_actions
-        assert "complete" not in impl_actions  # Not in implement phase
-
-    def test_recommended_action(self, tmp_path):
-        """Test that recommended action is set correctly."""
-        from agentforge.core.harness.minimal_context import (
-            TaskStateStore,
-            EnhancedContextBuilder,
-        )
-        from agentforge.core.harness.minimal_context.phase_machine import (
-            PhaseMachine,
-            Phase,
-        )
-
-        store = TaskStateStore(tmp_path)
-        builder = EnhancedContextBuilder(tmp_path, store)
-
-        task = store.create_task(
-            task_type="fix_violation",
-            goal="Test recommendations",
-            success_criteria=["Pass"],
-        )
-
-        # INIT phase should recommend read_file
-        machine = PhaseMachine()
-        task.set_phase_machine(machine)
-        store._save_state(task)
-
-        context = builder.build_from_task_state(task.task_id)
-        assert context.actions.recommended == "read_file"
-
-        # IMPLEMENT phase should recommend extract_function
-        machine._current_phase = Phase.IMPLEMENT
-        task.set_phase_machine(machine)
-        store._save_state(task)
-
-        context = builder.build_from_task_state(task.task_id)
-        assert context.actions.recommended == "extract_function"
-
-    def test_blocked_actions(self, tmp_path):
-        """Test that blocked actions are identified."""
-        from agentforge.core.harness.minimal_context import (
-            TaskStateStore,
-            EnhancedContextBuilder,
-        )
-        from agentforge.core.harness.minimal_context.phase_machine import (
-            PhaseMachine,
-            Phase,
-        )
-
-        store = TaskStateStore(tmp_path)
-        builder = EnhancedContextBuilder(tmp_path, store)
-
-        task = store.create_task(
-            task_type="fix_violation",
-            goal="Test blocked actions",
-            success_criteria=["Pass"],
-        )
-
-        machine = PhaseMachine()
-        task.set_phase_machine(machine)
-        store._save_state(task)
-
-        context = builder.build_from_task_state(task.task_id)
-
-        # Complete should be blocked (not in verify phase)
-        blocked_names = [b.split(":")[0] for b in context.actions.blocked]
-        assert "complete" in blocked_names
+        # TemplateContextBuilder returns TemplateStepContext, not AgentContext
+        assert context.total_tokens > 0
+        assert "Fix complexity violation" in context.user_message
 
     def test_build_messages(self, tmp_path):
         """Test building LLM messages."""
         from agentforge.core.harness.minimal_context import (
             TaskStateStore,
-            EnhancedContextBuilder,
+            TemplateContextBuilder,
         )
         from agentforge.core.harness.minimal_context.phase_machine import (
             PhaseMachine,
         )
 
         store = TaskStateStore(tmp_path)
-        builder = EnhancedContextBuilder(tmp_path, store)
+        builder = TemplateContextBuilder(
+            project_path=tmp_path,
+            state_store=store,
+            task_type="fix_violation",
+        )
 
         task = store.create_task(
             task_type="fix_violation",
             goal="Test messages",
             success_criteria=["Pass"],
+            context_data={
+                "violation": {
+                    "id": "V-TEST-001",
+                    "check_id": "test-check",
+                    "file_path": "test.py",
+                    "line_number": 10,
+                    "message": "Test violation",
+                },
+            },
         )
 
         machine = PhaseMachine()
@@ -1544,30 +1425,39 @@ class TestEnhancedContextBuilder:
         assert messages[0]["role"] == "system"
         assert messages[1]["role"] == "user"
 
-        # Check system prompt has phase guidance
-        assert "CURRENT PHASE: INIT" in messages[0]["content"]
-
         # Check user message has context
-        assert "# Task" in messages[1]["content"]
-        assert "# Available Actions" in messages[1]["content"]
+        assert "Test messages" in messages[1]["content"]
 
     def test_token_breakdown(self, tmp_path):
         """Test token breakdown calculation."""
         from agentforge.core.harness.minimal_context import (
             TaskStateStore,
-            EnhancedContextBuilder,
+            TemplateContextBuilder,
         )
         from agentforge.core.harness.minimal_context.phase_machine import (
             PhaseMachine,
         )
 
         store = TaskStateStore(tmp_path)
-        builder = EnhancedContextBuilder(tmp_path, store)
+        builder = TemplateContextBuilder(
+            project_path=tmp_path,
+            state_store=store,
+            task_type="fix_violation",
+        )
 
         task = store.create_task(
             task_type="fix_violation",
             goal="Test tokens",
             success_criteria=["Pass"],
+            context_data={
+                "violation": {
+                    "id": "V-TEST-001",
+                    "check_id": "test-check",
+                    "file_path": "test.py",
+                    "line_number": 10,
+                    "message": "Test violation",
+                },
+            },
         )
 
         machine = PhaseMachine()
@@ -1576,88 +1466,88 @@ class TestEnhancedContextBuilder:
 
         breakdown = builder.get_token_breakdown(task.task_id)
 
-        assert "total_tokens" in breakdown
-        assert "within_budget" in breakdown
-        assert breakdown["total_tokens"] > 0
-        assert breakdown["within_budget"] is True  # Should be within 6000 default
+        # Breakdown contains section-by-section token counts
+        assert isinstance(breakdown, dict)
+        assert len(breakdown) > 0
+        # Should contain at least task and system_prompt sections
+        total_tokens = sum(breakdown.values())
+        assert total_tokens > 0
 
-    def test_executor_uses_enhanced_builder(self, tmp_path):
-        """Test executor always uses enhanced context builder."""
+    def test_executor_uses_template_context_builder(self, tmp_path):
+        """Test executor uses template-based context builder."""
         from agentforge.core.harness.minimal_context import (
             TaskStateStore,
             MinimalContextExecutor,
-            EnhancedContextBuilder,
+            TemplateContextBuilder,
         )
 
         store = TaskStateStore(tmp_path)
 
-        # Create executor - enhanced builder is always used
+        # Create executor - template builder is always used
         executor = MinimalContextExecutor(
             project_path=tmp_path,
             state_store=store,
-            use_enhanced_context_builder=True,
         )
 
-        assert executor.use_enhanced_context_builder is True
-        assert isinstance(executor.context_builder, EnhancedContextBuilder)
+        assert isinstance(executor.context_builder, TemplateContextBuilder)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# Phase 6: Feature Flag Migration Tests
+# Unified Architecture Tests
 # ═══════════════════════════════════════════════════════════════════════════════
 
 
-class TestEnhancedContextAlwaysEnabled:
-    """Tests that enhanced context features are always enabled."""
+class TestUnifiedArchitecture:
+    """Tests that unified architecture features are always enabled."""
 
-    def test_workflow_has_enhanced_context_enabled(self, tmp_path):
-        """Test that workflow always uses enhanced context."""
+    def test_workflow_uses_unified_executor(self, tmp_path):
+        """Test that workflow uses unified executor."""
         from agentforge.core.harness.minimal_context import (
             MinimalContextFixWorkflow,
-            EnhancedContextBuilder,
+            MinimalContextExecutor,
+            TemplateContextBuilder,
         )
 
-        # Create workflow - enhanced context is always enabled
+        # Create workflow
         workflow = MinimalContextFixWorkflow(project_path=tmp_path)
 
+        # Verify unified executor is used
+        assert isinstance(workflow.executor, MinimalContextExecutor)
+        # Verify template-based context builder
+        assert isinstance(workflow.executor.context_builder, TemplateContextBuilder)
+        # Features always enabled
         assert workflow.executor.use_phase_machine is True
-        assert workflow.executor.use_enhanced_context_builder is True
-        assert workflow.executor.enable_understanding_extraction is True
-        assert isinstance(workflow.executor.context_builder, EnhancedContextBuilder)
 
-    def test_factory_function_creates_enhanced_workflow(self, tmp_path):
-        """Test factory function creates workflow with enhanced context."""
+    def test_factory_function_creates_workflow(self, tmp_path):
+        """Test factory function creates workflow with unified architecture."""
         from agentforge.core.harness.minimal_context import (
             create_minimal_fix_workflow,
-            EnhancedContextBuilder,
+            MinimalContextExecutor,
+            TemplateContextBuilder,
         )
 
         workflow = create_minimal_fix_workflow(project_path=tmp_path)
 
-        assert isinstance(workflow.executor.context_builder, EnhancedContextBuilder)
+        # Verify unified architecture
+        assert isinstance(workflow.executor, MinimalContextExecutor)
+        assert isinstance(workflow.executor.context_builder, TemplateContextBuilder)
         assert workflow.executor.use_phase_machine is True
-        assert workflow.executor.use_enhanced_context_builder is True
 
-    def test_enhanced_token_limits_exported(self):
-        """Test that ENHANCED_TOKEN_LIMITS is exported and correct."""
-        from agentforge.core.harness.minimal_context import (
-            TOKEN_BUDGET_LIMITS,
-            ENHANCED_TOKEN_LIMITS,
-        )
+    def test_deprecated_exports_removed(self):
+        """Test that deprecated exports are no longer in the public API."""
+        import agentforge.core.harness.minimal_context as mc
 
-        # Check legacy limits (for reference)
-        assert sum(TOKEN_BUDGET_LIMITS.values()) == 8000
+        # These deprecated exports should no longer be in the module
+        assert not hasattr(mc, 'EnhancedContextBuilder')
+        assert not hasattr(mc, 'TokenBudget')
+        assert not hasattr(mc, 'MinimalContextExecutorV2')
+        assert not hasattr(mc, 'create_executor_v2')
+        assert not hasattr(mc, 'should_use_v2')
 
-        # Check enhanced limits are reduced
-        assert sum(ENHANCED_TOKEN_LIMITS.values()) == 5000
-
-        # Check specific reductions
-        assert ENHANCED_TOKEN_LIMITS["system_prompt"] < TOKEN_BUDGET_LIMITS["system_prompt"]
-        assert ENHANCED_TOKEN_LIMITS["recent_actions"] < TOKEN_BUDGET_LIMITS["recent_actions"]
-
-        # Check new sections exist
-        assert "understanding" in ENHANCED_TOKEN_LIMITS
-        assert "precomputed" in ENHANCED_TOKEN_LIMITS
+        # These should still exist (unified architecture)
+        assert hasattr(mc, 'MinimalContextExecutor')
+        assert hasattr(mc, 'TemplateContextBuilder')
+        assert hasattr(mc, 'create_executor')
 
     def test_workflow_preserves_custom_iterations(self, tmp_path):
         """Test that custom iteration settings are preserved."""
@@ -1673,20 +1563,19 @@ class TestEnhancedContextAlwaysEnabled:
         assert workflow.max_iterations == 100
 
     def test_module_docstring_documents_features(self):
-        """Test that module docstring documents enhanced features."""
+        """Test that module docstring documents architecture features."""
         import agentforge.core.harness.minimal_context as mc
 
         docstring = mc.__doc__
 
-        assert "Enhanced Context Engineering" in docstring
+        # Architecture features documented
+        assert "TemplateContextBuilder" in docstring
         assert "PhaseMachine" in docstring
-        assert "EnhancedContextBuilder" in docstring
-        assert "Token Budget Enforcement" in docstring
-        assert "Fact Compaction" in docstring
+        assert "Progressive Compaction" in docstring
 
 
 class TestTokenBudgetEnforcement:
-    """Tests for token budget enforcement with compaction."""
+    """Tests for token budget estimation in context models."""
 
     def test_agent_context_estimate_tokens(self):
         """Test that AgentContext can estimate its token count."""
@@ -1721,193 +1610,6 @@ class TestTokenBudgetEnforcement:
         # Should be a reasonable positive number
         assert tokens > 0
         assert tokens < 1000  # Simple context should be under 1000 tokens
-
-    def test_compaction_triggered_when_over_budget(self):
-        """Test that compaction is triggered when context exceeds budget."""
-        from agentforge.core.harness.minimal_context import (
-            EnhancedContextBuilder,
-            TaskSpec,
-            StateSpec,
-            ActionsSpec,
-            ActionDef,
-            PhaseMachine,
-            Understanding,
-            Fact,
-            FactCategory,
-        )
-
-        # Create builder with very small budget
-        builder = EnhancedContextBuilder(
-            project_path=Path("/tmp"),
-            max_tokens=100,  # Very small to trigger compaction
-        )
-
-        # Create context with lots of data
-        facts = [
-            Fact(
-                id=f"fact-{i}",
-                category=FactCategory.CODE_STRUCTURE,
-                statement=f"This is fact number {i} with some additional content to make it longer",
-                confidence=0.6,  # Low confidence to test compaction
-                source="test",
-                step=1,
-            )
-            for i in range(20)
-        ]
-
-        context = builder.build_context(
-            task_spec=TaskSpec(
-                task_id="test",
-                task_type="fix",
-                goal="Fix it",
-                success_criteria=["Done"],
-            ),
-            state_spec=StateSpec(
-                understanding=Understanding(facts=facts),
-            ),
-            domain_context={"key": "x" * 1000},  # Large domain context
-            precomputed={"analysis": "y" * 2000},  # Large precomputed
-            phase_machine=PhaseMachine(),
-        )
-
-        # Compaction should have been applied
-        # Low-confidence facts should be removed
-        high_conf_facts = [f for f in context.state.understanding.facts if f.confidence >= 0.8]
-        assert len(context.state.understanding.facts) <= 10
-
-    def test_compaction_preserves_high_confidence_facts(self):
-        """Test that high-confidence facts are preserved during compaction."""
-        from agentforge.core.harness.minimal_context import (
-            EnhancedContextBuilder,
-            TaskSpec,
-            StateSpec,
-            ActionsSpec,
-            Understanding,
-            Fact,
-            FactCategory,
-            PhaseMachine,
-        )
-
-        builder = EnhancedContextBuilder(
-            project_path=Path("/tmp"),
-            max_tokens=200,
-        )
-
-        # Create facts with varying confidence
-        facts = [
-            Fact(
-                id="high-1",
-                category=FactCategory.CODE_STRUCTURE,
-                statement="High confidence fact",
-                confidence=0.95,
-                source="test",
-                step=1,
-            ),
-            Fact(
-                id="low-1",
-                category=FactCategory.INFERENCE,
-                statement="Low confidence fact" * 50,
-                confidence=0.5,
-                source="test",
-                step=1,
-            ),
-            Fact(
-                id="high-2",
-                category=FactCategory.VERIFICATION,
-                statement="Another high confidence fact",
-                confidence=0.85,
-                source="test",
-                step=1,
-            ),
-        ]
-
-        context = builder.build_context(
-            task_spec=TaskSpec(
-                task_id="test",
-                task_type="fix",
-                goal="Fix it",
-                success_criteria=["Done"],
-            ),
-            state_spec=StateSpec(
-                understanding=Understanding(facts=facts),
-            ),
-            domain_context={},
-            precomputed={"large_data": "z" * 5000},  # Force compaction
-            phase_machine=PhaseMachine(),
-        )
-
-        # High confidence facts should still be there
-        fact_ids = [f.id for f in context.state.understanding.facts]
-        assert "high-1" in fact_ids or "high-2" in fact_ids
-
-    def test_compaction_truncates_precomputed_first(self):
-        """Test that precomputed is truncated before other content."""
-        from agentforge.core.harness.minimal_context import (
-            EnhancedContextBuilder,
-            TaskSpec,
-            StateSpec,
-            ActionsSpec,
-            PhaseMachine,
-        )
-
-        builder = EnhancedContextBuilder(
-            project_path=Path("/tmp"),
-            max_tokens=500,
-        )
-
-        original_precomputed = {"analysis": "x" * 10000}
-
-        context = builder.build_context(
-            task_spec=TaskSpec(
-                task_id="test",
-                task_type="fix",
-                goal="Fix it",
-                success_criteria=["Done"],
-            ),
-            state_spec=StateSpec(),
-            domain_context={},
-            precomputed=original_precomputed,
-            phase_machine=PhaseMachine(),
-        )
-
-        # Precomputed should be truncated or empty
-        if context.precomputed.get("analysis"):
-            assert len(context.precomputed["analysis"]) < 10000
-        # Context should fit in budget
-        assert context.estimate_tokens() <= 500 or len(context.precomputed) == 0
-
-    def test_normal_context_not_compacted(self):
-        """Test that normal-sized context is not compacted."""
-        from agentforge.core.harness.minimal_context import (
-            EnhancedContextBuilder,
-            TaskSpec,
-            StateSpec,
-            ActionsSpec,
-            ActionDef,
-            PhaseMachine,
-        )
-
-        builder = EnhancedContextBuilder(
-            project_path=Path("/tmp"),
-            max_tokens=6000,  # Default budget
-        )
-
-        context = builder.build_context(
-            task_spec=TaskSpec(
-                task_id="test",
-                task_type="fix",
-                goal="Simple fix",
-                success_criteria=["Tests pass"],
-            ),
-            state_spec=StateSpec(),
-            domain_context={"file": "test.py", "line": 42},
-            precomputed={"complexity": 5},
-            phase_machine=PhaseMachine(),
-        )
-
-        # Should not be compacted
-        assert context.precomputed.get("complexity") == 5
-        assert context.domain_context.get("file") == "test.py"
 
 
 class TestResponseValidation:
@@ -2036,317 +1738,6 @@ parameters:
 
         assert action == "complete"
         assert params == {}
-
-
-class TestValueHintsPopulation:
-    """Tests for value_hints population from precomputed context."""
-
-    def test_extract_function_gets_hints_from_candidates(self):
-        """Test that extract_function action gets hints from extraction candidates."""
-        from agentforge.core.harness.minimal_context import (
-            EnhancedContextBuilder,
-            TaskSpec,
-            StateSpec,
-            PhaseMachine,
-            Phase,
-        )
-
-        builder = EnhancedContextBuilder(project_path=Path("/tmp"))
-        machine = PhaseMachine()
-        machine._current_phase = Phase.IMPLEMENT
-
-        precomputed = {
-            "extraction_candidates": [
-                {
-                    "start_line": 42,
-                    "end_line": 65,
-                    "suggested_name": "calculate_total",
-                    "source_function": "process_order",
-                    "file_path": "/tmp/orders.py",
-                }
-            ]
-        }
-
-        context = builder.build_context(
-            task_spec=TaskSpec(
-                task_id="test",
-                task_type="fix",
-                goal="Extract function",
-                success_criteria=["Done"],
-            ),
-            state_spec=StateSpec(),
-            domain_context={},
-            precomputed=precomputed,
-            phase_machine=machine,
-        )
-
-        # Find extract_function action
-        extract_action = next(
-            (a for a in context.actions.available if a.name == "extract_function"),
-            None,
-        )
-
-        assert extract_action is not None
-        assert extract_action.value_hints.get("start_line") == "42"
-        assert extract_action.value_hints.get("end_line") == "65"
-        assert extract_action.value_hints.get("new_function_name") == "calculate_total"
-        assert extract_action.value_hints.get("source_function") == "process_order"
-
-    def test_read_file_gets_path_hint(self):
-        """Test that read_file action gets path hint from precomputed."""
-        from agentforge.core.harness.minimal_context import (
-            EnhancedContextBuilder,
-            TaskSpec,
-            StateSpec,
-            PhaseMachine,
-            Phase,
-        )
-
-        builder = EnhancedContextBuilder(project_path=Path("/tmp"))
-        machine = PhaseMachine()
-        machine._current_phase = Phase.ANALYZE
-
-        precomputed = {
-            "file_path": "/tmp/target_file.py",
-        }
-
-        context = builder.build_context(
-            task_spec=TaskSpec(
-                task_id="test",
-                task_type="fix",
-                goal="Analyze file",
-                success_criteria=["Done"],
-            ),
-            state_spec=StateSpec(),
-            domain_context={},
-            precomputed=precomputed,
-            phase_machine=machine,
-        )
-
-        # Find read_file action
-        read_action = next(
-            (a for a in context.actions.available if a.name == "read_file"),
-            None,
-        )
-
-        assert read_action is not None
-        assert read_action.value_hints.get("path") == "/tmp/target_file.py"
-
-    def test_edit_file_gets_line_hint(self):
-        """Test that edit_file action gets line number hint."""
-        from agentforge.core.harness.minimal_context import (
-            EnhancedContextBuilder,
-            TaskSpec,
-            StateSpec,
-            PhaseMachine,
-            Phase,
-        )
-
-        builder = EnhancedContextBuilder(project_path=Path("/tmp"))
-        machine = PhaseMachine()
-        machine._current_phase = Phase.IMPLEMENT
-
-        precomputed = {
-            "file_path": "/tmp/target.py",
-            "line_number": 123,
-        }
-
-        context = builder.build_context(
-            task_spec=TaskSpec(
-                task_id="test",
-                task_type="fix",
-                goal="Edit file",
-                success_criteria=["Done"],
-            ),
-            state_spec=StateSpec(),
-            domain_context={},
-            precomputed=precomputed,
-            phase_machine=machine,
-        )
-
-        # Find edit_file action
-        edit_action = next(
-            (a for a in context.actions.available if a.name == "edit_file"),
-            None,
-        )
-
-        assert edit_action is not None
-        assert edit_action.value_hints.get("path") == "/tmp/target.py"
-        assert edit_action.value_hints.get("start_line") == "123"
-
-    def test_no_hints_without_precomputed(self):
-        """Test that no hints are added when precomputed is empty."""
-        from agentforge.core.harness.minimal_context import (
-            EnhancedContextBuilder,
-            TaskSpec,
-            StateSpec,
-            PhaseMachine,
-            Phase,
-        )
-
-        builder = EnhancedContextBuilder(project_path=Path("/tmp"))
-        machine = PhaseMachine()
-        machine._current_phase = Phase.IMPLEMENT
-
-        context = builder.build_context(
-            task_spec=TaskSpec(
-                task_id="test",
-                task_type="fix",
-                goal="Edit file",
-                success_criteria=["Done"],
-            ),
-            state_spec=StateSpec(),
-            domain_context={},
-            precomputed={},  # Empty
-            phase_machine=machine,
-        )
-
-        # Actions should have no value hints
-        for action in context.actions.available:
-            assert action.value_hints == {}
-
-    def test_user_message_displays_value_hints(self, tmp_path):
-        """Test that value hints are displayed in user message with USE: format.
-
-        This test verifies the fix for the bug where value_hints were populated
-        but not displayed in the user message, causing the LLM to guess parameter names.
-        """
-        from agentforge.core.harness.minimal_context import (
-            TaskStateStore,
-            EnhancedContextBuilder,
-        )
-        from agentforge.core.harness.minimal_context.phase_machine import (
-            PhaseMachine,
-            Phase,
-        )
-
-        store = TaskStateStore(tmp_path)
-        builder = EnhancedContextBuilder(tmp_path, store)
-
-        # Create task with precomputed context including file_path
-        task = store.create_task(
-            task_type="fix_violation",
-            goal="Test value hints display",
-            success_criteria=["Pass"],
-            context_data={
-                "file_path": "tools/test_file.py",
-                "line_number": 42,
-                "precomputed": {
-                    "file_path": "tools/test_file.py",
-                    "extraction_candidates": [
-                        {
-                            "start_line": 10,
-                            "end_line": 25,
-                            "suggested_name": "_helper_func",
-                            "source_function": "main_func",
-                        }
-                    ],
-                },
-            },
-        )
-
-        # Set to IMPLEMENT phase where extract_function is available
-        machine = PhaseMachine()
-        machine._current_phase = Phase.IMPLEMENT
-        task.set_phase_machine(machine)
-        store._save_state(task)
-
-        # Build messages
-        messages = builder.build_messages(task.task_id)
-        user_message = messages[1]["content"]
-
-        # Verify value hints are displayed with USE: format
-        assert "# USE:" in user_message, "Value hints should be displayed with '# USE:' format"
-        assert "tools/test_file.py" in user_message, "File path hint should be in message"
-
-    def test_domain_context_from_root_level_fields(self, tmp_path):
-        """Test that domain_context is extracted from root-level fields.
-
-        This test verifies the fix for the bug where context_data with fields
-        at the root level (not nested under 'violation') was not being extracted.
-        """
-        from agentforge.core.harness.minimal_context import (
-            TaskStateStore,
-            EnhancedContextBuilder,
-        )
-        from agentforge.core.harness.minimal_context.phase_machine import (
-            PhaseMachine,
-        )
-
-        store = TaskStateStore(tmp_path)
-        builder = EnhancedContextBuilder(tmp_path, store)
-
-        # Create task with NEW format: fields at root level (not nested under 'violation')
-        task = store.create_task(
-            task_type="fix_violation",
-            goal="Test domain context extraction",
-            success_criteria=["Pass"],
-            context_data={
-                # Fields at root level (new format from fix_workflow.py)
-                "file_path": "tools/harness/target.py",
-                "line_number": 51,
-                "check_id": "max-cyclomatic-complexity",
-                "severity": "warning",
-                "precomputed": {
-                    "function_source": "def target_func(): pass",
-                },
-            },
-        )
-
-        machine = PhaseMachine()
-        task.set_phase_machine(machine)
-        store._save_state(task)
-
-        # Build context
-        context = builder.build_from_task_state(task.task_id)
-
-        # Domain context should have the root-level fields
-        assert context.domain_context.get("file_path") == "tools/harness/target.py"
-        assert context.domain_context.get("line_number") == 51
-        assert context.domain_context.get("check_id") == "max-cyclomatic-complexity"
-
-        # precomputed should be separate
-        assert "precomputed" not in context.domain_context
-
-    def test_domain_context_backward_compatible_with_nested_format(self, tmp_path):
-        """Test that domain_context still works with OLD nested 'violation' format."""
-        from agentforge.core.harness.minimal_context import (
-            TaskStateStore,
-            EnhancedContextBuilder,
-        )
-        from agentforge.core.harness.minimal_context.phase_machine import (
-            PhaseMachine,
-        )
-
-        store = TaskStateStore(tmp_path)
-        builder = EnhancedContextBuilder(tmp_path, store)
-
-        # Create task with OLD format: fields nested under 'violation' key
-        task = store.create_task(
-            task_type="fix_violation",
-            goal="Test backward compat",
-            success_criteria=["Pass"],
-            context_data={
-                "violation": {
-                    "file_path": "old/format/file.py",
-                    "line_number": 100,
-                    "rule": "old-rule",
-                },
-                "precomputed": {},
-            },
-        )
-
-        machine = PhaseMachine()
-        task.set_phase_machine(machine)
-        store._save_state(task)
-
-        # Build context
-        context = builder.build_from_task_state(task.task_id)
-
-        # Domain context should have the nested fields (backward compat)
-        assert context.domain_context.get("file_path") == "old/format/file.py"
-        assert context.domain_context.get("line_number") == 100
-        assert context.domain_context.get("rule") == "old-rule"
 
 
 class TestSchemaVersioning:

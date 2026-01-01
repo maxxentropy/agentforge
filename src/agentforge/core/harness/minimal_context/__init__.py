@@ -1,5 +1,5 @@
-# @spec_file: .agentforge/specs/core-harness-minimal-context-v1.yaml
-# @spec_id: core-harness-minimal-context-v1
+# @spec_file: specs/minimal-context-architecture/05-llm-integration.yaml
+# @spec_id: llm-integration-v1
 # @component_id: harness-minimal_context-__init__
 # @test_path: tests/unit/harness/test_enhanced_context.py
 
@@ -13,19 +13,18 @@ Key principle: Each step is a fresh conversation with exactly 2 messages:
 1. System prompt (phase-appropriate)
 2. Current context (built from persisted state)
 
-Context size: ~5000 tokens per step.
+Context size: ~4000 tokens per step.
 
-Enhanced Context Engineering (v2) - Always Enabled
---------------------------------------------------
-All enhanced features are now the default:
-
+Features
+--------
+- **TemplateContextBuilder**: Task-type specific context templates
+- **AGENT.md Configuration**: Hierarchical configuration chain
+- **Dynamic Fingerprinting**: Project context generation
+- **Audit Trail**: Full context snapshots for debugging
+- **Progressive Compaction**: Token budget enforcement
 - **PhaseMachine**: Explicit phase transitions with guards
-- **EnhancedContextBuilder**: Pydantic v2 models for validated, typed context
-- **Understanding Extraction**: Fact-based reasoning instead of raw tool output
 - **Enhanced Loop Detection**: Semantic analysis (identical actions, error cycles)
-- **Token Budget Enforcement**: Progressive compaction when over budget
-- **Fact Compaction**: Proactive pruning (max 20 facts, prioritized by value)
-- **Value Hints**: Precomputed context mapped to action parameter hints
+- **Understanding Extraction**: Fact-based reasoning instead of raw tool output
 
 Usage
 -----
@@ -34,10 +33,7 @@ Usage
         create_minimal_fix_workflow,
     )
 
-    # Direct instantiation
-    workflow = MinimalContextFixWorkflow(project_path=Path("."))
-
-    # Factory function
+    # Factory function (recommended)
     workflow = create_minimal_fix_workflow(project_path=Path("."))
 
     # Fix a violation
@@ -45,15 +41,17 @@ Usage
 """
 
 from .state_store import TaskStateStore, TaskState, TaskPhase, SCHEMA_VERSION
-from .token_budget import TokenBudget, TOKEN_BUDGET_LIMITS, ENHANCED_TOKEN_LIMITS
 from .working_memory import WorkingMemoryManager, WorkingMemoryItem
-from .context_schemas import ContextSchema, FixViolationSchema, get_schema_for_task
-from .context_builder import ContextBuilder
-from .enhanced_context_builder import EnhancedContextBuilder, create_enhanced_context_builder
-from .executor import MinimalContextExecutor, StepOutcome, AdaptiveBudget
+from .executor import (
+    MinimalContextExecutor,
+    StepOutcome,
+    AdaptiveBudget,
+    create_executor,
+    should_use_native_tools,
+)
 from .fix_workflow import MinimalContextFixWorkflow, create_minimal_fix_workflow
 
-# Enhanced Context Engineering (v2)
+# Context Models
 from .context_models import (
     # Enums
     FactCategory,
@@ -96,13 +94,7 @@ from .phase_machine import (
     PhaseMachine,
 )
 
-# Context Management V2 (with AGENT.md config, fingerprints, templates, audit)
-from .executor_v2 import (
-    MinimalContextExecutorV2,
-    create_executor_v2,
-    should_use_v2,
-    should_use_native_tools,
-)
+# Template-based context building
 from .template_context_builder import (
     TemplateContextBuilder,
     TemplateStepContext,
@@ -119,22 +111,9 @@ __all__ = [
     "TaskState",
     "TaskPhase",
     "SCHEMA_VERSION",
-    # Token Budget
-    "TokenBudget",
-    "TOKEN_BUDGET_LIMITS",
-    "ENHANCED_TOKEN_LIMITS",
     # Working Memory
     "WorkingMemoryManager",
     "WorkingMemoryItem",
-    # Context Schemas (legacy)
-    "ContextSchema",
-    "FixViolationSchema",
-    "get_schema_for_task",
-    # Context Building (legacy)
-    "ContextBuilder",
-    # Context Building (enhanced - Phase 5)
-    "EnhancedContextBuilder",
-    "create_enhanced_context_builder",
     # Execution
     "MinimalContextExecutor",
     "StepOutcome",
@@ -143,7 +122,7 @@ __all__ = [
     "MinimalContextFixWorkflow",
     "create_minimal_fix_workflow",
     # ═══════════════════════════════════════════════════════════════════════════
-    # Enhanced Context Engineering (v2)
+    # Context Engineering
     # ═══════════════════════════════════════════════════════════════════════════
     # Context Models - Enums
     "FactCategory",
@@ -182,11 +161,9 @@ __all__ = [
     "PhaseConfig",
     "PhaseMachine",
     # ═══════════════════════════════════════════════════════════════════════════
-    # Context Management V2 (AGENT.md, fingerprints, templates, audit)
+    # Context Management (templates, AGENT.md config, fingerprints, audit)
     # ═══════════════════════════════════════════════════════════════════════════
-    "MinimalContextExecutorV2",
-    "create_executor_v2",
-    "should_use_v2",
+    "create_executor",
     "should_use_native_tools",
     "TemplateContextBuilder",
     "TemplateStepContext",

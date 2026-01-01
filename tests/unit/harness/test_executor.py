@@ -1,13 +1,13 @@
 # @spec_file: specs/minimal-context-architecture/05-llm-integration.yaml
 # @spec_id: llm-integration-v1
-# @component_id: executor-v2-tests
-# @impl_path: src/agentforge/core/harness/minimal_context/executor_v2.py
+# @component_id: executor-tests
+# @impl_path: src/agentforge/core/harness/minimal_context/executor.py
 
 """
-Tests for MinimalContextExecutorV2.
+Tests for MinimalContextExecutor.
 
 Covers:
-- V2 executor initialization and configuration
+- Executor initialization and configuration
 - Fingerprint generation
 - Native tool integration
 - run_task_native method
@@ -20,10 +20,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from agentforge.core.harness.minimal_context.executor_v2 import (
-    MinimalContextExecutorV2,
-    create_executor_v2,
-    should_use_v2,
+from agentforge.core.harness.minimal_context.executor import (
+    MinimalContextExecutor,
+    create_executor,
     should_use_native_tools,
 )
 from agentforge.core.harness.minimal_context.native_tool_executor import (
@@ -31,8 +30,8 @@ from agentforge.core.harness.minimal_context.native_tool_executor import (
 )
 
 
-class TestMinimalContextExecutorV2:
-    """Tests for MinimalContextExecutorV2."""
+class TestMinimalContextExecutor:
+    """Tests for MinimalContextExecutor."""
 
     @pytest.fixture
     def temp_project(self):
@@ -59,7 +58,7 @@ dependencies = ["pytest"]
 
     def test_init_loads_config(self, temp_project):
         """Executor loads config on init."""
-        executor = MinimalContextExecutorV2(
+        executor = MinimalContextExecutor(
             project_path=temp_project,
             task_type="fix_violation",
         )
@@ -69,7 +68,7 @@ dependencies = ["pytest"]
 
     def test_init_loads_fingerprint(self, temp_project):
         """Executor can generate fingerprint."""
-        executor = MinimalContextExecutorV2(
+        executor = MinimalContextExecutor(
             project_path=temp_project,
             task_type="fix_violation",
         )
@@ -81,7 +80,7 @@ dependencies = ["pytest"]
 
     def test_init_loads_template(self, temp_project):
         """Executor loads template for task type."""
-        executor = MinimalContextExecutorV2(
+        executor = MinimalContextExecutor(
             project_path=temp_project,
             task_type="fix_violation",
         )
@@ -91,7 +90,7 @@ dependencies = ["pytest"]
 
     def test_init_with_unknown_task_type_falls_back(self, temp_project):
         """Unknown task type falls back to fix_violation template."""
-        executor = MinimalContextExecutorV2(
+        executor = MinimalContextExecutor(
             project_path=temp_project,
             task_type="unknown_type",
         )
@@ -101,7 +100,7 @@ dependencies = ["pytest"]
 
     def test_compaction_disabled(self, temp_project):
         """Compaction can be disabled."""
-        executor = MinimalContextExecutorV2(
+        executor = MinimalContextExecutor(
             project_path=temp_project,
             task_type="fix_violation",
             compaction_enabled=False,
@@ -111,7 +110,7 @@ dependencies = ["pytest"]
 
     def test_compaction_enabled_by_default(self, temp_project):
         """Compaction is enabled by default."""
-        executor = MinimalContextExecutorV2(
+        executor = MinimalContextExecutor(
             project_path=temp_project,
             task_type="fix_violation",
         )
@@ -121,7 +120,7 @@ dependencies = ["pytest"]
     def test_audit_disabled_by_env(self, temp_project):
         """Audit can be disabled via environment."""
         with patch.dict(os.environ, {"AGENTFORGE_AUDIT_ENABLED": "false"}):
-            executor = MinimalContextExecutorV2(
+            executor = MinimalContextExecutor(
                 project_path=temp_project,
                 task_type="fix_violation",
             )
@@ -130,7 +129,7 @@ dependencies = ["pytest"]
 
     def test_audit_enabled_by_default(self, temp_project):
         """Audit is enabled by default."""
-        executor = MinimalContextExecutorV2(
+        executor = MinimalContextExecutor(
             project_path=temp_project,
             task_type="fix_violation",
         )
@@ -139,7 +138,7 @@ dependencies = ["pytest"]
 
     def test_register_action(self, temp_project):
         """Actions can be registered."""
-        executor = MinimalContextExecutorV2(
+        executor = MinimalContextExecutor(
             project_path=temp_project,
             task_type="fix_violation",
         )
@@ -147,11 +146,11 @@ dependencies = ["pytest"]
         mock_action = MagicMock()
         executor.register_action("test_action", mock_action)
 
-        assert "test_action" in executor.base_executor.action_executors
+        assert "test_action" in executor.action_executors
 
     def test_register_actions(self, temp_project):
         """Multiple actions can be registered."""
-        executor = MinimalContextExecutorV2(
+        executor = MinimalContextExecutor(
             project_path=temp_project,
             task_type="fix_violation",
         )
@@ -162,12 +161,12 @@ dependencies = ["pytest"]
         }
         executor.register_actions(actions)
 
-        assert "action1" in executor.base_executor.action_executors
-        assert "action2" in executor.base_executor.action_executors
+        assert "action1" in executor.action_executors
+        assert "action2" in executor.action_executors
 
 
-class TestCreateExecutorV2:
-    """Tests for create_executor_v2 factory function."""
+class TestCreateExecutor:
+    """Tests for create_executor factory function."""
 
     @pytest.fixture
     def temp_project(self):
@@ -180,47 +179,23 @@ class TestCreateExecutorV2:
 
     def test_creates_executor(self, temp_project):
         """Factory creates executor."""
-        executor = create_executor_v2(
+        executor = create_executor(
             project_path=temp_project,
             task_type="fix_violation",
         )
 
-        assert isinstance(executor, MinimalContextExecutorV2)
+        assert isinstance(executor, MinimalContextExecutor)
 
     def test_registers_actions(self, temp_project):
         """Factory registers actions."""
         actions = {"test": MagicMock()}
-        executor = create_executor_v2(
+        executor = create_executor(
             project_path=temp_project,
             task_type="fix_violation",
             action_executors=actions,
         )
 
-        assert "test" in executor.base_executor.action_executors
-
-
-class TestShouldUseV2:
-    """Tests for should_use_v2 function."""
-
-    def test_returns_false_by_default(self):
-        """Returns False when env not set."""
-        with patch.dict(os.environ, {}, clear=True):
-            # Clear the specific var if present
-            os.environ.pop("AGENTFORGE_CONTEXT_V2", None)
-            assert should_use_v2() is False
-
-    def test_returns_true_when_enabled(self):
-        """Returns True when env var is true."""
-        with patch.dict(os.environ, {"AGENTFORGE_CONTEXT_V2": "true"}):
-            assert should_use_v2() is True
-
-    def test_returns_true_case_insensitive(self):
-        """Returns True with any case."""
-        with patch.dict(os.environ, {"AGENTFORGE_CONTEXT_V2": "TRUE"}):
-            assert should_use_v2() is True
-
-        with patch.dict(os.environ, {"AGENTFORGE_CONTEXT_V2": "True"}):
-            assert should_use_v2() is True
+        assert "test" in executor.action_executors
 
 
 class TestFingerprint:
@@ -244,7 +219,7 @@ dependencies = ["pydantic", "fastapi"]
 
     def test_fingerprint_with_constraints(self, temp_project):
         """Fingerprint includes task constraints."""
-        executor = MinimalContextExecutorV2(
+        executor = MinimalContextExecutor(
             project_path=temp_project,
             task_type="fix_violation",
         )
@@ -259,7 +234,7 @@ dependencies = ["pydantic", "fastapi"]
 
     def test_fingerprint_has_project_info(self, temp_project):
         """Fingerprint contains project information."""
-        executor = MinimalContextExecutorV2(
+        executor = MinimalContextExecutor(
             project_path=temp_project,
             task_type="fix_violation",
         )
@@ -271,7 +246,7 @@ dependencies = ["pydantic", "fastapi"]
 
 
 class TestNativeToolIntegration:
-    """Tests for native tool integration in executor_v2."""
+    """Tests for native tool integration in executor."""
 
     @pytest.fixture
     def temp_project(self):
@@ -293,7 +268,7 @@ requires-python = ">=3.11"
 
     def test_executor_has_native_tool_executor(self, temp_project):
         """Executor initializes with native tool executor."""
-        executor = MinimalContextExecutorV2(
+        executor = MinimalContextExecutor(
             project_path=temp_project,
             task_type="fix_violation",
         )
@@ -303,7 +278,7 @@ requires-python = ">=3.11"
 
     def test_native_executor_has_standard_handlers(self, temp_project):
         """Native executor has standard handlers registered."""
-        executor = MinimalContextExecutorV2(
+        executor = MinimalContextExecutor(
             project_path=temp_project,
             task_type="fix_violation",
         )
@@ -315,8 +290,8 @@ requires-python = ">=3.11"
         assert native.has_action("escalate")
 
     def test_register_action_adds_to_both_executors(self, temp_project):
-        """register_action adds to both base and native executors."""
-        executor = MinimalContextExecutorV2(
+        """register_action adds to both action_executors and native executors."""
+        executor = MinimalContextExecutor(
             project_path=temp_project,
             task_type="fix_violation",
         )
@@ -324,13 +299,13 @@ requires-python = ">=3.11"
         mock_handler = MagicMock(return_value="result")
         executor.register_action("custom_action", mock_handler)
 
-        # Check both executors have the action
-        assert "custom_action" in executor.base_executor.action_executors
+        # Check both have the action
+        assert "custom_action" in executor.action_executors
         assert executor.native_tool_executor.has_action("custom_action")
 
     def test_get_native_tool_executor(self, temp_project):
         """Can get native tool executor via accessor."""
-        executor = MinimalContextExecutorV2(
+        executor = MinimalContextExecutor(
             project_path=temp_project,
             task_type="fix_violation",
         )
@@ -354,7 +329,7 @@ requires-python = ">=3.11"
         """run_task_native works with simulated LLM client."""
         from agentforge.core.llm import create_simple_client
 
-        executor = MinimalContextExecutorV2(
+        executor = MinimalContextExecutor(
             project_path=temp_project,
             task_type="fix_violation",
         )
@@ -387,7 +362,7 @@ requires-python = ">=3.11"
         """run_task_native can read files via native tools."""
         from agentforge.core.llm import create_simple_client
 
-        executor = MinimalContextExecutorV2(
+        executor = MinimalContextExecutor(
             project_path=temp_project,
             task_type="fix_violation",
         )
@@ -429,7 +404,7 @@ requires-python = ">=3.11"
         """run_task_native handles escalation."""
         from agentforge.core.llm import create_simple_client
 
-        executor = MinimalContextExecutorV2(
+        executor = MinimalContextExecutor(
             project_path=temp_project,
             task_type="fix_violation",
         )
@@ -457,7 +432,7 @@ requires-python = ">=3.11"
         """run_task_native calls step callback."""
         from agentforge.core.llm import create_simple_client
 
-        executor = MinimalContextExecutorV2(
+        executor = MinimalContextExecutor(
             project_path=temp_project,
             task_type="fix_violation",
         )
@@ -490,7 +465,7 @@ requires-python = ">=3.11"
         """run_task_native respects max_steps limit."""
         from agentforge.core.llm import create_simple_client
 
-        executor = MinimalContextExecutorV2(
+        executor = MinimalContextExecutor(
             project_path=temp_project,
             task_type="fix_violation",
         )

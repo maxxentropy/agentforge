@@ -166,21 +166,16 @@ from agentforge.core.harness.rollback_manager import (
     ROLLBACK_TOOL_DEFINITIONS,
 )
 
-# Phase 10: Minimal Context Architecture
+# Minimal Context Architecture
 from agentforge.core.harness.minimal_context import (
     TaskStateStore,
     TaskState,
     TaskPhase,
-    TokenBudget as MinimalTokenBudget,
-    TOKEN_BUDGET_LIMITS,
     WorkingMemoryManager,
     WorkingMemoryItem,
-    ContextSchema,
-    FixViolationSchema,
-    get_schema_for_task,
-    ContextBuilder,
     MinimalContextExecutor,
     StepOutcome,
+    AdaptiveBudget,
     MinimalContextFixWorkflow,
     create_minimal_fix_workflow,
 )
@@ -291,16 +286,11 @@ __all__ = [
     "TaskStateStore",
     "TaskState",
     "TaskPhase",
-    "MinimalTokenBudget",
-    "TOKEN_BUDGET_LIMITS",
     "WorkingMemoryManager",
     "WorkingMemoryItem",
-    "ContextSchema",
-    "FixViolationSchema",
-    "get_schema_for_task",
-    "ContextBuilder",
     "MinimalContextExecutor",
     "StepOutcome",
+    "AdaptiveBudget",
     "MinimalContextFixWorkflow",
     "create_minimal_fix_workflow",
 ]

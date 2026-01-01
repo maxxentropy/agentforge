@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/discovery-generators-v1.yaml
+# @spec_id: discovery-generators-v1
+# @component_id: discovery-generators-profile
+# @impl_path: tools/discovery/generators/profile.py
+
 """Unit tests for profile loader."""
 
 import pytest

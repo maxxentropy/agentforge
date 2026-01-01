@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/core-v1.yaml
+# @spec_id: core-v1
+# @component_id: agentforge-core-builtin_checks
+# @test_path: tests/unit/tools/test_builtin_checks_architecture.py
+
 """
 Built-in check implementations for AgentForge contracts.
 
@@ -384,6 +389,65 @@ except ImportError:
     )
 
 # ==============================================================================
+# Minimal Context Architecture Validation
+# ==============================================================================
+
+def check_minimal_context_validation(
+    repo_root: Path,
+    file_paths: List[Path],
+    **params
+) -> List[Dict]:
+    """
+    Check that the Minimal Context Architecture has proper validation in place.
+
+    Validates that key files contain required validation methods:
+    1. EnhancedContextBuilder has _validate_context_integrity
+    2. Executor has _validate_response_parameters
+    3. PhaseMachine has validate_state
+
+    This ensures runtime validation catches issues early.
+    """
+    violations = []
+
+    required_validations = {
+        "enhanced_context_builder.py": {
+            "method": "_validate_context_integrity",
+            "description": "context integrity validation",
+        },
+        "executor.py": {
+            "method": "_validate_response_parameters",
+            "description": "response parameter validation",
+        },
+        "phase_machine.py": {
+            "method": "validate_state",
+            "description": "phase state validation",
+        },
+    }
+
+    for file_path in file_paths:
+        filename = file_path.name
+        if filename not in required_validations:
+            continue
+
+        req = required_validations[filename]
+
+        try:
+            content = file_path.read_text(encoding='utf-8', errors='ignore')
+        except Exception:
+            continue
+
+        if f"def {req['method']}" not in content:
+            violations.append({
+                "message": f"Missing {req['description']} method: {req['method']}",
+                "file": str(file_path.relative_to(repo_root)),
+                "severity": "error",
+                "fix_hint": f"Add {req['method']} method for runtime validation"
+            })
+
+    return violations
+
+
+# ==============================================================================
 # Registry of built-in checks
 # ==============================================================================
 
@@ -407,6 +471,9 @@ BUILTIN_CHECKS = {
 
     # Lineage/Audit trail
     "lineage_metadata": check_lineage_metadata,
+
+    # Minimal Context Architecture
+    "minimal_context_validation": check_minimal_context_validation,
 }
 
 

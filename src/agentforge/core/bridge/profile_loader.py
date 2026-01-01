@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/core-bridge-v1.yaml
+# @spec_id: core-bridge-v1
+# @component_id: core-bridge-profile_loader
+# @test_path: tests/unit/tools/bridge/test_profile_loader.py
+
 """
 Profile Loader
 ==============

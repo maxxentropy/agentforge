@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/harness-v1.yaml
+# @spec_id: harness-v1
+# @component_id: tools-harness-tool_executor_bridge
+# @impl_path: tools/harness/tool_executor_bridge.py
+
 """Tests for Tool Executor Bridge."""
 
 import pytest

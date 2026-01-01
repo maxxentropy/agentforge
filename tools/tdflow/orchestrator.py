@@ -1,12 +1,20 @@
+# @spec_file: .agentforge/specs/tdflow-v1.yaml
+# @spec_id: tdflow-v1
+# @component_id: tools-tdflow-orchestrator
+# @test_path: tests/unit/tools/tdflow/test_orchestrator.py
+
 """
 TDFLOW Orchestrator
 ===================
 
 Main orchestrator that coordinates the TDFLOW workflow.
+
+Supports optional LLM-powered code generation via GenerationEngine.
+When no generator is available, falls back to template-based generation.
 """
 
 from pathlib import Path
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 from tools.tdflow.domain import (
     ComponentProgress,
@@ -23,25 +31,47 @@ from tools.tdflow.phases.verify import VerifyPhaseExecutor
 from tools.tdflow.runners.base import TestRunner
 from tools.tdflow.session import SessionManager
 
+if TYPE_CHECKING:
+    from tools.generate.engine import GenerationEngine
+
 
 class TDFlowOrchestrator:
     """
     Main orchestrator for TDFLOW workflow.
 
     Coordinates session management, phase execution, and progress tracking.
+    Optionally integrates with LLM generation for intelligent code creation.
     """
 
-    def __init__(self, project_path: Optional[Path] = None):
+    def __init__(
+        self,
+        project_path: Optional[Path] = None,
+        generator: Optional["GenerationEngine"] = None,
+    ):
         """
         Initialize TDFLOW orchestrator.
 
         Args:
             project_path: Root path of the project. Defaults to current directory.
+            generator: Optional LLM generation engine for intelligent code generation.
+                      When provided, phase executors use LLM for code/test generation.
+                      When None, falls back to template-based generation.
         """
         self.project_path = project_path or Path.cwd()
         self.session_manager = SessionManager(self.project_path)
         self._session: Optional[TDFlowSession] = None
         self._runner: Optional[TestRunner] = None
+        self._generator: Optional["GenerationEngine"] = generator
+
+    @property
+    def generator(self) -> Optional["GenerationEngine"]:
+        """Get the generation engine if available."""
+        return self._generator
+
+    @generator.setter
+    def generator(self, value: Optional["GenerationEngine"]) -> None:
+        """Set the generation engine."""
+        self._generator = value
 
     @property
     def session(self) -> Optional[TDFlowSession]:
@@ -118,7 +148,7 @@ class TDFlowOrchestrator:
             )
 
         # Execute RED phase
-        executor = RedPhaseExecutor(self.session, self.runner)
+        executor = RedPhaseExecutor(self.session, self.runner, generator=self._generator)
         result = executor.execute(component)
 
         # Update session
@@ -163,7 +193,7 @@ class TDFlowOrchestrator:
             )
 
         # Execute GREEN phase
-        executor = GreenPhaseExecutor(self.session, self.runner)
+        executor = GreenPhaseExecutor(self.session, self.runner, generator=self._generator)
         result = executor.execute(component)
 
         # Update session
@@ -208,7 +238,7 @@ class TDFlowOrchestrator:
             )
 
         # Execute REFACTOR phase
-        executor = RefactorPhaseExecutor(self.session, self.runner)
+        executor = RefactorPhaseExecutor(self.session, self.runner, generator=self._generator)
         result = executor.execute(component)
 
         # Update session

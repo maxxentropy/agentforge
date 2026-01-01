@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/core-bridge-v1.yaml
+# @spec_id: core-bridge-v1
+# @component_id: core-bridge-orchestrator
+# @test_path: tests/unit/tools/tdflow/test_orchestrator.py
+
 """
 Bridge Orchestrator
 ===================

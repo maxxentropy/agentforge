@@ -19,7 +19,7 @@ from tools.cicd import (
     GitHelper,
 )
 from tools.cicd.outputs import write_sarif, write_junit, write_markdown
-from tools.contracts_registry import ContractsRegistry
+from tools.contracts_registry import ContractRegistry
 
 
 def run_ci_check(args: Any) -> int:
@@ -53,7 +53,7 @@ def run_ci_check(args: Any) -> int:
     )
 
     # Load contracts
-    registry = ContractsRegistry(repo_root)
+    registry = ContractRegistry(repo_root)
     registry.discover_contracts()
     contracts = registry.get_all_contracts_data()
 
@@ -130,7 +130,7 @@ def run_baseline_save(args: Any) -> None:
         sys.exit(1)
 
     # Run full check to get current violations
-    registry = ContractsRegistry(repo_root)
+    registry = ContractRegistry(repo_root)
     registry.discover_contracts()
     contracts = registry.get_all_contracts_data()
 
@@ -167,7 +167,7 @@ def run_baseline_compare(args: Any) -> None:
         sys.exit(1)
 
     # Run full check
-    registry = ContractsRegistry(repo_root)
+    registry = ContractRegistry(repo_root)
     registry.discover_contracts()
     contracts = registry.get_all_contracts_data()
 

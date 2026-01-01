@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/cli-commands-v1.yaml
+# @spec_id: cli-commands-v1
+# @component_id: cli-commands-bridge
+# @test_path: tests/unit/tools/bridge/test_registry.py
+
 """Bridge command implementation."""
 
 import sys

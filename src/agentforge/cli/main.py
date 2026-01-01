@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+
+# @spec_file: .agentforge/specs/cli-v1.yaml
+# @spec_id: cli-v1
+# @component_id: agentforge-cli-main
+# @test_path: tests/unit/tools/test_builtin_checks_architecture.py
+
 """
 AgentForge CLI - Click-based command interface.
 

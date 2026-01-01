@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/conformance-v1.yaml
+# @spec_id: conformance-v1
+# @component_id: tools-conformance-domain
+# @impl_path: tools/conformance/domain.py
+
 """Tests for architecture-related builtin checks.
 
 These tests validate the AST-based semantic analysis checks for:

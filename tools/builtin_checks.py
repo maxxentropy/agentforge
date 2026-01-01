@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/tools-v1.yaml
+# @spec_id: tools-v1
+# @component_id: tools-builtin_checks
+# @test_path: tests/unit/tools/test_builtin_checks_architecture.py
+
 """
 Built-in check implementations for AgentForge contracts.
 

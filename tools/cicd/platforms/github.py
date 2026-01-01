@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/cicd-platforms-v1.yaml
+# @spec_id: cicd-platforms-v1
+# @component_id: cicd-platforms-github
+# @test_path: tests/unit/tools/cicd/test_outputs.py
+
 """
 GitHub Actions Integration
 ==========================

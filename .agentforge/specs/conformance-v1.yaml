@@ -1,0 +1,264 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Specification: conformance
+# ═══════════════════════════════════════════════════════════════════════════════
+# Generated: 2026-01-01T16:08:00.210769
+# Generator: brownfield-discovery
+# ═══════════════════════════════════════════════════════════════════════════════
+
+spec_id: conformance-v1
+name: conformance
+version: '1.0'
+status: as-built
+schema_version: '2.0'
+generated_at: '2026-01-01T16:08:00.210769'
+generated_by: brownfield-discovery
+description: Specification for tools/conformance
+components:
+- name: domain
+  component_id: tools-conformance-domain
+  location: tools/conformance/domain.py
+  test_location: tests/unit/tools/test_builtin_checks_architecture.py
+  description: 'Conformance Domain Entities
+
+    ===========================
+
+
+    Pure domain objects for conformance tracking. No I/O operations.
+
+    These entities represent the core business logic for tracking violations,
+
+    exemptions, and conformance state.'
+  entities:
+  - name: Severity
+    type: enum
+    line_number: 18
+    description: Canonical severity levels for violations.
+    methods:
+    - from_contract_severity
+    - weight
+    test_methods:
+    - test_generate_markdown_severity_icons
+    - test_from_contract_severity_error
+    - test_from_contract_severity_warning
+    - test_from_contract_severity_info
+    - test_from_contract_severity_unknown
+    - test_from_contract_severity_case_insensitive
+    - test_filter_by_severity
+    - test_sorted_by_severity
+  - name: ViolationStatus
+    type: enum
+    line_number: 49
+    description: Possible states for a violation.
+    methods: []
+    test_methods: []
+  - name: ExemptionStatus
+    type: enum
+    line_number: 57
+    description: Possible states for an exemption.
+    methods: []
+    test_methods: []
+  - name: ExemptionScopeType
+    type: enum
+    line_number: 65
+    description: Types of exemption scope.
+    methods: []
+    test_methods: []
+  - name: ExemptionScope
+    type: dataclass
+    line_number: 74
+    description: Defines what violations an exemption covers.
+    methods:
+    - matches_file
+    - matches_violation_id
+    - matches_line
+    test_methods: []
+  - name: Violation
+    type: dataclass
+    line_number: 108
+    description: Individual violation record.
+    methods:
+    - generate_id
+    - compute_test_path
+    - mark_resolved
+    - mark_stale
+    - mark_exemption_expired
+    - reopen
+    test_methods:
+    - test_create_from_violations
+    - test_compare_with_new_violation
+    - test_update_adds_new_violations
+    - test_run_with_violations
+    - test_exit_code_success_no_violations
+    - test_exit_code_violations_found
+    - test_hash_differs_for_different_violations
+    - test_hash_same_for_equivalent_violations
+    - test_add_violation
+    - test_compare_new_violations
+    - test_compare_fixed_violations
+    - test_violation_counts
+    - test_get_violations_by_file
+    - test_get_violations_by_check
+    - test_generate_markdown_violations_by_file
+    - test_generate_pr_comment_with_new_violations
+    - test_file_level_violation
+    - test_violation_id_scope
+    - test_covers_violation_matching
+    - test_covers_violation_wrong_contract
+    - test_covers_violation_wrong_file
+    - test_creates_violations
+    - test_deterministic_violation_ids
+    - test_reopens_resolved_violation
+    - test_exemption_applied_to_violation
+    - test_violation_yaml_format
+    - test_find_for_violation
+    - test_find_for_violation_no_match
+  - name: Exemption
+    type: dataclass
+    line_number: 264
+    description: Approved exception to contract checks.
+    methods:
+    - is_expired
+    - is_active
+    - needs_review
+    - covers_check
+    - covers_violation
+    test_methods:
+    - test_mark_exemption_expired
+    - test_exemption_applied_to_violation
+    - test_expired_exemption_handled
+  - name: ConformanceSummary
+    type: dataclass
+    line_number: 333
+    description: Aggregate counts for conformance state.
+    methods:
+    - compliance_rate
+    - open_issues
+    test_methods: []
+  - name: ConformanceReport
+    type: dataclass
+    line_number: 362
+    description: Current conformance state for a repository.
+    methods:
+    - has_blockers
+    - has_critical
+    - is_passing
+    test_methods: []
+  - name: HistorySnapshot
+    type: dataclass
+    line_number: 405
+    description: Point-in-time summary for trend analysis.
+    methods:
+    - delta_from
+    test_methods: []
+- name: manager
+  component_id: tools-conformance-manager
+  location: tools/conformance/manager.py
+  test_location: tests/unit/tools/conformance/test_manager.py
+  description: 'Conformance Manager
+
+    ===================
+
+
+    Application layer orchestration for conformance operations.
+
+    Coordinates between verification engine, stores, and CLI.'
+  entities:
+  - name: ConformanceManager
+    type: class
+    line_number: 25
+    description: 'Orchestrates conformance operations.
+
+
+      This is the main entry point for conformance tracking. It coordinates:
+
+      - Processing verification results into violations
+
+      - Managing exemptions and their effect on violations
+
+      - Tracking history for trend analysis
+
+      - Generating conformance reports'
+    methods:
+    - is_initialized
+    - initialize
+    - run_conformance_check
+    - get_report
+    - list_violations
+    - get_violation
+    - resolve_violation
+    - prune_violations
+    - get_history
+    - get_exemptions
+    - get_summary_stats
+    test_methods: []
+- name: stores
+  component_id: tools-conformance-stores
+  location: tools/conformance/stores.py
+  test_location: tests/unit/tools/conformance/test_stores.py
+  description: "Conformance Storage Infrastructure\n==================================\n\
+    \nFile-based storage for violations, exemptions, and history.\nAll writes use\
+    \ atomic operations (write to temp, then rename).\n\nDirectory Structure:\n  \
+    \  .agentforge/\n    ├── violations/          # One YAML file per violation\n\
+    \    │   └── V-{hash}.yaml\n    ├── exemptions/          # One YAML file per exemption\n\
+    \    │   └── {id}.yaml\n    └── history/             # Daily snapshots\n     \
+    \   └── YYYY-MM-DD.yaml"
+  entities:
+  - name: AtomicFileWriter
+    type: class
+    line_number: 33
+    description: 'Context manager for atomic file writes.
+
+
+      Writes to a temporary file first, then atomically renames to target.
+
+      This prevents file corruption if the process is interrupted.'
+    methods: []
+    test_methods: []
+  - name: ViolationStore
+    type: class
+    line_number: 69
+    description: 'Manages violations/ directory.
+
+
+      Each violation is stored as a separate YAML file: V-{hash}.yaml
+
+      This makes Git merges cleaner and allows parallel updates.'
+    methods:
+    - ensure_directory
+    - load_all
+    - get
+    - save
+    - delete
+    - find_by_contract
+    - find_by_status
+    - count_by_status
+    - count_by_severity
+    - mark_stale
+    test_methods: []
+  - name: ExemptionRegistry
+    type: class
+    line_number: 253
+    description: 'Manages exemptions/ directory.
+
+
+      Each exemption is stored as {exemption-id}.yaml'
+    methods:
+    - ensure_directory
+    - load_all
+    - get
+    - save
+    - delete
+    - find_for_violation
+    - get_expired
+    - get_active
+    - get_needs_review
+    - update_status
+    test_methods: []
+  - name: ReportStore
+    type: class
+    line_number: 424
+    description: Manages conformance_report.yaml persistence.
+    methods:
+    - save
+    - load
+    test_methods: []

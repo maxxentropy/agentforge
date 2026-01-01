@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/cli-click-commands-v1.yaml
+# @spec_id: cli-click-commands-v1
+# @component_id: cli-click_commands-ci
+# @test_path: tests/unit/tools/test_builtin_checks_architecture.py
+
 """
 CI/CD Integration Click commands.
 

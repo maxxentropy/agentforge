@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/core-generate-v1.yaml
+# @spec_id: core-generate-v1
+# @component_id: core-generate-engine
+# @test_path: tests/unit/tools/generate/test_engine.py
+
 """
 Generation Engine
 ==================

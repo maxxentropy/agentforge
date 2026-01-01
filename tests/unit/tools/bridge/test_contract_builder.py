@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/bridge-v1.yaml
+# @spec_id: bridge-v1
+# @component_id: tools-bridge-contract_builder
+# @impl_path: tools/bridge/contract_builder.py
+
 """Unit tests for contract builder."""
 
 import pytest

@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/core-v1.yaml
+# @spec_id: core-v1
+# @component_id: agentforge-core-init
+# @test_path: tests/unit/harness/test_tool_registry.py
+
 """
 Project initialization for AgentForge.
 

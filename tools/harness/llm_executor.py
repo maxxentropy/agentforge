@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/harness-v1.yaml
+# @spec_id: harness-v1
+# @component_id: tools-harness-llm_executor
+# @test_path: tests/unit/harness/test_action_parser.py
+
 """
 LLM Executor
 ============
@@ -141,16 +146,50 @@ class LLMExecutor:
         Returns:
             Tuple of (response_text, tokens_used)
         """
+        import asyncio
+        import inspect
+
         # Convert messages to prompt format expected by provider
         # The provider expects a single prompt string
         prompt = self._messages_to_prompt(messages)
 
-        response = self.provider.generate(prompt, self.max_tokens)
+        # Call the provider - may be sync (mock) or async (real provider)
+        result = self.provider.generate(prompt, self.max_tokens)
 
-        # Estimate tokens (provider may track this more accurately)
-        tokens_used = self.provider.count_tokens(prompt) + self.provider.count_tokens(response)
+        # Handle async coroutine if returned
+        if inspect.iscoroutine(result):
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                loop = None
 
-        return response, tokens_used
+            if loop is not None:
+                # We're already in an async context, create a new loop in a thread
+                import concurrent.futures
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    future = executor.submit(asyncio.run, result)
+                    response = future.result()
+            else:
+                # No running loop, we can use asyncio.run directly
+                response = asyncio.run(result)
+        else:
+            # Sync response (e.g., from mock)
+            response = result
+
+        # Handle response format - provider may return (text, TokenUsage) tuple or just text
+        if isinstance(response, tuple) and len(response) == 2:
+            response_text, token_usage = response
+            # TokenUsage has prompt_tokens and completion_tokens
+            if hasattr(token_usage, 'prompt_tokens') and hasattr(token_usage, 'completion_tokens'):
+                tokens_used = token_usage.prompt_tokens + token_usage.completion_tokens
+            else:
+                tokens_used = self.provider.count_tokens(prompt) + self.provider.count_tokens(response_text)
+        else:
+            response_text = response
+            # Estimate tokens
+            tokens_used = self.provider.count_tokens(prompt) + self.provider.count_tokens(response_text)
+
+        return response_text, tokens_used
 
     def _messages_to_prompt(self, messages: List[dict]) -> str:
         """Convert message list to a single prompt string.

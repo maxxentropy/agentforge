@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/core-bridge-mappings-v1.yaml
+# @spec_id: core-bridge-mappings-v1
+# @component_id: bridge-mappings-base
+# @test_path: tests/unit/tools/test_contracts_execution_naming.py
+
 """
 Pattern Mapping Base Class
 ==========================

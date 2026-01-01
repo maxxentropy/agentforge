@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/harness-v1.yaml
+# @spec_id: harness-v1
+# @component_id: tools-harness-execution_context_store
+# @impl_path: tools/harness/execution_context_store.py
+
 """Tests for Execution Context Store."""
 
 import pytest

@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/tdflow-v1.yaml
+# @spec_id: tdflow-v1
+# @component_id: tools-tdflow-session
+# @test_path: tests/unit/tools/tdflow/test_session.py
+
 """
 Session Management
 ==================

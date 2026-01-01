@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/core-harness-minimal-context-v1.yaml
+# @spec_id: core-harness-minimal-context-v1
+# @component_id: harness-minimal_context-fix_workflow
+# @test_path: tests/unit/harness/test_enhanced_context.py
+
 """
 Minimal Context Fix Workflow
 ============================
@@ -266,6 +271,83 @@ class MinimalContextFixWorkflow:
 
         return wrapper
 
+    def _validate_python_file(self, file_path: Path) -> Optional[str]:
+        """
+        Validate a Python file for syntax and import errors.
+
+        Returns None if valid, or an error message if invalid.
+        This catches:
+        1. Syntax errors (ast.parse)
+        2. Undefined names at module level (import check)
+
+        This is a FAST check that runs before the slower test verification.
+        """
+        import ast
+        import sys
+
+        if not file_path.suffix == '.py':
+            return None  # Only validate Python files
+
+        if not file_path.exists():
+            return f"File does not exist: {file_path}"
+
+        try:
+            source = file_path.read_text()
+        except Exception as e:
+            return f"Cannot read file: {e}"
+
+        # Step 1: Check syntax with ast.parse
+        try:
+            ast.parse(source)
+        except SyntaxError as e:
+            return f"Syntax error at line {e.lineno}: {e.msg}"
+
+        # Step 2: Try to compile and import to catch undefined names
+        # We use subprocess to avoid polluting the current process
+        module_path = str(file_path.resolve())
+
+        # Create a test script that imports the module
+        check_script = f'''
+import sys
+import importlib.util
+try:
+    spec = importlib.util.spec_from_file_location("_check_module", {repr(module_path)})
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    print("OK")
+except AttributeError as e:
+    print(f"AttributeError: {{e}}")
+    sys.exit(1)
+except NameError as e:
+    print(f"NameError: {{e}}")
+    sys.exit(1)
+except Exception as e:
+    print(f"{{type(e).__name__}}: {{e}}")
+    sys.exit(1)
+'''
+
+        try:
+            result = subprocess.run(
+                [sys.executable, "-c", check_script],
+                capture_output=True,
+                text=True,
+                timeout=10,
+                cwd=str(self.project_path),
+                env={**subprocess.os.environ, "PYTHONPATH": str(self.project_path)}
+            )
+
+            if result.returncode != 0:
+                error_msg = result.stdout.strip() or result.stderr.strip()
+                return f"Import validation failed: {error_msg}"
+
+        except subprocess.TimeoutExpired:
+            return "Import validation timed out"
+        except Exception as e:
+            # If subprocess fails, fall back to just syntax check (already passed)
+            pass
+
+        return None  # All validations passed
+
     def _action_read_file(
         self,
         action_name: str,
@@ -497,7 +579,8 @@ class MinimalContextFixWorkflow:
             return {"status": "failure", "error": f"File not found: {file_path}"}
 
         try:
-            lines = full_path.read_text().split('\n')
+            original_content = full_path.read_text()
+            lines = original_content.split('\n')
 
             # Validate line range
             if start_line < 1 or end_line > len(lines) or start_line > end_line:
@@ -508,14 +591,26 @@ class MinimalContextFixWorkflow:
 
             # Detect indentation from the first line being replaced
             original_line = lines[start_line - 1]
-            base_indent = len(original_line) - len(original_line.lstrip())
-            indent_str = ' ' * base_indent
+            target_indent = len(original_line) - len(original_line.lstrip())
 
-            # Process new content - apply base indentation
-            new_lines = []
-            for line in new_content.split('\n'):
+            # Detect indentation of the new content (first non-empty line)
+            content_lines = new_content.split('\n')
+            source_indent = 0
+            for line in content_lines:
                 if line.strip():
-                    new_lines.append(indent_str + line.lstrip())
+                    source_indent = len(line) - len(line.lstrip())
+                    break
+
+            # Calculate indent adjustment
+            indent_delta = target_indent - source_indent
+
+            # Process new content - adjust indentation while preserving relative nesting
+            new_lines = []
+            for line in content_lines:
+                if line.strip():
+                    current_indent = len(line) - len(line.lstrip())
+                    new_indent = max(0, current_indent + indent_delta)
+                    new_lines.append(' ' * new_indent + line.lstrip())
                 else:
                     new_lines.append('')
 
@@ -524,6 +619,17 @@ class MinimalContextFixWorkflow:
             new_source = '\n'.join(result_lines)
 
             full_path.write_text(new_source)
+
+            # VALIDATION: Check that the modified file is still valid Python
+            validation_error = self._validate_python_file(full_path)
+            if validation_error:
+                # Rollback: restore original content
+                full_path.write_text(original_content)
+                return {
+                    "status": "failure",
+                    "error": f"Code validation failed - REVERTED: {validation_error}",
+                    "summary": "✗ REVERTED - code validation failed",
+                }
 
             # Track modified file
             if "files_modified" not in state.context_data:
@@ -1327,6 +1433,20 @@ class MinimalContextFixWorkflow:
         phase_machine = PhaseMachine()
         task_state.set_phase_machine(phase_machine)
         self.state_store._save_state(task_state)
+
+        # If we have precomputed function_source, seed a CODE_STRUCTURE fact
+        # This allows the phase machine to transition directly to IMPLEMENT
+        if precomputed.get("function_source"):
+            task_dir = self.state_store._task_dir(task_state.task_id)
+            memory_manager = WorkingMemoryManager(task_dir)
+            memory_manager.add_fact(
+                fact_id="precomputed_structure",
+                category="code_structure",
+                statement=f"Function '{precomputed.get('violating_function', 'target')}' analyzed: {precomputed.get('function_lines', 'lines known')}",
+                confidence=1.0,
+                source="precomputed_analysis",
+                step=0,
+            )
 
         # Run until complete with adaptive budget
         budget = AdaptiveBudget(

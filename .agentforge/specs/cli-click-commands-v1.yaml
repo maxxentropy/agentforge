@@ -1,0 +1,606 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Specification: cli_click_commands
+# ═══════════════════════════════════════════════════════════════════════════════
+# Generated: 2026-01-01T16:07:59.012805
+# Generator: brownfield-discovery
+# ═══════════════════════════════════════════════════════════════════════════════
+
+spec_id: cli-click-commands-v1
+name: cli_click_commands
+version: '1.0'
+status: as-built
+schema_version: '2.0'
+generated_at: '2026-01-01T16:07:59.012805'
+generated_by: brownfield-discovery
+description: Specification for src/agentforge/cli/click_commands
+components:
+- name: contracts
+  component_id: cli-click_commands-contracts
+  location: src/agentforge/cli/click_commands/contracts.py
+  test_location: tests/unit/tools/test_contracts_execution_naming.py
+  description: "Contract and exemption management Click commands.\n\nCommands: contracts\
+    \ list, show, check, init, validate\n          exemptions list, add, audit"
+  entities:
+  - name: Args
+    type: class
+    line_number: 11
+    description: Simple namespace for passing args to handler functions.
+    methods: []
+    test_methods: []
+  - name: contracts
+    type: function
+    line_number: 22
+    description: Manage and run contracts.
+    methods: []
+    test_methods: []
+  - name: contracts_list
+    type: function
+    line_number: 37
+    description: List contracts with filtering.
+    methods: []
+    test_methods: []
+  - name: contracts_show
+    type: function
+    line_number: 56
+    description: Display contract information.
+    methods: []
+    test_methods: []
+  - name: contracts_check
+    type: function
+    line_number: 77
+    description: Execute contract checks.
+    methods: []
+    test_methods: []
+  - name: contracts_init
+    type: function
+    line_number: 100
+    description: Create new contract file.
+    methods: []
+    test_methods: []
+  - name: contracts_validate
+    type: function
+    line_number: 115
+    description: Validate contract structure.
+    methods: []
+    test_methods: []
+  - name: exemptions
+    type: function
+    line_number: 130
+    description: Manage contract exemptions.
+    methods: []
+    test_methods: []
+  - name: exemptions_list
+    type: function
+    line_number: 143
+    description: List exemptions.
+    methods: []
+    test_methods: []
+  - name: exemptions_add
+    type: function
+    line_number: 163
+    description: Create new exemption.
+    methods: []
+    test_methods: []
+  - name: exemptions_audit
+    type: function
+    line_number: 185
+    description: Audit exemptions.
+    methods: []
+    test_methods: []
+- name: ci
+  component_id: cli-click_commands-ci
+  location: src/agentforge/cli/click_commands/ci.py
+  test_location: tests/unit/tools/test_builtin_checks_architecture.py
+  description: 'CI/CD Integration Click commands.
+
+
+    Commands: ci run, ci baseline save/compare/stats, ci init'
+  entities:
+  - name: Args
+    type: class
+    line_number: 11
+    description: Simple namespace for passing args to handler functions.
+    methods: []
+    test_methods: []
+  - name: ci
+    type: function
+    line_number: 18
+    description: CI/CD conformance checking commands.
+    methods: []
+    test_methods:
+    - test_explicit_api_key_overrides_env
+  - name: ci_run
+    type: function
+    line_number: 41
+    description: Run conformance checks in CI mode.
+    methods: []
+    test_methods: []
+  - name: ci_baseline
+    type: function
+    line_number: 67
+    description: Manage violation baselines.
+    methods: []
+    test_methods: []
+  - name: baseline_save
+    type: function
+    line_number: 75
+    description: Save current violations as baseline.
+    methods: []
+    test_methods: []
+  - name: baseline_compare
+    type: function
+    line_number: 87
+    description: Compare violations against baseline.
+    methods: []
+    test_methods: []
+  - name: baseline_stats
+    type: function
+    line_number: 98
+    description: Show baseline statistics.
+    methods: []
+    test_methods: []
+  - name: ci_init
+    type: function
+    line_number: 111
+    description: Generate CI workflow files for a platform.
+    methods: []
+    test_methods: []
+- name: bridge
+  component_id: cli-click_commands-bridge
+  location: src/agentforge/cli/click_commands/bridge.py
+  test_location: tests/unit/tools/bridge/test_registry.py
+  description: 'Bridge CLI Commands
+
+    ===================
+
+
+    CLI commands for the Profile-to-Conformance Bridge.
+
+
+    Commands:
+
+    - bridge generate: Generate contracts from profile
+
+    - bridge preview: Preview what would be generated
+
+    - bridge mappings: List available pattern mappings
+
+    - bridge refresh: Regenerate contracts from updated profile'
+  entities:
+  - name: bridge
+    type: function
+    line_number: 20
+    description: Bridge commands for generating contracts from discovered patterns.
+    methods: []
+    test_methods:
+    - test_creates_bridge
+  - name: generate
+    type: function
+    line_number: 42
+    description: "Generate contracts from codebase profile.\n\nReads the codebase_profile.yaml\
+      \ generated by 'agentforge discover'\nand creates enforceable contract YAML\
+      \ files based on detected patterns.\n\nExamples:\n    agentforge bridge generate\n\
+      \    agentforge bridge generate --dry-run\n    agentforge bridge generate --zone\
+      \ core-service\n    agentforge bridge generate --confidence 0.8"
+    methods: []
+    test_methods:
+    - test_generate_checks_from_context
+    - test_generate_checks_with_pattern_filter
+  - name: preview
+    type: function
+    line_number: 78
+    description: "Preview what contracts would be generated.\n\nShows the checks that\
+      \ would be generated without writing any files.\n\nExamples:\n    agentforge\
+      \ bridge preview\n    agentforge bridge preview --zone core-service"
+    methods: []
+    test_methods: []
+  - name: mappings
+    type: function
+    line_number: 104
+    description: "List available pattern-to-check mappings.\n\nShows all registered\
+      \ mappings that transform discovered patterns\ninto conformance checks.\n\n\
+      Examples:\n    agentforge bridge mappings\n    agentforge bridge mappings --pattern\
+      \ cqrs\n    agentforge bridge mappings --format yaml"
+    methods: []
+    test_methods:
+    - test_has_registered_mappings
+    - test_get_mappings_for_language
+  - name: refresh
+    type: function
+    line_number: 130
+    description: "Regenerate contracts from updated profile.\n\nUse after running\
+      \ 'agentforge discover' to update contracts\nbased on newly discovered patterns.\n\
+      \nExamples:\n    agentforge bridge refresh\n    agentforge bridge refresh --zone\
+      \ core-service"
+    methods: []
+    test_methods: []
+  - name: diff
+    type: function
+    line_number: 156
+    description: 'Show diff between generated and existing contracts.
+
+
+      Compares what would be generated to what currently exists.'
+    methods: []
+    test_methods: []
+- name: generate
+  component_id: cli-click_commands-generate
+  location: src/agentforge/cli/click_commands/generate.py
+  test_location: tests/unit/tools/cicd/test_outputs.py
+  description: 'Generate CLI Commands
+
+    =====================
+
+
+    Commands for LLM-powered code generation.'
+  entities:
+  - name: generate
+    type: function
+    line_number: 16
+    description: LLM code generation commands.
+    methods: []
+    test_methods:
+    - test_generate_sarif_structure
+    - test_generate_sarif_tool_info
+    - test_generate_sarif_results
+    - test_generate_sarif_invocations
+    - test_generate_sarif_rules
+    - test_generate_sarif_for_github
+    - test_generate_junit_structure
+    - test_generate_junit_testsuite_grouping
+    - test_generate_junit_testcases
+    - test_generate_junit_failure_details
+    - test_generate_junit_string
+    - test_generate_markdown_structure
+    - test_generate_markdown_summary_table
+    - test_generate_markdown_success_status
+    - test_generate_markdown_with_comparison
+    - test_generate_markdown_violations_by_file
+    - test_generate_markdown_severity_icons
+    - test_generate_markdown_footer
+    - test_generate_pr_comment_success
+    - test_generate_pr_comment_with_new_violations
+    - test_generate_pr_comment_with_fixes
+    - test_generate_sync
+  - name: code
+    type: function
+    line_number: 58
+    description: "Generate code from specification using LLM.\n\nExamples:\n    agentforge\
+      \ generate code --spec outputs/specification.yaml --phase red\n    agentforge\
+      \ generate code --spec spec.yaml --phase green --dry-run\n    agentforge generate\
+      \ code --spec spec.yaml --phase red --component SessionManager"
+    methods: []
+    test_methods:
+    - test_extract_explanation_removes_code_blocks
+    - test_unclosed_code_block
+    - test_handles_triple_quotes_in_code
+    - test_captures_status_code
+  - name: parse_response
+    type: function
+    line_number: 179
+    description: "Parse a manually-obtained LLM response file.\n\nUse this when running\
+      \ in manual mode without an API key.\nThe response file should contain the LLM's\
+      \ response with code blocks.\n\nExamples:\n    agentforge generate parse-response\
+      \ .agentforge/generation_response.txt\n    agentforge generate parse-response\
+      \ response.txt --output-dir src/\n    agentforge generate parse-response response.txt\
+      \ --dry-run"
+    methods: []
+    test_methods: []
+  - name: prompt
+    type: function
+    line_number: 267
+    description: "Generate and display the prompt that would be sent to the LLM.\n\
+      \nUseful for debugging or manual generation workflows.\n\nExamples:\n    agentforge\
+      \ generate prompt --spec spec.yaml --phase red\n    agentforge generate prompt\
+      \ --spec spec.yaml --phase green -o prompt.txt"
+    methods: []
+    test_methods:
+    - test_simple_test_prompt
+    - test_simple_impl_prompt
+- name: tdflow
+  component_id: cli-click_commands-tdflow
+  location: src/agentforge/cli/click_commands/tdflow.py
+  test_location: tests/unit/tools/tdflow/test_session.py
+  description: 'TDFLOW CLI Commands
+
+    ===================
+
+
+    Commands for the Test-Driven Flow workflow.'
+  entities:
+  - name: tdflow
+    type: function
+    line_number: 13
+    description: Test-Driven Flow (TDFLOW) commands.
+    methods: []
+    test_methods: []
+  - name: start
+    type: function
+    line_number: 40
+    description: Start a new TDFLOW session from specification.
+    methods: []
+    test_methods:
+    - test_start_creates_session
+  - name: red
+    type: function
+    line_number: 65
+    description: 'Execute RED phase: generate failing tests.'
+    methods: []
+    test_methods:
+    - test_run_red_no_session
+    - test_run_red_success
+    - test_run_green_no_red_component
+  - name: green
+    type: function
+    line_number: 74
+    description: 'Execute GREEN phase: generate implementation.'
+    methods: []
+    test_methods:
+    - test_run_green_no_session
+    - test_run_green_no_red_component
+  - name: refactor
+    type: function
+    line_number: 83
+    description: 'Execute REFACTOR phase: clean up implementation.'
+    methods: []
+    test_methods: []
+  - name: verify
+    type: function
+    line_number: 92
+    description: Verify implementation meets specification.
+    methods: []
+    test_methods: []
+  - name: status
+    type: function
+    line_number: 100
+    description: Show current session status.
+    methods: []
+    test_methods:
+    - test_get_status_no_session
+    - test_get_status_with_session
+    - test_status_values
+  - name: resume
+    type: function
+    line_number: 108
+    description: Resume interrupted session.
+    methods: []
+    test_methods:
+    - test_resume_loads_session
+  - name: list_sessions
+    type: function
+    line_number: 116
+    description: List all TDFLOW sessions.
+    methods: []
+    test_methods:
+    - test_list_sessions
+- name: conformance
+  component_id: cli-click_commands-conformance
+  location: src/agentforge/cli/click_commands/conformance.py
+  test_location: tests/unit/tools/conformance/test_domain.py
+  description: "Conformance tracking Click commands.\n\nCommands: conformance init,\
+    \ check, report, history\n          conformance violations list, show, resolve,\
+    \ prune"
+  entities:
+  - name: Args
+    type: class
+    line_number: 11
+    description: Simple namespace for passing args to handler functions.
+    methods: []
+    test_methods: []
+  - name: conformance
+    type: function
+    line_number: 18
+    description: Track and manage code conformance.
+    methods: []
+    test_methods:
+    - test_run_conformance_check_missing_check_id
+    - test_run_conformance_check_missing_file_path
+    - test_run_conformance_check_file_not_found
+  - name: conformance_init
+    type: function
+    line_number: 26
+    description: Initialize conformance tracking.
+    methods: []
+    test_methods: []
+  - name: conformance_check
+    type: function
+    line_number: 41
+    description: Run conformance checks.
+    methods: []
+    test_methods:
+    - test_run_conformance_check_missing_check_id
+    - test_run_conformance_check_missing_file_path
+    - test_run_conformance_check_file_not_found
+  - name: conformance_report
+    type: function
+    line_number: 58
+    description: Generate conformance report.
+    methods: []
+    test_methods: []
+  - name: conformance_history
+    type: function
+    line_number: 74
+    description: Display conformance history.
+    methods: []
+    test_methods: []
+  - name: violations
+    type: function
+    line_number: 90
+    description: Manage conformance violations.
+    methods: []
+    test_methods:
+    - test_creates_violations
+    - test_list_violations
+    - test_list_violations_with_severity_filter
+    - test_list_violations_empty
+  - name: violations_list
+    type: function
+    line_number: 110
+    description: List violations.
+    methods: []
+    test_methods: []
+  - name: violations_show
+    type: function
+    line_number: 127
+    description: Display violation information.
+    methods: []
+    test_methods: []
+  - name: violations_resolve
+    type: function
+    line_number: 140
+    description: Resolve a violation.
+    methods: []
+    test_methods: []
+  - name: violations_prune
+    type: function
+    line_number: 155
+    description: Clean up old violations.
+    methods: []
+    test_methods: []
+- name: agent
+  component_id: cli-click_commands-agent
+  location: src/agentforge/cli/click_commands/agent.py
+  test_location: tests/unit/harness/test_enhanced_context.py
+  description: 'Agent Harness CLI Commands
+
+    ==========================
+
+
+    Commands for managing agent sessions in the Agent Harness.'
+  entities:
+  - name: agent
+    type: function
+    line_number: 13
+    description: Agent Harness commands for autonomous task execution.
+    methods: []
+    test_methods:
+    - test_agent_context_estimate_tokens
+    - test_get_health_healthy_agent
+    - test_get_health_degraded_agent
+    - test_get_health_critical_agent
+  - name: start
+    type: function
+    line_number: 48
+    description: "Start a new agent session with the given TASK description.\n\nExample:\n\
+      \    agentforge agent start \"Implement user authentication\""
+    methods: []
+    test_methods:
+    - test_start_session_returns_session_id
+    - test_start_session_calls_create
+    - test_start_session_with_execution_mode
+    - test_start_session_stores_context_in_memory
+    - test_start_session_saves_session
+  - name: status
+    type: function
+    line_number: 73
+    description: Show current agent session status.
+    methods: []
+    test_methods:
+    - test_get_status_returns_dict
+    - test_get_status_includes_state
+    - test_get_status_includes_iteration_count
+    - test_get_status_includes_health
+    - test_get_status_includes_pending_escalations
+    - test_get_status_calls_get_health_with_context
+    - test_build_user_prompt_includes_status
+  - name: resume
+    type: function
+    line_number: 88
+    description: Resume a paused agent session.
+    methods: []
+    test_methods:
+    - test_resume_session_returns_true_on_success
+    - test_resume_session_returns_false_for_nonexistent
+    - test_resume_session_loads_session
+    - test_resume_session_calls_session_manager_resume
+  - name: pause
+    type: function
+    line_number: 110
+    description: Pause the current agent session.
+    methods: []
+    test_methods:
+    - test_pause_session_returns_true
+    - test_pause_session_calls_session_manager_pause
+    - test_pause_session_returns_false_for_nonexistent
+  - name: stop
+    type: function
+    line_number: 131
+    description: Stop and abort the current agent session.
+    methods: []
+    test_methods: []
+  - name: step
+    type: function
+    line_number: 146
+    description: Execute a single step in the agent session.
+    methods: []
+    test_methods:
+    - test_advance_step
+    - test_max_steps_triggers_auto_transition
+    - test_step_outcome_includes_loop_info
+    - test_execute_step_returns_execution_result
+    - test_execute_step_checks_for_escalations
+    - test_execute_step_calls_observe_action
+    - test_execute_step_with_input_data
+  - name: run
+    type: function
+    line_number: 168
+    description: Run agent until completion or iteration limit.
+    methods: []
+    test_methods:
+    - test_compaction_truncates_precomputed_first
+    - test_run_until_complete_returns_result
+    - test_run_until_complete_respects_max_iterations
+    - test_run_until_complete_uses_config_max
+  - name: list_sessions
+    type: function
+    line_number: 190
+    description: List agent sessions.
+    methods: []
+    test_methods: []
+  - name: history
+    type: function
+    line_number: 212
+    description: Show execution history for a session.
+    methods: []
+    test_methods:
+    - test_detect_drift_empty_history
+    - test_clear_history
+    - test_history_window_bounded
+    - test_get_session_history_returns_list
+    - test_build_messages_includes_conversation_history
+    - test_empty_history
+  - name: cleanup
+    type: function
+    line_number: 232
+    description: Clean up old agent sessions.
+    methods: []
+    test_methods:
+    - test_cleanup_returns_count
+    - test_cleanup_uses_session_manager_cleanup_old_sessions
+  - name: fix_violation
+    type: function
+    line_number: 249
+    description: "Fix a specific conformance violation.\n\nExample:\n    agentforge\
+      \ agent fix-violation V-4734938a9485"
+    methods: []
+    test_methods: []
+  - name: fix_violations
+    type: function
+    line_number: 270
+    description: "Fix multiple violations in batch.\n\nExample:\n    agentforge agent\
+      \ fix-violations --limit 10 --severity major"
+    methods: []
+    test_methods: []
+  - name: approve_commit
+    type: function
+    line_number: 282
+    description: Approve and apply a pending commit from fix-violation.
+    methods: []
+    test_methods: []
+  - name: list_violations
+    type: function
+    line_number: 303
+    description: "List conformance violations that can be fixed.\n\nExample:\n   \
+      \ agentforge agent list-violations --severity major"
+    methods: []
+    test_methods: []

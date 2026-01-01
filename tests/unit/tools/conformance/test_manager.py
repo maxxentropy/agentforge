@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/conformance-v1.yaml
+# @spec_id: conformance-v1
+# @component_id: tools-conformance-manager
+# @impl_path: tools/conformance/manager.py
+
 """Tests for ConformanceManager."""
 
 import pytest

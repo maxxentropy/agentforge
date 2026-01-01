@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/core-discovery-v1.yaml
+# @spec_id: core-discovery-v1
+# @component_id: core-discovery-manager
+# @test_path: tests/unit/tools/conformance/test_manager.py
+
 """
 Discovery Manager
 =================

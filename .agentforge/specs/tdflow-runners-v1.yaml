@@ -1,0 +1,66 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Specification: tdflow_runners
+# ═══════════════════════════════════════════════════════════════════════════════
+# Generated: 2026-01-01T16:07:59.119272
+# Generator: brownfield-discovery
+# ═══════════════════════════════════════════════════════════════════════════════
+
+spec_id: tdflow-runners-v1
+name: tdflow_runners
+version: '1.0'
+status: as-built
+schema_version: '2.0'
+generated_at: '2026-01-01T16:07:59.119272'
+generated_by: brownfield-discovery
+description: Specification for tools/tdflow/runners
+components:
+- name: base
+  component_id: tdflow-runners-base
+  location: tools/tdflow/runners/base.py
+  test_location: tests/unit/tools/test_contracts_execution_naming.py
+  description: 'Test Runner Base
+
+    ================
+
+
+    Abstract base class for test runners.'
+  entities:
+  - name: TestRunner
+    type: class
+    line_number: 16
+    description: 'Abstract test runner interface.
+
+
+      Implementations handle specific frameworks (dotnet, pytest, etc.)'
+    methods:
+    - run_tests
+    - get_coverage
+    - discover_tests
+    - build
+    - detect
+    - for_framework
+    test_methods: []
+- name: dotnet
+  component_id: tdflow-runners-dotnet
+  location: tools/tdflow/runners/dotnet.py
+  test_location: tests/unit/tools/tdflow/runners/test_dotnet.py
+  description: 'DotNet Test Runner
+
+    ==================
+
+
+    Runs tests via ''dotnet test''.'
+  entities:
+  - name: DotNetTestRunner
+    type: class
+    line_number: 18
+    description: 'Test runner for .NET projects using dotnet test.
+
+
+      Supports xUnit, NUnit, and MSTest frameworks.'
+    methods:
+    - run_tests
+    - get_coverage
+    - discover_tests
+    - build
+    test_methods: []

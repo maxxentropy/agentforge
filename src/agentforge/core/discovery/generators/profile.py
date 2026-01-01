@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/core-discovery-generators-v1.yaml
+# @spec_id: core-discovery-generators-v1
+# @component_id: discovery-generators-profile
+# @test_path: tests/unit/tools/bridge/test_profile_loader.py
+
 """
 Profile Generator
 =================

@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/refactoring-v1.yaml
+# @spec_id: refactoring-v1
+# @component_id: tools-refactoring-registry
+# @impl_path: tools/refactoring/registry.py
+
 """Unit tests for mapping registry."""
 
 import pytest

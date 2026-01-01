@@ -364,3 +364,262 @@ def run_cleanup(days: int, dry_run: bool) -> None:
     else:
         count = manager.cleanup_old_sessions(days=days, dry_run=False)
         click.echo(click.style(f"✓ Removed {count} old sessions", fg="green"))
+
+
+# ============================================================================
+# Fix Violation Commands
+# ============================================================================
+
+def run_fix_violation(
+    violation_id: str,
+    dry_run: bool = False,
+    verbose: bool = False,
+    auto_commit: bool = False,
+) -> None:
+    """
+    Fix a single violation using minimal context architecture.
+
+    Args:
+        violation_id: Violation ID to fix
+        dry_run: Don't make actual changes
+        verbose: Show detailed output
+        auto_commit: Auto-commit without approval
+    """
+    import yaml
+    from tools.harness.minimal_context.fix_workflow import (
+        MinimalContextFixWorkflow,
+        create_minimal_fix_workflow,
+    )
+    from tools.harness.minimal_context.state_store import TaskPhase
+
+    project_path = Path.cwd()
+
+    click.echo(f"Fixing violation: {violation_id}")
+    click.echo(f"Project: {project_path}")
+    click.echo(f"Architecture: Minimal Context (bounded tokens)")
+    click.echo()
+
+    # Check violation exists
+    if not violation_id.startswith("V-"):
+        violation_id = f"V-{violation_id}"
+
+    violation_file = project_path / ".agentforge" / "violations" / f"{violation_id}.yaml"
+    if not violation_file.exists():
+        click.echo(click.style(f"Violation not found: {violation_id}", fg="red"))
+        raise SystemExit(1)
+
+    # Show violation info
+    with open(violation_file) as f:
+        violation_data = yaml.safe_load(f)
+
+    click.echo("Violation Details:")
+    click.echo(f"  Severity: {violation_data.get('severity')}")
+    click.echo(f"  File: {violation_data.get('file_path')}")
+    click.echo(f"  Check: {violation_data.get('check_id')}")
+    click.echo(f"  Message: {violation_data.get('message')}")
+    if violation_data.get("fix_hint"):
+        click.echo(f"  Hint: {violation_data.get('fix_hint')}")
+    click.echo()
+
+    if dry_run:
+        click.echo(click.style("DRY RUN - No changes will be made", fg="yellow"))
+        click.echo()
+        return
+
+    # Create workflow with minimal context architecture
+    workflow = create_minimal_fix_workflow(
+        project_path=project_path,
+        require_commit_approval=not auto_commit,
+    )
+
+    # Track steps for verbose output
+    step_count = [0]
+    total_tokens = [0]
+
+    def on_step(outcome):
+        step_count[0] += 1
+        total_tokens[0] += outcome.tokens_used
+        if verbose:
+            click.echo(f"  Step {step_count[0]}: {outcome.action_name}", nl=False)
+            click.echo(f" ({outcome.tokens_used} tokens, {outcome.result})")
+        else:
+            # Show token usage periodically to verify bounded tokens
+            if step_count[0] % 3 == 0:
+                click.echo(f"  Step {step_count[0]}: {outcome.tokens_used} tokens")
+
+    # Run fix
+    click.echo("Starting fix attempt (stateless steps, bounded context)...")
+    result = workflow.fix_violation(violation_id, on_step=on_step)
+
+    # Report results
+    click.echo()
+    click.echo("=" * 60)
+
+    if result.get("success"):
+        click.echo(click.style("Fix completed successfully!", fg="green"))
+        click.echo(f"  Steps taken: {result.get('steps_taken', 0)}")
+        click.echo(f"  Total tokens: {result.get('total_tokens', 0)}")
+        if result.get("files_modified"):
+            click.echo(f"  Files modified: {', '.join(result.get('files_modified', []))}")
+
+        # Check for pending commit
+        pending = workflow.git_tools.get_pending_commit()
+        if pending:
+            click.echo()
+            click.echo("Pending commit:")
+            click.echo(f"  Message: {pending.get('message')}")
+            click.echo()
+            click.echo("Run 'agentforge agent approve-commit' to apply")
+
+    elif result.get("phase") == TaskPhase.FAILED.value:
+        click.echo(click.style("Fix failed", fg="red"))
+        click.echo(f"  Error: {result.get('error')}")
+        click.echo(f"  Steps attempted: {result.get('steps_taken', 0)}")
+        click.echo(f"  Total tokens: {result.get('total_tokens', 0)}")
+
+    else:
+        click.echo(
+            click.style(f"Fix incomplete (phase: {result.get('phase')})", fg="yellow")
+        )
+
+    # Task is persisted in state store, show location
+    click.echo(f"\nTask state saved: .agentforge/tasks/{result.get('task_id')}/")
+    click.echo(f"To resume: agentforge agent resume-task {result.get('task_id')}")
+
+
+def run_fix_violations_batch(
+    limit: int = 5,
+    severity: Optional[str] = None,
+    dry_run: bool = False,
+    verbose: bool = False,
+) -> None:
+    """
+    Fix multiple violations in batch using minimal context architecture.
+
+    Args:
+        limit: Maximum violations to attempt
+        severity: Filter by severity
+        dry_run: Don't make actual changes
+        verbose: Show detailed output
+    """
+    from tools.harness.violation_tools import ViolationTools
+    from tools.harness.minimal_context.fix_workflow import create_minimal_fix_workflow
+
+    project_path = Path.cwd()
+    tools = ViolationTools(project_path)
+
+    # Get violations
+    params = {"status": "open", "limit": limit}
+    if severity:
+        params["severity"] = severity
+
+    result = tools.list_violations("list_violations", params)
+
+    if not result.success:
+        click.echo(click.style(f"Error listing violations: {result.error}", fg="red"))
+        raise SystemExit(1)
+
+    click.echo("Found violations to fix:")
+    click.echo(result.output)
+    click.echo()
+    click.echo("Architecture: Minimal Context (bounded tokens per step)")
+    click.echo()
+
+    if dry_run:
+        click.echo(click.style("DRY RUN - Would attempt to fix these violations", fg="yellow"))
+        return
+
+    # Parse violation IDs from output and fix each
+    violation_ids = []
+    for line in result.output.split("\n"):
+        line = line.strip()
+        if line.startswith("V-"):
+            vid = line.split()[0]
+            violation_ids.append(vid)
+
+    if not violation_ids:
+        click.echo("No violations to fix.")
+        return
+
+    click.echo(f"Will attempt to fix {len(violation_ids)} violations...")
+    click.echo()
+
+    # Create shared workflow (reuses state store)
+    workflow = create_minimal_fix_workflow(
+        project_path=project_path,
+        require_commit_approval=True,
+    )
+
+    fixed = 0
+    failed = 0
+    total_tokens_all = 0
+
+    for vid in violation_ids:
+        click.echo(f"--- Fixing {vid} ---")
+        try:
+            # Use the workflow directly for efficiency
+            result = workflow.fix_violation(vid)
+            total_tokens_all += result.get("total_tokens", 0)
+
+            if result.get("success"):
+                click.echo(click.style(f"  Fixed! ({result.get('steps_taken')} steps, {result.get('total_tokens')} tokens)", fg="green"))
+                fixed += 1
+            else:
+                click.echo(click.style(f"  Failed: {result.get('error')}", fg="red"))
+                failed += 1
+        except Exception as e:
+            click.echo(click.style(f"Error fixing {vid}: {e}", fg="red"))
+            failed += 1
+
+    click.echo()
+    click.echo("=" * 60)
+    click.echo(f"Fixed: {fixed}, Failed: {failed}")
+    click.echo(f"Total tokens used: {total_tokens_all}")
+    click.echo()
+    click.echo("Task states saved in: .agentforge/tasks/")
+
+
+def run_approve_commit() -> None:
+    """Approve and apply pending commit."""
+    from tools.harness.git_tools import GitTools
+
+    project_path = Path.cwd()
+    git_tools = GitTools(project_path)
+
+    pending = git_tools.get_pending_commit()
+    if not pending:
+        click.echo("No pending commit")
+        return
+
+    click.echo("Pending commit:")
+    click.echo(f"  Message: {pending.get('message')}")
+    click.echo()
+
+    if click.confirm("Apply this commit?"):
+        result = git_tools.apply_pending_commit()
+        if result.success:
+            click.echo(click.style("Committed", fg="green"))
+        else:
+            click.echo(click.style(f"Failed: {result.error}", fg="red"))
+    else:
+        click.echo("Commit cancelled")
+        git_tools.clear_pending_commit()
+
+
+def run_list_violations(status: str = "open", severity: Optional[str] = None, limit: int = 20) -> None:
+    """List violations that can be fixed."""
+    from tools.harness.violation_tools import ViolationTools
+
+    project_path = Path.cwd()
+    tools = ViolationTools(project_path)
+
+    params = {"status": status, "limit": limit}
+    if severity:
+        params["severity"] = severity
+
+    result = tools.list_violations("list_violations", params)
+
+    if result.success:
+        click.echo(result.output)
+    else:
+        click.echo(click.style(f"Error: {result.error}", fg="red"))

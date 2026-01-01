@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/cli-click-commands-v1.yaml
+# @spec_id: cli-click-commands-v1
+# @component_id: cli-click_commands-conformance
+# @test_path: tests/unit/tools/conformance/test_domain.py
+
 """
 Conformance tracking Click commands.
 

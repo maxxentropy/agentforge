@@ -1,0 +1,172 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Specification: core_tdflow
+# ═══════════════════════════════════════════════════════════════════════════════
+# Generated: 2026-01-01T16:07:59.345399
+# Generator: brownfield-discovery
+# ═══════════════════════════════════════════════════════════════════════════════
+
+spec_id: core-tdflow-v1
+name: core_tdflow
+version: '1.0'
+status: as-built
+schema_version: '2.0'
+generated_at: '2026-01-01T16:07:59.345399'
+generated_by: brownfield-discovery
+description: Specification for src/agentforge/core/tdflow
+components:
+- name: domain
+  component_id: core-tdflow-domain
+  location: src/agentforge/core/tdflow/domain.py
+  test_location: tests/unit/tools/test_builtin_checks_architecture.py
+  description: 'TDFLOW Domain Model
+
+    ===================
+
+
+    Domain entities for the Test-Driven Flow workflow.'
+  entities:
+  - name: TDFlowPhase
+    type: enum
+    line_number: 15
+    description: Phases in the TDFLOW workflow.
+    methods: []
+    test_methods: []
+  - name: ComponentStatus
+    type: enum
+    line_number: 26
+    description: Status of a component in TDFLOW.
+    methods: []
+    test_methods: []
+  - name: TestCase
+    type: dataclass
+    line_number: 38
+    description: A generated test case.
+    methods: []
+    test_methods:
+    - test_to_junit_testcase
+    - test_generate_junit_testcases
+  - name: TestFile
+    type: dataclass
+    line_number: 49
+    description: A generated test file.
+    methods: []
+    test_methods: []
+  - name: ImplementationFile
+    type: dataclass
+    line_number: 59
+    description: A generated implementation file.
+    methods: []
+    test_methods: []
+  - name: ComponentProgress
+    type: dataclass
+    line_number: 69
+    description: Progress tracking for a single component.
+    methods: []
+    test_methods: []
+  - name: TestResult
+    type: dataclass
+    line_number: 82
+    description: Result of running tests.
+    methods:
+    - all_passed
+    - all_failed
+    test_methods: []
+  - name: PhaseResult
+    type: dataclass
+    line_number: 105
+    description: Result of executing a phase.
+    methods: []
+    test_methods: []
+  - name: VerificationReport
+    type: dataclass
+    line_number: 118
+    description: Final verification report for a component.
+    methods:
+    - to_dict
+    test_methods: []
+  - name: SessionHistory
+    type: dataclass
+    line_number: 145
+    description: A history entry in the session.
+    methods: []
+    test_methods: []
+  - name: TDFlowSession
+    type: dataclass
+    line_number: 156
+    description: 'TDFLOW session state.
+
+
+      Persisted to disk to allow resume after interruption.'
+    methods:
+    - get_component
+    - get_next_pending
+    - get_current_component
+    - all_verified
+    - add_history
+    - get_progress_summary
+    test_methods: []
+- name: session
+  component_id: core-tdflow-session
+  location: src/agentforge/core/tdflow/session.py
+  test_location: tests/unit/tools/tdflow/test_session.py
+  description: 'Session Management
+
+    ==================
+
+
+    Create, load, save, and manage TDFLOW sessions.'
+  entities:
+  - name: SessionManager
+    type: class
+    line_number: 26
+    description: 'Manages TDFLOW session lifecycle.
+
+
+      Sessions are persisted to .agentforge/tdflow/ directory and can be
+
+      resumed after interruption.'
+    methods:
+    - create
+    - load
+    - save
+    - get_latest
+    - list_sessions
+    test_methods: []
+- name: orchestrator
+  component_id: core-tdflow-orchestrator
+  location: src/agentforge/core/tdflow/orchestrator.py
+  test_location: tests/unit/tools/tdflow/test_orchestrator.py
+  description: 'TDFLOW Orchestrator
+
+    ===================
+
+
+    Main orchestrator that coordinates the TDFLOW workflow.
+
+
+    Supports optional LLM-powered code generation via GenerationEngine.
+
+    When no generator is available, falls back to template-based generation.'
+  entities:
+  - name: TDFlowOrchestrator
+    type: class
+    line_number: 33
+    description: 'Main orchestrator for TDFLOW workflow.
+
+
+      Coordinates session management, phase execution, and progress tracking.
+
+      Optionally integrates with LLM generation for intelligent code creation.'
+    methods:
+    - generator
+    - generator
+    - session
+    - runner
+    - start
+    - run_red
+    - run_green
+    - run_refactor
+    - verify
+    - resume
+    - get_status
+    test_methods: []

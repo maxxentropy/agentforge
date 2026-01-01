@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/core-harness-minimal-context-v1.yaml
+# @spec_id: core-harness-minimal-context-v1
+# @component_id: harness-minimal_context-enhanced_context_builder
+# @test_path: tests/unit/harness/test_enhanced_context.py
+
 """
 Enhanced Context Builder
 ========================
@@ -282,11 +287,23 @@ class EnhancedContextBuilder:
         # Build StateSpec from state
         state_spec = self._build_state_spec(state, phase_machine)
 
-        # Build domain context
-        domain_context = state.context_data.get("violation", {})
-
-        # Build precomputed analysis
+        # Build domain context from state.context_data
+        # Supports two formats:
+        # - Old: {"violation": {...}, "precomputed": {...}}
+        # - New: {"file_path": ..., "check_id": ..., "precomputed": {...}}
         precomputed = state.context_data.get("precomputed", {})
+
+        # Check for old nested format first
+        if "violation" in state.context_data and isinstance(
+            state.context_data.get("violation"), dict
+        ):
+            domain_context = state.context_data["violation"]
+        else:
+            # New format: violation fields at root level
+            domain_context = {
+                k: v for k, v in state.context_data.items()
+                if k not in ("precomputed", "files_modified")
+            }
 
         # Build context
         return self.build_context(
@@ -320,8 +337,15 @@ class EnhancedContextBuilder:
         Returns:
             Validated AgentContext (always within token budget)
         """
-        # Build actions based on current phase (with value hints from precomputed)
-        actions = self._build_actions(phase_machine.current_phase, state_spec, precomputed)
+        # Merge key fields from domain_context into precomputed for value hints
+        # This ensures file_path, line_number etc. are available for action hints
+        hints_context = dict(precomputed) if precomputed else {}
+        for key in ("file_path", "line_number", "check_id", "test_path"):
+            if key in domain_context and key not in hints_context:
+                hints_context[key] = domain_context[key]
+
+        # Build actions based on current phase (with value hints from merged context)
+        actions = self._build_actions(phase_machine.current_phase, state_spec, hints_context)
 
         # Update state with phase info
         state_spec = state_spec.model_copy(
@@ -339,6 +363,9 @@ class EnhancedContextBuilder:
 
         # Validate (will raise on invalid data)
         context.model_validate(context.model_dump())
+
+        # Runtime validation: catch context issues early
+        self._validate_context_integrity(context, precomputed, hints_context)
 
         # Enforce token budget with compaction
         tokens = context.estimate_tokens()
@@ -463,6 +490,75 @@ class EnhancedContextBuilder:
             )
 
         return context
+
+    def _validate_context_integrity(
+        self,
+        context: AgentContext,
+        precomputed: Dict[str, Any],
+        hints_context: Dict[str, Any],
+    ) -> None:
+        """
+        Validate context integrity at runtime.
+
+        Catches issues that would cause the LLM to fail or behave incorrectly:
+        1. Missing file_path in domain_context for fix_violation tasks
+        2. Value hints not populated when precomputed data exists
+        3. Critical fields missing from context
+
+        Raises:
+            ValueError: If validation fails with details about the issue
+        """
+        issues = []
+
+        # Check 1: fix_violation tasks must have file_path in domain_context
+        if context.task.task_type == "fix_violation":
+            if not context.domain_context.get("file_path"):
+                issues.append(
+                    "fix_violation task missing 'file_path' in domain_context. "
+                    "Context builder may be extracting from wrong key."
+                )
+
+        # Check 2: If precomputed has extraction_candidates, extract_function should have hints
+        if precomputed.get("extraction_candidates"):
+            extract_action = next(
+                (a for a in context.actions.available if a.name == "extract_function"),
+                None,
+            )
+            if extract_action and not extract_action.value_hints:
+                issues.append(
+                    "precomputed has extraction_candidates but extract_function has no value_hints. "
+                    "Value hints population may be broken."
+                )
+
+        # Check 3: If hints_context has file_path, read_file should have path hint
+        if hints_context.get("file_path"):
+            read_action = next(
+                (a for a in context.actions.available if a.name == "read_file"),
+                None,
+            )
+            if read_action and not read_action.value_hints.get("path"):
+                issues.append(
+                    f"hints_context has file_path='{hints_context['file_path']}' but "
+                    "read_file action has no path hint. Hints may not be propagating."
+                )
+
+        # Check 4: Verify token estimate is reasonable
+        tokens = context.estimate_tokens()
+        if tokens < 100:
+            issues.append(
+                f"Context has only {tokens} estimated tokens. "
+                "Context may be empty or corrupted."
+            )
+
+        # Log warnings for non-fatal issues, raise for critical ones
+        if issues:
+            import logging
+            logger = logging.getLogger(__name__)
+            for issue in issues:
+                logger.warning(f"Context validation warning: {issue}")
+
+            # For now, log warnings but don't fail - can be made strict later
+            # To make strict: raise ValueError(f"Context validation failed: {issues}")
 
     def _build_state_spec(
         self,
@@ -887,15 +983,21 @@ Run checks and tests. Use 'complete' only when all pass.
             parts.append("```")
             parts.append("")
 
-        # Available actions section
+        # Available actions section - show EXACT parameter schema
         parts.append("# Available Actions")
+        parts.append("IMPORTANT: Use EXACTLY these parameter names. Do not invent new names.")
         parts.append("```yaml")
         for action in context.actions.available[:8]:  # Limit to top 8
             parts.append(f"- name: {action.name}")
             parts.append(f"  description: {action.description}")
             if action.parameters:
-                parts.append(f"  parameters: {action.parameters}")
-            parts.append(f"  priority: {action.priority}")
+                parts.append(f"  parameters:")
+                for param_name, param_type in action.parameters.items():
+                    hint = action.value_hints.get(param_name)
+                    if hint:
+                        parts.append(f"    {param_name}: {param_type}  # USE: {hint}")
+                    else:
+                        parts.append(f"    {param_name}: {param_type}")
         parts.append("```")
         parts.append("")
 

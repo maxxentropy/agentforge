@@ -26,9 +26,9 @@ def tdflow():
 @click.option(
     "--framework",
     "-f",
-    type=click.Choice(["xunit", "nunit", "mstest", "pytest"]),
-    default="xunit",
-    help="Test framework",
+    type=click.Choice(["auto", "xunit", "nunit", "mstest", "pytest"]),
+    default="auto",
+    help="Test framework (auto-detect by default)",
 )
 @click.option(
     "--coverage",
@@ -40,6 +40,22 @@ def tdflow():
 def start(spec: str, framework: str, coverage: float):
     """Start a new TDFLOW session from specification."""
     from cli.commands.tdflow import run_start
+
+    # Auto-detect framework if not specified
+    if framework == "auto":
+        from tools.tdflow.runners.base import TestRunner
+        try:
+            runner = TestRunner.detect(Path.cwd())
+            # Map runner class to framework name
+            from tools.tdflow.runners.pytest_runner import PytestRunner
+            if isinstance(runner, PytestRunner):
+                framework = "pytest"
+            else:
+                framework = "xunit"
+            click.echo(f"Auto-detected framework: {framework}")
+        except ValueError:
+            click.echo("Could not auto-detect framework, defaulting to pytest")
+            framework = "pytest"
 
     run_start(Path(spec), framework, coverage)
 

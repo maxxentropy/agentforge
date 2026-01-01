@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/core-harness-v1.yaml
+# @spec_id: core-harness-v1
+# @component_id: core-harness-execution_context_store
+# @test_path: tests/unit/harness/test_execution_context_store.py
+
 """
 Execution Context Store
 =======================

@@ -298,3 +298,27 @@ class ContractRegistry:
         if contract:
             self.resolve_inheritance(contract)
         return contract
+
+    def get_all_contracts_data(self, language: Optional[str] = None,
+                                repo_type: Optional[str] = None) -> List[Dict[str, Any]]:
+        """
+        Get all applicable contracts as dictionaries for CI runner consumption.
+
+        Returns contracts with resolved inheritance in dictionary format.
+        """
+        contracts = self.get_applicable_contracts(language=language, repo_type=repo_type)
+        result = []
+        for contract in contracts:
+            contract_dict = {
+                "name": contract.name,
+                "type": contract.type,
+                "description": contract.description,
+                "version": contract.version,
+                "enabled": contract.enabled,
+                "applies_to": contract.applies_to,
+                "tags": contract.tags,
+                "checks": contract.all_checks(),
+                "tier": contract.tier,
+            }
+            result.append(contract_dict)
+        return result

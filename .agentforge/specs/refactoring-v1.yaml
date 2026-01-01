@@ -1,0 +1,90 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Specification: refactoring
+# ═══════════════════════════════════════════════════════════════════════════════
+# Generated: 2026-01-01T16:07:59.125985
+# Generator: brownfield-discovery
+# ═══════════════════════════════════════════════════════════════════════════════
+
+spec_id: refactoring-v1
+name: refactoring
+version: '1.0'
+status: as-built
+schema_version: '2.0'
+generated_at: '2026-01-01T16:07:59.125985'
+generated_by: brownfield-discovery
+description: Specification for tools/refactoring
+components:
+- name: base
+  component_id: tools-refactoring-base
+  location: tools/refactoring/base.py
+  test_location: tests/unit/tools/test_contracts_execution_naming.py
+  description: 'Refactoring Provider Base
+
+    =========================
+
+
+    Abstract base class for language-specific refactoring providers.'
+  entities:
+  - name: RefactoringResult
+    type: dataclass
+    line_number: 15
+    description: Result of a refactoring operation.
+    methods:
+    - failure
+    - success_result
+    test_methods: []
+  - name: CanExtractResult
+    type: dataclass
+    line_number: 47
+    description: Result of checking if extraction is safe.
+    methods: []
+    test_methods: []
+  - name: RefactoringProvider
+    type: class
+    line_number: 58
+    description: 'Abstract base for language-specific refactoring.
+
+
+      Each language should have a provider that uses proper tooling:
+
+      - Python: rope library
+
+      - C#: Roslyn via LSP codeAction
+
+      - TypeScript: tsserver via LSP codeAction
+
+
+      The key contract: refactoring operations must preserve semantics.
+
+      If a refactoring would break the code, it should fail, not produce broken code.'
+    methods:
+    - can_extract_function
+    - extract_function
+    - supports_file
+    test_methods: []
+- name: registry
+  component_id: tools-refactoring-registry
+  location: tools/refactoring/registry.py
+  test_location: tests/unit/tools/bridge/test_registry.py
+  description: 'Refactoring Provider Registry
+
+    =============================
+
+
+    Returns the appropriate refactoring provider for a given file type.'
+  entities:
+  - name: get_refactoring_provider
+    type: function
+    line_number: 25
+    description: "Get the appropriate refactoring provider for a file.\n\nArgs:\n\
+      \    file_path: Path to the file to refactor\n    project_path: Root path of\
+      \ the project\n\nReturns:\n    RefactoringProvider instance or None if no provider\
+      \ supports this file type"
+    methods: []
+    test_methods: []
+  - name: supports_file
+    type: function
+    line_number: 48
+    description: Check if any provider supports this file type.
+    methods: []
+    test_methods: []

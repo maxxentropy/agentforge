@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/bridge-v1.yaml
+# @spec_id: bridge-v1
+# @component_id: tools-bridge-contract_builder
+# @test_path: tests/unit/tools/bridge/test_contract_builder.py
+
 """
 Contract Builder
 ================

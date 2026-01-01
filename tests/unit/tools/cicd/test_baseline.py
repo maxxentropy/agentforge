@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/cicd-v1.yaml
+# @spec_id: cicd-v1
+# @component_id: tools-cicd-baseline
+# @impl_path: tools/cicd/baseline.py
+
 """Unit tests for baseline management."""
 
 import json

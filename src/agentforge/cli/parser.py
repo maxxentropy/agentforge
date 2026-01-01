@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/cli-v1.yaml
+# @spec_id: cli-v1
+# @component_id: agentforge-cli-parser
+# @test_path: tests/unit/tools/generate/test_parser.py
+
 """
 CLI argument parser configuration.
 

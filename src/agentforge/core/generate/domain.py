@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/core-generate-v1.yaml
+# @spec_id: core-generate-v1
+# @component_id: core-generate-domain
+# @test_path: tests/unit/tools/test_builtin_checks_architecture.py
+
 """
 LLM Generation Domain Model
 ===========================

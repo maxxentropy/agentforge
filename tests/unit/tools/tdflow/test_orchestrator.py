@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/tdflow-v1.yaml
+# @spec_id: tdflow-v1
+# @component_id: tools-tdflow-orchestrator
+# @impl_path: tools/tdflow/orchestrator.py
+
 """Tests for TDFLOW orchestrator."""
 
 import pytest

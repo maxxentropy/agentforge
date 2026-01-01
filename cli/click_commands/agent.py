@@ -234,3 +234,78 @@ def cleanup(days: int, dry_run: bool):
     from cli.commands.agent import run_cleanup
 
     run_cleanup(days, dry_run)
+
+
+# ============================================================================
+# Fix Violation Commands
+# ============================================================================
+
+
+@agent.command("fix-violation")
+@click.argument("violation_id", type=str)
+@click.option("--dry-run", is_flag=True, help="Don't make actual changes")
+@click.option("--verbose", "-v", is_flag=True, help="Show detailed output")
+@click.option("--auto-commit", is_flag=True, help="Auto-commit without approval")
+def fix_violation(violation_id: str, dry_run: bool, verbose: bool, auto_commit: bool):
+    """Fix a specific conformance violation.
+
+    Example:
+        agentforge agent fix-violation V-4734938a9485
+    """
+    from cli.commands.agent import run_fix_violation
+
+    run_fix_violation(violation_id, dry_run, verbose, auto_commit)
+
+
+@agent.command("fix-violations")
+@click.option("--limit", "-n", type=int, default=5, help="Max violations to fix")
+@click.option(
+    "--severity",
+    "-s",
+    type=click.Choice(["blocker", "critical", "major", "minor"]),
+    help="Filter by severity",
+)
+@click.option("--dry-run", is_flag=True, help="Don't make actual changes")
+@click.option("--verbose", "-v", is_flag=True, help="Show detailed output")
+def fix_violations(limit: int, severity: str, dry_run: bool, verbose: bool):
+    """Fix multiple violations in batch.
+
+    Example:
+        agentforge agent fix-violations --limit 10 --severity major
+    """
+    from cli.commands.agent import run_fix_violations_batch
+
+    run_fix_violations_batch(limit, severity, dry_run, verbose)
+
+
+@agent.command("approve-commit")
+def approve_commit():
+    """Approve and apply a pending commit from fix-violation."""
+    from cli.commands.agent import run_approve_commit
+
+    run_approve_commit()
+
+
+@agent.command("list-violations")
+@click.option(
+    "--status",
+    "-s",
+    type=click.Choice(["open", "resolved", "all"]),
+    default="open",
+    help="Filter by status (default: open)",
+)
+@click.option(
+    "--severity",
+    type=click.Choice(["blocker", "critical", "major", "minor"]),
+    help="Filter by severity",
+)
+@click.option("--limit", "-l", type=int, default=20, help="Max violations to show")
+def list_violations(status: str, severity: str, limit: int):
+    """List conformance violations that can be fixed.
+
+    Example:
+        agentforge agent list-violations --severity major
+    """
+    from cli.commands.agent import run_list_violations
+
+    run_list_violations(status, severity, limit)

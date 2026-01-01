@@ -1,0 +1,160 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Specification: core_cicd_outputs
+# ═══════════════════════════════════════════════════════════════════════════════
+# Generated: 2026-01-01T16:08:00.325278
+# Generator: brownfield-discovery
+# ═══════════════════════════════════════════════════════════════════════════════
+
+spec_id: core-cicd-outputs-v1
+name: core_cicd_outputs
+version: '1.0'
+status: as-built
+schema_version: '2.0'
+generated_at: '2026-01-01T16:08:00.325278'
+generated_by: brownfield-discovery
+description: Specification for src/agentforge/core/cicd/outputs
+components:
+- name: sarif
+  component_id: cicd-outputs-sarif
+  location: src/agentforge/core/cicd/outputs/sarif.py
+  test_location: tests/unit/tools/cicd/test_outputs.py
+  description: 'SARIF Output Generator
+
+    ======================
+
+
+    Generates SARIF (Static Analysis Results Interchange Format) output
+
+    for GitHub Code Scanning integration.
+
+
+    SARIF specification: https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0.html'
+  entities:
+  - name: generate_sarif
+    type: function
+    line_number: 23
+    description: "Generate SARIF 2.1.0 compliant output from CI result.\n\nArgs:\n\
+      \    result: CI check result\n    tool_name: Name of the analysis tool\n\nReturns:\n\
+      \    SARIF document as dictionary"
+    methods: []
+    test_methods:
+    - test_generate_sarif_structure
+    - test_generate_sarif_tool_info
+    - test_generate_sarif_results
+    - test_generate_sarif_invocations
+    - test_generate_sarif_rules
+    - test_generate_sarif_for_github
+  - name: write_sarif
+    type: function
+    line_number: 118
+    description: "Write SARIF output to file.\n\nArgs:\n    result: CI check result\n\
+      \    output_path: Path to write SARIF file\n    tool_name: Name of the analysis\
+      \ tool"
+    methods: []
+    test_methods:
+    - test_write_sarif
+  - name: generate_sarif_for_github
+    type: function
+    line_number: 134
+    description: "Generate SARIF with GitHub-specific metadata.\n\nArgs:\n    result:\
+      \ CI check result\n    repository: GitHub repository (owner/repo)\n    ref:\
+      \ Git ref (e.g., refs/heads/main)\n    commit_sha: Commit SHA being analyzed\n\
+      \    tool_name: Name of the analysis tool\n\nReturns:\n    SARIF document with\
+      \ GitHub metadata"
+    methods: []
+    test_methods:
+    - test_generate_sarif_for_github
+- name: markdown
+  component_id: cicd-outputs-markdown
+  location: src/agentforge/core/cicd/outputs/markdown.py
+  test_location: tests/unit/tools/cicd/test_outputs.py
+  description: 'Markdown Output Generator
+
+    =========================
+
+
+    Generates Markdown summaries for PR comments and reports.
+
+    Designed for clear, actionable feedback in pull request discussions.'
+  entities:
+  - name: generate_markdown
+    type: function
+    line_number: 15
+    description: "Generate Markdown summary from CI result.\n\nOutput structure:\n\
+      1. Summary table (pass/fail counts)\n2. New violations (if PR mode) - expanded\n\
+      3. Fixed violations (if PR mode) - one-liner celebration\n4. All violations\
+      \ (grouped by file) - collapsible for long lists\n\nArgs:\n    result: CI check\
+      \ result\n    title: Report title\n\nReturns:\n    Markdown formatted string"
+    methods: []
+    test_methods:
+    - test_generate_markdown_structure
+    - test_generate_markdown_summary_table
+    - test_generate_markdown_success_status
+    - test_generate_markdown_with_comparison
+    - test_generate_markdown_violations_by_file
+    - test_generate_markdown_severity_icons
+    - test_generate_markdown_footer
+  - name: write_markdown
+    type: function
+    line_number: 201
+    description: "Write Markdown to file.\n\nArgs:\n    result: CI check result\n\
+      \    output_path: Path to write Markdown file\n    title: Report title"
+    methods: []
+    test_methods:
+    - test_write_markdown
+  - name: generate_pr_comment
+    type: function
+    line_number: 219
+    description: "Generate a concise PR comment format.\n\nOptimized for GitHub/Azure\
+      \ PR comment character limits\nand readability in PR discussions.\n\nArgs:\n\
+      \    result: CI check result\n\nReturns:\n    Markdown string suitable for PR\
+      \ comment"
+    methods: []
+    test_methods:
+    - test_generate_pr_comment_success
+    - test_generate_pr_comment_with_new_violations
+    - test_generate_pr_comment_with_fixes
+- name: junit
+  component_id: cicd-outputs-junit
+  location: src/agentforge/core/cicd/outputs/junit.py
+  test_location: tests/unit/tools/cicd/test_outputs.py
+  description: 'JUnit XML Output Generator
+
+    ==========================
+
+
+    Generates JUnit XML output for Azure DevOps and other CI systems
+
+    that consume test results in JUnit format.'
+  entities:
+  - name: generate_junit
+    type: function
+    line_number: 17
+    description: "Generate JUnit XML from CI result.\n\nEach violation becomes a failed\
+      \ test case.\nPassing checks are not represented (JUnit is failure-focused).\n\
+      \nArgs:\n    result: CI check result\n    suite_name: Name for the test suite\n\
+      \nReturns:\n    ElementTree root element"
+    methods: []
+    test_methods:
+    - test_generate_junit_structure
+    - test_generate_junit_testsuite_grouping
+    - test_generate_junit_testcases
+    - test_generate_junit_failure_details
+    - test_generate_junit_string
+  - name: write_junit
+    type: function
+    line_number: 98
+    description: "Write JUnit XML to file.\n\nArgs:\n    result: CI check result\n\
+      \    output_path: Path to write XML file\n    suite_name: Name for the test\
+      \ suite"
+    methods: []
+    test_methods:
+    - test_write_junit
+  - name: generate_junit_string
+    type: function
+    line_number: 117
+    description: "Generate JUnit XML as string.\n\nArgs:\n    result: CI check result\n\
+      \    suite_name: Name for the test suite\n\nReturns:\n    JUnit XML as string"
+    methods: []
+    test_methods:
+    - test_generate_junit_string

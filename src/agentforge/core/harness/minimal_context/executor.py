@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/core-harness-minimal-context-v1.yaml
+# @spec_id: core-harness-minimal-context-v1
+# @component_id: harness-minimal_context-executor
+# @test_path: tests/unit/harness/test_action_parser.py
+
 """
 Minimal Context Executor
 ========================
@@ -31,7 +36,7 @@ from .context_builder import ContextBuilder
 from .enhanced_context_builder import EnhancedContextBuilder
 from .working_memory import WorkingMemoryManager
 from .understanding import UnderstandingExtractor
-from .context_models import ActionResult, ActionRecord, AgentResponse
+from .context_models import ActionResult, ActionRecord, AgentResponse, Fact, FactCategory, ActionDef
 from .loop_detector import LoopDetector, LoopDetection, LoopType
 from .phase_machine import PhaseMachine, Phase, PhaseContext
 
@@ -403,10 +408,23 @@ class MinimalContextExecutor:
         Returns:
             PhaseContext for transitions
         """
-        # Get facts from working memory
+        # Get facts from working memory and convert to Fact objects
         task_dir = self.state_store._task_dir(state.task_id)
         memory_manager = WorkingMemoryManager(task_dir)
         fact_dicts = memory_manager.get_facts(current_step=state.current_step)
+
+        # Convert dicts to Fact objects (required by PhaseContext.has_fact_of_type)
+        facts = [
+            Fact(
+                id=f.get("id", ""),
+                category=FactCategory(f.get("category", "inference")),
+                statement=f.get("statement", ""),
+                confidence=f.get("confidence", 0.5),
+                source=f.get("source", "unknown"),
+                step=f.get("step", 0),
+            )
+            for f in fact_dicts
+        ]
 
         return PhaseContext(
             current_phase=machine.current_phase,
@@ -415,7 +433,7 @@ class MinimalContextExecutor:
             verification_passing=state.verification.checks_failing == 0,
             tests_passing=state.verification.tests_passing,
             files_modified=state.context_data.get("files_modified", []),
-            facts=fact_dicts,
+            facts=facts,
             last_action=last_action,
             last_action_result=last_action_result,
         )
@@ -784,12 +802,67 @@ class MinimalContextExecutor:
                     reasoning=reasoning,
                 )
                 return validated.action, validated.parameters
-            except Exception:
-                # Validation failed but we have a name, use raw values
+            except Exception as e:
+                # Validation failed - log the issue
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.warning(
+                    f"Response validation failed: {e}. "
+                    f"Action: {name}, Parameters: {params}"
+                )
                 return name, params
 
-        except yaml.YAMLError:
+        except yaml.YAMLError as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"YAML parsing failed: {e}")
             return None
+
+    def _validate_response_parameters(
+        self,
+        action_name: str,
+        action_params: Dict[str, Any],
+        available_actions: List[ActionDef],
+    ) -> List[str]:
+        """
+        Validate that response parameters match the expected schema.
+
+        Returns list of validation issues (empty if valid).
+        """
+        issues = []
+
+        # Find the action definition
+        action_def = next(
+            (a for a in available_actions if a.name == action_name),
+            None,
+        )
+
+        if not action_def:
+            issues.append(f"Action '{action_name}' not in available actions")
+            return issues
+
+        # Check for required parameters
+        expected_params = set(action_def.parameters.keys())
+        provided_params = set(action_params.keys())
+
+        # Missing required params (all params are considered required for now)
+        missing = expected_params - provided_params
+        # Extra params not in schema
+        extra = provided_params - expected_params
+
+        if missing:
+            issues.append(
+                f"Action '{action_name}' missing parameters: {missing}. "
+                f"Expected: {expected_params}"
+            )
+
+        if extra:
+            issues.append(
+                f"Action '{action_name}' has unexpected parameters: {extra}. "
+                f"This may indicate LLM is not following the schema."
+            )
+
+        return issues
 
     def _execute_action(
         self,
@@ -994,12 +1067,43 @@ class MinimalContextExecutor:
                 state = self.state_store.load(task_id)
                 if state:
                     fact_dicts = memory_manager.get_facts(current_step=state.current_step)
-                    # Convert to simple objects for loop detector
-                    facts = fact_dicts  # Loop detector handles dict format
+                    # Convert dicts to Fact objects for loop detector
+                    facts = [
+                        Fact(
+                            id=f.get("id", ""),
+                            category=FactCategory(f.get("category", "inference")),
+                            statement=f.get("statement", ""),
+                            confidence=f.get("confidence", 0.5),
+                            source=f.get("source", "unknown"),
+                            step=f.get("step", 0),
+                        )
+                        for f in fact_dicts
+                    ]
 
             should_continue, reason, loop_detection = budget.check_continue(
                 i + 1, recent_dicts, facts
             )
+
+            # Before stopping due to loop detection, check if phase transition is possible
+            # This allows the agent to transition from ANALYZE to IMPLEMENT even after
+            # several read-only operations (which is expected behavior)
+            if not should_continue and loop_detection and loop_detection.detected:
+                state = self.state_store.load(task_id)
+                if state and self.use_phase_machine:
+                    machine = state.get_phase_machine()
+                    phase_context = self._build_phase_context(
+                        machine=machine,
+                        state=state,
+                        last_action=outcome.action_name,
+                        last_action_result=outcome.result,
+                    )
+                    # Check if we can transition to a new phase
+                    target_phase = machine.should_auto_transition(phase_context)
+                    if target_phase and target_phase != machine.current_phase:
+                        # Allow continuation - phase transition pending
+                        should_continue = True
+                        reason = f"Phase transition to {target_phase.value} pending"
+                        print(f"  (Loop detected but phase transition to {target_phase.value} is possible)")
 
             if not should_continue:
                 # Log the reason for stopping

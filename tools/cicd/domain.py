@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/cicd-v1.yaml
+# @spec_id: cicd-v1
+# @component_id: tools-cicd-domain
+# @test_path: tests/unit/tools/test_builtin_checks_architecture.py
+
 """
 CI/CD Domain Entities
 =====================

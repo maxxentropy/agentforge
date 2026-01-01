@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/conformance-v1.yaml
+# @spec_id: conformance-v1
+# @component_id: tools-conformance-stores
+# @impl_path: tools/conformance/stores.py
+
 """Tests for conformance storage layer."""
 
 import pytest

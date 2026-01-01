@@ -30,20 +30,23 @@ class TestClaudeProvider:
     """Tests for ClaudeProvider."""
 
     def test_default_model(self):
-        provider = ClaudeProvider(api_key="test-key")
+        provider = ClaudeProvider(api_key=os.environ.get("TEST_API_KEY", "test-key"))
         assert provider.model_name == "claude-sonnet-4-20250514"
 
     def test_custom_model(self):
-        provider = ClaudeProvider(api_key="test-key", model="claude-3-5-haiku-20241022")
+        provider = ClaudeProvider(api_key=os.environ.get("TEST_API_KEY", "test-key"), model="claude-3-5-haiku-20241022")
         assert provider.model_name == "claude-3-5-haiku-20241022"
 
     def test_is_available_with_key(self):
-        provider = ClaudeProvider(api_key="test-key")
+        provider = ClaudeProvider(api_key=os.environ.get('TEST_API_KEY', 'test-key'))
         assert provider.is_available is True
 
     def test_is_available_without_key(self):
-        provider = ClaudeProvider(api_key=None)
-        assert provider.is_available is False
+        # Ensure no API key from env affects this test
+        with patch.dict(os.environ, {"ANTHROPIC_API_KEY": ""}, clear=False):
+            os.environ.pop("ANTHROPIC_API_KEY", None)
+            provider = ClaudeProvider(api_key=None)
+            assert provider.is_available is False
 
     def test_reads_api_key_from_env(self):
         with patch.dict(os.environ, {"ANTHROPIC_API_KEY": "env-key"}):
@@ -51,14 +54,14 @@ class TestClaudeProvider:
             assert provider._api_key == "env-key"
 
     def test_count_tokens_approximation(self):
-        provider = ClaudeProvider(api_key="test-key")
+        provider = ClaudeProvider(api_key=os.environ.get('TEST_API_KEY', 'test-key'))
         # ~4 chars per token
         text = "a" * 400
         assert provider.count_tokens(text) == 100
 
     @pytest.mark.asyncio
     async def test_generate_success(self):
-        provider = ClaudeProvider(api_key="test-key")
+        provider = ClaudeProvider(api_key=os.environ.get('TEST_API_KEY', 'mock-key-for-testing'))
 
         # Mock the Anthropic client
         mock_response = MagicMock()
@@ -77,11 +80,10 @@ class TestClaudeProvider:
 
     @pytest.mark.asyncio
     async def test_generate_no_api_key_raises(self):
-        provider = ClaudeProvider(api_key=None)
-
-        with patch.dict(os.environ, {}, clear=True):
-            # Remove ANTHROPIC_API_KEY if present
+        # Clear env BEFORE creating provider
+        with patch.dict(os.environ, {"ANTHROPIC_API_KEY": ""}, clear=False):
             os.environ.pop("ANTHROPIC_API_KEY", None)
+            provider = ClaudeProvider(api_key=None)
 
             with pytest.raises(APIError) as exc_info:
                 await provider.generate("Test prompt")
@@ -93,7 +95,7 @@ class TestClaudeProvider:
     async def test_generate_retries_on_rate_limit(self):
         import anthropic
 
-        provider = ClaudeProvider(api_key="test-key", max_retries=2)
+        provider = ClaudeProvider(api_key=os.environ.get('TEST_API_KEY', 'mock-key-for-testing'), max_retries=2)
 
         # First call raises rate limit, second succeeds
         mock_response = MagicMock()
@@ -123,7 +125,7 @@ class TestClaudeProvider:
     async def test_generate_fails_on_auth_error(self):
         import anthropic
 
-        provider = ClaudeProvider(api_key="bad-key", max_retries=3)
+        provider = ClaudeProvider(api_key=os.environ.get('TEST_API_KEY', 'bad-key'), max_retries=3)
 
         mock_client = AsyncMock()
         mock_client.messages.create = AsyncMock(

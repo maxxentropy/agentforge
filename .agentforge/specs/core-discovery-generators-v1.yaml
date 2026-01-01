@@ -1,0 +1,42 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Specification: core_discovery_generators
+# ═══════════════════════════════════════════════════════════════════════════════
+# Generated: 2026-01-01T16:08:00.318860
+# Generator: brownfield-discovery
+# ═══════════════════════════════════════════════════════════════════════════════
+
+spec_id: core-discovery-generators-v1
+name: core_discovery_generators
+version: '1.0'
+status: as-built
+schema_version: '2.0'
+generated_at: '2026-01-01T16:08:00.318860'
+generated_by: brownfield-discovery
+description: Specification for src/agentforge/core/discovery/generators
+components:
+- name: profile
+  component_id: discovery-generators-profile
+  location: src/agentforge/core/discovery/generators/profile.py
+  test_location: tests/unit/tools/bridge/test_profile_loader.py
+  description: 'Profile Generator
+
+    =================
+
+
+    Generates codebase_profile.yaml from discovery results.'
+  entities:
+  - name: ProfileGenerator
+    type: class
+    line_number: 23
+    description: 'Generates codebase_profile.yaml from discovery analysis results.
+
+
+      Combines results from multiple analyzers into a single profile
+
+      that conforms to the codebase_profile.schema.yaml specification.'
+    methods:
+    - generate
+    - to_yaml
+    - save
+    - load
+    test_methods: []

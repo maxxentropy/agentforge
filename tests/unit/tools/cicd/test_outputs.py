@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/cicd-outputs-v1.yaml
+# @spec_id: cicd-outputs-v1
+# @component_id: cicd-outputs-junit
+# @impl_path: tools/cicd/outputs/junit.py
+
 """Unit tests for CI/CD output generators."""
 
 import json

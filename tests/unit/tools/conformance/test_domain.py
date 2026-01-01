@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/cli-click-commands-v1.yaml
+# @spec_id: cli-click-commands-v1
+# @component_id: cli-click_commands-conformance
+# @impl_path: src/agentforge/cli/click_commands/conformance.py
+
 """Tests for conformance domain entities."""
 
 import pytest

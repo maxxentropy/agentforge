@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/harness-v1.yaml
+# @spec_id: harness-v1
+# @component_id: tools-harness-llm_executor_domain
+# @test_path: tests/unit/harness/test_action_parser.py
+
 """
 LLM Executor Domain Model
 =========================
@@ -33,6 +38,8 @@ class ToolCategory(Enum):
     GIT = "git"  # Git operations
     ANALYSIS = "analysis"  # Code analysis
     MEMORY = "memory"  # Memory operations
+    LLM = "llm"  # LLM/AI operations
+    GENERAL = "general"  # Uncategorized tools
 
 
 @dataclass
@@ -52,22 +59,43 @@ class ToolCall:
         """Infer tool category from name."""
         name_lower = self.name.lower()
 
-        if any(x in name_lower for x in ["read", "write", "edit", "file"]):
+        if self._is_file_tool(name_lower):
             return ToolCategory.FILE
-        if any(x in name_lower for x in ["grep", "glob", "search", "find"]):
+        if self._is_search_tool(name_lower):
             return ToolCategory.SEARCH
-        if any(x in name_lower for x in ["bash", "shell", "command"]):
+        if self._is_shell_tool(name_lower):
             return ToolCategory.SHELL
-        if any(x in name_lower for x in ["test", "pytest"]):
+        if self._is_test_tool(name_lower):
             return ToolCategory.TEST
-        if any(x in name_lower for x in ["git", "commit", "push"]):
+        if self._is_git_tool(name_lower):
             return ToolCategory.GIT
-        if any(x in name_lower for x in ["analyze", "lint", "check"]):
+        if self._is_analysis_tool(name_lower):
             return ToolCategory.ANALYSIS
-        if any(x in name_lower for x in ["memory", "remember", "recall"]):
-            return ToolCategory.MEMORY
+        if self._is_llm_tool(name_lower):
+            return ToolCategory.LLM
 
-        return ToolCategory.SHELL  # Default
+        return ToolCategory.GENERAL
+
+    def _is_file_tool(self, name_lower: str) -> bool:
+        return any(x in name_lower for x in ["read", "write", "edit", "file"])
+
+    def _is_search_tool(self, name_lower: str) -> bool:
+        return any(x in name_lower for x in ["grep", "glob", "search", "find"])
+
+    def _is_shell_tool(self, name_lower: str) -> bool:
+        return any(x in name_lower for x in ["bash", "shell", "command"])
+
+    def _is_test_tool(self, name_lower: str) -> bool:
+        return any(x in name_lower for x in ["test", "pytest"])
+
+    def _is_git_tool(self, name_lower: str) -> bool:
+        return any(x in name_lower for x in ["git", "commit", "branch"])
+
+    def _is_analysis_tool(self, name_lower: str) -> bool:
+        return any(x in name_lower for x in ["analyze", "check", "lint"])
+
+    def _is_llm_tool(self, name_lower: str) -> bool:
+        return any(x in name_lower for x in ["llm", "ai", "gpt"])
 
     def to_dict(self) -> Dict[str, Any]:
         """Serialize to YAML-compatible dict."""

@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/tools-v1.yaml
+# @spec_id: tools-v1
+# @component_id: tools-command_runner
+# @test_path: tests/test_python_checks.py
+
 """
 Command runner for external tool execution.
 

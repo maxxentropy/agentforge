@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/harness-minimal-context-v1.yaml
+# @spec_id: harness-minimal-context-v1
+# @component_id: harness-minimal_context-executor
+# @impl_path: tools/harness/minimal_context/executor.py
+
 """Tests for Action Parser."""
 
 import pytest

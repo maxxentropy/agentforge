@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/harness-v1.yaml
+# @spec_id: harness-v1
+# @component_id: tools-harness-refactoring_tools
+# @impl_path: tools/harness/refactoring_tools.py
+
 """
 Integration Tests for Agent Harness Workflows
 ==============================================

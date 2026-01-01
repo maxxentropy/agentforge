@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+
+# @spec_file: .agentforge/specs/tools-v1.yaml
+# @spec_id: tools-v1
+# @component_id: tools-contracts_execution
+# @test_path: tests/unit/tools/test_contracts_execution_naming.py
+
 """
 Contract Check Execution
 ========================

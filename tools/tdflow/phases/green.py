@@ -2,12 +2,27 @@
 GREEN Phase Executor
 ====================
 
-Generates implementation to pass failing tests.
+Generates implementation based on specifications and failing tests.
+
+Supports two generation modes:
+1. LLM-based: Uses GenerationEngine for intelligent implementation generation
+2. Template-based: Falls back to scaffolding templates when no LLM is available
+
+When using LLM generation, the engine provides:
+  - Full working implementations based on spec and tests
+  - Intelligent code that satisfies test requirements
+  - Iterative refinement if tests don't pass
+
+When using template generation, you get:
+  - Structural scaffolding with NotImplementedError stubs
+  - Correct class structure with dependencies
+  - Method signatures with parameters and return types
 """
 
+import asyncio
 import time
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, TYPE_CHECKING
 
 import yaml
 
@@ -21,6 +36,9 @@ from tools.tdflow.domain import (
 )
 from tools.tdflow.runners.base import TestRunner
 
+if TYPE_CHECKING:
+    from tools.generate.engine import GenerationEngine
+
 
 class GreenPhaseExecutor:
     """
@@ -30,7 +48,7 @@ class GreenPhaseExecutor:
     1. Load failing tests
     2. Load spec requirements
     3. Gather context (similar code, patterns)
-    4. Generate implementation via LLM
+    4. Generate implementation via LLM (or scaffolding)
     5. Write implementation file
     6. Run tests
     7. Verify tests PASS
@@ -38,16 +56,23 @@ class GreenPhaseExecutor:
 
     MAX_ITERATIONS = 3
 
-    def __init__(self, session: TDFlowSession, runner: TestRunner):
+    def __init__(
+        self,
+        session: TDFlowSession,
+        runner: TestRunner,
+        generator: Optional["GenerationEngine"] = None,
+    ):
         """
         Initialize GREEN phase executor.
 
         Args:
             session: Current TDFLOW session
             runner: Test runner for the project
+            generator: Optional LLM generation engine for intelligent implementation
         """
         self.session = session
         self.runner = runner
+        self.generator = generator
         self._spec_data: Optional[Dict[str, Any]] = None
 
     def execute(self, component: ComponentProgress) -> PhaseResult:
@@ -171,14 +196,10 @@ class GreenPhaseExecutor:
         iteration: int,
     ) -> Optional[str]:
         """
-        Generate implementation via LLM.
+        Generate implementation via LLM or templates.
 
-        Uses tdflow.green.v1 prompt contract.
-        Context includes:
-        - Failing tests
-        - Spec requirements
-        - Similar code from codebase
-        - Detected patterns
+        When a generator is available, uses LLM for intelligent implementation.
+        Otherwise, falls back to template scaffolding.
 
         Args:
             component: Component to implement
@@ -188,11 +209,65 @@ class GreenPhaseExecutor:
         Returns:
             Implementation file content or None
         """
-        # Build implementation template based on framework
+        # Try LLM generation first if available
+        if self.generator:
+            llm_result = self._generate_impl_with_llm(component, spec, iteration)
+            if llm_result:
+                return llm_result
+
+        # Fall back to template generation
         if self.session.test_framework in ("xunit", "nunit", "mstest"):
             return self._generate_csharp_impl(component, spec)
         else:
             return self._generate_python_impl(component, spec)
+
+    def _generate_impl_with_llm(
+        self,
+        component: ComponentProgress,
+        spec: Dict[str, Any],
+        iteration: int,
+    ) -> Optional[str]:
+        """
+        Generate implementation using LLM via GenerationEngine.
+
+        Args:
+            component: Component to implement
+            spec: Component specification
+            iteration: Current iteration number (used for error context)
+
+        Returns:
+            Implementation content or None if generation fails
+        """
+        if not self.generator:
+            return None
+
+        try:
+            from tools.generate.domain import GenerationContext, GenerationPhase
+
+            # Get existing test content for context
+            existing_tests = None
+            if component.tests:
+                existing_tests = component.tests.content
+
+            # Build generation context
+            context = GenerationContext.for_green(
+                spec=self._spec_data or {},
+                component_name=component.name,
+                existing_tests=existing_tests,
+            )
+
+            # Run generation (async -> sync)
+            result = asyncio.run(self.generator.generate(context, dry_run=False))
+
+            if result.success and result.files:
+                # Return the first generated file's content
+                return result.files[0].content
+
+            return None
+
+        except Exception:
+            # Fall back to template generation
+            return None
 
     def _generate_csharp_impl(
         self,
@@ -366,6 +441,8 @@ class {class_name}:
         """
         Determine implementation file path.
 
+        Uses impl_file from spec if provided, otherwise generates path.
+
         Args:
             component: Component being implemented
             spec: Component specification
@@ -374,6 +451,10 @@ class {class_name}:
             Path for implementation file
         """
         project_root = self.runner.project_path
+
+        # Use impl_file from spec if provided
+        if spec.get("impl_file"):
+            return project_root / spec["impl_file"]
 
         # Use spec layer if available
         layer = spec.get("layer", "Application")
@@ -401,6 +482,8 @@ class {class_name}:
         """
         Convert PascalCase/camelCase to snake_case.
 
+        Handles compound names with dots (e.g., "TokenBudget.record_usage").
+
         Args:
             name: Name to convert
 
@@ -408,6 +491,10 @@ class {class_name}:
             snake_case name
         """
         import re
+
+        # Handle compound names with dots - take just the method part
+        if "." in name:
+            name = name.split(".")[-1]
 
         s1 = re.sub(r"(.)([A-Z][a-z]+)", r"\1_\2", name)
         return re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", s1).lower()

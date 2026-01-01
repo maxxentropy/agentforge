@@ -1,0 +1,1013 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Specification: core_harness_minimal_context
+# ═══════════════════════════════════════════════════════════════════════════════
+# Generated: 2026-01-01T16:08:00.510157
+# Generator: brownfield-discovery
+# ═══════════════════════════════════════════════════════════════════════════════
+
+spec_id: core-harness-minimal-context-v1
+name: core_harness_minimal_context
+version: '1.0'
+status: as-built
+schema_version: '2.0'
+generated_at: '2026-01-01T16:08:00.510157'
+generated_by: brownfield-discovery
+description: Specification for src/agentforge/core/harness/minimal_context
+components:
+- name: executor
+  component_id: harness-minimal_context-executor
+  location: src/agentforge/core/harness/minimal_context/executor.py
+  test_location: tests/unit/harness/test_action_parser.py
+  description: 'Minimal Context Executor
+
+    ========================
+
+
+    Executes agent steps with stateless, bounded context.
+
+    Each step is a fresh conversation with exactly 2 messages.
+
+
+    Key guarantees:
+
+    - Step 1 and Step 100 use same token count (±10%)
+
+    - No step exceeds 8K tokens
+
+    - All state recoverable from disk after crash
+
+    - Rate limits never exceeded
+
+
+    Enhanced with Understanding Extraction for fact-based context.'
+  entities:
+  - name: StepOutcome
+    type: dataclass
+    line_number: 40
+    description: Result of executing a single step.
+    methods:
+    - to_dict
+    test_methods: []
+  - name: AdaptiveBudget
+    type: class
+    line_number: 79
+    description: "Adaptive step budget that prevents runaway while allowing complex\
+      \ tasks.\n\nKey behaviors:\n1. LOOP DETECTION: Enhanced detection via LoopDetector\
+      \ (Phase 3)\n   - Identical action loops\n   - Semantic loops (different actions,\
+      \ same outcome)\n   - Error cycling (A->B->A patterns)\n   - No-progress loops\n\
+      2. PROGRESS EXTENSION: Extend budget when making progress\n3. HARD CEILING:\
+      \ Never exceed max_budget (cost control)"
+    methods:
+    - check_continue
+    - get_last_loop_detection
+    - get_loop_suggestions
+    test_methods: []
+  - name: MinimalContextExecutor
+    type: class
+    line_number: 320
+    description: 'Executes agent steps with minimal, stateless context.
+
+
+      Each step:
+
+      1. Loads current state from disk
+
+      2. Builds minimal context (always 4-8K tokens)
+
+      3. Calls LLM with fresh 2-message conversation
+
+      4. Parses and executes the action
+
+      5. Updates state on disk'
+    methods:
+    - register_action
+    - register_actions
+    - execute_step
+    - run_until_complete
+    test_methods: []
+  - name: create_minimal_executor
+    type: function
+    line_number: 1135
+    description: "Factory function to create a minimal context executor.\n\nArgs:\n\
+      \    project_path: Project root path\n    action_executors: Optional action\
+      \ executors\n    model: Model to use\n\nReturns:\n    Configured MinimalContextExecutor"
+    methods: []
+    test_methods: []
+- name: working_memory
+  component_id: harness-minimal_context-working_memory
+  location: src/agentforge/core/harness/minimal_context/working_memory.py
+  test_location: tests/unit/harness/test_enhanced_context.py
+  description: 'Working Memory Manager
+
+    ======================
+
+
+    Manages the bounded rolling buffer of recent context items.
+
+    Items are automatically evicted (FIFO) when the buffer is full,
+
+    unless marked as pinned.
+
+
+    Enhanced with fact storage for the Understanding Extraction system.'
+  entities:
+  - name: WorkingMemoryItem
+    type: dataclass
+    line_number: 28
+    description: Single item in working memory.
+    methods:
+    - to_dict
+    - from_dict
+    - is_expired
+    test_methods: []
+  - name: WorkingMemoryManager
+    type: class
+    line_number: 68
+    description: 'Manages a bounded rolling buffer of context items.
+
+
+      The working memory is persisted to disk and loaded fresh each step.
+
+      Items are automatically evicted when the buffer is full (FIFO),
+
+      unless they are pinned.'
+    methods:
+    - add
+    - add_action_result
+    - load_context
+    - get_items
+    - get_by_type
+    - get_action_results
+    - get_loaded_context
+    - remove
+    - clear
+    - pin
+    - unpin
+    - add_fact
+    - add_facts_from_list
+    - get_facts
+    - get_high_confidence_facts
+    - get_facts_for_context
+    - clear_facts
+    test_methods: []
+- name: context_models
+  component_id: harness-minimal_context-context_models
+  location: src/agentforge/core/harness/minimal_context/context_models.py
+  test_location: tests/unit/harness/test_enhanced_context.py
+  description: 'Context Models
+
+    ==============
+
+
+    Pydantic v2 models for structured, validated agent context.
+
+
+    Key principles:
+
+    - Immutable specs (frozen=True) for task definitions
+
+    - Typed facts instead of raw tool output
+
+    - Explicit action definitions with preconditions
+
+    - Token-efficient serialization to YAML'
+  entities:
+  - name: FactCategory
+    type: enum
+    line_number: 32
+    description: Categories of extracted facts.
+    methods: []
+    test_methods: []
+  - name: ActionResult
+    type: enum
+    line_number: 42
+    description: Possible action outcomes.
+    methods: []
+    test_methods: []
+  - name: Fact
+    type: class
+    line_number: 56
+    description: 'A typed fact extracted from tool output or inference.
+
+
+      Facts are the primary unit of understanding - conclusions rather than
+
+      raw data. Each fact has a confidence score and category.'
+    methods:
+    - round_confidence
+    test_methods:
+    - test_create_fact
+    - test_fact_immutable
+    - test_get_active_facts
+    - test_add_fact
+    - test_analyze_to_implement_with_code_structure_fact
+    - test_has_fact_of_type
+    - test_add_and_get_fact
+    - test_get_facts_for_context
+    - test_add_facts_from_list
+    - test_clear_facts
+    - test_factory_function_creates_enhanced_workflow
+    - test_compaction_preserves_high_confidence_facts
+    - test_understanding_compact_reduces_facts
+  - name: ActionDef
+    type: class
+    line_number: 80
+    description: 'Definition of an available action with rich metadata.
+
+
+      Actions are phase-restricted and have explicit pre/postconditions.'
+    methods: []
+    test_methods: []
+  - name: ActionRecord
+    type: class
+    line_number: 105
+    description: Record of an action that was taken.
+    methods: []
+    test_methods: []
+  - name: TaskSpec
+    type: class
+    line_number: 124
+    description: 'Immutable task specification - the "what" we''re trying to do.
+
+
+      Created once at task start, never modified.'
+    methods: []
+    test_methods: []
+  - name: ViolationSpec
+    type: class
+    line_number: 141
+    description: Specification for a violation fix task.
+    methods: []
+    test_methods: []
+  - name: VerificationState
+    type: class
+    line_number: 161
+    description: Current verification status.
+    methods: []
+    test_methods: []
+  - name: Understanding
+    type: class
+    line_number: 171
+    description: 'The agent''s current understanding - extracted facts, not raw data.
+
+
+      This is the key innovation: instead of storing tool outputs,
+
+      we store conclusions with confidence scores.'
+    methods:
+    - get_active_facts
+    - get_by_category
+    - get_high_confidence
+    - compact
+    test_methods:
+    - test_to_understanding
+    - test_understanding_compact_reduces_facts
+    - test_understanding_compact_preserves_high_value
+    - test_understanding_compact_noop_under_threshold
+    - test_understanding_compact_prioritizes_categories
+  - name: PhaseState
+    type: class
+    line_number: 251
+    description: Current phase execution state.
+    methods: []
+    test_methods: []
+  - name: StateSpec
+    type: class
+    line_number: 260
+    description: Mutable task state - the "where we are" in execution.
+    methods: []
+    test_methods: []
+  - name: ActionsSpec
+    type: class
+    line_number: 280
+    description: Available actions for current context.
+    methods: []
+    test_methods: []
+  - name: AgentContext
+    type: class
+    line_number: 295
+    description: 'Complete context for a single agent step.
+
+
+      This is the root model that gets serialized to YAML for the LLM.
+
+      All fields are typed and validated.'
+    methods:
+    - estimate_tokens
+    - to_yaml
+    test_methods: []
+  - name: AgentResponse
+    type: class
+    line_number: 404
+    description: Expected response format from the agent.
+    methods: []
+    test_methods: []
+- name: state_store
+  component_id: harness-minimal_context-state_store
+  location: src/agentforge/core/harness/minimal_context/state_store.py
+  test_location: tests/unit/harness/test_enhanced_context.py
+  description: "Task State Store\n================\n\nManages task state persistence\
+    \ to disk.\nAll agent state lives here - the agent has no memory except what's\
+    \ in the state store.\n\nDirectory structure:\n.agentforge/tasks/{task_id}/\n\
+    ├── task.yaml                 # Immutable: goal, success criteria\n├── state.yaml\
+    \                # Mutable: current phase, status, verification\n├── actions.yaml\
+    \              # Append-only: complete log of all actions\n├── working_memory.yaml\
+    \       # Rolling: last N actions for context\n└── artifacts/\n    ├── inputs/\
+    \               # Verified inputs (spec, violation, etc.)\n    ├── outputs/  \
+    \            # Verified outputs from each phase\n    └── snapshots/          \
+    \  # File states before/after changes\n\nSchema Versioning\n-----------------\n\
+    Schema version is stored in state.yaml as 'schema_version'.\nWhen loading, older\
+    \ versions are automatically migrated to current.\n\nVersion History:\n- 1.0:\
+    \ Initial version (legacy, no version field)\n- 2.0: Enhanced Context Engineering\
+    \ (phase_machine_state added)"
+  entities:
+  - name: TaskPhase
+    type: enum
+    line_number: 52
+    description: Task execution phases.
+    methods: []
+    test_methods: []
+  - name: ActionRecord
+    type: dataclass
+    line_number: 66
+    description: Record of an action taken during execution.
+    methods:
+    - to_dict
+    - from_dict
+    test_methods: []
+  - name: VerificationStatus
+    type: dataclass
+    line_number: 107
+    description: Current verification status for a task.
+    methods:
+    - to_dict
+    - from_dict
+    test_methods: []
+  - name: TaskState
+    type: dataclass
+    line_number: 139
+    description: Complete state for a task.
+    methods:
+    - to_task_dict
+    - to_state_dict
+    - get_phase_machine
+    - set_phase_machine
+    test_methods: []
+  - name: TaskStateStore
+    type: class
+    line_number: 204
+    description: 'Manages task state on disk.
+
+
+      All agent state persists here. The agent has no memory except what''s
+
+      loaded from the state store at the start of each step.'
+    methods:
+    - create_task
+    - load
+    - update_phase
+    - update_phase_machine
+    - increment_step
+    - record_action
+    - get_recent_actions
+    - update_verification
+    - update_context_data
+    - set_error
+    - save_artifact
+    - load_artifact
+    - list_tasks
+    - delete_task
+    test_methods: []
+- name: token_budget
+  component_id: harness-minimal_context-token_budget
+  location: src/agentforge/core/harness/minimal_context/token_budget.py
+  test_location: tests/unit/harness/test_enhanced_context.py
+  description: 'Token Budget Enforcement
+
+    ========================
+
+
+    Enforces hard token limits for each context component.
+
+    Ensures total context never exceeds 8K tokens.'
+  entities:
+  - name: estimate_tokens
+    type: function
+    line_number: 43
+    description: 'Estimate token count for text.
+
+
+      Uses a conservative 4 chars/token estimate.
+
+      For accurate counts, use the provider''s tokenizer.'
+    methods: []
+    test_methods:
+    - test_agent_context_estimate_tokens
+    - test_estimate_tokens
+    - test_estimate_tokens_empty
+  - name: BudgetAllocation
+    type: dataclass
+    line_number: 56
+    description: Token allocation for a content section.
+    methods: []
+    test_methods: []
+  - name: TokenBudget
+    type: class
+    line_number: 66
+    description: Enforces token budget limits with compression strategies.
+    methods:
+    - check_allocation
+    - compress_to_fit
+    - allocate_all
+    - get_total_tokens
+    - is_within_budget
+    test_methods: []
+  - name: truncate_with_ellipsis
+    type: function
+    line_number: 168
+    description: Simple truncation with ellipsis.
+    methods: []
+    test_methods: []
+  - name: compress_file_content
+    type: function
+    line_number: 176
+    description: 'Compress file content, keeping first/last lines.
+
+
+      Shows first N lines, middle replaced with omission marker, last M lines.'
+    methods: []
+    test_methods:
+    - test_compress_file_content
+  - name: compress_recent_actions
+    type: function
+    line_number: 221
+    description: 'Compress action list by keeping only most recent.
+
+
+      Parses YAML-like action entries and keeps the last N that fit.'
+    methods: []
+    test_methods:
+    - test_compress_recent_actions
+  - name: compress_error_message
+    type: function
+    line_number: 255
+    description: Compress error messages to first 500 chars.
+    methods: []
+    test_methods: []
+  - name: compress_list_items
+    type: function
+    line_number: 271
+    description: 'Compress list by keeping first N items.
+
+
+      Detects YAML list format (- item) and keeps items that fit.'
+    methods: []
+    test_methods: []
+- name: understanding
+  component_id: harness-minimal_context-understanding
+  location: src/agentforge/core/harness/minimal_context/understanding.py
+  test_location: tests/unit/harness/test_enhanced_context.py
+  description: 'Understanding Extractor
+
+    =======================
+
+
+    Extracts structured facts from tool outputs rather than storing raw results.
+
+
+    Key principles:
+
+    1. Conclusions, not data: Extract "function has complexity 15" not raw AST
+
+    2. Rule-based first: Deterministic extraction where possible
+
+    3. LLM fallback: Use LLM only for ambiguous cases
+
+    4. Confidence scoring: Higher for deterministic, lower for inferred'
+  entities:
+  - name: ExtractionRule
+    type: dataclass
+    line_number: 28
+    description: 'Rule for extracting facts from tool output.
+
+
+      Each rule has:
+
+      - pattern: Regex or callable to match
+
+      - category: What kind of fact this produces
+
+      - confidence: How confident we are in rule-based extraction
+
+      - extractor: Function to extract the fact statement'
+    methods: []
+    test_methods: []
+  - name: ExtractionRuleSet
+    type: class
+    line_number: 46
+    description: Collection of extraction rules for a tool type.
+    methods:
+    - add_rule
+    - extract
+    test_methods: []
+  - name: UnderstandingExtractor
+    type: class
+    line_number: 267
+    description: 'Extracts structured facts from tool outputs.
+
+
+      Uses a two-tier approach:
+
+      1. Rule-based extraction (fast, deterministic, high confidence)
+
+      2. LLM-based extraction (fallback for complex cases)'
+    methods:
+    - register_rule_set
+    - extract
+    test_methods: []
+  - name: FactStore
+    type: class
+    line_number: 379
+    description: 'Manages the collection of facts with compaction.
+
+
+      Handles:
+
+      - Adding new facts
+
+      - Superseding old facts
+
+      - Compacting when too large
+
+      - Retrieving relevant facts'
+    methods:
+    - add
+    - add_many
+    - get_active
+    - get_by_category
+    - get_recent
+    - to_understanding
+    - clear
+    - from_understanding
+    test_methods: []
+- name: context_builder
+  component_id: harness-minimal_context-context_builder
+  location: src/agentforge/core/harness/minimal_context/context_builder.py
+  test_location: tests/unit/harness/test_enhanced_context.py
+  description: 'Context Builder
+
+    ===============
+
+
+    Builds minimal context for each step from persisted state.
+
+    Guarantees token budget compliance.'
+  entities:
+  - name: StepContext
+    type: dataclass
+    line_number: 21
+    description: Complete context for a single step.
+    methods: []
+    test_methods: []
+  - name: ContextBuilder
+    type: class
+    line_number: 29
+    description: 'Builds minimal context from task state.
+
+
+      Guarantees:
+
+      - Total tokens never exceed max_tokens (default 8000)
+
+      - Same token count for step 1 and step 100
+
+      - All context built from disk state (no memory)'
+    methods:
+    - build
+    - build_messages
+    - get_token_breakdown
+    test_methods: []
+  - name: create_context_builder
+    type: function
+    line_number: 262
+    description: "Factory function to create a context builder.\n\nArgs:\n    project_path:\
+      \ Project root path\n    max_tokens: Maximum total tokens\n\nReturns:\n    Configured\
+      \ ContextBuilder"
+    methods: []
+    test_methods: []
+- name: context_schemas
+  component_id: harness-minimal_context-context_schemas
+  location: src/agentforge/core/harness/minimal_context/context_schemas.py
+  test_location: tests/unit/harness/test_enhanced_context.py
+  description: 'Context Schemas
+
+    ===============
+
+
+    Defines context schemas for different task types.
+
+    Each schema specifies what data is included in the context and how to format it.'
+  entities:
+  - name: AvailableAction
+    type: dataclass
+    line_number: 20
+    description: Definition of an action the agent can take.
+    methods: []
+    test_methods: []
+  - name: ContextSchema
+    type: class
+    line_number: 27
+    description: Base class for context schemas.
+    methods:
+    - get_current_state
+    - get_available_actions
+    - get_system_prompt
+    - format_task_frame
+    - format_verification_status
+    - format_available_actions
+    test_methods: []
+  - name: FixViolationSchema
+    type: class
+    line_number: 122
+    description: Context schema for fix_violation tasks.
+    methods:
+    - get_current_state
+    - get_available_actions
+    test_methods: []
+  - name: ImplementFeatureSchema
+    type: class
+    line_number: 263
+    description: Context schema for implement_feature tasks.
+    methods:
+    - get_current_state
+    - get_available_actions
+    test_methods: []
+  - name: WriteTestsSchema
+    type: class
+    line_number: 324
+    description: Context schema for write_tests (RED phase) tasks.
+    methods:
+    - get_current_state
+    - get_available_actions
+    test_methods: []
+  - name: get_schema_for_task
+    type: function
+    line_number: 615
+    description: "Get the appropriate schema for a task type.\n\nArgs:\n    task_type:\
+      \ Type of task\n    project_path: Project root path\n\nReturns:\n    ContextSchema\
+      \ instance"
+    methods: []
+    test_methods: []
+- name: __init__
+  component_id: harness-minimal_context-__init__
+  location: src/agentforge/core/harness/minimal_context/__init__.py
+  test_location: tests/unit/harness/test_enhanced_context.py
+  description: "Minimal Context Architecture\n============================\n\nImplements\
+    \ stateless step execution with verified state.\n\nKey principle: Each step is\
+    \ a fresh conversation with exactly 2 messages:\n1. System prompt (phase-appropriate)\n\
+    2. Current context (built from persisted state)\n\nContext size: ~5000 tokens\
+    \ per step.\n\nEnhanced Context Engineering (v2) - Always Enabled\n--------------------------------------------------\n\
+    All enhanced features are now the default:\n\n- **PhaseMachine**: Explicit phase\
+    \ transitions with guards\n- **EnhancedContextBuilder**: Pydantic v2 models for\
+    \ validated, typed context\n- **Understanding Extraction**: Fact-based reasoning\
+    \ instead of raw tool output\n- **Enhanced Loop Detection**: Semantic analysis\
+    \ (identical actions, error cycles)\n- **Token Budget Enforcement**: Progressive\
+    \ compaction when over budget\n- **Fact Compaction**: Proactive pruning (max 20\
+    \ facts, prioritized by value)\n- **Value Hints**: Precomputed context mapped\
+    \ to action parameter hints\n\nUsage\n-----\n    from agentforge.core.harness.minimal_context\
+    \ import (\n        MinimalContextFixWorkflow,\n        create_minimal_fix_workflow,\n\
+    \    )\n\n    # Direct instantiation\n    workflow = MinimalContextFixWorkflow(project_path=Path(\"\
+    .\"))\n\n    # Factory function\n    workflow = create_minimal_fix_workflow(project_path=Path(\"\
+    .\"))\n\n    # Fix a violation\n    result = workflow.fix_violation(\"V-abc123\"\
+    )"
+  entities: []
+- name: phase_machine
+  component_id: harness-minimal_context-phase_machine
+  location: src/agentforge/core/harness/minimal_context/phase_machine.py
+  test_location: tests/unit/harness/test_enhanced_context.py
+  description: "Phase Machine\n=============\n\nExplicit state machine for task phase\
+    \ management with guards and transitions.\n\nKey principles:\n1. Explicit transitions:\
+    \ Every phase change must go through a defined transition\n2. Guards: Preconditions\
+    \ that must be true before transition\n3. Max steps: Hard limits per phase prevent\
+    \ getting stuck\n4. Phase-specific success: Clear criteria for phase completion\n\
+    \nPhase Diagram:\n                          ┌────────────┐\n                 \
+    \         │   INIT     │\n                          └─────┬──────┘\n         \
+    \                       │\n                ┌───────────────┼───────────────┐\n\
+    \                │               │               │\n                ▼        \
+    \       ▼               │\n          ┌──────────┐    ┌──────────┐         │\n\
+    \          │ ANALYZE  │───▶│   PLAN   │         │\n          └────┬─────┘    └────┬─────┘\
+    \         │\n               │               │               │\n              \
+    \ └───────┬───────┘               │\n                       │                \
+    \       │\n                       ▼                       │\n                ┌──────────┐◄──────────────────┘\n\
+    \                │IMPLEMENT │◄─────────┐\n                └────┬─────┘       \
+    \   │\n                     │                │\n                     ▼       \
+    \         │\n                ┌──────────┐          │\n                │  VERIFY\
+    \  │──────────┘\n                └────┬─────┘     (fails)\n                  \
+    \   │\n                     ▼ (passes)\n                ┌──────────┐\n       \
+    \         │ COMPLETE │\n                └──────────┘\n\n  [Any phase can transition\
+    \ to FAILED or ESCALATED]"
+  entities:
+  - name: Phase
+    type: enum
+    line_number: 52
+    description: Task execution phases.
+    methods: []
+    test_methods:
+    - test_initial_phase
+    - test_task_state_phase_machine_persistence
+    - test_update_phase_machine_method
+    - test_phase_context_building
+    - test_phase_transition_via_handle_method
+    - test_phase_aware_actions
+  - name: PhaseContext
+    type: dataclass
+    line_number: 66
+    description: 'Context available to guards and transitions.
+
+
+      Contains all information needed to evaluate whether a transition
+
+      should be allowed.'
+    methods:
+    - has_modifications
+    - has_fact_of_type
+    test_methods: []
+  - name: Transition
+    type: dataclass
+    line_number: 94
+    description: 'A transition between phases.
+
+
+      Transitions have:
+
+      - from_phase: Source phase
+
+      - to_phase: Target phase
+
+      - guards: List of conditions that must be true
+
+      - description: Human-readable description'
+    methods: []
+    test_methods:
+    - test_transition_init_to_analyze
+    - test_guard_blocks_transition
+    - test_max_steps_triggers_auto_transition
+    - test_get_available_transitions
+    - test_phase_transition_via_handle_method
+  - name: PhaseConfig
+    type: dataclass
+    line_number: 112
+    description: Configuration for a single phase.
+    methods: []
+    test_methods: []
+  - name: PhaseMachine
+    type: class
+    line_number: 122
+    description: 'State machine for task phase management.
+
+
+      Provides:
+
+      - Explicit transition definitions
+
+      - Guard evaluation before transitions
+
+      - Max step enforcement per phase
+
+      - Clear success/failure conditions'
+    methods:
+    - add_transition
+    - configure_phase
+    - current_phase
+    - steps_in_phase
+    - phase_history
+    - can_transition
+    - get_available_transitions
+    - transition
+    - advance_step
+    - validate_state
+    - should_auto_transition
+    - get_phase_info
+    - to_state
+    - from_state
+    - reset
+    test_methods: []
+- name: loop_detector
+  component_id: harness-minimal_context-loop_detector
+  location: src/agentforge/core/harness/minimal_context/loop_detector.py
+  test_location: tests/unit/harness/test_enhanced_context.py
+  description: 'Loop Detector
+
+    =============
+
+
+    Detects semantic loops and error cycling, not just repeated identical actions.
+
+
+    Types of loops detected:
+
+    1. IDENTICAL_ACTION: Same action + params repeated
+
+    2. SEMANTIC_LOOP: Different actions, same outcome
+
+    3. ERROR_CYCLE: A fails -> B fails -> A again
+
+    4. NO_PROGRESS: Actions succeed but nothing changes
+
+    5. OSCILLATION: Flip-flopping between states'
+  entities:
+  - name: LoopType
+    type: enum
+    line_number: 23
+    description: Types of loops we can detect.
+    methods: []
+    test_methods: []
+  - name: LoopDetection
+    type: dataclass
+    line_number: 34
+    description: Result of loop detection.
+    methods: []
+    test_methods: []
+  - name: ActionSignature
+    type: dataclass
+    line_number: 46
+    description: 'Semantic signature of an action for comparison.
+
+
+      Two actions with the same signature are considered "semantically equivalent"
+
+      even if their exact parameters differ.'
+    methods:
+    - matches
+    test_methods: []
+  - name: LoopDetector
+    type: class
+    line_number: 74
+    description: 'Detects various types of loops in agent execution.
+
+
+      Goes beyond simple "same action repeated" to detect:
+
+      - Semantic loops (different actions with same result)
+
+      - Error cycling (A->B->A pattern)
+
+      - No-progress loops (actions succeed but state unchanged)
+
+      - Oscillation (flip-flopping between states)'
+    methods:
+    - check
+    - get_summary
+    - reset
+    test_methods: []
+- name: fix_workflow
+  component_id: harness-minimal_context-fix_workflow
+  location: src/agentforge/core/harness/minimal_context/fix_workflow.py
+  test_location: tests/unit/harness/test_enhanced_context.py
+  description: 'Minimal Context Fix Workflow
+
+    ============================
+
+
+    Fix violation workflow using the minimal context architecture.
+
+    Each step is a fresh conversation with bounded context.
+
+
+    Test verification uses the violation''s test_path field, which is computed
+
+    at violation detection time from:
+
+    1. Lineage metadata embedded in the source file (explicit, auditable)
+
+    2. Convention-based detection (fallback for legacy files)'
+  entities:
+  - name: MinimalContextFixWorkflow
+    type: class
+    line_number: 39
+    description: 'Fix violation workflow using minimal context architecture.
+
+
+      Key differences from FixViolationWorkflow:
+
+      - State persisted to disk, not in memory
+
+      - Each step is a fresh 2-message conversation
+
+      - Token usage bounded regardless of step count
+
+      - Resumable after crashes
+
+
+      Enhanced Context Engineering (v2) features (always enabled):
+
+      - PhaseMachine for explicit phase transitions with guards
+
+      - EnhancedContextBuilder with Pydantic models
+
+      - Fact extraction from tool outputs instead of raw data
+
+      - Enhanced loop detection with semantic analysis
+
+      - Proactive fact compaction (max 20 facts)
+
+      - Token budget enforcement with progressive compaction
+
+      - Targets 5000 tokens per step'
+    methods:
+    - fix_violation
+    - resume_task
+    test_methods: []
+  - name: create_minimal_fix_workflow
+    type: function
+    line_number: 1533
+    description: "Factory function to create a MinimalContextFixWorkflow.\n\nEnhanced\
+      \ Context Engineering features are always enabled:\n- PhaseMachine for phase\
+      \ transitions\n- EnhancedContextBuilder with Pydantic models\n- Understanding\
+      \ extraction from tool outputs\n- Enhanced loop detection\n- Token budget enforcement\n\
+      \nArgs:\n    project_path: Project root directory\n    require_commit_approval:\
+      \ Require human approval for commits\n    base_iterations: Initial step budget\
+      \ (extends with progress)\n    max_iterations: Hard ceiling for steps (cost\
+      \ control)\n\nReturns:\n    Configured MinimalContextFixWorkflow"
+    methods: []
+    test_methods: []
+- name: enhanced_context_builder
+  component_id: harness-minimal_context-enhanced_context_builder
+  location: src/agentforge/core/harness/minimal_context/enhanced_context_builder.py
+  test_location: tests/unit/harness/test_enhanced_context.py
+  description: 'Enhanced Context Builder
+
+    ========================
+
+
+    Builds validated, typed context for agent steps using Pydantic models.
+
+
+    Key improvements over original ContextBuilder:
+
+    - Works with Pydantic models for type safety and validation
+
+    - Validates context before building (fails fast on bad data)
+
+    - Produces reproducible output with deterministic ordering
+
+    - Integrates with fact store and phase machine
+
+    - Phase-aware action filtering with priorities
+
+
+    This follows the strangler fig pattern - can be used alongside legacy
+
+    ContextBuilder with feature flag to switch between them.'
+  entities:
+  - name: get_base_actions
+    type: function
+    line_number: 47
+    description: Get actions available in all phases.
+    methods: []
+    test_methods: []
+  - name: get_analyze_actions
+    type: function
+    line_number: 80
+    description: Get actions for analyze phase.
+    methods: []
+    test_methods: []
+  - name: get_implement_actions
+    type: function
+    line_number: 104
+    description: Get actions for implement phase.
+    methods: []
+    test_methods: []
+  - name: get_verify_actions
+    type: function
+    line_number: 181
+    description: Get actions for verify phase.
+    methods: []
+    test_methods: []
+  - name: EnhancedContextBuilder
+    type: class
+    line_number: 222
+    description: 'Builds validated, typed context for agent steps.
+
+
+      Key improvements over original ContextBuilder:
+
+      - Works with Pydantic models
+
+      - Validates before building
+
+      - Produces reproducible output
+
+      - Integrates with fact store and phase machine'
+    methods:
+    - build_from_task_state
+    - build_context
+    - build_messages
+    - get_token_breakdown
+    test_methods: []
+  - name: create_enhanced_context_builder
+    type: function
+    line_number: 1038
+    description: Factory function for EnhancedContextBuilder.
+    methods: []
+    test_methods: []

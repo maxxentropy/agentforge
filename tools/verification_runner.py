@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+
+# @spec_file: .agentforge/specs/tools-v1.yaml
+# @spec_id: tools-v1
+# @component_id: tools-verification_runner
+# @test_path: tests/test_python_checks.py
+
 """
 Verification Runner
 ====================

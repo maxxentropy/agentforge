@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/cicd-v1.yaml
+# @spec_id: cicd-v1
+# @component_id: tools-cicd-runner
+# @impl_path: tools/cicd/runner.py
+
 """Test Python contract check implementations."""
 
 import tempfile

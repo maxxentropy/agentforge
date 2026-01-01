@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/tools-v1.yaml
+# @spec_id: tools-v1
+# @component_id: tools-verification_checks
+# @impl_path: tools/verification_checks.py
+
 """Tests for verification check implementations (CheckRunner mixin)."""
 
 import pytest

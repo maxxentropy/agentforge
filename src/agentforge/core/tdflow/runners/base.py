@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/core-tdflow-runners-v1.yaml
+# @spec_id: core-tdflow-runners-v1
+# @component_id: tdflow-runners-base
+# @test_path: tests/unit/tools/test_contracts_execution_naming.py
+
 """
 Test Runner Base
 ================

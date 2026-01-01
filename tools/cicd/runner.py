@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/cicd-v1.yaml
+# @spec_id: cicd-v1
+# @component_id: tools-cicd-runner
+# @test_path: tests/test_python_checks.py
+
 """
 CI Runner
 =========

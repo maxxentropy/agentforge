@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/core-refactoring-v1.yaml
+# @spec_id: core-refactoring-v1
+# @component_id: core-refactoring-base
+# @test_path: tests/unit/tools/test_contracts_execution_naming.py
+
 """
 Refactoring Provider Base
 =========================

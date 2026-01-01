@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/cli-click-commands-v1.yaml
+# @spec_id: cli-click-commands-v1
+# @component_id: cli-click_commands-tdflow
+# @test_path: tests/unit/tools/tdflow/test_session.py
+
 """
 TDFLOW CLI Commands
 ===================

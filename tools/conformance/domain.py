@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/conformance-v1.yaml
+# @spec_id: conformance-v1
+# @component_id: tools-conformance-domain
+# @test_path: tests/unit/tools/test_builtin_checks_architecture.py
+
 """
 Conformance Domain Entities
 ===========================

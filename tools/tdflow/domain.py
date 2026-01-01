@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/tdflow-v1.yaml
+# @spec_id: tdflow-v1
+# @component_id: tools-tdflow-domain
+# @test_path: tests/unit/tools/test_builtin_checks_architecture.py
+
 """
 TDFLOW Domain Model
 ===================

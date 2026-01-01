@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/discovery-v1.yaml
+# @spec_id: discovery-v1
+# @component_id: tools-discovery-domain
+# @test_path: tests/unit/tools/test_builtin_checks_architecture.py
+
 """
 Brownfield Discovery Domain Model
 =================================

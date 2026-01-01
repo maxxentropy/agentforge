@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/core-harness-minimal-context-v1.yaml
+# @spec_id: core-harness-minimal-context-v1
+# @component_id: harness-minimal_context-phase_machine
+# @test_path: tests/unit/harness/test_enhanced_context.py
+
 """
 Phase Machine
 =============
@@ -353,9 +358,22 @@ class PhaseMachine:
         Returns:
             True if transition succeeded, False otherwise
         """
+        import logging
+        logger = logging.getLogger(__name__)
+
         if not self.can_transition(to_phase, context):
+            # Log why transition failed for debugging
+            logger.debug(
+                f"Phase transition blocked: {self._current_phase.value} -> {to_phase.value}. "
+                f"Context: steps_in_phase={context.steps_in_phase}, "
+                f"has_modifications={context.has_modifications()}, "
+                f"verification_passing={context.verification_passing}"
+            )
             return False
 
+        logger.info(
+            f"Phase transition: {self._current_phase.value} -> {to_phase.value}"
+        )
         self._phase_history.append(self._current_phase)
         self._current_phase = to_phase
         self._steps_in_phase = 0
@@ -365,6 +383,47 @@ class PhaseMachine:
     def advance_step(self) -> None:
         """Record that a step was taken in current phase."""
         self._steps_in_phase += 1
+
+    def validate_state(self, context: PhaseContext) -> List[str]:
+        """
+        Validate current phase state and return any issues.
+
+        This is a runtime check to catch phase machine problems early.
+
+        Returns:
+            List of issue descriptions (empty if valid)
+        """
+        issues = []
+
+        # Check 1: Are we stuck in ANALYZE without code_structure facts?
+        if self._current_phase == Phase.ANALYZE and self._steps_in_phase >= 3:
+            if not context.has_fact_of_type("code_structure"):
+                issues.append(
+                    f"Stuck in ANALYZE phase (step {self._steps_in_phase}) without "
+                    "code_structure facts. Cannot transition to IMPLEMENT. "
+                    "Check if precomputed analysis is seeding CODE_STRUCTURE facts."
+                )
+
+        # Check 2: Are we in IMPLEMENT without code_structure facts?
+        if self._current_phase == Phase.IMPLEMENT:
+            if not context.has_fact_of_type("code_structure"):
+                issues.append(
+                    "In IMPLEMENT phase without code_structure facts. "
+                    "Agent may lack understanding of the code to fix."
+                )
+
+        # Check 3: Check for blocked transitions
+        available = self.get_available_transitions(context)
+        config = self._phase_configs.get(self._current_phase)
+
+        if config and self._steps_in_phase >= config.max_steps // 2:
+            if not available:
+                issues.append(
+                    f"No transitions available from {self._current_phase.value} "
+                    f"after {self._steps_in_phase} steps. May get stuck."
+                )
+
+        return issues
 
     def should_auto_transition(self, context: PhaseContext) -> Optional[Phase]:
         """

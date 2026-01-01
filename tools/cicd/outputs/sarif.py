@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/cicd-outputs-v1.yaml
+# @spec_id: cicd-outputs-v1
+# @component_id: cicd-outputs-sarif
+# @test_path: tests/unit/tools/cicd/test_outputs.py
+
 """
 SARIF Output Generator
 ======================

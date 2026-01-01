@@ -1,0 +1,439 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Specification: cli_commands
+# ═══════════════════════════════════════════════════════════════════════════════
+# Generated: 2026-01-01T16:07:58.872279
+# Generator: brownfield-discovery
+# ═══════════════════════════════════════════════════════════════════════════════
+
+spec_id: cli-commands-v1
+name: cli_commands
+version: '1.0'
+status: as-built
+schema_version: '2.0'
+generated_at: '2026-01-01T16:07:58.872279'
+generated_by: brownfield-discovery
+description: Specification for src/agentforge/cli/commands
+components:
+- name: context
+  component_id: cli-commands-context
+  location: src/agentforge/cli/commands/context.py
+  test_location: tests/unit/tools/test_context_retrieval.py
+  description: 'Context retrieval command.
+
+
+    Tests and manages the context retrieval system for code intelligence.
+
+    Uses LSP and/or vector search to find relevant code context.'
+  entities:
+  - name: run_context
+    type: function
+    line_number: 19
+    description: Test context retrieval system.
+    methods: []
+    test_methods: []
+- name: contracts
+  component_id: cli-commands-contracts
+  location: src/agentforge/cli/commands/contracts.py
+  test_location: tests/unit/tools/test_contracts_execution_naming.py
+  description: Contract management commands - listing, checking, validation, exemptions.
+  entities:
+  - name: run_contracts
+    type: function
+    line_number: 12
+    description: Fallback for contracts without subcommand.
+    methods: []
+    test_methods: []
+  - name: run_contracts_list
+    type: function
+    line_number: 17
+    description: List all contracts.
+    methods: []
+    test_methods: []
+  - name: run_contracts_show
+    type: function
+    line_number: 82
+    description: Show contract details.
+    methods: []
+    test_methods: []
+  - name: run_contracts_check
+    type: function
+    line_number: 160
+    description: Run contract checks.
+    methods: []
+    test_methods: []
+  - name: run_contracts_init
+    type: function
+    line_number: 247
+    description: Initialize contract for repo.
+    methods: []
+    test_methods: []
+  - name: run_contracts_validate
+    type: function
+    line_number: 278
+    description: Validate contract files.
+    methods: []
+    test_methods: []
+  - name: run_exemptions
+    type: function
+    line_number: 332
+    description: Fallback for exemptions without subcommand.
+    methods: []
+    test_methods: []
+  - name: run_exemptions_list
+    type: function
+    line_number: 337
+    description: List all exemptions.
+    methods: []
+    test_methods: []
+  - name: run_exemptions_add
+    type: function
+    line_number: 414
+    description: Add a new exemption.
+    methods: []
+    test_methods: []
+  - name: run_exemptions_audit
+    type: function
+    line_number: 506
+    description: Audit exemptions.
+    methods: []
+    test_methods: []
+- name: ci
+  component_id: cli-commands-ci
+  location: src/agentforge/cli/commands/ci.py
+  test_location: tests/unit/tools/test_builtin_checks_architecture.py
+  description: 'CI/CD Integration command handlers.
+
+
+    Implements: ci run, ci baseline save/compare/stats, ci init'
+  entities:
+  - name: run_ci_check
+    type: function
+    line_number: 25
+    description: 'Run conformance checks in CI mode.
+
+
+      Returns exit code for CI integration.'
+    methods: []
+    test_methods: []
+  - name: run_baseline_save
+    type: function
+    line_number: 122
+    description: Save current violations as baseline.
+    methods: []
+    test_methods: []
+  - name: run_baseline_compare
+    type: function
+    line_number: 159
+    description: Compare current violations against baseline.
+    methods: []
+    test_methods: []
+  - name: run_baseline_stats
+    type: function
+    line_number: 223
+    description: Show baseline statistics.
+    methods: []
+    test_methods: []
+  - name: run_ci_init
+    type: function
+    line_number: 254
+    description: Generate CI workflow files for a platform.
+    methods: []
+    test_methods: []
+- name: bridge
+  component_id: cli-commands-bridge
+  location: src/agentforge/cli/commands/bridge.py
+  test_location: tests/unit/tools/bridge/test_registry.py
+  description: Bridge command implementation.
+  entities:
+  - name: run_bridge_generate
+    type: function
+    line_number: 17
+    description: Generate contracts from codebase profile.
+    methods: []
+    test_methods: []
+  - name: run_bridge_preview
+    type: function
+    line_number: 137
+    description: Preview what contracts would be generated.
+    methods: []
+    test_methods: []
+  - name: run_bridge_mappings
+    type: function
+    line_number: 153
+    description: List available pattern mappings.
+    methods: []
+    test_methods: []
+  - name: run_bridge_refresh
+    type: function
+    line_number: 202
+    description: Regenerate contracts from updated profile.
+    methods: []
+    test_methods: []
+  - name: run_bridge_diff
+    type: function
+    line_number: 218
+    description: Show diff between generated and existing contracts.
+    methods: []
+    test_methods: []
+- name: tdflow
+  component_id: cli-commands-tdflow
+  location: src/agentforge/cli/commands/tdflow.py
+  test_location: tests/unit/tools/tdflow/test_session.py
+  description: 'TDFLOW Command Handlers
+
+    =======================
+
+
+    Implementation of TDFLOW CLI commands.
+
+
+    Supports LLM-powered code generation when ANTHROPIC_API_KEY is set.'
+  entities:
+  - name: run_start
+    type: function
+    line_number: 35
+    description: "Start a new TDFLOW session.\n\nArgs:\n    spec_file: Path to specification.yaml\n\
+      \    framework: Test framework to use\n    coverage: Coverage threshold percentage"
+    methods: []
+    test_methods: []
+  - name: run_red
+    type: function
+    line_number: 81
+    description: "Execute RED phase.\n\nArgs:\n    component_name: Specific component\
+      \ or None for next pending"
+    methods: []
+    test_methods:
+    - test_run_red_no_session
+    - test_run_red_success
+  - name: run_green
+    type: function
+    line_number: 119
+    description: "Execute GREEN phase.\n\nArgs:\n    component_name: Specific component\
+      \ or None for current"
+    methods: []
+    test_methods:
+    - test_run_green_no_session
+    - test_run_green_no_red_component
+  - name: run_refactor
+    type: function
+    line_number: 159
+    description: "Execute REFACTOR phase.\n\nArgs:\n    component_name: Specific component\
+      \ or None for current"
+    methods: []
+    test_methods: []
+  - name: run_verify
+    type: function
+    line_number: 197
+    description: "Execute VERIFY phase.\n\nArgs:\n    component_name: Specific component\
+      \ or None for all"
+    methods: []
+    test_methods: []
+  - name: run_status
+    type: function
+    line_number: 230
+    description: Show current session status.
+    methods: []
+    test_methods: []
+  - name: run_resume
+    type: function
+    line_number: 268
+    description: Resume interrupted session.
+    methods: []
+    test_methods: []
+  - name: run_list
+    type: function
+    line_number: 282
+    description: List all TDFLOW sessions.
+    methods: []
+    test_methods: []
+- name: conformance
+  component_id: cli-commands-conformance
+  location: src/agentforge/cli/commands/conformance.py
+  test_location: tests/unit/tools/conformance/test_domain.py
+  description: 'Conformance tracking CLI commands.
+
+
+    Provides commands for managing per-repository conformance state:
+
+    - init: Initialize .agentforge/ directory
+
+    - check: Run conformance checks
+
+    - report: Show current conformance report
+
+    - violations: List, show, resolve, prune violations
+
+    - history: Show historical trends
+
+    - exemptions: Manage exemptions (redirect to existing exemptions command)'
+  entities:
+  - name: run_conformance
+    type: function
+    line_number: 43
+    description: Base conformance command - show help.
+    methods: []
+    test_methods:
+    - test_run_conformance_check_missing_check_id
+    - test_run_conformance_check_missing_file_path
+    - test_run_conformance_check_file_not_found
+  - name: run_conformance_init
+    type: function
+    line_number: 48
+    description: Initialize conformance tracking.
+    methods: []
+    test_methods: []
+  - name: run_conformance_check
+    type: function
+    line_number: 114
+    description: Run conformance checks.
+    methods: []
+    test_methods:
+    - test_run_conformance_check_missing_check_id
+    - test_run_conformance_check_missing_file_path
+    - test_run_conformance_check_file_not_found
+  - name: run_conformance_report
+    type: function
+    line_number: 169
+    description: Show current conformance report.
+    methods: []
+    test_methods: []
+  - name: run_conformance_violations
+    type: function
+    line_number: 197
+    description: Base violations command - show help.
+    methods: []
+    test_methods: []
+  - name: run_conformance_violations_list
+    type: function
+    line_number: 202
+    description: List violations.
+    methods: []
+    test_methods: []
+  - name: run_conformance_violations_show
+    type: function
+    line_number: 244
+    description: Show a specific violation.
+    methods: []
+    test_methods: []
+  - name: run_conformance_violations_resolve
+    type: function
+    line_number: 282
+    description: Mark a violation as resolved.
+    methods: []
+    test_methods: []
+  - name: run_conformance_violations_prune
+    type: function
+    line_number: 303
+    description: Remove old resolved/stale violations.
+    methods: []
+    test_methods: []
+  - name: run_conformance_history
+    type: function
+    line_number: 322
+    description: Show conformance history.
+    methods: []
+    test_methods: []
+- name: agent
+  component_id: cli-commands-agent
+  location: src/agentforge/cli/commands/agent.py
+  test_location: tests/unit/harness/test_enhanced_context.py
+  description: 'Agent Harness Command Implementations
+
+    =====================================
+
+
+    Implementation functions for agent CLI commands.
+
+    These functions are called by the Click commands in cli/click_commands/agent.py.'
+  entities:
+  - name: run_start
+    type: function
+    line_number: 75
+    description: Start a new agent session.
+    methods: []
+    test_methods: []
+  - name: run_status
+    type: function
+    line_number: 113
+    description: Show session status.
+    methods: []
+    test_methods: []
+  - name: run_resume
+    type: function
+    line_number: 152
+    description: Resume a paused session.
+    methods: []
+    test_methods: []
+  - name: run_pause
+    type: function
+    line_number: 171
+    description: Pause the current session.
+    methods: []
+    test_methods: []
+  - name: run_stop
+    type: function
+    line_number: 189
+    description: Stop and abort the current session.
+    methods: []
+    test_methods: []
+  - name: run_step
+    type: function
+    line_number: 212
+    description: Execute a single step.
+    methods: []
+    test_methods: []
+  - name: run_until_complete
+    type: function
+    line_number: 239
+    description: Run until completion or iteration limit.
+    methods: []
+    test_methods:
+    - test_run_until_complete_returns_result
+    - test_run_until_complete_respects_max_iterations
+    - test_run_until_complete_uses_config_max
+  - name: run_list
+    type: function
+    line_number: 266
+    description: List agent sessions.
+    methods: []
+    test_methods: []
+  - name: run_history
+    type: function
+    line_number: 325
+    description: Show execution history.
+    methods: []
+    test_methods: []
+  - name: run_cleanup
+    type: function
+    line_number: 354
+    description: Clean up old sessions.
+    methods: []
+    test_methods: []
+  - name: run_fix_violation
+    type: function
+    line_number: 373
+    description: "Fix a single violation using minimal context architecture.\n\nArgs:\n\
+      \    violation_id: Violation ID to fix\n    dry_run: Don't make actual changes\n\
+      \    verbose: Show detailed output\n    auto_commit: Auto-commit without approval"
+    methods: []
+    test_methods: []
+  - name: run_fix_violations_batch
+    type: function
+    line_number: 490
+    description: "Fix multiple violations in batch using minimal context architecture.\n\
+      \nArgs:\n    limit: Maximum violations to attempt\n    severity: Filter by severity\n\
+      \    dry_run: Don't make actual changes\n    verbose: Show detailed output"
+    methods: []
+    test_methods: []
+  - name: run_approve_commit
+    type: function
+    line_number: 582
+    description: Approve and apply pending commit.
+    methods: []
+    test_methods: []
+  - name: run_list_violations
+    type: function
+    line_number: 609
+    description: List violations that can be fixed.
+    methods: []
+    test_methods: []

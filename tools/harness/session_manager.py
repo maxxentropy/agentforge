@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/harness-v1.yaml
+# @spec_id: harness-v1
+# @component_id: tools-harness-session_manager
+# @test_path: tests/unit/harness/test_session_manager.py
+
 """
 Session Manager
 ===============

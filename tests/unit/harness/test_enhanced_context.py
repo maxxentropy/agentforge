@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/harness-minimal-context-v1.yaml
+# @spec_id: harness-minimal-context-v1
+# @component_id: harness-minimal_context-fix_workflow
+# @impl_path: tools/harness/minimal_context/fix_workflow.py
+
 """
 Tests for Enhanced Context Engineering
 ======================================
@@ -553,6 +558,68 @@ class TestPhaseMachine:
         success = machine.transition(Phase.COMPLETE, context)
         assert success
         assert machine.current_phase == Phase.COMPLETE
+
+    def test_analyze_to_implement_with_code_structure_fact(self):
+        """Test transition from ANALYZE to IMPLEMENT when code_structure fact exists.
+
+        This test verifies that the phase machine correctly transitions when
+        the success_condition (has_fact_of_type('code_structure')) is met.
+        This requires facts to be Fact objects, not dicts.
+        """
+        from agentforge.core.harness.minimal_context import Fact, FactCategory
+
+        machine = PhaseMachine()
+        machine._current_phase = Phase.ANALYZE
+        machine._steps_in_phase = 1
+
+        # Create a code_structure fact as a Fact object (not dict!)
+        code_structure_fact = Fact(
+            id="test_fact",
+            category=FactCategory.CODE_STRUCTURE,
+            statement="Function 'target' analyzed",
+            confidence=1.0,
+            source="precomputed",
+            step=0,
+        )
+
+        context = PhaseContext(
+            current_phase=Phase.ANALYZE,
+            steps_in_phase=1,
+            total_steps=1,
+            verification_passing=False,
+            tests_passing=False,
+            files_modified=[],
+            facts=[code_structure_fact],  # Must be Fact objects!
+        )
+
+        # Verify has_fact_of_type works
+        assert context.has_fact_of_type("code_structure"), \
+            "has_fact_of_type should find code_structure fact"
+
+        # Should be able to transition to IMPLEMENT
+        assert machine.can_transition(Phase.IMPLEMENT, context), \
+            "Should be able to transition to IMPLEMENT with code_structure fact"
+
+        # Auto-transition should suggest PLAN (then PLAN -> IMPLEMENT)
+        # The phase order is: ANALYZE -> PLAN -> IMPLEMENT
+        next_phase = machine.should_auto_transition(context)
+        assert next_phase == Phase.PLAN, \
+            f"should_auto_transition should return PLAN, got {next_phase}"
+
+        # After transitioning to PLAN, should be able to go to IMPLEMENT
+        machine.transition(Phase.PLAN, context)
+        plan_context = PhaseContext(
+            current_phase=Phase.PLAN,
+            steps_in_phase=0,
+            total_steps=2,
+            verification_passing=False,
+            tests_passing=False,
+            files_modified=[],
+            facts=[code_structure_fact],
+        )
+        next_phase = machine.should_auto_transition(plan_context)
+        assert next_phase == Phase.IMPLEMENT, \
+            f"From PLAN, should_auto_transition should return IMPLEMENT, got {next_phase}"
 
     def test_max_steps_triggers_auto_transition(self):
         """Test auto-transition when max steps exceeded."""
@@ -2137,6 +2204,149 @@ class TestValueHintsPopulation:
         # Actions should have no value hints
         for action in context.actions.available:
             assert action.value_hints == {}
+
+    def test_user_message_displays_value_hints(self, tmp_path):
+        """Test that value hints are displayed in user message with USE: format.
+
+        This test verifies the fix for the bug where value_hints were populated
+        but not displayed in the user message, causing the LLM to guess parameter names.
+        """
+        from agentforge.core.harness.minimal_context import (
+            TaskStateStore,
+            EnhancedContextBuilder,
+        )
+        from agentforge.core.harness.minimal_context.phase_machine import (
+            PhaseMachine,
+            Phase,
+        )
+
+        store = TaskStateStore(tmp_path)
+        builder = EnhancedContextBuilder(tmp_path, store)
+
+        # Create task with precomputed context including file_path
+        task = store.create_task(
+            task_type="fix_violation",
+            goal="Test value hints display",
+            success_criteria=["Pass"],
+            context_data={
+                "file_path": "tools/test_file.py",
+                "line_number": 42,
+                "precomputed": {
+                    "file_path": "tools/test_file.py",
+                    "extraction_candidates": [
+                        {
+                            "start_line": 10,
+                            "end_line": 25,
+                            "suggested_name": "_helper_func",
+                            "source_function": "main_func",
+                        }
+                    ],
+                },
+            },
+        )
+
+        # Set to IMPLEMENT phase where extract_function is available
+        machine = PhaseMachine()
+        machine._current_phase = Phase.IMPLEMENT
+        task.set_phase_machine(machine)
+        store._save_state(task)
+
+        # Build messages
+        messages = builder.build_messages(task.task_id)
+        user_message = messages[1]["content"]
+
+        # Verify value hints are displayed with USE: format
+        assert "# USE:" in user_message, "Value hints should be displayed with '# USE:' format"
+        assert "tools/test_file.py" in user_message, "File path hint should be in message"
+
+    def test_domain_context_from_root_level_fields(self, tmp_path):
+        """Test that domain_context is extracted from root-level fields.
+
+        This test verifies the fix for the bug where context_data with fields
+        at the root level (not nested under 'violation') was not being extracted.
+        """
+        from agentforge.core.harness.minimal_context import (
+            TaskStateStore,
+            EnhancedContextBuilder,
+        )
+        from agentforge.core.harness.minimal_context.phase_machine import (
+            PhaseMachine,
+        )
+
+        store = TaskStateStore(tmp_path)
+        builder = EnhancedContextBuilder(tmp_path, store)
+
+        # Create task with NEW format: fields at root level (not nested under 'violation')
+        task = store.create_task(
+            task_type="fix_violation",
+            goal="Test domain context extraction",
+            success_criteria=["Pass"],
+            context_data={
+                # Fields at root level (new format from fix_workflow.py)
+                "file_path": "tools/harness/target.py",
+                "line_number": 51,
+                "check_id": "max-cyclomatic-complexity",
+                "severity": "warning",
+                "precomputed": {
+                    "function_source": "def target_func(): pass",
+                },
+            },
+        )
+
+        machine = PhaseMachine()
+        task.set_phase_machine(machine)
+        store._save_state(task)
+
+        # Build context
+        context = builder.build_from_task_state(task.task_id)
+
+        # Domain context should have the root-level fields
+        assert context.domain_context.get("file_path") == "tools/harness/target.py"
+        assert context.domain_context.get("line_number") == 51
+        assert context.domain_context.get("check_id") == "max-cyclomatic-complexity"
+
+        # precomputed should be separate
+        assert "precomputed" not in context.domain_context
+
+    def test_domain_context_backward_compatible_with_nested_format(self, tmp_path):
+        """Test that domain_context still works with OLD nested 'violation' format."""
+        from agentforge.core.harness.minimal_context import (
+            TaskStateStore,
+            EnhancedContextBuilder,
+        )
+        from agentforge.core.harness.minimal_context.phase_machine import (
+            PhaseMachine,
+        )
+
+        store = TaskStateStore(tmp_path)
+        builder = EnhancedContextBuilder(tmp_path, store)
+
+        # Create task with OLD format: fields nested under 'violation' key
+        task = store.create_task(
+            task_type="fix_violation",
+            goal="Test backward compat",
+            success_criteria=["Pass"],
+            context_data={
+                "violation": {
+                    "file_path": "old/format/file.py",
+                    "line_number": 100,
+                    "rule": "old-rule",
+                },
+                "precomputed": {},
+            },
+        )
+
+        machine = PhaseMachine()
+        task.set_phase_machine(machine)
+        store._save_state(task)
+
+        # Build context
+        context = builder.build_from_task_state(task.task_id)
+
+        # Domain context should have the nested fields (backward compat)
+        assert context.domain_context.get("file_path") == "old/format/file.py"
+        assert context.domain_context.get("line_number") == 100
+        assert context.domain_context.get("rule") == "old-rule"
 
 
 class TestSchemaVersioning:

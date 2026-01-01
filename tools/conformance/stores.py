@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/conformance-v1.yaml
+# @spec_id: conformance-v1
+# @component_id: tools-conformance-stores
+# @test_path: tests/unit/tools/conformance/test_stores.py
+
 """
 Conformance Storage Infrastructure
 ==================================

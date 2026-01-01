@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/cli-click-commands-v1.yaml
+# @spec_id: cli-click-commands-v1
+# @component_id: cli-click_commands-generate
+# @test_path: tests/unit/tools/cicd/test_outputs.py
+
 """
 Generate CLI Commands
 =====================

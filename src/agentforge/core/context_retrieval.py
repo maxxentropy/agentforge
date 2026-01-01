@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+
+# @spec_file: .agentforge/specs/core-v1.yaml
+# @spec_id: core-v1
+# @component_id: agentforge-core-context_retrieval
+# @test_path: tests/unit/tools/test_context_retrieval.py
+
 """
 Context Retrieval System
 ========================

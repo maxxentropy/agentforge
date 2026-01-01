@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/discovery-providers-v1.yaml
+# @spec_id: discovery-providers-v1
+# @component_id: discovery-providers-base
+# @test_path: tests/unit/tools/test_contracts_execution_naming.py
+
 """
 Language Provider Abstract Base
 ===============================

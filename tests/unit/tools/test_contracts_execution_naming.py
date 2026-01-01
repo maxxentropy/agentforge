@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/refactoring-v1.yaml
+# @spec_id: refactoring-v1
+# @component_id: tools-refactoring-base
+# @impl_path: tools/refactoring/base.py
+
 """Tests for naming and AST interface check handlers in contracts_execution.py."""
 
 import pytest

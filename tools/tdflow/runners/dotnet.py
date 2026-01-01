@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/tdflow-runners-v1.yaml
+# @spec_id: tdflow-runners-v1
+# @component_id: tdflow-runners-dotnet
+# @test_path: tests/unit/tools/tdflow/runners/test_dotnet.py
+
 """
 DotNet Test Runner
 ==================

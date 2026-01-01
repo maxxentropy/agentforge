@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/harness-v1.yaml
+# @spec_id: harness-v1
+# @component_id: tools-harness-agent_prompt_builder
+# @impl_path: tools/harness/agent_prompt_builder.py
+
 """Tests for Agent Prompt Builder."""
 
 import pytest

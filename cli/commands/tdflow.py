@@ -3,12 +3,33 @@ TDFLOW Command Handlers
 =======================
 
 Implementation of TDFLOW CLI commands.
+
+Supports LLM-powered code generation when ANTHROPIC_API_KEY is set.
 """
 
+import os
 from pathlib import Path
 from typing import Optional
 
 import click
+
+
+def _get_generator() -> Optional["GenerationEngine"]:
+    """
+    Get a generation engine if API key is available.
+
+    Returns:
+        GenerationEngine if ANTHROPIC_API_KEY is set, else None
+    """
+    if not os.environ.get("ANTHROPIC_API_KEY"):
+        return None
+
+    try:
+        from tools.generate.engine import GenerationEngine
+
+        return GenerationEngine()
+    except ImportError:
+        return None
 
 
 def run_start(spec_file: Path, framework: str, coverage: float) -> None:
@@ -22,7 +43,8 @@ def run_start(spec_file: Path, framework: str, coverage: float) -> None:
     """
     from tools.tdflow.orchestrator import TDFlowOrchestrator
 
-    orchestrator = TDFlowOrchestrator()
+    generator = _get_generator()
+    orchestrator = TDFlowOrchestrator(generator=generator)
 
     try:
         session = orchestrator.start(
@@ -38,6 +60,13 @@ def run_start(spec_file: Path, framework: str, coverage: float) -> None:
         click.echo(f"Spec: {spec_file}")
         click.echo(f"Framework: {framework}")
         click.echo(f"Coverage Target: {coverage}%")
+
+        # Show generation mode
+        if generator:
+            click.echo(click.style("Generation: LLM-powered (Claude API)", fg="green"))
+        else:
+            click.echo(click.style("Generation: Template-based (set ANTHROPIC_API_KEY for LLM)", fg="yellow"))
+
         click.echo()
         click.echo(f"Components: {len(session.components)}")
         for comp in session.components:
@@ -58,7 +87,8 @@ def run_red(component_name: Optional[str]) -> None:
     """
     from tools.tdflow.orchestrator import TDFlowOrchestrator
 
-    orchestrator = TDFlowOrchestrator()
+    generator = _get_generator()
+    orchestrator = TDFlowOrchestrator(generator=generator)
 
     if not orchestrator.session:
         click.echo("No active session. Run 'agentforge tdflow start' first.", err=True)
@@ -95,7 +125,8 @@ def run_green(component_name: Optional[str]) -> None:
     """
     from tools.tdflow.orchestrator import TDFlowOrchestrator
 
-    orchestrator = TDFlowOrchestrator()
+    generator = _get_generator()
+    orchestrator = TDFlowOrchestrator(generator=generator)
 
     if not orchestrator.session:
         click.echo("No active session. Run 'agentforge tdflow start' first.", err=True)
@@ -134,7 +165,8 @@ def run_refactor(component_name: Optional[str]) -> None:
     """
     from tools.tdflow.orchestrator import TDFlowOrchestrator
 
-    orchestrator = TDFlowOrchestrator()
+    generator = _get_generator()
+    orchestrator = TDFlowOrchestrator(generator=generator)
 
     if not orchestrator.session:
         click.echo("No active session. Run 'agentforge tdflow start' first.", err=True)

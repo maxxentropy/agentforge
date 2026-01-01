@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/harness-v1.yaml
+# @spec_id: harness-v1
+# @component_id: tools-harness-session_store
+# @impl_path: tools/harness/session_store.py
+
 """
 Unit tests for SessionManager application service.
 

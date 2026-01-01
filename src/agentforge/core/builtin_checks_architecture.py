@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/core-v1.yaml
+# @spec_id: core-v1
+# @component_id: agentforge-core-builtin_checks_architecture
+# @test_path: tests/unit/tools/test_builtin_checks_architecture.py
+
 """
 Architecture-related builtin checks for AgentForge contracts.
 

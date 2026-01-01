@@ -1,0 +1,38 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Specification: cicd_platforms
+# ═══════════════════════════════════════════════════════════════════════════════
+# Generated: 2026-01-01T16:08:00.332673
+# Generator: brownfield-discovery
+# ═══════════════════════════════════════════════════════════════════════════════
+
+spec_id: cicd-platforms-v1
+name: cicd_platforms
+version: '1.0'
+status: as-built
+schema_version: '2.0'
+generated_at: '2026-01-01T16:08:00.332673'
+generated_by: brownfield-discovery
+description: Specification for tools/cicd/platforms
+components:
+- name: github
+  component_id: cicd-platforms-github
+  location: tools/cicd/platforms/github.py
+  test_location: tests/unit/tools/cicd/test_outputs.py
+  description: 'GitHub Actions Integration
+
+    ==========================
+
+
+    GitHub-specific CI/CD integration including workflow templates
+
+    and PR comment generation.'
+  entities:
+  - name: generate_github_pr_comment_body
+    type: function
+    line_number: 141
+    description: 'Format markdown content for GitHub PR comment.
+
+
+      Ensures the content includes the marker for finding/updating comments.'
+    methods: []
+    test_methods: []

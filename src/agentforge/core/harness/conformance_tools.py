@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/core-harness-v1.yaml
+# @spec_id: core-harness-v1
+# @component_id: core-harness-conformance_tools
+# @test_path: tests/unit/harness/test_selfhosting_tools.py
+
 """
 Conformance Tools
 =================

@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+
+# @spec_file: .agentforge/specs/tools-v1.yaml
+# @spec_id: tools-v1
+# @component_id: tools-verification_checks
+# @test_path: tests/unit/tools/test_verification_checks.py
+
 """
 Verification Check Implementations - command, regex, file_exists, import, custom, contracts, lsp, ast.
 Extracted from verification_runner.py for modularity.

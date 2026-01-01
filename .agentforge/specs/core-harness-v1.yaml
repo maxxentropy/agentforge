@@ -1,0 +1,1093 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Specification: core_harness
+# ═══════════════════════════════════════════════════════════════════════════════
+# Generated: 2026-01-01T16:08:00.342929
+# Generator: brownfield-discovery
+# ═══════════════════════════════════════════════════════════════════════════════
+
+spec_id: core-harness-v1
+name: core_harness
+version: '1.0'
+status: as-built
+schema_version: '2.0'
+generated_at: '2026-01-01T16:08:00.342929'
+generated_by: brownfield-discovery
+description: Specification for src/agentforge/core/harness
+components:
+- name: llm_executor
+  component_id: core-harness-llm_executor
+  location: src/agentforge/core/harness/llm_executor.py
+  test_location: tests/unit/harness/test_action_parser.py
+  description: 'LLM Executor
+
+    ============
+
+
+    Executes agent steps by calling the LLM and processing actions.
+
+    This is the core component that enables the Agent Harness to actually run.'
+  entities:
+  - name: LLMExecutor
+    type: class
+    line_number: 31
+    description: 'Executes agent steps via LLM calls.
+
+
+      This component:
+
+      1. Builds prompts from execution context
+
+      2. Calls the LLM to decide on actions
+
+      3. Parses LLM responses into actions
+
+      4. Executes tool calls
+
+      5. Updates context with results'
+    methods:
+    - register_tool
+    - register_tools
+    - execute_step
+    - run_until_complete
+    test_methods: []
+  - name: create_default_executor
+    type: function
+    line_number: 308
+    description: "Create an LLM executor with default configuration.\n\nArgs:\n  \
+      \  tool_executors: Optional dict of tool executors\n    model: Model to use\n\
+      \nReturns:\n    Configured LLMExecutor"
+    methods: []
+    test_methods: []
+- name: action_parser
+  component_id: core-harness-action_parser
+  location: src/agentforge/core/harness/action_parser.py
+  test_location: tests/unit/harness/test_action_parser.py
+  description: 'Action Parser
+
+    =============
+
+
+    Parses LLM responses to extract agent actions.
+
+    Handles XML-structured responses from the agent prompt format.'
+  entities:
+  - name: ActionParser
+    type: class
+    line_number: 21
+    description: Parses LLM responses into AgentAction objects.
+    methods:
+    - parse
+    - parse_lenient
+    test_methods: []
+- name: llm_executor_domain
+  component_id: core-harness-llm_executor_domain
+  location: src/agentforge/core/harness/llm_executor_domain.py
+  test_location: tests/unit/harness/test_action_parser.py
+  description: 'LLM Executor Domain Model
+
+    =========================
+
+
+    Domain entities for the Agent Harness LLM Executor.
+
+    Defines the structures for agent actions, tool calls, and execution context.'
+  entities:
+  - name: ActionType
+    type: enum
+    line_number: 15
+    description: Types of actions an agent can take.
+    methods: []
+    test_methods: []
+  - name: ToolCategory
+    type: enum
+    line_number: 26
+    description: Categories of tools available to agents.
+    methods: []
+    test_methods: []
+  - name: ToolCall
+    type: dataclass
+    line_number: 39
+    description: A request to execute a specific tool.
+    methods:
+    - to_dict
+    - from_dict
+    test_methods: []
+  - name: ToolResult
+    type: dataclass
+    line_number: 92
+    description: Result of executing a tool.
+    methods:
+    - success_result
+    - failure_result
+    - to_dict
+    - from_dict
+    test_methods: []
+  - name: AgentAction
+    type: dataclass
+    line_number: 148
+    description: An action decided by the agent.
+    methods:
+    - tool_action
+    - think_action
+    - respond_action
+    - complete_action
+    - escalate_action
+    - to_dict
+    - from_dict
+    test_methods: []
+  - name: ConversationMessage
+    type: dataclass
+    line_number: 223
+    description: A message in the agent conversation history.
+    methods:
+    - user_message
+    - assistant_message
+    - tool_result_message
+    - to_dict
+    - from_dict
+    test_methods: []
+  - name: ExecutionContext
+    type: dataclass
+    line_number: 278
+    description: Context for agent execution step.
+    methods:
+    - tokens_remaining
+    - recent_messages
+    - add_user_message
+    - add_assistant_message
+    - add_tool_results
+    - to_dict
+    - from_dict
+    test_methods: []
+  - name: StepResult
+    type: dataclass
+    line_number: 352
+    description: Result of executing one agent step.
+    methods:
+    - success_step
+    - failure_step
+    - to_dict
+    - from_dict
+    test_methods: []
+  - name: TokenUsage
+    type: dataclass
+    line_number: 425
+    description: Token usage tracking for LLM calls.
+    methods:
+    - total_tokens
+    - to_dict
+    - from_dict
+    test_methods: []
+  - name: LLMExecutorError
+    type: class
+    line_number: 454
+    description: Base exception for LLM executor errors.
+    methods: []
+    test_methods: []
+  - name: ActionParseError
+    type: class
+    line_number: 463
+    description: Error parsing agent action from LLM response.
+    methods: []
+    test_methods: []
+  - name: ToolExecutionError
+    type: class
+    line_number: 471
+    description: Error executing a tool.
+    methods: []
+    test_methods: []
+- name: monitor_domain
+  component_id: core-harness-monitor_domain
+  location: src/agentforge/core/harness/monitor_domain.py
+  test_location: tests/unit/harness/test_monitor_domain.py
+  description: ''
+  entities:
+  - name: ObservationType
+    type: enum
+    line_number: 12
+    description: ''
+    methods: []
+    test_methods: []
+  - name: Observation
+    type: dataclass
+    line_number: 21
+    description: ''
+    methods: []
+    test_methods:
+    - test_observation_type_has_all_required_values
+    - test_observation_creation_with_required_fields
+    - test_observation_creation_with_context
+    - test_get_recent_observations_count_limit
+    - test_get_recent_observations_type_filter
+  - name: HealthStatus
+    type: enum
+    line_number: 28
+    description: ''
+    methods: []
+    test_methods: []
+  - name: Recommendation
+    type: enum
+    line_number: 34
+    description: ''
+    methods: []
+    test_methods:
+    - test_recommendation_has_all_required_values
+  - name: LoopDetection
+    type: dataclass
+    line_number: 42
+    description: ''
+    methods: []
+    test_methods: []
+  - name: ThrashingDetection
+    type: dataclass
+    line_number: 54
+    description: ''
+    methods: []
+    test_methods: []
+  - name: AgentHealth
+    type: dataclass
+    line_number: 66
+    description: ''
+    methods: []
+    test_methods: []
+- name: recovery_domain
+  component_id: core-harness-recovery_domain
+  location: src/agentforge/core/harness/recovery_domain.py
+  test_location: tests/unit/harness/test_checkpoint_manager.py
+  description: Domain entities for recovery operations.
+  entities:
+  - name: RecoveryAction
+    type: enum
+    line_number: 14
+    description: Types of recovery actions.
+    methods: []
+    test_methods: []
+  - name: RecoveryResult
+    type: enum
+    line_number: 25
+    description: Outcome of a recovery attempt.
+    methods: []
+    test_methods: []
+  - name: Checkpoint
+    type: dataclass
+    line_number: 34
+    description: Saved state snapshot.
+    methods: []
+    test_methods:
+    - test_init_with_custom_max_checkpoints_sets_limit
+    - test_create_checkpoint_with_minimal_params_returns_checkpoint
+    - test_create_checkpoint_with_all_params_returns_complete_checkpoint
+    - test_create_checkpoint_generates_unique_ids
+    - test_create_checkpoint_saves_to_storage
+    - test_create_checkpoint_with_nonexistent_files_skips_them
+    - test_restore_checkpoint_with_valid_id_returns_true
+    - test_restore_checkpoint_with_invalid_id_returns_false
+    - test_restore_checkpoint_restores_backed_up_files
+    - test_restore_checkpoint_handles_restore_errors
+    - test_list_checkpoints_without_session_returns_all
+    - test_list_checkpoints_with_session_filters_correctly
+    - test_list_checkpoints_with_nonexistent_session_returns_empty
+    - test_list_checkpoints_returns_sorted_by_timestamp
+    - test_get_checkpoint_with_valid_id_returns_checkpoint
+    - test_get_checkpoint_with_invalid_id_returns_none
+    - test_delete_checkpoint_with_valid_id_returns_true
+    - test_delete_checkpoint_removes_from_storage
+    - test_delete_checkpoint_removes_backup_files
+    - test_delete_checkpoint_with_invalid_id_returns_false
+    - test_cleanup_old_checkpoints_keeps_recent_within_limit
+    - test_cleanup_old_checkpoints_only_affects_specified_session
+    - test_cleanup_old_checkpoints_with_no_excess_does_nothing
+    - test_full_checkpoint_lifecycle
+    - test_concurrent_checkpoint_operations
+    - test_checkpoint_creation_with_required_fields
+    - test_checkpoint_creation_with_optional_description
+    - test_checkpoint_state_can_be_complex_dict
+    - test_checkpoint_file_backups_can_be_empty_list
+    - test_init_with_checkpoint_manager_and_policies
+    - test_execute_action_checkpoint_calls_checkpoint_method
+    - test_checkpoint_creates_checkpoint_successfully
+    - test_checkpoint_handles_creation_failure
+    - test_rollback_restores_last_checkpoint_successfully
+    - test_rollback_fails_when_no_checkpoints_available
+  - name: RecoveryAttempt
+    type: dataclass
+    line_number: 46
+    description: Record of a recovery operation.
+    methods: []
+    test_methods: []
+  - name: RecoveryPolicy
+    type: dataclass
+    line_number: 57
+    description: Rules for when to apply recovery actions.
+    methods: []
+    test_methods: []
+- name: checkpoint_manager
+  component_id: core-harness-checkpoint_manager
+  location: src/agentforge/core/harness/checkpoint_manager.py
+  test_location: tests/unit/harness/test_checkpoint_manager.py
+  description: Checkpoint manager for state snapshots and rollback capability.
+  entities:
+  - name: CheckpointManager
+    type: class
+    line_number: 18
+    description: Manages state checkpoints for rollback capability.
+    methods:
+    - create_checkpoint
+    - restore_checkpoint
+    - list_checkpoints
+    - get_checkpoint
+    - delete_checkpoint
+    - cleanup_old_checkpoints
+    test_methods: []
+- name: memory_domain
+  component_id: core-harness-memory_domain
+  location: src/agentforge/core/harness/memory_domain.py
+  test_location: tests/unit/harness/test_memory_domain.py
+  description: Domain entities for the memory system.
+  entities:
+  - name: MemoryTier
+    type: enum
+    line_number: 13
+    description: Enumeration of memory tiers in the hierarchy.
+    methods: []
+    test_methods: []
+  - name: MemoryEntry
+    type: class
+    line_number: 21
+    description: A memory entry with key, value, timestamp, and optional metadata.
+    methods:
+    - create
+    - is_expired
+    - timestamp
+    - to_dict
+    - from_dict
+    test_methods: []
+- name: escalation_domain
+  component_id: core-harness-escalation_domain
+  location: src/agentforge/core/harness/escalation_domain.py
+  test_location: tests/unit/harness/test_escalation_domain.py
+  description: Domain entities for human escalation operations.
+  entities:
+  - name: EscalationPriority
+    type: enum
+    line_number: 14
+    description: Urgency level for escalations.
+    methods: []
+    test_methods: []
+  - name: EscalationStatus
+    type: enum
+    line_number: 22
+    description: Current status of an escalation.
+    methods: []
+    test_methods: []
+  - name: EscalationChannel
+    type: enum
+    line_number: 32
+    description: Channels for human notification.
+    methods: []
+    test_methods: []
+  - name: ResolutionType
+    type: enum
+    line_number: 40
+    description: How an escalation was resolved.
+    methods: []
+    test_methods: []
+  - name: Escalation
+    type: dataclass
+    line_number: 50
+    description: A request for human intervention.
+    methods: []
+    test_methods:
+    - test_escalation_priority_has_all_required_values
+    - test_escalation_priority_values_are_accessible
+    - test_escalation_priority_ordering
+    - test_escalation_status_has_all_required_values
+    - test_escalation_status_values_are_accessible
+    - test_escalation_channel_has_all_required_values
+    - test_escalation_channel_values_are_accessible
+    - test_escalation_creation_with_required_fields
+    - test_escalation_creation_with_optional_fields
+    - test_escalation_context_can_be_complex_dict
+    - test_escalation_supports_all_priority_levels
+    - test_escalation_supports_all_status_values
+    - test_escalation_resolution_creation_with_required_fields
+    - test_escalation_resolution_creation_with_optional_fields
+    - test_escalation_resolution_supports_all_resolution_types
+    - test_escalation_rule_creation_with_required_fields
+    - test_escalation_rule_creation_with_custom_timeout
+    - test_escalation_rule_supports_multiple_triggers
+    - test_escalation_rule_supports_multiple_channels
+    - test_escalation_rule_empty_triggers_allowed
+    - test_execute_step_checks_for_escalations
+    - test_get_status_includes_pending_escalations
+    - test_handle_escalation_returns_true_on_success
+    - test_handle_escalation_returns_false_for_nonexistent_session
+    - test_notify_cli_prints_escalation_info
+    - test_format_escalation_text_format
+    - test_format_escalation_json_format
+    - test_format_escalation_markdown_format
+    - test_format_escalation_default_is_text
+    - test_create_escalation_with_minimal_params
+    - test_create_escalation_with_all_params
+    - test_create_escalation_generates_unique_ids
+    - test_create_escalation_persists_to_storage
+    - test_create_escalation_sets_created_at_timestamp
+    - test_acknowledge_escalation_returns_true
+    - test_acknowledge_escalation_updates_status
+    - test_acknowledge_escalation_with_acknowledged_by
+    - test_acknowledge_nonexistent_escalation_returns_false
+    - test_resolve_escalation_returns_resolution
+    - test_resolve_escalation_updates_status
+    - test_resolve_escalation_with_notes
+    - test_resolve_escalation_with_resolved_by
+    - test_resolve_escalation_supports_all_resolution_types
+    - test_get_escalation_returns_escalation
+    - test_get_escalation_nonexistent_returns_none
+    - test_list_escalations_returns_all
+    - test_list_escalations_filter_by_session
+    - test_list_escalations_filter_by_status
+    - test_list_escalations_filter_by_priority
+    - test_get_pending_escalations_returns_only_pending
+    - test_get_pending_escalations_filter_by_session
+    - test_check_timeouts_expires_old_escalations
+    - test_cancel_escalation_returns_true
+    - test_cancel_escalation_updates_status
+    - test_cancel_nonexistent_escalation_returns_false
+    - test_cancel_resolved_escalation_returns_false
+    - test_full_escalation_lifecycle
+  - name: EscalationResolution
+    type: dataclass
+    line_number: 66
+    description: Human's response to an escalation.
+    methods: []
+    test_methods: []
+  - name: EscalationRule
+    type: dataclass
+    line_number: 77
+    description: Rules for when to trigger escalation.
+    methods: []
+    test_methods: []
+- name: git_tools
+  component_id: core-harness-git_tools
+  location: src/agentforge/core/harness/git_tools.py
+  test_location: tests/unit/harness/test_selfhosting_tools.py
+  description: 'Git Tools
+
+    =========
+
+
+    Tools for Git operations with safety guardrails.'
+  entities:
+  - name: GitTools
+    type: class
+    line_number: 15
+    description: 'Git tools with safety constraints.
+
+
+      Only allows:
+
+      - Status, diff, log (read operations)
+
+      - Add, commit (with message validation)
+
+      - Never push, force, or destructive operations'
+    methods:
+    - git_status
+    - git_diff
+    - git_log
+    - git_add
+    - git_commit
+    - get_pending_commit
+    - clear_pending_commit
+    - apply_pending_commit
+    - get_tool_executors
+    test_methods: []
+- name: conformance_tools
+  component_id: core-harness-conformance_tools
+  location: src/agentforge/core/harness/conformance_tools.py
+  test_location: tests/unit/harness/test_selfhosting_tools.py
+  description: 'Conformance Tools
+
+    =================
+
+
+    Tools for running conformance checks and verifying fixes.
+
+
+    Key improvements in this version:
+
+    - `run_conformance_check`: Directly runs a specific check by ID (fast, structured)
+
+    - `get_check_definition`: Returns the check definition so agent understands requirements
+
+    - Original tools preserved for backwards compatibility'
+  entities:
+  - name: ConformanceTools
+    type: class
+    line_number: 31
+    description: 'Tools for conformance checking.
+
+
+      Enables agent to verify that fixes resolve violations.'
+    methods:
+    - check_file
+    - verify_violation_fixed
+    - run_full_check
+    - run_conformance_check
+    - get_check_definition
+    - get_tool_executors
+    test_methods: []
+- name: violation_tools
+  component_id: core-harness-violation_tools
+  location: src/agentforge/core/harness/violation_tools.py
+  test_location: tests/unit/harness/test_selfhosting_tools.py
+  description: 'Violation Tools
+
+    ===============
+
+
+    Tools for reading and managing conformance violations.
+
+    These tools enable the agent to understand and fix violations.'
+  entities:
+  - name: ViolationInfo
+    type: dataclass
+    line_number: 19
+    description: Parsed violation information.
+    methods:
+    - to_summary
+    - to_dict
+    - from_dict
+    test_methods: []
+  - name: ViolationTools
+    type: class
+    line_number: 71
+    description: 'Tools for working with conformance violations.
+
+
+      Provides read-only access to violation data for the agent.'
+    methods:
+    - read_violation
+    - list_violations
+    - get_violation_context
+    - get_tool_executors
+    test_methods: []
+- name: tool_executor_bridge
+  component_id: core-harness-tool_executor_bridge
+  location: src/agentforge/core/harness/tool_executor_bridge.py
+  test_location: tests/unit/harness/test_tool_executor_bridge.py
+  description: 'Tool Executor Bridge
+
+    ====================
+
+
+    Bridges the gap between the Agent Harness tool system and the LLM Executor.
+
+    Converts tool definitions into executable functions.'
+  entities:
+  - name: ToolExecutorBridge
+    type: class
+    line_number: 21
+    description: 'Creates executable tool functions from tool definitions.
+
+
+      This bridge provides default implementations for common tools
+
+      and allows custom tool registration.'
+    methods:
+    - register_custom_tool
+    - get_default_executors
+    test_methods: []
+  - name: create_tool_bridge
+    type: function
+    line_number: 283
+    description: "Factory function to create a tool executor bridge.\n\nArgs:\n  \
+      \  working_dir: Optional working directory\n\nReturns:\n    Configured ToolExecutorBridge"
+    methods: []
+    test_methods: []
+- name: agent_monitor
+  component_id: core-harness-agent_monitor
+  location: src/agentforge/core/harness/agent_monitor.py
+  test_location: tests/unit/harness/test_agent_monitor.py
+  description: ''
+  entities:
+  - name: MonitorConfig
+    type: class
+    line_number: 17
+    description: ''
+    methods: []
+    test_methods: []
+  - name: AgentMonitor
+    type: class
+    line_number: 33
+    description: ''
+    methods:
+    - observe_action
+    - observe_output
+    - observe_verification
+    - observe_state_change
+    - observe_error
+    - detect_loop
+    - detect_drift
+    - detect_thrashing
+    - get_context_pressure
+    - get_progress_score
+    - get_health
+    - clear_history
+    - get_recent_observations
+    test_methods: []
+- name: tool_registry
+  component_id: core-harness-tool_registry
+  location: src/agentforge/core/harness/tool_registry.py
+  test_location: tests/unit/harness/test_tool_registry.py
+  description: ''
+  entities:
+  - name: DuplicateToolError
+    type: class
+    line_number: 13
+    description: Raised when registering a tool with an existing name.
+    methods: []
+    test_methods: []
+  - name: ToolRegistry
+    type: class
+    line_number: 18
+    description: Central registry for tool definitions and profiles.
+    methods:
+    - register_tool
+    - register_profile
+    - register_domain_tools
+    - get_tool
+    - get_profile
+    - list_tools
+    - list_profiles
+    - get_base_tools
+    - get_domain_tools
+    - load_from_yaml
+    - save_to_yaml
+    test_methods: []
+- name: tool_domain
+  component_id: core-harness-tool_domain
+  location: src/agentforge/core/harness/tool_domain.py
+  test_location: tests/unit/harness/test_tool_registry.py
+  description: Domain entities for tool definitions and profiles.
+  entities:
+  - name: ToolDefinition
+    type: dataclass
+    line_number: 13
+    description: Definition of a single tool available to agents.
+    methods:
+    - to_dict
+    - from_dict
+    test_methods: []
+  - name: ToolProfile
+    type: dataclass
+    line_number: 48
+    description: Collection of tools for a specific workflow phase.
+    methods:
+    - to_dict
+    - from_dict
+    test_methods: []
+  - name: DomainTools
+    type: dataclass
+    line_number: 79
+    description: Domain-specific tool set (Python, .NET, TypeScript).
+    methods:
+    - to_dict
+    - from_dict
+    test_methods: []
+- name: session_domain
+  component_id: core-harness-session_domain
+  location: src/agentforge/core/harness/session_domain.py
+  test_location: tests/unit/harness/test_agent_orchestrator.py
+  description: 'Session Domain Model
+
+    ====================
+
+
+    Domain entities for the Agent Harness session management.
+
+    Follows patterns from tools/tdflow/domain.py.'
+  entities:
+  - name: SessionState
+    type: enum
+    line_number: 16
+    description: Session lifecycle states.
+    methods: []
+    test_methods: []
+  - name: TokenBudget
+    type: dataclass
+    line_number: 26
+    description: 'Tracks token consumption against allocated budget.
+
+
+      Provides budget monitoring and extension capabilities.'
+    methods:
+    - tokens_remaining
+    - utilization_percent
+    - is_warning
+    - can_continue
+    - record_usage
+    - extend
+    test_methods: []
+  - name: SessionArtifact
+    type: dataclass
+    line_number: 67
+    description: Represents a file created or modified during session execution.
+    methods: []
+    test_methods: []
+  - name: SessionHistory
+    type: dataclass
+    line_number: 79
+    description: A history entry tracking a significant session event.
+    methods: []
+    test_methods: []
+  - name: SessionContext
+    type: dataclass
+    line_number: 91
+    description: 'Main session entity containing all session state and metadata.
+
+
+      This is the primary domain object managed by SessionManager.'
+    methods:
+    - create
+    - add_artifact
+    - get_artifacts
+    - add_history
+    test_methods: []
+- name: agent_orchestrator
+  component_id: core-harness-agent_orchestrator
+  location: src/agentforge/core/harness/agent_orchestrator.py
+  test_location: tests/unit/harness/test_agent_orchestrator.py
+  description: Main orchestrator coordinating all Agent Harness components.
+  entities:
+  - name: AgentOrchestrator
+    type: class
+    line_number: 30
+    description: 'Main orchestrator coordinating all Agent Harness components.
+
+
+      This orchestrator adapts to the real component APIs:
+
+      - SessionManager: single-session model with load/save
+
+      - MemoryManager: tiered memory with get/set
+
+      - AgentMonitor: observe_* methods and get_health with task context
+
+      - ToolSelector: get_tool_names with workflow/phase/domain
+
+      - LLMExecutor: optional component for agent decision-making'
+    methods:
+    - start_session
+    - resume_session
+    - execute_step
+    - run_until_complete
+    - pause_session
+    - get_status
+    - get_available_tools
+    - handle_health_check
+    - handle_escalation
+    - complete_session
+    - fail_session
+    - get_session_history
+    - cleanup
+    test_methods: []
+- name: orchestrator_domain
+  component_id: core-harness-orchestrator_domain
+  location: src/agentforge/core/harness/orchestrator_domain.py
+  test_location: tests/unit/harness/test_agent_orchestrator.py
+  description: Domain entities for agent orchestration.
+  entities:
+  - name: OrchestratorState
+    type: enum
+    line_number: 14
+    description: Current state of the orchestrator.
+    methods: []
+    test_methods: []
+  - name: ExecutionMode
+    type: enum
+    line_number: 25
+    description: How much human oversight is required.
+    methods: []
+    test_methods: []
+  - name: AgentTask
+    type: dataclass
+    line_number: 33
+    description: A unit of work for the agent.
+    methods: []
+    test_methods: []
+  - name: ExecutionResult
+    type: dataclass
+    line_number: 46
+    description: Result of an agent execution step.
+    methods: []
+    test_methods: []
+  - name: OrchestratorConfig
+    type: dataclass
+    line_number: 58
+    description: Configuration for orchestrator behavior.
+    methods: []
+    test_methods: []
+- name: tool_selector
+  component_id: core-harness-tool_selector
+  location: src/agentforge/core/harness/tool_selector.py
+  test_location: tests/unit/harness/test_tool_selector.py
+  description: ''
+  entities:
+  - name: ToolSelector
+    type: class
+    line_number: 12
+    description: Main selector that composes tools for a given context.
+    methods:
+    - get_tools
+    - detect_domain
+    - get_tool_names
+    - validate_tool_access
+    test_methods: []
+- name: agent_prompt_builder
+  component_id: core-harness-agent_prompt_builder
+  location: src/agentforge/core/harness/agent_prompt_builder.py
+  test_location: tests/unit/harness/test_agent_prompt_builder.py
+  description: 'Agent Prompt Builder
+
+    ====================
+
+
+    Builds prompts for the agent LLM to decide on actions.
+
+    Uses XML-structured prompts for clear parsing.'
+  entities:
+  - name: AgentPromptBuilder
+    type: class
+    line_number: 80
+    description: Builds prompts for agent execution.
+    methods:
+    - build_system_prompt
+    - build_user_prompt
+    - build_messages
+    - format_tool_results
+    test_methods: []
+- name: recovery_executor
+  component_id: core-harness-recovery_executor
+  location: src/agentforge/core/harness/recovery_executor.py
+  test_location: tests/unit/harness/test_recovery_executor.py
+  description: Recovery executor for automated agent recovery strategies.
+  entities:
+  - name: RecoveryExecutor
+    type: class
+    line_number: 20
+    description: Executes recovery strategies based on health status.
+    methods:
+    - execute_recovery
+    - execute_action
+    - checkpoint
+    - rollback
+    - summarize_context
+    - reset_state
+    - escalate
+    - get_recovery_history
+    - register_policy
+    - get_policy_for_issue
+    test_methods: []
+- name: memory_store
+  component_id: core-harness-memory_store
+  location: src/agentforge/core/harness/memory_store.py
+  test_location: tests/unit/harness/test_memory_store.py
+  description: Persistence layer for memory tiers.
+  entities:
+  - name: MemoryWriteError
+    type: class
+    line_number: 16
+    description: Raised when memory write operations fail.
+    methods: []
+    test_methods: []
+  - name: MemoryStore
+    type: class
+    line_number: 21
+    description: Persistence layer for memory tiers with YAML storage.
+    methods:
+    - get
+    - set
+    - delete
+    - list_keys
+    - clear_tier
+    test_methods: []
+- name: escalation_notifier
+  component_id: core-harness-escalation_notifier
+  location: src/agentforge/core/harness/escalation_notifier.py
+  test_location: tests/unit/harness/test_escalation_notifier.py
+  description: Escalation notifier for sending notifications through configured channels.
+  entities:
+  - name: EscalationNotifier
+    type: class
+    line_number: 20
+    description: Sends notifications through configured channels.
+    methods:
+    - notify
+    - notify_cli
+    - notify_file
+    - notify_webhook
+    - format_escalation
+    - get_priority_color
+    test_methods: []
+- name: session_manager
+  component_id: core-harness-session_manager
+  location: src/agentforge/core/harness/session_manager.py
+  test_location: tests/unit/harness/test_session_manager.py
+  description: 'Session Manager
+
+    ===============
+
+
+    Application service orchestrating session lifecycle.
+
+    Single session per instance.'
+  entities:
+  - name: SessionAlreadyActive
+    type: class
+    line_number: 17
+    description: Raised when create() called with active session.
+    methods: []
+    test_methods: []
+  - name: NoActiveSession
+    type: class
+    line_number: 22
+    description: Raised when operation requires active session but none exists.
+    methods: []
+    test_methods: []
+  - name: InvalidStateTransition
+    type: class
+    line_number: 27
+    description: Raised when state transition is not allowed.
+    methods: []
+    test_methods: []
+  - name: SessionManager
+    type: class
+    line_number: 32
+    description: 'Application service orchestrating session lifecycle.
+
+
+      Single session per instance. Provides all session management operations.'
+    methods:
+    - current_session
+    - create
+    - load
+    - save
+    - pause
+    - resume
+    - complete
+    - abort
+    - advance_phase
+    - checkpoint_session
+    - record_tokens
+    - extend_budget
+    - add_artifact
+    - cleanup_old_sessions
+    test_methods: []
+- name: session_store
+  component_id: core-harness-session_store
+  location: src/agentforge/core/harness/session_store.py
+  test_location: tests/unit/harness/test_session_manager.py
+  description: 'Session Store
+
+    =============
+
+
+    Persistence layer for SessionContext using atomic YAML writes.
+
+    Follows patterns from tools/tdflow/session.py.'
+  entities:
+  - name: SessionStore
+    type: class
+    line_number: 27
+    description: 'Persistence layer for SessionContext.
+
+
+      Handles serialization to/from YAML files using atomic writes
+
+      for crash safety.'
+    methods:
+    - ensure_directory
+    - save
+    - load
+    - exists
+    - list_sessions
+    - delete
+    test_methods: []
+- name: execution_context_store
+  component_id: core-harness-execution_context_store
+  location: src/agentforge/core/harness/execution_context_store.py
+  test_location: tests/unit/harness/test_execution_context_store.py
+  description: 'Execution Context Store
+
+    =======================
+
+
+    Persists LLM execution context to YAML for auditability and recovery.
+
+    Follows the same patterns as other harness stores (session_store, memory_store).'
+  entities:
+  - name: ExecutionContextStore
+    type: class
+    line_number: 17
+    description: "Stores execution context and step history to YAML.\n\nDirectory\
+      \ structure per session:\n    .agentforge/sessions/{session_id}/\n    ├── session.yaml\
+      \              # Existing session state\n    ├── execution_context.yaml    #\
+      \ LLM execution context\n    └── step_history.yaml         # Step-by-step audit\
+      \ trail"
+    methods:
+    - save_context
+    - load_context
+    - append_step
+    - get_history
+    - delete_context
+    - list_sessions
+    - get_step_count
+    test_methods: []
+  - name: create_execution_store
+    type: function
+    line_number: 240
+    description: "Factory function to create an ExecutionContextStore.\n\nArgs:\n\
+      \    base_path: Optional base path (defaults to .agentforge/sessions)\n\nReturns:\n\
+      \    Configured ExecutionContextStore"
+    methods: []
+    test_methods: []
+- name: escalation_manager
+  component_id: core-harness-escalation_manager
+  location: src/agentforge/core/harness/escalation_manager.py
+  test_location: tests/unit/harness/test_escalation_manager.py
+  description: Escalation manager for human-in-the-loop intervention.
+  entities:
+  - name: EscalationManager
+    type: class
+    line_number: 24
+    description: Manages escalation lifecycle.
+    methods:
+    - create_escalation
+    - acknowledge_escalation
+    - resolve_escalation
+    - get_escalation
+    - list_escalations
+    - get_pending_escalations
+    - check_timeouts
+    - cancel_escalation
+    test_methods: []
+- name: memory_manager
+  component_id: core-harness-memory_manager
+  location: src/agentforge/core/harness/memory_manager.py
+  test_location: tests/unit/harness/test_memory_manager.py
+  description: High-level memory operations with search and context assembly.
+  entities:
+  - name: MemoryManager
+    type: class
+    line_number: 15
+    description: High-level memory operations with search and context assembly.
+    methods:
+    - get
+    - set
+    - merge
+    - search
+    - get_context
+    - link_session
+    - link_task
+    test_methods: []

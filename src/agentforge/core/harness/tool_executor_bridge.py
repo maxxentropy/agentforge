@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/core-harness-v1.yaml
+# @spec_id: core-harness-v1
+# @component_id: core-harness-tool_executor_bridge
+# @test_path: tests/unit/harness/test_tool_executor_bridge.py
+
 """
 Tool Executor Bridge
 ====================

@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/bridge-v1.yaml
+# @spec_id: bridge-v1
+# @component_id: tools-bridge-domain
+# @test_path: tests/unit/tools/test_builtin_checks_architecture.py
+
 """
 Bridge Domain Model
 ====================

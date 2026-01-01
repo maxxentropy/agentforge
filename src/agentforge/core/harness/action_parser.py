@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/core-harness-v1.yaml
+# @spec_id: core-harness-v1
+# @component_id: core-harness-action_parser
+# @test_path: tests/unit/harness/test_action_parser.py
+
 """
 Action Parser
 =============

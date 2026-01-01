@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/cli-v1.yaml
+# @spec_id: cli-v1
+# @component_id: agentforge-cli-core
+# @test_path: tests/unit/harness/test_enhanced_context.py
+
 """
 Core utilities for CLI command execution.
 

@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/cli-commands-v1.yaml
+# @spec_id: cli-commands-v1
+# @component_id: cli-commands-context
+# @test_path: tests/unit/tools/test_context_retrieval.py
+
 """
 Context retrieval command.
 

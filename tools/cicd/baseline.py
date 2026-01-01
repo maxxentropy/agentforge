@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/cicd-v1.yaml
+# @spec_id: cicd-v1
+# @component_id: tools-cicd-baseline
+# @test_path: tests/unit/tools/cicd/test_baseline.py
+
 """
 Baseline Management
 ===================

@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+
+# @spec_file: .agentforge/specs/core-v1.yaml
+# @spec_id: core-v1
+# @component_id: agentforge-core-verification_types
+# @test_path: tests/unit/tools/test_verification_checks.py
+
 """
 Verification Types
 ==================

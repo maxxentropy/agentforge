@@ -1,0 +1,172 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Specification: cli
+# ═══════════════════════════════════════════════════════════════════════════════
+# Generated: 2026-01-01T16:07:59.680913
+# Generator: brownfield-discovery
+# ═══════════════════════════════════════════════════════════════════════════════
+
+spec_id: cli-v1
+name: cli
+version: '1.0'
+status: as-built
+schema_version: '2.0'
+generated_at: '2026-01-01T16:07:59.680913'
+generated_by: brownfield-discovery
+description: Specification for src/agentforge/cli
+components:
+- name: main
+  component_id: agentforge-cli-main
+  location: src/agentforge/cli/main.py
+  test_location: tests/unit/tools/test_builtin_checks_architecture.py
+  description: 'AgentForge CLI - Click-based command interface.
+
+
+    This module defines the main CLI entry point using Click.
+
+    Commands are organized into groups imported from agentforge.cli.click_commands/.'
+  entities:
+  - name: cli
+    type: function
+    line_number: 32
+    description: AgentForge - Autonomous AI agent framework with verified execution.
+    methods: []
+    test_methods:
+    - test_notify_cli_returns_true_on_success
+    - test_notify_cli_prints_escalation_info
+    - test_notify_cli_includes_priority
+  - name: init
+    type: function
+    line_number: 42
+    description: "Initialize an AgentForge project.\n\nCreates the .agentforge directory\
+      \ structure with default agent\ndefinitions and pipeline configurations.\n\n\
+      \b\nExamples:\n    agentforge init                    # Initialize current directory\n\
+      \    agentforge init ./my-project       # Initialize specific directory\n  \
+      \  agentforge init -n myproject       # Initialize with custom name"
+    methods: []
+    test_methods:
+    - test_service_with_no_init_fails
+    - test_direct_instantiation_in_init_fails
+    - test_check_for_init_params_disabled
+    - test_runner_init
+    - test_init_paths
+    - test_is_initialized_false
+    - test_is_initialized_true
+    - test_initialize_creates_directories
+    - test_initialize_creates_report
+    - test_initialize_updates_gitignore_new
+    - test_initialize_updates_gitignore_existing
+    - test_initialize_fails_if_exists
+    - test_initialize_force
+    - test_not_initialized
+    - test_initialized_with_data
+    - test_init_with_storage_path_creates_manager
+    - test_init_with_custom_max_checkpoints_sets_limit
+    - test_init_creates_storage_directory_if_not_exists
+    - test_init_with_default_working_dir
+    - test_init_with_custom_working_dir
+    - test_init_with_default_config
+    - test_init_with_custom_config
+    - test_init_without_config_creates_empty_registry
+    - test_init_with_config_path_loads_config
+    - test_init_with_all_components
+    - test_init_with_registry_creates_selector
+    - test_init_with_project_domain_sets_domain
+    - test_init_with_checkpoint_manager_and_policies
+    - test_init_with_default_policies_when_none_provided
+    - test_init_with_default_paths
+    - test_init_with_custom_paths
+    - test_init_with_channels_creates_notifier
+    - test_init_with_config_sets_configuration
+    - test_init_with_empty_channels_allowed
+    - test_init_with_required_fields_creates_instance
+    - test_init_with_all_fields_creates_instance
+    - test_init_creates_instance_with_all_fields
+    - test_default_initialization
+    - test_init_with_custom_timeout_sets_default
+    - test_init_with_channels_sets_active_channels
+    - test_init_with_store_only_creates_manager
+    - test_init_with_session_context_sets_session_id
+  - name: main
+    type: function
+    line_number: 128
+    description: Main entry point for the CLI.
+    methods: []
+    test_methods:
+    - test_domain_importing_infrastructure_fails
+    - test_domain_importing_application_fails
+    - test_application_importing_domain_passes
+    - test_register_domain_tools_adds_domain_tools
+    - test_tokens_remaining
+    - test_init_with_project_domain_sets_domain
+    - test_get_tools_without_domain_excludes_domain_tools
+    - test_detect_domain_identifies_python_project
+    - test_detect_domain_identifies_dotnet_project
+    - test_detect_domain_identifies_typescript_project
+    - test_detect_domain_returns_none_for_unknown_project
+    - test_get_tools_with_project_domain_uses_domain_tools
+    - test_tokens_remaining_calculation
+- name: parser
+  component_id: agentforge-cli-parser
+  location: src/agentforge/cli/parser.py
+  test_location: tests/unit/tools/generate/test_parser.py
+  description: 'CLI argument parser configuration.
+
+
+    Builds the argparse parser with all subcommands and their handlers.'
+  entities:
+  - name: build_parser
+    type: function
+    line_number: 36
+    description: "Build the argument parser with all subcommands.\n\nArgs:\n    handlers:\
+      \ Dict mapping command names to handler functions\n\nReturns:\n    Configured\
+      \ ArgumentParser"
+    methods: []
+    test_methods: []
+- name: core
+  component_id: agentforge-cli-core
+  location: src/agentforge/cli/core.py
+  test_location: tests/unit/harness/test_enhanced_context.py
+  description: 'Core utilities for CLI command execution.
+
+
+    Contains shared functions used across multiple command modules:
+
+    - API calling (Claude Code CLI and Anthropic API)
+
+    - YAML parsing and extraction
+
+    - Contract execution'
+  entities:
+  - name: call_claude_code
+    type: function
+    line_number: 138
+    description: 'Call Claude Code CLI (uses your subscription, no API credits needed).
+
+
+      This is the DEFAULT execution method.
+
+      Uses --output-format json and --append-system-prompt for structured output.'
+    methods: []
+    test_methods: []
+  - name: call_anthropic_api
+    type: function
+    line_number: 195
+    description: 'Call Anthropic API directly (pay-per-token).
+
+
+      Use with --use-api flag.'
+    methods: []
+    test_methods: []
+  - name: extract_yaml_from_response
+    type: function
+    line_number: 281
+    description: Extract YAML content from a response that may include markdown or
+      prose.
+    methods: []
+    test_methods: []
+  - name: execute_contract
+    type: function
+    line_number: 297
+    description: Execute a contract and return parsed output.
+    methods: []
+    test_methods: []

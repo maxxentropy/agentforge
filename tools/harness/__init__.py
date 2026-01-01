@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/harness-v1.yaml
+# @spec_id: harness-v1
+# @component_id: tools-harness-__init__
+# @test_path: tests/integration/harness/test_harness_workflow.py
+
 """
 Agent Harness - Autonomous Agent Framework Layer
 =================================================
@@ -130,6 +135,61 @@ from tools.harness.execution_context_store import (
     create_execution_store,
 )
 
+# Self-Hosting (Phase 9)
+from tools.harness.violation_tools import (
+    ViolationTools,
+    ViolationInfo,
+    VIOLATION_TOOL_DEFINITIONS,
+)
+from tools.harness.conformance_tools import (
+    ConformanceTools,
+    CONFORMANCE_TOOL_DEFINITIONS,
+)
+from tools.harness.git_tools import (
+    GitTools,
+    GIT_TOOL_DEFINITIONS,
+)
+from tools.harness.test_runner_tools import (
+    TestRunnerTools,
+    TEST_TOOL_DEFINITIONS,
+)
+from tools.harness.fix_violation_workflow import (
+    FixViolationWorkflow,
+    FixPhase,
+    FixAttempt,
+    create_fix_workflow,
+)
+from tools.harness.auto_fix_daemon import (
+    AutoFixDaemon,
+    AutoFixConfig,
+    DaemonStatus,
+    create_auto_fix_daemon,
+)
+from tools.harness.rollback_manager import (
+    RollbackManager,
+    BackupManifest,
+    ROLLBACK_TOOL_DEFINITIONS,
+)
+
+# Phase 10: Minimal Context Architecture
+from tools.harness.minimal_context import (
+    TaskStateStore,
+    TaskState,
+    TaskPhase,
+    TokenBudget as MinimalTokenBudget,
+    TOKEN_BUDGET_LIMITS,
+    WorkingMemoryManager,
+    WorkingMemoryItem,
+    ContextSchema,
+    FixViolationSchema,
+    get_schema_for_task,
+    ContextBuilder,
+    MinimalContextExecutor,
+    StepOutcome,
+    MinimalContextFixWorkflow,
+    create_minimal_fix_workflow,
+)
+
 __all__ = [
     # Session Management
     "SessionState",
@@ -211,4 +271,41 @@ __all__ = [
     "create_tool_bridge",
     "ExecutionContextStore",
     "create_execution_store",
+    # Self-Hosting
+    "ViolationTools",
+    "ViolationInfo",
+    "VIOLATION_TOOL_DEFINITIONS",
+    "ConformanceTools",
+    "CONFORMANCE_TOOL_DEFINITIONS",
+    "GitTools",
+    "GIT_TOOL_DEFINITIONS",
+    "TestRunnerTools",
+    "TEST_TOOL_DEFINITIONS",
+    "FixViolationWorkflow",
+    "FixPhase",
+    "FixAttempt",
+    "create_fix_workflow",
+    "AutoFixDaemon",
+    "AutoFixConfig",
+    "DaemonStatus",
+    "create_auto_fix_daemon",
+    "RollbackManager",
+    "BackupManifest",
+    "ROLLBACK_TOOL_DEFINITIONS",
+    # Minimal Context Architecture
+    "TaskStateStore",
+    "TaskState",
+    "TaskPhase",
+    "MinimalTokenBudget",
+    "TOKEN_BUDGET_LIMITS",
+    "WorkingMemoryManager",
+    "WorkingMemoryItem",
+    "ContextSchema",
+    "FixViolationSchema",
+    "get_schema_for_task",
+    "ContextBuilder",
+    "MinimalContextExecutor",
+    "StepOutcome",
+    "MinimalContextFixWorkflow",
+    "create_minimal_fix_workflow",
 ]

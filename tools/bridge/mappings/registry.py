@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/bridge-mappings-v1.yaml
+# @spec_id: bridge-mappings-v1
+# @component_id: bridge-mappings-registry
+# @test_path: tests/unit/tools/bridge/test_registry.py
+
 """
 Mapping Registry
 ================

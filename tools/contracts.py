@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/tools-v1.yaml
+# @spec_id: tools-v1
+# @component_id: tools-contracts
+# @test_path: tests/unit/tools/test_contracts_execution_naming.py
+
 """
 Contract loading, resolution, and execution for AgentForge.
 

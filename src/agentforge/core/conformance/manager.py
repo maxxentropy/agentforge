@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/core-conformance-v1.yaml
+# @spec_id: core-conformance-v1
+# @component_id: core-conformance-manager
+# @test_path: tests/unit/tools/conformance/test_manager.py
+
 """
 Conformance Manager
 ===================

@@ -1,3 +1,8 @@
+# @spec_file: .agentforge/specs/core-v1.yaml
+# @spec_id: core-v1
+# @component_id: agentforge-core-pyright_runner
+# @test_path: tests/test_python_checks.py
+
 """
 Pyright runner for AgentForge contract checks.
 

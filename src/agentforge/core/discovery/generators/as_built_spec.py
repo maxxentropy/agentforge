@@ -113,9 +113,46 @@ class AsBuiltSpecGenerator:
     enabling full lineage tracking and orchestration engine integration.
     """
 
+    # Path prefixes to strip for cleaner spec names
+    # These are common project structure prefixes that add noise
+    STRIP_PREFIXES = [
+        "src-agentforge-",
+        "src/agentforge/",
+        "tools-",
+        "tools/",
+        "lib-",
+        "lib/",
+    ]
+
     def __init__(self, root_path: Path):
         self.root_path = root_path
         self.specs_dir = root_path / ".agentforge" / "specs"
+
+    def _simplify_path(self, path: str) -> str:
+        """
+        Simplify a path by removing common project prefixes.
+
+        Examples:
+            src/agentforge/core/harness -> core-harness
+            tools/discovery -> discovery
+            src-agentforge-core-v1 -> core-v1
+        """
+        result = path
+
+        # Normalize separators
+        result = result.replace("/", "-").replace("\\", "-")
+
+        # Strip common prefixes
+        for prefix in self.STRIP_PREFIXES:
+            normalized_prefix = prefix.replace("/", "-").replace("\\", "-")
+            if result.startswith(normalized_prefix):
+                result = result[len(normalized_prefix):]
+                break
+
+        # Clean up any leading/trailing dashes
+        result = result.strip("-")
+
+        return result
 
     def generate_from_test_analysis(
         self,
@@ -160,21 +197,24 @@ class AsBuiltSpecGenerator:
         zone_name: str,
     ) -> Optional[AsBuiltSpec]:
         """Generate a spec for a single directory."""
-        # Generate spec_id from directory path
-        dir_parts = dir_path.replace("/", "-").replace("\\", "-")
-        if dir_parts.startswith("-"):
-            dir_parts = dir_parts[1:]
-        spec_id = f"as-built-{dir_parts}-v1".lower()
+        # Simplify the path (removes src-agentforge-, tools-, etc.)
+        simplified = self._simplify_path(dir_path)
 
-        # Clean up spec_id
+        # Generate spec_id from simplified path
+        spec_id = f"{simplified}-v1".lower()
+
+        # Clean up spec_id (only alphanumeric and dashes)
         spec_id = re.sub(r"[^a-z0-9-]", "-", spec_id)
         spec_id = re.sub(r"-+", "-", spec_id)
         spec_id = spec_id.strip("-")
 
+        # Generate human-readable name
+        name = simplified.replace("-", "_")
+
         spec = AsBuiltSpec(
             spec_id=spec_id,
-            name=dir_parts.replace("-", "_"),
-            description=f"As-built specification for {dir_path}",
+            name=name,
+            description=f"Specification for {dir_path}",
         )
 
         for linkage in linkages:
@@ -326,12 +366,11 @@ class AsBuiltSpecGenerator:
                 sort_keys=False,
             )
 
-            # Add header
+            # Add header (generic - the status field in YAML indicates as-built)
             header = f"""# ═══════════════════════════════════════════════════════════════════════════════
-# As-Built Specification: {spec.name}
+# Specification: {spec.name}
 # ═══════════════════════════════════════════════════════════════════════════════
 # Generated: {spec.generated_at.isoformat()}
-# Status: {spec.status}
 # Generator: brownfield-discovery
 # ═══════════════════════════════════════════════════════════════════════════════
 

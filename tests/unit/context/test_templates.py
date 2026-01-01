@@ -10,11 +10,16 @@ import pytest
 
 from agentforge.core.context.templates import (
     BaseContextTemplate,
+    BridgeTemplate,
+    CodeReviewTemplate,
     CompactionLevel,
     ContextSection,
+    DiscoveryTemplate,
     FixViolationTemplate,
     ImplementFeatureTemplate,
+    RefactorTemplate,
     TierDefinition,
+    WriteTestsTemplate,
     get_template_class,
     get_template_for_task,
     list_task_types,
@@ -444,3 +449,384 @@ class TestCompactionLevel:
         """CompactionLevel is a string enum."""
         assert isinstance(CompactionLevel.NEVER, str)
         assert CompactionLevel.NEVER == "never"
+
+
+class TestWriteTestsTemplate:
+    """Tests for WriteTestsTemplate."""
+
+    @pytest.fixture
+    def template(self):
+        return WriteTestsTemplate()
+
+    def test_task_type(self, template):
+        """Task type is write_tests."""
+        assert template.task_type == "write_tests"
+
+    def test_phases(self, template):
+        """Has correct phases."""
+        assert template.phases == ["init", "analyze", "implement", "verify"]
+
+    def test_tier2_init_phase(self, template):
+        """Init phase has spec requirements."""
+        tier2 = template.get_tier2_for_phase("init")
+
+        assert tier2.name == "init"
+        section_names = [s.name for s in tier2.sections]
+        assert "spec_requirements" in section_names
+
+    def test_tier2_analyze_phase(self, template):
+        """Analyze phase has testable interface and coverage."""
+        tier2 = template.get_tier2_for_phase("analyze")
+
+        assert tier2.max_tokens == 1500
+        section_names = [s.name for s in tier2.sections]
+        assert "acceptance_criteria" in section_names
+        assert "testable_interface" in section_names
+        assert "existing_test_patterns" in section_names
+        assert "coverage_gaps" in section_names
+
+    def test_tier2_implement_phase(self, template):
+        """Implement phase has test template and fixtures."""
+        tier2 = template.get_tier2_for_phase("implement")
+
+        assert tier2.max_tokens == 2000
+        section_names = [s.name for s in tier2.sections]
+        assert "test_template" in section_names
+        assert "assertion_hints" in section_names
+        assert "fixture_examples" in section_names
+        assert "edge_cases" in section_names
+
+    def test_tier2_verify_phase(self, template):
+        """Verify phase checks tests must fail."""
+        tier2 = template.get_tier2_for_phase("verify")
+
+        section_names = [s.name for s in tier2.sections]
+        assert "tests_must_fail" in section_names
+        assert "failure_reasons" in section_names
+
+        # tests_must_fail is required (TDD red phase)
+        tests_must_fail = tier2.get_section("tests_must_fail")
+        assert tests_must_fail.required is True
+
+    def test_system_prompt_mentions_tdd(self, template):
+        """System prompt mentions TDD red phase."""
+        prompt = template.get_system_prompt()
+
+        assert "TDD" in prompt
+        assert "fail" in prompt.lower()
+
+    def test_system_prompt_is_small(self, template):
+        """System prompt must be cacheable."""
+        prompt = template.get_system_prompt()
+        tokens = len(prompt) // 4
+        assert tokens < 200
+
+
+class TestDiscoveryTemplate:
+    """Tests for DiscoveryTemplate."""
+
+    @pytest.fixture
+    def template(self):
+        return DiscoveryTemplate()
+
+    def test_task_type(self, template):
+        """Task type is discovery."""
+        assert template.task_type == "discovery"
+
+    def test_phases(self, template):
+        """Has correct phases (different from fix_violation)."""
+        assert template.phases == ["scan", "analyze", "synthesize"]
+
+    def test_tier2_scan_phase(self, template):
+        """Scan phase has file structure and entry points."""
+        tier2 = template.get_tier2_for_phase("scan")
+
+        assert tier2.name == "scan"
+        assert tier2.max_tokens == 1500
+        section_names = [s.name for s in tier2.sections]
+        assert "file_structure" in section_names
+        assert "entry_points" in section_names
+        assert "config_files" in section_names
+
+    def test_tier2_analyze_phase(self, template):
+        """Analyze phase has dependency and pattern analysis."""
+        tier2 = template.get_tier2_for_phase("analyze")
+
+        assert tier2.max_tokens == 2000
+        section_names = [s.name for s in tier2.sections]
+        assert "dependency_graph" in section_names
+        assert "pattern_candidates" in section_names
+        assert "architecture_hints" in section_names
+        assert "zone_detection" in section_names
+
+    def test_tier2_synthesize_phase(self, template):
+        """Synthesize phase has discoveries and recommendations."""
+        tier2 = template.get_tier2_for_phase("synthesize")
+
+        section_names = [s.name for s in tier2.sections]
+        assert "discovered_patterns" in section_names
+        assert "zone_boundaries" in section_names
+        assert "recommendations" in section_names
+
+        # discovered_patterns is required
+        discovered = tier2.get_section("discovered_patterns")
+        assert discovered.required is True
+
+    def test_system_prompt_is_small(self, template):
+        """System prompt must be cacheable."""
+        prompt = template.get_system_prompt()
+        tokens = len(prompt) // 4
+        assert tokens < 200
+
+
+class TestBridgeTemplate:
+    """Tests for BridgeTemplate."""
+
+    @pytest.fixture
+    def template(self):
+        return BridgeTemplate()
+
+    def test_task_type(self, template):
+        """Task type is bridge."""
+        assert template.task_type == "bridge"
+
+    def test_phases(self, template):
+        """Has correct phases."""
+        assert template.phases == ["analyze", "map", "validate"]
+
+    def test_tier2_analyze_phase(self, template):
+        """Analyze phase has code structure and contracts."""
+        tier2 = template.get_tier2_for_phase("analyze")
+
+        assert tier2.max_tokens == 1500
+        section_names = [s.name for s in tier2.sections]
+        assert "existing_code_structure" in section_names
+        assert "target_contracts" in section_names
+        assert "mapping_rules" in section_names
+
+        # target_contracts is required
+        contracts = tier2.get_section("target_contracts")
+        assert contracts.required is True
+
+    def test_tier2_map_phase(self, template):
+        """Map phase has candidate mappings and hints."""
+        tier2 = template.get_tier2_for_phase("map")
+
+        assert tier2.max_tokens == 2000
+        section_names = [s.name for s in tier2.sections]
+        assert "candidate_mappings" in section_names
+        assert "conflict_analysis" in section_names
+        assert "transformation_hints" in section_names
+
+        # candidate_mappings is required
+        mappings = tier2.get_section("candidate_mappings")
+        assert mappings.required is True
+
+    def test_tier2_validate_phase(self, template):
+        """Validate phase has coverage and results."""
+        tier2 = template.get_tier2_for_phase("validate")
+
+        section_names = [s.name for s in tier2.sections]
+        assert "mapping_coverage" in section_names
+        assert "unmapped_elements" in section_names
+        assert "validation_results" in section_names
+
+    def test_system_prompt_is_small(self, template):
+        """System prompt must be cacheable."""
+        prompt = template.get_system_prompt()
+        tokens = len(prompt) // 4
+        assert tokens < 200
+
+
+class TestCodeReviewTemplate:
+    """Tests for CodeReviewTemplate."""
+
+    @pytest.fixture
+    def template(self):
+        return CodeReviewTemplate()
+
+    def test_task_type(self, template):
+        """Task type is code_review."""
+        assert template.task_type == "code_review"
+
+    def test_phases(self, template):
+        """Has correct phases."""
+        assert template.phases == ["init", "analyze", "report"]
+
+    def test_tier2_init_phase(self, template):
+        """Init phase has diff summary and context."""
+        tier2 = template.get_tier2_for_phase("init")
+
+        section_names = [s.name for s in tier2.sections]
+        assert "diff_summary" in section_names
+        assert "changed_files" in section_names
+        assert "pr_context" in section_names
+
+        # diff_summary is required
+        diff = tier2.get_section("diff_summary")
+        assert diff.required is True
+
+    def test_tier2_analyze_phase(self, template):
+        """Analyze phase has full diff and coverage."""
+        tier2 = template.get_tier2_for_phase("analyze")
+
+        assert tier2.max_tokens == 2000
+        section_names = [s.name for s in tier2.sections]
+        assert "full_diff" in section_names
+        assert "affected_functions" in section_names
+        assert "test_coverage" in section_names
+        assert "related_code" in section_names
+
+        # full_diff uses truncate_middle
+        full_diff = tier2.get_section("full_diff")
+        assert full_diff.compaction == CompactionLevel.TRUNCATE_MIDDLE
+
+    def test_tier2_report_phase(self, template):
+        """Report phase has findings and suggestions."""
+        tier2 = template.get_tier2_for_phase("report")
+
+        section_names = [s.name for s in tier2.sections]
+        assert "findings" in section_names
+        assert "suggestions" in section_names
+        assert "security_concerns" in section_names
+
+        # findings is required
+        findings = tier2.get_section("findings")
+        assert findings.required is True
+
+    def test_system_prompt_mentions_review(self, template):
+        """System prompt mentions review concerns."""
+        prompt = template.get_system_prompt()
+
+        assert "review" in prompt.lower()
+        assert "security" in prompt.lower()
+
+    def test_system_prompt_is_small(self, template):
+        """System prompt must be cacheable."""
+        prompt = template.get_system_prompt()
+        tokens = len(prompt) // 4
+        assert tokens < 200
+
+
+class TestRefactorTemplate:
+    """Tests for RefactorTemplate."""
+
+    @pytest.fixture
+    def template(self):
+        return RefactorTemplate()
+
+    def test_task_type(self, template):
+        """Task type is refactor."""
+        assert template.task_type == "refactor"
+
+    def test_phases(self, template):
+        """Has correct phases."""
+        assert template.phases == ["init", "analyze", "implement", "verify"]
+
+    def test_tier2_init_phase(self, template):
+        """Init phase has refactor goal and scope."""
+        tier2 = template.get_tier2_for_phase("init")
+
+        section_names = [s.name for s in tier2.sections]
+        assert "refactor_goal" in section_names
+        assert "scope" in section_names
+        assert "constraints" in section_names
+
+        # refactor_goal is required
+        goal = tier2.get_section("refactor_goal")
+        assert goal.required is True
+
+    def test_tier2_analyze_phase(self, template):
+        """Analyze phase has target code and dependencies."""
+        tier2 = template.get_tier2_for_phase("analyze")
+
+        assert tier2.max_tokens == 1500
+        section_names = [s.name for s in tier2.sections]
+        assert "target_code" in section_names
+        assert "dependencies" in section_names
+        assert "callers" in section_names
+        assert "test_coverage" in section_names
+
+        # target_code uses truncate_middle
+        target = tier2.get_section("target_code")
+        assert target.compaction == CompactionLevel.TRUNCATE_MIDDLE
+
+    def test_tier2_implement_phase(self, template):
+        """Implement phase has source and patterns."""
+        tier2 = template.get_tier2_for_phase("implement")
+
+        assert tier2.max_tokens == 2000
+        section_names = [s.name for s in tier2.sections]
+        assert "source_code" in section_names
+        assert "refactoring_patterns" in section_names
+        assert "similar_refactors" in section_names
+        assert "action_hints" in section_names
+
+        # source_code is required
+        source = tier2.get_section("source_code")
+        assert source.required is True
+
+    def test_tier2_verify_phase(self, template):
+        """Verify phase has test results."""
+        tier2 = template.get_tier2_for_phase("verify")
+
+        section_names = [s.name for s in tier2.sections]
+        assert "test_command" in section_names
+        assert "test_results" in section_names
+        assert "behavior_diff" in section_names
+
+    def test_system_prompt_mentions_behavior(self, template):
+        """System prompt mentions behavior preservation."""
+        prompt = template.get_system_prompt()
+
+        assert "behavior" in prompt.lower()
+        assert "refactor" in prompt.lower()
+
+    def test_system_prompt_is_small(self, template):
+        """System prompt must be cacheable."""
+        prompt = template.get_system_prompt()
+        tokens = len(prompt) // 4
+        assert tokens < 200
+
+
+class TestAllTemplatesRegistered:
+    """Tests that all expected templates are registered."""
+
+    def test_all_task_types_registered(self):
+        """All 7 task types are registered."""
+        types = list_task_types()
+
+        assert "fix_violation" in types
+        assert "implement_feature" in types
+        assert "write_tests" in types
+        assert "discovery" in types
+        assert "bridge" in types
+        assert "code_review" in types
+        assert "refactor" in types
+
+        assert len(types) == 7
+
+    def test_all_templates_instantiable(self):
+        """All registered templates can be instantiated."""
+        for task_type in list_task_types():
+            template = get_template_for_task(task_type)
+            assert template.task_type == task_type
+            assert len(template.phases) > 0
+
+    def test_all_templates_have_valid_budgets(self):
+        """All templates have reasonable token budgets."""
+        for task_type in list_task_types():
+            template = get_template_for_task(task_type)
+            budget = template.get_total_budget()
+
+            # Should be between 2000 and 5000 tokens
+            assert 2000 < budget < 5000, f"{task_type} has budget {budget}"
+
+    def test_all_system_prompts_cacheable(self):
+        """All templates have small system prompts for caching."""
+        for task_type in list_task_types():
+            template = get_template_for_task(task_type)
+            prompt = template.get_system_prompt()
+            tokens = len(prompt) // 4
+
+            assert tokens < 200, f"{task_type} prompt is {tokens} tokens"

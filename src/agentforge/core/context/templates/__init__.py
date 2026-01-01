@@ -47,6 +47,9 @@ Extending:
 from typing import Dict, List, Type
 
 from .base import BaseContextTemplate
+from .bridge import BridgeTemplate
+from .code_review import CodeReviewTemplate
+from .discovery import DiscoveryTemplate
 from .fix_violation import FixViolationTemplate
 from .implement_feature import ImplementFeatureTemplate
 from .models import (
@@ -55,11 +58,18 @@ from .models import (
     PhaseContextDef,
     TierDefinition,
 )
+from .refactor import RefactorTemplate
+from .write_tests import WriteTestsTemplate
 
 # Registry of all templates
 _TEMPLATE_REGISTRY: Dict[str, Type[BaseContextTemplate]] = {
     "fix_violation": FixViolationTemplate,
     "implement_feature": ImplementFeatureTemplate,
+    "write_tests": WriteTestsTemplate,
+    "discovery": DiscoveryTemplate,
+    "bridge": BridgeTemplate,
+    "code_review": CodeReviewTemplate,
+    "refactor": RefactorTemplate,
 }
 
 
@@ -160,6 +170,11 @@ __all__ = [
     # Concrete templates
     "FixViolationTemplate",
     "ImplementFeatureTemplate",
+    "WriteTestsTemplate",
+    "DiscoveryTemplate",
+    "BridgeTemplate",
+    "CodeReviewTemplate",
+    "RefactorTemplate",
     # Models
     "CompactionLevel",
     "ContextSection",

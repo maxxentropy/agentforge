@@ -1,5 +1,5 @@
-# @spec_file: .agentforge/specs/core-context-v1.yaml
-# @spec_id: core-context-v1
+# @spec_file: specs/minimal-context-architecture-specs/specs/minimal-context-architecture/03-fingerprint.yaml
+# @spec_id: fingerprint-v1
 # @component_id: fingerprint-generator
 # @test_path: tests/unit/context/test_fingerprint.py
 

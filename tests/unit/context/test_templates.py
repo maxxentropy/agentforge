@@ -830,3 +830,108 @@ class TestAllTemplatesRegistered:
             tokens = len(prompt) // 4
 
             assert tokens < 200, f"{task_type} prompt is {tokens} tokens"
+
+
+class TestPhaseMappings:
+    """Tests for phase mapping functionality."""
+
+    def test_all_templates_have_phase_mapping(self):
+        """All templates have get_phase_mapping method."""
+        for task_type in list_task_types():
+            template = get_template_for_task(task_type)
+            mapping = template.get_phase_mapping()
+
+            assert isinstance(mapping, dict)
+            # Must map all standard phases
+            assert "init" in mapping
+            assert "analyze" in mapping
+            assert "implement" in mapping
+            assert "verify" in mapping
+
+    def test_phase_mapping_returns_valid_phases(self):
+        """Phase mapping returns phases that exist in template."""
+        for task_type in list_task_types():
+            template = get_template_for_task(task_type)
+            mapping = template.get_phase_mapping()
+
+            for standard_phase, template_phase in mapping.items():
+                assert template_phase in template.phases, (
+                    f"{task_type}: {standard_phase} maps to {template_phase} "
+                    f"but valid phases are {template.phases}"
+                )
+
+    def test_discovery_phase_mapping(self):
+        """Discovery template maps to scan/analyze/synthesize."""
+        template = DiscoveryTemplate()
+        mapping = template.get_phase_mapping()
+
+        assert mapping["init"] == "scan"
+        assert mapping["analyze"] == "analyze"
+        assert mapping["implement"] == "synthesize"
+        assert mapping["verify"] == "synthesize"
+
+    def test_bridge_phase_mapping(self):
+        """Bridge template maps to analyze/map/validate."""
+        template = BridgeTemplate()
+        mapping = template.get_phase_mapping()
+
+        assert mapping["init"] == "analyze"
+        assert mapping["analyze"] == "analyze"
+        assert mapping["implement"] == "map"
+        assert mapping["verify"] == "validate"
+
+    def test_code_review_phase_mapping(self):
+        """Code review template maps to init/analyze/report."""
+        template = CodeReviewTemplate()
+        mapping = template.get_phase_mapping()
+
+        assert mapping["init"] == "init"
+        assert mapping["analyze"] == "analyze"
+        assert mapping["implement"] == "report"
+        assert mapping["verify"] == "report"
+
+    def test_translate_phase_method(self):
+        """translate_phase uses mapping correctly."""
+        template = DiscoveryTemplate()
+
+        # Test translation of all standard phases
+        assert template.translate_phase("init") == "scan"
+        assert template.translate_phase("analyze") == "analyze"
+        assert template.translate_phase("implement") == "synthesize"
+        assert template.translate_phase("verify") == "synthesize"
+
+        # Test case insensitivity
+        assert template.translate_phase("INIT") == "scan"
+        assert template.translate_phase("Analyze") == "analyze"
+
+    def test_translate_phase_unknown_returns_first(self):
+        """translate_phase returns first phase for unknown standard phase."""
+        template = DiscoveryTemplate()
+
+        # Unknown phase falls back to first phase
+        assert template.translate_phase("unknown") == "scan"
+
+    def test_fix_violation_default_mapping(self):
+        """fix_violation uses standard phases so mapping is identity."""
+        template = FixViolationTemplate()
+        mapping = template.get_phase_mapping()
+
+        # fix_violation has init, analyze, implement, verify
+        assert mapping["init"] == "init"
+        assert mapping["analyze"] == "analyze"
+        assert mapping["implement"] == "implement"
+        assert mapping["verify"] == "verify"
+
+    def test_all_templates_translate_all_standard_phases(self):
+        """All templates can translate all standard phases."""
+        standard_phases = ["init", "analyze", "plan", "implement", "verify"]
+
+        for task_type in list_task_types():
+            template = get_template_for_task(task_type)
+
+            for standard_phase in standard_phases:
+                translated = template.translate_phase(standard_phase)
+                assert translated in template.phases, (
+                    f"{task_type}: {standard_phase} translated to {translated} "
+                    f"which is not in {template.phases}"
+                )

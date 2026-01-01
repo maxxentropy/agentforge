@@ -1,7 +1,7 @@
-# @spec_file: .agentforge/specs/core-context-v1.yaml
-# @spec_id: core-context-v1
+# @spec_file: specs/minimal-context-architecture-specs/specs/minimal-context-architecture/README.md
+# @spec_id: minimal-context-architecture-v2
 # @component_id: context-package
-# @test_path: tests/unit/context/test_package.py
+# @test_path: tests/unit/context/
 
 """
 Context Management Package

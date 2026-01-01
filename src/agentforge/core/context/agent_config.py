@@ -1,6 +1,6 @@
-# @spec_file: .agentforge/specs/core-context-v1.yaml
-# @spec_id: core-context-v1
-# @component_id: agent-config
+# @spec_file: specs/minimal-context-architecture-specs/specs/minimal-context-architecture/02-agent-config.yaml
+# @spec_id: agent-config-v1
+# @component_id: agent-config-loader
 # @test_path: tests/unit/context/test_agent_config.py
 
 """

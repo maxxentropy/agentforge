@@ -1,5 +1,5 @@
-# @spec_file: .agentforge/specs/core-context-v1.yaml
-# @spec_id: core-context-v1
+# @spec_file: specs/minimal-context-architecture-specs/specs/minimal-context-architecture/04-context-templates.yaml
+# @spec_id: context-templates-v1
 # @component_id: context-template-fix-violation
 # @test_path: tests/unit/context/test_templates.py
 

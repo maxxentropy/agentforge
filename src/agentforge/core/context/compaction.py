@@ -1,4 +1,4 @@
-# @spec_file: .agentforge/specs/core-context-v1.yaml
+# @spec_file: specs/minimal-context-architecture-specs/specs/minimal-context-architecture/06-compaction.yaml
 # @spec_id: compaction-v1
 # @component_id: compaction-manager
 # @test_path: tests/unit/context/test_compaction.py

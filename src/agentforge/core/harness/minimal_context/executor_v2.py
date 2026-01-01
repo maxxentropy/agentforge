@@ -1,5 +1,5 @@
-# @spec_file: .agentforge/specs/core-context-v1.yaml
-# @spec_id: core-context-v1
+# @spec_file: .agentforge/specs/core-harness-minimal-context-v1.yaml
+# @spec_id: core-harness-minimal-context-v1
 # @component_id: executor-v2
 # @test_path: tests/unit/harness/test_executor_v2.py
 
@@ -55,6 +55,7 @@ from ...context import (
 )
 from .executor import MinimalContextExecutor, StepOutcome, AdaptiveBudget
 from .state_store import TaskStateStore
+from .template_context_builder import TemplateContextBuilder
 from .working_memory import WorkingMemoryManager
 
 
@@ -132,6 +133,17 @@ class MinimalContextExecutorV2:
         self._compaction_events = 0
         self._tokens_saved = 0
 
+        # Initialize state store (shared between executor and context builder)
+        self.state_store = TaskStateStore(self.project_path)
+
+        # Create template-based context builder
+        self.template_context_builder = TemplateContextBuilder(
+            project_path=self.project_path,
+            state_store=self.state_store,
+            task_type=task_type,
+            fingerprint_generator=self.fingerprint_generator,
+        )
+
         # Initialize base executor with config-derived settings
         executor_kwargs.setdefault("model", "claude-sonnet-4-20250514")
         executor_kwargs.setdefault(
@@ -143,8 +155,12 @@ class MinimalContextExecutorV2:
 
         self.base_executor = MinimalContextExecutor(
             project_path=self.project_path,
+            state_store=self.state_store,  # Share state store
             **executor_kwargs,
         )
+
+        # Replace the base executor's context builder with template-based one
+        self.base_executor.context_builder = self.template_context_builder
 
     def get_fingerprint(
         self,

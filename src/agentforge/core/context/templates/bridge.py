@@ -1,5 +1,5 @@
-# @spec_file: .agentforge/specs/core-context-v1.yaml
-# @spec_id: core-context-v1
+# @spec_file: specs/minimal-context-architecture-specs/specs/minimal-context-architecture/04-context-templates.yaml
+# @spec_id: context-templates-v1
 # @component_id: context-template-bridge
 # @test_path: tests/unit/context/test_templates.py
 
@@ -20,7 +20,7 @@ Token budget prioritizes:
 - validate phase: 800 tokens (coverage + results)
 """
 
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from .base import BaseContextTemplate
 from .models import CompactionLevel, ContextSection, TierDefinition
@@ -36,6 +36,16 @@ class BridgeTemplate(BaseContextTemplate):
     @property
     def phases(self) -> List[str]:
         return ["analyze", "map", "validate"]
+
+    def get_phase_mapping(self) -> Dict[str, str]:
+        """Map standard phases to bridge phases."""
+        return {
+            "init": "analyze",
+            "analyze": "analyze",
+            "plan": "analyze",
+            "implement": "map",
+            "verify": "validate",
+        }
 
     def get_tier2_for_phase(self, phase: str) -> TierDefinition:
         """Get phase-specific tier 2 definition."""

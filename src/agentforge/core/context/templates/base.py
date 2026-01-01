@@ -1,5 +1,5 @@
-# @spec_file: .agentforge/specs/core-context-v1.yaml
-# @spec_id: core-context-v1
+# @spec_file: specs/minimal-context-architecture-specs/specs/minimal-context-architecture/04-context-templates.yaml
+# @spec_id: context-templates-v1
 # @component_id: context-templates-base
 # @test_path: tests/unit/context/test_templates.py
 
@@ -140,6 +140,51 @@ reasoning: brief explanation
     def get_tier2_for_phase(self, phase: str) -> TierDefinition:
         """Get tier 2 definition for a specific phase."""
         pass
+
+    def get_phase_mapping(self) -> Dict[str, str]:
+        """
+        Map standard PhaseMachine phases to this template's phases.
+
+        The PhaseMachine uses standard phases: init, analyze, plan, implement, verify.
+        Templates may use different phase names that carry domain-specific meaning.
+
+        Override this method to provide custom mappings.
+
+        Returns:
+            Dict mapping standard phase names to template phase names.
+
+        Example for discovery template:
+            {"init": "scan", "analyze": "analyze", "implement": "synthesize", "verify": "synthesize"}
+        """
+        # Default: identity mapping for standard phases
+        return {
+            "init": "init" if "init" in self.phases else self.phases[0],
+            "analyze": "analyze" if "analyze" in self.phases else (
+                self.phases[1] if len(self.phases) > 1 else self.phases[0]
+            ),
+            "plan": "analyze" if "analyze" in self.phases else self.phases[0],
+            "implement": "implement" if "implement" in self.phases else (
+                self.phases[-2] if len(self.phases) > 2 else self.phases[-1]
+            ),
+            "verify": "verify" if "verify" in self.phases else self.phases[-1],
+        }
+
+    def translate_phase(self, standard_phase: str) -> str:
+        """
+        Translate a standard phase name to this template's phase name.
+
+        Args:
+            standard_phase: Phase name from PhaseMachine (init, analyze, etc.)
+
+        Returns:
+            Corresponding template phase name
+        """
+        mapping = self.get_phase_mapping()
+        template_phase = mapping.get(standard_phase.lower(), self.phases[0])
+        # Ensure the returned phase is valid for this template
+        if template_phase not in self.phases:
+            return self.phases[0]
+        return template_phase
 
     def get_system_prompt(self, phase: Optional[str] = None) -> str:
         """

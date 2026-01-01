@@ -1,4 +1,4 @@
-# @spec_file: .agentforge/specs/core-context-v1.yaml
+# @spec_file: specs/minimal-context-architecture-specs/specs/minimal-context-architecture/07-audit.yaml
 # @spec_id: audit-v1
 # @component_id: context-audit-logger
 # @test_path: tests/unit/context/test_audit.py

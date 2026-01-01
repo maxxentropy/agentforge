@@ -102,6 +102,10 @@ from .executor_v2 import (
     create_executor_v2,
     should_use_v2,
 )
+from .template_context_builder import (
+    TemplateContextBuilder,
+    TemplateStepContext,
+)
 
 __all__ = [
     # State
@@ -177,4 +181,6 @@ __all__ = [
     "MinimalContextExecutorV2",
     "create_executor_v2",
     "should_use_v2",
+    "TemplateContextBuilder",
+    "TemplateStepContext",
 ]

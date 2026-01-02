@@ -20,7 +20,7 @@ import yaml
 
 from agentforge.core.harness.conformance_tools import ConformanceTools
 from agentforge.core.harness.git_tools import GitTools
-from agentforge.core.harness.test_runner_tools import TestRunnerTools
+from agentforge.core.harness.test_runner_tools import RunnerTools
 from agentforge.core.harness.violation_tools import ViolationInfo, ViolationTools
 
 
@@ -372,8 +372,8 @@ class TestGitTools:
         assert "git_commit" in executors
 
 
-class TestTestRunnerTools:
-    """Tests for TestRunnerTools."""
+class TestRunnerTools:
+    """Tests for RunnerTools."""
 
     @pytest.fixture
     def temp_test_project(self):
@@ -404,7 +404,7 @@ def test_fails():
             yield project
 
     def test_run_tests_passing(self, temp_test_project):
-        tools = TestRunnerTools(temp_test_project)
+        tools = RunnerTools(temp_test_project)
         result = tools.run_tests(
             "run_tests",
             {"test_path": "tests/test_simple.py", "verbose": True},
@@ -414,7 +414,7 @@ def test_fails():
         assert "passed" in result.output.lower()
 
     def test_run_tests_failing(self, temp_test_project):
-        tools = TestRunnerTools(temp_test_project)
+        tools = RunnerTools(temp_test_project)
         result = tools.run_tests(
             "run_tests",
             {"test_path": "tests/test_failing.py"},
@@ -426,7 +426,7 @@ def test_fails():
         assert "failed" in result.error.lower()
 
     def test_run_single_test(self, temp_test_project):
-        tools = TestRunnerTools(temp_test_project)
+        tools = RunnerTools(temp_test_project)
         result = tools.run_single_test(
             "run_single_test",
             {"test_path": "tests/test_simple.py::test_passes"},
@@ -436,14 +436,14 @@ def test_fails():
         assert "passed" in result.output.lower()
 
     def test_run_single_test_missing_path(self, temp_test_project):
-        tools = TestRunnerTools(temp_test_project)
+        tools = RunnerTools(temp_test_project)
         result = tools.run_single_test("run_single_test", {})
 
         assert not result.success
         assert "missing" in result.error.lower()
 
     def test_run_affected_tests_no_matches(self, temp_test_project):
-        tools = TestRunnerTools(temp_test_project)
+        tools = RunnerTools(temp_test_project)
         result = tools.run_affected_tests(
             "run_affected_tests",
             {"changed_files": ["src/some_module.py"]},
@@ -453,7 +453,7 @@ def test_fails():
         assert "No related tests found" in result.output
 
     def test_get_tool_executors(self, temp_test_project):
-        tools = TestRunnerTools(temp_test_project)
+        tools = RunnerTools(temp_test_project)
         executors = tools.get_tool_executors()
 
         assert "run_tests" in executors

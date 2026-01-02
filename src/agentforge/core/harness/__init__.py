@@ -157,7 +157,7 @@ from agentforge.core.harness.session_manager import (
 from agentforge.core.harness.session_store import SessionStore
 from agentforge.core.harness.test_runner_tools import (
     TEST_TOOL_DEFINITIONS,
-    TestRunnerTools,
+    RunnerTools,
 )
 
 # Phase 3: Tool Selection
@@ -269,7 +269,7 @@ __all__ = [
     "CONFORMANCE_TOOL_DEFINITIONS",
     "GitTools",
     "GIT_TOOL_DEFINITIONS",
-    "TestRunnerTools",
+    "RunnerTools",
     "TEST_TOOL_DEFINITIONS",
     "FixViolationWorkflow",
     "FixPhase",

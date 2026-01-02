@@ -39,7 +39,7 @@ from ..conformance_tools import ConformanceTools
 from ..git_tools import GitTools
 from ..python_tools import PythonTools
 from ..refactoring_tools import RefactoringTools
-from ..test_runner_tools import TestRunnerTools
+from ..test_runner_tools import RunnerTools
 from ..violation_tools import ViolationTools
 from .executor import AdaptiveBudget, MinimalContextExecutor, StepOutcome
 from .phase_machine import PhaseMachine
@@ -97,7 +97,7 @@ class MinimalContextFixWorkflow:
         self.violation_tools = ViolationTools(project_path)
         self.conformance_tools = ConformanceTools(project_path)
         self.git_tools = GitTools(project_path, require_approval=require_commit_approval)
-        self.test_tools = TestRunnerTools(project_path)
+        self.test_tools = RunnerTools(project_path)
         self.python_tools = PythonTools(project_path)
         self.refactoring_tools = RefactoringTools(project_path)
 

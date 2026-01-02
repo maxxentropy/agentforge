@@ -15,7 +15,7 @@ import subprocess
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-from agentforge.core.tdflow.domain import TestResult
+from agentforge.core.tdflow.domain import RunResult
 from agentforge.core.tdflow.runners.base import TestRunner
 
 
@@ -26,7 +26,7 @@ class DotNetTestRunner(TestRunner):
     Supports xUnit, NUnit, and MSTest frameworks.
     """
 
-    def run_tests(self, filter_pattern: str | None = None) -> TestResult:
+    def run_tests(self, filter_pattern: str | None = None) -> RunResult:
         """
         Run dotnet test and parse results.
 
@@ -34,7 +34,7 @@ class DotNetTestRunner(TestRunner):
             filter_pattern: Optional test filter (e.g., "ClassName", "MethodName")
 
         Returns:
-            TestResult with parsed test counts
+            RunResult with parsed test counts
         """
         cmd = ["dotnet", "test", str(self.project_path), "--no-restore"]
 
@@ -65,7 +65,7 @@ class DotNetTestRunner(TestRunner):
 
         return self._parse_output(result.stdout + result.stderr, result.returncode)
 
-    def _parse_trx(self, trx_path: Path, output: str) -> TestResult:
+    def _parse_trx(self, trx_path: Path, output: str) -> RunResult:
         """
         Parse TRX (Visual Studio Test Results) file.
 
@@ -74,7 +74,7 @@ class DotNetTestRunner(TestRunner):
             output: Raw console output for fallback
 
         Returns:
-            TestResult with parsed data
+            RunResult with parsed data
         """
         tree = ET.parse(trx_path)
         root = tree.getroot()
@@ -102,7 +102,7 @@ class DotNetTestRunner(TestRunner):
                     finish_dt = datetime.fromisoformat(finish.replace("Z", "+00:00"))
                     duration = (finish_dt - start_dt).total_seconds()
 
-            return TestResult(
+            return RunResult(
                 total=total,
                 passed=passed,
                 failed=failed,
@@ -114,7 +114,7 @@ class DotNetTestRunner(TestRunner):
         # Fallback to output parsing
         return self._parse_output(output, 0 if passed == total else 1)
 
-    def _parse_output(self, output: str, returncode: int) -> TestResult:
+    def _parse_output(self, output: str, returncode: int) -> RunResult:
         """
         Parse dotnet test output.
 
@@ -123,7 +123,7 @@ class DotNetTestRunner(TestRunner):
             returncode: Process return code
 
         Returns:
-            TestResult with parsed data
+            RunResult with parsed data
         """
         total = passed = failed = 0
 
@@ -151,7 +151,7 @@ class DotNetTestRunner(TestRunner):
         if total == 0 and (passed > 0 or failed > 0):
             total = passed + failed
 
-        return TestResult(
+        return RunResult(
             total=total,
             passed=passed,
             failed=failed,

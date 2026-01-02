@@ -227,7 +227,7 @@ class ConventionDetection:
 
 
 @dataclass
-class TestInventory:
+class DiscoveredTests:
     """Inventory of tests in the codebase."""
     total_test_files: int = 0
     total_test_methods: int = 0
@@ -244,7 +244,7 @@ class TestGap:
 
 
 @dataclass
-class TestLinkage:
+class SourceTestLinkage:
     """
     Links a source file to its test file(s).
 
@@ -267,13 +267,13 @@ class TestLinkage:
 
 
 @dataclass
-class TestAnalysis:
+class CoverageGapAnalysis:
     """Results of test gap analysis."""
-    inventory: TestInventory = field(default_factory=TestInventory)
+    inventory: DiscoveredTests = field(default_factory=DiscoveredTests)
     estimated_coverage: float = 0.0
     gaps: list[TestGap] = field(default_factory=list)
     # NEW: Source-to-test mapping for fix verification
-    linkages: list[TestLinkage] = field(default_factory=list)
+    linkages: list[SourceTestLinkage] = field(default_factory=list)
     detection: Detection = field(default_factory=lambda: Detection(
         value="test_analysis", confidence=0.0, source=DetectionSource.AUTO_DETECTED
     ))
@@ -462,7 +462,7 @@ class CodebaseProfile:
     conventions: dict[str, Any] | None = None
 
     # Tests
-    test_analysis: TestAnalysis | None = None
+    test_analysis: CoverageGapAnalysis | None = None
 
     # Dependencies
     dependencies: list[DependencyInfo] = field(default_factory=list)

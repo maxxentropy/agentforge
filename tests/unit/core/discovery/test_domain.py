@@ -10,7 +10,7 @@ Tests the pure domain objects for brownfield discovery:
 - Dataclasses with to_dict() serialization
 - Detection confidence scoring
 - Zone containment checks
-- TestLinkage and TestAnalysis for fix workflows
+- SourceTestLinkage and CoverageGapAnalysis for fix workflows
 """
 
 from datetime import datetime
@@ -33,9 +33,9 @@ from agentforge.core.discovery.domain import (
     OnboardingProgress,
     OnboardingStatus,
     PatternDetection,
-    TestAnalysis,
-    TestInventory,
-    TestLinkage,
+    DiscoveredTests,
+    SourceTestLinkage,
+    CoverageGapAnalysis,
     Zone,
     ZoneDetectionMode,
 )
@@ -181,12 +181,12 @@ class TestLayerInfo:
         assert result["confidence"] == 0.9
 
 
-class TestTestLinkage:
-    """Tests for TestLinkage dataclass."""
+class TestSourceTestLinkage:
+    """Tests for SourceTestLinkage dataclass."""
 
     def test_to_dict(self):
         """Should convert test linkage to dict."""
-        linkage = TestLinkage(
+        linkage = SourceTestLinkage(
             source_path="src/core/module.py",
             test_paths=["tests/unit/test_module.py", "tests/integration/test_module.py"],
             confidence=0.85,
@@ -201,17 +201,17 @@ class TestTestLinkage:
         assert result["detection_method"] == "import"
 
 
-class TestTestAnalysis:
-    """Tests for TestAnalysis dataclass."""
+class TestCoverageGapAnalysis:
+    """Tests for CoverageGapAnalysis dataclass."""
 
     def test_get_test_path_found(self):
         """Should return primary test path when linkage exists."""
-        linkage = TestLinkage(
+        linkage = SourceTestLinkage(
             source_path="src/module.py",
             test_paths=["tests/test_module.py", "tests/test_module_integration.py"],
             confidence=0.9
         )
-        analysis = TestAnalysis(linkages=[linkage])
+        analysis = CoverageGapAnalysis(linkages=[linkage])
 
         result = analysis.get_test_path("src/module.py")
 
@@ -219,7 +219,7 @@ class TestTestAnalysis:
 
     def test_get_test_path_not_found(self):
         """Should return None when no linkage exists."""
-        analysis = TestAnalysis(linkages=[])
+        analysis = CoverageGapAnalysis(linkages=[])
 
         result = analysis.get_test_path("src/unknown.py")
 
@@ -227,12 +227,12 @@ class TestTestAnalysis:
 
     def test_get_test_path_empty_test_paths(self):
         """Should return None when linkage has empty test_paths."""
-        linkage = TestLinkage(
+        linkage = SourceTestLinkage(
             source_path="src/module.py",
             test_paths=[],
             confidence=0.5
         )
-        analysis = TestAnalysis(linkages=[linkage])
+        analysis = CoverageGapAnalysis(linkages=[linkage])
 
         result = analysis.get_test_path("src/module.py")
 
@@ -240,17 +240,17 @@ class TestTestAnalysis:
 
     def test_to_dict(self):
         """Should convert test analysis to dict with linkages."""
-        inventory = TestInventory(
+        inventory = DiscoveredTests(
             total_test_files=10,
             total_test_methods=50,
             frameworks=["pytest"],
             categories={"unit": 40, "integration": 10}
         )
-        linkage = TestLinkage(
+        linkage = SourceTestLinkage(
             source_path="src/a.py",
             test_paths=["tests/test_a.py"]
         )
-        analysis = TestAnalysis(
+        analysis = CoverageGapAnalysis(
             inventory=inventory,
             estimated_coverage=0.65,
             linkages=[linkage],
@@ -422,7 +422,7 @@ class TestCodebaseProfile:
 
     def test_to_dict_with_test_analysis(self, sample_profile):
         """Should include test analysis when present."""
-        sample_profile.test_analysis = TestAnalysis(
+        sample_profile.test_analysis = CoverageGapAnalysis(
             estimated_coverage=0.65,
             detection=Detection(value="tests", confidence=0.8)
         )

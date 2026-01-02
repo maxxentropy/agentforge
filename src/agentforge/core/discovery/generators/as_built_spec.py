@@ -21,7 +21,7 @@ from typing import Any
 
 import yaml
 
-from ..domain import TestAnalysis, TestLinkage
+from ..domain import SourceTestLinkage, CoverageGapAnalysis
 
 
 @dataclass
@@ -155,7 +155,7 @@ class AsBuiltSpecGenerator:
 
     def generate_from_test_analysis(
         self,
-        test_analysis: TestAnalysis,
+        test_analysis: CoverageGapAnalysis,
         zone_name: str = "main",
     ) -> list[AsBuiltSpec]:
         """
@@ -171,7 +171,7 @@ class AsBuiltSpecGenerator:
             List of generated AsBuiltSpec objects
         """
         # Group linkages by directory
-        dir_groups: dict[str, list[TestLinkage]] = {}
+        dir_groups: dict[str, list[SourceTestLinkage]] = {}
 
         for linkage in test_analysis.linkages:
             source_path = Path(linkage.source_path)
@@ -192,7 +192,7 @@ class AsBuiltSpecGenerator:
     def _generate_spec_for_directory(
         self,
         dir_path: str,
-        linkages: list[TestLinkage],
+        linkages: list[SourceTestLinkage],
         zone_name: str,
     ) -> AsBuiltSpec | None:
         """Generate a spec for a single directory."""
@@ -223,7 +223,7 @@ class AsBuiltSpecGenerator:
 
         return spec
 
-    def _analyze_source_file(self, linkage: TestLinkage) -> DiscoveredComponent | None:
+    def _analyze_source_file(self, linkage: SourceTestLinkage) -> DiscoveredComponent | None:
         """Analyze a source file to extract component information."""
         source_path = self.root_path / linkage.source_path
 

@@ -10,7 +10,7 @@ from agentforge.core.tdflow.domain import (
     ComponentStatus,
     TDFlowPhase,
     TDFlowSession,
-    TestResult,
+    RunResult,
     VerificationReport,
 )
 
@@ -41,40 +41,40 @@ class TestComponentStatus:
         assert ComponentStatus.FAILED.value == "failed"
 
 
-class TestTestResult:
-    """Tests for TestResult dataclass."""
+class TestRunResult:
+    """Tests for RunResult dataclass."""
 
     def test_all_passed_when_all_pass(self):
         """All passed returns true when all tests pass."""
-        result = TestResult(
+        result = RunResult(
             total=5, passed=5, failed=0, errors=0, duration_seconds=1.0, output=""
         )
         assert result.all_passed is True
 
     def test_all_passed_false_when_some_fail(self):
         """All passed returns false when some fail."""
-        result = TestResult(
+        result = RunResult(
             total=5, passed=3, failed=2, errors=0, duration_seconds=1.0, output=""
         )
         assert result.all_passed is False
 
     def test_all_passed_false_when_errors(self):
         """All passed returns false when there are errors."""
-        result = TestResult(
+        result = RunResult(
             total=5, passed=5, failed=0, errors=1, duration_seconds=1.0, output=""
         )
         assert result.all_passed is False
 
     def test_all_passed_false_when_no_tests(self):
         """All passed returns false when no tests exist."""
-        result = TestResult(
+        result = RunResult(
             total=0, passed=0, failed=0, errors=0, duration_seconds=0.0, output=""
         )
         assert result.all_passed is False
 
     def test_all_failed_when_none_pass(self):
         """All failed returns true when no tests pass."""
-        result = TestResult(
+        result = RunResult(
             total=5, passed=0, failed=5, errors=0, duration_seconds=1.0, output=""
         )
         assert result.all_failed is True

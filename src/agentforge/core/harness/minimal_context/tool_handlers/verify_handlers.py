@@ -289,11 +289,11 @@ def create_run_tests_handler(project_path: Path | None = None) -> ActionHandler:
         files_modified = context.get("files_modified", [])
 
         try:
-            # Try to use TestRunnerTools if available
+            # Try to use RunnerTools if available
             try:
-                from agentforge.harness.test_runner_tools import TestRunnerTools
+                from agentforge.harness.test_runner_tools import RunnerTools
 
-                test_tools = TestRunnerTools(base_path)
+                test_tools = RunnerTools(base_path)
 
                 if test_path:
                     # Run specific test

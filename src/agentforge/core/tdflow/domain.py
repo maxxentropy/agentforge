@@ -84,7 +84,7 @@ class ComponentProgress:
 
 
 @dataclass
-class TestResult:
+class RunResult:
     """Result of running tests."""
 
     total: int
@@ -114,7 +114,7 @@ class PhaseResult:
     success: bool
     component: str
     artifacts: dict[str, Path] = field(default_factory=dict)
-    test_result: TestResult | None = None
+    test_result: RunResult | None = None
     errors: list[str] = field(default_factory=list)
     duration_seconds: float = 0.0
 

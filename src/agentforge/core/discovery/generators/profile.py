@@ -25,7 +25,7 @@ from ..domain import (
     DetectionSource,
     DiscoveryMetadata,
     LanguageInfo,
-    TestAnalysis,
+    CoverageGapAnalysis,
 )
 
 
@@ -51,7 +51,7 @@ class ProfileGenerator:
         dependencies: list[DependencyInfo],
         phases_completed: list[str],
         duration_seconds: float,
-        test_analysis: TestAnalysis | None = None,
+        test_analysis: CoverageGapAnalysis | None = None,
     ) -> CodebaseProfile:
         """
         Generate a CodebaseProfile from analysis results.

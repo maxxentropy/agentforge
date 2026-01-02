@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from agentforge.core.tdflow.domain import TestResult
+    from agentforge.core.tdflow.domain import RunResult
 
 
 class TestRunner(ABC):
@@ -35,7 +35,7 @@ class TestRunner(ABC):
         self.project_path = project_path
 
     @abstractmethod
-    def run_tests(self, filter_pattern: str | None = None) -> "TestResult":
+    def run_tests(self, filter_pattern: str | None = None) -> "RunResult":
         """
         Run tests and return results.
 
@@ -43,7 +43,7 @@ class TestRunner(ABC):
             filter_pattern: Optional filter to run specific tests
 
         Returns:
-            TestResult with pass/fail counts
+            RunResult with pass/fail counts
         """
         pass
 

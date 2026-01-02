@@ -17,7 +17,7 @@ from agentforge.core.tdflow.domain import (
     ComponentStatus,
     TDFlowPhase,
     TDFlowSession,
-    TestResult,
+    RunResult,
 )
 from agentforge.core.tdflow.orchestrator import TDFlowOrchestrator
 
@@ -123,7 +123,7 @@ components:
             success=True,
             component="TestService",
             artifacts={"tests": temp_dir / "tests" / "test_file.py"},
-            test_result=TestResult(
+            test_result=RunResult(
                 total=3, passed=0, failed=3, errors=0, duration_seconds=0.5, output=""
             ),
         )

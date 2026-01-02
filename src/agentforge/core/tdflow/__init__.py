@@ -22,7 +22,7 @@ from agentforge.core.tdflow.domain import (
     TDFlowSession,
     TestCase,
     TestFile,
-    TestResult,
+    RunResult,
     VerificationReport,
 )
 from agentforge.core.tdflow.orchestrator import TDFlowOrchestrator
@@ -36,7 +36,7 @@ __all__ = [
     "TestFile",
     "ImplementationFile",
     "ComponentProgress",
-    "TestResult",
+    "RunResult",
     "PhaseResult",
     "VerificationReport",
     "SessionHistory",

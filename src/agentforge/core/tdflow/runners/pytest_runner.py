@@ -10,7 +10,7 @@ import re
 import subprocess
 from pathlib import Path
 
-from agentforge.core.tdflow.domain import TestResult
+from agentforge.core.tdflow.domain import RunResult
 from agentforge.core.tdflow.runners.base import TestRunner
 
 
@@ -19,7 +19,7 @@ class PytestRunner(TestRunner):
     Test runner for Python projects using pytest.
     """
 
-    def run_tests(self, filter_pattern: str | None = None) -> TestResult:
+    def run_tests(self, filter_pattern: str | None = None) -> RunResult:
         """
         Run pytest and parse results.
 
@@ -27,7 +27,7 @@ class PytestRunner(TestRunner):
             filter_pattern: Optional filter (-k pattern)
 
         Returns:
-            TestResult with parsed data
+            RunResult with parsed data
         """
         cmd = ["python", "-m", "pytest", "-v", "--tb=short"]
 
@@ -70,7 +70,7 @@ class PytestRunner(TestRunner):
 
         return self._parse_output(result.stdout + result.stderr, result.returncode)
 
-    def _parse_json_report(self, report_path: Path, output: str) -> TestResult:
+    def _parse_json_report(self, report_path: Path, output: str) -> RunResult:
         """
         Parse pytest JSON report.
 
@@ -79,13 +79,13 @@ class PytestRunner(TestRunner):
             output: Raw console output
 
         Returns:
-            TestResult with parsed data
+            RunResult with parsed data
         """
         with open(report_path) as f:
             report = json.load(f)
 
         summary = report.get("summary", {})
-        return TestResult(
+        return RunResult(
             total=summary.get("total", 0),
             passed=summary.get("passed", 0),
             failed=summary.get("failed", 0),
@@ -94,7 +94,7 @@ class PytestRunner(TestRunner):
             output=output,
         )
 
-    def _parse_output(self, output: str, returncode: int) -> TestResult:
+    def _parse_output(self, output: str, returncode: int) -> RunResult:
         """
         Parse pytest output.
 
@@ -103,7 +103,7 @@ class PytestRunner(TestRunner):
             returncode: Process return code
 
         Returns:
-            TestResult with parsed data
+            RunResult with parsed data
         """
         total = passed = failed = errors = 0
         duration = 0.0
@@ -145,7 +145,7 @@ class PytestRunner(TestRunner):
             errors = len(re.findall(r"ERROR", output))
             total = passed + failed + errors
 
-        return TestResult(
+        return RunResult(
             total=total,
             passed=passed,
             failed=failed,

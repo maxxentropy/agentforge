@@ -29,7 +29,7 @@ from .domain import (
     DiscoveryPhase,
     Interaction,
     LanguageInfo,
-    TestAnalysis,
+    CoverageGapAnalysis,
     Zone,
     ZoneProfile,
 )
@@ -124,7 +124,7 @@ class DiscoveryManager:
         self._dependencies: list[DependencyInfo] = []
         self._structure_result: StructureAnalysisResult | None = None
         self._pattern_result: PatternAnalysisResult | None = None
-        self._test_analysis: TestAnalysis | None = None  # type: ignore
+        self._test_analysis: CoverageGapAnalysis | None = None  # type: ignore
 
     def discover(
         self,
@@ -391,7 +391,7 @@ class DiscoveryManager:
 
         return architecture
 
-    def _analyze_tests(self) -> TestAnalysis:
+    def _analyze_tests(self) -> CoverageGapAnalysis:
         """Phase 5: Analyze tests and build source-to-test linkage."""
         # Get test directories from structure analysis
         test_dirs = ["tests", "test"]

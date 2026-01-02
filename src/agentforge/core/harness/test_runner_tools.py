@@ -12,7 +12,7 @@ from typing import Any
 from .llm_executor_domain import ToolResult
 
 
-class TestRunnerTools:
+class RunnerTools:
     """Tools for running pytest and validating changes."""
 
     def __init__(self, project_path: Path, timeout: int = 300):

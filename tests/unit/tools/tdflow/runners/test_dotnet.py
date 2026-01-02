@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from agentforge.core.tdflow.domain import TestResult
+from agentforge.core.tdflow.domain import RunResult
 from agentforge.core.tdflow.runners.dotnet import DotNetTestRunner
 
 
@@ -89,12 +89,12 @@ No test matches the given testcase filter
         assert result.failed == 0
 
 
-class TestTestResultProperties:
-    """Tests for TestResult property calculations."""
+class TestRunResultProperties:
+    """Tests for RunResult property calculations."""
 
     def test_all_passed_true(self):
         """All passed when all tests pass."""
-        result = TestResult(
+        result = RunResult(
             total=5, passed=5, failed=0, errors=0, duration_seconds=1.0, output=""
         )
         assert result.all_passed is True
@@ -102,7 +102,7 @@ class TestTestResultProperties:
 
     def test_all_failed_true(self):
         """All failed when no tests pass."""
-        result = TestResult(
+        result = RunResult(
             total=5, passed=0, failed=5, errors=0, duration_seconds=1.0, output=""
         )
         assert result.all_failed is True
@@ -110,7 +110,7 @@ class TestTestResultProperties:
 
     def test_partial_pass(self):
         """Partial pass neither all passed nor all failed."""
-        result = TestResult(
+        result = RunResult(
             total=5, passed=3, failed=2, errors=0, duration_seconds=1.0, output=""
         )
         assert result.all_passed is False

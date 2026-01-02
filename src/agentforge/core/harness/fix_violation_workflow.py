@@ -19,7 +19,7 @@ from .llm_executor_domain import (
     ExecutionContext,
     StepResult,
 )
-from .test_runner_tools import TEST_TOOL_DEFINITIONS, TestRunnerTools
+from .test_runner_tools import TEST_TOOL_DEFINITIONS, RunnerTools
 from .violation_tools import VIOLATION_TOOL_DEFINITIONS, ViolationTools
 
 
@@ -176,7 +176,7 @@ class FixViolationWorkflow:
         self.violation_tools = ViolationTools(project_path)
         self.conformance_tools = ConformanceTools(project_path)
         self.git_tools = GitTools(project_path, require_approval=require_commit_approval)
-        self.test_tools = TestRunnerTools(project_path)
+        self.test_tools = RunnerTools(project_path)
 
         # Register all tools with executor
         self._register_tools()

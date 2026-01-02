@@ -17,7 +17,7 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from ..domain import TestAnalysis, TestInventory, TestLinkage
+from ..domain import DiscoveredTests, SourceTestLinkage, CoverageGapAnalysis
 
 
 @dataclass
@@ -33,12 +33,12 @@ class TestLinkageAnalyzer:
     test_directories: list[str] = field(default_factory=lambda: ["tests", "test"])
     source_directories: list[str] = field(default_factory=lambda: ["src", "tools", "lib"])
 
-    def analyze(self) -> TestAnalysis:
+    def analyze(self) -> CoverageGapAnalysis:
         """
         Analyze the codebase and build source-to-test mappings.
 
         Returns:
-            TestAnalysis with linkages populated
+            CoverageGapAnalysis with linkages populated
         """
         # Find all test files
         test_files = self._find_test_files()
@@ -47,7 +47,7 @@ class TestLinkageAnalyzer:
         source_files = self._find_source_files()
 
         # Build mappings using multiple detection methods
-        linkages: dict[str, TestLinkage] = {}
+        linkages: dict[str, SourceTestLinkage] = {}
 
         for test_file in test_files:
             # Analyze imports in test file
@@ -65,7 +65,7 @@ class TestLinkageAnalyzer:
 
                 if confidence > 0:
                     if source_rel not in linkages:
-                        linkages[source_rel] = TestLinkage(
+                        linkages[source_rel] = SourceTestLinkage(
                             source_path=source_rel,
                             test_paths=[],
                             confidence=0.0,
@@ -87,7 +87,7 @@ class TestLinkageAnalyzer:
             if source_rel not in linkages:
                 test_path, confidence = self._check_naming_convention(source_file)
                 if test_path:
-                    linkages[source_rel] = TestLinkage(
+                    linkages[source_rel] = SourceTestLinkage(
                         source_path=source_rel,
                         test_paths=[test_path],
                         confidence=confidence,
@@ -95,14 +95,14 @@ class TestLinkageAnalyzer:
                     )
 
         # Build inventory
-        inventory = TestInventory(
+        inventory = DiscoveredTests(
             total_test_files=len(test_files),
             total_test_methods=self._count_test_methods(test_files),
             frameworks=self._detect_frameworks(test_files),
             categories=self._categorize_tests(test_files),
         )
 
-        return TestAnalysis(
+        return CoverageGapAnalysis(
             inventory=inventory,
             linkages=list(linkages.values()),
             estimated_coverage=len(linkages) / max(len(source_files), 1),

@@ -41,7 +41,7 @@
 - **Location:** `src/agentforge/core/pipeline/state_store.py`
 - **Issue:** YAML file I/O for every state save could be expensive for rapid iterations
 - **Solution:** Consider write batching or async persistence for high-frequency updates
-- **Status:** [ ] Deferred (not blocking)
+- **Status:** [x] Fixed - Added `DeferredWriteManager` with debouncing and background flush
 
 ---
 

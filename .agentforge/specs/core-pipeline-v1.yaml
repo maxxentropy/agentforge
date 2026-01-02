@@ -142,6 +142,19 @@ components:
   test_location: tests/unit/pipeline/test_llm_stage_executor.py
   description: LLM-powered stage executor for AI-driven stages.
 
+# === Types and Testing Infrastructure ===
+- name: types
+  component_id: pipeline-types
+  location: src/agentforge/core/pipeline/types.py
+  test_location: tests/unit/pipeline/test_types.py
+  description: Common type aliases for pipeline configuration and artifacts.
+
+- name: state_machine_properties
+  component_id: pipeline-state-machine-properties
+  location: tests/unit/pipeline/test_state_machine_properties.py
+  test_location: tests/unit/pipeline/test_state_machine_properties.py
+  description: Property-based tests for state machine invariants using Hypothesis.
+
 # === Configuration ===
 - name: config
   component_id: pipeline-config

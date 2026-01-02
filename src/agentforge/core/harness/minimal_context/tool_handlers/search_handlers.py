@@ -16,12 +16,21 @@ load_context loads additional file content into the agent's working memory.
 """
 
 import fnmatch
+import logging
 import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+from .constants import (
+    FIND_RELATED_MAX_FILES,
+    SEARCH_DEFAULT_MAX_RESULTS,
+    SEARCH_LINE_MAX_CHARS,
+    WORKING_MEMORY_EXPIRY_STEPS,
+    WORKING_MEMORY_MAX_CONTENT_SIZE,
+)
 from .types import ActionHandler
 
+logger = logging.getLogger(__name__)
 
 # Default file patterns
 INCLUDE_PATTERNS = ["*.py", "*.ts", "*.js", "*.cs", "*.java", "*.go", "*.rs"]
@@ -56,8 +65,9 @@ def create_search_code_handler(project_path: Optional[Path] = None) -> ActionHan
     def handler(params: Dict[str, Any]) -> str:
         pattern = params.get("pattern", "")
         file_pattern = params.get("file_pattern")
-        max_results = params.get("max_results", 20)
+        max_results = params.get("max_results", SEARCH_DEFAULT_MAX_RESULTS)
         search_type = params.get("search_type", "regex")  # "regex" or "semantic"
+        logger.debug("search_code: pattern=%s, type=%s", pattern, search_type)
 
         if not pattern:
             return "ERROR: pattern parameter required"
@@ -113,7 +123,7 @@ def create_search_code_handler(project_path: Optional[Path] = None) -> ActionHan
                 for line_num, line in enumerate(content.splitlines(), 1):
                     if regex.search(line):
                         rel_path = str(file_path.relative_to(base_path))
-                        results.append((rel_path, line_num, line.strip()[:100]))
+                        results.append((rel_path, line_num, line.strip()[:SEARCH_LINE_MAX_CHARS]))
                         if len(results) >= max_results:
                             break
             except Exception:
@@ -193,6 +203,7 @@ def create_load_context_handler(project_path: Optional[Path] = None) -> ActionHa
         # Support multiple parameter formats
         item = params.get("item", "")
         path = params.get("path") or params.get("file_path") or params.get("file")
+        logger.debug("load_context: item=%s, path=%s", item, path)
 
         # If path provided directly, treat as file load
         if path:
@@ -242,9 +253,9 @@ def create_load_context_handler(project_path: Optional[Path] = None) -> ActionHa
                         memory = WorkingMemoryManager(task_dir)
                         memory.load_context(
                             item,
-                            content[:5000],  # Limit to 5000 chars
+                            content[:WORKING_MEMORY_MAX_CONTENT_SIZE],
                             current_step,
-                            expires_after_steps=3,
+                            expires_after_steps=WORKING_MEMORY_EXPIRY_STEPS,
                         )
                     except Exception:
                         pass  # Non-critical if working memory integration fails
@@ -283,18 +294,19 @@ def create_find_related_handler(project_path: Optional[Path] = None) -> ActionHa
     base_path = Path(project_path) if project_path else Path.cwd()
 
     def handler(params: Dict[str, Any]) -> str:
-        file_path = params.get("file_path") or params.get("path")
+        path = params.get("path") or params.get("file_path")
         relation_type = params.get("type", "all")  # "imports", "same_dir", "tests", "all"
+        logger.debug("find_related: path=%s, type=%s", path, relation_type)
 
-        if not file_path:
-            return "ERROR: file_path parameter required"
+        if not path:
+            return "ERROR: path parameter required"
 
-        full_path = Path(file_path)
+        full_path = Path(path)
         if not full_path.is_absolute():
-            full_path = base_path / file_path
+            full_path = base_path / path
 
         if not full_path.exists():
-            return f"ERROR: File not found: {file_path}"
+            return f"ERROR: File not found: {path}"
 
         related = []
 
@@ -348,11 +360,11 @@ def create_find_related_handler(project_path: Optional[Path] = None) -> ActionHa
                 pass  # Skip import analysis on error
 
         if not related:
-            return f"No related files found for: {file_path}"
+            return f"No related files found for: {path}"
 
-        output = [f"Related files for {file_path}:\n"]
-        for rel_type, path in related[:10]:
-            output.append(f"  [{rel_type}] {path}")
+        output = [f"Related files for {path}:\n"]
+        for rel_type, rel_path in related[:FIND_RELATED_MAX_FILES]:
+            output.append(f"  [{rel_type}] {rel_path}")
 
         return "\n".join(output)
 

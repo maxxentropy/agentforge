@@ -12,13 +12,17 @@ Handlers for terminal actions: complete, escalate, cannot_fix.
 These handlers signal the end of a task execution with different outcomes.
 """
 
+import logging
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import yaml
 
+from .constants import PLAN_DISPLAY_MAX_STEPS, SUMMARY_FIELD_MAX_CHARS
 from .types import ActionHandler
+
+logger = logging.getLogger(__name__)
 
 
 def create_complete_handler() -> ActionHandler:
@@ -34,6 +38,7 @@ def create_complete_handler() -> ActionHandler:
     def handler(params: Dict[str, Any]) -> str:
         summary = params.get("summary", "Task completed")
         files_modified = params.get("files_modified", [])
+        logger.debug("complete: summary=%s", summary[:50] if len(summary) > 50 else summary)
 
         # Get context for additional info
         context = params.get("_context", {})
@@ -65,6 +70,7 @@ def create_escalate_handler() -> ActionHandler:
         reason = params.get("reason", "Unknown reason")
         priority = params.get("priority", "medium")
         suggestions = params.get("suggestions", [])
+        logger.debug("escalate: priority=%s, reason=%s", priority, reason[:50])
 
         result_parts = [f"ESCALATE: {reason}"]
         result_parts.append(f"  Priority: {priority}")
@@ -98,6 +104,7 @@ def create_cannot_fix_handler(project_path: Optional[Path] = None) -> ActionHand
         reason = params.get("reason", "")
         constraints = params.get("constraints", [])
         alternatives = params.get("alternatives", [])
+        logger.debug("cannot_fix: reason=%s", reason[:50] if reason else "None")
 
         if not reason:
             return "ERROR: reason parameter required"
@@ -307,16 +314,16 @@ def create_plan_fix_handler(project_path: Optional[Path] = None) -> ActionHandle
 
         result_parts = [
             "PLAN_RECORDED",
-            f"  Diagnosis: {diagnosis[:100]}..." if len(diagnosis) > 100 else f"  Diagnosis: {diagnosis}",
-            f"  Approach: {approach[:100]}..." if len(approach) > 100 else f"  Approach: {approach}",
+            f"  Diagnosis: {diagnosis[:SUMMARY_FIELD_MAX_CHARS]}..." if len(diagnosis) > SUMMARY_FIELD_MAX_CHARS else f"  Diagnosis: {diagnosis}",
+            f"  Approach: {approach[:SUMMARY_FIELD_MAX_CHARS]}..." if len(approach) > SUMMARY_FIELD_MAX_CHARS else f"  Approach: {approach}",
         ]
 
         if steps:
             result_parts.append("  Steps:")
-            for i, step in enumerate(steps[:5], 1):
+            for i, step in enumerate(steps[:PLAN_DISPLAY_MAX_STEPS], 1):
                 result_parts.append(f"    {i}. {step}")
-            if len(steps) > 5:
-                result_parts.append(f"    ... and {len(steps) - 5} more")
+            if len(steps) > PLAN_DISPLAY_MAX_STEPS:
+                result_parts.append(f"    ... and {len(steps) - PLAN_DISPLAY_MAX_STEPS} more")
 
         result_parts.append("\n  Ready to implement.")
 

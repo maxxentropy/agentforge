@@ -18,10 +18,14 @@ Design principles:
 - Provide clear success/failure messages with context
 """
 
+import logging
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from .types import ActionHandler
+from .constants import FILE_PREVIEW_MAX_LINES
+from .types import ActionHandler, validate_path_security
+
+logger = logging.getLogger(__name__)
 
 
 def create_read_file_handler(project_path: Optional[Path] = None) -> ActionHandler:
@@ -38,15 +42,14 @@ def create_read_file_handler(project_path: Optional[Path] = None) -> ActionHandl
 
     def handler(params: Dict[str, Any]) -> str:
         path = params.get("path", "")
+        logger.debug("read_file: path=%s", path)
         if not path:
             return "ERROR: path parameter required"
 
-        file_path = Path(path)
-        if not file_path.is_absolute():
-            file_path = base_path / file_path
-
-        if not file_path.exists():
-            return f"ERROR: File not found: {file_path}"
+        # Validate path security
+        file_path, error = validate_path_security(path, base_path)
+        if error:
+            return f"ERROR: {error}"
 
         if not file_path.is_file():
             return f"ERROR: Not a file: {file_path}"
@@ -57,11 +60,11 @@ def create_read_file_handler(project_path: Optional[Path] = None) -> ActionHandl
             line_count = len(lines)
 
             # Add line numbers for context
-            numbered_lines = [f"{i+1:4d}: {line}" for i, line in enumerate(lines[:100])]
+            numbered_lines = [f"{i+1:4d}: {line}" for i, line in enumerate(lines[:FILE_PREVIEW_MAX_LINES])]
             preview = "\n".join(numbered_lines)
 
-            if line_count > 100:
-                preview += f"\n... [{line_count - 100} more lines]"
+            if line_count > FILE_PREVIEW_MAX_LINES:
+                preview += f"\n... [{line_count - FILE_PREVIEW_MAX_LINES} more lines]"
 
             return (
                 f"SUCCESS: Read {file_path.name}\n"
@@ -94,13 +97,15 @@ def create_write_file_handler(project_path: Optional[Path] = None) -> ActionHand
     def handler(params: Dict[str, Any]) -> str:
         path = params.get("path", "")
         content = params.get("content", "")
+        logger.debug("write_file: path=%s, content_len=%d", path, len(content))
 
         if not path:
             return "ERROR: path parameter required"
 
-        file_path = Path(path)
-        if not file_path.is_absolute():
-            file_path = base_path / file_path
+        # Validate path security (allow_create=True for write operations)
+        file_path, error = validate_path_security(path, base_path, allow_create=True)
+        if error:
+            return f"ERROR: {error}"
 
         try:
             # Track if this is a new file
@@ -146,6 +151,7 @@ def create_edit_file_handler(project_path: Optional[Path] = None) -> ActionHandl
         start_line = params.get("start_line", 0)
         end_line = params.get("end_line", 0)
         new_content = params.get("new_content", "")
+        logger.debug("edit_file: path=%s, lines=%d-%d", path, start_line, end_line)
 
         # Validate parameters
         if not path:
@@ -155,14 +161,11 @@ def create_edit_file_handler(project_path: Optional[Path] = None) -> ActionHandl
         if end_line < start_line:
             return "ERROR: end_line must be >= start_line"
 
-        # Resolve file path
-        file_path = Path(path)
-        if not file_path.is_absolute():
-            file_path = base_path / file_path
+        # Validate path security
+        file_path, error = validate_path_security(path, base_path)
+        if error:
+            return f"ERROR: {error}"
 
-        # Check file exists
-        if not file_path.exists():
-            return f"ERROR: File not found: {file_path}"
         if not file_path.is_file():
             return f"ERROR: Not a file: {file_path}"
 
@@ -231,24 +234,22 @@ def create_replace_lines_handler(project_path: Optional[Path] = None) -> ActionH
     base_path = Path(project_path) if project_path else Path.cwd()
 
     def handler(params: Dict[str, Any]) -> str:
-        file_path = params.get("file_path") or params.get("path")
+        path = params.get("path") or params.get("file_path")
         start_line = params.get("start_line")
         end_line = params.get("end_line")
         new_content = params.get("new_content")
 
-        if not file_path:
-            return "ERROR: file_path parameter required"
+        if not path:
+            return "ERROR: path parameter required"
         if start_line is None or end_line is None:
             return "ERROR: start_line and end_line required"
         if new_content is None:
             return "ERROR: new_content required"
 
-        full_path = Path(file_path)
-        if not full_path.is_absolute():
-            full_path = base_path / full_path
-
-        if not full_path.exists():
-            return f"ERROR: File not found: {file_path}"
+        # Validate path security
+        full_path, error = validate_path_security(path, base_path)
+        if error:
+            return f"ERROR: {error}"
 
         try:
             original_content = full_path.read_text()
@@ -319,24 +320,22 @@ def create_insert_lines_handler(project_path: Optional[Path] = None) -> ActionHa
     base_path = Path(project_path) if project_path else Path.cwd()
 
     def handler(params: Dict[str, Any]) -> str:
-        file_path = params.get("file_path") or params.get("path")
+        path = params.get("path") or params.get("file_path")
         line_number = params.get("line_number") or params.get("before_line")
         new_content = params.get("new_content") or params.get("content")
         indent_level = params.get("indent_level")
 
-        if not file_path:
-            return "ERROR: file_path parameter required"
+        if not path:
+            return "ERROR: path parameter required"
         if line_number is None:
             return "ERROR: line_number parameter required"
         if not new_content:
             return "ERROR: new_content parameter required"
 
-        full_path = Path(file_path)
-        if not full_path.is_absolute():
-            full_path = base_path / full_path
-
-        if not full_path.exists():
-            return f"ERROR: File not found: {file_path}"
+        # Validate path security
+        full_path, error = validate_path_security(path, base_path)
+        if error:
+            return f"ERROR: {error}"
 
         try:
             lines = full_path.read_text().split("\n")

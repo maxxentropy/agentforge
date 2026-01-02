@@ -13,12 +13,23 @@ These handlers wrap existing infrastructure (ConformanceManager, TestRunner)
 to provide consistent interfaces for the agent.
 """
 
+import logging
 import subprocess
 import sys
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+from .constants import (
+    CHECK_FAILED_OUTPUT_MAX_CHARS,
+    CHECK_PASSED_OUTPUT_MAX_CHARS,
+    CHECK_STDERR_MAX_CHARS,
+    CONFORMANCE_CHECK_TIMEOUT,
+    PYTHON_VALIDATION_TIMEOUT,
+    TEST_RUN_TIMEOUT,
+)
 from .types import ActionHandler
+
+logger = logging.getLogger(__name__)
 
 
 def create_run_check_handler(project_path: Optional[Path] = None) -> ActionHandler:
@@ -37,9 +48,10 @@ def create_run_check_handler(project_path: Optional[Path] = None) -> ActionHandl
     base_path = Path(project_path) if project_path else Path.cwd()
 
     def handler(params: Dict[str, Any]) -> str:
-        file_path = params.get("file_path") or params.get("path")
+        path = params.get("path") or params.get("file_path")
         check_type = params.get("check_type")
         check_id = params.get("check_id")
+        logger.debug("run_check: path=%s, check_id=%s", path, check_id)
 
         # Get context for violation-specific checking
         context = params.get("_context", {})
@@ -50,9 +62,9 @@ def create_run_check_handler(project_path: Optional[Path] = None) -> ActionHandl
         if not check_id and context_check_id:
             check_id = context_check_id
 
-        # Use context file_path if not provided directly
-        if not file_path and context.get("file_path"):
-            file_path = context.get("file_path")
+        # Use context path if not provided directly
+        if not path and context.get("file_path"):
+            path = context.get("file_path")
 
         try:
             # Try to use ConformanceTools if available
@@ -61,15 +73,15 @@ def create_run_check_handler(project_path: Optional[Path] = None) -> ActionHandl
 
                 conformance = ConformanceTools(base_path)
 
-                if check_id and file_path:
+                if check_id and path:
                     # Targeted check (faster)
                     result = conformance.run_conformance_check(
                         "run_conformance_check",
-                        {"check_id": check_id, "file_path": file_path},
+                        {"check_id": check_id, "file_path": path},
                     )
-                elif file_path:
+                elif path:
                     # File-level check
-                    result = conformance.check_file("check_file", {"file_path": file_path})
+                    result = conformance.check_file("check_file", {"file_path": path})
                 else:
                     # Full check
                     result = conformance.run_full_check("run_full_check", {})
@@ -77,21 +89,21 @@ def create_run_check_handler(project_path: Optional[Path] = None) -> ActionHandl
                 if result.success:
                     return (
                         f"CHECK PASSED\n"
-                        f"  File: {file_path or 'all'}\n"
+                        f"  File: {path or 'all'}\n"
                         f"  Check: {check_id or 'all'}\n"
-                        f"  {result.output[:500] if result.output else 'All checks passing'}"
+                        f"  {result.output[:CHECK_PASSED_OUTPUT_MAX_CHARS] if result.output else 'All checks passing'}"
                     )
                 else:
                     return (
                         f"CHECK FAILED\n"
-                        f"  File: {file_path or 'all'}\n"
+                        f"  File: {path or 'all'}\n"
                         f"  Check: {check_id or 'all'}\n"
-                        f"  {result.output[:800] if result.output else 'Violations found'}"
+                        f"  {result.output[:CHECK_FAILED_OUTPUT_MAX_CHARS] if result.output else 'Violations found'}"
                     )
 
             except ImportError:
                 # Fall back to direct runner invocation
-                return _run_check_fallback(base_path, file_path, check_type)
+                return _run_check_fallback(base_path, path, check_type)
 
         except FileNotFoundError as e:
             return f"ERROR: Configuration not found: {e}"
@@ -99,13 +111,13 @@ def create_run_check_handler(project_path: Optional[Path] = None) -> ActionHandl
             return f"ERROR: Check failed: {e}"
 
     def _run_check_fallback(
-        base_path: Path, file_path: Optional[str], check_type: Optional[str]
+        base_path: Path, path: Optional[str], check_type: Optional[str]
     ) -> str:
         """Fallback implementation using subprocess."""
         cmd = [sys.executable, "-m", "agentforge", "verify"]
 
-        if file_path:
-            cmd.extend(["--file", file_path])
+        if path:
+            cmd.extend(["--file", path])
         if check_type:
             cmd.extend(["--check", check_type])
 
@@ -115,16 +127,16 @@ def create_run_check_handler(project_path: Optional[Path] = None) -> ActionHandl
                 cwd=str(base_path),
                 capture_output=True,
                 text=True,
-                timeout=120,
+                timeout=CONFORMANCE_CHECK_TIMEOUT,
             )
 
             if result.returncode == 0:
-                return f"CHECK PASSED\n{result.stdout[:500]}"
+                return f"CHECK PASSED\n{result.stdout[:CHECK_PASSED_OUTPUT_MAX_CHARS]}"
             else:
-                return f"CHECK FAILED\n{result.stdout[:500]}\n{result.stderr[:300]}"
+                return f"CHECK FAILED\n{result.stdout[:CHECK_PASSED_OUTPUT_MAX_CHARS]}\n{result.stderr[:CHECK_STDERR_MAX_CHARS]}"
 
         except subprocess.TimeoutExpired:
-            return "ERROR: Check timed out after 120 seconds"
+            return f"ERROR: Check timed out after {CONFORMANCE_CHECK_TIMEOUT} seconds"
         except Exception as e:
             return f"ERROR: Failed to run check: {e}"
 
@@ -146,9 +158,10 @@ def create_run_check_handler_v2(project_path: Optional[Path] = None) -> ActionHa
     base_path = Path(project_path) if project_path else Path.cwd()
 
     def handler(params: Dict[str, Any]) -> str:
-        file_path = params.get("file_path")
+        path = params.get("path") or params.get("file_path")
         check_type = params.get("check_type")
         violation_id = params.get("violation_id")
+        logger.debug("run_check_v2: path=%s, violation_id=%s", path, violation_id)
 
         # Get context from working memory if available
         context = params.get("_context", {})
@@ -157,10 +170,10 @@ def create_run_check_handler_v2(project_path: Optional[Path] = None) -> ActionHa
         try:
             # If we have a target violation, check if it's resolved
             if target_violation:
-                return _check_violation_resolved(base_path, target_violation, file_path)
+                return _check_violation_resolved(base_path, target_violation, path)
             else:
                 # General check
-                return _run_general_check(base_path, file_path, check_type)
+                return _run_general_check(base_path, path, check_type)
 
         except Exception as e:
             return f"ERROR: Check failed: {e}"
@@ -242,9 +255,9 @@ def create_run_check_handler_v2(project_path: Optional[Path] = None) -> ActionHa
                 result = conformance.run_full_check("run_full_check", {})
 
             if result.success:
-                return f"CHECK PASSED (all checks run)\n{result.output[:500]}"
+                return f"CHECK PASSED (all checks run)\n{result.output[:CHECK_PASSED_OUTPUT_MAX_CHARS]}"
             else:
-                return f"CHECK FAILED\n{result.output[:800]}"
+                return f"CHECK FAILED\n{result.output[:CHECK_FAILED_OUTPUT_MAX_CHARS]}"
 
         except ImportError:
             return "ERROR: ConformanceTools not available"
@@ -269,6 +282,7 @@ def create_run_tests_handler(project_path: Optional[Path] = None) -> ActionHandl
     def handler(params: Dict[str, Any]) -> str:
         test_path = params.get("path") or params.get("test_path")
         verbose = params.get("verbose", False)
+        logger.debug("run_tests: test_path=%s, verbose=%s", test_path, verbose)
 
         # Get context for affected files
         context = params.get("_context", {})
@@ -298,12 +312,12 @@ def create_run_tests_handler(project_path: Optional[Path] = None) -> ActionHandl
                 if result.success:
                     return (
                         f"TESTS PASSED\n"
-                        f"  {result.output[:500] if result.output else 'All tests passing'}"
+                        f"  {result.output[:CHECK_PASSED_OUTPUT_MAX_CHARS] if result.output else 'All tests passing'}"
                     )
                 else:
                     return (
                         f"TESTS FAILED\n"
-                        f"  {result.output[:800] if result.output else 'Test failures detected'}"
+                        f"  {result.output[:CHECK_FAILED_OUTPUT_MAX_CHARS] if result.output else 'Test failures detected'}"
                     )
 
             except ImportError:
@@ -334,19 +348,19 @@ def create_run_tests_handler(project_path: Optional[Path] = None) -> ActionHandl
                 cwd=str(base_path),
                 capture_output=True,
                 text=True,
-                timeout=300,
+                timeout=TEST_RUN_TIMEOUT,
             )
 
             if result.returncode == 0:
-                return f"TESTS PASSED\n{result.stdout[-500:]}"
+                return f"TESTS PASSED\n{result.stdout[-CHECK_PASSED_OUTPUT_MAX_CHARS:]}"
             else:
                 # Extract failure info
-                output = result.stdout[-800:] if result.stdout else ""
-                stderr = result.stderr[-300:] if result.stderr else ""
+                output = result.stdout[-CHECK_FAILED_OUTPUT_MAX_CHARS:] if result.stdout else ""
+                stderr = result.stderr[-CHECK_STDERR_MAX_CHARS:] if result.stderr else ""
                 return f"TESTS FAILED\n{output}\n{stderr}"
 
         except subprocess.TimeoutExpired:
-            return "ERROR: Tests timed out after 300 seconds"
+            return f"ERROR: Tests timed out after {TEST_RUN_TIMEOUT} seconds"
         except Exception as e:
             return f"ERROR: Failed to run tests: {e}"
 
@@ -369,20 +383,21 @@ def create_validate_python_handler(project_path: Optional[Path] = None) -> Actio
     base_path = Path(project_path) if project_path else Path.cwd()
 
     def handler(params: Dict[str, Any]) -> str:
-        file_path = params.get("file_path") or params.get("path")
+        path = params.get("path") or params.get("file_path")
+        logger.debug("validate_python: path=%s", path)
 
-        if not file_path:
-            return "ERROR: file_path parameter required"
+        if not path:
+            return "ERROR: path parameter required"
 
-        full_path = Path(file_path)
+        full_path = Path(path)
         if not full_path.is_absolute():
-            full_path = base_path / file_path
+            full_path = base_path / path
 
         if not full_path.exists():
-            return f"ERROR: File not found: {file_path}"
+            return f"ERROR: File not found: {path}"
 
         if not full_path.suffix == ".py":
-            return f"ERROR: Not a Python file: {file_path}"
+            return f"ERROR: Not a Python file: {path}"
 
         try:
             import ast
@@ -419,7 +434,7 @@ except Exception as e:
                 [sys.executable, "-c", check_script],
                 capture_output=True,
                 text=True,
-                timeout=10,
+                timeout=PYTHON_VALIDATION_TIMEOUT,
                 cwd=str(base_path),
                 env={**subprocess.os.environ, "PYTHONPATH": str(base_path)},
             )
@@ -430,7 +445,7 @@ except Exception as e:
 
             return (
                 f"VALIDATION PASSED\n"
-                f"  File: {file_path}\n"
+                f"  File: {path}\n"
                 f"  Syntax: OK\n"
                 f"  Imports: OK"
             )

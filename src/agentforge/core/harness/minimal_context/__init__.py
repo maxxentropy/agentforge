@@ -99,11 +99,8 @@ from .template_context_builder import (
     TemplateContextBuilder,
     TemplateStepContext,
 )
-from .native_tool_executor import (
-    NativeToolExecutor,
-    ActionResult as NativeActionResult,
-    create_standard_handlers,
-)
+from .native_tool_executor import NativeToolExecutor
+from .tool_handlers import create_standard_handlers
 
 __all__ = [
     # State
@@ -169,6 +166,5 @@ __all__ = [
     "TemplateStepContext",
     # Native Tool Execution
     "NativeToolExecutor",
-    "NativeActionResult",
     "create_standard_handlers",
 ]

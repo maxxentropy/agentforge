@@ -21,14 +21,16 @@ This directory contains specifications for the P0 tool handlers required to make
 | `load_context` | Load additional file context | P1 | ✅ Implemented |
 | `run_tests` | Execute tests to verify changes | P1 | ✅ Implemented |
 
-### Existing Handlers (Already Implemented)
+### All Handlers (Consolidated in tool_handlers module)
 
 | Handler | Location |
 |---------|----------|
-| `read_file` | native_tool_executor.py |
-| `write_file` | native_tool_executor.py |
-| `complete` | native_tool_executor.py |
-| `escalate` | native_tool_executor.py |
+| `read_file` | tool_handlers/file_handlers.py |
+| `write_file` | tool_handlers/file_handlers.py |
+| `edit_file` | tool_handlers/file_handlers.py |
+| `complete` | tool_handlers/terminal_handlers.py |
+| `escalate` | tool_handlers/terminal_handlers.py |
+| `cannot_fix` | tool_handlers/terminal_handlers.py |
 
 ## Specification Files
 
@@ -44,12 +46,13 @@ This directory contains specifications for the P0 tool handlers required to make
 
 ```
 src/agentforge/core/harness/minimal_context/tool_handlers/
-├── __init__.py           # Exports create_standard_handlers
-├── types.py              # ActionHandler type, HandlerContext protocol
-├── file_handlers.py      # read_file, write_file, edit_file
-├── search_handlers.py    # search_code, load_context
-├── verify_handlers.py    # run_check, run_tests
-└── terminal_handlers.py  # complete, escalate, cannot_fix
+├── __init__.py           # Exports create_standard_handlers, ToolHandlerRegistry
+├── types.py              # ActionHandler type, HandlerContext protocol, validate_path_security
+├── constants.py          # Configuration constants (timeouts, limits, etc.)
+├── file_handlers.py      # read_file, write_file, edit_file, replace_lines, insert_lines
+├── search_handlers.py    # search_code, load_context, find_related
+├── verify_handlers.py    # run_check, run_tests, validate_python
+└── terminal_handlers.py  # complete, escalate, cannot_fix, request_help, plan_fix
 ```
 
 ## Handler Signature
@@ -116,25 +119,29 @@ All tool executions logged with:
 
 ## Implementation Checklist
 
-### Phase 1: Module Setup (0.5 day) ✅ COMPLETE
+### Phase 1: Module Setup ✅ COMPLETE
 - [x] Create `tool_handlers/` directory
 - [x] Create `__init__.py` with exports
-- [x] Create `types.py`
-- [x] Move existing handlers from `native_tool_executor.py`
+- [x] Create `types.py` with ActionHandler, HandlerContext, validate_path_security
+- [x] Create `constants.py` for configuration values
+- [x] Move handlers from `native_tool_executor.py` (legacy code quarantined)
 
-### Phase 2: New Handlers (3 days) ✅ COMPLETE
+### Phase 2: New Handlers ✅ COMPLETE
 - [x] `edit_file` handler + tests
 - [x] `search_code` handler + tests
 - [x] `run_check` handler + tests
 - [x] `cannot_fix` handler + tests
+- [x] Additional handlers: `replace_lines`, `insert_lines`, `find_related`, `validate_python`
 
-### Phase 3: Integration (1 day) ✅ COMPLETE
+### Phase 3: Integration ✅ COMPLETE
 - [x] Update `NativeToolExecutor` to use new module
 - [x] Add context injection
 - [x] Add audit logging
-- [x] Integration tests
+- [x] Add debug logging to all handlers
+- [x] Add path traversal security protection
+- [x] Integration tests for context injection
 
-### Phase 4: Validation (1 day) - PENDING
+### Phase 4: Validation - PENDING
 - [ ] End-to-end test with real violation
 - [ ] Documentation
 
@@ -145,11 +152,12 @@ tests/unit/harness/tool_handlers/
 ├── test_file_handlers.py
 ├── test_search_handlers.py
 ├── test_verify_handlers.py
-└── test_terminal_handlers.py
+├── test_terminal_handlers.py
+├── test_registry.py
+└── test_types.py          # Path security validation tests
 
 tests/integration/tool_handlers/
-├── test_handler_integration.py
-└── test_fix_violation_workflow.py
+└── test_context_injection.py  # Context injection integration tests
 ```
 
 ## Related Documents

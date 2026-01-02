@@ -67,7 +67,8 @@ from .understanding import UnderstandingExtractor
 from .context_models import ActionResult, ActionRecord, AgentResponse, Fact, FactCategory, ActionDef
 from .loop_detector import LoopDetection
 from .phase_machine import PhaseMachine, Phase, PhaseContext
-from .native_tool_executor import NativeToolExecutor, create_standard_handlers
+from .native_tool_executor import NativeToolExecutor
+from .tool_handlers import create_standard_handlers
 
 # Import decomposed modules
 from .step_outcome import StepOutcome

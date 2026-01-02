@@ -33,7 +33,7 @@ Handler Categories:
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from .types import ActionHandler, HandlerContext, HandlerResult
+from .types import ActionHandler, HandlerContext
 
 from .file_handlers import (
     create_read_file_handler,
@@ -279,7 +279,6 @@ __all__ = [
     # Types
     "ActionHandler",
     "HandlerContext",
-    "HandlerResult",
     # Registry
     "ToolHandlerRegistry",
     # Factory functions

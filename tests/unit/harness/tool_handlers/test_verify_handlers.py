@@ -194,7 +194,7 @@ class TestValidatePythonHandler:
         result = handler({})
 
         assert "ERROR" in result
-        assert "file_path" in result.lower()
+        assert "path" in result.lower()
 
     def test_validate_import_error(self, temp_project):
         """Detect import error in Python file."""

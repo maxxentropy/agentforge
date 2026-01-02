@@ -200,7 +200,7 @@ class TestFindRelatedHandler:
         result = handler({})
 
         assert "ERROR" in result
-        assert "file_path" in result.lower()
+        assert "path" in result.lower()
 
     def test_find_all_types(self, temp_project):
         """Find all related file types."""

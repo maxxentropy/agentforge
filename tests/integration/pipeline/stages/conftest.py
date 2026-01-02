@@ -1,7 +1,9 @@
 # @spec_file: specs/pipeline-controller/implementation/phase-2-design-pipeline.yaml
 # @spec_file: specs/pipeline-controller/implementation/phase-3-tdd-stages.yaml
+# @spec_file: specs/pipeline-controller/implementation/phase-4-refactor-deliver.yaml
 # @spec_id: pipeline-controller-phase2-v1
 # @spec_id: pipeline-controller-phase3-v1
+# @spec_id: pipeline-controller-phase4-v1
 
 """Shared fixtures for stage integration tests."""
 
@@ -237,5 +239,166 @@ def temp_project_for_tdd(tmp_path):
 
     # Create .agentforge directory
     (project / ".agentforge").mkdir()
+
+    return project
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# REFACTOR & DELIVER Stage Fixtures (Phase 4)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+@pytest.fixture
+def sample_green_artifact_for_refactor():
+    """Create a GREEN phase artifact for REFACTOR testing."""
+    return {
+        "spec_id": "SPEC-20260102-0001",
+        "request_id": "REQ-20260102-0001",
+        "implementation_files": [
+            "src/calculator.py",
+        ],
+        "test_files": [
+            {
+                "path": "tests/test_calculator.py",
+                "content": '''"""Tests for Calculator."""
+import pytest
+from src.calculator import Calculator
+
+
+class TestCalculator:
+    def test_add_positive_numbers(self):
+        calc = Calculator()
+        assert calc.add(2, 3) == 5
+
+    def test_subtract_numbers(self):
+        calc = Calculator()
+        assert calc.subtract(5, 3) == 2
+''',
+            }
+        ],
+        "test_results": {
+            "passed": 2,
+            "failed": 0,
+            "errors": 0,
+            "total": 2,
+            "exit_code": 0,
+            "test_details": [
+                {"name": "test_add_positive_numbers", "status": "passed"},
+                {"name": "test_subtract_numbers", "status": "passed"},
+            ],
+        },
+        "passing_tests": 2,
+        "iterations": 2,
+        "all_tests_pass": True,
+        "acceptance_criteria": [
+            {"criterion": "All basic operations work correctly"},
+        ],
+        "clarified_requirements": "Create a simple calculator with add and subtract",
+        "original_request": "Create a calculator module",
+    }
+
+
+@pytest.fixture
+def sample_refactor_artifact_for_deliver():
+    """Create a REFACTOR phase artifact for DELIVER testing."""
+    return {
+        "spec_id": "SPEC-20260102-0001",
+        "request_id": "REQ-20260102-0001",
+        "refactored_files": [
+            {
+                "path": "src/calculator.py",
+                "changes": "Added type hints and docstrings",
+            }
+        ],
+        "improvements": [
+            {
+                "type": "documentation",
+                "description": "Added docstrings to all methods",
+                "file": "src/calculator.py",
+            },
+        ],
+        "final_files": [
+            "src/calculator.py",
+            "tests/test_calculator.py",
+        ],
+        "test_results": {
+            "passed": 2,
+            "failed": 0,
+            "total": 2,
+        },
+        "conformance_passed": True,
+        "remaining_violations": [],
+        "clarified_requirements": "Create a simple calculator with add and subtract",
+        "original_request": "Create a calculator module",
+    }
+
+
+@pytest.fixture
+def temp_project_for_refactor(tmp_path):
+    """Create a temporary project for REFACTOR testing with implementation."""
+    import subprocess
+
+    project = tmp_path / "refactor_project"
+    project.mkdir(parents=True)
+
+    # Create directories
+    (project / "src").mkdir()
+    (project / "tests").mkdir()
+    (project / ".agentforge" / "patches").mkdir(parents=True)
+
+    # Create __init__.py files
+    (project / "src" / "__init__.py").write_text("")
+    (project / "tests" / "__init__.py").write_text("")
+
+    # Create implementation file
+    (project / "src" / "calculator.py").write_text('''"""Calculator module."""
+
+
+class Calculator:
+    """Simple calculator class."""
+
+    def add(self, a: int, b: int) -> int:
+        """Add two numbers."""
+        return a + b
+
+    def subtract(self, a: int, b: int) -> int:
+        """Subtract two numbers."""
+        return a - b
+''')
+
+    # Create test file
+    (project / "tests" / "test_calculator.py").write_text('''"""Tests for Calculator."""
+import pytest
+from src.calculator import Calculator
+
+
+class TestCalculator:
+    def test_add_positive_numbers(self):
+        calc = Calculator()
+        assert calc.add(2, 3) == 5
+
+    def test_subtract_numbers(self):
+        calc = Calculator()
+        assert calc.subtract(5, 3) == 2
+''')
+
+    # Initialize git
+    try:
+        subprocess.run(["git", "init"], cwd=str(project), check=True, capture_output=True)
+        subprocess.run(
+            ["git", "config", "user.email", "test@test.com"],
+            cwd=str(project), check=True, capture_output=True
+        )
+        subprocess.run(
+            ["git", "config", "user.name", "Test User"],
+            cwd=str(project), check=True, capture_output=True
+        )
+        subprocess.run(["git", "add", "."], cwd=str(project), check=True, capture_output=True)
+        subprocess.run(
+            ["git", "commit", "-m", "Initial commit"],
+            cwd=str(project), check=True, capture_output=True
+        )
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        pass  # Git may not be available
 
     return project

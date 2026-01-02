@@ -1,7 +1,9 @@
 # @spec_file: specs/pipeline-controller/implementation/phase-2-design-pipeline.yaml
 # @spec_file: specs/pipeline-controller/implementation/phase-3-tdd-stages.yaml
+# @spec_file: specs/pipeline-controller/implementation/phase-4-refactor-deliver.yaml
 # @spec_id: pipeline-controller-phase2-v1
 # @spec_id: pipeline-controller-phase3-v1
+# @spec_id: pipeline-controller-phase4-v1
 
 """Shared fixtures for stage unit tests."""
 
@@ -400,5 +402,176 @@ def temp_project_path(tmp_path):
     (tmp_path / "tests" / "__init__.py").write_text("")
     (tmp_path / "tests" / "unit" / "__init__.py").write_text("")
     (tmp_path / "tests" / "unit" / "auth" / "__init__.py").write_text("")
+
+    return tmp_path
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# REFACTOR & DELIVER Stage Fixtures (Phase 4)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+@pytest.fixture
+def sample_green_artifact(sample_red_artifact):
+    """Create a sample GREEN phase artifact for REFACTOR tests."""
+    return {
+        "spec_id": sample_red_artifact["spec_id"],
+        "request_id": sample_red_artifact["request_id"],
+        "implementation_files": [
+            "src/auth/oauth_provider.py",
+            "src/auth/token_manager.py",
+        ],
+        "test_files": sample_red_artifact["test_files"],
+        "test_results": {
+            "passed": 3,
+            "failed": 0,
+            "errors": 0,
+            "total": 3,
+            "exit_code": 0,
+            "output": "3 passed in 0.05s",
+            "test_details": [
+                {"name": "test_authenticate", "status": "passed"},
+                {"name": "test_invalid_code", "status": "passed"},
+                {"name": "test_refresh", "status": "passed"},
+            ],
+        },
+        "passing_tests": 3,
+        "iterations": 3,
+        "all_tests_pass": True,
+        "acceptance_criteria": [
+            {"criterion": "OAuth flow completes successfully"},
+            {"criterion": "Tokens are securely stored"},
+        ],
+        "clarified_requirements": "Add OAuth2 authentication using Google as the provider",
+        "original_request": "Add OAuth2 authentication",
+    }
+
+
+@pytest.fixture
+def sample_refactor_artifact(sample_green_artifact):
+    """Create a sample REFACTOR phase artifact for DELIVER tests."""
+    return {
+        "spec_id": sample_green_artifact["spec_id"],
+        "request_id": sample_green_artifact["request_id"],
+        "refactored_files": [
+            {
+                "path": "src/auth/oauth_provider.py",
+                "changes": "Improved docstrings and type hints",
+            }
+        ],
+        "improvements": [
+            {
+                "type": "documentation",
+                "description": "Added docstrings to all public methods",
+                "file": "src/auth/oauth_provider.py",
+            },
+            {
+                "type": "typing",
+                "description": "Added type hints",
+                "file": "src/auth/oauth_provider.py",
+            },
+        ],
+        "final_files": [
+            "src/auth/oauth_provider.py",
+            "src/auth/token_manager.py",
+            "tests/unit/auth/test_oauth_provider.py",
+        ],
+        "test_results": {
+            "passed": 3,
+            "failed": 0,
+            "total": 3,
+        },
+        "conformance_passed": True,
+        "remaining_violations": [],
+        "clarified_requirements": sample_green_artifact.get("clarified_requirements"),
+        "original_request": sample_green_artifact.get("original_request"),
+    }
+
+
+@pytest.fixture
+def mock_conformance_passing():
+    """Mock conformance check that passes."""
+    return {
+        "passed": True,
+        "violations": [],
+        "total_violations": 0,
+    }
+
+
+@pytest.fixture
+def mock_conformance_violations():
+    """Mock conformance check with violations."""
+    return {
+        "passed": False,
+        "violations": [
+            {
+                "type": "complexity",
+                "file": "src/auth/oauth_provider.py",
+                "line": 45,
+                "message": "Function complexity too high (12 > 10)",
+            },
+            {
+                "type": "missing_docstring",
+                "file": "src/auth/oauth_provider.py",
+                "line": 10,
+                "message": "Missing docstring for public method 'authenticate'",
+            },
+        ],
+        "total_violations": 2,
+    }
+
+
+@pytest.fixture
+def temp_git_project(tmp_path):
+    """Create a temporary project with git initialized."""
+    import subprocess
+
+    # Create basic directories
+    (tmp_path / "src" / "auth").mkdir(parents=True)
+    (tmp_path / "tests" / "unit" / "auth").mkdir(parents=True)
+    (tmp_path / ".agentforge" / "patches").mkdir(parents=True)
+
+    # Create __init__.py files
+    (tmp_path / "src" / "__init__.py").write_text("")
+    (tmp_path / "src" / "auth" / "__init__.py").write_text("")
+    (tmp_path / "tests" / "__init__.py").write_text("")
+    (tmp_path / "tests" / "unit" / "__init__.py").write_text("")
+    (tmp_path / "tests" / "unit" / "auth" / "__init__.py").write_text("")
+
+    # Initialize git
+    try:
+        subprocess.run(
+            ["git", "init"],
+            cwd=str(tmp_path),
+            check=True,
+            capture_output=True,
+        )
+        subprocess.run(
+            ["git", "config", "user.email", "test@test.com"],
+            cwd=str(tmp_path),
+            check=True,
+            capture_output=True,
+        )
+        subprocess.run(
+            ["git", "config", "user.name", "Test User"],
+            cwd=str(tmp_path),
+            check=True,
+            capture_output=True,
+        )
+        # Initial commit
+        subprocess.run(
+            ["git", "add", "."],
+            cwd=str(tmp_path),
+            check=True,
+            capture_output=True,
+        )
+        subprocess.run(
+            ["git", "commit", "-m", "Initial commit"],
+            cwd=str(tmp_path),
+            check=True,
+            capture_output=True,
+        )
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        pass  # Git may not be available in test environment
 
     return tmp_path

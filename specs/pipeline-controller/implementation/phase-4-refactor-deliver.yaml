@@ -1,0 +1,738 @@
+# Pipeline Controller - Phase 4: REFACTOR & DELIVER Stages
+# ========================================================
+#
+# This specification defines the REFACTOR and DELIVER stage executors
+# that complete the TDD cycle and package the final result.
+#
+# Version: 1.0
+# Status: In Development
+# Date: January 2026
+
+spec_id: pipeline-controller-phase4-v1
+version: "1.0"
+status: in_development
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# OVERVIEW
+# ═══════════════════════════════════════════════════════════════════════════════
+
+overview:
+  title: Pipeline Controller REFACTOR & DELIVER Stages
+  purpose: |
+    Implements the final stages of the TDD pipeline:
+    - REFACTOR: Improve code quality without changing behavior (tests pass)
+    - DELIVER: Package and deliver the final result (commit, PR, files, patch)
+
+    This ensures:
+    - Code quality improvements are applied
+    - Tests continue to pass after refactoring
+    - Results are properly packaged and delivered
+    - Flexible delivery modes support various workflows
+
+  design_principles:
+    - Tests must continue to pass after refactoring
+    - Don't change public interfaces during refactoring
+    - Make small, incremental improvements
+    - Support multiple delivery modes
+    - Generate meaningful commit messages
+    - Provide clear delivery summaries
+
+  stage_flow: |
+    ┌─────────────────────────────────────────────────────────────────┐
+    │                        REFACTOR                                  │
+    │                                                                  │
+    │  "Improve code while keeping tests green"                       │
+    │                                                                  │
+    │  Input: Implementation files + passing tests                    │
+    │  Output: Refactored files + still passing tests                 │
+    │                                                                  │
+    │  Actions:                                                       │
+    │  1. Run conformance checks                                      │
+    │  2. Identify code quality issues                                │
+    │  3. Apply refactorings                                          │
+    │  4. Verify tests still pass                                     │
+    │  5. Verify conformance passes                                   │
+    └─────────────────────────────────────────────────────────────────┘
+         │
+         ▼
+    ┌─────────────────────────────────────────────────────────────────┐
+    │                         DELIVER                                  │
+    │                                                                  │
+    │  "Package and deliver the result"                               │
+    │                                                                  │
+    │  Input: Refactored files + test results                         │
+    │  Output: Commit/PR/Files/Patch                                  │
+    │                                                                  │
+    │  Actions:                                                       │
+    │  1. Stage files for commit                                      │
+    │  2. Generate commit message                                     │
+    │  3. Create commit or PR                                         │
+    │  4. Update documentation                                        │
+    │  5. Generate summary                                            │
+    └─────────────────────────────────────────────────────────────────┘
+         │
+         ▼
+       PIPELINE COMPLETE
+
+  related_specs:
+    - path: ../stage-07-refactor-deliver-stages.md
+      description: REFACTOR & DELIVER stage specification
+    - path: ./phase-3-tdd-stages.yaml
+      description: Phase 3 TDD stages (provides GREEN artifacts)
+    - path: ./phase-2-design-pipeline.yaml
+      description: Phase 2 design pipeline
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# MODULE STRUCTURE
+# ═══════════════════════════════════════════════════════════════════════════════
+
+module_structure:
+  root: src/agentforge/core/pipeline/
+
+  files:
+    # ─────────────────────────────────────────────────────────────────────────
+    # REFACTOR Phase Executor
+    # ─────────────────────────────────────────────────────────────────────────
+    - path: stages/refactor.py
+      component_id: refactor-phase-executor
+      purpose: REFACTOR phase - Improve code quality while maintaining behavior
+      test_path: tests/unit/pipeline/stages/test_refactor.py
+      classes:
+        - name: RefactorPhaseExecutor
+          type: class
+          extends: StageExecutor
+          description: |
+            REFACTOR phase executor that improves code quality while maintaining
+            behavior. Uses conformance checks to identify issues and LLM to
+            apply refactorings. Tests must continue to pass after every change.
+          class_attributes:
+            - name: stage_name
+              value: "refactor"
+            - name: artifact_type
+              value: "refactored_code"
+            - name: required_input_fields
+              value: '["spec_id", "implementation_files", "test_results"]'
+            - name: output_fields
+              value: '["spec_id", "refactored_files", "final_files", "test_results", "conformance_passed"]'
+            - name: max_iterations
+              value: 10
+          tools:
+            - name: read_file
+              description: "Read a file from the project"
+            - name: edit_file
+              description: "Make targeted edits to a file"
+            - name: run_check
+              description: "Run conformance checks"
+            - name: run_tests
+              description: "Run tests to verify behavior"
+            - name: complete
+              description: "Signal refactoring complete"
+          methods:
+            - name: execute
+              signature: "(context: StageContext) -> StageResult"
+              description: "Execute REFACTOR phase"
+            - name: _run_tests
+              signature: "(context: StageContext) -> Dict[str, Any]"
+              description: "Run test suite and return results"
+            - name: _run_conformance
+              signature: "(context: StageContext) -> Dict[str, Any]"
+              description: "Run conformance checks and return violations"
+            - name: _get_refactor_executor
+              signature: "(context: StageContext) -> MinimalContextExecutor"
+              description: "Get executor for refactoring with LLM"
+            - name: _build_task
+              signature: "(artifact: Dict, test_results: Dict, conformance: Dict) -> str"
+              description: "Build refactoring task description"
+            - name: _create_passthrough_artifact
+              signature: "(context: StageContext, test_results: Dict) -> Dict"
+              description: "Create artifact when no refactoring needed"
+            - name: _build_artifact
+              signature: "(context: StageContext, result: Dict, test_results: Dict, conformance: Dict) -> Dict"
+              description: "Build REFACTOR artifact"
+            - name: validate_output
+              signature: "(artifact: Optional[Dict[str, Any]]) -> OutputValidation"
+              description: "Validate REFACTOR phase artifact"
+
+        - name: create_refactor_executor
+          type: function
+          signature: "(config: Optional[Dict] = None) -> RefactorPhaseExecutor"
+          description: "Factory function for registry registration"
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # DELIVER Phase Executor
+    # ─────────────────────────────────────────────────────────────────────────
+    - path: stages/deliver.py
+      component_id: deliver-phase-executor
+      purpose: DELIVER phase - Package and deliver the final result
+      test_path: tests/unit/pipeline/stages/test_deliver.py
+      classes:
+        - name: DeliveryMode
+          type: class
+          description: "Enum-like class for delivery modes"
+          attributes:
+            - name: COMMIT
+              value: '"commit"'
+              description: "Git commit only"
+            - name: PR
+              value: '"pr"'
+              description: "Create pull request"
+            - name: FILES
+              value: '"files"'
+              description: "Just output files (no git)"
+            - name: PATCH
+              value: '"patch"'
+              description: "Generate patch file"
+
+        - name: DeliverPhaseExecutor
+          type: class
+          extends: StageExecutor
+          description: |
+            DELIVER phase executor that packages and delivers the final result.
+            Supports multiple delivery modes: commit, PR, files, patch.
+          class_attributes:
+            - name: stage_name
+              value: "deliver"
+            - name: artifact_type
+              value: "deliverable"
+            - name: required_input_fields
+              value: '["spec_id", "final_files"]'
+            - name: output_fields
+              value: '["spec_id", "deliverable_type", "files_modified", "summary"]'
+          config_options:
+            - name: delivery_mode
+              type: str
+              default: "commit"
+              description: "Delivery mode (commit, pr, files, patch)"
+            - name: auto_commit
+              type: bool
+              default: false
+              description: "Auto-commit changes without approval"
+            - name: branch_prefix
+              type: str
+              default: "feature/"
+              description: "Branch prefix for PR mode"
+          methods:
+            - name: __init__
+              signature: "(config: Optional[Dict[str, Any]] = None)"
+              description: "Initialize with delivery configuration"
+            - name: execute
+              signature: "(context: StageContext) -> StageResult"
+              description: "Execute DELIVER phase"
+            - name: _deliver_commit
+              signature: "(context: StageContext, artifact: Dict) -> StageResult"
+              description: "Deliver as git commit"
+            - name: _deliver_pr
+              signature: "(context: StageContext, artifact: Dict) -> StageResult"
+              description: "Deliver as pull request"
+            - name: _deliver_files
+              signature: "(context: StageContext, artifact: Dict) -> StageResult"
+              description: "Deliver as files only"
+            - name: _deliver_patch
+              signature: "(context: StageContext, artifact: Dict) -> StageResult"
+              description: "Deliver as patch file"
+            - name: _generate_commit_message
+              signature: "(artifact: Dict[str, Any]) -> str"
+              description: "Generate commit message from artifact"
+            - name: _generate_summary
+              signature: "(artifact: Dict[str, Any]) -> str"
+              description: "Generate human-readable summary"
+            - name: _stage_files
+              signature: "(context: StageContext, files: List) -> List[str]"
+              description: "Stage files for commit"
+            - name: _create_commit
+              signature: "(context: StageContext, message: str) -> Optional[str]"
+              description: "Create git commit"
+            - name: _create_branch
+              signature: "(context: StageContext, branch_name: str) -> bool"
+              description: "Create and checkout feature branch"
+            - name: _create_pull_request
+              signature: "(context: StageContext, branch_name: str, artifact: Dict) -> Optional[str]"
+              description: "Create pull request using GitHub CLI"
+            - name: _generate_patch
+              signature: "(context: StageContext) -> str"
+              description: "Generate git diff patch"
+            - name: validate_output
+              signature: "(artifact: Optional[Dict[str, Any]]) -> OutputValidation"
+              description: "Validate DELIVER phase artifact"
+
+        - name: create_deliver_executor
+          type: function
+          signature: "(config: Optional[Dict] = None) -> DeliverPhaseExecutor"
+          description: "Factory function for registry registration"
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Update artifacts.py with REFACTOR/DELIVER artifacts
+    # ─────────────────────────────────────────────────────────────────────────
+    - path: artifacts.py
+      component_id: phase4-artifacts
+      purpose: Add REFACTOR and DELIVER artifact dataclasses
+      test_path: tests/unit/pipeline/test_artifacts.py
+      additions:
+        - name: RefactorArtifact
+          type: dataclass
+          fields:
+            - name: spec_id
+              type: str
+            - name: request_id
+              type: str
+              default: ""
+            - name: refactored_files
+              type: List[Dict[str, str]]
+              default: "field(default_factory=list)"
+            - name: improvements
+              type: List[Dict[str, str]]
+              default: "field(default_factory=list)"
+            - name: final_files
+              type: List[str]
+              default: "field(default_factory=list)"
+            - name: test_results
+              type: Dict[str, Any]
+              default: "field(default_factory=dict)"
+            - name: conformance_passed
+              type: bool
+              default: false
+            - name: remaining_violations
+              type: List[Dict[str, Any]]
+              default: "field(default_factory=list)"
+
+        - name: DeliverArtifact
+          type: dataclass
+          fields:
+            - name: spec_id
+              type: str
+            - name: request_id
+              type: str
+              default: ""
+            - name: deliverable_type
+              type: str
+              default: "commit"
+            - name: commit_sha
+              type: Optional[str]
+              default: null
+            - name: commit_message
+              type: str
+              default: ""
+            - name: branch_name
+              type: Optional[str]
+              default: null
+            - name: pr_url
+              type: Optional[str]
+              default: null
+            - name: patch_file
+              type: Optional[str]
+              default: null
+            - name: files_modified
+              type: List[str]
+              default: "field(default_factory=list)"
+            - name: files_staged
+              type: List[str]
+              default: "field(default_factory=list)"
+            - name: summary
+              type: str
+              default: ""
+            - name: status
+              type: str
+              default: ""
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Update stages/__init__.py
+    # ─────────────────────────────────────────────────────────────────────────
+    - path: stages/__init__.py
+      component_id: stages-init-phase4
+      purpose: Add REFACTOR and DELIVER stage exports and registration
+      test_path: tests/unit/pipeline/stages/test_stages_init.py
+      additions:
+        - export: RefactorPhaseExecutor
+        - export: DeliverPhaseExecutor
+        - export: DeliveryMode
+        - export: create_refactor_executor
+        - export: create_deliver_executor
+        - function: register_delivery_stages
+          signature: "(registry: StageExecutorRegistry) -> None"
+          description: "Register REFACTOR and DELIVER stages with registry"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ARTIFACT SCHEMAS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+artifacts:
+  refactored_code:
+    description: "Output of REFACTOR phase"
+    fields:
+      - name: spec_id
+        type: str
+        required: true
+      - name: request_id
+        type: str
+      - name: refactored_files
+        type: list
+        item_schema:
+          path: str
+          changes: str
+      - name: improvements
+        type: list
+        item_schema:
+          type: str
+          description: str
+          file: str
+      - name: final_files
+        type: list[str]
+        required: true
+        description: "All files (implementation + tests)"
+      - name: test_results
+        type: dict
+        schema:
+          passed: int
+          failed: int
+          total: int
+      - name: conformance_passed
+        type: bool
+        required: true
+      - name: remaining_violations
+        type: list
+
+  deliverable:
+    description: "Output of DELIVER phase"
+    fields:
+      - name: spec_id
+        type: str
+        required: true
+      - name: request_id
+        type: str
+      - name: deliverable_type
+        type: enum
+        values: [commit, pr, files, patch]
+        required: true
+      - name: commit_sha
+        type: str
+        description: "For commit and pr modes"
+      - name: commit_message
+        type: str
+      - name: branch_name
+        type: str
+        description: "For pr mode"
+      - name: pr_url
+        type: str
+        description: "For pr mode"
+      - name: patch_file
+        type: str
+        description: "For patch mode"
+      - name: files_modified
+        type: list[str]
+        required: true
+      - name: files_staged
+        type: list[str]
+      - name: summary
+        type: str
+        required: true
+      - name: status
+        type: str
+        description: "committed, staged, no_changes"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# TEST STRUCTURE
+# ═══════════════════════════════════════════════════════════════════════════════
+
+test_structure:
+  unit_tests:
+    root: tests/unit/pipeline/
+
+    files:
+      # ─────────────────────────────────────────────────────────────────────────
+      # REFACTOR Phase Tests
+      # ─────────────────────────────────────────────────────────────────────────
+      - path: stages/test_refactor.py
+        tests_for: refactor-phase-executor
+        test_cases:
+          # Core attributes
+          - test_stage_name_is_refactor
+          - test_artifact_type_is_refactored_code
+          - test_required_input_fields
+          - test_output_fields
+          - test_has_max_iterations_config
+          # Skip when no issues
+          - test_skips_when_no_conformance_violations
+          - test_skips_when_tests_pass_and_conformance_clean
+          # Refactoring execution
+          - test_applies_refactorings_for_violations
+          - test_verifies_tests_still_pass_after_refactoring
+          - test_fails_if_tests_break_during_refactoring
+          - test_fails_if_initial_tests_fail
+          # Test execution
+          - test_runs_tests_returns_results
+          - test_handles_test_timeout
+          - test_parses_pytest_output
+          # Conformance
+          - test_runs_conformance_checks
+          - test_handles_conformance_failure
+          - test_handles_conformance_json_output
+          # Artifact building
+          - test_creates_passthrough_artifact
+          - test_builds_refactor_artifact
+          - test_includes_improvements_in_artifact
+          # Task building
+          - test_builds_task_with_files
+          - test_builds_task_with_test_status
+          - test_builds_task_with_acceptance_criteria
+          # Prompts
+          - test_system_prompt_mentions_refactor
+          - test_task_template_has_placeholders
+          # Validation
+          - test_validates_final_files_present
+          - test_validates_conformance_status
+          # Edge cases
+          - test_handles_empty_implementation_files
+          - test_handles_no_test_results
+
+      # ─────────────────────────────────────────────────────────────────────────
+      # DELIVER Phase Tests
+      # ─────────────────────────────────────────────────────────────────────────
+      - path: stages/test_deliver.py
+        tests_for: deliver-phase-executor
+        test_cases:
+          # Core attributes
+          - test_stage_name_is_deliver
+          - test_artifact_type_is_deliverable
+          - test_required_input_fields
+          - test_output_fields
+          # Configuration
+          - test_default_delivery_mode_is_commit
+          - test_delivery_mode_from_config
+          - test_auto_commit_default_false
+          - test_branch_prefix_from_config
+          # Delivery modes
+          - test_delivers_as_commit
+          - test_delivers_as_pr
+          - test_delivers_as_files
+          - test_delivers_as_patch
+          - test_fails_on_unknown_delivery_mode
+          # Commit delivery
+          - test_generates_commit_message
+          - test_commit_message_includes_spec_id
+          - test_commit_message_includes_files
+          - test_commit_message_truncates_long_title
+          - test_stages_files_for_commit
+          - test_creates_commit_when_auto_commit
+          - test_skips_commit_when_no_auto_commit
+          - test_handles_no_changes_to_commit
+          # PR delivery
+          - test_creates_feature_branch
+          - test_pushes_branch_to_remote
+          - test_creates_pull_request
+          - test_handles_pr_creation_failure
+          # Patch delivery
+          - test_generates_patch_content
+          - test_saves_patch_file
+          - test_patch_file_uses_spec_id
+          # Files delivery
+          - test_files_mode_no_git_operations
+          - test_files_mode_returns_file_list
+          # Summary generation
+          - test_generates_summary
+          - test_summary_includes_spec_id
+          - test_summary_includes_file_count
+          - test_summary_includes_test_results
+          # Git operations
+          - test_stages_multiple_files
+          - test_handles_staging_failure
+          - test_gets_commit_sha
+          # Validation
+          - test_validates_deliverable_type_present
+          - test_validates_files_modified_present
+          # Edge cases
+          - test_handles_empty_final_files
+          - test_handles_dict_file_entries
+          - test_handles_git_not_available
+
+      # ─────────────────────────────────────────────────────────────────────────
+      # DeliveryMode Tests
+      # ─────────────────────────────────────────────────────────────────────────
+      - path: stages/test_deliver.py
+        tests_for: deliver-phase-executor
+        additional_test_cases:
+          - test_delivery_mode_commit_value
+          - test_delivery_mode_pr_value
+          - test_delivery_mode_files_value
+          - test_delivery_mode_patch_value
+
+      # ─────────────────────────────────────────────────────────────────────────
+      # Shared fixtures
+      # ─────────────────────────────────────────────────────────────────────────
+      - path: stages/conftest.py
+        purpose: Add Phase 4 specific fixtures
+        fixtures:
+          - sample_green_artifact_for_refactor
+          - sample_refactor_artifact_for_deliver
+          - mock_conformance_passing
+          - mock_conformance_violations
+          - temp_git_project
+
+      # ─────────────────────────────────────────────────────────────────────────
+      # Artifact tests (additions)
+      # ─────────────────────────────────────────────────────────────────────────
+      - path: test_artifacts.py
+        tests_for: phase4-artifacts
+        additional_test_cases:
+          - test_refactor_artifact_creation
+          - test_refactor_artifact_defaults
+          - test_deliver_artifact_creation
+          - test_deliver_artifact_defaults
+          - test_refactor_artifact_to_dict
+          - test_deliver_artifact_to_dict
+
+  integration_tests:
+    root: tests/integration/pipeline/
+
+    files:
+      - path: stages/test_refactor_deliver_pipeline.py
+        purpose: End-to-end REFACTOR & DELIVER pipeline tests
+        test_cases:
+          # REFACTOR integration
+          - test_green_to_refactor_artifact_flow
+          - test_refactor_maintains_passing_tests
+          - test_refactor_applies_improvements
+          - test_refactor_skips_when_clean
+          # DELIVER integration
+          - test_refactor_to_deliver_artifact_flow
+          - test_deliver_stages_files
+          - test_deliver_generates_summary
+          # Full pipeline
+          - test_green_to_refactor_to_deliver_flow
+          - test_full_pipeline_completes
+          - test_full_pipeline_handles_errors
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# IMPLEMENTATION PATTERNS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+implementation_patterns:
+  refactor_loop:
+    description: "REFACTOR phase iterative loop"
+    steps:
+      - "1. Verify tests pass before starting"
+      - "2. Run conformance checks to identify issues"
+      - "3. If no issues, create passthrough artifact"
+      - "4. Otherwise, execute refactoring with LLM"
+      - "5. Verify tests still pass"
+      - "6. Verify conformance passes"
+      - "7. Build and return artifact"
+
+  delivery_flow:
+    description: "DELIVER phase flow by mode"
+    modes:
+      commit:
+        - "1. Generate commit message"
+        - "2. Stage files"
+        - "3. Create commit if auto_commit"
+        - "4. Return artifact with status"
+      pr:
+        - "1. Create feature branch"
+        - "2. Stage and commit files"
+        - "3. Push branch to remote"
+        - "4. Create pull request via gh CLI"
+        - "5. Return artifact with PR URL"
+      files:
+        - "1. Simply return files list"
+        - "2. No git operations"
+      patch:
+        - "1. Generate git diff"
+        - "2. Save to patch file"
+        - "3. Return artifact with patch path"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DEPENDENCIES
+# ═══════════════════════════════════════════════════════════════════════════════
+
+dependencies:
+  internal:
+    - module: agentforge.core.pipeline.stage_executor
+      used_by: [refactor-phase-executor, deliver-phase-executor]
+      purpose: StageExecutor base class
+
+    - module: agentforge.core.harness.minimal_context.executor
+      used_by: [refactor-phase-executor]
+      purpose: LLM execution with tools
+
+    - module: agentforge.core.harness.minimal_context.tool_handlers
+      used_by: [refactor-phase-executor]
+      purpose: File operation tool handlers
+
+  external:
+    - package: subprocess
+      version: stdlib
+      purpose: Running tests, git commands, conformance checks
+
+    - package: pathlib
+      version: stdlib
+      purpose: File path operations
+
+    - package: datetime
+      version: stdlib
+      purpose: Timestamps
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ACCEPTANCE CRITERIA
+# ═══════════════════════════════════════════════════════════════════════════════
+
+acceptance_criteria:
+  refactor_phase:
+    - Identifies code quality issues via conformance checks
+    - Applies refactorings to fix issues
+    - Maintains passing tests after every change
+    - Skips refactoring when no issues found
+    - Handles conformance check failures gracefully
+    - Reports improvements made
+
+  deliver_phase:
+    - Supports commit, PR, files, and patch delivery modes
+    - Generates meaningful commit messages
+    - Stages files correctly for git operations
+    - Creates PRs with proper titles and bodies
+    - Generates human-readable summaries
+    - Handles missing git gracefully
+    - Respects auto_commit configuration
+
+  full_pipeline:
+    - GREEN → REFACTOR → DELIVER flow works end-to-end
+    - Artifacts flow correctly between stages
+    - Final result is properly packaged
+    - Summary provides useful information
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CONFIGURATION
+# ═══════════════════════════════════════════════════════════════════════════════
+
+configuration:
+  refactor_phase:
+    file: ".agentforge/config/stages/refactor.yaml"
+    options:
+      max_iterations: 10
+      run_conformance: true
+      conformance_command: "agentforge conformance check --format json"
+      test_timeout_seconds: 300
+      skip_if_clean: true
+
+  deliver_phase:
+    file: ".agentforge/config/stages/deliver.yaml"
+    options:
+      delivery_mode: commit
+      auto_commit: false
+      branch_prefix: "feature/"
+      commit_message_template: "feat: {title}"
+      include_spec_id: true
+      patch_output_dir: ".agentforge/patches"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CHANGELOG
+# ═══════════════════════════════════════════════════════════════════════════════
+
+changelog:
+  - version: "1.0"
+    date: "2026-01-02"
+    changes:
+      - Initial Phase 4 specification
+      - REFACTOR phase executor defined
+      - DELIVER phase executor defined
+      - DeliveryMode enum defined
+      - Phase 4 artifact dataclasses defined
+      - Test structure outlined

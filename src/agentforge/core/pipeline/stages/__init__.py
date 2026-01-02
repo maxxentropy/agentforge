@@ -1,9 +1,12 @@
 # @spec_file: specs/pipeline-controller/implementation/phase-2-design-pipeline.yaml
 # @spec_file: specs/pipeline-controller/implementation/phase-3-tdd-stages.yaml
+# @spec_file: specs/pipeline-controller/implementation/phase-4-refactor-deliver.yaml
 # @spec_id: pipeline-controller-phase2-v1
 # @spec_id: pipeline-controller-phase3-v1
+# @spec_id: pipeline-controller-phase4-v1
 # @component_id: stages-init
 # @component_id: stages-init-tdd
+# @component_id: stages-init-phase4
 # @test_path: tests/unit/pipeline/stages/test_stages_init.py
 
 """
@@ -33,6 +36,8 @@ from .analyze import AnalyzeExecutor, create_analyze_executor
 from .spec import SpecExecutor, create_spec_executor
 from .red import RedPhaseExecutor, create_red_executor
 from .green import GreenPhaseExecutor, create_green_executor
+from .refactor import RefactorPhaseExecutor, create_refactor_executor
+from .deliver import DeliverPhaseExecutor, DeliveryMode, create_deliver_executor
 
 __all__ = [
     # Design Pipeline Executor classes
@@ -43,6 +48,10 @@ __all__ = [
     # TDD Pipeline Executor classes
     "RedPhaseExecutor",
     "GreenPhaseExecutor",
+    # Delivery Pipeline Executor classes
+    "RefactorPhaseExecutor",
+    "DeliverPhaseExecutor",
+    "DeliveryMode",
     # Design Pipeline Factory functions
     "create_intake_executor",
     "create_clarify_executor",
@@ -51,9 +60,13 @@ __all__ = [
     # TDD Pipeline Factory functions
     "create_red_executor",
     "create_green_executor",
+    # Delivery Pipeline Factory functions
+    "create_refactor_executor",
+    "create_deliver_executor",
     # Registration functions
     "register_design_stages",
     "register_tdd_stages",
+    "register_delivery_stages",
 ]
 
 
@@ -84,3 +97,17 @@ def register_tdd_stages(registry: "StageExecutorRegistry") -> None:
     """
     registry.register("red", create_red_executor)
     registry.register("green", create_green_executor)
+
+
+def register_delivery_stages(registry: "StageExecutorRegistry") -> None:
+    """
+    Register all delivery pipeline stages with the given registry.
+
+    This registers REFACTOR and DELIVER stages that complete the
+    TDD cycle and package the final result.
+
+    Args:
+        registry: The StageExecutorRegistry to register with
+    """
+    registry.register("refactor", create_refactor_executor)
+    registry.register("deliver", create_deliver_executor)

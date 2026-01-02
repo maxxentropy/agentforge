@@ -1,9 +1,12 @@
 # @spec_file: specs/pipeline-controller/implementation/phase-2-design-pipeline.yaml
 # @spec_file: specs/pipeline-controller/implementation/phase-3-tdd-stages.yaml
+# @spec_file: specs/pipeline-controller/implementation/phase-4-refactor-deliver.yaml
 # @spec_id: pipeline-controller-phase2-v1
 # @spec_id: pipeline-controller-phase3-v1
+# @spec_id: pipeline-controller-phase4-v1
 # @component_id: pipeline-artifacts
 # @component_id: tdd-artifacts
+# @component_id: phase4-artifacts
 # @test_path: tests/unit/pipeline/test_artifacts.py
 
 """
@@ -141,12 +144,17 @@ class RefactorArtifact:
     Artifact produced by REFACTOR stage.
 
     Contains refactored files and improvement details.
+    Tests must continue to pass after refactoring.
     """
 
     spec_id: str
-    refactored_files: List[str] = field(default_factory=list)
-    improvements: List[Dict[str, Any]] = field(default_factory=list)
+    request_id: str = ""
+    refactored_files: List[Dict[str, str]] = field(default_factory=list)
+    improvements: List[Dict[str, str]] = field(default_factory=list)
     final_files: List[str] = field(default_factory=list)
+    test_results: Dict[str, Any] = field(default_factory=dict)
+    conformance_passed: bool = False
+    remaining_violations: List[Dict[str, Any]] = field(default_factory=list)
 
 
 @dataclass
@@ -154,12 +162,18 @@ class DeliverArtifact:
     """
     Artifact produced by DELIVER stage.
 
-    Contains delivery details (commit, PR, files).
+    Contains delivery details (commit, PR, files, patch).
     """
 
     spec_id: str
-    deliverable_type: str  # commit, pr, files
+    request_id: str = ""
+    deliverable_type: str = "commit"  # commit, pr, files, patch
     commit_sha: Optional[str] = None
+    commit_message: str = ""
+    branch_name: Optional[str] = None
     pr_url: Optional[str] = None
+    patch_file: Optional[str] = None
     files_modified: List[str] = field(default_factory=list)
+    files_staged: List[str] = field(default_factory=list)
     summary: str = ""
+    status: str = ""

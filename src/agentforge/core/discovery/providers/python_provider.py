@@ -767,7 +767,7 @@ class PythonProvider(LanguageProvider):
                         "impact": "Reduces nesting depth",
                         "extractable": not (isinstance(n, ast.If) and
                                           any(isinstance(c, ast.If) for c in n.orelse)),
-                        "nesting_path": " > ".join(f"{t}:{l}" for t, l in new_path),
+                        "nesting_path": " > ".join(f"{typ}:{line}" for typ, line in new_path),
                     })
 
                 for child in ast.iter_child_nodes(n):

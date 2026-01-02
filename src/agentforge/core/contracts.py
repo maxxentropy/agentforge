@@ -35,8 +35,8 @@ class RegistryOptions:
 # Re-export types for backwards compatibility
 try:
     from .contracts_execution import execute_check
-    from .contracts_registry import BUILTIN_CONTRACTS_DIR, ContractRegistry
-    from .contracts_types import CheckResult, Contract, ContractResult, Exemption
+    from .contracts_registry import BUILTIN_CONTRACTS_DIR, ContractRegistry  # noqa: F401
+    from .contracts_types import CheckResult, Contract, ContractResult, Exemption  # noqa: F401
 except ImportError:
     from contracts_execution import execute_check
     from contracts_registry import ContractRegistry

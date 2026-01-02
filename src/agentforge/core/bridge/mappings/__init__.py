@@ -18,7 +18,7 @@ Available mappings are auto-registered via the @MappingRegistry.register decorat
 """
 
 # Import all mappings to trigger registration
-from . import architecture, conventions, cqrs, repository
+from . import architecture, conventions, cqrs, repository  # noqa: F401
 from .base import PatternMapping
 from .registry import MappingRegistry
 

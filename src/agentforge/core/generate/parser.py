@@ -179,7 +179,7 @@ class ResponseParser:
                 f"Invalid Python syntax in {file_path}: {e.msg}",
                 raw_response=content[:200],
                 position=e.lineno,
-            )
+            ) from e
 
     def extract_explanation(self, response: str) -> str:
         """

@@ -3,6 +3,13 @@ __pycache__/
 *.py[cod]
 *$py.class
 *.so
+
+# Test artifacts
+tmp*.py
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
 .Python
 build/
 develop-eggs/

@@ -314,7 +314,7 @@ class DiscoveryManager:
         # Mark first language as primary
         if self._languages:
             # Sort by file count, most files = primary
-            self._languages.sort(key=lambda l: l.file_count, reverse=True)
+            self._languages.sort(key=lambda lang: lang.file_count, reverse=True)
             for i, lang in enumerate(self._languages):
                 lang.primary = (i == 0)
 
@@ -326,7 +326,7 @@ class DiscoveryManager:
             raise ValueError("No language providers available. Run language detection first.")
 
         # Use primary language provider
-        primary_lang = next((l for l in self._languages if l.primary), None)
+        primary_lang = next((lang for lang in self._languages if lang.primary), None)
         if not primary_lang:
             primary_lang = self._languages[0] if self._languages else None
 
@@ -353,7 +353,7 @@ class DiscoveryManager:
             raise ValueError("No language providers available")
 
         # Use primary language provider
-        primary_lang = next((l for l in self._languages if l.primary), None)
+        primary_lang = next((lang for lang in self._languages if lang.primary), None)
         if not primary_lang:
             raise ValueError("No primary language detected")
 

@@ -89,7 +89,7 @@ def init(name, force, path):
         click.echo("  agentforge design 'your feature description'")
     except FileExistsError as e:
         click.echo(str(e), err=True)
-        raise SystemExit(1)
+        raise SystemExit(1) from None
 
 
 # Import and register commands from submodules

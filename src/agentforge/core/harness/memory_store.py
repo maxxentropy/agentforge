@@ -206,4 +206,4 @@ class MemoryStore:
             temp_path.replace(tier_path)
 
         except (OSError, yaml.YAMLError, Exception) as e:
-            raise MemoryWriteError(f"Failed to write tier {tier}: {e}")
+            raise MemoryWriteError(f"Failed to write tier {tier}: {e}") from e

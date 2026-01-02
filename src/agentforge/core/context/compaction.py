@@ -415,10 +415,10 @@ class SimpleLLMSummarizer:
             try:
                 from ..llm import LLMClientFactory
                 self._client = LLMClientFactory.create(model=self.model)
-            except ImportError:
+            except ImportError as e:
                 raise RuntimeError(
                     "LLM client not available. Install agentforge with LLM support."
-                )
+                ) from e
         return self._client
 
     def summarize(self, content: str, max_tokens: int) -> str:

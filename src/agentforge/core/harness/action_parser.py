@@ -120,11 +120,11 @@ class ActionParser:
 
         try:
             action_type = ActionType(action_type_str)
-        except ValueError:
+        except ValueError as e:
             raise ActionParseError(
                 f"Invalid action type: {action_type_str}",
                 raw_response=response
-            )
+            ) from e
 
         return action_type, action_content
 

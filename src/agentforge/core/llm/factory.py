@@ -106,9 +106,9 @@ class LLMClientFactory:
         mode_str = mode or os.environ.get(cls.ENV_MODE, LLMClientMode.REAL.value)
         try:
             client_mode = LLMClientMode(mode_str.lower())
-        except ValueError:
+        except ValueError as e:
             valid_modes = ", ".join(m.value for m in LLMClientMode)
-            raise ValueError(f"Invalid LLM mode: {mode_str}. Valid: {valid_modes}")
+            raise ValueError(f"Invalid LLM mode: {mode_str}. Valid: {valid_modes}") from e
 
         # Create appropriate client
         if client_mode == LLMClientMode.REAL:

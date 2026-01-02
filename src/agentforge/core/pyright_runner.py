@@ -71,10 +71,10 @@ class PyrightRunner:
             )
             if result.returncode != 0:
                 raise RuntimeError("pyright --version failed")
-        except FileNotFoundError:
+        except FileNotFoundError as e:
             raise RuntimeError(
                 "pyright is not installed. Install with: pip install pyright"
-            )
+            ) from e
 
     def check_file(self, file_path: Path) -> PyrightResult:
         """

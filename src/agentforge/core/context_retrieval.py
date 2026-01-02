@@ -136,7 +136,7 @@ class ContextRetriever:
         """Get or create LSP adapter. Returns None if not available."""
         if self._lsp_adapter is None and self._lsp_available is None:
             try:
-                from agentforge.core.lsp_adapter import LSPServerNotFound, get_adapter_for_project
+                from agentforge.core.lsp_adapter import get_adapter_for_project
 
                 adapter = get_adapter_for_project(str(self.project_path))
                 adapter.initialize()

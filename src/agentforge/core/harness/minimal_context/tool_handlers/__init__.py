@@ -31,7 +31,6 @@ Handler Categories:
 """
 
 from pathlib import Path
-from typing import Any, Dict, Optional
 
 from .file_handlers import (
     create_edit_file_handler,

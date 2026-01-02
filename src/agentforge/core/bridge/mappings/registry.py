@@ -64,7 +64,7 @@ class MappingRegistry:
         all_mappings = cls.get_all_mappings()
         return [
             m for m in all_mappings
-            if not m.languages or language.lower() in [l.lower() for l in m.languages]
+            if not m.languages or language.lower() in [lang.lower() for lang in m.languages]
         ]
 
     @classmethod

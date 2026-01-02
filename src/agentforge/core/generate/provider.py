@@ -190,7 +190,7 @@ class ClaudeProvider(LLMProvider):
                     retryable=retryable,
                 )
                 if not retryable:
-                    raise last_error
+                    raise last_error from e
             except anthropic.APIConnectionError as e:
                 last_error = APIError(
                     f"Connection error: {e}",
@@ -201,7 +201,7 @@ class ClaudeProvider(LLMProvider):
                     f"Unexpected error: {e}",
                     retryable=False,
                 )
-                raise last_error
+                raise last_error from e
 
             # If we get here, error was retryable
             if attempt < self._max_retries:

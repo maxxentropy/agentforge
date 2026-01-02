@@ -190,7 +190,7 @@ def start(ctx, request, supervised, exit_after, iterate, delivery_mode, timeout)
 
     except Exception as e:
         click.echo(click.style(f"Error: {e}", fg="red"))
-        raise click.Abort()
+        raise click.Abort() from None
 
 
 @click.command("design")
@@ -239,7 +239,7 @@ def design(ctx, request, iterate):
 
     except Exception as e:
         click.echo(click.style(f"Error: {e}", fg="red"))
-        raise click.Abort()
+        raise click.Abort() from None
 
 
 @click.command("implement")
@@ -316,7 +316,7 @@ def implement(ctx, request, from_spec, skip_to, delivery_mode):
         raise
     except Exception as e:
         click.echo(click.style(f"Error: {e}", fg="red"))
-        raise click.Abort()
+        raise click.Abort() from None
 
 
 # =============================================================================
@@ -404,7 +404,7 @@ def status(ctx, pipeline_id, verbose):
 
     except Exception as e:
         click.echo(click.style(f"Error: {e}", fg="red"))
-        raise click.Abort()
+        raise click.Abort() from None
 
 
 @click.command("resume")
@@ -441,7 +441,7 @@ def resume(ctx, pipeline_id, feedback):
 
     except Exception as e:
         click.echo(click.style(f"Error: {e}", fg="red"))
-        raise click.Abort()
+        raise click.Abort() from None
 
 
 @click.command("approve")
@@ -467,7 +467,7 @@ def approve(ctx, pipeline_id):
 
     except Exception as e:
         click.echo(click.style(f"Error: {e}", fg="red"))
-        raise click.Abort()
+        raise click.Abort() from None
 
 
 @click.command("reject")
@@ -500,7 +500,7 @@ def reject(ctx, pipeline_id, feedback, abort_flag):
 
     except Exception as e:
         click.echo(click.style(f"Error: {e}", fg="red"))
-        raise click.Abort()
+        raise click.Abort() from None
 
 
 @click.command("abort")
@@ -525,7 +525,7 @@ def abort(ctx, pipeline_id, reason):
 
     except Exception as e:
         click.echo(click.style(f"Error: {e}", fg="red"))
-        raise click.Abort()
+        raise click.Abort() from None
 
 
 # =============================================================================
@@ -589,7 +589,7 @@ def pipelines(ctx, status_filter, limit):
 
     except Exception as e:
         click.echo(click.style(f"Error: {e}", fg="red"))
-        raise click.Abort()
+        raise click.Abort() from None
 
 
 @click.command("artifacts")

@@ -295,7 +295,7 @@ class TestAnalysis:
             },
             "estimated_coverage": round(self.estimated_coverage, 2),
             "confidence": round(self.detection.confidence, 2),
-            "linkages": {l.source_path: l.test_paths for l in self.linkages},
+            "linkages": {linkage.source_path: linkage.test_paths for linkage in self.linkages},
         }
 
 

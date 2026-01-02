@@ -154,7 +154,7 @@ def _load_workspace(ctx: WorkspaceContext) -> WorkspaceContext:
     try:
         ctx.workspace_config = yaml.safe_load(ctx.workspace_path.read_text())
     except Exception as e:
-        raise WorkspaceSchemaError(f"Failed to parse workspace.yaml: {e}")
+        raise WorkspaceSchemaError(f"Failed to parse workspace.yaml: {e}") from e
 
     _load_repos_into_context(ctx, ctx.workspace_path.parent)
     _detect_current_repo(ctx)

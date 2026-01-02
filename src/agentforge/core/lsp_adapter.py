@@ -95,7 +95,7 @@ class LSPAdapter:
 
         except Exception as e:
             self.shutdown()
-            raise LSPInitializationError(f"Failed to initialize {self.SERVER_NAME}: {e}")
+            raise LSPInitializationError(f"Failed to initialize {self.SERVER_NAME}: {e}") from e
 
     def _get_initialize_params(self) -> dict:
         """Get initialization parameters for the server."""

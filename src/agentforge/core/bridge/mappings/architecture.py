@@ -208,7 +208,7 @@ class LayerViolationMapping(PatternMapping):
             # Find forbidden dependencies (layers that are "outer")
             layer_idx = layer_order.index(layer_name) if layer_name in layer_order else -1
             if layer_idx >= 0:
-                forbidden = [l for l in layer_order[layer_idx + 1:] if l in layers]
+                forbidden = [layer for layer in layer_order[layer_idx + 1:] if layer in layers]
                 if forbidden:
                     templates.append(CheckTemplate(
                         id_template=f"{{zone}}-{layer_name}-no-outer-deps",

@@ -43,7 +43,7 @@ __all__ = [
 def __getattr__(name: str):
     if name in ("GeneratedFile", "GenerationResult", "GenerationContext",
                 "GenerationError", "APIError", "ParseError"):
-        from agentforge.core.generate.domain import (
+        from agentforge.core.generate.domain import (  # noqa: F401
             APIError,
             GeneratedFile,
             GenerationContext,
@@ -54,7 +54,7 @@ def __getattr__(name: str):
         return locals()[name]
 
     if name in ("LLMProvider", "ClaudeProvider", "ManualProvider", "get_provider"):
-        from agentforge.core.generate.provider import (
+        from agentforge.core.generate.provider import (  # noqa: F401
             ClaudeProvider,
             LLMProvider,
             ManualProvider,

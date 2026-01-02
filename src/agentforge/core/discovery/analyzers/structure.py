@@ -318,7 +318,7 @@ class StructureAnalyzer:
         # Confidence based on how many layers we detected
         if detected_layer_names:
             avg_layer_confidence = sum(
-                l.detection.confidence for l in layers.values()
+                layer.detection.confidence for layer in layers.values()
             ) / len(layers)
             final_confidence = (best_score + avg_layer_confidence) / 2
         else:

@@ -120,7 +120,7 @@ class CodeWriter:
                     f"Failed to write {file.path}: {e}",
                     path=file.path,
                     original_error=e,
-                )
+                ) from e
 
         return written_paths
 

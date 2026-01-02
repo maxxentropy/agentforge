@@ -103,11 +103,11 @@ class LSPClient:
                 cwd=str(self.project_root),
                 env={**os.environ, 'NO_COLOR': '1'},
             )
-        except FileNotFoundError:
+        except FileNotFoundError as e:
             raise LSPServerNotFound(
                 command[0],
                 f"Command '{' '.join(command)}' not found in PATH"
-            )
+            ) from e
 
         self._running = True
         self._reader_thread = threading.Thread(target=self._read_messages, daemon=True)
@@ -215,8 +215,8 @@ class LSPClient:
 
             try:
                 response = response_queue.get(timeout=timeout)
-            except queue.Empty:
-                raise LSPTimeoutError(f"Request '{method}' timed out after {timeout}s")
+            except queue.Empty as e:
+                raise LSPTimeoutError(f"Request '{method}' timed out after {timeout}s") from e
 
             if 'error' in response:
                 raise LSPRequestError(method, response['error'])

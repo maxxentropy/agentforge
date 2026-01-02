@@ -107,11 +107,11 @@ class LocalEmbeddingProvider(EmbeddingProvider):
                 print(f"Loading embedding model: {self.model_name}", file=sys.stderr)
                 self._model = SentenceTransformer(self.model_name)
                 self.dimension = self._model.get_sentence_embedding_dimension()
-            except ImportError:
+            except ImportError as e:
                 raise ImportError(
                     "sentence-transformers not installed. "
                     f"Install with: {self.install_instructions}"
-                )
+                ) from e
         return self._model
 
     def embed(self, texts: list[str]) -> np.ndarray:
@@ -126,7 +126,7 @@ class LocalEmbeddingProvider(EmbeddingProvider):
 
     def is_available(self) -> bool:
         try:
-            import sentence_transformers
+            import sentence_transformers  # noqa: F401
             return True
         except ImportError:
             return False
@@ -155,11 +155,11 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
             try:
                 from openai import OpenAI
                 self._client = OpenAI()  # Uses OPENAI_API_KEY env var
-            except ImportError:
+            except ImportError as e:
                 raise ImportError(
                     "openai package not installed. "
                     "Install with: pip install openai"
-                )
+                ) from e
         return self._client
 
     def embed(self, texts: list[str]) -> np.ndarray:
@@ -184,7 +184,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         if not os.environ.get("OPENAI_API_KEY"):
             return False
         try:
-            import openai
+            import openai  # noqa: F401
             return True
         except ImportError:
             return False
@@ -213,11 +213,11 @@ class VoyageEmbeddingProvider(EmbeddingProvider):
             try:
                 import voyageai
                 self._client = voyageai.Client()  # Uses VOYAGE_API_KEY env var
-            except ImportError:
+            except ImportError as e:
                 raise ImportError(
                     "voyageai package not installed. "
                     "Install with: pip install voyageai"
-                )
+                ) from e
         return self._client
 
     def embed(self, texts: list[str]) -> np.ndarray:
@@ -238,7 +238,7 @@ class VoyageEmbeddingProvider(EmbeddingProvider):
         if not os.environ.get("VOYAGE_API_KEY"):
             return False
         try:
-            import voyageai
+            import voyageai  # noqa: F401
             return True
         except ImportError:
             return False

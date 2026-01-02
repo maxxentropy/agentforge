@@ -44,8 +44,6 @@ Extending:
     ```
 """
 
-from typing import Dict, List, Type
-
 from .base import BaseContextTemplate
 from .bridge import BridgeTemplate
 from .code_review import CodeReviewTemplate

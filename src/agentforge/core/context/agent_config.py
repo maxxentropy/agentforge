@@ -262,7 +262,7 @@ class AgentConfigLoader:
             try:
                 data = yaml.safe_load(yaml_content) or {}
             except yaml.YAMLError as e:
-                raise ValueError(f"Invalid YAML in {path}: {e}")
+                raise ValueError(f"Invalid YAML in {path}: {e}") from e
 
             # Add markdown body as instructions if not already set
             if markdown_body and "instructions" not in data:

@@ -260,8 +260,8 @@ class VectorSearch:
         try:
             import faiss
             import numpy as np
-        except ImportError:
-            raise ImportError("FAISS not installed. Run: pip install faiss-cpu")
+        except ImportError as e:
+            raise ImportError("FAISS not installed. Run: pip install faiss-cpu") from e
 
         if not self._load_index():
             print("Index not found. Building...")

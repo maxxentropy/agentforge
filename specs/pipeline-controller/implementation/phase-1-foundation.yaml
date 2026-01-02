@@ -1,0 +1,578 @@
+# Pipeline Controller - Phase 1: Foundation
+# ==========================================
+#
+# This specification defines the core architecture for the Pipeline Controller.
+# Phase 1 establishes the foundation: state management, stage execution, and orchestration.
+#
+# Version: 1.0
+# Status: In Development
+# Date: January 2026
+
+spec_id: pipeline-controller-phase1-v1
+version: "1.0"
+status: implemented
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# OVERVIEW
+# ═══════════════════════════════════════════════════════════════════════════════
+
+overview:
+  title: Pipeline Controller Foundation
+  purpose: |
+    Establishes the core orchestration engine for autonomous development pipelines.
+    This phase delivers:
+    - Pipeline state management with YAML persistence
+    - Stage executor base classes and registry
+    - Pipeline controller for orchestrating stage execution
+    - Artifact validation and flow between stages
+
+  design_principles:
+    - State survives process restarts (YAML persistence)
+    - Stages are independent, composable units
+    - Artifacts validate between stage transitions
+    - Escalation-first for human intervention
+    - Factory pattern for stage executor creation
+
+  related_specs:
+    - path: ../stage-01-core-architecture.md
+      description: Core architecture design document
+    - path: ../stage-02-stage-executor-interface.md
+      description: Stage executor interface specification
+    - path: ../README.md
+      description: Pipeline controller overview
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# MODULE STRUCTURE
+# ═══════════════════════════════════════════════════════════════════════════════
+
+module_structure:
+  root: src/agentforge/core/pipeline/
+
+  files:
+    # ─────────────────────────────────────────────────────────────────────────
+    # Core Module Exports
+    # ─────────────────────────────────────────────────────────────────────────
+    - path: __init__.py
+      component_id: pipeline-init
+      purpose: Module exports and public API
+      test_path: tests/unit/pipeline/test_module_exports.py
+      exports:
+        - PipelineController
+        - PipelineState
+        - PipelineStatus
+        - PipelineStateStore
+        - StageExecutor
+        - StageResult
+        - StageStatus
+        - StageExecutorRegistry
+        - ArtifactValidator
+        - EscalationHandler
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Pipeline State Management
+    # ─────────────────────────────────────────────────────────────────────────
+    - path: state.py
+      component_id: pipeline-state
+      purpose: Pipeline and stage state dataclasses
+      test_path: tests/unit/pipeline/test_state.py
+      classes:
+        - name: PipelineStatus
+          type: enum
+          values: [PENDING, RUNNING, PAUSED, WAITING_APPROVAL, COMPLETED, FAILED, ABORTED]
+
+        - name: StageStatus
+          type: enum
+          values: [PENDING, RUNNING, COMPLETED, FAILED, SKIPPED]
+
+        - name: StageState
+          type: dataclass
+          fields:
+            - name: stage_name
+              type: str
+            - name: status
+              type: StageStatus
+            - name: started_at
+              type: Optional[datetime]
+            - name: completed_at
+              type: Optional[datetime]
+            - name: artifacts
+              type: Dict[str, Any]
+            - name: error
+              type: Optional[str]
+
+        - name: PipelineState
+          type: dataclass
+          fields:
+            - name: pipeline_id
+              type: str
+              description: "Unique ID: PL-{YYYYMMDD}-{uuid8}"
+            - name: template
+              type: str
+              description: "Pipeline template name (design, implement, test, fix)"
+            - name: status
+              type: PipelineStatus
+            - name: current_stage
+              type: Optional[str]
+            - name: stages
+              type: Dict[str, StageState]
+            - name: request
+              type: str
+              description: "Original user request"
+            - name: created_at
+              type: datetime
+            - name: updated_at
+              type: datetime
+            - name: project_path
+              type: Path
+            - name: config
+              type: Dict[str, Any]
+              description: "Pipeline configuration overrides"
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # State Persistence
+    # ─────────────────────────────────────────────────────────────────────────
+    - path: state_store.py
+      component_id: pipeline-state-store
+      purpose: YAML-based pipeline state persistence
+      test_path: tests/unit/pipeline/test_state_store.py
+      classes:
+        - name: PipelineStateStore
+          methods:
+            - name: save
+              signature: "(state: PipelineState) -> None"
+              description: "Save pipeline state to YAML file"
+            - name: load
+              signature: "(pipeline_id: str) -> Optional[PipelineState]"
+              description: "Load pipeline state by ID"
+            - name: list_active
+              signature: "() -> List[PipelineState]"
+              description: "List all active (non-completed) pipelines"
+            - name: list_completed
+              signature: "(limit: int = 20) -> List[PipelineState]"
+              description: "List recent completed pipelines"
+            - name: delete
+              signature: "(pipeline_id: str) -> bool"
+              description: "Delete a pipeline state"
+            - name: archive
+              signature: "(pipeline_id: str) -> bool"
+              description: "Move pipeline to completed directory"
+
+      storage_structure:
+        root: ".agentforge/pipeline/"
+        active: "active/{pipeline_id}.yaml"
+        completed: "completed/{pipeline_id}.yaml"
+        index: "index.yaml"
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Stage Executor Interface
+    # ─────────────────────────────────────────────────────────────────────────
+    - path: stage_executor.py
+      component_id: pipeline-stage-executor
+      purpose: Abstract base class for stage executors
+      test_path: tests/unit/pipeline/test_stage_executor.py
+      classes:
+        - name: StageContext
+          type: dataclass
+          fields:
+            - name: pipeline_id
+              type: str
+            - name: stage_name
+              type: str
+            - name: project_path
+              type: Path
+            - name: input_artifacts
+              type: Dict[str, Any]
+            - name: config
+              type: Dict[str, Any]
+            - name: state_store
+              type: PipelineStateStore
+
+        - name: StageResult
+          type: dataclass
+          fields:
+            - name: status
+              type: StageStatus
+            - name: artifacts
+              type: Dict[str, Any]
+            - name: error
+              type: Optional[str]
+            - name: next_stage
+              type: Optional[str]
+              description: "Override next stage (for conditional flow)"
+            - name: escalation
+              type: Optional[Dict[str, Any]]
+              description: "Escalation request if human input needed"
+
+        - name: StageExecutor
+          type: abstract_class
+          methods:
+            - name: execute
+              signature: "(context: StageContext) -> StageResult"
+              abstract: true
+              description: "Execute the stage and return result"
+            - name: validate_input
+              signature: "(artifacts: Dict[str, Any]) -> List[str]"
+              description: "Validate input artifacts, return list of errors"
+            - name: get_required_inputs
+              signature: "() -> List[str]"
+              description: "Return list of required input artifact keys"
+            - name: get_output_schema
+              signature: "() -> Dict[str, Any]"
+              description: "Return JSON schema for output artifacts"
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Stage Executor Registry
+    # ─────────────────────────────────────────────────────────────────────────
+    - path: registry.py
+      component_id: pipeline-registry
+      purpose: Registry for stage executor factories
+      test_path: tests/unit/pipeline/test_registry.py
+      classes:
+        - name: StageExecutorRegistry
+          methods:
+            - name: register
+              signature: "(stage_name: str, factory: Callable[[], StageExecutor]) -> None"
+              description: "Register a stage executor factory"
+            - name: get
+              signature: "(stage_name: str) -> StageExecutor"
+              description: "Get executor instance for a stage"
+            - name: list_stages
+              signature: "() -> List[str]"
+              description: "List all registered stage names"
+            - name: has_stage
+              signature: "(stage_name: str) -> bool"
+              description: "Check if stage is registered"
+
+      singleton: true
+      description: "Global registry for stage executors"
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Artifact Validation
+    # ─────────────────────────────────────────────────────────────────────────
+    - path: validator.py
+      component_id: pipeline-validator
+      purpose: Validate artifacts between stage transitions
+      test_path: tests/unit/pipeline/test_validator.py
+      classes:
+        - name: ValidationError
+          type: exception
+          description: "Raised when artifact validation fails"
+
+        - name: ArtifactValidator
+          methods:
+            - name: validate
+              signature: "(artifacts: Dict[str, Any], schema: Dict[str, Any]) -> List[str]"
+              description: "Validate artifacts against JSON schema"
+            - name: validate_required
+              signature: "(artifacts: Dict[str, Any], required: List[str]) -> List[str]"
+              description: "Check required keys are present"
+            - name: validate_types
+              signature: "(artifacts: Dict[str, Any], types: Dict[str, type]) -> List[str]"
+              description: "Validate artifact value types"
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Escalation Handling
+    # ─────────────────────────────────────────────────────────────────────────
+    - path: escalation.py
+      component_id: pipeline-escalation
+      purpose: Handle human escalation requests
+      test_path: tests/unit/pipeline/test_escalation.py
+      classes:
+        - name: EscalationType
+          type: enum
+          values: [APPROVAL_REQUIRED, CLARIFICATION_NEEDED, ERROR_RECOVERY, CANNOT_PROCEED]
+
+        - name: Escalation
+          type: dataclass
+          fields:
+            - name: escalation_id
+              type: str
+            - name: pipeline_id
+              type: str
+            - name: stage_name
+              type: str
+            - name: type
+              type: EscalationType
+            - name: message
+              type: str
+            - name: options
+              type: Optional[List[str]]
+            - name: context
+              type: Dict[str, Any]
+            - name: created_at
+              type: datetime
+
+        - name: EscalationHandler
+          methods:
+            - name: create
+              signature: "(escalation: Escalation) -> str"
+              description: "Create escalation and return ID"
+            - name: resolve
+              signature: "(escalation_id: str, response: str) -> None"
+              description: "Resolve an escalation with user response"
+            - name: get_pending
+              signature: "(pipeline_id: str) -> List[Escalation]"
+              description: "Get pending escalations for a pipeline"
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Pipeline Controller (Orchestrator)
+    # ─────────────────────────────────────────────────────────────────────────
+    - path: controller.py
+      component_id: pipeline-controller
+      purpose: Main orchestration engine for pipeline execution
+      test_path: tests/unit/pipeline/test_controller.py
+      classes:
+        - name: PipelineController
+          methods:
+            - name: __init__
+              signature: "(project_path: Path, state_store: PipelineStateStore = None, registry: StageExecutorRegistry = None)"
+
+            - name: create
+              signature: "(request: str, template: str = 'implement') -> PipelineState"
+              description: "Create a new pipeline from a request"
+
+            - name: execute
+              signature: "(pipeline_id: str) -> PipelineState"
+              description: "Execute pipeline until completion or pause"
+
+            - name: resume
+              signature: "(pipeline_id: str) -> PipelineState"
+              description: "Resume a paused pipeline"
+
+            - name: approve
+              signature: "(pipeline_id: str, escalation_id: str, response: str = 'approved') -> PipelineState"
+              description: "Approve an escalation and continue"
+
+            - name: reject
+              signature: "(pipeline_id: str, escalation_id: str, reason: str) -> PipelineState"
+              description: "Reject an escalation"
+
+            - name: abort
+              signature: "(pipeline_id: str, reason: str = None) -> PipelineState"
+              description: "Abort a running pipeline"
+
+            - name: get_status
+              signature: "(pipeline_id: str) -> PipelineState"
+              description: "Get current pipeline status"
+
+            - name: _execute_stage
+              signature: "(state: PipelineState, stage_name: str) -> StageResult"
+              description: "Execute a single stage"
+
+            - name: _transition_stage
+              signature: "(state: PipelineState, result: StageResult) -> Optional[str]"
+              description: "Determine next stage based on result"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ARTIFACTS SCHEMA
+# ═══════════════════════════════════════════════════════════════════════════════
+
+artifacts:
+  description: |
+    Artifacts flow between stages. Each stage produces output artifacts
+    that become input artifacts for the next stage.
+
+  common_fields:
+    - name: pipeline_id
+      type: str
+      required: true
+    - name: stage_name
+      type: str
+      required: true
+    - name: timestamp
+      type: datetime
+      required: true
+    - name: version
+      type: str
+      required: true
+      default: "1.0"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# TEST STRUCTURE
+# ═══════════════════════════════════════════════════════════════════════════════
+
+test_structure:
+  unit_tests:
+    root: tests/unit/pipeline/
+    files:
+      - path: __init__.py
+        purpose: Test package marker
+
+      - path: conftest.py
+        purpose: Shared fixtures for pipeline tests
+        fixtures:
+          - temp_project
+          - mock_state_store
+          - mock_registry
+          - sample_pipeline_state
+          - sample_stage_context
+
+      - path: test_state.py
+        tests_for: pipeline-state
+        test_cases:
+          - test_pipeline_state_creation
+          - test_pipeline_state_serialization
+          - test_stage_state_creation
+          - test_status_transitions
+          - test_pipeline_id_generation
+
+      - path: test_state_store.py
+        tests_for: pipeline-state-store
+        test_cases:
+          - test_save_and_load
+          - test_list_active_pipelines
+          - test_list_completed_pipelines
+          - test_delete_pipeline
+          - test_archive_pipeline
+          - test_concurrent_access
+          - test_corrupted_state_recovery
+
+      - path: test_stage_executor.py
+        tests_for: pipeline-stage-executor
+        test_cases:
+          - test_stage_context_creation
+          - test_stage_result_creation
+          - test_input_validation
+          - test_required_inputs
+          - test_output_schema
+
+      - path: test_registry.py
+        tests_for: pipeline-registry
+        test_cases:
+          - test_register_executor
+          - test_get_executor
+          - test_list_stages
+          - test_unknown_stage_error
+          - test_duplicate_registration
+
+      - path: test_validator.py
+        tests_for: pipeline-validator
+        test_cases:
+          - test_validate_required_fields
+          - test_validate_types
+          - test_validate_schema
+          - test_validation_error_messages
+
+      - path: test_escalation.py
+        tests_for: pipeline-escalation
+        test_cases:
+          - test_create_escalation
+          - test_resolve_escalation
+          - test_get_pending_escalations
+          - test_escalation_types
+
+      - path: test_controller.py
+        tests_for: pipeline-controller
+        test_cases:
+          - test_create_pipeline
+          - test_execute_single_stage
+          - test_execute_multi_stage
+          - test_pause_on_escalation
+          - test_resume_pipeline
+          - test_approve_escalation
+          - test_reject_escalation
+          - test_abort_pipeline
+          - test_stage_transition
+          - test_error_handling
+
+  integration_tests:
+    root: tests/integration/pipeline/
+    files:
+      - path: __init__.py
+        purpose: Test package marker
+
+      - path: conftest.py
+        purpose: Integration test fixtures
+        fixtures:
+          - real_project_path
+          - pipeline_controller
+          - mock_llm_client
+
+      - path: test_pipeline_execution.py
+        purpose: End-to-end pipeline execution tests
+        test_cases:
+          - test_simple_pipeline_execution
+          - test_pipeline_with_escalation
+          - test_pipeline_resume_after_restart
+          - test_pipeline_abort_cleanup
+          - test_concurrent_pipelines
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DEPENDENCIES
+# ═══════════════════════════════════════════════════════════════════════════════
+
+dependencies:
+  internal:
+    - module: agentforge.core.harness.minimal_context.executor
+      used_by: [pipeline-controller]
+      purpose: LLM execution for stages
+
+    - module: agentforge.core.harness.minimal_context.tool_handlers
+      used_by: [pipeline-controller]
+      purpose: Tool execution within stages
+
+    - module: agentforge.core.harness.minimal_context.state_store
+      used_by: [pipeline-state-store]
+      purpose: Reference implementation for state persistence
+
+  external:
+    - package: pyyaml
+      version: ">=6.0"
+      purpose: YAML serialization for state
+
+    - package: dataclasses
+      version: stdlib
+      purpose: State dataclasses
+
+    - package: uuid
+      version: stdlib
+      purpose: Pipeline ID generation
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ACCEPTANCE CRITERIA
+# ═══════════════════════════════════════════════════════════════════════════════
+
+acceptance_criteria:
+  pipeline_state:
+    - Pipeline state can be created with all required fields
+    - Pipeline state serializes to/from YAML correctly
+    - Pipeline ID format is PL-{YYYYMMDD}-{uuid8}
+    - Status transitions are valid (no invalid state changes)
+
+  state_store:
+    - Save and load round-trips correctly
+    - Active and completed pipelines are stored separately
+    - Corrupted state files are handled gracefully
+    - Concurrent access is safe (file locking)
+
+  stage_executor:
+    - Input validation catches missing required artifacts
+    - Output schema is enforced
+    - Errors are captured in StageResult, not thrown
+
+  registry:
+    - Executors can be registered and retrieved
+    - Unknown stage names raise clear errors
+    - Registry is singleton (shared across controller instances)
+
+  controller:
+    - Pipeline executes stages in order
+    - Escalations pause execution correctly
+    - Resume continues from correct stage
+    - Abort cleans up and marks failed
+    - State is persisted after each stage
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CHANGELOG
+# ═══════════════════════════════════════════════════════════════════════════════
+
+changelog:
+  - version: "1.0"
+    date: "2026-01-01"
+    changes:
+      - Initial Phase 1 specification
+      - Core architecture components defined
+      - Test structure outlined
+      - Implementation completed with 141 tests passing
+        - Unit tests: 127 tests
+        - Integration tests: 14 tests

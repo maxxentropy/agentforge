@@ -1,6 +1,9 @@
 # @spec_file: specs/pipeline-controller/implementation/phase-2-design-pipeline.yaml
+# @spec_file: specs/pipeline-controller/implementation/phase-3-tdd-stages.yaml
 # @spec_id: pipeline-controller-phase2-v1
+# @spec_id: pipeline-controller-phase3-v1
 # @component_id: pipeline-artifacts
+# @component_id: tdd-artifacts
 # @test_path: tests/unit/pipeline/test_artifacts.py
 
 """
@@ -102,12 +105,16 @@ class RedArtifact:
     Artifact produced by RED (test-first) stage.
 
     Contains generated test files and initial test results.
+    Tests are expected to fail in RED phase (no implementation yet).
     """
 
     spec_id: str
-    test_files: List[str] = field(default_factory=list)
+    request_id: str = ""
+    test_files: List[Dict[str, str]] = field(default_factory=list)
     test_results: Dict[str, Any] = field(default_factory=dict)
     failing_tests: List[str] = field(default_factory=list)
+    unexpected_passes: List[str] = field(default_factory=list)
+    warnings: List[str] = field(default_factory=list)
 
 
 @dataclass
@@ -119,9 +126,13 @@ class GreenArtifact:
     """
 
     spec_id: str
+    request_id: str = ""
     implementation_files: List[str] = field(default_factory=list)
     test_results: Dict[str, Any] = field(default_factory=dict)
-    passing_tests: List[str] = field(default_factory=list)
+    passing_tests: int = 0
+    iterations: int = 0
+    all_tests_pass: bool = False
+    error: Optional[str] = None
 
 
 @dataclass

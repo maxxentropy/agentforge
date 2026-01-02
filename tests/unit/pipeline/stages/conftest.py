@@ -1,5 +1,7 @@
 # @spec_file: specs/pipeline-controller/implementation/phase-2-design-pipeline.yaml
+# @spec_file: specs/pipeline-controller/implementation/phase-3-tdd-stages.yaml
 # @spec_id: pipeline-controller-phase2-v1
+# @spec_id: pipeline-controller-phase3-v1
 
 """Shared fixtures for stage unit tests."""
 
@@ -165,3 +167,238 @@ def sample_stage_context(tmp_path):
         )
 
     return _make_context
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# TDD Stage Fixtures (Phase 3)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+@pytest.fixture
+def sample_spec_artifact(sample_analyze_artifact):
+    """Create a sample spec artifact for TDD tests."""
+    return {
+        "spec_id": "SPEC-20260101120000-0001",
+        "request_id": sample_analyze_artifact["request_id"],
+        "title": "OAuth2 Authentication",
+        "version": "1.0",
+        "overview": {
+            "purpose": "Add OAuth2 authentication using Google provider",
+            "scope": "Authentication module",
+        },
+        "components": [
+            {
+                "name": "OAuthProvider",
+                "type": "class",
+                "file_path": "src/auth/oauth_provider.py",
+                "description": "Handles OAuth2 authentication flow",
+                "interface": {
+                    "methods": [
+                        {
+                            "signature": "authenticate(code: str) -> Dict[str, Any]",
+                            "description": "Authenticate with authorization code",
+                        },
+                        {
+                            "signature": "refresh_token(refresh_token: str) -> Dict[str, Any]",
+                            "description": "Refresh access token",
+                        },
+                    ]
+                },
+            },
+            {
+                "name": "TokenManager",
+                "type": "class",
+                "file_path": "src/auth/token_manager.py",
+                "description": "Manages OAuth tokens",
+            },
+        ],
+        "test_cases": [
+            {
+                "id": "TC001",
+                "description": "Test successful authentication",
+                "component": "OAuthProvider",
+                "type": "unit",
+                "given": "Valid OAuth credentials",
+                "when": "authenticate() is called with valid code",
+                "then": "Returns access token",
+            },
+            {
+                "id": "TC002",
+                "description": "Test invalid code handling",
+                "component": "OAuthProvider",
+                "type": "unit",
+                "given": "Invalid authorization code",
+                "when": "authenticate() is called",
+                "then": "Raises AuthenticationError",
+            },
+            {
+                "id": "TC003",
+                "description": "Test token refresh",
+                "component": "OAuthProvider",
+                "type": "unit",
+                "given": "Valid refresh token",
+                "when": "refresh_token() is called",
+                "then": "Returns new access token",
+            },
+        ],
+        "acceptance_criteria": [
+            {"criterion": "OAuth flow completes successfully"},
+            {"criterion": "Tokens are securely stored"},
+            {"criterion": "Refresh tokens work correctly"},
+        ],
+        "implementation_order": [
+            {"step": 1, "description": "Create OAuthProvider class"},
+            {"step": 2, "description": "Implement authenticate method"},
+            {"step": 3, "description": "Implement refresh_token method"},
+            {"step": 4, "description": "Create TokenManager class"},
+        ],
+    }
+
+
+@pytest.fixture
+def sample_red_artifact(sample_spec_artifact):
+    """Create a sample RED phase artifact."""
+    return {
+        "spec_id": sample_spec_artifact["spec_id"],
+        "request_id": sample_spec_artifact["request_id"],
+        "test_files": [
+            {
+                "path": "tests/unit/auth/test_oauth_provider.py",
+                "content": "# Test file content",
+            }
+        ],
+        "test_results": {
+            "passed": 0,
+            "failed": 3,
+            "errors": 0,
+            "skipped": 0,
+            "total": 3,
+            "exit_code": 1,
+            "output": "FAILED test_authenticate\nFAILED test_invalid_code\nFAILED test_refresh",
+            "test_details": [
+                {"name": "test_authenticate", "status": "failed"},
+                {"name": "test_invalid_code", "status": "failed"},
+                {"name": "test_refresh", "status": "failed"},
+            ],
+        },
+        "failing_tests": [
+            "test_authenticate",
+            "test_invalid_code",
+            "test_refresh",
+        ],
+        "unexpected_passes": [],
+        "warnings": [],
+    }
+
+
+@pytest.fixture
+def sample_llm_test_generation_response():
+    """Create a sample LLM response with test file generation."""
+    return {
+        "response": '''I'll generate the test files for the OAuth components.
+
+### FILE: tests/unit/auth/test_oauth_provider.py
+```python
+"""Tests for OAuthProvider."""
+import pytest
+from src.auth.oauth_provider import OAuthProvider, AuthenticationError
+
+
+class TestOAuthProvider:
+    """Unit tests for OAuthProvider class."""
+
+    @pytest.fixture
+    def provider(self):
+        """Create OAuthProvider instance."""
+        return OAuthProvider(client_id="test", client_secret="secret")
+
+    def test_authenticate_returns_token_on_success(self, provider):
+        """TC001: Test successful authentication."""
+        result = provider.authenticate("valid_code")
+        assert "access_token" in result
+
+    def test_authenticate_raises_on_invalid_code(self, provider):
+        """TC002: Test invalid code handling."""
+        with pytest.raises(AuthenticationError):
+            provider.authenticate("invalid_code")
+
+    def test_refresh_token_returns_new_token(self, provider):
+        """TC003: Test token refresh."""
+        result = provider.refresh_token("valid_refresh")
+        assert "access_token" in result
+```
+
+### FILE: tests/unit/auth/test_token_manager.py
+```python
+"""Tests for TokenManager."""
+import pytest
+from src.auth.token_manager import TokenManager
+
+
+class TestTokenManager:
+    """Unit tests for TokenManager class."""
+
+    def test_store_token(self):
+        """Test token storage."""
+        manager = TokenManager()
+        manager.store("user_id", {"access_token": "token"})
+        assert manager.get("user_id") is not None
+```
+''',
+        "content": "",
+        "tool_results": [],
+    }
+
+
+@pytest.fixture
+def mock_pytest_passing_output():
+    """Mock pytest output when all tests pass."""
+    return """
+============================= test session starts ==============================
+collected 3 items
+
+tests/unit/auth/test_oauth_provider.py::TestOAuthProvider::test_authenticate_returns_token_on_success PASSED
+tests/unit/auth/test_oauth_provider.py::TestOAuthProvider::test_authenticate_raises_on_invalid_code PASSED
+tests/unit/auth/test_oauth_provider.py::TestOAuthProvider::test_refresh_token_returns_new_token PASSED
+
+============================== 3 passed in 0.05s ===============================
+"""
+
+
+@pytest.fixture
+def mock_pytest_failing_output():
+    """Mock pytest output when tests fail."""
+    return """
+============================= test session starts ==============================
+collected 3 items
+
+tests/unit/auth/test_oauth_provider.py::TestOAuthProvider::test_authenticate_returns_token_on_success FAILED
+tests/unit/auth/test_oauth_provider.py::TestOAuthProvider::test_authenticate_raises_on_invalid_code FAILED
+tests/unit/auth/test_oauth_provider.py::TestOAuthProvider::test_refresh_token_returns_new_token FAILED
+
+=================================== FAILURES ===================================
+_____ TestOAuthProvider.test_authenticate_returns_token_on_success _____
+
+    def test_authenticate_returns_token_on_success(self, provider):
+>       result = provider.authenticate("valid_code")
+E       ModuleNotFoundError: No module named 'src.auth.oauth_provider'
+
+============================= 3 failed in 0.05s ================================
+"""
+
+
+@pytest.fixture
+def temp_project_path(tmp_path):
+    """Create a temporary project path with basic structure."""
+    # Create basic directories
+    (tmp_path / "src" / "auth").mkdir(parents=True)
+    (tmp_path / "tests" / "unit" / "auth").mkdir(parents=True)
+
+    # Create __init__.py files
+    (tmp_path / "src" / "__init__.py").write_text("")
+    (tmp_path / "src" / "auth" / "__init__.py").write_text("")
+    (tmp_path / "tests" / "__init__.py").write_text("")
+    (tmp_path / "tests" / "unit" / "__init__.py").write_text("")
+    (tmp_path / "tests" / "unit" / "auth" / "__init__.py").write_text("")
+
+    return tmp_path

@@ -1,6 +1,9 @@
 # @spec_file: specs/pipeline-controller/implementation/phase-2-design-pipeline.yaml
+# @spec_file: specs/pipeline-controller/implementation/phase-3-tdd-stages.yaml
 # @spec_id: pipeline-controller-phase2-v1
+# @spec_id: pipeline-controller-phase3-v1
 # @component_id: pipeline-artifacts
+# @component_id: tdd-artifacts
 # @test_path: tests/unit/pipeline/test_artifacts.py
 
 """Tests for artifact dataclasses."""
@@ -212,3 +215,194 @@ class TestArtifactConversion:
         assert restored.components == original.components
         assert restored.test_cases == original.test_cases
         assert restored.acceptance_criteria == original.acceptance_criteria
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# TDD Artifact Tests (Phase 3)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+class TestRedArtifact:
+    """Tests for RedArtifact dataclass."""
+
+    def test_red_artifact_creation(self):
+        """RedArtifact can be created with required fields."""
+        from agentforge.core.pipeline.artifacts import RedArtifact
+
+        artifact = RedArtifact(
+            spec_id="SPEC-001",
+        )
+
+        assert artifact.spec_id == "SPEC-001"
+
+    def test_red_artifact_defaults(self):
+        """RedArtifact has correct default values."""
+        from agentforge.core.pipeline.artifacts import RedArtifact
+
+        artifact = RedArtifact(spec_id="SPEC-001")
+
+        assert artifact.request_id == ""
+        assert artifact.test_files == []
+        assert artifact.test_results == {}
+        assert artifact.failing_tests == []
+        assert artifact.unexpected_passes == []
+        assert artifact.warnings == []
+
+    def test_red_artifact_with_test_results(self):
+        """RedArtifact can store test results."""
+        from agentforge.core.pipeline.artifacts import RedArtifact
+
+        artifact = RedArtifact(
+            spec_id="SPEC-001",
+            request_id="REQ-001",
+            test_files=[{"path": "tests/test.py", "content": "..."}],
+            test_results={
+                "passed": 0,
+                "failed": 3,
+                "total": 3,
+            },
+            failing_tests=["test_one", "test_two", "test_three"],
+        )
+
+        assert len(artifact.test_files) == 1
+        assert artifact.test_results["failed"] == 3
+        assert len(artifact.failing_tests) == 3
+
+    def test_red_artifact_to_dict(self):
+        """RedArtifact can be converted to dict."""
+        from agentforge.core.pipeline.artifacts import RedArtifact
+
+        artifact = RedArtifact(
+            spec_id="SPEC-001",
+            failing_tests=["test_a", "test_b"],
+        )
+
+        data = asdict(artifact)
+        assert data["spec_id"] == "SPEC-001"
+        assert data["failing_tests"] == ["test_a", "test_b"]
+
+
+class TestGreenArtifact:
+    """Tests for GreenArtifact dataclass."""
+
+    def test_green_artifact_creation(self):
+        """GreenArtifact can be created with required fields."""
+        from agentforge.core.pipeline.artifacts import GreenArtifact
+
+        artifact = GreenArtifact(
+            spec_id="SPEC-001",
+        )
+
+        assert artifact.spec_id == "SPEC-001"
+
+    def test_green_artifact_defaults(self):
+        """GreenArtifact has correct default values."""
+        from agentforge.core.pipeline.artifacts import GreenArtifact
+
+        artifact = GreenArtifact(spec_id="SPEC-001")
+
+        assert artifact.request_id == ""
+        assert artifact.implementation_files == []
+        assert artifact.test_results == {}
+        assert artifact.passing_tests == 0
+        assert artifact.iterations == 0
+        assert artifact.all_tests_pass is False
+        assert artifact.error is None
+
+    def test_green_artifact_with_implementation(self):
+        """GreenArtifact can store implementation results."""
+        from agentforge.core.pipeline.artifacts import GreenArtifact
+
+        artifact = GreenArtifact(
+            spec_id="SPEC-001",
+            request_id="REQ-001",
+            implementation_files=["src/module.py", "src/helper.py"],
+            test_results={
+                "passed": 5,
+                "failed": 0,
+                "total": 5,
+            },
+            passing_tests=5,
+            iterations=3,
+            all_tests_pass=True,
+        )
+
+        assert len(artifact.implementation_files) == 2
+        assert artifact.passing_tests == 5
+        assert artifact.iterations == 3
+        assert artifact.all_tests_pass is True
+
+    def test_green_artifact_with_error(self):
+        """GreenArtifact can store error state."""
+        from agentforge.core.pipeline.artifacts import GreenArtifact
+
+        artifact = GreenArtifact(
+            spec_id="SPEC-001",
+            all_tests_pass=False,
+            error="Max iterations reached",
+        )
+
+        assert artifact.all_tests_pass is False
+        assert artifact.error == "Max iterations reached"
+
+    def test_green_artifact_to_dict(self):
+        """GreenArtifact can be converted to dict."""
+        from agentforge.core.pipeline.artifacts import GreenArtifact
+
+        artifact = GreenArtifact(
+            spec_id="SPEC-001",
+            implementation_files=["file.py"],
+            all_tests_pass=True,
+        )
+
+        data = asdict(artifact)
+        assert data["spec_id"] == "SPEC-001"
+        assert data["implementation_files"] == ["file.py"]
+        assert data["all_tests_pass"] is True
+
+
+class TestTDDArtifactRoundtrip:
+    """Tests for TDD artifact roundtrip conversion."""
+
+    def test_red_artifact_roundtrip(self):
+        """RedArtifact roundtrips correctly through dict."""
+        from agentforge.core.pipeline.artifacts import RedArtifact
+
+        original = RedArtifact(
+            spec_id="SPEC-001",
+            request_id="REQ-001",
+            test_files=[{"path": "test.py", "content": "..."}],
+            failing_tests=["test_one"],
+            warnings=["Some tests passed unexpectedly"],
+        )
+
+        data = asdict(original)
+        restored = RedArtifact(**data)
+
+        assert restored.spec_id == original.spec_id
+        assert restored.request_id == original.request_id
+        assert restored.test_files == original.test_files
+        assert restored.failing_tests == original.failing_tests
+        assert restored.warnings == original.warnings
+
+    def test_green_artifact_roundtrip(self):
+        """GreenArtifact roundtrips correctly through dict."""
+        from agentforge.core.pipeline.artifacts import GreenArtifact
+
+        original = GreenArtifact(
+            spec_id="SPEC-001",
+            request_id="REQ-001",
+            implementation_files=["src/module.py"],
+            passing_tests=5,
+            iterations=3,
+            all_tests_pass=True,
+        )
+
+        data = asdict(original)
+        restored = GreenArtifact(**data)
+
+        assert restored.spec_id == original.spec_id
+        assert restored.implementation_files == original.implementation_files
+        assert restored.passing_tests == original.passing_tests
+        assert restored.iterations == original.iterations
+        assert restored.all_tests_pass == original.all_tests_pass

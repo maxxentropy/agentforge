@@ -1,5 +1,7 @@
 # @spec_file: specs/pipeline-controller/implementation/phase-2-design-pipeline.yaml
+# @spec_file: specs/pipeline-controller/implementation/phase-3-tdd-stages.yaml
 # @spec_id: pipeline-controller-phase2-v1
+# @spec_id: pipeline-controller-phase3-v1
 
 """Shared fixtures for stage integration tests."""
 
@@ -101,3 +103,139 @@ def pipeline_controller_with_stages(temp_project_with_code):
     )
 
     return controller
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# TDD Stage Fixtures (Phase 3)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+@pytest.fixture
+def sample_spec_for_tdd():
+    """Create a sample specification artifact for TDD tests."""
+    return {
+        "spec_id": "SPEC-20260102-0001",
+        "request_id": "REQ-20260102-0001",
+        "title": "Calculator Module",
+        "version": "1.0",
+        "overview": {
+            "purpose": "Create a simple calculator module",
+            "scope": "Math operations",
+        },
+        "components": [
+            {
+                "name": "Calculator",
+                "type": "class",
+                "file_path": "src/calculator.py",
+                "description": "Simple calculator class",
+                "interface": {
+                    "methods": [
+                        {
+                            "signature": "add(a: int, b: int) -> int",
+                            "description": "Add two numbers",
+                        },
+                        {
+                            "signature": "subtract(a: int, b: int) -> int",
+                            "description": "Subtract two numbers",
+                        },
+                    ]
+                },
+            }
+        ],
+        "test_cases": [
+            {
+                "id": "TC001",
+                "description": "Test addition",
+                "component": "Calculator",
+                "type": "unit",
+                "given": "Two positive integers",
+                "when": "add() is called",
+                "then": "Returns their sum",
+            },
+            {
+                "id": "TC002",
+                "description": "Test subtraction",
+                "component": "Calculator",
+                "type": "unit",
+                "given": "Two integers",
+                "when": "subtract() is called",
+                "then": "Returns the difference",
+            },
+        ],
+        "acceptance_criteria": [
+            {"criterion": "All basic operations work correctly"},
+        ],
+        "implementation_order": [
+            {"step": 1, "description": "Create Calculator class"},
+            {"step": 2, "description": "Implement add method"},
+            {"step": 3, "description": "Implement subtract method"},
+        ],
+    }
+
+
+@pytest.fixture
+def sample_red_artifact_for_green():
+    """Create a RED phase artifact for GREEN phase testing."""
+    return {
+        "spec_id": "SPEC-20260102-0001",
+        "request_id": "REQ-20260102-0001",
+        "test_files": [
+            {
+                "path": "tests/test_calculator.py",
+                "content": '''"""Tests for Calculator."""
+import pytest
+from src.calculator import Calculator
+
+
+class TestCalculator:
+    """Unit tests for Calculator class."""
+
+    def test_add_positive_numbers(self):
+        """TC001: Test addition of positive numbers."""
+        calc = Calculator()
+        result = calc.add(2, 3)
+        assert result == 5
+
+    def test_subtract_numbers(self):
+        """TC002: Test subtraction."""
+        calc = Calculator()
+        result = calc.subtract(5, 3)
+        assert result == 2
+''',
+            }
+        ],
+        "test_results": {
+            "passed": 0,
+            "failed": 2,
+            "errors": 0,
+            "total": 2,
+            "exit_code": 1,
+            "test_details": [
+                {"name": "test_add_positive_numbers", "status": "failed"},
+                {"name": "test_subtract_numbers", "status": "failed"},
+            ],
+        },
+        "failing_tests": ["test_add_positive_numbers", "test_subtract_numbers"],
+        "unexpected_passes": [],
+        "warnings": [],
+    }
+
+
+@pytest.fixture
+def temp_project_for_tdd(tmp_path):
+    """Create a temporary project for TDD testing."""
+    project = tmp_path / "tdd_project"
+    project.mkdir(parents=True)
+
+    # Create directories
+    (project / "src").mkdir()
+    (project / "tests").mkdir()
+
+    # Create __init__.py files
+    (project / "src" / "__init__.py").write_text("")
+    (project / "tests" / "__init__.py").write_text("")
+
+    # Create .agentforge directory
+    (project / ".agentforge").mkdir()
+
+    return project

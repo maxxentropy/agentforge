@@ -1,0 +1,618 @@
+# Pipeline Controller - Phase 3: TDD Stages (RED & GREEN)
+# ========================================================
+#
+# This specification defines the TDD stage executors (RED and GREEN phases)
+# that enable test-driven development within the pipeline.
+#
+# Version: 1.0
+# Status: In Development
+# Date: January 2026
+
+spec_id: pipeline-controller-phase3-v1
+version: "1.0"
+status: implemented
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# OVERVIEW
+# ═══════════════════════════════════════════════════════════════════════════════
+
+overview:
+  title: Pipeline Controller TDD Stages
+  purpose: |
+    Implements the TDD pipeline stages that enforce test-driven development:
+    - RED Phase: Generate tests BEFORE implementation, verify they fail
+    - GREEN Phase: Implement minimal code to make tests pass
+
+    This ensures:
+    - Tests define the specification (tests-as-spec)
+    - Implementation is driven by tests
+    - No untested code is produced
+    - Quality is built-in, not tested-in
+
+  design_principles:
+    - Tests are generated from specification, not implementation
+    - RED phase tests MUST fail initially (no implementation exists)
+    - GREEN phase implements MINIMAL code to pass tests
+    - Iterative implementation with continuous test feedback
+    - Clear artifact flow between stages
+
+  tdd_philosophy: |
+    ┌─────────────────────────────────────────────────────────────────┐
+    │                          TDD CYCLE                              │
+    │                                                                  │
+    │     SPEC Stage                                                  │
+    │         │                                                        │
+    │         ▼                                                        │
+    │    ┌─────────┐     ┌─────────┐     ┌─────────┐                 │
+    │    │   RED   │────▶│  GREEN  │────▶│REFACTOR │                 │
+    │    │  PHASE  │     │  PHASE  │     │  PHASE  │                 │
+    │    └─────────┘     └─────────┘     └─────────┘                 │
+    │    Tests Fail      Tests Pass      Code Clean                  │
+    │                                                                  │
+    └─────────────────────────────────────────────────────────────────┘
+
+  related_specs:
+    - path: ../stage-05-red-phase.md
+      description: RED phase specification
+    - path: ../stage-06-green-phase.md
+      description: GREEN phase specification
+    - path: ./phase-2-design-pipeline.yaml
+      description: Phase 2 design pipeline (provides SPEC artifacts)
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# MODULE STRUCTURE
+# ═══════════════════════════════════════════════════════════════════════════════
+
+module_structure:
+  root: src/agentforge/core/pipeline/
+
+  files:
+    # ─────────────────────────────────────────────────────────────────────────
+    # RED Phase Executor
+    # ─────────────────────────────────────────────────────────────────────────
+    - path: stages/red.py
+      component_id: red-phase-executor
+      purpose: RED phase - Generate tests from specification, verify they fail
+      test_path: tests/unit/pipeline/stages/test_red.py
+      classes:
+        - name: RedPhaseExecutor
+          type: class
+          extends: LLMStageExecutor
+          description: |
+            RED phase executor that generates test files from specification.
+            Tests are written BEFORE implementation exists, so they should fail.
+            This enforces TDD discipline and ensures testability.
+          class_attributes:
+            - name: stage_name
+              value: "red"
+            - name: artifact_type
+              value: "test_suite"
+            - name: required_input_fields
+              value: '["spec_id", "components", "test_cases"]'
+            - name: output_fields
+              value: '["spec_id", "test_files", "test_results"]'
+          methods:
+            - name: _execute
+              signature: "(context: StageContext) -> StageResult"
+              description: "Override to add test writing and running after generation"
+            - name: get_system_prompt
+              signature: "(context: StageContext) -> str"
+              description: "Returns test generation system prompt"
+            - name: get_user_message
+              signature: "(context: StageContext) -> str"
+              description: "Builds message with spec, components, and test cases"
+            - name: parse_response
+              signature: "(llm_result: Dict[str, Any], context: StageContext) -> Optional[Dict[str, Any]]"
+              description: "Parse test file blocks from LLM response"
+            - name: _extract_file_blocks
+              signature: "(response_text: str) -> List[Dict[str, str]]"
+              description: "Extract file path and content blocks from response"
+            - name: _write_test_files
+              signature: "(context: StageContext, test_files: List[Dict[str, str]]) -> List[str]"
+              description: "Write generated test files to disk"
+            - name: _run_tests
+              signature: "(context: StageContext, test_files: List[str]) -> Dict[str, Any]"
+              description: "Run pytest on generated tests"
+            - name: _parse_pytest_output
+              signature: "(output: str, results: Dict[str, Any]) -> None"
+              description: "Parse pytest output to extract test counts"
+            - name: _validate_red_results
+              signature: "(test_results: Dict[str, Any]) -> Dict[str, Any]"
+              description: "Validate that tests fail appropriately (expected in RED)"
+            - name: validate_output
+              signature: "(artifact: Optional[Dict[str, Any]]) -> OutputValidation"
+              description: "Validate RED phase artifact"
+
+        - name: create_red_executor
+          type: function
+          signature: "(config: Optional[Dict] = None) -> RedPhaseExecutor"
+          description: "Factory function for registry registration"
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # GREEN Phase Executor
+    # ─────────────────────────────────────────────────────────────────────────
+    - path: stages/green.py
+      component_id: green-phase-executor
+      purpose: GREEN phase - Implement code to make tests pass
+      test_path: tests/unit/pipeline/stages/test_green.py
+      classes:
+        - name: GreenPhaseExecutor
+          type: class
+          extends: StageExecutor
+          description: |
+            GREEN phase executor that implements code to make RED phase tests pass.
+            Uses an iterative approach: implement -> test -> fix -> repeat.
+            Continues until all tests pass or max iterations reached.
+          class_attributes:
+            - name: stage_name
+              value: "green"
+            - name: artifact_type
+              value: "implementation"
+            - name: required_input_fields
+              value: '["spec_id", "test_files", "failing_tests"]'
+            - name: output_fields
+              value: '["spec_id", "implementation_files", "test_results"]'
+            - name: max_iterations
+              value: 20
+            - name: test_timeout
+              value: 120
+          tools:
+            - name: read_file
+              description: "Read a file from the project"
+            - name: write_file
+              description: "Write content to a file"
+            - name: edit_file
+              description: "Edit a specific section of a file"
+            - name: run_tests
+              description: "Run the test suite"
+            - name: complete_implementation
+              description: "Signal that implementation is complete"
+          methods:
+            - name: _execute
+              signature: "(context: StageContext) -> StageResult"
+              description: "Execute iterative implementation loop"
+            - name: _build_user_message
+              signature: "(context: StageContext) -> str"
+              description: "Build initial user message with failing tests"
+            - name: _build_iteration_message
+              signature: "(test_results: Dict[str, Any], iteration: int) -> str"
+              description: "Build message for subsequent iterations"
+            - name: _register_implementation_tools
+              signature: "(executor: MinimalContextExecutor, context: StageContext) -> None"
+              description: "Register tool handlers for implementation"
+            - name: _run_all_tests
+              signature: "(context: StageContext, test_files: List[str], specific_test: Optional[str] = None) -> Dict[str, Any]"
+              description: "Run tests and return results"
+            - name: _parse_pytest_output
+              signature: "(output: str, results: Dict[str, Any]) -> None"
+              description: "Parse pytest output"
+            - name: _check_completion
+              signature: "(result: Dict[str, Any]) -> bool"
+              description: "Check if completion was signaled via tool call"
+            - name: _extract_completion_data
+              signature: "(result: Dict[str, Any]) -> Dict[str, Any]"
+              description: "Extract completion data from tool result"
+            - name: _extract_written_files
+              signature: "(result: Dict[str, Any]) -> List[str]"
+              description: "Extract list of files written during iteration"
+            - name: validate_output
+              signature: "(artifact: Optional[Dict[str, Any]]) -> OutputValidation"
+              description: "Validate GREEN phase artifact"
+
+        - name: create_green_executor
+          type: function
+          signature: "(config: Optional[Dict] = None) -> GreenPhaseExecutor"
+          description: "Factory function for registry registration"
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Update artifacts.py with RED/GREEN artifacts
+    # ─────────────────────────────────────────────────────────────────────────
+    - path: artifacts.py
+      component_id: tdd-artifacts
+      purpose: Add TDD artifact dataclasses
+      test_path: tests/unit/pipeline/test_artifacts.py
+      additions:
+        - name: RedArtifact
+          type: dataclass
+          fields:
+            - name: spec_id
+              type: str
+            - name: request_id
+              type: str
+              default: ""
+            - name: test_files
+              type: List[Dict[str, str]]
+              default: "field(default_factory=list)"
+            - name: test_results
+              type: Dict[str, Any]
+              default: "field(default_factory=dict)"
+            - name: failing_tests
+              type: List[str]
+              default: "field(default_factory=list)"
+            - name: unexpected_passes
+              type: List[str]
+              default: "field(default_factory=list)"
+            - name: warnings
+              type: List[str]
+              default: "field(default_factory=list)"
+
+        - name: GreenArtifact
+          type: dataclass
+          fields:
+            - name: spec_id
+              type: str
+            - name: request_id
+              type: str
+              default: ""
+            - name: implementation_files
+              type: List[str]
+              default: "field(default_factory=list)"
+            - name: test_results
+              type: Dict[str, Any]
+              default: "field(default_factory=dict)"
+            - name: passing_tests
+              type: int
+              default: 0
+            - name: iterations
+              type: int
+              default: 0
+            - name: all_tests_pass
+              type: bool
+              default: false
+            - name: error
+              type: Optional[str]
+              default: null
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Update stages/__init__.py
+    # ─────────────────────────────────────────────────────────────────────────
+    - path: stages/__init__.py
+      component_id: stages-init-tdd
+      purpose: Add TDD stage exports and registration
+      test_path: tests/unit/pipeline/stages/test_stages_init.py
+      additions:
+        - export: RedPhaseExecutor
+        - export: GreenPhaseExecutor
+        - export: create_red_executor
+        - export: create_green_executor
+        - function: register_tdd_stages
+          signature: "(registry: StageExecutorRegistry) -> None"
+          description: "Register RED and GREEN stages with registry"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ARTIFACT SCHEMAS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+artifacts:
+  test_suite:
+    description: "Output of RED phase"
+    fields:
+      - name: spec_id
+        type: str
+        required: true
+      - name: request_id
+        type: str
+      - name: test_files
+        type: list
+        required: true
+        item_schema:
+          path: str
+          content: str
+      - name: test_results
+        type: dict
+        schema:
+          passed: int
+          failed: int
+          errors: int
+          skipped: int
+          total: int
+          exit_code: int
+          output: str
+          test_details: list
+      - name: failing_tests
+        type: list[str]
+        description: "List of failing test names (expected in RED phase)"
+      - name: unexpected_passes
+        type: list[str]
+        description: "Tests that passed unexpectedly"
+      - name: warnings
+        type: list[str]
+
+  implementation:
+    description: "Output of GREEN phase"
+    fields:
+      - name: spec_id
+        type: str
+        required: true
+      - name: request_id
+        type: str
+      - name: implementation_files
+        type: list[str]
+        required: true
+        description: "List of created/modified files"
+      - name: test_results
+        type: dict
+        required: true
+        schema:
+          passed: int
+          failed: int
+          errors: int
+          total: int
+          test_details: list
+      - name: passing_tests
+        type: int
+      - name: all_tests_pass
+        type: bool
+        required: true
+      - name: iterations
+        type: int
+        description: "Number of implement-test cycles"
+      - name: error
+        type: str
+        description: "Error message if failed"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# TEST STRUCTURE
+# ═══════════════════════════════════════════════════════════════════════════════
+
+test_structure:
+  unit_tests:
+    root: tests/unit/pipeline/
+
+    files:
+      # ─────────────────────────────────────────────────────────────────────────
+      # RED Phase Tests
+      # ─────────────────────────────────────────────────────────────────────────
+      - path: stages/test_red.py
+        tests_for: red-phase-executor
+        test_cases:
+          # Core functionality
+          - test_generates_test_files_from_spec
+          - test_writes_test_files_to_disk
+          - test_runs_pytest_on_generated_tests
+          - test_reports_failing_tests
+          - test_warns_on_unexpected_passes
+          # File extraction
+          - test_extracts_single_file_block
+          - test_extracts_multiple_file_blocks
+          - test_handles_missing_file_marker
+          - test_handles_malformed_code_block
+          # Pytest integration
+          - test_parses_pytest_passed_count
+          - test_parses_pytest_failed_count
+          - test_handles_pytest_timeout
+          - test_handles_pytest_error
+          # Validation
+          - test_validates_test_files_present
+          - test_validates_red_expects_failures
+          - test_warns_all_tests_passed
+          # Edge cases
+          - test_handles_empty_spec_test_cases
+          - test_handles_no_components
+          - test_creates_parent_directories
+
+      # ─────────────────────────────────────────────────────────────────────────
+      # GREEN Phase Tests
+      # ─────────────────────────────────────────────────────────────────────────
+      - path: stages/test_green.py
+        tests_for: green-phase-executor
+        test_cases:
+          # Core functionality
+          - test_reads_test_files_first
+          - test_creates_implementation_files
+          - test_runs_tests_after_changes
+          - test_iterates_until_tests_pass
+          - test_stops_at_max_iterations
+          - test_signals_completion_when_done
+          - test_tracks_implementation_files
+          # Iteration logic
+          - test_makes_progress_each_iteration
+          - test_builds_iteration_message
+          - test_includes_failure_details
+          # Tool registration
+          - test_registers_read_file_tool
+          - test_registers_write_file_tool
+          - test_registers_edit_file_tool
+          - test_registers_run_tests_tool
+          - test_registers_complete_implementation_tool
+          # Completion detection
+          - test_detects_completion_signal
+          - test_extracts_completion_data
+          - test_extracts_written_files
+          # Validation
+          - test_validates_implementation_files_present
+          - test_validates_all_tests_pass
+          - test_reports_failing_count
+          # Edge cases
+          - test_handles_no_failing_tests
+          - test_handles_empty_test_files
+          - test_handles_test_timeout
+
+      # ─────────────────────────────────────────────────────────────────────────
+      # Shared fixtures
+      # ─────────────────────────────────────────────────────────────────────────
+      - path: stages/conftest.py
+        purpose: Add TDD-specific fixtures
+        fixtures:
+          - sample_spec_artifact
+          - sample_red_artifact
+          - sample_llm_test_generation_response
+          - mock_pytest_passing_output
+          - mock_pytest_failing_output
+          - temp_project_path
+
+      # ─────────────────────────────────────────────────────────────────────────
+      # Artifact tests (additions)
+      # ─────────────────────────────────────────────────────────────────────────
+      - path: test_artifacts.py
+        tests_for: tdd-artifacts
+        additional_test_cases:
+          - test_red_artifact_creation
+          - test_red_artifact_defaults
+          - test_green_artifact_creation
+          - test_green_artifact_defaults
+          - test_red_artifact_to_dict
+          - test_green_artifact_to_dict
+
+  integration_tests:
+    root: tests/integration/pipeline/
+
+    files:
+      - path: stages/test_red_phase.py
+        purpose: RED phase integration tests
+        test_cases:
+          - test_full_spec_to_tests_flow
+          - test_tests_fail_without_implementation
+          - test_generated_tests_are_runnable
+          - test_test_structure_matches_spec
+
+      - path: stages/test_green_phase.py
+        purpose: GREEN phase integration tests
+        test_cases:
+          - test_red_to_green_artifact_flow
+          - test_green_makes_tests_pass
+          - test_implementation_matches_spec
+          - test_handles_import_dependencies
+
+      - path: stages/test_tdd_pipeline.py
+        purpose: End-to-end TDD pipeline tests
+        test_cases:
+          - test_spec_to_red_to_green_flow
+          - test_tdd_pipeline_produces_passing_tests
+          - test_tdd_pipeline_creates_implementation
+          - test_tdd_pipeline_handles_complex_spec
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# IMPLEMENTATION PATTERNS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+implementation_patterns:
+  test_file_extraction:
+    description: "Pattern for extracting test file blocks from LLM response"
+    pattern: |
+      ### FILE: {file_path}
+      ```python
+      {content}
+      ```
+    regex: 'r"###\s*FILE:\s*([^\n]+)\n```(?:python)?\n(.*?)```"'
+
+  pytest_output_parsing:
+    description: "Patterns for parsing pytest output"
+    patterns:
+      - passed_tests: 'r"(\S+::\S+)\s+PASSED"'
+      - failed_tests: 'r"(\S+::\S+)\s+FAILED"'
+      - summary_line: 'r"(\d+) passed.*?(\d+) failed"'
+
+  iterative_implementation:
+    description: "GREEN phase iterative loop"
+    steps:
+      - "1. Read failing tests to understand requirements"
+      - "2. Write/modify implementation file"
+      - "3. Run tests to check progress"
+      - "4. If failing, analyze error and fix"
+      - "5. Repeat until all pass or max iterations"
+      - "6. Call complete_implementation when done"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DEPENDENCIES
+# ═══════════════════════════════════════════════════════════════════════════════
+
+dependencies:
+  internal:
+    - module: agentforge.core.pipeline.llm_stage_executor
+      used_by: [red-phase-executor]
+      purpose: LLMStageExecutor base class
+
+    - module: agentforge.core.pipeline.stage_executor
+      used_by: [green-phase-executor]
+      purpose: StageExecutor base class
+
+    - module: agentforge.core.harness.minimal_context.executor
+      used_by: [green-phase-executor]
+      purpose: LLM execution with tools
+
+    - module: agentforge.core.harness.minimal_context.tool_handlers
+      used_by: [green-phase-executor]
+      purpose: File operation tool handlers
+
+  external:
+    - package: pytest
+      version: ">=7.0"
+      purpose: Test execution
+
+    - package: subprocess
+      version: stdlib
+      purpose: Running pytest
+
+    - package: pathlib
+      version: stdlib
+      purpose: File path operations
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ACCEPTANCE CRITERIA
+# ═══════════════════════════════════════════════════════════════════════════════
+
+acceptance_criteria:
+  red_phase:
+    - Generates test files from specification test_cases
+    - Tests follow Given/When/Then pattern
+    - Tests are runnable with pytest
+    - Correctly reports failing tests (expected)
+    - Warns on unexpected passes
+    - Writes test files to correct locations
+    - Handles pytest timeout gracefully
+
+  green_phase:
+    - Reads and understands test requirements
+    - Creates implementation files
+    - Iterates until tests pass
+    - Handles common error patterns (ImportError, AttributeError, etc.)
+    - Stops at max iterations if not passing
+    - Signals completion when all tests pass
+    - Tracks all created/modified files
+
+  tdd_pipeline:
+    - SPEC → RED → GREEN flow works end-to-end
+    - Artifacts flow correctly between stages
+    - All tests pass at GREEN completion
+    - Implementation matches specification
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CONFIGURATION
+# ═══════════════════════════════════════════════════════════════════════════════
+
+configuration:
+  red_phase:
+    file: ".agentforge/config/stages/red.yaml"
+    options:
+      test_framework: pytest
+      test_directory: tests
+      include_edge_cases: true
+      include_error_cases: true
+      tests_per_component: "5-10"
+      max_pass_ratio: 0.3
+      timeout_seconds: 300
+
+  green_phase:
+    file: ".agentforge/config/stages/green.yaml"
+    options:
+      max_iterations: 20
+      test_timeout_seconds: 120
+      continue_on_partial_success: true
+      style: minimal
+      include_docstrings: true
+      include_type_hints: true
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CHANGELOG
+# ═══════════════════════════════════════════════════════════════════════════════
+
+changelog:
+  - version: "1.0"
+    date: "2026-01-02"
+    changes:
+      - Initial Phase 3 specification
+      - RED phase executor defined
+      - GREEN phase executor defined
+      - TDD artifact dataclasses defined
+      - Test structure outlined

@@ -1,5 +1,9 @@
 # @spec_file: specs/pipeline-controller/implementation/phase-1-foundation.yaml
+# @spec_file: specs/pipeline-controller/implementation/phase-2-design-pipeline.yaml
+# @spec_file: specs/pipeline-controller/implementation/phase-3-tdd-stages.yaml
 # @spec_id: pipeline-controller-phase1-v1
+# @spec_id: pipeline-controller-phase2-v1
+# @spec_id: pipeline-controller-phase3-v1
 # @component_id: pipeline-init
 # @test_path: tests/unit/pipeline/test_module_exports.py
 
@@ -17,6 +21,7 @@ This module provides:
 - Escalation handling for human intervention
 - LLM-driven stage executors (Phase 2)
 - Design pipeline stages: INTAKE, CLARIFY, ANALYZE, SPEC (Phase 2)
+- TDD pipeline stages: RED, GREEN (Phase 3)
 
 Example usage:
     from agentforge.core.pipeline import PipelineController, PipelineState

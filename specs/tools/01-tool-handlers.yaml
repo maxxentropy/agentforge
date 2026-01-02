@@ -38,11 +38,22 @@ module_structure:
 
     - path: types.py
       component_id: tool-handler-types
-      purpose: Type definitions (ActionHandler, HandlerContext, HandlerResult)
+      purpose: Type definitions and security utilities
       exports:
         - ActionHandler
         - HandlerContext
-        - HandlerResult
+        - PathValidationError
+        - validate_path_security
+
+    - path: constants.py
+      component_id: tool-handler-constants
+      purpose: Configuration constants (timeouts, limits, sizes)
+      exports:
+        - FILE_PREVIEW_MAX_LINES
+        - SEARCH_DEFAULT_MAX_RESULTS
+        - CONFORMANCE_CHECK_TIMEOUT
+        - TEST_RUN_TIMEOUT
+        # ... and 10 more constants
 
     - path: file_handlers.py
       component_id: file-handlers
@@ -172,6 +183,10 @@ test_structure:
       tests_for: tool-handlers-init
       coverage_target: 90%
 
+    - path: test_types.py
+      tests_for: tool-handler-types
+      coverage_target: 90%
+
 integration:
   native_tool_executor:
     file: src/agentforge/core/harness/minimal_context/native_tool_executor.py
@@ -185,10 +200,10 @@ integration:
 
   fix_workflow:
     file: src/agentforge/core/harness/minimal_context/fix_workflow.py
-    migration_status: pending
+    migration_status: complete
     notes: |
-      fix_workflow.py currently has its own handler implementations.
-      These should be migrated to use tool_handlers module.
+      fix_workflow.py now uses tool_handlers module via NativeToolExecutor.
+      Legacy handlers quarantined to deprecated/legacy_handlers.py.
 
 dependencies:
   internal:
@@ -244,7 +259,29 @@ acceptance_criteria:
     - Returns escalation ID for tracking
     - Persists to disk for human review
 
+integration_tests:
+  root: tests/integration/
+  files:
+    - path: tool_handlers/test_context_injection.py
+      purpose: Context injection verification (10 tests)
+
+    - path: workflows/test_fix_violation_workflow.py
+      purpose: Full workflow integration tests (17 tests)
+
+    - path: workflows/conftest.py
+      purpose: Test fixtures (project_with_violation, simulated LLM)
+
 changelog:
+  - version: "1.1"
+    date: "2026-01-01"
+    changes:
+      - Added validate_path_security for path traversal protection
+      - Extracted magic numbers to constants.py
+      - Added debug logging to all handlers
+      - Removed HandlerResult (unused)
+      - Added integration tests for fix_violation workflow
+      - Quarantined legacy handlers to deprecated/
+
   - version: "1.0"
     date: "2025-01-01"
     changes:

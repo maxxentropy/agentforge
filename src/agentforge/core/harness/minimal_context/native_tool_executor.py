@@ -20,12 +20,21 @@ Usage:
     ```python
     from agentforge.core.harness.minimal_context.native_tool_executor import (
         NativeToolExecutor,
+        create_enhanced_handlers,  # Full handler set
     )
 
-    # Create executor with registered actions
-    executor = NativeToolExecutor()
-    executor.register_action("read_file", read_file_handler)
-    executor.register_action("write_file", write_file_handler)
+    # Create executor with enhanced handlers (recommended)
+    handlers = create_enhanced_handlers(project_path)
+    executor = NativeToolExecutor(actions=handlers)
+
+    # Or use registry for custom handler sets
+    from agentforge.core.harness.minimal_context.tool_handlers import (
+        ToolHandlerRegistry,
+    )
+
+    registry = ToolHandlerRegistry(project_path)
+    registry.add_file_handlers().add_verify_handlers()
+    executor = NativeToolExecutor(actions=registry.get_handlers())
 
     # Use with LLM client
     response = llm_client.complete_with_tools(
@@ -348,6 +357,9 @@ def create_standard_handlers(project_path=None) -> Dict[str, ActionHandler]:
     """
     Create standard action handlers for common tools.
 
+    This is the legacy handler set with basic file and terminal operations.
+    For a complete handler set, use create_enhanced_handlers() instead.
+
     Args:
         project_path: Base path for file operations
 
@@ -360,3 +372,41 @@ def create_standard_handlers(project_path=None) -> Dict[str, ActionHandler]:
         "complete": create_complete_handler(),
         "escalate": create_escalate_handler(),
     }
+
+
+def create_enhanced_handlers(project_path=None) -> Dict[str, ActionHandler]:
+    """
+    Create enhanced action handlers from the tool_handlers module.
+
+    This includes all P0 handlers required for the fix_violation workflow:
+    - File operations: read_file, write_file, edit_file, replace_lines, insert_lines
+    - Search: search_code, load_context, find_related
+    - Verification: run_check, run_tests, validate_python
+    - Terminal: complete, escalate, cannot_fix, plan_fix
+
+    Args:
+        project_path: Base path for file operations
+
+    Returns:
+        Dict of action name to handler
+    """
+    from .tool_handlers import create_standard_handlers as create_full_handlers
+
+    return create_full_handlers(project_path)
+
+
+def create_fix_violation_handlers(project_path=None) -> Dict[str, ActionHandler]:
+    """
+    Create handlers specifically for the fix_violation workflow.
+
+    This is the recommended handler set for violation fixing tasks.
+
+    Args:
+        project_path: Project root path
+
+    Returns:
+        Dict of action name to handler
+    """
+    from .tool_handlers import create_fix_violation_handlers as create_handlers
+
+    return create_handlers(project_path)

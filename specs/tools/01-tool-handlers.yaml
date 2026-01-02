@@ -1,0 +1,254 @@
+# Tool Handlers Specification
+# ===========================
+#
+# This specification defines the P0 tool handlers for the fix_violation workflow.
+#
+# Version: 1.0
+# Status: Implemented
+# Date: January 2025
+
+spec_id: tool-handlers-v1
+version: "1.0"
+status: implemented
+
+overview:
+  title: Tool Handlers Module
+  purpose: |
+    Provides action handlers for the fix_violation workflow and other agent tasks.
+    Handlers bridge LLM tool calls to executable actions with consistent error handling.
+
+  design_principles:
+    - Wrap existing infrastructure (ConformanceManager, VectorSearch, etc.)
+    - Return structured results as strings (not exceptions)
+    - Fail gracefully with informative error messages
+    - Audit all executions for replay and debugging
+    - Follow factory pattern for handler creation
+
+module_structure:
+  root: src/agentforge/core/harness/minimal_context/tool_handlers/
+  files:
+    - path: __init__.py
+      component_id: tool-handlers-init
+      purpose: Module exports and ToolHandlerRegistry
+      exports:
+        - create_standard_handlers
+        - create_fix_violation_handlers
+        - create_minimal_handlers
+        - ToolHandlerRegistry
+
+    - path: types.py
+      component_id: tool-handler-types
+      purpose: Type definitions (ActionHandler, HandlerContext, HandlerResult)
+      exports:
+        - ActionHandler
+        - HandlerContext
+        - HandlerResult
+
+    - path: file_handlers.py
+      component_id: file-handlers
+      purpose: File operation handlers
+      handlers:
+        - name: read_file
+          factory: create_read_file_handler
+          description: Read file contents with line numbers
+        - name: write_file
+          factory: create_write_file_handler
+          description: Write content to file (create or overwrite)
+        - name: edit_file
+          factory: create_edit_file_handler
+          description: Replace specific line range with new content
+        - name: replace_lines
+          factory: create_replace_lines_handler
+          description: Replace lines with auto-indentation
+        - name: insert_lines
+          factory: create_insert_lines_handler
+          description: Insert lines at position without removing
+
+    - path: search_handlers.py
+      component_id: search-handlers
+      purpose: Code search and context loading handlers
+      handlers:
+        - name: search_code
+          factory: create_search_code_handler
+          description: Regex or semantic code search
+        - name: load_context
+          factory: create_load_context_handler
+          description: Load file content into working memory
+        - name: find_related
+          factory: create_find_related_handler
+          description: Find related files (tests, imports, siblings)
+
+    - path: verify_handlers.py
+      component_id: verify-handlers
+      purpose: Verification and validation handlers
+      handlers:
+        - name: run_check
+          factory: create_run_check_handler_v2
+          description: Run conformance checks (wraps ConformanceManager)
+        - name: run_tests
+          factory: create_run_tests_handler
+          description: Run tests (wraps TestRunnerTools)
+        - name: validate_python
+          factory: create_validate_python_handler
+          description: Validate Python syntax and imports
+
+    - path: terminal_handlers.py
+      component_id: terminal-handlers
+      purpose: Task completion and escalation handlers
+      handlers:
+        - name: complete
+          factory: create_complete_handler
+          description: Signal successful task completion
+        - name: escalate
+          factory: create_escalate_handler
+          description: Request human intervention
+        - name: cannot_fix
+          factory: create_cannot_fix_handler
+          description: Record inability to fix with escalation
+        - name: request_help
+          factory: create_request_help_handler
+          description: Request specific human assistance
+        - name: plan_fix
+          factory: create_plan_fix_handler
+          description: Record fix plan and advance to implement
+
+handler_signature:
+  description: |
+    All handlers follow the same signature pattern for consistency.
+  pattern: |
+    def create_xyz_handler(project_path: Path = None) -> ActionHandler:
+        """
+        Create an xyz action handler.
+
+        Args:
+            project_path: Base path for operations
+
+        Returns:
+            Handler function: (params: Dict[str, Any]) -> str
+        """
+        base_path = Path(project_path) if project_path else Path.cwd()
+
+        def handler(params: Dict[str, Any]) -> str:
+            # Access context via params["_context"]
+            # Perform action
+            # Return result string (SUCCESS or ERROR)
+            ...
+
+        return handler
+
+  context_injection:
+    description: |
+      Executor injects task context via params["_context"].
+      Handlers can access violation info, files examined, etc.
+    schema:
+      violation_id: "V-001"
+      task_id: "T-123"
+      current_step: 5
+      files_examined: ["src/a.py", "src/b.py"]
+      files_modified: ["src/a.py"]
+      attempted_approaches: ["extraction", "refactor"]
+      understanding: ["Function has 3 early returns"]
+
+test_structure:
+  root: tests/unit/harness/tool_handlers/
+  files:
+    - path: test_file_handlers.py
+      tests_for: file-handlers
+      coverage_target: 90%
+
+    - path: test_search_handlers.py
+      tests_for: search-handlers
+      coverage_target: 85%
+
+    - path: test_verify_handlers.py
+      tests_for: verify-handlers
+      coverage_target: 85%
+
+    - path: test_terminal_handlers.py
+      tests_for: terminal-handlers
+      coverage_target: 90%
+
+    - path: test_registry.py
+      tests_for: tool-handlers-init
+      coverage_target: 90%
+
+integration:
+  native_tool_executor:
+    file: src/agentforge/core/harness/minimal_context/native_tool_executor.py
+    integration_point: create_standard_handlers
+    usage: |
+      # In native_tool_executor.py
+      from .tool_handlers import create_standard_handlers
+
+      handlers = create_standard_handlers(project_path)
+      executor = NativeToolExecutor(actions=handlers)
+
+  fix_workflow:
+    file: src/agentforge/core/harness/minimal_context/fix_workflow.py
+    migration_status: pending
+    notes: |
+      fix_workflow.py currently has its own handler implementations.
+      These should be migrated to use tool_handlers module.
+
+dependencies:
+  internal:
+    - module: agentforge.core.harness.minimal_context.state_store
+      used_by: [verify-handlers, terminal-handlers, search-handlers]
+    - module: agentforge.core.harness.minimal_context.working_memory
+      used_by: [search-handlers]
+
+  external:
+    - module: agentforge.harness.conformance_tools
+      used_by: [verify-handlers]
+      optional: true
+      fallback: subprocess-based verification
+
+    - module: agentforge.harness.test_runner_tools
+      used_by: [verify-handlers]
+      optional: true
+      fallback: pytest subprocess
+
+    - module: agentforge.tools.vector_search
+      used_by: [search-handlers]
+      optional: true
+      fallback: regex search only
+
+acceptance_criteria:
+  edit_file:
+    - Replaces specified line range with new content
+    - Handles 1-indexed line numbers correctly
+    - Preserves content before start_line and after end_line
+    - Handles edge cases (first line, last line, beyond file)
+    - Returns clear success/error messages
+    - Works with relative and absolute paths
+
+  run_check:
+    - Runs conformance checks on specified file or all files
+    - Returns pass/fail with violation details
+    - Can verify specific violation was resolved
+    - Updates violation status when resolved
+    - Handles missing configuration gracefully
+
+  search_code:
+    - Performs regex search across codebase
+    - Respects file pattern filters
+    - Excludes common noise directories
+    - Returns file paths with line numbers
+    - Limits results to max_results
+    - Falls back gracefully if vector search unavailable
+
+  cannot_fix:
+    - Creates escalation record with timestamp
+    - Includes reason, constraints, and alternatives
+    - Captures agent's analysis context
+    - Returns escalation ID for tracking
+    - Persists to disk for human review
+
+changelog:
+  - version: "1.0"
+    date: "2025-01-01"
+    changes:
+      - Initial implementation of tool_handlers module
+      - Extracted handlers from fix_workflow.py
+      - Added ToolHandlerRegistry for composition
+      - Added comprehensive type definitions

@@ -1,0 +1,453 @@
+# Phase 6: Configuration System
+# @spec_id: pipeline-controller-phase6-v1
+# @spec_file: specs/pipeline-controller/stage-09-configuration-system.md
+
+version: "1.0"
+spec_id: pipeline-controller-phase6-v1
+title: "Pipeline Configuration System"
+status: implementing
+created: "2026-01-02"
+
+overview:
+  description: |
+    Configuration system for pipeline operations.
+
+    Core components:
+    - ConfigurationLoader: Loads settings, templates, and stage configs
+    - PipelineTemplate: Pre-defined stage sequences (implement, design, test, fix)
+    - StageConfig: Per-stage settings and customization
+    - GlobalSettings: Project-wide configuration
+
+    Configuration hierarchy:
+    - .agentforge/config/settings.yaml (global settings)
+    - .agentforge/config/stages/*.yaml (stage-specific configs)
+    - .agentforge/pipelines/*.yaml (pipeline templates)
+
+    Validation:
+    - ConfigValidator validates template integrity
+    - Checks stage names, stage order, exit_after references
+
+  goals:
+    - Provide flexible configuration for pipeline behavior
+    - Support built-in and custom pipeline templates
+    - Enable per-stage customization
+    - Validate configuration before execution
+
+  dependencies:
+    - PipelineController (phase-1)
+    - Click CLI (phase-5)
+    - PyYAML for config loading
+
+components:
+  # ==========================================================================
+  # DATA CLASSES
+  # ==========================================================================
+
+  - id: config-stage-config
+    name: "StageConfig"
+    type: dataclass
+    description: |
+      Configuration for a single stage.
+
+      Attributes:
+      - name: Stage identifier
+      - enabled: Whether stage is enabled
+      - timeout_seconds: Execution timeout
+      - max_iterations: Max iteration count
+      - tools: Tool-specific configuration
+      - custom: Additional custom settings
+
+    file_path: src/agentforge/core/pipeline/config.py
+    test_path: tests/unit/pipeline/test_config.py
+
+    attributes:
+      - name: name
+        type: str
+        description: Stage identifier
+      - name: enabled
+        type: bool
+        default: true
+      - name: timeout_seconds
+        type: int
+        default: 600
+      - name: max_iterations
+        type: int
+        default: 3
+      - name: tools
+        type: Dict[str, Any]
+        default: {}
+      - name: custom
+        type: Dict[str, Any]
+        default: {}
+
+  - id: config-pipeline-template
+    name: "PipelineTemplate"
+    type: dataclass
+    description: |
+      Pipeline template definition.
+
+      Defines a sequence of stages with default configuration.
+
+    file_path: src/agentforge/core/pipeline/config.py
+    test_path: tests/unit/pipeline/test_config.py
+
+    attributes:
+      - name: name
+        type: str
+        description: Template name (e.g., implement, design)
+      - name: description
+        type: str
+        description: Human-readable description
+      - name: stages
+        type: List[str]
+        description: Ordered list of stage names
+      - name: defaults
+        type: Dict[str, Any]
+        default: {}
+        description: Default configuration values
+      - name: stage_config
+        type: Dict[str, StageConfig]
+        default: {}
+        description: Per-stage configuration overrides
+      - name: exit_conditions
+        type: Dict[str, Any]
+        default: {}
+        description: Conditions for pipeline exit
+      - name: required_context
+        type: List[str]
+        default: []
+        description: Required context (e.g., spec, violation)
+
+  - id: config-global-settings
+    name: "GlobalSettings"
+    type: dataclass
+    description: |
+      Global project settings.
+
+      Loaded from .agentforge/config/settings.yaml
+
+    file_path: src/agentforge/core/pipeline/config.py
+    test_path: tests/unit/pipeline/test_config.py
+
+    attributes:
+      - name: project_name
+        type: str
+        default: ""
+      - name: language
+        type: str
+        default: python
+      - name: llm_model
+        type: str
+        default: claude-sonnet-4-20250514
+      - name: max_cost_per_pipeline
+        type: float
+        default: 10.0
+      - name: supervised_by_default
+        type: bool
+        default: false
+      - name: auto_commit
+        type: bool
+        default: false
+
+  # ==========================================================================
+  # CONFIGURATION LOADER
+  # ==========================================================================
+
+  - id: config-loader
+    name: "ConfigurationLoader"
+    type: class
+    description: |
+      Loads and manages pipeline configuration.
+
+      Configuration sources (in priority order):
+      1. Command-line overrides
+      2. Environment variables
+      3. .agentforge/config/ files
+      4. Built-in defaults
+
+    file_path: src/agentforge/core/pipeline/config.py
+    test_path: tests/unit/pipeline/test_config.py
+
+    attributes:
+      - name: DEFAULT_PIPELINES
+        type: Dict[str, Dict]
+        description: Built-in pipeline definitions
+
+    interfaces:
+      - name: __init__
+        type: method
+        parameters:
+          - name: project_path
+            type: Path
+        description: Initialize with project path
+
+      - name: load_settings
+        type: method
+        returns: GlobalSettings
+        description: Load global settings from settings.yaml
+
+      - name: load_pipeline_template
+        type: method
+        parameters:
+          - name: pipeline_type
+            type: str
+        returns: PipelineTemplate
+        description: Load pipeline template by type name
+
+      - name: load_stage_config
+        type: method
+        parameters:
+          - name: stage_name
+            type: str
+        returns: StageConfig
+        description: Load configuration for a specific stage
+
+      - name: list_available_pipelines
+        type: method
+        returns: List[str]
+        description: List all available pipeline types
+
+      - name: create_default_config
+        type: method
+        description: Create default configuration files
+
+  - id: config-template-loader
+    name: "PipelineTemplateLoader"
+    type: class
+    description: |
+      Wrapper for ConfigurationLoader used by PipelineController.
+      Converts templates to PipelineConfig objects.
+
+    file_path: src/agentforge/core/pipeline/config.py
+    test_path: tests/unit/pipeline/test_config.py
+
+    interfaces:
+      - name: load
+        type: method
+        parameters:
+          - name: pipeline_type
+            type: str
+        returns: PipelineConfig
+        description: Load and convert template to PipelineConfig
+
+  # ==========================================================================
+  # VALIDATION
+  # ==========================================================================
+
+  - id: config-validation-error
+    name: "ValidationError"
+    type: dataclass
+    description: Configuration validation error.
+
+    file_path: src/agentforge/core/pipeline/config_validator.py
+    test_path: tests/unit/pipeline/test_config_validator.py
+
+    attributes:
+      - name: path
+        type: str
+        description: Config path where error occurred
+      - name: message
+        type: str
+        description: Error message
+      - name: severity
+        type: str
+        description: "error" or "warning"
+
+  - id: config-validator
+    name: "ConfigValidator"
+    type: class
+    description: |
+      Validates pipeline configuration.
+
+      Checks:
+      - Stage names are valid
+      - Stage order is logical (e.g., GREEN requires RED)
+      - exit_after references valid stage
+      - Required fields are present
+
+    file_path: src/agentforge/core/pipeline/config_validator.py
+    test_path: tests/unit/pipeline/test_config_validator.py
+
+    attributes:
+      - name: VALID_STAGES
+        type: List[str]
+        description: List of valid stage names
+
+    interfaces:
+      - name: validate_template
+        type: method
+        parameters:
+          - name: template
+            type: PipelineTemplate
+        returns: List[ValidationError]
+        description: Validate a pipeline template
+
+      - name: validate_settings
+        type: method
+        parameters:
+          - name: settings
+            type: GlobalSettings
+        returns: List[ValidationError]
+        description: Validate global settings
+
+  # ==========================================================================
+  # ENVIRONMENT VARIABLE SUPPORT
+  # ==========================================================================
+
+  - id: config-env-expand
+    name: "expand_env_vars"
+    type: function
+    description: |
+      Expand ${VAR} patterns in config values.
+      Used for secrets like API keys and webhooks.
+
+    file_path: src/agentforge/core/pipeline/config.py
+    test_path: tests/unit/pipeline/test_config.py
+
+    interfaces:
+      - name: expand_env_vars
+        type: function
+        parameters:
+          - name: value
+            type: str
+        returns: str
+        description: String with environment variables expanded
+
+test_cases:
+  # GlobalSettings tests
+  - id: test-loads-default-settings
+    description: Loads default settings when no file exists
+    component_id: config-loader
+
+  - id: test-loads-settings-file
+    description: Loads settings from YAML file
+    component_id: config-loader
+
+  - id: test-settings-with-env-vars
+    description: Expands environment variables in settings
+    component_id: config-loader
+
+  # PipelineTemplate tests
+  - id: test-loads-pipeline-template
+    description: Loads pipeline template from file
+    component_id: config-loader
+
+  - id: test-falls-back-to-default-template
+    description: Uses default template when file missing
+    component_id: config-loader
+
+  - id: test-loads-custom-template
+    description: Loads custom pipeline template
+    component_id: config-loader
+
+  - id: test-template-with-stage-config
+    description: Loads template with stage-specific config
+    component_id: config-loader
+
+  # StageConfig tests
+  - id: test-loads-stage-config
+    description: Loads stage config from file
+    component_id: config-loader
+
+  - id: test-stage-config-defaults
+    description: Uses defaults when no file exists
+    component_id: config-loader
+
+  - id: test-stage-config-tools
+    description: Loads tool configuration for stage
+    component_id: config-loader
+
+  # List and create tests
+  - id: test-list-available-pipelines
+    description: Lists built-in and custom pipelines
+    component_id: config-loader
+
+  - id: test-create-default-config
+    description: Creates default configuration files
+    component_id: config-loader
+
+  # PipelineTemplateLoader tests
+  - id: test-template-loader-returns-pipeline-config
+    description: Converts template to PipelineConfig
+    component_id: config-template-loader
+
+  - id: test-template-loader-merges-settings
+    description: Merges template defaults with global settings
+    component_id: config-template-loader
+
+  # Validation tests
+  - id: test-validates-stage-names
+    description: Rejects invalid stage names
+    component_id: config-validator
+
+  - id: test-warns-green-without-red
+    description: Warns when GREEN without RED
+    component_id: config-validator
+
+  - id: test-validates-exit-after
+    description: Error when exit_after not in stages
+    component_id: config-validator
+
+  - id: test-validates-required-context
+    description: Warns on unrecognized required_context
+    component_id: config-validator
+
+  - id: test-validation-error-dataclass
+    description: ValidationError stores path, message, severity
+    component_id: config-validation-error
+
+  # Environment variable tests
+  - id: test-expand-env-vars
+    description: Expands ${VAR} patterns
+    component_id: config-env-expand
+
+  - id: test-expand-missing-env-var
+    description: Returns empty string for missing vars
+    component_id: config-env-expand
+
+  # Built-in template tests
+  - id: test-implement-template
+    description: Implement template has all 8 stages
+    component_id: config-loader
+
+  - id: test-design-template
+    description: Design template exits at spec
+    component_id: config-loader
+
+  - id: test-test-template
+    description: Test template requires spec context
+    component_id: config-loader
+
+  - id: test-fix-template
+    description: Fix template requires violation context
+    component_id: config-loader
+
+acceptance_criteria:
+  - Configuration files load correctly
+  - Built-in templates work without config files
+  - Custom templates override built-in defaults
+  - Stage configs merge properly with defaults
+  - Validation catches common errors
+  - Environment variables expand correctly
+  - Error messages are clear and actionable
+
+implementation_order:
+  - step: 1
+    components: [config-stage-config, config-pipeline-template, config-global-settings]
+    description: Implement dataclasses
+
+  - step: 2
+    component: config-loader
+    description: Implement ConfigurationLoader
+
+  - step: 3
+    component: config-env-expand
+    description: Implement environment variable expansion
+
+  - step: 4
+    components: [config-validation-error, config-validator]
+    description: Implement validation
+
+  - step: 5
+    component: config-template-loader
+    description: Implement PipelineTemplateLoader

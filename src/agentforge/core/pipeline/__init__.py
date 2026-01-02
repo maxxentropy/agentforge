@@ -1,9 +1,11 @@
 # @spec_file: specs/pipeline-controller/implementation/phase-1-foundation.yaml
 # @spec_file: specs/pipeline-controller/implementation/phase-2-design-pipeline.yaml
 # @spec_file: specs/pipeline-controller/implementation/phase-3-tdd-stages.yaml
+# @spec_file: specs/pipeline-controller/implementation/phase-6-configuration.yaml
 # @spec_id: pipeline-controller-phase1-v1
 # @spec_id: pipeline-controller-phase2-v1
 # @spec_id: pipeline-controller-phase3-v1
+# @spec_id: pipeline-controller-phase6-v1
 # @component_id: pipeline-init
 # @test_path: tests/unit/pipeline/test_module_exports.py
 
@@ -115,6 +117,22 @@ from .artifacts import (
     DeliverArtifact,
 )
 
+# Phase 6: Configuration System
+from .config import (
+    StageConfig,
+    PipelineTemplate,
+    GlobalSettings,
+    PipelineConfig,
+    ConfigurationLoader,
+    PipelineTemplateLoader,
+    expand_env_vars,
+)
+
+from .config_validator import (
+    ConfigValidator,
+    ValidationError as ConfigValidationError,
+)
+
 __all__ = [
     # State
     "PipelineState",
@@ -165,4 +183,14 @@ __all__ = [
     "GreenArtifact",
     "RefactorArtifact",
     "DeliverArtifact",
+    # Phase 6: Configuration
+    "StageConfig",
+    "PipelineTemplate",
+    "GlobalSettings",
+    "PipelineConfig",
+    "ConfigurationLoader",
+    "PipelineTemplateLoader",
+    "expand_env_vars",
+    "ConfigValidator",
+    "ConfigValidationError",
 ]

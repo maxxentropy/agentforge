@@ -103,6 +103,10 @@ from agentforge.cli.click_commands.tdflow import tdflow
 from agentforge.cli.click_commands.ci import ci
 from agentforge.cli.click_commands.generate import generate
 from agentforge.cli.click_commands.agent import agent
+from agentforge.cli.click_commands.pipeline import (
+    start, design, implement, status, resume, approve, reject, abort,
+    pipelines, artifacts
+)
 
 # Register spec workflow commands
 cli.add_command(intake)
@@ -129,6 +133,18 @@ cli.add_command(tdflow)
 cli.add_command(ci)
 cli.add_command(generate)
 cli.add_command(agent)
+
+# Register pipeline commands
+cli.add_command(start)
+cli.add_command(design)
+cli.add_command(implement)
+cli.add_command(status)
+cli.add_command(resume)
+cli.add_command(approve)
+cli.add_command(reject)
+cli.add_command(abort)
+cli.add_command(pipelines)
+cli.add_command(artifacts)
 
 
 def main():

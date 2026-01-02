@@ -1,0 +1,490 @@
+# Phase 5: Pipeline CLI Commands
+# @spec_id: pipeline-controller-phase5-v1
+# @spec_file: specs/pipeline-controller/stage-08-cli-commands.md
+
+version: "1.0"
+spec_id: pipeline-controller-phase5-v1
+title: "Pipeline CLI Commands"
+status: implementing
+created: "2026-01-02"
+
+overview:
+  description: |
+    CLI commands for pipeline operations using Click framework.
+
+    Primary commands:
+    - start: Full autonomous pipeline (INTAKE → DELIVER)
+    - design: Design only (INTAKE → SPEC)
+    - implement: Implementation pipeline (from request or existing spec)
+
+    Control commands:
+    - status: Check pipeline status
+    - resume: Resume paused pipeline
+    - approve: Approve stage output
+    - reject: Reject with feedback
+    - abort: Cancel pipeline
+
+    List commands:
+    - pipelines: List all pipelines
+    - artifacts: View pipeline artifacts
+
+  goals:
+    - Provide intuitive CLI for pipeline operations
+    - Support supervised and autonomous modes
+    - Enable pipeline control (pause/resume/abort)
+    - Display clear progress and status information
+
+  dependencies:
+    - PipelineController (phase-1)
+    - StageExecutors (phases 2-4)
+    - Click framework
+
+components:
+  # ==========================================================================
+  # PRIMARY COMMANDS
+  # ==========================================================================
+
+  - id: pipeline-cli-start
+    name: "StartCommand"
+    type: cli_command
+    description: |
+      Start full autonomous development pipeline.
+
+      Options:
+      - --supervised/-s: Pause for approval between stages
+      - --exit-after: Exit after specified stage
+      - --iterate/-i: Enable iteration (pause at SPEC)
+      - --delivery-mode: How to deliver result (commit/pr/files/patch)
+      - --timeout: Pipeline timeout in seconds
+
+    file_path: src/agentforge/cli/click_commands/pipeline.py
+    test_path: tests/unit/cli/test_pipeline_commands.py
+
+    interfaces:
+      - name: start
+        type: click_command
+        arguments:
+          - name: request
+            type: str
+            required: true
+            description: User request describing the task
+        options:
+          - name: supervised
+            short: s
+            type: bool
+            default: false
+          - name: exit_after
+            type: choice
+            choices: [intake, clarify, analyze, spec, red, green, refactor]
+          - name: iterate
+            short: i
+            type: bool
+            default: false
+          - name: delivery_mode
+            type: choice
+            choices: [commit, pr, files, patch]
+            default: commit
+          - name: timeout
+            type: int
+            default: 3600
+
+  - id: pipeline-cli-design
+    name: "DesignCommand"
+    type: cli_command
+    description: |
+      Run design pipeline (exits at SPEC stage).
+      Produces detailed technical specification without implementation.
+
+    file_path: src/agentforge/cli/click_commands/pipeline.py
+    test_path: tests/unit/cli/test_pipeline_commands.py
+
+    interfaces:
+      - name: design
+        type: click_command
+        arguments:
+          - name: request
+            type: str
+            required: true
+        options:
+          - name: iterate
+            short: i
+            type: bool
+            default: false
+
+  - id: pipeline-cli-implement
+    name: "ImplementCommand"
+    type: cli_command
+    description: |
+      Run implementation pipeline.
+      Either provide a request or use --from-spec to continue from design.
+
+    file_path: src/agentforge/cli/click_commands/pipeline.py
+    test_path: tests/unit/cli/test_pipeline_commands.py
+
+    interfaces:
+      - name: implement
+        type: click_command
+        arguments:
+          - name: request
+            type: str
+            required: false
+        options:
+          - name: from_spec
+            type: str
+            description: Start from existing specification ID
+          - name: skip_to
+            type: choice
+            choices: [red, green]
+          - name: delivery_mode
+            type: choice
+            choices: [commit, pr, files, patch]
+            default: commit
+
+  # ==========================================================================
+  # CONTROL COMMANDS
+  # ==========================================================================
+
+  - id: pipeline-cli-status
+    name: "StatusCommand"
+    type: cli_command
+    description: |
+      Check pipeline status.
+      Without PIPELINE_ID, shows most recent pipeline.
+
+    file_path: src/agentforge/cli/click_commands/pipeline.py
+    test_path: tests/unit/cli/test_pipeline_commands.py
+
+    interfaces:
+      - name: status
+        type: click_command
+        arguments:
+          - name: pipeline_id
+            type: str
+            required: false
+        options:
+          - name: verbose
+            short: v
+            type: bool
+            default: false
+
+  - id: pipeline-cli-resume
+    name: "ResumeCommand"
+    type: cli_command
+    description: Resume a paused pipeline.
+
+    file_path: src/agentforge/cli/click_commands/pipeline.py
+    test_path: tests/unit/cli/test_pipeline_commands.py
+
+    interfaces:
+      - name: resume
+        type: click_command
+        arguments:
+          - name: pipeline_id
+            type: str
+            required: true
+        options:
+          - name: feedback
+            short: f
+            type: str
+            description: Provide feedback before resuming
+
+  - id: pipeline-cli-approve
+    name: "ApproveCommand"
+    type: cli_command
+    description: Approve current stage and continue pipeline.
+
+    file_path: src/agentforge/cli/click_commands/pipeline.py
+    test_path: tests/unit/cli/test_pipeline_commands.py
+
+    interfaces:
+      - name: approve
+        type: click_command
+        arguments:
+          - name: pipeline_id
+            type: str
+            required: true
+
+  - id: pipeline-cli-reject
+    name: "RejectCommand"
+    type: cli_command
+    description: |
+      Reject stage output.
+      With --feedback: Request revision
+      With --abort: Cancel the pipeline
+
+    file_path: src/agentforge/cli/click_commands/pipeline.py
+    test_path: tests/unit/cli/test_pipeline_commands.py
+
+    interfaces:
+      - name: reject
+        type: click_command
+        arguments:
+          - name: pipeline_id
+            type: str
+            required: true
+        options:
+          - name: feedback
+            short: f
+            type: str
+          - name: abort
+            type: bool
+            default: false
+
+  - id: pipeline-cli-abort
+    name: "AbortCommand"
+    type: cli_command
+    description: Abort a running or paused pipeline.
+
+    file_path: src/agentforge/cli/click_commands/pipeline.py
+    test_path: tests/unit/cli/test_pipeline_commands.py
+
+    interfaces:
+      - name: abort
+        type: click_command
+        arguments:
+          - name: pipeline_id
+            type: str
+            required: true
+        options:
+          - name: reason
+            short: r
+            type: str
+            default: "User requested"
+
+  # ==========================================================================
+  # LIST COMMANDS
+  # ==========================================================================
+
+  - id: pipeline-cli-pipelines
+    name: "PipelinesCommand"
+    type: cli_command
+    description: List pipelines with optional status filter.
+
+    file_path: src/agentforge/cli/click_commands/pipeline.py
+    test_path: tests/unit/cli/test_pipeline_commands.py
+
+    interfaces:
+      - name: pipelines
+        type: click_command
+        options:
+          - name: status
+            short: s
+            type: choice
+            choices: [running, paused, completed, failed, aborted, all]
+            default: all
+          - name: limit
+            short: n
+            type: int
+            default: 10
+
+  - id: pipeline-cli-artifacts
+    name: "ArtifactsCommand"
+    type: cli_command
+    description: View pipeline artifacts.
+
+    file_path: src/agentforge/cli/click_commands/pipeline.py
+    test_path: tests/unit/cli/test_pipeline_commands.py
+
+    interfaces:
+      - name: artifacts
+        type: click_command
+        arguments:
+          - name: pipeline_id
+            type: str
+            required: true
+        options:
+          - name: stage
+            short: s
+            type: str
+          - name: output
+            short: o
+            type: path
+
+  # ==========================================================================
+  # HELPER COMPONENTS
+  # ==========================================================================
+
+  - id: pipeline-cli-display-result
+    name: "DisplayResult"
+    type: helper_function
+    description: Display pipeline execution result with appropriate formatting.
+
+    file_path: src/agentforge/cli/click_commands/pipeline.py
+    test_path: tests/unit/cli/test_pipeline_commands.py
+
+  - id: pipeline-cli-progress-display
+    name: "PipelineProgressDisplay"
+    type: helper_class
+    description: |
+      Real-time progress display for pipeline execution.
+      Shows stage icons, completion status, and timing.
+
+    file_path: src/agentforge/cli/click_commands/pipeline.py
+    test_path: tests/unit/cli/test_pipeline_commands.py
+
+    attributes:
+      - name: STAGE_ICONS
+        type: Dict[str, str]
+        description: Mapping of stage names to emoji icons
+
+test_cases:
+  # Primary command tests
+  - id: test-start-executes-pipeline
+    description: start command executes full pipeline
+    component_id: pipeline-cli-start
+
+  - id: test-start-with-supervised
+    description: --supervised flag enables approval mode
+    component_id: pipeline-cli-start
+
+  - id: test-start-with-exit-after
+    description: --exit-after stops at specified stage
+    component_id: pipeline-cli-start
+
+  - id: test-start-with-delivery-mode
+    description: --delivery-mode configures output format
+    component_id: pipeline-cli-start
+
+  - id: test-design-exits-at-spec
+    description: design command exits at SPEC stage
+    component_id: pipeline-cli-design
+
+  - id: test-design-with-iterate
+    description: --iterate enables spec review pause
+    component_id: pipeline-cli-design
+
+  - id: test-implement-from-request
+    description: implement with request runs full pipeline
+    component_id: pipeline-cli-implement
+
+  - id: test-implement-from-spec
+    description: --from-spec loads existing specification
+    component_id: pipeline-cli-implement
+
+  - id: test-implement-skip-to-stage
+    description: --skip-to jumps to specified stage
+    component_id: pipeline-cli-implement
+
+  - id: test-implement-requires-request-or-spec
+    description: error when neither request nor --from-spec provided
+    component_id: pipeline-cli-implement
+
+  # Control command tests
+  - id: test-status-shows-pipeline-info
+    description: status displays pipeline information
+    component_id: pipeline-cli-status
+
+  - id: test-status-without-id-shows-recent
+    description: status without ID shows most recent pipeline
+    component_id: pipeline-cli-status
+
+  - id: test-status-verbose-output
+    description: --verbose shows detailed information
+    component_id: pipeline-cli-status
+
+  - id: test-resume-calls-controller
+    description: resume calls controller with pipeline ID
+    component_id: pipeline-cli-resume
+
+  - id: test-resume-with-feedback
+    description: --feedback provides feedback before resuming
+    component_id: pipeline-cli-resume
+
+  - id: test-approve-calls-controller
+    description: approve calls controller.approve()
+    component_id: pipeline-cli-approve
+
+  - id: test-reject-with-feedback
+    description: --feedback requests revision
+    component_id: pipeline-cli-reject
+
+  - id: test-reject-with-abort
+    description: --abort cancels the pipeline
+    component_id: pipeline-cli-reject
+
+  - id: test-reject-requires-feedback-or-abort
+    description: error when neither feedback nor abort specified
+    component_id: pipeline-cli-reject
+
+  - id: test-abort-calls-controller
+    description: abort calls controller.abort()
+    component_id: pipeline-cli-abort
+
+  - id: test-abort-with-reason
+    description: --reason provides abort reason
+    component_id: pipeline-cli-abort
+
+  # List command tests
+  - id: test-pipelines-lists-all
+    description: pipelines lists all pipelines
+    component_id: pipeline-cli-pipelines
+
+  - id: test-pipelines-filter-status
+    description: --status filters by pipeline status
+    component_id: pipeline-cli-pipelines
+
+  - id: test-pipelines-limit
+    description: --limit controls number of results
+    component_id: pipeline-cli-pipelines
+
+  - id: test-artifacts-shows-all
+    description: artifacts shows all pipeline artifacts
+    component_id: pipeline-cli-artifacts
+
+  - id: test-artifacts-specific-stage
+    description: --stage shows specific stage artifact
+    component_id: pipeline-cli-artifacts
+
+  - id: test-artifacts-output-file
+    description: --output saves artifact to file
+    component_id: pipeline-cli-artifacts
+
+  # Helper tests
+  - id: test-display-result-success
+    description: displays success result correctly
+    component_id: pipeline-cli-display-result
+
+  - id: test-display-result-failure
+    description: displays failure result correctly
+    component_id: pipeline-cli-display-result
+
+  - id: test-progress-display-stage-icons
+    description: uses correct icons for each stage
+    component_id: pipeline-cli-progress-display
+
+acceptance_criteria:
+  - Commands work correctly with PipelineController
+  - Clear progress display during execution
+  - Helpful error messages for invalid input
+  - Consistent formatting across commands
+  - State persists between commands
+  - Integration with existing CLI structure
+
+implementation_order:
+  - step: 1
+    component: pipeline-cli-start
+    description: Implement start command
+
+  - step: 2
+    component: pipeline-cli-design
+    description: Implement design command
+
+  - step: 3
+    component: pipeline-cli-implement
+    description: Implement implement command
+
+  - step: 4
+    components: [pipeline-cli-status, pipeline-cli-resume]
+    description: Implement status and resume commands
+
+  - step: 5
+    components: [pipeline-cli-approve, pipeline-cli-reject, pipeline-cli-abort]
+    description: Implement approval/rejection/abort commands
+
+  - step: 6
+    components: [pipeline-cli-pipelines, pipeline-cli-artifacts]
+    description: Implement list commands
+
+  - step: 7
+    components: [pipeline-cli-display-result, pipeline-cli-progress-display]
+    description: Implement helper components

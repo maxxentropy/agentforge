@@ -54,16 +54,16 @@
 - **Status:** [x] Fixed - Removed duplicate annotations
 
 ### 7. Property-Based Tests for State Machine
-- **Location:** `tests/unit/pipeline/test_state.py`
+- **Location:** `tests/unit/pipeline/test_state_machine_properties.py`
 - **Issue:** State transitions could benefit from property-based testing
 - **Solution:** Add hypothesis-based tests for state machine invariants
-- **Status:** [ ] Deferred
+- **Status:** [x] Fixed - Added 19 property-based tests covering 7 invariants
 
 ### 8. CLI Help Text Improvements
 - **Location:** `src/agentforge/cli/click_commands/pipeline.py`
 - **Issue:** CLI command options could use more examples
 - **Solution:** Add usage examples to help strings
-- **Status:** [ ] Deferred
+- **Status:** [x] Fixed - Enhanced approve, reject, abort commands with examples
 
 ---
 
@@ -100,4 +100,4 @@ def _validate_path(self, path: str, project_path: Path) -> Path:
 ---
 
 *Last Updated: January 2, 2026*
-*Fixes Applied: January 2, 2026 - Issues #1-4, #6 resolved*
+*Fixes Applied: January 2, 2026 - All issues resolved (#1-8)*

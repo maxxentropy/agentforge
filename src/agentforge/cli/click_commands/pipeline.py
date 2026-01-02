@@ -451,7 +451,17 @@ def approve(ctx, pipeline_id):
     """
     Approve current stage and continue pipeline.
 
-    Use when pipeline is in 'awaiting_approval' status.
+    Use when pipeline is in 'awaiting_approval' status. This typically
+    occurs at SPEC stage (design review) or before DELIVER (final review).
+
+    Examples:
+
+        agentforge approve PL-20260102-abc123
+
+        # Check what needs approval first
+        agentforge status PL-123
+
+    After approval, the pipeline continues to the next stage automatically.
     """
     project_path = Path.cwd()
 
@@ -477,10 +487,23 @@ def approve(ctx, pipeline_id):
 @click.pass_context
 def reject(ctx, pipeline_id, feedback, abort_flag):
     """
-    Reject stage output.
+    Reject stage output and request revision or abort.
 
-    With --feedback: Request revision with feedback
-    With --abort: Cancel the pipeline
+    Use when a stage output doesn't meet requirements. Provide feedback
+    to guide the revision, or use --abort to cancel entirely.
+
+    Examples:
+
+        # Request revision with feedback
+        agentforge reject PL-123 --feedback "Need more error handling"
+
+        # Request changes to spec
+        agentforge reject PL-123 -f "Add pagination to the API design"
+
+        # Abort the pipeline instead of revising
+        agentforge reject PL-123 --abort
+
+    The pipeline will re-run the current stage with your feedback context.
     """
     project_path = Path.cwd()
 
@@ -510,6 +533,19 @@ def reject(ctx, pipeline_id, feedback, abort_flag):
 def abort(ctx, pipeline_id, reason):
     """
     Abort a running or paused pipeline.
+
+    Immediately stops pipeline execution and marks it as aborted.
+    Use when you want to cancel a pipeline without completing it.
+
+    Examples:
+
+        agentforge abort PL-20260102-abc123
+
+        agentforge abort PL-123 --reason "Requirements changed"
+
+        agentforge abort PL-123 -r "Starting over with new approach"
+
+    Aborted pipelines cannot be resumed. Start a new pipeline instead.
     """
     project_path = Path.cwd()
 

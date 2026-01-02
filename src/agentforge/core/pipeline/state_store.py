@@ -15,11 +15,15 @@ Manages storage of pipeline states with:
 - Automatic archival on completion
 """
 
+import atexit
 import fcntl
 import logging
+import threading
+import time
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
+from queue import Empty, Queue
 from typing import Any, Generator
 
 import yaml
@@ -27,6 +31,145 @@ import yaml
 from .state import PipelineState, PipelineStatus
 
 logger = logging.getLogger(__name__)
+
+
+# =============================================================================
+# Deferred Write Manager
+# =============================================================================
+
+
+class DeferredWriteManager:
+    """
+    Manages deferred/batched writes for state persistence.
+
+    Buffers writes and flushes them either:
+    - After a configurable delay (debouncing rapid saves)
+    - When flush() is explicitly called
+    - On shutdown
+
+    This reduces I/O overhead during rapid iteration phases like GREEN.
+
+    Thread-safe: writes are processed by a background thread.
+    """
+
+    # Default debounce delay in seconds
+    DEFAULT_DEBOUNCE_SECONDS = 0.5
+
+    def __init__(
+        self,
+        write_func: callable,
+        debounce_seconds: float = DEFAULT_DEBOUNCE_SECONDS,
+    ):
+        """
+        Initialize the deferred write manager.
+
+        Args:
+            write_func: Function to call for actual write (path, data) -> None
+            debounce_seconds: Delay before flushing buffered writes
+        """
+        self._write_func = write_func
+        self._debounce_seconds = debounce_seconds
+
+        # Pending writes: path -> (data, timestamp)
+        self._pending: dict[Path, tuple[dict[str, Any], float]] = {}
+        self._lock = threading.Lock()
+
+        # Background thread for flushing
+        self._queue: Queue = Queue()
+        self._shutdown = threading.Event()
+        self._worker = threading.Thread(target=self._worker_loop, daemon=True)
+        self._worker.start()
+
+        # Register shutdown handler
+        atexit.register(self.shutdown)
+
+    def schedule_write(self, path: Path, data: dict[str, Any]) -> None:
+        """
+        Schedule a write operation.
+
+        If a write for this path is already pending, it's replaced.
+        The write will be executed after the debounce delay.
+
+        Args:
+            path: File path to write to
+            data: Data to write (YAML-serializable dict)
+        """
+        with self._lock:
+            self._pending[path] = (data, time.time())
+            # Signal the worker to check for pending writes
+            self._queue.put(("check", None))
+
+    def flush(self, path: Path | None = None) -> None:
+        """
+        Flush pending writes immediately.
+
+        Args:
+            path: Specific path to flush, or None for all pending writes
+        """
+        with self._lock:
+            if path is not None:
+                # Flush specific path
+                if path in self._pending:
+                    data, _ = self._pending.pop(path)
+                    self._write_func(path, data)
+            else:
+                # Flush all
+                for p, (data, _) in list(self._pending.items()):
+                    self._write_func(p, data)
+                self._pending.clear()
+
+    def flush_blocking(self) -> None:
+        """Flush all pending writes and wait for completion."""
+        self._queue.put(("flush_all", None))
+        # Wait for the flush to complete
+        self._queue.join()
+
+    def _worker_loop(self) -> None:
+        """Background worker that processes the write queue."""
+        while not self._shutdown.is_set():
+            try:
+                # Wait for a signal with timeout for periodic checks
+                cmd, _ = self._queue.get(timeout=0.1)
+
+                if cmd == "check":
+                    self._process_pending()
+                elif cmd == "flush_all":
+                    self.flush()
+
+                self._queue.task_done()
+
+            except Empty:
+                # Timeout - check for expired pending writes
+                self._process_pending()
+
+    def _process_pending(self) -> None:
+        """Process pending writes that have passed the debounce delay."""
+        now = time.time()
+        with self._lock:
+            expired = []
+            for path, (data, timestamp) in self._pending.items():
+                if now - timestamp >= self._debounce_seconds:
+                    expired.append((path, data))
+
+            for path, data in expired:
+                del self._pending[path]
+                try:
+                    self._write_func(path, data)
+                except Exception as e:
+                    logger.error(f"Deferred write failed for {path}: {e}")
+
+    def shutdown(self) -> None:
+        """Shutdown the manager, flushing all pending writes."""
+        self._shutdown.set()
+        self.flush()
+        if self._worker.is_alive():
+            self._worker.join(timeout=2.0)
+
+    @property
+    def pending_count(self) -> int:
+        """Number of pending writes."""
+        with self._lock:
+            return len(self._pending)
 
 
 class PipelineStateStore:
@@ -39,21 +182,49 @@ class PipelineStateStore:
         │   └── {pipeline_id}.yaml
         ├── completed/
         │   └── {pipeline_id}.yaml
+        ├── locks/
+        │   └── {pipeline_id}.lock
         └── index.yaml
+
+    Supports two write modes:
+        - Immediate (default): Writes to disk immediately
+        - Deferred: Buffers writes and flushes after debounce delay
+
+    Use deferred mode for rapid iteration scenarios (e.g., GREEN phase)
+    where frequent saves would cause I/O overhead.
     """
 
-    def __init__(self, project_path: Path):
+    # Default debounce delay for deferred writes
+    DEFAULT_DEBOUNCE_SECONDS = 0.5
+
+    def __init__(
+        self,
+        project_path: Path,
+        deferred: bool = False,
+        debounce_seconds: float = DEFAULT_DEBOUNCE_SECONDS,
+    ):
         """
         Initialize the state store.
 
         Args:
             project_path: Root path for the project
+            deferred: Enable deferred/batched writes (reduces I/O for rapid saves)
+            debounce_seconds: Delay before flushing deferred writes (default: 0.5s)
         """
         self.project_path = Path(project_path)
         self.root = self.project_path / ".agentforge" / "pipeline"
         self.active_dir = self.root / "active"
         self.completed_dir = self.root / "completed"
         self.index_file = self.root / "index.yaml"
+
+        # Deferred write support
+        self._deferred_mode = deferred
+        self._deferred_manager: DeferredWriteManager | None = None
+        if deferred:
+            self._deferred_manager = DeferredWriteManager(
+                write_func=self._write_yaml,
+                debounce_seconds=debounce_seconds,
+            )
 
         # Ensure directories exist
         self._ensure_dirs()
@@ -141,6 +312,90 @@ class PipelineStateStore:
         self._update_index(state)
 
         logger.debug(f"Saved pipeline state: {state.pipeline_id} -> {file_path}")
+
+    def save_deferred(self, state: PipelineState) -> None:
+        """
+        Save pipeline state using deferred write mode.
+
+        In deferred mode: buffers the write and flushes after debounce delay.
+        In immediate mode: behaves exactly like save().
+
+        Use this for non-critical saves during rapid iteration phases
+        (e.g., progress updates during GREEN phase).
+
+        For critical state changes (status transitions, completions),
+        use save() instead to ensure immediate persistence.
+
+        Args:
+            state: Pipeline state to save
+        """
+        if not self._deferred_mode or self._deferred_manager is None:
+            # Fall back to immediate save
+            self.save(state)
+            return
+
+        # Update timestamp
+        state.touch()
+
+        # Determine target path based on status
+        if state.is_terminal():
+            # Terminal states should be saved immediately
+            self.save(state)
+            return
+
+        file_path = self._get_active_path(state.pipeline_id)
+
+        # Serialize and schedule deferred write
+        data = state.to_dict()
+        self._deferred_manager.schedule_write(file_path, data)
+
+        # Index update is still immediate (small file)
+        self._update_index(state)
+
+        logger.debug(f"Scheduled deferred save: {state.pipeline_id}")
+
+    def flush(self, pipeline_id: str | None = None) -> None:
+        """
+        Flush pending deferred writes.
+
+        Args:
+            pipeline_id: Specific pipeline to flush, or None for all
+
+        Note:
+            No-op if not in deferred mode.
+        """
+        if self._deferred_manager is None:
+            return
+
+        if pipeline_id:
+            # Flush specific pipeline
+            path = self._get_active_path(pipeline_id)
+            self._deferred_manager.flush(path)
+        else:
+            # Flush all
+            self._deferred_manager.flush()
+
+    def flush_all_blocking(self) -> None:
+        """
+        Flush all pending writes and block until complete.
+
+        Call this before shutdown or when you need to ensure
+        all state is persisted.
+        """
+        if self._deferred_manager:
+            self._deferred_manager.flush_blocking()
+
+    @property
+    def pending_writes(self) -> int:
+        """Number of pending deferred writes."""
+        if self._deferred_manager:
+            return self._deferred_manager.pending_count
+        return 0
+
+    @property
+    def deferred_mode(self) -> bool:
+        """Whether deferred write mode is enabled."""
+        return self._deferred_mode
 
     def load(self, pipeline_id: str) -> PipelineState | None:
         """

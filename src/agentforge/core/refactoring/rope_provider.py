@@ -16,13 +16,11 @@ This is a world-class solution, not hand-rolled AST manipulation.
 
 import ast
 from pathlib import Path
-from typing import Optional
 
 from rope.base.project import Project
-from rope.base import libutils
 from rope.refactor.extract import ExtractMethod
 
-from .base import RefactoringProvider, RefactoringResult, CanExtractResult
+from .base import CanExtractResult, RefactoringProvider, RefactoringResult
 
 
 class RopeRefactoringProvider(RefactoringProvider):
@@ -40,7 +38,7 @@ class RopeRefactoringProvider(RefactoringProvider):
 
     def __init__(self, project_path: Path):
         super().__init__(project_path)
-        self._project: Optional[Project] = None
+        self._project: Project | None = None
 
     def _get_project(self) -> Project:
         """Get or create rope project."""
@@ -147,7 +145,7 @@ class RopeRefactoringProvider(RefactoringProvider):
             elif "bad region" in error_msg.lower():
                 return CanExtractResult(
                     can_extract=False,
-                    reason=f"Cannot extract: Invalid selection. Ensure you're selecting complete statements.",
+                    reason="Cannot extract: Invalid selection. Ensure you're selecting complete statements.",
                 )
             else:
                 return CanExtractResult(

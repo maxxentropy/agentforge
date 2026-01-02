@@ -1,0 +1,152 @@
+context_data:
+  check_id: max-function-length
+  contract_id: agentforge
+  file_path: tools/tdflow/phases/refactor.py
+  fix_hint: Extract logic into helper functions or use composition
+  line_number: 47
+  message: 'Function ''execute'' has 98 lines (max: 50)'
+  precomputed:
+    analysis:
+      branch_count: 7
+      cognitive_complexity: 9
+      cyclomatic_complexity: 10
+      line_count: 129
+      loop_count: 0
+      nesting_depth: 1
+    check_definition: "Check Definition for 'max-function-length':\nid: max-function-length\n\
+      name: Maximum Function Length\ntype: ast_check\nseverity: warning\nenabled:\
+      \ true\ndescription: Functions should not exceed 50 lines\nconfig:\n  metric:\
+      \ function_length\n  threshold: 50\n  scope: function\nfix_hint: Extract logic\
+      \ into helper functions or use composition\napplies_to:\n  paths:\n  - '**/*.py'\n\
+      \  exclude_paths:\n  - '**/tests/**'\n  - '**/*_test.py'\n"
+    class_methods:
+    - end_line: 45
+      line: 36
+      name: __init__
+    - end_line: 175
+      line: 47
+      name: execute
+    - end_line: 197
+      line: 177
+      name: _run_conformance_check
+    - end_line: 223
+      line: 199
+      name: _is_clean
+    - end_line: 246
+      line: 225
+      name: _refactor_implementation
+    extraction_suggestions:
+    - description: Extract if block (12 lines)
+      end_line: 94
+      extractable: true
+      impact: Reduces function length by 12 lines
+      start_line: 83
+    - description: Extract if block (11 lines)
+      end_line: 144
+      extractable: true
+      impact: Reduces function length by 11 lines
+      start_line: 134
+    - description: Extract if block (10 lines)
+      end_line: 115
+      extractable: true
+      impact: Reduces function length by 10 lines
+      start_line: 106
+    - description: Extract if block (10 lines)
+      end_line: 130
+      extractable: true
+      impact: Reduces function length by 10 lines
+      start_line: 121
+    - description: Extract if block (10 lines)
+      end_line: 157
+      extractable: true
+      impact: Reduces function length by 10 lines
+      start_line: 148
+    file_context: "      38:         Initialize REFACTOR phase executor.\n      39:\
+      \ \n      40:         Args:\n      41:             session: Current TDFLOW session\n\
+      \      42:             runner: Test runner for the project\n      43:      \
+      \   \"\"\"\n      44:         self.session = session\n      45:         self.runner\
+      \ = runner\n      46: \n>>>   47:     def execute(self, component: ComponentProgress)\
+      \ -> PhaseResult:\n      48:         \"\"\"\n      49:         Execute REFACTOR\
+      \ phase for a component.\n      50: \n      51:         Args:\n      52:   \
+      \          component: Component to refactor\n      53: \n      54:         Returns:\n\
+      \      55:             PhaseResult indicating success/failure\n      56:   \
+      \      \"\"\"\n      57:         start_time = time.time()"
+    fix_strategy: Extract logical sections into helper functions
+    function_lines: 47-175
+    function_source: "    def execute(self, component: ComponentProgress) -> PhaseResult:\n\
+      \        \"\"\"\n        Execute REFACTOR phase for a component.\n\n       \
+      \ Args:\n            component: Component to refactor\n\n        Returns:\n\
+      \            PhaseResult indicating success/failure\n        \"\"\"\n      \
+      \  start_time = time.time()\n\n        # 1. Verify component is in GREEN state\n\
+      \        if component.status != ComponentStatus.GREEN:\n            return PhaseResult(\n\
+      \                phase=TDFlowPhase.REFACTOR,\n                success=False,\n\
+      \                component=component.name,\n                errors=[f\"Component\
+      \ must be in GREEN state, not {component.status.value}\"],\n               \
+      \ duration_seconds=time.time() - start_time,\n            )\n\n        # 2.\
+      \ Verify we have implementation\n        if not component.implementation:\n\
+      \            return PhaseResult(\n                phase=TDFlowPhase.REFACTOR,\n\
+      \                success=False,\n                component=component.name,\n\
+      \                errors=[\"No implementation found - run GREEN phase first\"\
+      ],\n                duration_seconds=time.time() - start_time,\n           \
+      \ )\n\n        # 3. Run conformance checks\n        violations = self._run_conformance_check(component)\n\
+      \n        # 4. If no violations and no obvious improvements, skip refactor\n\
+      \        if not violations and self._is_clean(component):\n            # Mark\
+      \ as refactored without changes\n            component.status = ComponentStatus.REFACTORED\n\
+      \            component.conformance_clean = True\n\n            return PhaseResult(\n\
+      \                phase=TDFlowPhase.REFACTOR,\n                success=True,\n\
+      \                component=component.name,\n                artifacts={\"implementation\"\
+      : component.implementation.path},\n                duration_seconds=time.time()\
+      \ - start_time,\n            )\n\n        # 5. Generate refactored implementation\n\
+      \        impl_path = component.implementation.path\n        original_content\
+      \ = impl_path.read_text()\n\n        refactored_content = self._refactor_implementation(\n\
+      \            component,\n            original_content,\n            violations,\n\
+      \        )\n\n        if not refactored_content or refactored_content == original_content:\n\
+      \            # No changes made - that's OK\n            component.status = ComponentStatus.REFACTORED\n\
+      \            return PhaseResult(\n                phase=TDFlowPhase.REFACTOR,\n\
+      \                success=True,\n                component=component.name,\n\
+      \                artifacts={\"implementation\": impl_path},\n              \
+      \  duration_seconds=time.time() - start_time,\n            )\n\n        # 6.\
+      \ Write refactored implementation\n        impl_path.write_text(refactored_content)\n\
+      \n        # 7. Build and verify tests still pass\n        if not self.runner.build():\n\
+      \            # Revert\n            impl_path.write_text(original_content)\n\
+      \            return PhaseResult(\n                phase=TDFlowPhase.REFACTOR,\n\
+      \                success=False,\n                component=component.name,\n\
+      \                errors=[\"Refactored code failed to build - reverted\"],\n\
+      \                duration_seconds=time.time() - start_time,\n            )\n\
+      \n        result = self.runner.run_tests(filter_pattern=component.name)\n\n\
+      \        if not result.all_passed:\n            # Revert\n            impl_path.write_text(original_content)\n\
+      \            return PhaseResult(\n                phase=TDFlowPhase.REFACTOR,\n\
+      \                success=False,\n                component=component.name,\n\
+      \                test_result=result,\n                errors=[\"Tests failed\
+      \ after refactor - reverted\"],\n                duration_seconds=time.time()\
+      \ - start_time,\n            )\n\n        # 8. Verify no new conformance violations\n\
+      \        new_violations = self._run_conformance_check(component)\n        if\
+      \ len(new_violations) > len(violations):\n            # Revert\n           \
+      \ impl_path.write_text(original_content)\n            return PhaseResult(\n\
+      \                phase=TDFlowPhase.REFACTOR,\n                success=False,\n\
+      \                component=component.name,\n                errors=[\"Refactor\
+      \ introduced new conformance violations - reverted\"],\n                duration_seconds=time.time()\
+      \ - start_time,\n            )\n\n        # 9. Update component\n        component.status\
+      \ = ComponentStatus.REFACTORED\n        component.implementation = ImplementationFile(\n\
+      \            path=impl_path,\n            content=refactored_content,\n    \
+      \    )\n        component.conformance_clean = len(new_violations) == 0\n   \
+      \     component.coverage = self.runner.get_coverage()\n\n        return PhaseResult(\n\
+      \            phase=TDFlowPhase.REFACTOR,\n            success=True,\n      \
+      \      component=component.name,\n            artifacts={\"implementation\"\
+      : impl_path},\n            test_result=result,\n            duration_seconds=time.time()\
+      \ - start_time,\n        )"
+    parent_class: RefactorPhaseExecutor
+    violating_function: execute
+  severity: warning
+  violation_id: V-test-refactor
+current_step: 10
+error: null
+last_updated: '2025-12-31T16:27:35.808900'
+phase: init
+verification:
+  checks_failing: 0
+  checks_passing: 0
+  details: {}
+  last_check_time: null
+  ready_for_completion: false
+  tests_passing: false

@@ -13,21 +13,19 @@ Coordinates profile loading, mapping, conflict resolution, and contract generati
 
 from datetime import datetime
 from pathlib import Path
-from typing import List, Dict, Any, Optional, Tuple
+from typing import Any
 
-from bridge.domain import (
-    GeneratedContract,
-    GeneratedCheck,
-    GenerationReport,
-    ContractSummary,
-    ReviewItem,
+from .conflict_resolver import ConflictResolver
+from .contract_builder import ContractBuilder
+from .domain import (
     Conflict,
-    MappingContext,
+    ContractSummary,
+    GeneratedContract,
+    GenerationReport,
+    ReviewItem,
 )
-from bridge.profile_loader import ProfileLoader
-from bridge.mappings import MappingRegistry
-from bridge.conflict_resolver import ConflictResolver
-from bridge.contract_builder import ContractBuilder
+from .mappings import MappingRegistry
+from .profile_loader import ProfileLoader
 
 
 class BridgeOrchestrator:
@@ -52,7 +50,7 @@ class BridgeOrchestrator:
     def __init__(
         self,
         root_path: Path,
-        profile_path: Optional[Path] = None,
+        profile_path: Path | None = None,
         output_dir: str = "contracts",
         confidence_threshold: float = 0.6,
         verbose: bool = False,
@@ -79,16 +77,16 @@ class BridgeOrchestrator:
         self.builder = ContractBuilder(self.root_path, output_dir)
 
         # State
-        self._profile: Optional[Dict[str, Any]] = None
-        self._contracts: List[GeneratedContract] = []
-        self._all_conflicts: List[Conflict] = []
+        self._profile: dict[str, Any] | None = None
+        self._contracts: list[GeneratedContract] = []
+        self._all_conflicts: list[Conflict] = []
 
     def generate(
         self,
-        zone_filter: Optional[str] = None,
+        zone_filter: str | None = None,
         dry_run: bool = False,
         force: bool = False,
-    ) -> Tuple[List[GeneratedContract], GenerationReport]:
+    ) -> tuple[list[GeneratedContract], GenerationReport]:
         """
         Generate contracts from profile.
 
@@ -100,7 +98,7 @@ class BridgeOrchestrator:
         Returns:
             Tuple of (list of generated contracts, generation report)
         """
-        start_time = datetime.now()
+        datetime.now()
 
         # Load profile
         if self.verbose:
@@ -158,7 +156,7 @@ class BridgeOrchestrator:
     def _generate_zone_contract(
         self,
         zone_name: str
-    ) -> Optional[GeneratedContract]:
+    ) -> GeneratedContract | None:
         """Generate contract for a single zone."""
         if self.verbose:
             print(f"  Generating checks for zone: {zone_name}...")
@@ -205,7 +203,7 @@ class BridgeOrchestrator:
         self,
         zones_processed: int,
         dry_run: bool,
-        written_paths: List[Path],
+        written_paths: list[Path],
     ) -> GenerationReport:
         """Generate summary report."""
         report = GenerationReport(
@@ -294,8 +292,6 @@ class BridgeOrchestrator:
         ]
 
         for contract in contracts:
-            enabled = contract.enabled_count
-            disabled = contract.disabled_count
             path = self.builder.get_output_path(contract.name)
             lines.append(f"  {path} ({len(contract.checks)} checks)")
 
@@ -311,7 +307,7 @@ class BridgeOrchestrator:
 
         return "\n".join(lines)
 
-    def list_mappings(self, pattern_filter: Optional[str] = None) -> List[dict]:
+    def list_mappings(self, pattern_filter: str | None = None) -> list[dict]:
         """
         List available pattern mappings.
 
@@ -330,8 +326,8 @@ class BridgeOrchestrator:
 
     def refresh(
         self,
-        zone_filter: Optional[str] = None,
-    ) -> Tuple[List[GeneratedContract], GenerationReport]:
+        zone_filter: str | None = None,
+    ) -> tuple[list[GeneratedContract], GenerationReport]:
         """
         Regenerate contracts from updated profile.
 
@@ -345,7 +341,7 @@ class BridgeOrchestrator:
         """
         return self.generate(zone_filter=zone_filter, dry_run=False, force=True)
 
-    def write_report(self, report: GenerationReport, path: Optional[Path] = None) -> Path:
+    def write_report(self, report: GenerationReport, path: Path | None = None) -> Path:
         """
         Write generation report to file.
 

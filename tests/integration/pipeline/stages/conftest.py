@@ -1,15 +1,13 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-2-design-pipeline.yaml
-# @spec_file: specs/pipeline-controller/implementation/phase-3-tdd-stages.yaml
-# @spec_file: specs/pipeline-controller/implementation/phase-4-refactor-deliver.yaml
-# @spec_id: pipeline-controller-phase2-v1
-# @spec_id: pipeline-controller-phase3-v1
-# @spec_id: pipeline-controller-phase4-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
+# @spec_id: core-pipeline-v1
+# @spec_id: core-pipeline-v1
 
 """Shared fixtures for stage integration tests."""
 
-from pathlib import Path
-from typing import Dict, Any
-from unittest.mock import MagicMock, patch
+from typing import Any
 
 import pytest
 
@@ -17,7 +15,6 @@ from agentforge.core.pipeline import (
     PipelineController,
     PipelineStateStore,
     StageExecutorRegistry,
-    get_registry,
 )
 from agentforge.core.pipeline.stages import register_design_stages
 
@@ -84,7 +81,7 @@ def mock_llm_client():
                 "tool_results": tool_results or [],
             }
 
-        def get_response(self, stage: str) -> Dict[str, Any]:
+        def get_response(self, stage: str) -> dict[str, Any]:
             """Get the response for a stage."""
             return self.responses.get(stage, {"response": "", "tool_results": []})
 

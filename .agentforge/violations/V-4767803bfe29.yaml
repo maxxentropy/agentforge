@@ -1,0 +1,13 @@
+schema_version: '1.0'
+violation_id: V-4767803bfe29
+contract_id: agentforge
+check_id: max-function-length
+severity: major
+file_path: tools/harness/minimal_context/fix_workflow.py
+message: 'Function ''_with_test_verification'' has 80 lines (max: 50)'
+detected_at: '2025-12-31T18:34:20.641816'
+last_seen_at: '2026-01-01T01:39:13.581535'
+status: open
+line_number: 144
+fix_hint: Extract logic into helper functions or use composition
+test_path: tests/unit/tools/

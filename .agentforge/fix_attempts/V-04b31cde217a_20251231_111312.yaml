@@ -1,0 +1,23 @@
+committed: false
+completed_at: '2025-12-31T11:13:12.724357'
+conformance_passed: false
+error: 'Unexpected error: API error: Error code: 400 - {''type'': ''error'', ''error'':
+  {''type'': ''invalid_request_error'', ''message'': ''Your credit balance is too
+  low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase
+  credits.''}, ''request_id'': ''req_011CWefamBwkDfbVhi8yveWt''}'
+files_modified: []
+phase: failed
+started_at: '2025-12-31T11:13:11.666171'
+steps:
+- action: null
+  duration_seconds: 1.05660080909729
+  error: 'Unexpected error: API error: Error code: 400 - {''type'': ''error'', ''error'':
+    {''type'': ''invalid_request_error'', ''message'': ''Your credit balance is too
+    low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase
+    credits.''}, ''request_id'': ''req_011CWefamBwkDfbVhi8yveWt''}'
+  should_continue: false
+  success: false
+  tokens_used: 0
+  tool_results: []
+tests_passed: false
+violation_id: V-04b31cde217a

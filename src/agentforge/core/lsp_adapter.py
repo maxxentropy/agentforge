@@ -36,18 +36,18 @@ LSP Protocol Notes:
 """
 
 import os
-import sys
 import shutil
+import sys
 import time
-from typing import Optional, List
 from pathlib import Path
 
-from .lsp_types import Location, Symbol, SymbolKind, Diagnostic, HoverInfo
 from .lsp_client import (
-    LSPClient, LSPError, LSPServerNotFound, LSPInitializationError,
-    LSPRequestError, LSPTimeoutError
+    LSPClient,
+    LSPInitializationError,
+    LSPRequestError,
+    LSPServerNotFound,
 )
-
+from .lsp_types import Diagnostic, HoverInfo, Location, Symbol, SymbolKind
 
 # =============================================================================
 # LSP Adapter Base Class
@@ -56,11 +56,11 @@ from .lsp_client import (
 class LSPAdapter:
     """Abstract adapter for language servers."""
 
-    SERVER_COMMAND: List[str] = []
+    SERVER_COMMAND: list[str] = []
     SERVER_NAME: str = "unknown"
     INSTALL_INSTRUCTIONS: str = ""
     LANGUAGE_ID: str = "text"
-    FILE_EXTENSIONS: List[str] = []
+    FILE_EXTENSIONS: list[str] = []
 
     def __init__(self, project_path: str):
         """
@@ -70,7 +70,7 @@ class LSPAdapter:
             project_path: Root directory of the project
         """
         self.project_path = Path(project_path).resolve()
-        self.client: Optional[LSPClient] = None
+        self.client: LSPClient | None = None
         self._initialized = False
         self._open_documents: set = set()
 
@@ -137,7 +137,7 @@ class LSPAdapter:
             return
 
         try:
-            with open(abs_path, 'r', encoding='utf-8', errors='replace') as f:
+            with open(abs_path, encoding='utf-8', errors='replace') as f:
                 content = f.read()
 
             self.client.send_notification('textDocument/didOpen', {
@@ -167,7 +167,7 @@ class LSPAdapter:
         self.client.send_notification('textDocument/didClose', {'textDocument': {'uri': uri}})
         self._open_documents.discard(uri)
 
-    def get_symbols(self, file: str) -> List[Symbol]:
+    def get_symbols(self, file: str) -> list[Symbol]:
         """Get all symbols defined in a file."""
         self._ensure_initialized()
         self._open_document(file)
@@ -186,7 +186,7 @@ class LSPAdapter:
         except LSPRequestError:
             return []
 
-    def _parse_document_symbols(self, symbols: list, file_path: str, container: str = None) -> List[Symbol]:
+    def _parse_document_symbols(self, symbols: list, file_path: str, container: str = None) -> list[Symbol]:
         """Parse document symbols from LSP response."""
         result = []
         for sym in symbols:
@@ -230,7 +230,7 @@ class LSPAdapter:
             return uri[7:]
         return uri
 
-    def get_workspace_symbols(self, query: str) -> List[Symbol]:
+    def get_workspace_symbols(self, query: str) -> list[Symbol]:
         """Search for symbols across the workspace."""
         self._ensure_initialized()
 
@@ -257,7 +257,7 @@ class LSPAdapter:
         except LSPRequestError:
             return []
 
-    def get_definition(self, file: str, line: int, col: int) -> Optional[Location]:
+    def get_definition(self, file: str, line: int, col: int) -> Location | None:
         """Get definition location for symbol at position (0-based line/col)."""
         self._ensure_initialized()
         self._open_document(file)
@@ -292,7 +292,7 @@ class LSPAdapter:
         except LSPRequestError:
             return None
 
-    def get_references(self, file: str, line: int, col: int, include_declaration: bool = True) -> List[Location]:
+    def get_references(self, file: str, line: int, col: int, include_declaration: bool = True) -> list[Location]:
         """Get all references to symbol at position (0-based line/col)."""
         self._ensure_initialized()
         self._open_document(file)
@@ -323,7 +323,7 @@ class LSPAdapter:
         except LSPRequestError:
             return []
 
-    def get_hover(self, file: str, line: int, col: int) -> Optional[HoverInfo]:
+    def get_hover(self, file: str, line: int, col: int) -> HoverInfo | None:
         """Get hover information for symbol at position (0-based line/col)."""
         self._ensure_initialized()
         self._open_document(file)
@@ -358,7 +358,7 @@ class LSPAdapter:
         except LSPRequestError:
             return None
 
-    def get_diagnostics(self, file: str) -> List[Diagnostic]:
+    def get_diagnostics(self, file: str) -> list[Diagnostic]:
         """Get compiler errors/warnings for a file."""
         self._ensure_initialized()
         self._open_document(file)
@@ -381,20 +381,6 @@ class LSPAdapter:
             self.client.shutdown()
             self.client = None
         self._initialized = False
-
-
-# =============================================================================
-# Re-exports for backwards compatibility
-# =============================================================================
-
-# Import language-specific adapters for re-export
-# Done at module level to avoid circular imports
-def _get_adapters():
-    from .lsp_adapters import (
-        CSharpLSPAdapter, OmniSharpAdapter, PyrightAdapter, TypeScriptAdapter,
-        get_adapter_for_project
-    )
-    return CSharpLSPAdapter, OmniSharpAdapter, PyrightAdapter, TypeScriptAdapter, get_adapter_for_project
 
 
 # CLI entry point

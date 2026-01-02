@@ -1,4 +1,4 @@
-# @spec_file: specs/minimal-context-architecture/04-context-templates.yaml
+# @spec_file: .agentforge/specs/core-context-v1.yaml
 # @spec_id: context-templates-v1
 # @component_id: context-templates-models
 # @test_path: tests/unit/context/test_templates.py
@@ -20,7 +20,6 @@ Token budget allocation:
 """
 
 from enum import Enum
-from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -52,20 +51,20 @@ class TierDefinition(BaseModel):
 
     name: str
     max_tokens: int
-    sections: List[ContextSection]
+    sections: list[ContextSection]
 
-    def get_section(self, name: str) -> Optional[ContextSection]:
+    def get_section(self, name: str) -> ContextSection | None:
         """Get a section by name."""
         for section in self.sections:
             if section.name == name:
                 return section
         return None
 
-    def get_required_sections(self) -> List[ContextSection]:
+    def get_required_sections(self) -> list[ContextSection]:
         """Get all required sections."""
         return [s for s in self.sections if s.required]
 
-    def get_section_names(self) -> List[str]:
+    def get_section_names(self) -> list[str]:
         """Get list of all section names."""
         return [s.name for s in self.sections]
 
@@ -75,4 +74,4 @@ class PhaseContextDef(BaseModel):
 
     phase: str
     tier2: TierDefinition
-    system_prompt_additions: Optional[str] = None
+    system_prompt_additions: str | None = None

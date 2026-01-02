@@ -1,0 +1,13 @@
+schema_version: '1.0'
+violation_id: V-383f36609ec7
+contract_id: agentforge
+check_id: single-responsibility-modules
+severity: minor
+file_path: tools/harness/llm_executor_domain.py
+message: 'Class ''ConversationMessage'' has 5 methods (max: 3)'
+detected_at: '2026-01-01T01:39:13.934466'
+last_seen_at: '2026-01-01T01:39:13.934466'
+status: open
+line_number: 246
+fix_hint: Split modules with too many classes into focused single-class modules
+test_path: tests/unit/tools/

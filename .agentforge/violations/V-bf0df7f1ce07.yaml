@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-bf0df7f1ce07
+contract_id: agentforge
+check_id: max-function-length
+severity: major
+file_path: src/agentforge/core/discovery/manager.py
+message: 'Function ''_generate_multi_zone_profile'' has 61 lines (max: 50)'
+detected_at: '2026-01-01T01:39:13.608621'
+last_seen_at: '2026-01-01T01:39:13.608621'
+status: open
+line_number: 771
+fix_hint: Extract logic into helper functions or use composition

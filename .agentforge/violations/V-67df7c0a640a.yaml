@@ -1,0 +1,11 @@
+schema_version: '1.0'
+violation_id: V-67df7c0a640a
+contract_id: agentforge
+check_id: max-file-lines
+severity: major
+file_path: src/agentforge/core/harness/minimal_context/fix_workflow.py
+message: File exceeds line limit (1564 lines > 500)
+detected_at: '2026-01-01T01:39:13.733808'
+last_seen_at: '2026-01-01T01:39:13.733808'
+status: open
+fix_hint: Consider splitting into smaller files

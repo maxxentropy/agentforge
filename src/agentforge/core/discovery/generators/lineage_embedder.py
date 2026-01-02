@@ -1,3 +1,7 @@
+# @spec_file: .agentforge/specs/core-discovery-generators-v1.yaml
+# @spec_id: core-discovery-generators-v1
+# @component_id: discovery-generators-lineage-embedder
+
 """
 Lineage Metadata Embedder
 =========================
@@ -7,8 +11,8 @@ After embedding, brownfield code has the same traceability as greenfield code.
 
 Lineage Format (Python files):
 ```
-# @spec_file: .agentforge/specs/as-built-core-v1.yaml
-# @spec_id: as-built-core-v1
+# @spec_file: .agentforge/specs/core-v1.yaml
+# @spec_id: core-v1
 # @component_id: context-models
 # @test_path: tests/unit/core/test_context_models.py
 ```
@@ -20,10 +24,8 @@ The orchestration engine uses this metadata to:
 """
 
 import re
-from dataclasses import dataclass, field
-from datetime import datetime
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
 
 
 @dataclass
@@ -32,8 +34,8 @@ class LineageMetadata:
     spec_file: str
     spec_id: str
     component_id: str
-    test_path: Optional[str] = None  # For implementation files
-    impl_path: Optional[str] = None  # For test files
+    test_path: str | None = None  # For implementation files
+    impl_path: str | None = None  # For test files
 
 
 @dataclass
@@ -85,12 +87,12 @@ class LineageEmbedder:
         """
         self.root_path = root_path
         self.dry_run = dry_run
-        self._results: List[EmbedResult] = []
+        self._results: list[EmbedResult] = []
 
     def embed_all(
         self,
-        lineage_updates: Dict[str, Dict[str, str]],
-    ) -> List[EmbedResult]:
+        lineage_updates: dict[str, dict[str, str]],
+    ) -> list[EmbedResult]:
         """
         Embed lineage metadata into all specified files.
 
@@ -226,7 +228,7 @@ class LineageEmbedder:
         self,
         content: str,
         comment_prefix: str,
-    ) -> Tuple[bool, int, int]:
+    ) -> tuple[bool, int, int]:
         """
         Find an existing lineage block in the content.
 
@@ -349,11 +351,11 @@ class LineageEmbedder:
         return "\n".join(new_lines)
 
     @property
-    def results(self) -> List[EmbedResult]:
+    def results(self) -> list[EmbedResult]:
         """Get the results from the last embed_all call."""
         return self._results
 
-    def summary(self) -> Dict[str, int]:
+    def summary(self) -> dict[str, int]:
         """Get a summary of the embedding results."""
         summary = {
             "added": 0,

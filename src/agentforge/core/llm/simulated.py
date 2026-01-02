@@ -1,5 +1,5 @@
-# @spec_file: specs/minimal-context-architecture/05-llm-integration.yaml
-# @spec_id: llm-integration-v1
+# @spec_file: .agentforge/specs/core-llm-v1.yaml
+# @spec_id: core-llm-v1
 # @component_id: llm-simulated
 # @test_path: tests/unit/llm/test_simulated.py
 
@@ -32,9 +32,10 @@ Usage:
 """
 
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
 import yaml
 
@@ -56,8 +57,8 @@ class SimulatedResponse:
     Can be used directly or loaded from YAML scripts.
     """
     content: str = ""
-    tool_calls: List[Dict[str, Any]] = field(default_factory=list)
-    thinking: Optional[str] = None
+    tool_calls: list[dict[str, Any]] = field(default_factory=list)
+    thinking: str | None = None
     stop_reason: str = "end_turn"
 
     def to_llm_response(self, call_index: int = 0) -> LLMResponse:
@@ -101,9 +102,9 @@ class ResponseStrategy(ABC):
     def get_response(
         self,
         system: str,
-        messages: List[Dict[str, Any]],
-        tools: List[ToolDefinition],
-        context: Dict[str, Any],
+        messages: list[dict[str, Any]],
+        tools: list[ToolDefinition],
+        context: dict[str, Any],
     ) -> SimulatedResponse:
         """
         Get the next simulated response.
@@ -153,8 +154,8 @@ class ScriptedResponseStrategy(ResponseStrategy):
 
     def __init__(
         self,
-        script_path: Optional[Path] = None,
-        script_data: Optional[Dict[str, Any]] = None,
+        script_path: Path | None = None,
+        script_data: dict[str, Any] | None = None,
     ):
         """
         Initialize with script from file or dict.
@@ -175,9 +176,9 @@ class ScriptedResponseStrategy(ResponseStrategy):
     def get_response(
         self,
         system: str,
-        messages: List[Dict[str, Any]],
-        tools: List[ToolDefinition],
-        context: Dict[str, Any],
+        messages: list[dict[str, Any]],
+        tools: list[ToolDefinition],
+        context: dict[str, Any],
     ) -> SimulatedResponse:
         """Get next scripted response."""
         responses = self.script.get("responses", [])
@@ -233,7 +234,7 @@ class PatternMatchingStrategy(ResponseStrategy):
     """
 
     def __init__(self):
-        self.patterns: List[tuple] = []
+        self.patterns: list[tuple] = []
         self._default_response = SimulatedResponse(
             content="No matching pattern found",
             tool_calls=[{"name": "escalate", "input": {"reason": "No pattern match"}}],
@@ -241,7 +242,7 @@ class PatternMatchingStrategy(ResponseStrategy):
 
     def add_pattern(
         self,
-        matcher: Callable[[Dict[str, Any]], bool],
+        matcher: Callable[[dict[str, Any]], bool],
         response: SimulatedResponse,
     ) -> "PatternMatchingStrategy":
         """
@@ -265,9 +266,9 @@ class PatternMatchingStrategy(ResponseStrategy):
     def get_response(
         self,
         system: str,
-        messages: List[Dict[str, Any]],
-        tools: List[ToolDefinition],
-        context: Dict[str, Any],
+        messages: list[dict[str, Any]],
+        tools: list[ToolDefinition],
+        context: dict[str, Any],
     ) -> SimulatedResponse:
         """Get response matching first pattern."""
         # Build full context for matchers
@@ -296,7 +297,7 @@ class SequentialStrategy(ResponseStrategy):
     simple test cases.
     """
 
-    def __init__(self, responses: List[SimulatedResponse]):
+    def __init__(self, responses: list[SimulatedResponse]):
         """
         Initialize with list of responses.
 
@@ -309,9 +310,9 @@ class SequentialStrategy(ResponseStrategy):
     def get_response(
         self,
         system: str,
-        messages: List[Dict[str, Any]],
-        tools: List[ToolDefinition],
-        context: Dict[str, Any],
+        messages: list[dict[str, Any]],
+        tools: list[ToolDefinition],
+        context: dict[str, Any],
     ) -> SimulatedResponse:
         """Get next response in sequence."""
         if self.current_index >= len(self.responses):
@@ -365,8 +366,8 @@ class SimulatedLLMClient(LLMClient):
 
     def __init__(
         self,
-        strategy: Optional[ResponseStrategy] = None,
-        default_response: Optional[SimulatedResponse] = None,
+        strategy: ResponseStrategy | None = None,
+        default_response: SimulatedResponse | None = None,
     ):
         """
         Initialize simulated client.
@@ -387,14 +388,14 @@ class SimulatedLLMClient(LLMClient):
         self._total_output_tokens = 0
 
         # Call history for debugging
-        self._call_history: List[Dict[str, Any]] = []
+        self._call_history: list[dict[str, Any]] = []
 
     def complete(
         self,
         system: str,
-        messages: List[Dict[str, Any]],
-        tools: Optional[List[ToolDefinition]] = None,
-        thinking: Optional[ThinkingConfig] = None,
+        messages: list[dict[str, Any]],
+        tools: list[ToolDefinition] | None = None,
+        thinking: ThinkingConfig | None = None,
         tool_choice: str = "auto",
         max_tokens: int = 4096,
     ) -> LLMResponse:
@@ -435,7 +436,7 @@ class SimulatedLLMClient(LLMClient):
 
         return response
 
-    def get_usage_stats(self) -> Dict[str, int]:
+    def get_usage_stats(self) -> dict[str, int]:
         """Get cumulative usage statistics."""
         return {
             "total_input_tokens": self._total_input_tokens,
@@ -450,7 +451,7 @@ class SimulatedLLMClient(LLMClient):
         self._total_output_tokens = 0
         self._call_count = 0
 
-    def get_call_history(self) -> List[Dict[str, Any]]:
+    def get_call_history(self) -> list[dict[str, Any]]:
         """Get history of all calls made (for debugging)."""
         return list(self._call_history)
 
@@ -466,7 +467,7 @@ class SimulatedLLMClient(LLMClient):
             self.strategy.reset()
 
 
-def create_simple_client(responses: List[Dict[str, Any]]) -> SimulatedLLMClient:
+def create_simple_client(responses: list[dict[str, Any]]) -> SimulatedLLMClient:
     """
     Create a simulated client with simple response list.
 

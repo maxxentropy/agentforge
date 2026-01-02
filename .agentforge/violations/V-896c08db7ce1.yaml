@@ -1,0 +1,13 @@
+schema_version: '1.0'
+violation_id: V-896c08db7ce1
+contract_id: agentforge
+check_id: single-responsibility-modules
+severity: minor
+file_path: tests/unit/harness/test_agent_orchestrator.py
+message: 'Class ''TestGetStatus'' has 7 methods (max: 3)'
+detected_at: '2025-12-31T12:15:10.131364'
+last_seen_at: '2026-01-01T01:39:14.077032'
+status: open
+line_number: 427
+fix_hint: Split modules with too many classes into focused single-class modules
+test_path: tests/unit/harness/test_agent_orchestrator.py

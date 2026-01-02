@@ -1,5 +1,5 @@
-# @spec_file: .agentforge/specs/harness-minimal-context-v1.yaml
-# @spec_id: harness-minimal-context-v1
+# @spec_file: .agentforge/specs/core-harness-minimal-context-v1.yaml
+# @spec_id: core-harness-minimal-context-v1
 # @component_id: harness-minimal_context-executor
 # @impl_path: tools/harness/minimal_context/executor.py
 
@@ -7,10 +7,10 @@
 
 import pytest
 
-from tools.harness.action_parser import ActionParser
-from tools.harness.llm_executor_domain import (
-    ActionType,
+from agentforge.core.harness.action_parser import ActionParser
+from agentforge.core.harness.llm_executor_domain import (
     ActionParseError,
+    ActionType,
 )
 
 

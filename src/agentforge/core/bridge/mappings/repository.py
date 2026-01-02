@@ -10,11 +10,10 @@ Repository Pattern Mappings
 Mappings for Repository pattern enforcement.
 """
 
-from typing import List
 
-from bridge.mappings.base import PatternMapping
-from bridge.mappings.registry import MappingRegistry
-from bridge.domain import CheckTemplate, MappingContext
+from ..domain import CheckTemplate, MappingContext
+from .base import PatternMapping
+from .registry import MappingRegistry
 
 
 @MappingRegistry.register
@@ -38,7 +37,7 @@ class RepositoryPatternMapping(PatternMapping):
             return context.get_pattern_confidence("repository") >= self.min_confidence
         return False
 
-    def get_templates(self, context: MappingContext) -> List[CheckTemplate]:
+    def get_templates(self, context: MappingContext) -> list[CheckTemplate]:
         """Get Repository pattern check templates."""
         templates = [
             CheckTemplate(
@@ -102,12 +101,9 @@ class GenericRepositoryMapping(PatternMapping):
 
         # Check metadata for generic indicator
         repo_meta = context.get_pattern_metadata("repository")
-        if repo_meta.get("primary") == "generic_repository":
-            return True
+        return repo_meta.get("primary") == "generic_repository"
 
-        return False
-
-    def get_templates(self, context: MappingContext) -> List[CheckTemplate]:
+    def get_templates(self, context: MappingContext) -> list[CheckTemplate]:
         """Get generic repository check templates."""
         return [
             CheckTemplate(

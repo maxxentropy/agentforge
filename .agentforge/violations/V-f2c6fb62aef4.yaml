@@ -1,0 +1,13 @@
+schema_version: '1.0'
+violation_id: V-f2c6fb62aef4
+contract_id: agentforge
+check_id: single-responsibility-modules
+severity: minor
+file_path: tests/unit/tools/tdflow/test_orchestrator.py
+message: 'Class ''TestOrchestratorComponentSelection'' has 4 methods (max: 3)'
+detected_at: '2025-12-31T02:40:13.240057'
+last_seen_at: '2026-01-01T01:39:14.002372'
+status: open
+line_number: 171
+fix_hint: Split modules with too many classes into focused single-class modules
+test_path: tests/unit/tools/tdflow/test_orchestrator.py

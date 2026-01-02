@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-d4841588b8da
+contract_id: agentforge
+check_id: max-function-length
+severity: major
+file_path: tools/harness/minimal_context/fix_workflow.py
+message: 'Function ''_action_replace_lines'' has 61 lines (max: 50)'
+detected_at: '2025-12-31T17:47:35.633996'
+last_seen_at: '2025-12-31T17:47:35.633996'
+status: stale
+line_number: 433
+fix_hint: Extract logic into helper functions or use composition

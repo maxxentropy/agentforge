@@ -10,18 +10,18 @@ Enables automated conformance checking in CI/CD pipelines with:
 - Platform integrations (GitHub Actions, Azure DevOps)
 """
 
+from agentforge.core.cicd.baseline import BaselineError, BaselineManager, GitError, GitHelper
 from agentforge.core.cicd.domain import (
-    CIMode,
-    ExitCode,
-    CIViolation,
-    BaselineEntry,
     Baseline,
     BaselineComparison,
-    CIResult,
+    BaselineEntry,
     CIConfig,
+    CIMode,
+    CIResult,
+    CIViolation,
+    ExitCode,
 )
-from agentforge.core.cicd.baseline import BaselineManager, GitHelper, BaselineError, GitError
-from agentforge.core.cicd.runner import CIRunner, CheckCache
+from agentforge.core.cicd.runner import CheckCache, CIRunner
 
 __all__ = [
     # Domain

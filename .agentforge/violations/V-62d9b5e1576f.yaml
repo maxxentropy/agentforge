@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-62d9b5e1576f
+contract_id: agentforge
+check_id: max-parameter-count
+severity: major
+file_path: src/agentforge/cli/click_commands/contracts.py
+message: 'Function ''contracts_check'' has 8 parameters (max: 5)'
+detected_at: '2026-01-01T01:39:13.707459'
+last_seen_at: '2026-01-01T01:39:13.707459'
+status: open
+line_number: 77
+fix_hint: Group related parameters into a dataclass or use **kwargs

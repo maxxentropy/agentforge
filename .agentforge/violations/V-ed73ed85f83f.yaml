@@ -1,0 +1,13 @@
+schema_version: '1.0'
+violation_id: V-ed73ed85f83f
+contract_id: agentforge
+check_id: fixtures-in-conftest
+severity: minor
+file_path: tests/unit/tools/tdflow/test_orchestrator.py
+message: 'Forbidden pattern found: ''@pytest.fixture'''
+detected_at: '2025-12-31T02:40:13.278673'
+last_seen_at: '2026-01-01T01:39:14.270710'
+status: open
+line_number: 174
+fix_hint: Move shared fixtures to conftest.py
+test_path: tests/unit/tools/tdflow/test_orchestrator.py

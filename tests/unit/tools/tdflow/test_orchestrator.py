@@ -1,24 +1,25 @@
-# @spec_file: .agentforge/specs/tdflow-v1.yaml
-# @spec_id: tdflow-v1
+# @spec_file: .agentforge/specs/core-tdflow-v1.yaml
+# @spec_id: core-tdflow-v1
 # @component_id: tools-tdflow-orchestrator
 # @impl_path: tools/tdflow/orchestrator.py
 
 """Tests for TDFLOW orchestrator."""
 
-import pytest
 import tempfile
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from tools.tdflow.domain import (
+import pytest
+
+from agentforge.core.tdflow.domain import (
     ComponentProgress,
     ComponentStatus,
     TDFlowPhase,
     TDFlowSession,
     TestResult,
 )
-from tools.tdflow.orchestrator import TDFlowOrchestrator
+from agentforge.core.tdflow.orchestrator import TDFlowOrchestrator
 
 
 class TestTDFlowOrchestrator:
@@ -99,8 +100,8 @@ components:
         assert result.success is False
         assert "No active session" in result.errors[0]
 
-    @patch("tools.tdflow.phases.red.RedPhaseExecutor.execute")
-    @patch("tools.tdflow.runners.base.TestRunner.for_framework")
+    @patch("agentforge.core.tdflow.phases.red.RedPhaseExecutor.execute")
+    @patch("agentforge.core.tdflow.runners.base.TestRunner.for_framework")
     def test_run_red_success(
         self,
         mock_runner: MagicMock,
@@ -110,7 +111,7 @@ components:
         temp_dir: Path,
     ):
         """Run red executes phase successfully."""
-        from tools.tdflow.domain import PhaseResult
+        from agentforge.core.tdflow.domain import PhaseResult
 
         # Mock runner
         runner_instance = MagicMock()

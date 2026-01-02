@@ -1,0 +1,16 @@
+schema_version: '1.0'
+violation_id: V-260e39afe6f6
+contract_id: agentforge
+check_id: single-responsibility-modules
+severity: minor
+file_path: tools/harness/minimal_context/fix_workflow.py
+message: 'Class ''MinimalContextFixWorkflow'' has 11 methods (max: 3)'
+detected_at: '2025-12-31T12:15:10.031332'
+last_seen_at: '2025-12-31T12:18:45.004830'
+status: resolved
+line_number: 24
+fix_hint: Split modules with too many classes into focused single-class modules
+resolution:
+  resolved_at: '2025-12-31T14:51:44.676039'
+  resolved_by: system
+  reason: No longer detected in full verification run

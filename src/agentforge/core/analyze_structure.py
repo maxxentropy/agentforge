@@ -12,12 +12,10 @@ Usage:
 """
 
 import ast
-import re
 import sys
-from pathlib import Path
-from dataclasses import dataclass, field, asdict
-from typing import Optional
 from collections import defaultdict
+from dataclasses import asdict, dataclass
+from pathlib import Path
 
 
 @dataclass
@@ -30,7 +28,7 @@ class ClassInfo:
     methods: list[str]
     bases: list[str]
     decorators: list[str]
-    docstring: Optional[str]
+    docstring: str | None
 
 
 @dataclass
@@ -45,7 +43,7 @@ class FunctionInfo:
     is_public: bool
     is_async: bool
     decorators: list[str]
-    docstring: Optional[str]
+    docstring: str | None
 
 
 @dataclass
@@ -157,7 +155,7 @@ class StructureAnalyzer(ast.NodeVisitor):
                     calls.append(child.func.attr)
         return list(set(calls))
 
-    def _truncate_docstring(self, docstring: Optional[str]) -> Optional[str]:
+    def _truncate_docstring(self, docstring: str | None) -> str | None:
         """Truncate docstring to 100 chars if needed."""
         if docstring and len(docstring) > 100:
             return docstring[:100] + "..."

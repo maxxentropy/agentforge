@@ -1,20 +1,18 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-1-foundation.yaml
-# @spec_id: pipeline-controller-phase1-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
+# @spec_id: core-pipeline-v1
 # @component_id: pipeline-state-store
+# @component_id: state-store-list
 
 """Tests for pipeline state persistence."""
 
 import threading
 import time
-from pathlib import Path
-
-import pytest
-import yaml
 
 from agentforge.core.pipeline import (
-    PipelineState,
-    PipelineStatus,
     PipelineStateStore,
+    PipelineStatus,
     create_pipeline_state,
 )
 
@@ -198,7 +196,7 @@ class TestPipelineStateStore:
         def update_state(n):
             try:
                 # Retry load if we hit a race condition with concurrent write
-                for attempt in range(3):
+                for _attempt in range(3):
                     loaded = store.load(state.pipeline_id)
                     if loaded is not None:
                         break
@@ -221,3 +219,86 @@ class TestPipelineStateStore:
         # State should have some updates (order depends on timing)
         final = store.load(state.pipeline_id)
         assert final is not None
+
+
+class TestStateStoreList:
+    """Tests for unified list() method - Phase 6 API Integration."""
+
+    def test_list_all_pipelines(self, state_store, temp_project):
+        """list() returns all pipelines when no filter."""
+        # Create pipelines with various statuses
+        for i, status in enumerate([
+            PipelineStatus.PENDING,
+            PipelineStatus.RUNNING,
+            PipelineStatus.COMPLETED,
+            PipelineStatus.FAILED,
+        ]):
+            state = create_pipeline_state(f"req{i}", temp_project)
+            state.status = status
+            state_store.save(state)
+
+        all_pipelines = state_store.list()
+        assert len(all_pipelines) == 4
+
+    def test_list_filtered_by_status(self, state_store, temp_project):
+        """list(status=...) filters correctly."""
+        state1 = create_pipeline_state("req1", temp_project)
+        state2 = create_pipeline_state("req2", temp_project)
+        state3 = create_pipeline_state("req3", temp_project)
+
+        state1.status = PipelineStatus.RUNNING
+        state2.status = PipelineStatus.RUNNING
+        state3.status = PipelineStatus.COMPLETED
+
+        state_store.save(state1)
+        state_store.save(state2)
+        state_store.save(state3)
+
+        running = state_store.list(status=PipelineStatus.RUNNING)
+        assert len(running) == 2
+
+        completed = state_store.list(status=PipelineStatus.COMPLETED)
+        assert len(completed) == 1
+
+    def test_list_respects_limit(self, state_store, temp_project):
+        """list(limit=N) returns at most N results."""
+        for i in range(10):
+            state = create_pipeline_state(f"req{i}", temp_project)
+            state_store.save(state)
+
+        limited = state_store.list(limit=5)
+        assert len(limited) == 5
+
+    def test_list_ordered_by_date_newest_first(self, state_store, temp_project):
+        """list() returns results ordered by created_at descending."""
+        import time
+
+        states = []
+        for i in range(3):
+            state = create_pipeline_state(f"req{i}", temp_project)
+            state_store.save(state)
+            states.append(state)
+            time.sleep(0.01)  # Ensure different timestamps
+
+        result = state_store.list()
+
+        # Newest (last created) should be first
+        assert result[0].pipeline_id == states[2].pipeline_id
+        assert result[2].pipeline_id == states[0].pipeline_id
+
+    def test_list_empty_store(self, state_store):
+        """list() returns empty list when no pipelines."""
+        result = state_store.list()
+        assert result == []
+
+    def test_list_with_status_and_limit(self, state_store, temp_project):
+        """list() combines status filter and limit."""
+        for i in range(10):
+            state = create_pipeline_state(f"req{i}", temp_project)
+            state.status = PipelineStatus.RUNNING if i < 7 else PipelineStatus.COMPLETED
+            state_store.save(state)
+
+        running = state_store.list(status=PipelineStatus.RUNNING, limit=3)
+        assert len(running) == 3
+        for s in running:
+            assert s.status == PipelineStatus.RUNNING

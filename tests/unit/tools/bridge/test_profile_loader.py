@@ -1,17 +1,14 @@
-# @spec_file: .agentforge/specs/discovery-generators-v1.yaml
-# @spec_id: discovery-generators-v1
+# @spec_file: .agentforge/specs/core-discovery-generators-v1.yaml
+# @spec_id: core-discovery-generators-v1
 # @component_id: discovery-generators-profile
 # @impl_path: tools/discovery/generators/profile.py
 
 """Unit tests for profile loader."""
 
+
 import pytest
-from pathlib import Path
 
-import sys
-sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent.parent / "tools"))
-
-from bridge.profile_loader import ProfileLoader
+from agentforge.core.bridge.profile_loader import ProfileLoader
 
 
 class TestProfileLoader:

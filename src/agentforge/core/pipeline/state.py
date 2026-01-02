@@ -1,5 +1,5 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-1-foundation.yaml
-# @spec_id: pipeline-controller-phase1-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
 # @component_id: pipeline-state
 # @test_path: tests/unit/pipeline/test_state.py
 
@@ -15,12 +15,12 @@ The state model supports:
 - Serialization to/from YAML for persistence
 """
 
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional
-import uuid
+from typing import Any
 
 
 class PipelineStatus(Enum):
@@ -56,12 +56,12 @@ class StageState:
 
     stage_name: str
     status: StageStatus = StageStatus.PENDING
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
-    artifacts: Dict[str, Any] = field(default_factory=dict)
-    error: Optional[str] = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+    artifacts: dict[str, Any] = field(default_factory=dict)
+    error: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary for YAML storage."""
         return {
             "stage_name": self.stage_name,
@@ -73,7 +73,7 @@ class StageState:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "StageState":
+    def from_dict(cls, data: dict[str, Any]) -> "StageState":
         """Deserialize from dictionary."""
         return cls(
             stage_name=data["stage_name"],
@@ -97,7 +97,7 @@ class StageState:
         self.status = StageStatus.RUNNING
         self.started_at = datetime.now()
 
-    def mark_completed(self, artifacts: Dict[str, Any] = None) -> None:
+    def mark_completed(self, artifacts: dict[str, Any] = None) -> None:
         """Mark stage as completed with optional artifacts."""
         self.status = StageStatus.COMPLETED
         self.completed_at = datetime.now()
@@ -147,16 +147,16 @@ class PipelineState:
     status: PipelineStatus
     request: str
     project_path: Path
-    stages: Dict[str, StageState] = field(default_factory=dict)
-    current_stage: Optional[str] = None
+    stages: dict[str, StageState] = field(default_factory=dict)
+    current_stage: str | None = None
     created_at: datetime = field(default_factory=datetime.now)
     updated_at: datetime = field(default_factory=datetime.now)
-    config: Dict[str, Any] = field(default_factory=dict)
+    config: dict[str, Any] = field(default_factory=dict)
 
     # Stage order for the pipeline template
-    stage_order: List[str] = field(default_factory=list)
+    stage_order: list[str] = field(default_factory=list)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary for YAML storage."""
         return {
             "schema_version": "1.0",
@@ -176,7 +176,7 @@ class PipelineState:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "PipelineState":
+    def from_dict(cls, data: dict[str, Any]) -> "PipelineState":
         """Deserialize from dictionary."""
         stages = {
             name: StageState.from_dict(state_data)
@@ -201,7 +201,7 @@ class PipelineState:
         """Update the updated_at timestamp."""
         self.updated_at = datetime.now()
 
-    def get_next_stage(self) -> Optional[str]:
+    def get_next_stage(self) -> str | None:
         """Get the next stage to execute based on stage_order."""
         if not self.current_stage:
             # First stage
@@ -222,7 +222,7 @@ class PipelineState:
             self.stages[stage_name] = StageState(stage_name=stage_name)
         return self.stages[stage_name]
 
-    def collect_artifacts(self) -> Dict[str, Any]:
+    def collect_artifacts(self) -> dict[str, Any]:
         """Collect all artifacts from completed stages."""
         artifacts = {}
         for stage_name in self.stage_order:
@@ -260,7 +260,7 @@ def create_pipeline_state(
     request: str,
     project_path: Path,
     template: str = "implement",
-    config: Dict[str, Any] = None,
+    config: dict[str, Any] = None,
 ) -> PipelineState:
     """
     Factory function to create a new pipeline state.

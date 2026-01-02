@@ -6,16 +6,13 @@ Detects code patterns through multi-signal analysis.
 Combines naming conventions, structural analysis, and AST patterns.
 """
 
-from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Dict, List, Optional, Set, Any
 import re
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
 
-from ..domain import (
-    Detection, DetectionSource, ConfidenceLevel, PatternDetection
-)
+from ..domain import Detection, DetectionSource, PatternDetection
 from ..providers.base import LanguageProvider, Symbol
-
 
 # Pattern definitions with detection signals
 PATTERN_DEFINITIONS = {
@@ -392,9 +389,9 @@ class PatternMatch:
 @dataclass
 class PatternAnalysisResult:
     """Result of pattern analysis."""
-    patterns: Dict[str, PatternDetection]
-    frameworks: Dict[str, Detection]
-    matches: List[PatternMatch]
+    patterns: dict[str, PatternDetection]
+    frameworks: dict[str, Detection]
+    matches: list[PatternMatch]
     total_files_analyzed: int
 
 
@@ -413,8 +410,8 @@ class PatternAnalyzer:
 
     def __init__(self, provider: LanguageProvider):
         self.provider = provider
-        self._matches: List[PatternMatch] = []
-        self._pattern_scores: Dict[str, Dict[str, float]] = {}
+        self._matches: list[PatternMatch] = []
+        self._pattern_scores: dict[str, dict[str, float]] = {}
 
     def analyze(self, root: Path) -> PatternAnalysisResult:
         """
@@ -487,12 +484,12 @@ class PatternAnalyzer:
     def _check_signal(
         self,
         signal_type: str,
-        signal_config: Dict[str, Any],
+        signal_config: dict[str, Any],
         file_path: Path,
         relative_path: str,
         content: str,
-        symbols: List[Symbol],
-        imports: List,
+        symbols: list[Symbol],
+        imports: list,
         pattern_name: str,
     ) -> float:
         """Check for a specific signal type and return weighted score."""
@@ -602,7 +599,7 @@ class PatternAnalyzer:
             weight=weight,
         ))
 
-    def _aggregate_patterns(self) -> Dict[str, PatternDetection]:
+    def _aggregate_patterns(self) -> dict[str, PatternDetection]:
         """Aggregate pattern matches into pattern detections."""
         patterns = {}
 
@@ -615,7 +612,7 @@ class PatternAnalyzer:
 
             # Get all matches for this pattern
             pattern_matches = [m for m in self._matches if m.pattern_name == pattern_name]
-            signals = list(set(m.signal_type for m in pattern_matches))
+            signals = list({m.signal_type for m in pattern_matches})
 
             # Check required signals - if defined, at least one must be present
             required_signals = pattern_def.get("required_signals", [])
@@ -654,7 +651,7 @@ class PatternAnalyzer:
 
         return patterns
 
-    def _detect_frameworks(self, source_files: List[Path]) -> Dict[str, Detection]:
+    def _detect_frameworks(self, source_files: list[Path]) -> dict[str, Detection]:
         """Detect frameworks used in the codebase."""
         frameworks = {}
 
@@ -706,7 +703,7 @@ class PatternAnalyzer:
 
     def get_patterns_by_confidence(
         self, min_confidence: float = 0.5
-    ) -> List[PatternDetection]:
+    ) -> list[PatternDetection]:
         """Get patterns above a confidence threshold, sorted by confidence."""
         if not hasattr(self, '_last_result'):
             return []

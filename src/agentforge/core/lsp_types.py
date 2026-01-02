@@ -10,7 +10,6 @@ Extracted from lsp_adapter.py for modularity.
 
 from dataclasses import dataclass, field
 from enum import IntEnum
-from typing import Optional, List
 
 
 @dataclass
@@ -19,8 +18,8 @@ class Location:
     file: str
     line: int  # 0-based (LSP convention)
     column: int  # 0-based
-    end_line: Optional[int] = None
-    end_column: Optional[int] = None
+    end_line: int | None = None
+    end_column: int | None = None
 
     def to_1based(self) -> 'Location':
         """Convert to 1-based line numbers (editor convention)."""
@@ -87,9 +86,9 @@ class Symbol:
     name: str
     kind: str  # class, method, property, field, interface, enum, etc.
     location: Location
-    container: Optional[str] = None  # Parent class/namespace
-    detail: Optional[str] = None  # Type signature
-    children: List['Symbol'] = field(default_factory=list)
+    container: str | None = None  # Parent class/namespace
+    detail: str | None = None  # Type signature
+    children: list['Symbol'] = field(default_factory=list)
 
     def __str__(self):
         if self.container:
@@ -105,12 +104,12 @@ class Diagnostic:
     column: int
     severity: str  # error, warning, info, hint
     message: str
-    code: Optional[str] = None
-    source: Optional[str] = None
+    code: str | None = None
+    source: str | None = None
 
 
 @dataclass
 class HoverInfo:
     """Hover information for a symbol."""
     contents: str  # Markdown formatted
-    range: Optional[Location] = None
+    range: Location | None = None

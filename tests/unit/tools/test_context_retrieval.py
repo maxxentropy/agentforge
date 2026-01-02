@@ -5,15 +5,13 @@
 
 """Tests for ContextRetriever class."""
 
-import pytest
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
-import sys
+from unittest.mock import Mock, patch
 
-sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent / 'tools'))
+import pytest
 
-from context_retrieval import ContextRetriever, IndexStats
-from context_assembler import CodeContext, FileContext
+from agentforge.core.context_assembler import CodeContext, FileContext
+from agentforge.core.context_retrieval import ContextRetriever, IndexStats
 
 
 class TestContextRetrieverInit:
@@ -89,7 +87,7 @@ class TestContextRetrieverLSP:
         """Test graceful degradation when LSP not available."""
         retriever = ContextRetriever(project_path=str(tmp_path))
 
-        with patch('tools.context_retrieval.ContextRetriever.lsp_adapter', new=None):
+        with patch('agentforge.core.context_retrieval.ContextRetriever.lsp_adapter', new=None):
             retriever._lsp_available = False
             symbols = retriever._retrieve_lsp_symbols("test query")
 
@@ -246,8 +244,8 @@ class TestContextRetrieverRetrieve:
                     context = retriever.retrieve("test query")
 
         assert "project_path" in context.retrieval_metadata
-        assert context.retrieval_metadata["lsp_enabled"] == True
-        assert context.retrieval_metadata["vector_enabled"] == True
+        assert context.retrieval_metadata["lsp_enabled"]
+        assert context.retrieval_metadata["vector_enabled"]
 
 
 class TestKeywordExtraction:

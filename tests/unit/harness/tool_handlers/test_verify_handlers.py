@@ -1,13 +1,13 @@
-# @spec_file: specs/tools/01-tool-handlers.yaml
-# @spec_id: tool-handlers-v1
+# @spec_file: .agentforge/specs/core-harness-minimal-context-v1.yaml
+# @spec_id: core-harness-minimal-context-v1
 # @component_id: verify-handlers
 
 """
 Tests for verify_handlers module.
 """
 
+
 import pytest
-from pathlib import Path
 
 from agentforge.core.harness.minimal_context.tool_handlers.verify_handlers import (
     create_run_check_handler,

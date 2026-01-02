@@ -1,0 +1,1717 @@
+schema_version: '1.0'
+generated_at: '2026-01-01T11:07:58.474423'
+discovery_metadata:
+  discovery_version: '1.0'
+  run_date: '2026-01-01T11:07:58.474423'
+  root_path: /Users/sean/source/tools/agentforge
+  phases_completed:
+  - language
+  - structure
+  - patterns
+  - architecture
+  - tests
+  total_files_analyzed: 548
+  duration_seconds: 3.64
+languages:
+- name: python
+  version: 0.1.0
+  confidence: 0.9
+  file_count: 548
+  line_count: 99717
+  frameworks:
+  - FastAPI
+  - Pydantic
+  - Click
+  primary: true
+structure:
+  architecture_style: clean_architecture
+  confidence: 0.68
+  source_root: /Users/sean/source/tools/agentforge/src
+  layers:
+    domain:
+      paths:
+      - src/agentforge/core
+      - src/agentforge/core/bridge
+      - src/agentforge/core/bridge/mappings
+      - src/agentforge/core/cicd
+      - src/agentforge/core/cicd/outputs
+      - src/agentforge/core/cicd/platforms
+      - src/agentforge/core/conformance
+      - src/agentforge/core/discovery
+      - src/agentforge/core/discovery/analyzers
+      - src/agentforge/core/discovery/generators
+      - src/agentforge/core/discovery/providers
+      - src/agentforge/core/discovery/zones
+      - src/agentforge/core/generate
+      - src/agentforge/core/harness
+      - src/agentforge/core/harness/minimal_context
+      - src/agentforge/core/lineage
+      - src/agentforge/core/refactoring
+      - src/agentforge/core/tdflow
+      - src/agentforge/core/tdflow/phases
+      - src/agentforge/core/tdflow/runners
+      file_count: 158
+      line_count: 35105
+      confidence: 0.8
+      signals:
+      - directory_exact:core
+      - directory_exact:core
+      - directory_exact:core
+      - directory_exact:core
+      - directory_exact:core
+    infrastructure:
+      paths:
+      - tools
+      file_count: 40
+      line_count: 7530
+      confidence: 0.36
+      signals:
+      - file_pattern:adapter(3)
+      - file_pattern:client(1)
+    application:
+      paths:
+      - tools/bridge/mappings
+      file_count: 7
+      line_count: 949
+      confidence: 0.36
+      signals:
+      - directory_partial:app
+  entry_points:
+  - /Users/sean/source/tools/agentforge/cli/main.py
+  - /Users/sean/source/tools/agentforge/execute.py
+  - /Users/sean/source/tools/agentforge/src/agentforge/__main__.py
+  - /Users/sean/source/tools/agentforge/src/agentforge/cli/main.py
+  test_directories:
+  - /Users/sean/source/tools/agentforge/tests
+  - /Users/sean/source/tools/agentforge/specs
+  signals:
+  - required_layers:{'application', 'domain'}
+  - optional_layers:{'infrastructure'}
+patterns:
+  result_type:
+    description: Result<T> or similar error handling pattern
+    confidence: 1.0
+    source: naming
+    file_count: 59
+    locations:
+    - /Users/sean/source/tools/agentforge/src/agentforge/core/cicd/runner.py
+    - /Users/sean/source/tools/agentforge/src/agentforge/core/command_runner.py
+    - /Users/sean/source/tools/agentforge/src/agentforge/core/contracts.py
+    - /Users/sean/source/tools/agentforge/src/agentforge/core/discovery/analyzers/patterns.py
+    - /Users/sean/source/tools/agentforge/src/agentforge/core/discovery/analyzers/structure.py
+    signals:
+    - return_type
+  interface_prefix:
+    description: I-prefix interface naming convention
+    confidence: 0.9
+    source: naming
+    file_count: 20
+    locations:
+    - /Users/sean/source/tools/agentforge/src/agentforge/core/analyze_structure.py
+    - /Users/sean/source/tools/agentforge/src/agentforge/core/bridge/mappings/conventions.py
+    - /Users/sean/source/tools/agentforge/src/agentforge/core/context_retrieval.py
+    - /Users/sean/source/tools/agentforge/src/agentforge/core/discovery/analyzers/interactions.py
+    - /Users/sean/source/tools/agentforge/src/agentforge/core/discovery/domain.py
+    signals:
+    - class_name
+  dependency_injection:
+    description: Dependency Injection pattern
+    confidence: 0.8
+    source: naming
+    file_count: 3
+    locations:
+    - /Users/sean/source/tools/agentforge/src/agentforge/core/builtin_checks.py
+    - /Users/sean/source/tools/agentforge/tests/unit/tools/test_builtin_checks_architecture.py
+    - /Users/sean/source/tools/agentforge/tools/builtin_checks.py
+    signals:
+    - import
+  singleton:
+    description: Singleton pattern
+    confidence: 1.0
+    source: naming
+    file_count: 2
+    locations:
+    - /Users/sean/source/tools/agentforge/.agentforge/backups/20251231_052517_436324_tests_unit_harness_test_tool_domain.py
+    - /Users/sean/source/tools/agentforge/tests/unit/harness/test_tool_domain.py
+    signals:
+    - method_name
+  strategy:
+    description: Strategy pattern for interchangeable algorithms
+    confidence: 0.61
+    source: ast
+    file_count: 19
+    locations:
+    - /Users/sean/source/tools/agentforge/src/agentforge/core/bridge/domain.py
+    - /Users/sean/source/tools/agentforge/src/agentforge/core/bridge/mappings/base.py
+    - /Users/sean/source/tools/agentforge/src/agentforge/core/discovery/providers/base.py
+    - /Users/sean/source/tools/agentforge/src/agentforge/core/embedding_providers.py
+    - /Users/sean/source/tools/agentforge/src/agentforge/core/generate/provider.py
+    signals:
+    - base_class
+    - class_suffix
+  framework_pytest:
+    description: pytest framework detected
+    confidence: 1.0
+    source: explicit
+    signals:
+    - decorator
+    - file_pattern
+    - import
+    metadata:
+      type: testing
+  framework_fastapi:
+    description: fastapi framework detected
+    confidence: 0.4
+    source: explicit
+    signals:
+    - import
+    metadata:
+      type: web
+  framework_pydantic:
+    description: pydantic framework detected
+    confidence: 0.6
+    source: explicit
+    signals:
+    - import
+    metadata:
+      type: validation
+  framework_sqlalchemy:
+    description: sqlalchemy framework detected
+    confidence: 0.72
+    source: explicit
+    signals:
+    - decorator
+    - import
+    metadata:
+      type: orm
+  framework_click:
+    description: click framework detected
+    confidence: 1.0
+    source: explicit
+    signals:
+    - decorator
+    - import
+    metadata:
+      type: cli
+  framework_typer:
+    description: typer framework detected
+    confidence: 0.4
+    source: explicit
+    signals:
+    - import
+    metadata:
+      type: cli
+  framework_mediatr:
+    description: mediatr framework detected
+    confidence: 0.4
+    source: explicit
+    signals:
+    - import
+    metadata:
+      type: cqrs
+  framework_fluentvalidation:
+    description: fluentvalidation framework detected
+    confidence: 0.4
+    source: explicit
+    signals:
+    - import
+    metadata:
+      type: validation
+  framework_efcore:
+    description: efcore framework detected
+    confidence: 0.4
+    source: explicit
+    signals:
+    - import
+    metadata:
+      type: orm
+  framework_aspnetcore:
+    description: aspnetcore framework detected
+    confidence: 0.4
+    source: explicit
+    signals:
+    - import
+    metadata:
+      type: web
+  framework_automapper:
+    description: automapper framework detected
+    confidence: 0.4
+    source: explicit
+    signals:
+    - import
+    metadata:
+      type: mapping
+  framework_serilog:
+    description: serilog framework detected
+    confidence: 0.4
+    source: explicit
+    signals:
+    - import
+    metadata:
+      type: logging
+  framework_xunit:
+    description: xunit framework detected
+    confidence: 0.8
+    source: explicit
+    signals:
+    - import
+    metadata:
+      type: testing
+  framework_nunit:
+    description: nunit framework detected
+    confidence: 0.4
+    source: explicit
+    signals:
+    - import
+    metadata:
+      type: testing
+  framework_moq:
+    description: moq framework detected
+    confidence: 0.4
+    source: explicit
+    signals:
+    - import
+    metadata:
+      type: testing
+architecture:
+  style: clean_architecture
+  layers:
+  - domain
+  - infrastructure
+  - application
+  layer_dependencies: {}
+  violations: []
+dependencies:
+- name: click
+  version: 8.1.0
+  source: pypi
+  is_dev: false
+  category: null
+- name: rich
+  version: 13.0.0
+  source: pypi
+  is_dev: false
+  category: null
+- name: pyyaml
+  version: '6.0'
+  source: pypi
+  is_dev: false
+  category: null
+- name: pydantic
+  version: 2.0.0
+  source: pypi
+  is_dev: false
+  category: null
+- name: pydantic-settings
+  version: 2.0.0
+  source: pypi
+  is_dev: false
+  category: null
+- name: anthropic
+  version: 0.30.0
+  source: pypi
+  is_dev: false
+  category: null
+- name: httpx
+  version: 0.27.0
+  source: pypi
+  is_dev: false
+  category: null
+- name: aiofiles
+  version: 23.0.0
+  source: pypi
+  is_dev: false
+  category: null
+- name: fastapi
+  version: 0.110.0
+  source: pypi
+  is_dev: false
+  category: null
+- name: uvicorn
+  version: 0.29.0
+  source: pypi
+  is_dev: false
+  category: null
+- name: websockets
+  version: '12.0'
+  source: pypi
+  is_dev: false
+  category: null
+- name: watchdog
+  version: 4.0.0
+  source: pypi
+  is_dev: false
+  category: null
+- name: gitpython
+  version: 3.1.0
+  source: pypi
+  is_dev: false
+  category: null
+- name: python-dotenv
+  version: 1.0.0
+  source: pypi
+  is_dev: false
+  category: null
+- name: tenacity
+  version: 8.2.0
+  source: pypi
+  is_dev: false
+  category: null
+- name: structlog
+  version: 24.0.0
+  source: pypi
+  is_dev: false
+  category: null
+- name: rope
+  version: 1.12.0
+  source: pypi
+  is_dev: false
+  category: null
+- name: pytest
+  version: 8.0.0
+  source: pypi
+  is_dev: true
+  category: null
+- name: pytest-asyncio
+  version: 0.23.0
+  source: pypi
+  is_dev: true
+  category: null
+- name: pytest-cov
+  version: 4.1.0
+  source: pypi
+  is_dev: true
+  category: null
+- name: mypy
+  version: 1.8.0
+  source: pypi
+  is_dev: true
+  category: null
+- name: ruff
+  version: 0.3.0
+  source: pypi
+  is_dev: true
+  category: null
+- name: black
+  version: 24.0.0
+  source: pypi
+  is_dev: true
+  category: null
+- name: pre-commit
+  version: 3.6.0
+  source: pypi
+  is_dev: true
+  category: null
+- name: types-PyYAML
+  version: null
+  source: pypi
+  is_dev: true
+  category: null
+- name: types-aiofiles
+  version: null
+  source: pypi
+  is_dev: true
+  category: null
+test_analysis:
+  inventory:
+    total_test_files: 59
+    total_test_methods: 1514
+    frameworks:
+    - pytest
+    - unittest
+    categories:
+      other: 2
+      unit: 56
+      integration: 1
+  estimated_coverage: 0.58
+  confidence: 0.0
+  linkages:
+    src/agentforge/core/pyright_runner.py:
+    - tests/test_python_checks.py
+    src/agentforge/core/command_runner.py:
+    - tests/test_python_checks.py
+    src/agentforge/core/verification_runner.py:
+    - tests/test_python_checks.py
+    - tests/unit/tools/test_verification_checks.py
+    - tests/unit/tools/test_verification_runner.py
+    src/agentforge/core/cicd/runner.py:
+    - tests/test_python_checks.py
+    - tests/unit/tools/test_verification_checks.py
+    - tests/unit/tools/test_verification_runner.py
+    - tests/unit/tools/cicd/test_runner.py
+    - tests/unit/tools/tdflow/runners/test_dotnet.py
+    - tests/unit/tools/tdflow/runners/test_pytest_runner.py
+    - tests/unit/harness/test_selfhosting_tools.py
+    tools/pyright_runner.py:
+    - tests/test_python_checks.py
+    tools/command_runner.py:
+    - tests/test_python_checks.py
+    tools/verification_runner.py:
+    - tests/test_python_checks.py
+    - tests/unit/tools/test_verification_checks.py
+    - tests/unit/tools/test_verification_runner.py
+    tools/cicd/runner.py:
+    - tests/test_python_checks.py
+    - tests/unit/tools/test_verification_checks.py
+    - tests/unit/tools/test_verification_runner.py
+    - tests/unit/tools/cicd/test_runner.py
+    - tests/unit/tools/tdflow/runners/test_dotnet.py
+    - tests/unit/tools/tdflow/runners/test_pytest_runner.py
+    - tests/unit/harness/test_selfhosting_tools.py
+    src/agentforge/core/context_assembler.py:
+    - tests/unit/tools/test_context_retrieval.py
+    - tests/unit/tools/test_context_assembler.py
+    src/agentforge/core/context_retrieval_cli.py:
+    - tests/unit/tools/test_context_retrieval.py
+    src/agentforge/core/context_assembler_types.py:
+    - tests/unit/tools/test_context_retrieval.py
+    - tests/unit/tools/test_context_assembler.py
+    src/agentforge/core/context_retrieval.py:
+    - tests/unit/tools/test_context_retrieval.py
+    src/agentforge/cli/commands/context.py:
+    - tests/unit/tools/test_context_retrieval.py
+    - tests/unit/tools/test_context_assembler.py
+    - tests/unit/harness/test_enhanced_context.py
+    - tests/unit/harness/test_minimal_context.py
+    - tests/unit/harness/test_execution_context_store.py
+    tools/context_assembler.py:
+    - tests/unit/tools/test_context_retrieval.py
+    - tests/unit/tools/test_context_assembler.py
+    tools/context_retrieval_cli.py:
+    - tests/unit/tools/test_context_retrieval.py
+    tools/context_assembler_types.py:
+    - tests/unit/tools/test_context_retrieval.py
+    - tests/unit/tools/test_context_assembler.py
+    tools/context_retrieval.py:
+    - tests/unit/tools/test_context_retrieval.py
+    src/agentforge/core/contracts_execution.py:
+    - tests/unit/tools/test_contracts_execution_naming.py
+    src/agentforge/core/contracts.py:
+    - tests/unit/tools/test_contracts_execution_naming.py
+    src/agentforge/core/bridge/mappings/base.py:
+    - tests/unit/tools/test_contracts_execution_naming.py
+    - tests/unit/tools/bridge/test_registry.py
+    - tests/unit/tools/cicd/test_baseline.py
+    - tests/unit/tools/tdflow/runners/test_pytest_runner.py
+    src/agentforge/core/discovery/providers/base.py:
+    - tests/unit/tools/test_contracts_execution_naming.py
+    - tests/unit/tools/bridge/test_registry.py
+    - tests/unit/tools/cicd/test_baseline.py
+    - tests/unit/tools/tdflow/runners/test_pytest_runner.py
+    src/agentforge/core/tdflow/runners/base.py:
+    - tests/unit/tools/test_contracts_execution_naming.py
+    - tests/unit/tools/bridge/test_registry.py
+    - tests/unit/tools/cicd/test_baseline.py
+    - tests/unit/tools/tdflow/runners/test_pytest_runner.py
+    src/agentforge/core/refactoring/base.py:
+    - tests/unit/tools/test_contracts_execution_naming.py
+    - tests/unit/tools/bridge/test_registry.py
+    - tests/unit/tools/cicd/test_baseline.py
+    - tests/unit/tools/tdflow/runners/test_pytest_runner.py
+    src/agentforge/cli/commands/contracts.py:
+    - tests/unit/tools/test_contracts_execution_naming.py
+    src/agentforge/cli/click_commands/contracts.py:
+    - tests/unit/tools/test_contracts_execution_naming.py
+    tools/contracts_execution.py:
+    - tests/unit/tools/test_contracts_execution_naming.py
+    tools/contracts.py:
+    - tests/unit/tools/test_contracts_execution_naming.py
+    tools/bridge/mappings/base.py:
+    - tests/unit/tools/test_contracts_execution_naming.py
+    - tests/unit/tools/bridge/test_registry.py
+    - tests/unit/tools/cicd/test_baseline.py
+    - tests/unit/tools/tdflow/runners/test_pytest_runner.py
+    tools/discovery/providers/base.py:
+    - tests/unit/tools/test_contracts_execution_naming.py
+    - tests/unit/tools/bridge/test_registry.py
+    - tests/unit/tools/cicd/test_baseline.py
+    - tests/unit/tools/tdflow/runners/test_pytest_runner.py
+    tools/tdflow/runners/base.py:
+    - tests/unit/tools/test_contracts_execution_naming.py
+    - tests/unit/tools/bridge/test_registry.py
+    - tests/unit/tools/cicd/test_baseline.py
+    - tests/unit/tools/tdflow/runners/test_pytest_runner.py
+    tools/refactoring/base.py:
+    - tests/unit/tools/test_contracts_execution_naming.py
+    - tests/unit/tools/bridge/test_registry.py
+    - tests/unit/tools/cicd/test_baseline.py
+    - tests/unit/tools/tdflow/runners/test_pytest_runner.py
+    src/agentforge/core/verification_types.py:
+    - tests/unit/tools/test_verification_checks.py
+    - tests/unit/tools/test_verification_runner.py
+    tools/verification_types.py:
+    - tests/unit/tools/test_verification_checks.py
+    - tests/unit/tools/test_verification_runner.py
+    src/agentforge/core/builtin_checks_architecture.py:
+    - tests/unit/tools/test_builtin_checks_architecture.py
+    src/agentforge/core/builtin_checks_architecture_helpers.py:
+    - tests/unit/tools/test_builtin_checks_architecture.py
+    src/agentforge/core/builtin_checks.py:
+    - tests/unit/tools/test_builtin_checks_architecture.py
+    src/agentforge/core/bridge/domain.py:
+    - tests/unit/tools/test_builtin_checks_architecture.py
+    - tests/unit/tools/bridge/test_registry.py
+    - tests/unit/tools/bridge/test_domain.py
+    - tests/unit/tools/bridge/test_contract_builder.py
+    - tests/unit/tools/cicd/test_baseline.py
+    - tests/unit/tools/cicd/test_runner.py
+    - tests/unit/tools/cicd/test_domain.py
+    - tests/unit/tools/cicd/test_outputs.py
+    - tests/unit/tools/tdflow/test_session.py
+    - tests/unit/tools/tdflow/test_orchestrator.py
+    - tests/unit/tools/tdflow/test_domain.py
+    - tests/unit/tools/tdflow/runners/test_dotnet.py
+    - tests/unit/tools/tdflow/runners/test_pytest_runner.py
+    - tests/unit/tools/generate/test_parser.py
+    - tests/unit/tools/generate/test_engine.py
+    - tests/unit/tools/generate/test_writer.py
+    - tests/unit/tools/generate/test_provider.py
+    - tests/unit/tools/generate/test_domain.py
+    - tests/unit/tools/generate/test_prompt_builder.py
+    - tests/unit/tools/conformance/test_domain.py
+    - tests/unit/tools/conformance/test_manager.py
+    - tests/unit/tools/conformance/test_stores.py
+    - tests/unit/harness/test_action_parser.py
+    - tests/unit/harness/test_monitor_domain.py
+    - tests/unit/harness/test_checkpoint_manager.py
+    - tests/unit/harness/test_memory_domain.py
+    - tests/unit/harness/test_escalation_domain.py
+    - tests/unit/harness/test_tool_executor_bridge.py
+    - tests/unit/harness/test_agent_monitor.py
+    - tests/unit/harness/test_tool_registry.py
+    - tests/unit/harness/test_llm_executor_domain.py
+    - tests/unit/harness/test_agent_orchestrator.py
+    - tests/unit/harness/test_tool_selector.py
+    - tests/unit/harness/test_orchestrator_domain.py
+    - tests/unit/harness/test_agent_prompt_builder.py
+    - tests/unit/harness/test_recovery_domain.py
+    - tests/unit/harness/test_recovery_executor.py
+    - tests/unit/harness/test_memory_store.py
+    - tests/unit/harness/test_escalation_notifier.py
+    - tests/unit/harness/test_session_manager.py
+    - tests/unit/harness/test_tool_domain.py
+    - tests/unit/harness/test_execution_context_store.py
+    - tests/unit/harness/test_llm_executor.py
+    - tests/unit/harness/test_session_domain.py
+    - tests/unit/harness/test_session_store.py
+    - tests/unit/harness/test_escalation_manager.py
+    - tests/unit/harness/test_memory_manager.py
+    src/agentforge/core/discovery/domain.py:
+    - tests/unit/tools/test_builtin_checks_architecture.py
+    - tests/unit/tools/bridge/test_registry.py
+    - tests/unit/tools/bridge/test_domain.py
+    - tests/unit/tools/bridge/test_contract_builder.py
+    - tests/unit/tools/cicd/test_baseline.py
+    - tests/unit/tools/cicd/test_runner.py
+    - tests/unit/tools/cicd/test_domain.py
+    - tests/unit/tools/cicd/test_outputs.py
+    - tests/unit/tools/tdflow/test_session.py
+    - tests/unit/tools/tdflow/test_orchestrator.py
+    - tests/unit/tools/tdflow/test_domain.py
+    - tests/unit/tools/tdflow/runners/test_dotnet.py
+    - tests/unit/tools/tdflow/runners/test_pytest_runner.py
+    - tests/unit/tools/generate/test_parser.py
+    - tests/unit/tools/generate/test_engine.py
+    - tests/unit/tools/generate/test_writer.py
+    - tests/unit/tools/generate/test_provider.py
+    - tests/unit/tools/generate/test_domain.py
+    - tests/unit/tools/generate/test_prompt_builder.py
+    - tests/unit/tools/conformance/test_domain.py
+    - tests/unit/tools/conformance/test_manager.py
+    - tests/unit/tools/conformance/test_stores.py
+    - tests/unit/harness/test_action_parser.py
+    - tests/unit/harness/test_monitor_domain.py
+    - tests/unit/harness/test_checkpoint_manager.py
+    - tests/unit/harness/test_memory_domain.py
+    - tests/unit/harness/test_escalation_domain.py
+    - tests/unit/harness/test_tool_executor_bridge.py
+    - tests/unit/harness/test_agent_monitor.py
+    - tests/unit/harness/test_tool_registry.py
+    - tests/unit/harness/test_llm_executor_domain.py
+    - tests/unit/harness/test_agent_orchestrator.py
+    - tests/unit/harness/test_tool_selector.py
+    - tests/unit/harness/test_orchestrator_domain.py
+    - tests/unit/harness/test_agent_prompt_builder.py
+    - tests/unit/harness/test_recovery_domain.py
+    - tests/unit/harness/test_recovery_executor.py
+    - tests/unit/harness/test_memory_store.py
+    - tests/unit/harness/test_escalation_notifier.py
+    - tests/unit/harness/test_session_manager.py
+    - tests/unit/harness/test_tool_domain.py
+    - tests/unit/harness/test_execution_context_store.py
+    - tests/unit/harness/test_llm_executor.py
+    - tests/unit/harness/test_session_domain.py
+    - tests/unit/harness/test_session_store.py
+    - tests/unit/harness/test_escalation_manager.py
+    - tests/unit/harness/test_memory_manager.py
+    src/agentforge/core/cicd/domain.py:
+    - tests/unit/tools/test_builtin_checks_architecture.py
+    - tests/unit/tools/bridge/test_registry.py
+    - tests/unit/tools/bridge/test_domain.py
+    - tests/unit/tools/bridge/test_contract_builder.py
+    - tests/unit/tools/cicd/test_baseline.py
+    - tests/unit/tools/cicd/test_runner.py
+    - tests/unit/tools/cicd/test_domain.py
+    - tests/unit/tools/cicd/test_outputs.py
+    - tests/unit/tools/tdflow/test_session.py
+    - tests/unit/tools/tdflow/test_orchestrator.py
+    - tests/unit/tools/tdflow/test_domain.py
+    - tests/unit/tools/tdflow/runners/test_dotnet.py
+    - tests/unit/tools/tdflow/runners/test_pytest_runner.py
+    - tests/unit/tools/generate/test_parser.py
+    - tests/unit/tools/generate/test_engine.py
+    - tests/unit/tools/generate/test_writer.py
+    - tests/unit/tools/generate/test_provider.py
+    - tests/unit/tools/generate/test_domain.py
+    - tests/unit/tools/generate/test_prompt_builder.py
+    - tests/unit/tools/conformance/test_domain.py
+    - tests/unit/tools/conformance/test_manager.py
+    - tests/unit/tools/conformance/test_stores.py
+    - tests/unit/harness/test_action_parser.py
+    - tests/unit/harness/test_monitor_domain.py
+    - tests/unit/harness/test_checkpoint_manager.py
+    - tests/unit/harness/test_memory_domain.py
+    - tests/unit/harness/test_escalation_domain.py
+    - tests/unit/harness/test_tool_executor_bridge.py
+    - tests/unit/harness/test_agent_monitor.py
+    - tests/unit/harness/test_tool_registry.py
+    - tests/unit/harness/test_llm_executor_domain.py
+    - tests/unit/harness/test_agent_orchestrator.py
+    - tests/unit/harness/test_tool_selector.py
+    - tests/unit/harness/test_orchestrator_domain.py
+    - tests/unit/harness/test_agent_prompt_builder.py
+    - tests/unit/harness/test_recovery_domain.py
+    - tests/unit/harness/test_recovery_executor.py
+    - tests/unit/harness/test_memory_store.py
+    - tests/unit/harness/test_escalation_notifier.py
+    - tests/unit/harness/test_session_manager.py
+    - tests/unit/harness/test_tool_domain.py
+    - tests/unit/harness/test_execution_context_store.py
+    - tests/unit/harness/test_llm_executor.py
+    - tests/unit/harness/test_session_domain.py
+    - tests/unit/harness/test_session_store.py
+    - tests/unit/harness/test_escalation_manager.py
+    - tests/unit/harness/test_memory_manager.py
+    src/agentforge/core/tdflow/domain.py:
+    - tests/unit/tools/test_builtin_checks_architecture.py
+    - tests/unit/tools/bridge/test_registry.py
+    - tests/unit/tools/bridge/test_domain.py
+    - tests/unit/tools/bridge/test_contract_builder.py
+    - tests/unit/tools/cicd/test_baseline.py
+    - tests/unit/tools/cicd/test_runner.py
+    - tests/unit/tools/cicd/test_domain.py
+    - tests/unit/tools/cicd/test_outputs.py
+    - tests/unit/tools/tdflow/test_session.py
+    - tests/unit/tools/tdflow/test_orchestrator.py
+    - tests/unit/tools/tdflow/test_domain.py
+    - tests/unit/tools/tdflow/runners/test_dotnet.py
+    - tests/unit/tools/tdflow/runners/test_pytest_runner.py
+    - tests/unit/tools/generate/test_parser.py
+    - tests/unit/tools/generate/test_engine.py
+    - tests/unit/tools/generate/test_writer.py
+    - tests/unit/tools/generate/test_provider.py
+    - tests/unit/tools/generate/test_domain.py
+    - tests/unit/tools/generate/test_prompt_builder.py
+    - tests/unit/tools/conformance/test_domain.py
+    - tests/unit/tools/conformance/test_manager.py
+    - tests/unit/tools/conformance/test_stores.py
+    - tests/unit/harness/test_action_parser.py
+    - tests/unit/harness/test_monitor_domain.py
+    - tests/unit/harness/test_checkpoint_manager.py
+    - tests/unit/harness/test_memory_domain.py
+    - tests/unit/harness/test_escalation_domain.py
+    - tests/unit/harness/test_tool_executor_bridge.py
+    - tests/unit/harness/test_agent_monitor.py
+    - tests/unit/harness/test_tool_registry.py
+    - tests/unit/harness/test_llm_executor_domain.py
+    - tests/unit/harness/test_agent_orchestrator.py
+    - tests/unit/harness/test_tool_selector.py
+    - tests/unit/harness/test_orchestrator_domain.py
+    - tests/unit/harness/test_agent_prompt_builder.py
+    - tests/unit/harness/test_recovery_domain.py
+    - tests/unit/harness/test_recovery_executor.py
+    - tests/unit/harness/test_memory_store.py
+    - tests/unit/harness/test_escalation_notifier.py
+    - tests/unit/harness/test_session_manager.py
+    - tests/unit/harness/test_tool_domain.py
+    - tests/unit/harness/test_execution_context_store.py
+    - tests/unit/harness/test_llm_executor.py
+    - tests/unit/harness/test_session_domain.py
+    - tests/unit/harness/test_session_store.py
+    - tests/unit/harness/test_escalation_manager.py
+    - tests/unit/harness/test_memory_manager.py
+    src/agentforge/core/generate/domain.py:
+    - tests/unit/tools/test_builtin_checks_architecture.py
+    - tests/unit/tools/bridge/test_registry.py
+    - tests/unit/tools/bridge/test_domain.py
+    - tests/unit/tools/bridge/test_contract_builder.py
+    - tests/unit/tools/cicd/test_baseline.py
+    - tests/unit/tools/cicd/test_runner.py
+    - tests/unit/tools/cicd/test_domain.py
+    - tests/unit/tools/cicd/test_outputs.py
+    - tests/unit/tools/tdflow/test_session.py
+    - tests/unit/tools/tdflow/test_orchestrator.py
+    - tests/unit/tools/tdflow/test_domain.py
+    - tests/unit/tools/tdflow/runners/test_dotnet.py
+    - tests/unit/tools/tdflow/runners/test_pytest_runner.py
+    - tests/unit/tools/generate/test_parser.py
+    - tests/unit/tools/generate/test_engine.py
+    - tests/unit/tools/generate/test_writer.py
+    - tests/unit/tools/generate/test_provider.py
+    - tests/unit/tools/generate/test_domain.py
+    - tests/unit/tools/generate/test_prompt_builder.py
+    - tests/unit/tools/conformance/test_domain.py
+    - tests/unit/tools/conformance/test_manager.py
+    - tests/unit/tools/conformance/test_stores.py
+    - tests/unit/harness/test_action_parser.py
+    - tests/unit/harness/test_monitor_domain.py
+    - tests/unit/harness/test_checkpoint_manager.py
+    - tests/unit/harness/test_memory_domain.py
+    - tests/unit/harness/test_escalation_domain.py
+    - tests/unit/harness/test_tool_executor_bridge.py
+    - tests/unit/harness/test_agent_monitor.py
+    - tests/unit/harness/test_tool_registry.py
+    - tests/unit/harness/test_llm_executor_domain.py
+    - tests/unit/harness/test_agent_orchestrator.py
+    - tests/unit/harness/test_tool_selector.py
+    - tests/unit/harness/test_orchestrator_domain.py
+    - tests/unit/harness/test_agent_prompt_builder.py
+    - tests/unit/harness/test_recovery_domain.py
+    - tests/unit/harness/test_recovery_executor.py
+    - tests/unit/harness/test_memory_store.py
+    - tests/unit/harness/test_escalation_notifier.py
+    - tests/unit/harness/test_session_manager.py
+    - tests/unit/harness/test_tool_domain.py
+    - tests/unit/harness/test_execution_context_store.py
+    - tests/unit/harness/test_llm_executor.py
+    - tests/unit/harness/test_session_domain.py
+    - tests/unit/harness/test_session_store.py
+    - tests/unit/harness/test_escalation_manager.py
+    - tests/unit/harness/test_memory_manager.py
+    src/agentforge/core/conformance/domain.py:
+    - tests/unit/tools/test_builtin_checks_architecture.py
+    - tests/unit/tools/bridge/test_registry.py
+    - tests/unit/tools/bridge/test_domain.py
+    - tests/unit/tools/bridge/test_contract_builder.py
+    - tests/unit/tools/cicd/test_baseline.py
+    - tests/unit/tools/cicd/test_runner.py
+    - tests/unit/tools/cicd/test_domain.py
+    - tests/unit/tools/cicd/test_outputs.py
+    - tests/unit/tools/tdflow/test_session.py
+    - tests/unit/tools/tdflow/test_orchestrator.py
+    - tests/unit/tools/tdflow/test_domain.py
+    - tests/unit/tools/tdflow/runners/test_dotnet.py
+    - tests/unit/tools/tdflow/runners/test_pytest_runner.py
+    - tests/unit/tools/generate/test_parser.py
+    - tests/unit/tools/generate/test_engine.py
+    - tests/unit/tools/generate/test_writer.py
+    - tests/unit/tools/generate/test_provider.py
+    - tests/unit/tools/generate/test_domain.py
+    - tests/unit/tools/generate/test_prompt_builder.py
+    - tests/unit/tools/conformance/test_domain.py
+    - tests/unit/tools/conformance/test_manager.py
+    - tests/unit/tools/conformance/test_stores.py
+    - tests/unit/harness/test_action_parser.py
+    - tests/unit/harness/test_monitor_domain.py
+    - tests/unit/harness/test_checkpoint_manager.py
+    - tests/unit/harness/test_memory_domain.py
+    - tests/unit/harness/test_escalation_domain.py
+    - tests/unit/harness/test_tool_executor_bridge.py
+    - tests/unit/harness/test_agent_monitor.py
+    - tests/unit/harness/test_tool_registry.py
+    - tests/unit/harness/test_llm_executor_domain.py
+    - tests/unit/harness/test_agent_orchestrator.py
+    - tests/unit/harness/test_tool_selector.py
+    - tests/unit/harness/test_orchestrator_domain.py
+    - tests/unit/harness/test_agent_prompt_builder.py
+    - tests/unit/harness/test_recovery_domain.py
+    - tests/unit/harness/test_recovery_executor.py
+    - tests/unit/harness/test_memory_store.py
+    - tests/unit/harness/test_escalation_notifier.py
+    - tests/unit/harness/test_session_manager.py
+    - tests/unit/harness/test_tool_domain.py
+    - tests/unit/harness/test_execution_context_store.py
+    - tests/unit/harness/test_llm_executor.py
+    - tests/unit/harness/test_session_domain.py
+    - tests/unit/harness/test_session_store.py
+    - tests/unit/harness/test_escalation_manager.py
+    - tests/unit/harness/test_memory_manager.py
+    src/agentforge/cli/main.py:
+    - tests/unit/tools/test_builtin_checks_architecture.py
+    - tests/unit/tools/bridge/test_registry.py
+    - tests/unit/tools/bridge/test_domain.py
+    - tests/unit/tools/bridge/test_contract_builder.py
+    - tests/unit/tools/cicd/test_baseline.py
+    - tests/unit/tools/cicd/test_runner.py
+    - tests/unit/tools/cicd/test_domain.py
+    - tests/unit/tools/cicd/test_outputs.py
+    - tests/unit/tools/tdflow/test_session.py
+    - tests/unit/tools/tdflow/test_orchestrator.py
+    - tests/unit/tools/tdflow/test_domain.py
+    - tests/unit/tools/tdflow/runners/test_dotnet.py
+    - tests/unit/tools/tdflow/runners/test_pytest_runner.py
+    - tests/unit/tools/generate/test_parser.py
+    - tests/unit/tools/generate/test_engine.py
+    - tests/unit/tools/generate/test_writer.py
+    - tests/unit/tools/generate/test_provider.py
+    - tests/unit/tools/generate/test_domain.py
+    - tests/unit/tools/generate/test_prompt_builder.py
+    - tests/unit/tools/conformance/test_domain.py
+    - tests/unit/tools/conformance/test_manager.py
+    - tests/unit/tools/conformance/test_stores.py
+    - tests/unit/harness/test_action_parser.py
+    - tests/unit/harness/test_monitor_domain.py
+    - tests/unit/harness/test_checkpoint_manager.py
+    - tests/unit/harness/test_memory_domain.py
+    - tests/unit/harness/test_escalation_domain.py
+    - tests/unit/harness/test_tool_executor_bridge.py
+    - tests/unit/harness/test_agent_monitor.py
+    - tests/unit/harness/test_tool_registry.py
+    - tests/unit/harness/test_llm_executor_domain.py
+    - tests/unit/harness/test_agent_orchestrator.py
+    - tests/unit/harness/test_tool_selector.py
+    - tests/unit/harness/test_orchestrator_domain.py
+    - tests/unit/harness/test_agent_prompt_builder.py
+    - tests/unit/harness/test_recovery_domain.py
+    - tests/unit/harness/test_recovery_executor.py
+    - tests/unit/harness/test_memory_store.py
+    - tests/unit/harness/test_escalation_notifier.py
+    - tests/unit/harness/test_session_manager.py
+    - tests/unit/harness/test_tool_domain.py
+    - tests/unit/harness/test_execution_context_store.py
+    - tests/unit/harness/test_llm_executor.py
+    - tests/unit/harness/test_session_domain.py
+    - tests/unit/harness/test_session_store.py
+    - tests/unit/harness/test_escalation_manager.py
+    - tests/unit/harness/test_memory_manager.py
+    src/agentforge/cli/commands/ci.py:
+    - tests/unit/tools/test_builtin_checks_architecture.py
+    - tests/unit/tools/cicd/test_baseline.py
+    - tests/unit/tools/cicd/test_runner.py
+    - tests/unit/tools/cicd/test_domain.py
+    - tests/unit/tools/cicd/test_outputs.py
+    - tests/unit/tools/generate/test_provider.py
+    src/agentforge/cli/click_commands/ci.py:
+    - tests/unit/tools/test_builtin_checks_architecture.py
+    - tests/unit/tools/cicd/test_baseline.py
+    - tests/unit/tools/cicd/test_runner.py
+    - tests/unit/tools/cicd/test_domain.py
+    - tests/unit/tools/cicd/test_outputs.py
+    - tests/unit/tools/generate/test_provider.py
+    tools/builtin_checks_architecture.py:
+    - tests/unit/tools/test_builtin_checks_architecture.py
+    tools/builtin_checks_architecture_helpers.py:
+    - tests/unit/tools/test_builtin_checks_architecture.py
+    tools/builtin_checks.py:
+    - tests/unit/tools/test_builtin_checks_architecture.py
+    tools/bridge/domain.py:
+    - tests/unit/tools/test_builtin_checks_architecture.py
+    - tests/unit/tools/bridge/test_registry.py
+    - tests/unit/tools/bridge/test_domain.py
+    - tests/unit/tools/bridge/test_contract_builder.py
+    - tests/unit/tools/cicd/test_baseline.py
+    - tests/unit/tools/cicd/test_runner.py
+    - tests/unit/tools/cicd/test_domain.py
+    - tests/unit/tools/cicd/test_outputs.py
+    - tests/unit/tools/tdflow/test_session.py
+    - tests/unit/tools/tdflow/test_orchestrator.py
+    - tests/unit/tools/tdflow/test_domain.py
+    - tests/unit/tools/tdflow/runners/test_dotnet.py
+    - tests/unit/tools/tdflow/runners/test_pytest_runner.py
+    - tests/unit/tools/generate/test_parser.py
+    - tests/unit/tools/generate/test_engine.py
+    - tests/unit/tools/generate/test_writer.py
+    - tests/unit/tools/generate/test_provider.py
+    - tests/unit/tools/generate/test_domain.py
+    - tests/unit/tools/generate/test_prompt_builder.py
+    - tests/unit/tools/conformance/test_domain.py
+    - tests/unit/tools/conformance/test_manager.py
+    - tests/unit/tools/conformance/test_stores.py
+    - tests/unit/harness/test_action_parser.py
+    - tests/unit/harness/test_monitor_domain.py
+    - tests/unit/harness/test_checkpoint_manager.py
+    - tests/unit/harness/test_memory_domain.py
+    - tests/unit/harness/test_escalation_domain.py
+    - tests/unit/harness/test_tool_executor_bridge.py
+    - tests/unit/harness/test_agent_monitor.py
+    - tests/unit/harness/test_tool_registry.py
+    - tests/unit/harness/test_llm_executor_domain.py
+    - tests/unit/harness/test_agent_orchestrator.py
+    - tests/unit/harness/test_tool_selector.py
+    - tests/unit/harness/test_orchestrator_domain.py
+    - tests/unit/harness/test_agent_prompt_builder.py
+    - tests/unit/harness/test_recovery_domain.py
+    - tests/unit/harness/test_recovery_executor.py
+    - tests/unit/harness/test_memory_store.py
+    - tests/unit/harness/test_escalation_notifier.py
+    - tests/unit/harness/test_session_manager.py
+    - tests/unit/harness/test_tool_domain.py
+    - tests/unit/harness/test_execution_context_store.py
+    - tests/unit/harness/test_llm_executor.py
+    - tests/unit/harness/test_session_domain.py
+    - tests/unit/harness/test_session_store.py
+    - tests/unit/harness/test_escalation_manager.py
+    - tests/unit/harness/test_memory_manager.py
+    tools/discovery/domain.py:
+    - tests/unit/tools/test_builtin_checks_architecture.py
+    - tests/unit/tools/bridge/test_registry.py
+    - tests/unit/tools/bridge/test_domain.py
+    - tests/unit/tools/bridge/test_contract_builder.py
+    - tests/unit/tools/cicd/test_baseline.py
+    - tests/unit/tools/cicd/test_runner.py
+    - tests/unit/tools/cicd/test_domain.py
+    - tests/unit/tools/cicd/test_outputs.py
+    - tests/unit/tools/tdflow/test_session.py
+    - tests/unit/tools/tdflow/test_orchestrator.py
+    - tests/unit/tools/tdflow/test_domain.py
+    - tests/unit/tools/tdflow/runners/test_dotnet.py
+    - tests/unit/tools/tdflow/runners/test_pytest_runner.py
+    - tests/unit/tools/generate/test_parser.py
+    - tests/unit/tools/generate/test_engine.py
+    - tests/unit/tools/generate/test_writer.py
+    - tests/unit/tools/generate/test_provider.py
+    - tests/unit/tools/generate/test_domain.py
+    - tests/unit/tools/generate/test_prompt_builder.py
+    - tests/unit/tools/conformance/test_domain.py
+    - tests/unit/tools/conformance/test_manager.py
+    - tests/unit/tools/conformance/test_stores.py
+    - tests/unit/harness/test_action_parser.py
+    - tests/unit/harness/test_monitor_domain.py
+    - tests/unit/harness/test_checkpoint_manager.py
+    - tests/unit/harness/test_memory_domain.py
+    - tests/unit/harness/test_escalation_domain.py
+    - tests/unit/harness/test_tool_executor_bridge.py
+    - tests/unit/harness/test_agent_monitor.py
+    - tests/unit/harness/test_tool_registry.py
+    - tests/unit/harness/test_llm_executor_domain.py
+    - tests/unit/harness/test_agent_orchestrator.py
+    - tests/unit/harness/test_tool_selector.py
+    - tests/unit/harness/test_orchestrator_domain.py
+    - tests/unit/harness/test_agent_prompt_builder.py
+    - tests/unit/harness/test_recovery_domain.py
+    - tests/unit/harness/test_recovery_executor.py
+    - tests/unit/harness/test_memory_store.py
+    - tests/unit/harness/test_escalation_notifier.py
+    - tests/unit/harness/test_session_manager.py
+    - tests/unit/harness/test_tool_domain.py
+    - tests/unit/harness/test_execution_context_store.py
+    - tests/unit/harness/test_llm_executor.py
+    - tests/unit/harness/test_session_domain.py
+    - tests/unit/harness/test_session_store.py
+    - tests/unit/harness/test_escalation_manager.py
+    - tests/unit/harness/test_memory_manager.py
+    tools/cicd/domain.py:
+    - tests/unit/tools/test_builtin_checks_architecture.py
+    - tests/unit/tools/bridge/test_registry.py
+    - tests/unit/tools/bridge/test_domain.py
+    - tests/unit/tools/bridge/test_contract_builder.py
+    - tests/unit/tools/cicd/test_baseline.py
+    - tests/unit/tools/cicd/test_runner.py
+    - tests/unit/tools/cicd/test_domain.py
+    - tests/unit/tools/cicd/test_outputs.py
+    - tests/unit/tools/tdflow/test_session.py
+    - tests/unit/tools/tdflow/test_orchestrator.py
+    - tests/unit/tools/tdflow/test_domain.py
+    - tests/unit/tools/tdflow/runners/test_dotnet.py
+    - tests/unit/tools/tdflow/runners/test_pytest_runner.py
+    - tests/unit/tools/generate/test_parser.py
+    - tests/unit/tools/generate/test_engine.py
+    - tests/unit/tools/generate/test_writer.py
+    - tests/unit/tools/generate/test_provider.py
+    - tests/unit/tools/generate/test_domain.py
+    - tests/unit/tools/generate/test_prompt_builder.py
+    - tests/unit/tools/conformance/test_domain.py
+    - tests/unit/tools/conformance/test_manager.py
+    - tests/unit/tools/conformance/test_stores.py
+    - tests/unit/harness/test_action_parser.py
+    - tests/unit/harness/test_monitor_domain.py
+    - tests/unit/harness/test_checkpoint_manager.py
+    - tests/unit/harness/test_memory_domain.py
+    - tests/unit/harness/test_escalation_domain.py
+    - tests/unit/harness/test_tool_executor_bridge.py
+    - tests/unit/harness/test_agent_monitor.py
+    - tests/unit/harness/test_tool_registry.py
+    - tests/unit/harness/test_llm_executor_domain.py
+    - tests/unit/harness/test_agent_orchestrator.py
+    - tests/unit/harness/test_tool_selector.py
+    - tests/unit/harness/test_orchestrator_domain.py
+    - tests/unit/harness/test_agent_prompt_builder.py
+    - tests/unit/harness/test_recovery_domain.py
+    - tests/unit/harness/test_recovery_executor.py
+    - tests/unit/harness/test_memory_store.py
+    - tests/unit/harness/test_escalation_notifier.py
+    - tests/unit/harness/test_session_manager.py
+    - tests/unit/harness/test_tool_domain.py
+    - tests/unit/harness/test_execution_context_store.py
+    - tests/unit/harness/test_llm_executor.py
+    - tests/unit/harness/test_session_domain.py
+    - tests/unit/harness/test_session_store.py
+    - tests/unit/harness/test_escalation_manager.py
+    - tests/unit/harness/test_memory_manager.py
+    tools/tdflow/domain.py:
+    - tests/unit/tools/test_builtin_checks_architecture.py
+    - tests/unit/tools/bridge/test_registry.py
+    - tests/unit/tools/bridge/test_domain.py
+    - tests/unit/tools/bridge/test_contract_builder.py
+    - tests/unit/tools/cicd/test_baseline.py
+    - tests/unit/tools/cicd/test_runner.py
+    - tests/unit/tools/cicd/test_domain.py
+    - tests/unit/tools/cicd/test_outputs.py
+    - tests/unit/tools/tdflow/test_session.py
+    - tests/unit/tools/tdflow/test_orchestrator.py
+    - tests/unit/tools/tdflow/test_domain.py
+    - tests/unit/tools/tdflow/runners/test_dotnet.py
+    - tests/unit/tools/tdflow/runners/test_pytest_runner.py
+    - tests/unit/tools/generate/test_parser.py
+    - tests/unit/tools/generate/test_engine.py
+    - tests/unit/tools/generate/test_writer.py
+    - tests/unit/tools/generate/test_provider.py
+    - tests/unit/tools/generate/test_domain.py
+    - tests/unit/tools/generate/test_prompt_builder.py
+    - tests/unit/tools/conformance/test_domain.py
+    - tests/unit/tools/conformance/test_manager.py
+    - tests/unit/tools/conformance/test_stores.py
+    - tests/unit/harness/test_action_parser.py
+    - tests/unit/harness/test_monitor_domain.py
+    - tests/unit/harness/test_checkpoint_manager.py
+    - tests/unit/harness/test_memory_domain.py
+    - tests/unit/harness/test_escalation_domain.py
+    - tests/unit/harness/test_tool_executor_bridge.py
+    - tests/unit/harness/test_agent_monitor.py
+    - tests/unit/harness/test_tool_registry.py
+    - tests/unit/harness/test_llm_executor_domain.py
+    - tests/unit/harness/test_agent_orchestrator.py
+    - tests/unit/harness/test_tool_selector.py
+    - tests/unit/harness/test_orchestrator_domain.py
+    - tests/unit/harness/test_agent_prompt_builder.py
+    - tests/unit/harness/test_recovery_domain.py
+    - tests/unit/harness/test_recovery_executor.py
+    - tests/unit/harness/test_memory_store.py
+    - tests/unit/harness/test_escalation_notifier.py
+    - tests/unit/harness/test_session_manager.py
+    - tests/unit/harness/test_tool_domain.py
+    - tests/unit/harness/test_execution_context_store.py
+    - tests/unit/harness/test_llm_executor.py
+    - tests/unit/harness/test_session_domain.py
+    - tests/unit/harness/test_session_store.py
+    - tests/unit/harness/test_escalation_manager.py
+    - tests/unit/harness/test_memory_manager.py
+    tools/generate/domain.py:
+    - tests/unit/tools/test_builtin_checks_architecture.py
+    - tests/unit/tools/bridge/test_registry.py
+    - tests/unit/tools/bridge/test_domain.py
+    - tests/unit/tools/bridge/test_contract_builder.py
+    - tests/unit/tools/cicd/test_baseline.py
+    - tests/unit/tools/cicd/test_runner.py
+    - tests/unit/tools/cicd/test_domain.py
+    - tests/unit/tools/cicd/test_outputs.py
+    - tests/unit/tools/tdflow/test_session.py
+    - tests/unit/tools/tdflow/test_orchestrator.py
+    - tests/unit/tools/tdflow/test_domain.py
+    - tests/unit/tools/tdflow/runners/test_dotnet.py
+    - tests/unit/tools/tdflow/runners/test_pytest_runner.py
+    - tests/unit/tools/generate/test_parser.py
+    - tests/unit/tools/generate/test_engine.py
+    - tests/unit/tools/generate/test_writer.py
+    - tests/unit/tools/generate/test_provider.py
+    - tests/unit/tools/generate/test_domain.py
+    - tests/unit/tools/generate/test_prompt_builder.py
+    - tests/unit/tools/conformance/test_domain.py
+    - tests/unit/tools/conformance/test_manager.py
+    - tests/unit/tools/conformance/test_stores.py
+    - tests/unit/harness/test_action_parser.py
+    - tests/unit/harness/test_monitor_domain.py
+    - tests/unit/harness/test_checkpoint_manager.py
+    - tests/unit/harness/test_memory_domain.py
+    - tests/unit/harness/test_escalation_domain.py
+    - tests/unit/harness/test_tool_executor_bridge.py
+    - tests/unit/harness/test_agent_monitor.py
+    - tests/unit/harness/test_tool_registry.py
+    - tests/unit/harness/test_llm_executor_domain.py
+    - tests/unit/harness/test_agent_orchestrator.py
+    - tests/unit/harness/test_tool_selector.py
+    - tests/unit/harness/test_orchestrator_domain.py
+    - tests/unit/harness/test_agent_prompt_builder.py
+    - tests/unit/harness/test_recovery_domain.py
+    - tests/unit/harness/test_recovery_executor.py
+    - tests/unit/harness/test_memory_store.py
+    - tests/unit/harness/test_escalation_notifier.py
+    - tests/unit/harness/test_session_manager.py
+    - tests/unit/harness/test_tool_domain.py
+    - tests/unit/harness/test_execution_context_store.py
+    - tests/unit/harness/test_llm_executor.py
+    - tests/unit/harness/test_session_domain.py
+    - tests/unit/harness/test_session_store.py
+    - tests/unit/harness/test_escalation_manager.py
+    - tests/unit/harness/test_memory_manager.py
+    tools/conformance/domain.py:
+    - tests/unit/tools/test_builtin_checks_architecture.py
+    - tests/unit/tools/bridge/test_registry.py
+    - tests/unit/tools/bridge/test_domain.py
+    - tests/unit/tools/bridge/test_contract_builder.py
+    - tests/unit/tools/cicd/test_baseline.py
+    - tests/unit/tools/cicd/test_runner.py
+    - tests/unit/tools/cicd/test_domain.py
+    - tests/unit/tools/cicd/test_outputs.py
+    - tests/unit/tools/tdflow/test_session.py
+    - tests/unit/tools/tdflow/test_orchestrator.py
+    - tests/unit/tools/tdflow/test_domain.py
+    - tests/unit/tools/tdflow/runners/test_dotnet.py
+    - tests/unit/tools/tdflow/runners/test_pytest_runner.py
+    - tests/unit/tools/generate/test_parser.py
+    - tests/unit/tools/generate/test_engine.py
+    - tests/unit/tools/generate/test_writer.py
+    - tests/unit/tools/generate/test_provider.py
+    - tests/unit/tools/generate/test_domain.py
+    - tests/unit/tools/generate/test_prompt_builder.py
+    - tests/unit/tools/conformance/test_domain.py
+    - tests/unit/tools/conformance/test_manager.py
+    - tests/unit/tools/conformance/test_stores.py
+    - tests/unit/harness/test_action_parser.py
+    - tests/unit/harness/test_monitor_domain.py
+    - tests/unit/harness/test_checkpoint_manager.py
+    - tests/unit/harness/test_memory_domain.py
+    - tests/unit/harness/test_escalation_domain.py
+    - tests/unit/harness/test_tool_executor_bridge.py
+    - tests/unit/harness/test_agent_monitor.py
+    - tests/unit/harness/test_tool_registry.py
+    - tests/unit/harness/test_llm_executor_domain.py
+    - tests/unit/harness/test_agent_orchestrator.py
+    - tests/unit/harness/test_tool_selector.py
+    - tests/unit/harness/test_orchestrator_domain.py
+    - tests/unit/harness/test_agent_prompt_builder.py
+    - tests/unit/harness/test_recovery_domain.py
+    - tests/unit/harness/test_recovery_executor.py
+    - tests/unit/harness/test_memory_store.py
+    - tests/unit/harness/test_escalation_notifier.py
+    - tests/unit/harness/test_session_manager.py
+    - tests/unit/harness/test_tool_domain.py
+    - tests/unit/harness/test_execution_context_store.py
+    - tests/unit/harness/test_llm_executor.py
+    - tests/unit/harness/test_session_domain.py
+    - tests/unit/harness/test_session_store.py
+    - tests/unit/harness/test_escalation_manager.py
+    - tests/unit/harness/test_memory_manager.py
+    src/agentforge/core/bridge/mappings/registry.py:
+    - tests/unit/tools/bridge/test_registry.py
+    - tests/unit/harness/test_tool_registry.py
+    - tests/unit/harness/test_tool_selector.py
+    src/agentforge/core/bridge/mappings/cqrs.py:
+    - tests/unit/tools/bridge/test_registry.py
+    src/agentforge/core/bridge/mappings/__init__.py:
+    - tests/unit/tools/bridge/test_registry.py
+    src/agentforge/core/bridge/mappings/conventions.py:
+    - tests/unit/tools/bridge/test_registry.py
+    src/agentforge/core/bridge/mappings/architecture.py:
+    - tests/unit/tools/bridge/test_registry.py
+    src/agentforge/core/bridge/mappings/repository.py:
+    - tests/unit/tools/bridge/test_registry.py
+    - tests/unit/tools/generate/test_writer.py
+    - tests/unit/tools/generate/test_provider.py
+    - tests/unit/harness/test_tool_executor_bridge.py
+    - tests/unit/harness/test_memory_store.py
+    src/agentforge/core/refactoring/registry.py:
+    - tests/unit/tools/bridge/test_registry.py
+    - tests/unit/harness/test_tool_registry.py
+    - tests/unit/harness/test_tool_selector.py
+    src/agentforge/cli/commands/bridge.py:
+    - tests/unit/tools/bridge/test_registry.py
+    - tests/unit/tools/bridge/test_domain.py
+    - tests/unit/tools/bridge/test_profile_loader.py
+    - tests/unit/tools/bridge/test_contract_builder.py
+    - tests/unit/harness/test_tool_executor_bridge.py
+    src/agentforge/cli/click_commands/bridge.py:
+    - tests/unit/tools/bridge/test_registry.py
+    - tests/unit/tools/bridge/test_domain.py
+    - tests/unit/tools/bridge/test_profile_loader.py
+    - tests/unit/tools/bridge/test_contract_builder.py
+    - tests/unit/harness/test_tool_executor_bridge.py
+    tools/bridge/mappings/registry.py:
+    - tests/unit/tools/bridge/test_registry.py
+    - tests/unit/harness/test_tool_registry.py
+    - tests/unit/harness/test_tool_selector.py
+    tools/bridge/mappings/cqrs.py:
+    - tests/unit/tools/bridge/test_registry.py
+    tools/bridge/mappings/__init__.py:
+    - tests/unit/tools/bridge/test_registry.py
+    tools/bridge/mappings/conventions.py:
+    - tests/unit/tools/bridge/test_registry.py
+    tools/bridge/mappings/architecture.py:
+    - tests/unit/tools/bridge/test_registry.py
+    tools/bridge/mappings/repository.py:
+    - tests/unit/tools/bridge/test_registry.py
+    - tests/unit/tools/generate/test_writer.py
+    - tests/unit/tools/generate/test_provider.py
+    - tests/unit/harness/test_tool_executor_bridge.py
+    - tests/unit/harness/test_memory_store.py
+    tools/refactoring/registry.py:
+    - tests/unit/tools/bridge/test_registry.py
+    - tests/unit/harness/test_tool_registry.py
+    - tests/unit/harness/test_tool_selector.py
+    src/agentforge/core/bridge/profile_loader.py:
+    - tests/unit/tools/bridge/test_profile_loader.py
+    src/agentforge/core/discovery/generators/profile.py:
+    - tests/unit/tools/bridge/test_profile_loader.py
+    tools/bridge/profile_loader.py:
+    - tests/unit/tools/bridge/test_profile_loader.py
+    tools/discovery/generators/profile.py:
+    - tests/unit/tools/bridge/test_profile_loader.py
+    src/agentforge/core/bridge/contract_builder.py:
+    - tests/unit/tools/bridge/test_contract_builder.py
+    tools/bridge/contract_builder.py:
+    - tests/unit/tools/bridge/test_contract_builder.py
+    src/agentforge/core/cicd/baseline.py:
+    - tests/unit/tools/cicd/test_baseline.py
+    tools/cicd/baseline.py:
+    - tests/unit/tools/cicd/test_baseline.py
+    src/agentforge/core/cicd/platforms/github.py:
+    - tests/unit/tools/cicd/test_outputs.py
+    src/agentforge/core/cicd/outputs/sarif.py:
+    - tests/unit/tools/cicd/test_outputs.py
+    src/agentforge/core/cicd/outputs/markdown.py:
+    - tests/unit/tools/cicd/test_outputs.py
+    src/agentforge/core/cicd/outputs/junit.py:
+    - tests/unit/tools/cicd/test_outputs.py
+    src/agentforge/cli/click_commands/generate.py:
+    - tests/unit/tools/cicd/test_outputs.py
+    - tests/unit/tools/generate/test_parser.py
+    - tests/unit/tools/generate/test_engine.py
+    - tests/unit/tools/generate/test_writer.py
+    - tests/unit/tools/generate/test_provider.py
+    - tests/unit/tools/generate/test_domain.py
+    - tests/unit/tools/generate/test_prompt_builder.py
+    tools/cicd/platforms/github.py:
+    - tests/unit/tools/cicd/test_outputs.py
+    tools/cicd/outputs/sarif.py:
+    - tests/unit/tools/cicd/test_outputs.py
+    tools/cicd/outputs/markdown.py:
+    - tests/unit/tools/cicd/test_outputs.py
+    tools/cicd/outputs/junit.py:
+    - tests/unit/tools/cicd/test_outputs.py
+    src/agentforge/core/tdflow/session.py:
+    - tests/unit/tools/tdflow/test_session.py
+    - tests/unit/harness/test_agent_orchestrator.py
+    - tests/unit/harness/test_session_manager.py
+    - tests/unit/harness/test_session_domain.py
+    - tests/unit/harness/test_session_store.py
+    - tests/integration/harness/test_harness_workflow.py
+    src/agentforge/cli/commands/tdflow.py:
+    - tests/unit/tools/tdflow/test_session.py
+    - tests/unit/tools/tdflow/test_orchestrator.py
+    - tests/unit/tools/tdflow/test_domain.py
+    - tests/unit/tools/tdflow/runners/test_dotnet.py
+    - tests/unit/tools/tdflow/runners/test_pytest_runner.py
+    src/agentforge/cli/click_commands/tdflow.py:
+    - tests/unit/tools/tdflow/test_session.py
+    - tests/unit/tools/tdflow/test_orchestrator.py
+    - tests/unit/tools/tdflow/test_domain.py
+    - tests/unit/tools/tdflow/runners/test_dotnet.py
+    - tests/unit/tools/tdflow/runners/test_pytest_runner.py
+    tools/tdflow/session.py:
+    - tests/unit/tools/tdflow/test_session.py
+    - tests/unit/harness/test_agent_orchestrator.py
+    - tests/unit/harness/test_session_manager.py
+    - tests/unit/harness/test_session_domain.py
+    - tests/unit/harness/test_session_store.py
+    - tests/integration/harness/test_harness_workflow.py
+    src/agentforge/core/bridge/orchestrator.py:
+    - tests/unit/tools/tdflow/test_orchestrator.py
+    - tests/unit/harness/test_agent_orchestrator.py
+    - tests/unit/harness/test_orchestrator_domain.py
+    src/agentforge/core/tdflow/orchestrator.py:
+    - tests/unit/tools/tdflow/test_orchestrator.py
+    - tests/unit/harness/test_agent_orchestrator.py
+    - tests/unit/harness/test_orchestrator_domain.py
+    tools/bridge/orchestrator.py:
+    - tests/unit/tools/tdflow/test_orchestrator.py
+    - tests/unit/harness/test_agent_orchestrator.py
+    - tests/unit/harness/test_orchestrator_domain.py
+    tools/tdflow/orchestrator.py:
+    - tests/unit/tools/tdflow/test_orchestrator.py
+    - tests/unit/harness/test_agent_orchestrator.py
+    - tests/unit/harness/test_orchestrator_domain.py
+    src/agentforge/core/tdflow/runners/dotnet.py:
+    - tests/unit/tools/tdflow/runners/test_dotnet.py
+    - tests/unit/tools/tdflow/runners/test_pytest_runner.py
+    tools/tdflow/runners/dotnet.py:
+    - tests/unit/tools/tdflow/runners/test_dotnet.py
+    - tests/unit/tools/tdflow/runners/test_pytest_runner.py
+    src/agentforge/core/generate/parser.py:
+    - tests/unit/tools/generate/test_parser.py
+    - tests/unit/tools/generate/test_engine.py
+    - tests/unit/harness/test_action_parser.py
+    src/agentforge/cli/parser.py:
+    - tests/unit/tools/generate/test_parser.py
+    - tests/unit/tools/generate/test_engine.py
+    - tests/unit/harness/test_action_parser.py
+    tools/generate/parser.py:
+    - tests/unit/tools/generate/test_parser.py
+    - tests/unit/tools/generate/test_engine.py
+    - tests/unit/harness/test_action_parser.py
+    src/agentforge/core/generate/prompt_builder.py:
+    - tests/unit/tools/generate/test_engine.py
+    - tests/unit/tools/generate/test_prompt_builder.py
+    - tests/unit/harness/test_agent_prompt_builder.py
+    src/agentforge/core/generate/provider.py:
+    - tests/unit/tools/generate/test_engine.py
+    - tests/unit/tools/generate/test_provider.py
+    src/agentforge/core/generate/engine.py:
+    - tests/unit/tools/generate/test_engine.py
+    src/agentforge/core/generate/writer.py:
+    - tests/unit/tools/generate/test_engine.py
+    - tests/unit/tools/generate/test_writer.py
+    tools/generate/prompt_builder.py:
+    - tests/unit/tools/generate/test_engine.py
+    - tests/unit/tools/generate/test_prompt_builder.py
+    - tests/unit/harness/test_agent_prompt_builder.py
+    tools/generate/provider.py:
+    - tests/unit/tools/generate/test_engine.py
+    - tests/unit/tools/generate/test_provider.py
+    tools/generate/engine.py:
+    - tests/unit/tools/generate/test_engine.py
+    tools/generate/writer.py:
+    - tests/unit/tools/generate/test_engine.py
+    - tests/unit/tools/generate/test_writer.py
+    src/agentforge/cli/commands/conformance.py:
+    - tests/unit/tools/conformance/test_domain.py
+    - tests/unit/tools/conformance/test_manager.py
+    - tests/unit/tools/conformance/test_stores.py
+    - tests/unit/harness/test_selfhosting_tools.py
+    src/agentforge/cli/click_commands/conformance.py:
+    - tests/unit/tools/conformance/test_domain.py
+    - tests/unit/tools/conformance/test_manager.py
+    - tests/unit/tools/conformance/test_stores.py
+    - tests/unit/harness/test_selfhosting_tools.py
+    src/agentforge/core/discovery/manager.py:
+    - tests/unit/tools/conformance/test_manager.py
+    - tests/unit/harness/test_checkpoint_manager.py
+    - tests/unit/harness/test_recovery_executor.py
+    - tests/unit/harness/test_session_manager.py
+    - tests/unit/harness/test_escalation_manager.py
+    - tests/unit/harness/test_memory_manager.py
+    src/agentforge/core/conformance/manager.py:
+    - tests/unit/tools/conformance/test_manager.py
+    - tests/unit/harness/test_checkpoint_manager.py
+    - tests/unit/harness/test_recovery_executor.py
+    - tests/unit/harness/test_session_manager.py
+    - tests/unit/harness/test_escalation_manager.py
+    - tests/unit/harness/test_memory_manager.py
+    tools/discovery/manager.py:
+    - tests/unit/tools/conformance/test_manager.py
+    - tests/unit/harness/test_checkpoint_manager.py
+    - tests/unit/harness/test_recovery_executor.py
+    - tests/unit/harness/test_session_manager.py
+    - tests/unit/harness/test_escalation_manager.py
+    - tests/unit/harness/test_memory_manager.py
+    tools/conformance/manager.py:
+    - tests/unit/tools/conformance/test_manager.py
+    - tests/unit/harness/test_checkpoint_manager.py
+    - tests/unit/harness/test_recovery_executor.py
+    - tests/unit/harness/test_session_manager.py
+    - tests/unit/harness/test_escalation_manager.py
+    - tests/unit/harness/test_memory_manager.py
+    src/agentforge/core/conformance/stores.py:
+    - tests/unit/tools/conformance/test_stores.py
+    tools/conformance/stores.py:
+    - tests/unit/tools/conformance/test_stores.py
+    src/agentforge/core/harness/llm_executor.py:
+    - tests/unit/harness/test_action_parser.py
+    - tests/unit/harness/test_tool_executor_bridge.py
+    - tests/unit/harness/test_llm_executor_domain.py
+    - tests/unit/harness/test_agent_prompt_builder.py
+    - tests/unit/harness/test_execution_context_store.py
+    - tests/unit/harness/test_llm_executor.py
+    src/agentforge/core/harness/action_parser.py:
+    - tests/unit/harness/test_action_parser.py
+    src/agentforge/core/harness/llm_executor_domain.py:
+    - tests/unit/harness/test_action_parser.py
+    - tests/unit/harness/test_tool_executor_bridge.py
+    - tests/unit/harness/test_llm_executor_domain.py
+    - tests/unit/harness/test_agent_prompt_builder.py
+    - tests/unit/harness/test_execution_context_store.py
+    - tests/unit/harness/test_llm_executor.py
+    src/agentforge/core/harness/minimal_context/executor.py:
+    - tests/unit/harness/test_action_parser.py
+    - tests/unit/harness/test_enhanced_context.py
+    - tests/unit/harness/test_tool_executor_bridge.py
+    - tests/unit/harness/test_llm_executor_domain.py
+    - tests/unit/harness/test_agent_prompt_builder.py
+    - tests/unit/harness/test_recovery_executor.py
+    - tests/unit/harness/test_execution_context_store.py
+    - tests/unit/harness/test_llm_executor.py
+    tools/harness/llm_executor.py:
+    - tests/unit/harness/test_action_parser.py
+    - tests/unit/harness/test_tool_executor_bridge.py
+    - tests/unit/harness/test_llm_executor_domain.py
+    - tests/unit/harness/test_agent_prompt_builder.py
+    - tests/unit/harness/test_execution_context_store.py
+    - tests/unit/harness/test_llm_executor.py
+    - tests/integration/harness/test_harness_workflow.py
+    tools/harness/action_parser.py:
+    - tests/unit/harness/test_action_parser.py
+    - tests/integration/harness/test_harness_workflow.py
+    tools/harness/llm_executor_domain.py:
+    - tests/unit/harness/test_action_parser.py
+    - tests/unit/harness/test_tool_executor_bridge.py
+    - tests/unit/harness/test_llm_executor_domain.py
+    - tests/unit/harness/test_agent_prompt_builder.py
+    - tests/unit/harness/test_execution_context_store.py
+    - tests/unit/harness/test_llm_executor.py
+    - tests/integration/harness/test_harness_workflow.py
+    tools/harness/minimal_context/executor.py:
+    - tests/unit/harness/test_action_parser.py
+    - tests/unit/harness/test_enhanced_context.py
+    - tests/unit/harness/test_tool_executor_bridge.py
+    - tests/unit/harness/test_llm_executor_domain.py
+    - tests/unit/harness/test_minimal_context.py
+    - tests/unit/harness/test_agent_prompt_builder.py
+    - tests/unit/harness/test_recovery_executor.py
+    - tests/unit/harness/test_execution_context_store.py
+    - tests/unit/harness/test_llm_executor.py
+    - tests/integration/harness/test_harness_workflow.py
+    src/agentforge/core/harness/monitor_domain.py:
+    - tests/unit/harness/test_monitor_domain.py
+    - tests/unit/harness/test_agent_monitor.py
+    - tests/unit/harness/test_agent_orchestrator.py
+    tools/harness/monitor_domain.py:
+    - tests/unit/harness/test_monitor_domain.py
+    - tests/unit/harness/test_agent_monitor.py
+    - tests/unit/harness/test_agent_orchestrator.py
+    - tests/integration/harness/test_harness_workflow.py
+    src/agentforge/core/harness/recovery_domain.py:
+    - tests/unit/harness/test_checkpoint_manager.py
+    - tests/unit/harness/test_agent_orchestrator.py
+    - tests/unit/harness/test_recovery_domain.py
+    - tests/unit/harness/test_recovery_executor.py
+    src/agentforge/core/harness/checkpoint_manager.py:
+    - tests/unit/harness/test_checkpoint_manager.py
+    - tests/unit/harness/test_recovery_executor.py
+    tools/harness/recovery_domain.py:
+    - tests/unit/harness/test_checkpoint_manager.py
+    - tests/unit/harness/test_agent_orchestrator.py
+    - tests/unit/harness/test_recovery_domain.py
+    - tests/unit/harness/test_recovery_executor.py
+    - tests/integration/harness/test_harness_workflow.py
+    tools/harness/checkpoint_manager.py:
+    - tests/unit/harness/test_checkpoint_manager.py
+    - tests/unit/harness/test_recovery_executor.py
+    - tests/integration/harness/test_harness_workflow.py
+    src/agentforge/core/harness/memory_domain.py:
+    - tests/unit/harness/test_memory_domain.py
+    - tests/unit/harness/test_memory_store.py
+    - tests/unit/harness/test_memory_manager.py
+    tools/harness/memory_domain.py:
+    - tests/unit/harness/test_memory_domain.py
+    - tests/unit/harness/test_memory_store.py
+    - tests/unit/harness/test_memory_manager.py
+    - tests/integration/harness/test_harness_workflow.py
+    src/agentforge/core/harness/minimal_context/working_memory.py:
+    - tests/unit/harness/test_enhanced_context.py
+    src/agentforge/core/harness/minimal_context/context_models.py:
+    - tests/unit/harness/test_enhanced_context.py
+    src/agentforge/core/harness/minimal_context/state_store.py:
+    - tests/unit/harness/test_enhanced_context.py
+    src/agentforge/core/harness/minimal_context/token_budget.py:
+    - tests/unit/harness/test_enhanced_context.py
+    - tests/unit/harness/test_minimal_context.py
+    src/agentforge/core/harness/minimal_context/understanding.py:
+    - tests/unit/harness/test_enhanced_context.py
+    src/agentforge/core/harness/minimal_context/context_builder.py:
+    - tests/unit/harness/test_enhanced_context.py
+    src/agentforge/core/harness/minimal_context/context_schemas.py:
+    - tests/unit/harness/test_enhanced_context.py
+    src/agentforge/core/harness/minimal_context/__init__.py:
+    - tests/unit/harness/test_enhanced_context.py
+    src/agentforge/core/harness/minimal_context/phase_machine.py:
+    - tests/unit/harness/test_enhanced_context.py
+    src/agentforge/core/harness/minimal_context/loop_detector.py:
+    - tests/unit/harness/test_enhanced_context.py
+    src/agentforge/core/harness/minimal_context/fix_workflow.py:
+    - tests/unit/harness/test_enhanced_context.py
+    src/agentforge/core/harness/minimal_context/enhanced_context_builder.py:
+    - tests/unit/harness/test_enhanced_context.py
+    src/agentforge/cli/core.py:
+    - tests/unit/harness/test_enhanced_context.py
+    src/agentforge/cli/commands/agent.py:
+    - tests/unit/harness/test_enhanced_context.py
+    - tests/unit/harness/test_agent_monitor.py
+    - tests/unit/harness/test_agent_orchestrator.py
+    - tests/unit/harness/test_agent_prompt_builder.py
+    src/agentforge/cli/click_commands/agent.py:
+    - tests/unit/harness/test_enhanced_context.py
+    - tests/unit/harness/test_agent_monitor.py
+    - tests/unit/harness/test_agent_orchestrator.py
+    - tests/unit/harness/test_agent_prompt_builder.py
+    tools/harness/minimal_context/working_memory.py:
+    - tests/unit/harness/test_enhanced_context.py
+    - tests/unit/harness/test_minimal_context.py
+    - tests/integration/harness/test_harness_workflow.py
+    tools/harness/minimal_context/fix_workflow.py:
+    - tests/unit/harness/test_enhanced_context.py
+    - tests/unit/harness/test_minimal_context.py
+    - tests/integration/harness/test_harness_workflow.py
+    src/agentforge/core/harness/escalation_domain.py:
+    - tests/unit/harness/test_escalation_domain.py
+    - tests/unit/harness/test_agent_orchestrator.py
+    - tests/unit/harness/test_escalation_notifier.py
+    - tests/unit/harness/test_escalation_manager.py
+    tools/harness/escalation_domain.py:
+    - tests/unit/harness/test_escalation_domain.py
+    - tests/unit/harness/test_agent_orchestrator.py
+    - tests/unit/harness/test_escalation_notifier.py
+    - tests/unit/harness/test_escalation_manager.py
+    - tests/integration/harness/test_harness_workflow.py
+    src/agentforge/core/harness/git_tools.py:
+    - tests/unit/harness/test_selfhosting_tools.py
+    src/agentforge/core/harness/conformance_tools.py:
+    - tests/unit/harness/test_selfhosting_tools.py
+    src/agentforge/core/harness/violation_tools.py:
+    - tests/unit/harness/test_selfhosting_tools.py
+    tools/harness/git_tools.py:
+    - tests/unit/harness/test_selfhosting_tools.py
+    - tests/integration/harness/test_harness_workflow.py
+    tools/harness/conformance_tools.py:
+    - tests/unit/harness/test_selfhosting_tools.py
+    - tests/integration/harness/test_harness_workflow.py
+    tools/harness/violation_tools.py:
+    - tests/unit/harness/test_selfhosting_tools.py
+    - tests/integration/harness/test_harness_workflow.py
+    src/agentforge/core/harness/tool_executor_bridge.py:
+    - tests/unit/harness/test_tool_executor_bridge.py
+    tools/harness/tool_executor_bridge.py:
+    - tests/unit/harness/test_tool_executor_bridge.py
+    - tests/integration/harness/test_harness_workflow.py
+    src/agentforge/core/harness/agent_monitor.py:
+    - tests/unit/harness/test_agent_monitor.py
+    tools/harness/agent_monitor.py:
+    - tests/unit/harness/test_agent_monitor.py
+    - tests/integration/harness/test_harness_workflow.py
+    src/agentforge/core/init.py:
+    - tests/unit/harness/test_tool_registry.py
+    - tests/unit/harness/test_tool_selector.py
+    - tests/unit/harness/test_tool_domain.py
+    - tests/integration/harness/test_harness_workflow.py
+    src/agentforge/core/harness/tool_registry.py:
+    - tests/unit/harness/test_tool_registry.py
+    - tests/unit/harness/test_tool_selector.py
+    src/agentforge/core/harness/tool_domain.py:
+    - tests/unit/harness/test_tool_registry.py
+    - tests/unit/harness/test_tool_selector.py
+    - tests/unit/harness/test_tool_domain.py
+    tools/harness/tool_registry.py:
+    - tests/unit/harness/test_tool_registry.py
+    - tests/unit/harness/test_tool_selector.py
+    - tests/integration/harness/test_harness_workflow.py
+    tools/harness/tool_domain.py:
+    - tests/unit/harness/test_tool_registry.py
+    - tests/unit/harness/test_tool_selector.py
+    - tests/unit/harness/test_tool_domain.py
+    - tests/integration/harness/test_harness_workflow.py
+    tools/harness/minimal_context/state_store.py:
+    - tests/unit/harness/test_minimal_context.py
+    - tests/integration/harness/test_harness_workflow.py
+    tools/harness/minimal_context/token_budget.py:
+    - tests/unit/harness/test_minimal_context.py
+    - tests/integration/harness/test_harness_workflow.py
+    tools/harness/minimal_context/context_builder.py:
+    - tests/unit/harness/test_minimal_context.py
+    - tests/integration/harness/test_harness_workflow.py
+    tools/harness/minimal_context/context_schemas.py:
+    - tests/unit/harness/test_minimal_context.py
+    - tests/integration/harness/test_harness_workflow.py
+    tools/harness/minimal_context/__init__.py:
+    - tests/unit/harness/test_minimal_context.py
+    - tests/integration/harness/test_harness_workflow.py
+    src/agentforge/core/harness/session_domain.py:
+    - tests/unit/harness/test_agent_orchestrator.py
+    - tests/unit/harness/test_session_manager.py
+    - tests/unit/harness/test_session_domain.py
+    - tests/unit/harness/test_session_store.py
+    src/agentforge/core/harness/agent_orchestrator.py:
+    - tests/unit/harness/test_agent_orchestrator.py
+    src/agentforge/core/harness/orchestrator_domain.py:
+    - tests/unit/harness/test_agent_orchestrator.py
+    - tests/unit/harness/test_orchestrator_domain.py
+    tools/harness/session_domain.py:
+    - tests/unit/harness/test_agent_orchestrator.py
+    - tests/unit/harness/test_session_manager.py
+    - tests/unit/harness/test_session_domain.py
+    - tests/unit/harness/test_session_store.py
+    - tests/integration/harness/test_harness_workflow.py
+    tools/harness/agent_orchestrator.py:
+    - tests/unit/harness/test_agent_orchestrator.py
+    - tests/integration/harness/test_harness_workflow.py
+    tools/harness/orchestrator_domain.py:
+    - tests/unit/harness/test_agent_orchestrator.py
+    - tests/unit/harness/test_orchestrator_domain.py
+    - tests/integration/harness/test_harness_workflow.py
+    src/agentforge/core/harness/tool_selector.py:
+    - tests/unit/harness/test_tool_selector.py
+    tools/harness/tool_selector.py:
+    - tests/unit/harness/test_tool_selector.py
+    - tests/integration/harness/test_harness_workflow.py
+    src/agentforge/core/harness/agent_prompt_builder.py:
+    - tests/unit/harness/test_agent_prompt_builder.py
+    tools/harness/agent_prompt_builder.py:
+    - tests/unit/harness/test_agent_prompt_builder.py
+    - tests/integration/harness/test_harness_workflow.py
+    src/agentforge/core/harness/recovery_executor.py:
+    - tests/unit/harness/test_recovery_executor.py
+    tools/harness/recovery_executor.py:
+    - tests/unit/harness/test_recovery_executor.py
+    - tests/integration/harness/test_harness_workflow.py
+    src/agentforge/core/harness/memory_store.py:
+    - tests/unit/harness/test_memory_store.py
+    - tests/unit/harness/test_memory_manager.py
+    - tests/integration/harness/test_harness_workflow.py
+    tools/harness/memory_store.py:
+    - tests/unit/harness/test_memory_store.py
+    - tests/unit/harness/test_memory_manager.py
+    - tests/integration/harness/test_harness_workflow.py
+    src/agentforge/core/harness/escalation_notifier.py:
+    - tests/unit/harness/test_escalation_notifier.py
+    tools/harness/escalation_notifier.py:
+    - tests/unit/harness/test_escalation_notifier.py
+    - tests/integration/harness/test_harness_workflow.py
+    src/agentforge/core/harness/session_manager.py:
+    - tests/unit/harness/test_session_manager.py
+    src/agentforge/core/harness/session_store.py:
+    - tests/unit/harness/test_session_manager.py
+    - tests/unit/harness/test_session_store.py
+    - tests/integration/harness/test_harness_workflow.py
+    tools/harness/session_manager.py:
+    - tests/unit/harness/test_session_manager.py
+    - tests/integration/harness/test_harness_workflow.py
+    tools/harness/session_store.py:
+    - tests/unit/harness/test_session_manager.py
+    - tests/unit/harness/test_session_store.py
+    - tests/integration/harness/test_harness_workflow.py
+    src/agentforge/core/harness/execution_context_store.py:
+    - tests/unit/harness/test_execution_context_store.py
+    tools/harness/execution_context_store.py:
+    - tests/unit/harness/test_execution_context_store.py
+    - tests/integration/harness/test_harness_workflow.py
+    src/agentforge/core/harness/escalation_manager.py:
+    - tests/unit/harness/test_escalation_manager.py
+    tools/harness/escalation_manager.py:
+    - tests/unit/harness/test_escalation_manager.py
+    - tests/integration/harness/test_harness_workflow.py
+    src/agentforge/core/harness/memory_manager.py:
+    - tests/unit/harness/test_memory_manager.py
+    tools/harness/memory_manager.py:
+    - tests/unit/harness/test_memory_manager.py
+    - tests/integration/harness/test_harness_workflow.py
+    tools/harness/python_tools.py:
+    - tests/integration/harness/test_harness_workflow.py
+    tools/harness/auto_fix_daemon.py:
+    - tests/integration/harness/test_harness_workflow.py
+    tools/harness/__init__.py:
+    - tests/integration/harness/test_harness_workflow.py
+    tools/harness/fix_violation_workflow.py:
+    - tests/integration/harness/test_harness_workflow.py
+    tools/harness/rollback_manager.py:
+    - tests/integration/harness/test_harness_workflow.py
+    tools/harness/refactoring_tools.py:
+    - tests/integration/harness/test_harness_workflow.py
+    tools/verification_checks.py:
+    - tests/unit/tools/test_verification_checks.py

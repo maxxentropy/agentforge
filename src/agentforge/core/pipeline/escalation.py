@@ -1,5 +1,5 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-1-foundation.yaml
-# @spec_id: pipeline-controller-phase1-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
 # @component_id: pipeline-escalation
 # @test_path: tests/unit/pipeline/test_escalation.py
 
@@ -22,7 +22,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import yaml
 
@@ -58,14 +58,14 @@ class Escalation:
     stage_name: str
     type: EscalationType
     message: str
-    options: Optional[List[str]] = None
-    context: Dict[str, Any] = field(default_factory=dict)
+    options: list[str] | None = None
+    context: dict[str, Any] = field(default_factory=dict)
     created_at: datetime = field(default_factory=datetime.now)
     status: EscalationStatus = EscalationStatus.PENDING
-    response: Optional[str] = None
-    resolved_at: Optional[datetime] = None
+    response: str | None = None
+    resolved_at: datetime | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary."""
         return {
             "escalation_id": self.escalation_id,
@@ -82,7 +82,7 @@ class Escalation:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "Escalation":
+    def from_dict(cls, data: dict[str, Any]) -> "Escalation":
         """Deserialize from dictionary."""
         return cls(
             escalation_id=data["escalation_id"],
@@ -204,7 +204,7 @@ class EscalationHandler:
 
         logger.info(f"Rejected escalation {escalation_id}")
 
-    def get(self, escalation_id: str) -> Optional[Escalation]:
+    def get(self, escalation_id: str) -> Escalation | None:
         """
         Get an escalation by ID.
 
@@ -219,14 +219,14 @@ class EscalationHandler:
             return None
 
         try:
-            with open(file_path, "r") as f:
+            with open(file_path) as f:
                 data = yaml.safe_load(f)
                 return Escalation.from_dict(data)
         except (yaml.YAMLError, KeyError, ValueError) as e:
             logger.error(f"Failed to load escalation {escalation_id}: {e}")
             return None
 
-    def get_pending(self, pipeline_id: str = None) -> List[Escalation]:
+    def get_pending(self, pipeline_id: str = None) -> list[Escalation]:
         """
         Get pending escalations.
 
@@ -247,7 +247,7 @@ class EscalationHandler:
         pending.sort(key=lambda e: e.created_at)
         return pending
 
-    def get_for_pipeline(self, pipeline_id: str) -> List[Escalation]:
+    def get_for_pipeline(self, pipeline_id: str) -> list[Escalation]:
         """
         Get all escalations for a pipeline.
 
@@ -267,10 +267,10 @@ class EscalationHandler:
         escalations.sort(key=lambda e: e.created_at)
         return escalations
 
-    def _load_from_file(self, file_path: Path) -> Optional[Escalation]:
+    def _load_from_file(self, file_path: Path) -> Escalation | None:
         """Load escalation from file."""
         try:
-            with open(file_path, "r") as f:
+            with open(file_path) as f:
                 data = yaml.safe_load(f)
                 return Escalation.from_dict(data)
         except (yaml.YAMLError, KeyError, ValueError) as e:

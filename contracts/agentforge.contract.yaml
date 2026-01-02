@@ -413,6 +413,21 @@ checks:
       exclude_paths:
         - "cli/click_commands/__init__.py"
 
+  # Minimal Context Architecture validation
+  - id: minimal-context-validation
+    name: "Minimal Context Validation Methods"
+    description: "Ensure runtime validation methods exist in context architecture"
+    type: custom
+    severity: error
+    enabled: true
+    config:
+      module: builtin_checks
+      function: check_minimal_context_validation
+    applies_to:
+      paths:
+        - "src/agentforge/core/harness/minimal_context/*.py"
+    fix_hint: "Add required validation methods for runtime integrity checking"
+
   # Architecture checks relaxed for tests
   - id: no-god-classes
     applies_to:

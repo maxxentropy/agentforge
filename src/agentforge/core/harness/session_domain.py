@@ -11,11 +11,10 @@ Domain entities for the Agent Harness session management.
 Follows patterns from tools/tdflow/domain.py.
 """
 
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional
-import uuid
 
 
 class SessionState(Enum):
@@ -77,7 +76,7 @@ class SessionArtifact:
     path: str
     artifact_type: str  # 'created' or 'modified'
     timestamp: datetime
-    phase: Optional[str] = None
+    phase: str | None = None
 
 
 @dataclass
@@ -88,8 +87,8 @@ class SessionHistory:
 
     timestamp: datetime
     action: str
-    phase: Optional[str] = None
-    details: Optional[str] = None
+    phase: str | None = None
+    details: str | None = None
 
 
 @dataclass
@@ -105,18 +104,18 @@ class SessionContext:
     created_at: datetime
     updated_at: datetime
     token_budget: TokenBudget = field(default_factory=TokenBudget)
-    workflow_type: Optional[str] = None
-    current_phase: Optional[str] = None
+    workflow_type: str | None = None
+    current_phase: str | None = None
     attempt_number: int = 1
-    completed_at: Optional[datetime] = None
-    artifacts: List[SessionArtifact] = field(default_factory=list)
-    history: List[SessionHistory] = field(default_factory=list)
+    completed_at: datetime | None = None
+    artifacts: list[SessionArtifact] = field(default_factory=list)
+    history: list[SessionHistory] = field(default_factory=list)
 
     @classmethod
     def create(
         cls,
-        workflow_type: Optional[str] = None,
-        initial_phase: Optional[str] = None,
+        workflow_type: str | None = None,
+        initial_phase: str | None = None,
         token_budget: int = 100000,
     ) -> "SessionContext":
         """
@@ -152,7 +151,7 @@ class SessionContext:
         self,
         path: str,
         artifact_type: str,
-        phase: Optional[str] = None,
+        phase: str | None = None,
     ) -> None:
         """
         Record an artifact with current timestamp.
@@ -172,7 +171,7 @@ class SessionContext:
         )
         self.updated_at = datetime.utcnow()
 
-    def get_artifacts(self, phase: Optional[str] = None) -> List[SessionArtifact]:
+    def get_artifacts(self, phase: str | None = None) -> list[SessionArtifact]:
         """
         Get artifacts, optionally filtered by phase.
 
@@ -189,8 +188,8 @@ class SessionContext:
     def add_history(
         self,
         action: str,
-        phase: Optional[str] = None,
-        details: Optional[str] = None,
+        phase: str | None = None,
+        details: str | None = None,
     ) -> None:
         """
         Record a history entry with current timestamp.

@@ -5,14 +5,14 @@ Generators for Brownfield Discovery
 Provides output generation capabilities for discovery results.
 """
 
-from .profile import ProfileGenerator
 from .as_built_spec import (
-    AsBuiltSpecGenerator,
     AsBuiltSpec,
+    AsBuiltSpecGenerator,
     DiscoveredComponent,
     DiscoveredEntity,
 )
-from .lineage_embedder import LineageEmbedder, LineageMetadata, EmbedResult
+from .lineage_embedder import EmbedResult, LineageEmbedder, LineageMetadata
+from .profile import ProfileGenerator
 
 __all__ = [
     "ProfileGenerator",

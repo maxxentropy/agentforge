@@ -1,5 +1,5 @@
-# @spec_file: .agentforge/specs/harness-v1.yaml
-# @spec_id: harness-v1
+# @spec_file: .agentforge/specs/core-harness-v1.yaml
+# @spec_id: core-harness-v1
 # @component_id: tools-harness-escalation_manager
 # @impl_path: tools/harness/escalation_manager.py
 
@@ -13,21 +13,21 @@ Tests for EscalationManager - manages escalation lifecycle.
 These tests verify escalation creation, acknowledgment, resolution, and timeout handling.
 """
 
-import pytest
-from datetime import datetime, timedelta
-from pathlib import Path
-from unittest.mock import Mock, patch
 import tempfile
+from datetime import datetime
+from pathlib import Path
 
-from tools.harness.escalation_manager import EscalationManager
-from tools.harness.escalation_domain import (
-    EscalationPriority,
-    EscalationStatus,
-    EscalationChannel,
-    ResolutionType,
+import pytest
+
+from agentforge.core.harness.escalation_domain import (
     Escalation,
-    EscalationResolution
+    EscalationChannel,
+    EscalationPriority,
+    EscalationResolution,
+    EscalationStatus,
+    ResolutionType,
 )
+from agentforge.core.harness.escalation_manager import EscalationManager
 
 
 class TestEscalationManagerInit:
@@ -55,7 +55,7 @@ class TestEscalationManagerInit:
         """Test that EscalationManager creates storage directory."""
         with tempfile.TemporaryDirectory() as temp_dir:
             storage_path = Path(temp_dir) / "escalations"
-            manager = EscalationManager(storage_path=storage_path)
+            EscalationManager(storage_path=storage_path)
 
             assert storage_path.exists()
             assert storage_path.is_dir()

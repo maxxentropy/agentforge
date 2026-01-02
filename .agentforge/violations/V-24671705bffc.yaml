@@ -1,0 +1,13 @@
+schema_version: '1.0'
+violation_id: V-24671705bffc
+contract_id: agentforge
+check_id: max-cyclomatic-complexity
+severity: major
+file_path: tools/harness/minimal_context/fix_workflow.py
+message: 'Function ''wrapper'' has complexity 27 (max: 10)'
+detected_at: '2025-12-31T18:34:20.601878'
+last_seen_at: '2025-12-31T19:17:47.897813'
+status: stale
+line_number: 683
+fix_hint: Break complex functions into smaller, focused helper functions
+test_path: tests/unit/tools/

@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-6000cc48d126
+contract_id: agentforge
+check_id: max-function-length
+severity: major
+file_path: src/agentforge/core/discovery/providers/dotnet_provider.py
+message: 'Function ''_parse_csproj'' has 57 lines (max: 50)'
+detected_at: '2026-01-01T01:39:13.611088'
+last_seen_at: '2026-01-01T01:39:13.611088'
+status: open
+line_number: 104
+fix_hint: Extract logic into helper functions or use composition

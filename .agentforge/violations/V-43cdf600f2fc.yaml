@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-43cdf600f2fc
+contract_id: agentforge
+check_id: single-responsibility-modules
+severity: minor
+file_path: src/agentforge/core/harness/llm_executor_domain.py
+message: 'Class ''StepResult'' has 4 methods (max: 3)'
+detected_at: '2026-01-01T01:39:14.163878'
+last_seen_at: '2026-01-01T01:39:14.163878'
+status: open
+line_number: 352
+fix_hint: Split modules with too many classes into focused single-class modules

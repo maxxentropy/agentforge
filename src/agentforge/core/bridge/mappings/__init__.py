@@ -17,14 +17,10 @@ Each mapping:
 Available mappings are auto-registered via the @MappingRegistry.register decorator.
 """
 
+# Import all mappings to trigger registration
+from . import architecture, conventions, cqrs, repository
 from .base import PatternMapping
 from .registry import MappingRegistry
-
-# Import all mappings to trigger registration
-from . import cqrs
-from . import architecture
-from . import repository
-from . import conventions
 
 __all__ = [
     "PatternMapping",

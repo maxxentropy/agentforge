@@ -6,7 +6,8 @@ severity: minor
 file_path: tests/unit/tools/conformance/test_stores.py
 message: 'Class ''TestHistoryStore'' has 9 methods (max: 3)'
 detected_at: '2025-12-30T17:10:15.618969'
-last_seen_at: '2025-12-30T20:29:36.728081'
+last_seen_at: '2026-01-01T01:39:14.031817'
 status: open
 line_number: 393
 fix_hint: Split modules with too many classes into focused single-class modules
+test_path: tests/unit/tools/conformance/test_stores.py

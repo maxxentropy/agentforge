@@ -1,19 +1,15 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-3-tdd-stages.yaml
-# @spec_id: pipeline-controller-phase3-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
 # @component_id: red-phase-executor, green-phase-executor
 # @test_path: tests/integration/pipeline/stages/test_tdd_pipeline.py
 
 """Integration tests for TDD pipeline (RED → GREEN)."""
 
-from pathlib import Path
-from typing import Any, Dict
-from unittest.mock import MagicMock, patch, Mock
-
-import pytest
+from unittest.mock import MagicMock, Mock, patch
 
 from agentforge.core.pipeline import StageContext, StageStatus
-from agentforge.core.pipeline.stages.red import RedPhaseExecutor
 from agentforge.core.pipeline.stages.green import GreenPhaseExecutor
+from agentforge.core.pipeline.stages.red import RedPhaseExecutor
 
 
 class TestRedPhaseIntegration:
@@ -173,7 +169,7 @@ def test_add():
                     returncode=1,
                 )
 
-                result = executor.execute(context)
+                executor.execute(context)
 
         # Verify file was written
         test_file = temp_project_for_tdd / "tests" / "test_calculator.py"
@@ -190,7 +186,7 @@ class TestGreenPhaseIntegration:
         temp_project_for_tdd,
     ):
         """RED artifact flows correctly to GREEN phase."""
-        executor = GreenPhaseExecutor()
+        GreenPhaseExecutor()
 
         # Write the test file from RED phase
         test_file = temp_project_for_tdd / "tests" / "test_calculator.py"
@@ -302,7 +298,7 @@ class TestTDDPipelineIntegration:
         """Full SPEC → RED → GREEN flow."""
         # Setup
         red_executor = RedPhaseExecutor()
-        green_executor = GreenPhaseExecutor()
+        GreenPhaseExecutor()
 
         # RED Phase
         red_context = StageContext(

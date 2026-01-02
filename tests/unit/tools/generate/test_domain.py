@@ -3,24 +3,24 @@ Tests for LLM Generation Domain Model
 ======================================
 """
 
-import pytest
 from datetime import datetime
 from pathlib import Path
 
-from tools.generate.domain import (
-    GenerationPhase,
-    GenerationMode,
-    FileAction,
-    GenerationError,
+import pytest
+
+from agentforge.core.generate.domain import (
     APIError,
-    ParseError,
-    WriteError,
-    TokenUsage,
+    FileAction,
     GeneratedFile,
     GenerationContext,
+    GenerationError,
+    GenerationMode,
+    GenerationPhase,
     GenerationResult,
+    ParseError,
+    TokenUsage,
+    WriteError,
 )
-
 
 # =============================================================================
 # Enum Tests
@@ -128,7 +128,7 @@ class TestWriteError:
         assert error.path == Path("/test/file.py")
 
     def test_captures_original_error(self):
-        original = IOError("disk full")
+        original = OSError("disk full")
         error = WriteError("Write failed", original_error=original)
         assert error.original_error is original
 

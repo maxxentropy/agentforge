@@ -1,23 +1,20 @@
-# @spec_file: .agentforge/specs/refactoring-v1.yaml
-# @spec_id: refactoring-v1
+# @spec_file: .agentforge/specs/core-refactoring-v1.yaml
+# @spec_id: core-refactoring-v1
 # @component_id: tools-refactoring-base
 # @impl_path: tools/refactoring/base.py
 
 """Tests for naming and AST interface check handlers in contracts_execution.py."""
 
-import pytest
 from pathlib import Path
-from typing import List
-import sys
 
-sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent / 'tools'))
+import pytest
 
-from contracts_execution import (
+from agentforge.core.contracts_execution import (
     CheckContext,
-    _execute_naming_check,
     _execute_ast_interface_check,
-    _extract_symbols,
+    _execute_naming_check,
     _extract_class_with_bases,
+    _extract_symbols,
     _parse_inheritance_list,
 )
 
@@ -379,7 +376,7 @@ class TestIntegration:
 
     def test_naming_check_type_registered(self, tmp_path: Path):
         """Verify 'naming' check type is in dispatch table."""
-        from contracts_execution import execute_check
+        from agentforge.core.contracts_execution import execute_check
 
         test_file = tmp_path / "Test.cs"
         test_file.write_text("public class TestHandler { }")
@@ -398,7 +395,7 @@ class TestIntegration:
 
     def test_ast_check_type_registered(self, tmp_path: Path):
         """Verify 'ast' check type is in dispatch table."""
-        from contracts_execution import execute_check
+        from agentforge.core.contracts_execution import execute_check
 
         test_file = tmp_path / "Test.cs"
         test_file.write_text("public class TestCommand : IRequest<bool> { }")

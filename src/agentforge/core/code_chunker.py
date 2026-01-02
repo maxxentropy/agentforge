@@ -14,7 +14,6 @@ Extracted from vector_search.py for modularity.
 """
 
 import re
-from typing import List
 
 try:
     from .vector_types import Chunk
@@ -45,7 +44,7 @@ class CodeChunker:
         self.chunk_size_chars = chunk_size * 4
         self.overlap_chars = overlap * 4
 
-    def chunk_file(self, file_path: str, content: str, language: str = "text") -> List[Chunk]:
+    def chunk_file(self, file_path: str, content: str, language: str = "text") -> list[Chunk]:
         """
         Split file into chunks.
 
@@ -107,7 +106,7 @@ class CodeChunker:
             )
         return None
 
-    def _chunk_by_structure(self, file_path: str, content: str, context: str, language: str) -> List[Chunk]:
+    def _chunk_by_structure(self, file_path: str, content: str, context: str, language: str) -> list[Chunk]:
         """Chunk by code structure (functions, classes)."""
         chunks = []
         lines = content.split('\n')
@@ -146,7 +145,7 @@ class CodeChunker:
         return chunks
 
     def _chunk_sliding_window(self, file_path: str, content: str, context: str,
-                               language: str, start_line_offset: int = 0) -> List[Chunk]:
+                               language: str, start_line_offset: int = 0) -> list[Chunk]:
         """Chunk using sliding window with overlap."""
         chunks = []
         lines = content.split('\n')

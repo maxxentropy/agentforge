@@ -6,7 +6,8 @@ severity: minor
 file_path: tests/unit/tools/test_context_assembler.py
 message: 'Class ''TestLanguageDetection'' has 7 methods (max: 3)'
 detected_at: '2025-12-30T17:10:15.601275'
-last_seen_at: '2025-12-30T20:29:36.709040'
+last_seen_at: '2026-01-01T01:39:13.979432'
 status: open
 line_number: 113
 fix_hint: Split modules with too many classes into focused single-class modules
+test_path: tests/unit/tools/test_context_assembler.py

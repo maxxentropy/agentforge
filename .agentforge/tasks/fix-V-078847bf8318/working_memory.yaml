@@ -1,0 +1,64 @@
+items:
+- added_at: '2026-01-01T00:59:51.873667+00:00'
+  content:
+    category: code_structure
+    confidence: 1.0
+    id: precomputed_structure
+    source: precomputed_analysis
+    statement: 'Function ''_infer_category'' analyzed: 51-70'
+    supersedes: null
+  expires_after_steps: null
+  key: fact:precomputed_structure
+  pinned: true
+  step: 0
+  type: fact
+- added_at: '2026-01-01T01:00:35.966681+00:00'
+  content:
+    category: error
+    confidence: 0.7
+    id: fact_abb56bf8
+    source: run_tests:result
+    statement: run_tests failed
+    supersedes: null
+  expires_after_steps: null
+  key: fact:fact_abb56bf8
+  pinned: false
+  step: 7
+  type: fact
+- added_at: '2026-01-01T01:00:35.956742+00:00'
+  content:
+    action: run_tests
+    result: failure
+    summary: 'Action failed: ''NoneType'' object is not subscriptable'
+    target: null
+  expires_after_steps: null
+  key: action_step_7
+  pinned: false
+  step: 7
+  type: action_result
+- added_at: '2026-01-01T01:00:32.333192+00:00'
+  content:
+    category: verification
+    confidence: 0.7
+    id: fact_256ff3c3
+    source: read_file:result
+    statement: read_file succeeded
+    supersedes: null
+  expires_after_steps: null
+  key: fact:fact_256ff3c3
+  pinned: false
+  step: 6
+  type: fact
+- added_at: '2026-01-01T01:00:32.322922+00:00'
+  content:
+    action: read_file
+    result: success
+    summary: Read tools/harness/llm_executor_domain.py lines 22-121 (violation at
+      line 51)
+    target: tools/harness/llm_executor_domain.py
+  expires_after_steps: null
+  key: action_step_6
+  pinned: false
+  step: 6
+  type: action_result
+max_items: 5

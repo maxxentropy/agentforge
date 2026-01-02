@@ -1,16 +1,17 @@
-# @spec_file: .agentforge/specs/tdflow-runners-v1.yaml
-# @spec_id: tdflow-runners-v1
+# @spec_file: .agentforge/specs/core-tdflow-runners-v1.yaml
+# @spec_id: core-tdflow-runners-v1
 # @component_id: tdflow-runners-dotnet
 # @impl_path: tools/tdflow/runners/dotnet.py
 
 """Tests for DotNet test runner."""
 
-import pytest
 import tempfile
 from pathlib import Path
 
-from tools.tdflow.runners.dotnet import DotNetTestRunner
-from tools.tdflow.domain import TestResult
+import pytest
+
+from agentforge.core.tdflow.domain import TestResult
+from agentforge.core.tdflow.runners.dotnet import DotNetTestRunner
 
 
 class TestDotNetTestRunner:

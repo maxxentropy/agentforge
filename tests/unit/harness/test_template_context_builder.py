@@ -1,4 +1,4 @@
-# @spec_file: .agentforge/specs/core-context-v1.yaml
+# @spec_file: .agentforge/specs/core-harness-minimal-context-v1.yaml
 # @spec_id: core-context-v1
 # @component_id: template-context-builder-tests
 
@@ -13,23 +13,20 @@ Tests that the TemplateContextBuilder properly:
 
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, Dict
-from unittest.mock import MagicMock, patch
+from typing import Any
 
 import pytest
 
+from agentforge.core.harness.minimal_context.state_store import (
+    TaskStateStore,
+)
 from agentforge.core.harness.minimal_context.template_context_builder import (
     TemplateContextBuilder,
     TemplateStepContext,
 )
-from agentforge.core.harness.minimal_context.state_store import (
-    TaskStateStore,
-    TaskState,
-    TaskPhase,
-)
 
 
-def get_required_context_for_task_type(task_type: str) -> Dict[str, Any]:
+def get_required_context_for_task_type(task_type: str) -> dict[str, Any]:
     """Get the minimum required context_data for a task type."""
     contexts = {
         "fix_violation": {

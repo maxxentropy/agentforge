@@ -11,26 +11,34 @@ Orchestrates the brownfield discovery process through multiple phases.
 """
 
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Dict, List, Optional, Set, Callable, Any
 from enum import Enum
+from pathlib import Path
+from typing import Any
 
-from .domain import (
-    CodebaseProfile, DiscoveryPhase, Detection, DetectionSource,
-    LanguageInfo, DependencyInfo, OnboardingProgress, OnboardingStatus,
-    Zone, Interaction, ZoneProfile, ZoneDetectionMode, TestAnalysis,
-)
-from .providers.base import LanguageProvider
-from .providers.python_provider import PythonProvider
-from .providers.dotnet_provider import DotNetProvider
-from .analyzers.structure import StructureAnalyzer, StructureAnalysisResult
-from .analyzers.patterns import PatternAnalyzer, PatternAnalysisResult
 from .analyzers.interactions import InteractionDetector
+from .analyzers.patterns import PatternAnalysisResult, PatternAnalyzer
+from .analyzers.structure import StructureAnalysisResult, StructureAnalyzer
 from .analyzers.test_linkage import TestLinkageAnalyzer
-from .generators.profile import ProfileGenerator
+from .domain import (
+    CodebaseProfile,
+    DependencyInfo,
+    Detection,
+    DetectionSource,
+    DiscoveryPhase,
+    Interaction,
+    LanguageInfo,
+    TestAnalysis,
+    Zone,
+    ZoneProfile,
+)
 from .generators.as_built_spec import AsBuiltSpecGenerator
 from .generators.lineage_embedder import LineageEmbedder
+from .generators.profile import ProfileGenerator
+from .providers.base import LanguageProvider
+from .providers.dotnet_provider import DotNetProvider
+from .providers.python_provider import PythonProvider
 from .zones.detector import ZoneDetector
 from .zones.merger import ZoneMerger
 
@@ -56,20 +64,20 @@ class PhaseResult:
     status: DiscoveryPhaseStatus
     duration_seconds: float
     result: Any = None
-    error: Optional[str] = None
+    error: str | None = None
 
 
 @dataclass
 class DiscoveryResult:
     """Complete result of discovery process."""
     success: bool
-    profile: Optional[CodebaseProfile]
-    profile_path: Optional[Path]
-    phases: Dict[DiscoveryPhase, PhaseResult]
+    profile: CodebaseProfile | None
+    profile_path: Path | None
+    phases: dict[DiscoveryPhase, PhaseResult]
     total_duration_seconds: float
-    errors: List[str] = field(default_factory=list)
-    warnings: List[str] = field(default_factory=list)
-    spec_paths: List[Path] = field(default_factory=list)  # As-built spec files
+    errors: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
+    spec_paths: list[Path] = field(default_factory=list)  # As-built spec files
     lineage_embedded: int = 0  # Number of files with lineage embedded
 
 
@@ -96,7 +104,7 @@ class DiscoveryManager:
         self,
         root_path: Path,
         verbose: bool = False,
-        progress_callback: Optional[Callable[[str, float], None]] = None,
+        progress_callback: Callable[[str, float], None] | None = None,
     ):
         """
         Initialize discovery manager.
@@ -110,17 +118,17 @@ class DiscoveryManager:
         self.verbose = verbose
         self.progress_callback = progress_callback
 
-        self._providers: Dict[str, LanguageProvider] = {}
-        self._phase_results: Dict[DiscoveryPhase, PhaseResult] = {}
-        self._languages: List[LanguageInfo] = []
-        self._dependencies: List[DependencyInfo] = []
-        self._structure_result: Optional[StructureAnalysisResult] = None
-        self._pattern_result: Optional[PatternAnalysisResult] = None
-        self._test_analysis: Optional["TestAnalysis"] = None  # type: ignore
+        self._providers: dict[str, LanguageProvider] = {}
+        self._phase_results: dict[DiscoveryPhase, PhaseResult] = {}
+        self._languages: list[LanguageInfo] = []
+        self._dependencies: list[DependencyInfo] = []
+        self._structure_result: StructureAnalysisResult | None = None
+        self._pattern_result: PatternAnalysisResult | None = None
+        self._test_analysis: TestAnalysis | None = None  # type: ignore
 
     def discover(
         self,
-        phases: Optional[List[DiscoveryPhase]] = None,
+        phases: list[DiscoveryPhase] | None = None,
         save_profile: bool = True,
         generate_specs: bool = False,
         embed_lineage: bool = False,
@@ -184,7 +192,7 @@ class DiscoveryManager:
                 errors.append(f"Profile generation: {str(e)}")
 
         # Generate as-built specs (Artifact Parity)
-        spec_paths: List[Path] = []
+        spec_paths: list[Path] = []
         lineage_embedded = 0
 
         if generate_specs and self._test_analysis:
@@ -250,7 +258,7 @@ class DiscoveryManager:
                 error=str(e),
             )
 
-    def _detect_languages(self) -> List[LanguageInfo]:
+    def _detect_languages(self) -> list[LanguageInfo]:
         """Phase 1: Detect languages and frameworks."""
         self._languages = []
 
@@ -364,7 +372,7 @@ class DiscoveryManager:
 
         return self._pattern_result
 
-    def _map_architecture(self) -> Dict[str, Any]:
+    def _map_architecture(self) -> dict[str, Any]:
         """Phase 4: Map architectural dependencies."""
         # This phase uses structure analysis results to map layer dependencies
         if not self._structure_result:
@@ -421,7 +429,7 @@ class DiscoveryManager:
             self._pattern_result is not None
         )
 
-    def _generate_profile(self, save_profile: bool) -> tuple[CodebaseProfile, Optional[Path]]:
+    def _generate_profile(self, save_profile: bool) -> tuple[CodebaseProfile, Path | None]:
         """Generate and optionally save the profile."""
         generator = ProfileGenerator(self.root_path)
 
@@ -480,7 +488,7 @@ class DiscoveryManager:
     def _generate_as_built_specs(
         self,
         embed_lineage: bool = False,
-    ) -> tuple[List[Path], int]:
+    ) -> tuple[list[Path], int]:
         """
         Generate as-built specs from test analysis results.
 
@@ -541,13 +549,13 @@ class DiscoveryManager:
 class MultiZoneDiscoveryResult:
     """Result of multi-zone discovery process."""
     success: bool
-    zones: List[Zone]
-    zone_profiles: Dict[str, ZoneProfile]
-    interactions: List[Interaction]
-    profile_path: Optional[Path]
+    zones: list[Zone]
+    zone_profiles: dict[str, ZoneProfile]
+    interactions: list[Interaction]
+    profile_path: Path | None
     total_duration_seconds: float
-    errors: List[str] = field(default_factory=list)
-    warnings: List[str] = field(default_factory=list)
+    errors: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
 
 
 class MultiZoneDiscoveryManager:
@@ -572,9 +580,9 @@ class MultiZoneDiscoveryManager:
     def __init__(
         self,
         root_path: Path,
-        config: Optional[Dict[str, Any]] = None,
+        config: dict[str, Any] | None = None,
         verbose: bool = False,
-        progress_callback: Optional[Callable[[str, float], None]] = None,
+        progress_callback: Callable[[str, float], None] | None = None,
     ):
         """
         Initialize multi-zone discovery manager.
@@ -590,11 +598,11 @@ class MultiZoneDiscoveryManager:
         self.verbose = verbose
         self.progress_callback = progress_callback
 
-        self._zones: List[Zone] = []
-        self._zone_profiles: Dict[str, ZoneProfile] = {}
-        self._interactions: List[Interaction] = []
+        self._zones: list[Zone] = []
+        self._zone_profiles: dict[str, ZoneProfile] = {}
+        self._interactions: list[Interaction] = []
 
-    def _load_config(self) -> Dict[str, Any]:
+    def _load_config(self) -> dict[str, Any]:
         """Load repo.yaml configuration if it exists."""
         config_path = self.root_path / ".agentforge" / "repo.yaml"
         if config_path.exists() and yaml:
@@ -606,7 +614,7 @@ class MultiZoneDiscoveryManager:
 
     def discover(
         self,
-        zone_name: Optional[str] = None,
+        zone_name: str | None = None,
         save_profile: bool = True,
     ) -> MultiZoneDiscoveryResult:
         """
@@ -704,7 +712,7 @@ class MultiZoneDiscoveryManager:
                 errors=[str(e)],
             )
 
-    def list_zones(self) -> List[Zone]:
+    def list_zones(self) -> list[Zone]:
         """
         Detect and return zones without full analysis.
 
@@ -853,13 +861,13 @@ class MultiZoneDiscoveryManager:
         from datetime import datetime
 
         # Aggregate languages across zones
-        all_languages: List[LanguageInfo] = []
+        all_languages: list[LanguageInfo] = []
         for profile in self._zone_profiles.values():
             all_languages.extend(profile.languages)
 
         # Aggregate dependencies
-        all_dependencies: List[DependencyInfo] = []
-        seen_deps: Set[str] = set()
+        all_dependencies: list[DependencyInfo] = []
+        seen_deps: set[str] = set()
         for profile in self._zone_profiles.values():
             for dep in profile.dependencies:
                 if dep.name not in seen_deps:
@@ -868,7 +876,7 @@ class MultiZoneDiscoveryManager:
 
         # Calculate totals
         total_files = sum(p.file_count for p in self._zone_profiles.values())
-        total_lines = sum(p.line_count for p in self._zone_profiles.values())
+        sum(p.line_count for p in self._zone_profiles.values())
 
         # Build profile dict
         profile_data = {

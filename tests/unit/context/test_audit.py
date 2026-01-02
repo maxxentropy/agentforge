@@ -1,5 +1,5 @@
 # @spec_file: .agentforge/specs/core-context-v1.yaml
-# @spec_id: audit-v1
+# @spec_id: core-context-v1
 # @component_id: audit-tests
 
 """

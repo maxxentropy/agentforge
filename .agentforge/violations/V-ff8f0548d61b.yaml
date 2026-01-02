@@ -1,0 +1,13 @@
+schema_version: '1.0'
+violation_id: V-ff8f0548d61b
+contract_id: agentforge
+check_id: no-hardcoded-api-keys
+severity: blocker
+file_path: tests/unit/tools/generate/test_provider.py
+message: 'Forbidden pattern found: ''api_key="explicit-key"'''
+detected_at: '2025-12-31T04:36:43.259364'
+last_seen_at: '2026-01-01T01:39:14.239969'
+status: open
+line_number: 284
+fix_hint: 'Use environment variables: os.environ.get(''API_KEY'')'
+test_path: tests/unit/tools/generate/test_provider.py

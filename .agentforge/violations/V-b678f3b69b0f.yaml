@@ -1,0 +1,13 @@
+schema_version: '1.0'
+violation_id: V-b678f3b69b0f
+contract_id: agentforge
+check_id: single-responsibility-modules
+severity: minor
+file_path: tests/unit/harness/test_execution_context_store.py
+message: 'Class ''TestSerializationRoundTrip'' has 6 methods (max: 3)'
+detected_at: '2025-12-31T12:15:10.152713'
+last_seen_at: '2026-01-01T01:39:14.100831'
+status: open
+line_number: 174
+fix_hint: Split modules with too many classes into focused single-class modules
+test_path: tests/unit/harness/test_execution_context_store.py

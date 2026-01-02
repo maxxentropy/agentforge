@@ -12,13 +12,12 @@ Each mapping transforms a discovered pattern into conformance checks.
 """
 
 from abc import ABC, abstractmethod
-from typing import List, Optional
 
-from bridge.domain import (
+from ..domain import (
     CheckTemplate,
+    ConfidenceTier,
     GeneratedCheck,
     MappingContext,
-    ConfidenceTier,
 )
 
 
@@ -57,7 +56,7 @@ class PatternMapping(ABC):
 
     # Class-level attributes (override in subclasses)
     pattern_key: str = ""                    # Key in profile patterns dict
-    languages: List[str] = []                # Applicable languages
+    languages: list[str] = []                # Applicable languages
     min_confidence: float = 0.5              # Minimum confidence to generate
     version: str = "1.0"                     # Mapping version for tracking
 
@@ -75,7 +74,7 @@ class PatternMapping(ABC):
         pass
 
     @abstractmethod
-    def get_templates(self, context: MappingContext) -> List[CheckTemplate]:
+    def get_templates(self, context: MappingContext) -> list[CheckTemplate]:
         """
         Get check templates for this mapping.
 
@@ -87,7 +86,7 @@ class PatternMapping(ABC):
         """
         pass
 
-    def generate(self, context: MappingContext) -> List[GeneratedCheck]:
+    def generate(self, context: MappingContext) -> list[GeneratedCheck]:
         """
         Generate checks from this mapping.
 
@@ -121,7 +120,7 @@ class PatternMapping(ABC):
         self,
         template: CheckTemplate,
         context: MappingContext
-    ) -> Optional[GeneratedCheck]:
+    ) -> GeneratedCheck | None:
         """Convert a template to a generated check."""
         confidence = context.get_pattern_confidence(self.pattern_key)
         tier = ConfidenceTier.from_score(confidence)

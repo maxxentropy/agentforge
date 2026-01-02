@@ -1,15 +1,11 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-4-refactor-deliver.yaml
-# @spec_id: pipeline-controller-phase4-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
 # @component_id: refactor-phase-executor
 # @test_path: tests/unit/pipeline/stages/test_refactor.py
 
 """Unit tests for RefactorPhaseExecutor."""
 
-from pathlib import Path
-from typing import Any, Dict
-from unittest.mock import MagicMock, patch, Mock
-
-import pytest
+from unittest.mock import MagicMock, Mock, patch
 
 from agentforge.core.pipeline import StageContext, StageStatus
 
@@ -310,8 +306,9 @@ class TestRefactorPhaseTestExecution:
 
     def test_handles_test_timeout(self, sample_green_artifact, temp_project_path):
         """Handles test execution timeout."""
-        from agentforge.core.pipeline.stages.refactor import RefactorPhaseExecutor
         import subprocess
+
+        from agentforge.core.pipeline.stages.refactor import RefactorPhaseExecutor
 
         executor = RefactorPhaseExecutor()
 
@@ -408,8 +405,9 @@ class TestRefactorPhaseConformance:
 
     def test_handles_conformance_json_output(self, sample_green_artifact, temp_project_path):
         """Parses JSON conformance output."""
-        from agentforge.core.pipeline.stages.refactor import RefactorPhaseExecutor
         import json
+
+        from agentforge.core.pipeline.stages.refactor import RefactorPhaseExecutor
 
         executor = RefactorPhaseExecutor()
 
@@ -641,7 +639,7 @@ class TestRefactorPhaseEdgeCases:
             "test_results": {"passed": 0, "failed": 0, "total": 0},
         }
 
-        context = StageContext(
+        StageContext(
             pipeline_id="PL-test",
             stage_name="refactor",
             project_path=temp_project_path,

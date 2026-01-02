@@ -1,5 +1,5 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-4-refactor-deliver.yaml
-# @spec_id: pipeline-controller-phase4-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
 # @component_id: deliver-phase-executor
 # @test_path: tests/unit/pipeline/stages/test_deliver.py
 
@@ -9,14 +9,12 @@ The DELIVER phase packages and delivers the final result.
 Supports multiple delivery modes: commit, PR, files, patch.
 """
 
-from typing import Any, Dict, List, Optional
-from pathlib import Path
-from datetime import datetime, timezone
 import logging
 import subprocess
+from typing import Any
 
-from ..stage_executor import StageExecutor, StageContext, StageResult, StageStatus
 from ..llm_stage_executor import OutputValidation
+from ..stage_executor import StageContext, StageExecutor, StageResult
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +52,7 @@ class DeliverPhaseExecutor(StageExecutor):
         "summary",
     ]
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         """Initialize DeliverPhaseExecutor."""
         self._config = config or {}
         self.delivery_mode = self._config.get("delivery_mode", DeliveryMode.COMMIT)
@@ -84,7 +82,7 @@ class DeliverPhaseExecutor(StageExecutor):
     def _deliver_commit(
         self,
         context: StageContext,
-        artifact: Dict[str, Any],
+        artifact: dict[str, Any],
     ) -> StageResult:
         """Deliver as git commit."""
         spec_id = artifact.get("spec_id", "unknown")
@@ -135,7 +133,7 @@ class DeliverPhaseExecutor(StageExecutor):
     def _deliver_pr(
         self,
         context: StageContext,
-        artifact: Dict[str, Any],
+        artifact: dict[str, Any],
     ) -> StageResult:
         """Deliver as pull request."""
         spec_id = artifact.get("spec_id", "unknown")
@@ -172,7 +170,7 @@ class DeliverPhaseExecutor(StageExecutor):
     def _deliver_files(
         self,
         context: StageContext,
-        artifact: Dict[str, Any],
+        artifact: dict[str, Any],
     ) -> StageResult:
         """Deliver as files only (no git)."""
         spec_id = artifact.get("spec_id", "unknown")
@@ -191,7 +189,7 @@ class DeliverPhaseExecutor(StageExecutor):
     def _deliver_patch(
         self,
         context: StageContext,
-        artifact: Dict[str, Any],
+        artifact: dict[str, Any],
     ) -> StageResult:
         """Deliver as patch file."""
         spec_id = artifact.get("spec_id", "unknown")
@@ -218,7 +216,7 @@ class DeliverPhaseExecutor(StageExecutor):
             },
         )
 
-    def _generate_commit_message(self, artifact: Dict[str, Any]) -> str:
+    def _generate_commit_message(self, artifact: dict[str, Any]) -> str:
         """Generate commit message from artifact."""
         spec_id = artifact.get("spec_id", "unknown")
 
@@ -228,10 +226,7 @@ class DeliverPhaseExecutor(StageExecutor):
             original_request = artifact.get("clarified_requirements", "Implementation")
 
         # Truncate if too long
-        if len(original_request) > 50:
-            title = original_request[:47] + "..."
-        else:
-            title = original_request
+        title = original_request[:47] + "..." if len(original_request) > 50 else original_request
 
         # Build commit message
         message = f"feat: {title}\n\n"
@@ -240,7 +235,7 @@ class DeliverPhaseExecutor(StageExecutor):
         # Add files
         files = artifact.get("final_files", [])
         if files:
-            message += f"\nFiles modified:\n"
+            message += "\nFiles modified:\n"
             for f in files[:10]:  # Limit to 10
                 if isinstance(f, dict):
                     message += f"  - {f.get('path', f)}\n"
@@ -256,13 +251,13 @@ class DeliverPhaseExecutor(StageExecutor):
 
         return message
 
-    def _generate_summary(self, artifact: Dict[str, Any]) -> str:
+    def _generate_summary(self, artifact: dict[str, Any]) -> str:
         """Generate human-readable summary."""
         spec_id = artifact.get("spec_id", "unknown")
         files = artifact.get("final_files", [])
         test_results = artifact.get("test_results", {})
 
-        summary = f"## Delivery Summary\n\n"
+        summary = "## Delivery Summary\n\n"
         summary += f"**Spec ID:** {spec_id}\n\n"
         summary += f"**Files Modified:** {len(files)}\n"
 
@@ -283,8 +278,8 @@ class DeliverPhaseExecutor(StageExecutor):
     def _stage_files(
         self,
         context: StageContext,
-        files: List,
-    ) -> List[str]:
+        files: list,
+    ) -> list[str]:
         """Stage files for commit."""
         staged = []
 
@@ -311,7 +306,7 @@ class DeliverPhaseExecutor(StageExecutor):
         self,
         context: StageContext,
         message: str,
-    ) -> Optional[str]:
+    ) -> str | None:
         """Create git commit."""
         try:
             subprocess.run(
@@ -356,8 +351,8 @@ class DeliverPhaseExecutor(StageExecutor):
         self,
         context: StageContext,
         branch_name: str,
-        artifact: Dict[str, Any],
-    ) -> Optional[str]:
+        artifact: dict[str, Any],
+    ) -> str | None:
         """Create pull request using GitHub CLI."""
         try:
             # Push branch
@@ -402,7 +397,7 @@ class DeliverPhaseExecutor(StageExecutor):
             logger.error(f"Failed to generate patch: {e}")
             return ""
 
-    def validate_output(self, artifact: Optional[Dict[str, Any]]) -> OutputValidation:
+    def validate_output(self, artifact: dict[str, Any] | None) -> OutputValidation:
         """Validate DELIVER phase artifact."""
         if artifact is None:
             return OutputValidation(
@@ -434,6 +429,6 @@ class DeliverPhaseExecutor(StageExecutor):
         )
 
 
-def create_deliver_executor(config: Optional[Dict] = None) -> DeliverPhaseExecutor:
+def create_deliver_executor(config: dict | None = None) -> DeliverPhaseExecutor:
     """Create DeliverPhaseExecutor instance."""
     return DeliverPhaseExecutor(config)

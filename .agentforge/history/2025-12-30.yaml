@@ -1,16 +1,20 @@
 schema_version: '1.0'
 date: '2025-12-30'
-generated_at: '2025-12-30T20:29:37.364694'
+generated_at: '2025-12-31T04:36:44.247057'
 summary:
-  total: 113
+  total: 540
   passed: 0
-  failed: 107
+  failed: 521
   exempted: 6
-  stale: 0
+  stale: 13
 by_severity:
-  minor: 107
+  major: 102
+  blocker: 18
+  minor: 401
 by_contract:
-  agentforge: 107
-files_analyzed: 52
+  agentforge: 520
+  generated: 1
+files_analyzed: 130
 contracts_checked:
 - agentforge
+- generated

@@ -1,5 +1,5 @@
-# @spec_file: .agentforge/specs/harness-v1.yaml
-# @spec_id: harness-v1
+# @spec_file: .agentforge/specs/core-harness-v1.yaml
+# @spec_id: core-harness-v1
 # @component_id: tools-harness-session_store
 # @impl_path: tools/harness/session_store.py
 
@@ -11,11 +11,11 @@ Tests for: create, load, pause, resume, complete, abort, advance_phase,
 Based on specification acceptance criteria AC-001 through AC-030.
 """
 
-import pytest
-from pathlib import Path
-from datetime import datetime, timedelta
-import tempfile
 import shutil
+import tempfile
+from pathlib import Path
+
+import pytest
 
 
 class TestSessionManagerCreation:
@@ -31,14 +31,14 @@ class TestSessionManagerCreation:
     @pytest.fixture
     def manager(self, temp_dir):
         """Create SessionManager with temp directory."""
-        from tools.harness.session_manager import SessionManager
-        from tools.harness.session_store import SessionStore
+        from agentforge.core.harness.session_manager import SessionManager
+        from agentforge.core.harness.session_store import SessionStore
         store = SessionStore(base_path=temp_dir / "sessions")
         return SessionManager(store=store)
 
     def test_create_returns_session_with_unique_id(self, manager):
         """AC-001: create() returns session with unique ID and ACTIVE state."""
-        from tools.harness.session_domain import SessionState
+        from agentforge.core.harness.session_domain import SessionState
 
         session = manager.create()
 
@@ -86,14 +86,14 @@ class TestSessionManagerStateTransitions:
 
     @pytest.fixture
     def manager(self, temp_dir):
-        from tools.harness.session_manager import SessionManager
-        from tools.harness.session_store import SessionStore
+        from agentforge.core.harness.session_manager import SessionManager
+        from agentforge.core.harness.session_store import SessionStore
         store = SessionStore(base_path=temp_dir / "sessions")
         return SessionManager(store=store)
 
     def test_pause_transitions_to_paused(self, manager):
         """AC-004: pause() transitions ACTIVE to PAUSED."""
-        from tools.harness.session_domain import SessionState
+        from agentforge.core.harness.session_domain import SessionState
 
         manager.create()
         session = manager.pause()
@@ -111,7 +111,7 @@ class TestSessionManagerStateTransitions:
 
     def test_resume_transitions_to_active(self, manager):
         """AC-005: resume() transitions PAUSED to ACTIVE."""
-        from tools.harness.session_domain import SessionState
+        from agentforge.core.harness.session_domain import SessionState
 
         manager.create()
         manager.pause()
@@ -131,7 +131,7 @@ class TestSessionManagerStateTransitions:
 
     def test_complete_transitions_to_completed(self, manager):
         """complete() transitions to COMPLETED (terminal)."""
-        from tools.harness.session_domain import SessionState
+        from agentforge.core.harness.session_domain import SessionState
 
         manager.create()
         session = manager.complete()
@@ -141,7 +141,7 @@ class TestSessionManagerStateTransitions:
 
     def test_abort_transitions_to_aborted(self, manager):
         """abort() transitions to ABORTED (terminal)."""
-        from tools.harness.session_domain import SessionState
+        from agentforge.core.harness.session_domain import SessionState
 
         manager.create()
         session = manager.abort(reason="Test abort")
@@ -182,8 +182,8 @@ class TestSessionManagerPhaseAdvancement:
 
     @pytest.fixture
     def manager(self, temp_dir):
-        from tools.harness.session_manager import SessionManager
-        from tools.harness.session_store import SessionStore
+        from agentforge.core.harness.session_manager import SessionManager
+        from agentforge.core.harness.session_store import SessionStore
         store = SessionStore(base_path=temp_dir / "sessions")
         return SessionManager(store=store)
 
@@ -234,8 +234,8 @@ class TestSessionManagerTokenBudget:
 
     @pytest.fixture
     def manager(self, temp_dir):
-        from tools.harness.session_manager import SessionManager
-        from tools.harness.session_store import SessionStore
+        from agentforge.core.harness.session_manager import SessionManager
+        from agentforge.core.harness.session_store import SessionStore
         store = SessionStore(base_path=temp_dir / "sessions")
         return SessionManager(store=store)
 
@@ -250,7 +250,7 @@ class TestSessionManagerTokenBudget:
     def test_record_tokens_returns_warning_at_80_percent(self, manager):
         """AC-014: Warning returned at 80% utilization."""
         manager.create()
-        result = manager.record_tokens(80000)
+        manager.record_tokens(80000)
 
         # Should indicate warning
         assert manager.current_session.token_budget.is_warning is True
@@ -277,8 +277,8 @@ class TestSessionManagerArtifacts:
 
     @pytest.fixture
     def manager(self, temp_dir):
-        from tools.harness.session_manager import SessionManager
-        from tools.harness.session_store import SessionStore
+        from agentforge.core.harness.session_manager import SessionManager
+        from agentforge.core.harness.session_store import SessionStore
         store = SessionStore(base_path=temp_dir / "sessions")
         return SessionManager(store=store)
 
@@ -305,8 +305,8 @@ class TestSessionManagerCheckpointing:
 
     @pytest.fixture
     def manager(self, temp_dir):
-        from tools.harness.session_manager import SessionManager
-        from tools.harness.session_store import SessionStore
+        from agentforge.core.harness.session_manager import SessionManager
+        from agentforge.core.harness.session_store import SessionStore
         store = SessionStore(base_path=temp_dir / "sessions")
         return SessionManager(store=store)
 
@@ -343,8 +343,8 @@ class TestSessionManagerCleanup:
 
     @pytest.fixture
     def manager(self, temp_dir):
-        from tools.harness.session_manager import SessionManager
-        from tools.harness.session_store import SessionStore
+        from agentforge.core.harness.session_manager import SessionManager
+        from agentforge.core.harness.session_store import SessionStore
         store = SessionStore(base_path=temp_dir / "sessions")
         return SessionManager(store=store)
 
@@ -411,8 +411,9 @@ class TestSessionManagerTestability:
         """AC-030: SessionManager works with custom store path."""
         import tempfile
         from pathlib import Path
-        from tools.harness.session_manager import SessionManager
-        from tools.harness.session_store import SessionStore
+
+        from agentforge.core.harness.session_manager import SessionManager
+        from agentforge.core.harness.session_store import SessionStore
 
         with tempfile.TemporaryDirectory() as temp:
             store = SessionStore(base_path=Path(temp) / "custom_sessions")

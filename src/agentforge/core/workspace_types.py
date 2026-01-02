@@ -8,10 +8,8 @@ Data classes and exceptions for workspace management.
 Extracted from workspace.py for modularity.
 """
 
-from pathlib import Path
 from dataclasses import dataclass, field
-from typing import Optional, Dict, List
-
+from pathlib import Path
 
 # =============================================================================
 # Exceptions
@@ -48,13 +46,13 @@ class RepoConfig:
     path: str  # Relative path from workspace.yaml
     type: str  # service, library, application, meta
     language: str
-    framework: Optional[str] = None
-    lsp: Optional[str] = None
-    layers: List[str] = field(default_factory=list)
-    tags: List[str] = field(default_factory=list)
+    framework: str | None = None
+    lsp: str | None = None
+    layers: list[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
 
     # Resolved at runtime
-    resolved_path: Optional[Path] = None
+    resolved_path: Path | None = None
     is_available: bool = False
 
     @classmethod
@@ -95,20 +93,20 @@ class WorkspaceContext:
     """Resolved workspace context."""
 
     # Workspace location and config
-    workspace_path: Optional[Path] = None
-    workspace_config: Optional[dict] = None
+    workspace_path: Path | None = None
+    workspace_config: dict | None = None
 
     # Current repo context
-    current_repo: Optional[str] = None
-    current_repo_path: Optional[Path] = None
+    current_repo: str | None = None
+    current_repo_path: Path | None = None
 
     # Discovery information
     discovery_method: str = "none"
 
     # Resolved repos
-    repos: Dict[str, RepoConfig] = field(default_factory=dict)
-    available_repos: Dict[str, Path] = field(default_factory=dict)
-    unavailable_repos: List[str] = field(default_factory=list)
+    repos: dict[str, RepoConfig] = field(default_factory=dict)
+    available_repos: dict[str, Path] = field(default_factory=dict)
+    unavailable_repos: list[str] = field(default_factory=list)
 
     @property
     def is_workspace_mode(self) -> bool:
@@ -116,49 +114,49 @@ class WorkspaceContext:
         return self.discovery_method != "none" and self.workspace_config is not None
 
     @property
-    def workspace_name(self) -> Optional[str]:
+    def workspace_name(self) -> str | None:
         """Get workspace name."""
         if self.workspace_config:
             return self.workspace_config.get('workspace', {}).get('name')
         return None
 
     @property
-    def workspace_description(self) -> Optional[str]:
+    def workspace_description(self) -> str | None:
         """Get workspace description."""
         if self.workspace_config:
             return self.workspace_config.get('workspace', {}).get('description')
         return None
 
     @property
-    def workspace_version(self) -> Optional[str]:
+    def workspace_version(self) -> str | None:
         """Get workspace version."""
         if self.workspace_config:
             return self.workspace_config.get('workspace', {}).get('version')
         return None
 
     @property
-    def workspace_dir(self) -> Optional[Path]:
+    def workspace_dir(self) -> Path | None:
         """Get workspace directory (parent of workspace.yaml)."""
         if self.workspace_path:
             return self.workspace_path.parent
         return None
 
-    def get_repo(self, name: str) -> Optional[RepoConfig]:
+    def get_repo(self, name: str) -> RepoConfig | None:
         """Get repo config by name."""
         return self.repos.get(name)
 
-    def get_repo_path(self, name: str) -> Optional[Path]:
+    def get_repo_path(self, name: str) -> Path | None:
         """Get resolved path for a repo."""
         return self.available_repos.get(name)
 
-    def get_repos_by_tag(self, tag: str) -> List[RepoConfig]:
+    def get_repos_by_tag(self, tag: str) -> list[RepoConfig]:
         """Get all repos with a specific tag."""
         return [r for r in self.repos.values() if tag in r.tags]
 
-    def get_repos_by_type(self, repo_type: str) -> List[RepoConfig]:
+    def get_repos_by_type(self, repo_type: str) -> list[RepoConfig]:
         """Get all repos of a specific type."""
         return [r for r in self.repos.values() if r.type == repo_type]
 
-    def get_repos_by_language(self, language: str) -> List[RepoConfig]:
+    def get_repos_by_language(self, language: str) -> list[RepoConfig]:
         """Get all repos with a specific language."""
         return [r for r in self.repos.values() if r.language == language]

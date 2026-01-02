@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-7e8be0610da0
+contract_id: agentforge
+check_id: max-file-lines
+severity: major
+file_path: tools/harness/minimal_context/context_schemas.py
+message: File exceeds line limit (543 lines > 500)
+detected_at: '2025-12-31T12:15:09.963919'
+last_seen_at: '2026-01-01T01:39:13.720835'
+status: open
+fix_hint: Consider splitting into smaller files
+test_path: tests/unit/tools/

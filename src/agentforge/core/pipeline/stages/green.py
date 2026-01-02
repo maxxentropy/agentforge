@@ -1,5 +1,5 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-3-tdd-stages.yaml
-# @spec_id: pipeline-controller-phase3-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
 # @component_id: green-phase-executor
 # @test_path: tests/unit/pipeline/stages/test_green.py
 
@@ -18,16 +18,14 @@ This stage:
 TDD Philosophy: "Write the simplest code that makes tests pass"
 """
 
-from typing import Any, Dict, List, Optional
-from pathlib import Path
-from datetime import datetime, timezone
 import logging
+import re
 import subprocess
 import sys
-import re
+from typing import Any
 
-from ..stage_executor import StageExecutor, StageContext, StageResult, StageStatus
 from ..llm_stage_executor import OutputValidation
+from ..stage_executor import StageContext, StageExecutor, StageResult, StageStatus
 
 logger = logging.getLogger(__name__)
 
@@ -184,7 +182,7 @@ Instructions:
 Start by reading the test files.
 """
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         self._config = config or {}
         self.max_iterations = self._config.get("max_iterations", 20)
         self.test_timeout = self._config.get("test_timeout", 120)
@@ -341,7 +339,7 @@ Start by reading the test files.
 
     def _build_iteration_message(
         self,
-        test_results: Dict[str, Any],
+        test_results: dict[str, Any],
         iteration: int,
     ) -> str:
         """Build message for subsequent iterations."""
@@ -380,7 +378,7 @@ TEST RESULTS:
         project_path = context.project_path
 
         # Read file handler
-        def read_file_handler(params: Dict[str, Any]) -> str:
+        def read_file_handler(params: dict[str, Any]) -> str:
             path = params.get("path", "")
             file_path = project_path / path
             if file_path.exists():
@@ -388,7 +386,7 @@ TEST RESULTS:
             return f"File not found: {path}"
 
         # Write file handler
-        def write_file_handler(params: Dict[str, Any]) -> str:
+        def write_file_handler(params: dict[str, Any]) -> str:
             path = params.get("path", "")
             content = params.get("content", "")
             file_path = project_path / path
@@ -397,7 +395,7 @@ TEST RESULTS:
             return f"Wrote {len(content)} bytes to {path}"
 
         # Edit file handler
-        def edit_file_handler(params: Dict[str, Any]) -> str:
+        def edit_file_handler(params: dict[str, Any]) -> str:
             path = params.get("path", "")
             old_content = params.get("old_content", "")
             new_content = params.get("new_content", "")
@@ -415,7 +413,7 @@ TEST RESULTS:
             return f"Updated {path}"
 
         # Run tests handler
-        def run_tests_handler(params: Dict[str, Any]) -> str:
+        def run_tests_handler(params: dict[str, Any]) -> str:
             test_files = params.get("test_files", [])
             test_name = params.get("test_name")
 
@@ -434,7 +432,7 @@ TEST RESULTS:
             return f"Tests: {results['passed']} passed, {results['failed']} failed"
 
         # Complete implementation handler
-        def complete_handler(params: Dict[str, Any]) -> str:
+        def complete_handler(params: dict[str, Any]) -> str:
             return f"IMPLEMENTATION_COMPLETE:{params}"
 
         # Register handlers
@@ -448,9 +446,9 @@ TEST RESULTS:
     def _run_all_tests(
         self,
         context: StageContext,
-        test_files: List[str],
-        specific_test: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        test_files: list[str],
+        specific_test: str | None = None,
+    ) -> dict[str, Any]:
         """Run tests and return results."""
         results = {
             "passed": 0,
@@ -485,7 +483,7 @@ TEST RESULTS:
 
         return results
 
-    def _parse_pytest_output(self, output: str, results: Dict[str, Any]) -> None:
+    def _parse_pytest_output(self, output: str, results: dict[str, Any]) -> None:
         """Parse pytest output."""
         # Extract test results
         passed = re.findall(r"(\S+::\S+)\s+PASSED", output)
@@ -512,7 +510,7 @@ TEST RESULTS:
                 "message": message,
             })
 
-    def _check_completion(self, result: Dict[str, Any]) -> bool:
+    def _check_completion(self, result: dict[str, Any]) -> bool:
         """Check if completion was signaled."""
         tool_results = result.get("tool_results", [])
         for tr in tool_results:
@@ -522,7 +520,7 @@ TEST RESULTS:
                 return True
         return False
 
-    def _extract_completion_data(self, result: Dict[str, Any]) -> Dict[str, Any]:
+    def _extract_completion_data(self, result: dict[str, Any]) -> dict[str, Any]:
         """Extract completion data from tool result."""
         tool_results = result.get("tool_results", [])
         for tr in tool_results:
@@ -530,7 +528,7 @@ TEST RESULTS:
                 return tr.get("input", {})
         return {}
 
-    def _extract_written_files(self, result: Dict[str, Any]) -> List[str]:
+    def _extract_written_files(self, result: dict[str, Any]) -> list[str]:
         """Extract list of files written during this iteration."""
         files = []
         tool_results = result.get("tool_results", [])
@@ -543,7 +541,7 @@ TEST RESULTS:
 
         return files
 
-    def validate_output(self, artifact: Optional[Dict[str, Any]]) -> OutputValidation:
+    def validate_output(self, artifact: dict[str, Any] | None) -> OutputValidation:
         """Validate GREEN phase artifact."""
         if artifact is None:
             return OutputValidation(valid=False, errors=["No artifact"])
@@ -567,6 +565,6 @@ TEST RESULTS:
         )
 
 
-def create_green_executor(config: Optional[Dict] = None) -> GreenPhaseExecutor:
+def create_green_executor(config: dict | None = None) -> GreenPhaseExecutor:
     """Create GreenPhaseExecutor instance."""
     return GreenPhaseExecutor(config)

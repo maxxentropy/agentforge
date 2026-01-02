@@ -170,3 +170,64 @@ components:
     description: Execute a contract and return parsed output.
     methods: []
     test_methods: []
+- name: spec_adapt
+  component_id: cli-spec-adapt
+  location: src/agentforge/cli/commands/spec_adapt.py
+  test_location: tests/unit/cli/test_spec_adapt.py
+  description: |
+    SPEC.ADAPT command implementation.
+    Adapts external specifications to AgentForge codebase conventions.
+    This is the ON-RAMP for external specs - transforms them into
+    canonical format compatible with VALIDATE → REVISE → TDFLOW.
+  entities:
+  - name: run_adapt
+    type: function
+    line_number: 89
+    description: |
+      Execute ADAPT phase - transform external spec to AgentForge format.
+      Takes rich external spec as PRIMARY INPUT, uses SA agent to map
+      concepts to codebase reality, produces canonical draft.
+    methods: []
+    test_methods:
+    - test_run_adapt_import
+    - test_adapt_click_command_import
+  - name: _load_external_spec
+    type: function
+    line_number: 23
+    description: Load external specification content.
+    methods: []
+    test_methods:
+    - test_load_external_spec_success
+    - test_load_external_spec_not_found
+  - name: _load_codebase_profile
+    type: function
+    line_number: 31
+    description: Load codebase profile for context.
+    methods: []
+    test_methods:
+    - test_load_profile_success
+    - test_load_profile_not_found
+  - name: _get_existing_spec_ids
+    type: function
+    line_number: 44
+    description: Get list of existing spec IDs to ensure uniqueness.
+    methods: []
+    test_methods:
+    - test_get_existing_spec_ids_empty
+    - test_get_existing_spec_ids_with_specs
+  - name: _build_adapt_inputs
+    type: function
+    line_number: 62
+    description: Build inputs for the adapt contract.
+    methods: []
+    test_methods:
+    - test_build_adapt_inputs
+    - test_build_adapt_inputs_empty_profile
+  - name: _save_adapted_spec
+    type: function
+    line_number: 76
+    description: Save adapted specification.
+    methods: []
+    test_methods:
+    - test_save_adapted_spec_success
+    - test_save_adapted_spec_with_raw

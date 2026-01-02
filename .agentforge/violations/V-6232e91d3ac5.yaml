@@ -6,7 +6,8 @@ severity: minor
 file_path: tools/contracts_types.py
 message: 'Class ''Exemption'' has 4 methods (max: 3)'
 detected_at: '2025-12-30T17:10:15.588068'
-last_seen_at: '2025-12-30T20:29:36.694859'
+last_seen_at: '2026-01-01T01:39:13.895468'
 status: open
 line_number: 56
 fix_hint: Split modules with too many classes into focused single-class modules
+test_path: tests/unit/tools/

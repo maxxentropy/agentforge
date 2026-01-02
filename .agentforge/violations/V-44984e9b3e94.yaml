@@ -1,0 +1,13 @@
+schema_version: '1.0'
+violation_id: V-44984e9b3e94
+contract_id: agentforge
+check_id: single-responsibility-modules
+severity: minor
+file_path: tests/unit/harness/test_memory_store.py
+message: 'Class ''TestMemoryStoreSet'' has 4 methods (max: 3)'
+detected_at: '2025-12-31T05:18:48.140449'
+last_seen_at: '2026-01-01T01:39:14.087112'
+status: open
+line_number: 94
+fix_hint: Split modules with too many classes into focused single-class modules
+test_path: tests/unit/harness/test_memory_store.py

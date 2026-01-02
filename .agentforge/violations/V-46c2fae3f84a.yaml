@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-46c2fae3f84a
+contract_id: agentforge
+check_id: max-parameter-count
+severity: major
+file_path: src/agentforge/core/bridge/contract_builder.py
+message: 'Function ''build_contract'' has 6 parameters (max: 5)'
+detected_at: '2026-01-01T01:39:13.690545'
+last_seen_at: '2026-01-01T01:39:13.690545'
+status: open
+line_number: 67
+fix_hint: Group related parameters into a dataclass or use **kwargs

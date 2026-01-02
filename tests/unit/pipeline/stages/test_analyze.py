@@ -1,13 +1,11 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-2-design-pipeline.yaml
-# @spec_id: pipeline-controller-phase2-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
 # @component_id: analyze-executor
 # @test_path: tests/unit/pipeline/stages/test_analyze.py
 
 """Tests for AnalyzeExecutor."""
 
 from unittest.mock import patch
-
-import pytest
 
 from agentforge.core.pipeline import StageContext, StageStatus
 

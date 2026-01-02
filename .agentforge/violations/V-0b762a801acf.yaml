@@ -1,0 +1,13 @@
+schema_version: '1.0'
+violation_id: V-0b762a801acf
+contract_id: agentforge
+check_id: single-responsibility-modules
+severity: minor
+file_path: tests/unit/harness/test_agent_monitor.py
+message: 'Class ''TestAgentMonitorContextAndProgress'' has 6 methods (max: 3)'
+detected_at: '2025-12-31T05:40:20.376018'
+last_seen_at: '2026-01-01T01:39:14.063879'
+status: open
+line_number: 292
+fix_hint: Split modules with too many classes into focused single-class modules
+test_path: tests/unit/harness/test_agent_monitor.py

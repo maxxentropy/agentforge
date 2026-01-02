@@ -1,0 +1,61 @@
+items:
+- added_at: '2026-01-01T01:35:20.040429'
+  content:
+    action: extract_function
+    result: success
+    summary: "\u2713 Extracted '_adjust_indentation' from lines 424-441\n  Refactoring\
+      \ validated by rope - semantics preserved | \u2713 No new failures | \u25CB\
+      \ Check still failing"
+    target: tools/harness/minimal_context/fix_workflow.py
+  expires_after_steps: null
+  key: action_step_1
+  pinned: false
+  step: 1
+  type: action_result
+- added_at: '2026-01-01T01:35:51.317135'
+  content:
+    action: extract_function
+    result: success
+    summary: "\u2713 Extracted '_detect_base_indentation' from lines 415-420\n  Refactoring\
+      \ validated by rope - semantics preserved | \u2713 No new failures | \u25CB\
+      \ Check still failing"
+    target: tools/harness/minimal_context/fix_workflow.py
+  expires_after_steps: null
+  key: action_step_2
+  pinned: false
+  step: 2
+  type: action_result
+- added_at: '2026-01-01T01:36:09.404873'
+  content:
+    action: extract_function
+    result: failure
+    summary: ''
+    target: tools/harness/minimal_context/fix_workflow.py
+  expires_after_steps: null
+  key: action_step_3
+  pinned: false
+  step: 3
+  type: action_result
+- added_at: '2026-01-01T01:36:28.051638'
+  content:
+    action: extract_function
+    result: failure
+    summary: ''
+    target: tools/harness/minimal_context/fix_workflow.py
+  expires_after_steps: null
+  key: action_step_4
+  pinned: false
+  step: 4
+  type: action_result
+- added_at: '2026-01-01T01:36:46.471886'
+  content:
+    action: extract_function
+    result: failure
+    summary: ''
+    target: tools/harness/minimal_context/fix_workflow.py
+  expires_after_steps: null
+  key: action_step_5
+  pinned: false
+  step: 5
+  type: action_result
+max_items: 5

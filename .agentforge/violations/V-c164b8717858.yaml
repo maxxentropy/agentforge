@@ -1,0 +1,13 @@
+schema_version: '1.0'
+violation_id: V-c164b8717858
+contract_id: agentforge
+check_id: single-responsibility-modules
+severity: minor
+file_path: tests/unit/tools/generate/test_provider.py
+message: 'Class ''TestClaudeProvider'' has 11 methods (max: 3)'
+detected_at: '2025-12-31T04:36:43.226622'
+last_seen_at: '2026-01-01T01:39:14.015065'
+status: open
+line_number: 29
+fix_hint: Split modules with too many classes into focused single-class modules
+test_path: tests/unit/tools/generate/test_provider.py

@@ -1,20 +1,18 @@
-# @spec_file: .agentforge/specs/tools-v1.yaml
-# @spec_id: tools-v1
-# @component_id: tools-verification_checks
-# @impl_path: tools/verification_checks.py
+# @spec_file: .agentforge/specs/core-v1.yaml
+# @spec_id: core-v1
+# @component_id: agentforge-core-verification_runner
 
 """Tests for verification check implementations (CheckRunner mixin)."""
 
-import pytest
-from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
 import subprocess
 import sys
+from pathlib import Path
+from unittest.mock import Mock, patch
 
-sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent / 'tools'))
+import pytest
 
-from verification_runner import VerificationRunner
-from verification_types import CheckResult, CheckStatus, Severity
+from agentforge.core.verification_runner import VerificationRunner
+from agentforge.core.verification_types import CheckStatus
 
 
 class TestCommandCheck:
@@ -108,7 +106,7 @@ class TestCommandCheck:
 
         with patch('subprocess.run') as mock_run:
             mock_run.return_value = Mock(returncode=0, stdout="", stderr="")
-            result = runner.run_check(check, {})
+            runner.run_check(check, {})
 
         # Check that substitution happened
         call_args = mock_run.call_args[0][0]

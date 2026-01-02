@@ -1,4 +1,4 @@
-# @spec_file: specs/minimal-context-architecture/04-context-templates.yaml
+# @spec_file: .agentforge/specs/core-context-v1.yaml
 # @spec_id: context-templates-v1
 # @component_id: context-template-refactor
 # @test_path: tests/unit/context/test_templates.py
@@ -21,7 +21,6 @@ Token budget prioritizes:
 - verify phase: 800 tokens (test results)
 """
 
-from typing import List, Optional
 
 from .base import BaseContextTemplate
 from .models import CompactionLevel, ContextSection, TierDefinition
@@ -35,7 +34,7 @@ class RefactorTemplate(BaseContextTemplate):
         return "refactor"
 
     @property
-    def phases(self) -> List[str]:
+    def phases(self) -> list[str]:
         return ["init", "analyze", "implement", "verify"]
 
     def get_tier2_for_phase(self, phase: str) -> TierDefinition:
@@ -146,7 +145,7 @@ class RefactorTemplate(BaseContextTemplate):
 
         return definitions.get(phase, definitions["init"])
 
-    def get_system_prompt(self, phase: Optional[str] = None) -> str:
+    def get_system_prompt(self, phase: str | None = None) -> str:
         """System prompt for refactor tasks."""
         return """You are an expert code refactoring agent.
 

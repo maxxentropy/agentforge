@@ -11,15 +11,9 @@
 """Escalation notifier for sending notifications through configured channels."""
 
 import json
-from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
-from .escalation_domain import (
-    EscalationPriority,
-    EscalationChannel,
-    Escalation
-)
+from .escalation_domain import Escalation, EscalationChannel, EscalationPriority
 
 
 class EscalationNotifier:
@@ -37,7 +31,7 @@ class EscalationNotifier:
     def __init__(
         self,
         channels: list[EscalationChannel],
-        config: Optional[dict] = None
+        config: dict | None = None
     ):
         """Initialize notifier with channels and config.
 
@@ -117,7 +111,7 @@ class EscalationNotifier:
     def notify_file(
         self,
         escalation: Escalation,
-        file_path: Optional[Path] = None
+        file_path: Path | None = None
     ) -> bool:
         """Write escalation to file.
 
@@ -148,7 +142,7 @@ class EscalationNotifier:
     def notify_webhook(
         self,
         escalation: Escalation,
-        webhook_url: Optional[str] = None
+        webhook_url: str | None = None
     ) -> bool:
         """Send escalation via webhook.
 

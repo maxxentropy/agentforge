@@ -6,7 +6,8 @@ severity: minor
 file_path: tests/unit/tools/test_builtin_checks_architecture.py
 message: 'Class ''TestCheckConstructorInjection'' has 8 methods (max: 3)'
 detected_at: '2025-12-30T17:10:15.606077'
-last_seen_at: '2025-12-30T20:29:36.715253'
+last_seen_at: '2026-01-01T01:39:13.984834'
 status: open
 line_number: 288
 fix_hint: Split modules with too many classes into focused single-class modules
+test_path: tests/unit/tools/test_builtin_checks_architecture.py

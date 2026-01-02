@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-9ef57ba431a1
+contract_id: agentforge
+check_id: max-nesting-depth
+severity: major
+file_path: src/agentforge/core/discovery/analyzers/interactions.py
+message: 'Function ''_detect_docker_compose'' has nesting depth 5 (max: 4)'
+detected_at: '2026-01-01T01:39:13.666795'
+last_seen_at: '2026-01-01T01:39:13.666795'
+status: open
+line_number: 52
+fix_hint: Use early returns, guard clauses, or extract nested logic

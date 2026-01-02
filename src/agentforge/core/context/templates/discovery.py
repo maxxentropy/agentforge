@@ -1,4 +1,4 @@
-# @spec_file: specs/minimal-context-architecture/04-context-templates.yaml
+# @spec_file: .agentforge/specs/core-context-v1.yaml
 # @spec_id: context-templates-v1
 # @component_id: context-template-discovery
 # @test_path: tests/unit/context/test_templates.py
@@ -20,7 +20,6 @@ Token budget prioritizes:
 - synthesize phase: 1000 tokens (consolidation)
 """
 
-from typing import Dict, List, Optional
 
 from .base import BaseContextTemplate
 from .models import CompactionLevel, ContextSection, TierDefinition
@@ -34,10 +33,10 @@ class DiscoveryTemplate(BaseContextTemplate):
         return "discovery"
 
     @property
-    def phases(self) -> List[str]:
+    def phases(self) -> list[str]:
         return ["scan", "analyze", "synthesize"]
 
-    def get_phase_mapping(self) -> Dict[str, str]:
+    def get_phase_mapping(self) -> dict[str, str]:
         """Map standard phases to discovery phases."""
         return {
             "init": "scan",
@@ -125,7 +124,7 @@ class DiscoveryTemplate(BaseContextTemplate):
 
         return definitions.get(phase, definitions["scan"])
 
-    def get_system_prompt(self, phase: Optional[str] = None) -> str:
+    def get_system_prompt(self, phase: str | None = None) -> str:
         """System prompt for discovery tasks."""
         return """You are an expert codebase analyst.
 

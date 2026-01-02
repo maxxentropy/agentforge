@@ -1,0 +1,13 @@
+schema_version: '1.0'
+violation_id: V-a76d299e037a
+contract_id: agentforge
+check_id: single-responsibility-modules
+severity: minor
+file_path: tests/unit/harness/test_orchestrator_domain.py
+message: 'Class ''TestOrchestratorConfig'' has 4 methods (max: 3)'
+detected_at: '2025-12-31T07:19:19.367293'
+last_seen_at: '2026-01-01T01:39:14.080254'
+status: open
+line_number: 201
+fix_hint: Split modules with too many classes into focused single-class modules
+test_path: tests/unit/harness/test_orchestrator_domain.py

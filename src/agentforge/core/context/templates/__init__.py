@@ -1,4 +1,4 @@
-# @spec_file: specs/minimal-context-architecture/04-context-templates.yaml
+# @spec_file: .agentforge/specs/core-context-v1.yaml
 # @spec_id: context-templates-v1
 # @component_id: context-template-registry
 # @test_path: tests/unit/context/test_templates.py
@@ -62,7 +62,7 @@ from .refactor import RefactorTemplate
 from .write_tests import WriteTestsTemplate
 
 # Registry of all templates
-_TEMPLATE_REGISTRY: Dict[str, Type[BaseContextTemplate]] = {
+_TEMPLATE_REGISTRY: dict[str, type[BaseContextTemplate]] = {
     "fix_violation": FixViolationTemplate,
     "implement_feature": ImplementFeatureTemplate,
     "write_tests": WriteTestsTemplate,
@@ -99,7 +99,7 @@ def get_template_for_task(task_type: str) -> BaseContextTemplate:
 
 
 def register_template(
-    task_type: str, template_class: Type[BaseContextTemplate]
+    task_type: str, template_class: type[BaseContextTemplate]
 ) -> None:
     """
     Register a new template type.
@@ -122,7 +122,7 @@ def register_template(
     _TEMPLATE_REGISTRY[task_type] = template_class
 
 
-def list_task_types() -> List[str]:
+def list_task_types() -> list[str]:
     """
     List all registered task types.
 
@@ -136,7 +136,7 @@ def list_task_types() -> List[str]:
     return sorted(_TEMPLATE_REGISTRY.keys())
 
 
-def get_template_class(task_type: str) -> Type[BaseContextTemplate]:
+def get_template_class(task_type: str) -> type[BaseContextTemplate]:
     """
     Get the template class (not instance) for a task type.
 

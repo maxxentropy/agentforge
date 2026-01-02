@@ -1,24 +1,18 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-1-foundation.yaml
-# @spec_id: pipeline-controller-phase1-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
 
 """Shared fixtures for pipeline unit tests."""
 
-import tempfile
-from pathlib import Path
-from typing import Dict, Any
 from unittest.mock import MagicMock
 
 import pytest
 
 from agentforge.core.pipeline import (
-    PipelineState,
-    PipelineStatus,
     PipelineStateStore,
-    StageExecutor,
     StageContext,
-    StageResult,
-    StageStatus,
+    StageExecutor,
     StageExecutorRegistry,
+    StageResult,
     create_pipeline_state,
 )
 
@@ -141,3 +135,29 @@ def failing_executor():
 def escalating_executor():
     """Create an escalating executor."""
     return EscalatingExecutor()
+
+
+@pytest.fixture
+def full_registry():
+    """Create a registry with all stages registered."""
+    from agentforge.core.pipeline import PassthroughExecutor
+
+    registry = StageExecutorRegistry()
+    stages = [
+        "intake", "clarify", "analyze", "spec",
+        "red", "green", "refactor", "deliver"
+    ]
+    for stage in stages:
+        registry.register(stage, lambda s=stage: PassthroughExecutor(s))
+    return registry
+
+
+@pytest.fixture
+def controller(temp_project, full_registry):
+    """Create a PipelineController with full registry."""
+    from agentforge.core.pipeline import PipelineController
+
+    return PipelineController(
+        project_path=temp_project,
+        registry=full_registry,
+    )

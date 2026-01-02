@@ -1,27 +1,35 @@
-# @spec_file: .agentforge/specs/cicd-outputs-v1.yaml
-# @spec_id: cicd-outputs-v1
+# @spec_file: .agentforge/specs/core-cicd-outputs-v1.yaml
+# @spec_id: core-cicd-outputs-v1
 # @component_id: cicd-outputs-junit
 # @impl_path: tools/cicd/outputs/junit.py
 
 """Unit tests for CI/CD output generators."""
 
 import json
-import pytest
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
-from pathlib import Path
 
-from tools.cicd.domain import (
-    CIMode,
-    ExitCode,
-    CIViolation,
-    CIResult,
+import pytest
+
+from agentforge.core.cicd.domain import (
     BaselineComparison,
     BaselineEntry,
+    CIMode,
+    CIResult,
+    CIViolation,
+    ExitCode,
 )
-from tools.cicd.outputs.sarif import generate_sarif, write_sarif, generate_sarif_for_github
-from tools.cicd.outputs.junit import generate_junit, write_junit, generate_junit_string
-from tools.cicd.outputs.markdown import generate_markdown, write_markdown, generate_pr_comment
+from agentforge.core.cicd.outputs.junit import generate_junit, generate_junit_string, write_junit
+from agentforge.core.cicd.outputs.markdown import (
+    generate_markdown,
+    generate_pr_comment,
+    write_markdown,
+)
+from agentforge.core.cicd.outputs.sarif import (
+    generate_sarif,
+    generate_sarif_for_github,
+    write_sarif,
+)
 
 
 @pytest.fixture

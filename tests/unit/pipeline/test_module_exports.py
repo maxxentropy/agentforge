@@ -1,10 +1,9 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-1-foundation.yaml
-# @spec_id: pipeline-controller-phase1-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
 # @component_id: pipeline-init
 
 """Tests for pipeline module exports."""
 
-import pytest
 
 
 class TestModuleExports:
@@ -13,13 +12,8 @@ class TestModuleExports:
     def test_state_exports(self):
         """State management classes are exported."""
         from agentforge.core.pipeline import (
-            PipelineState,
             PipelineStatus,
-            StageState,
             StageStatus,
-            create_pipeline_state,
-            generate_pipeline_id,
-            PIPELINE_TEMPLATES,
         )
 
         assert PipelineStatus.PENDING is not None
@@ -34,10 +28,8 @@ class TestModuleExports:
     def test_stage_executor_exports(self):
         """Stage executor classes are exported."""
         from agentforge.core.pipeline import (
-            StageContext,
-            StageExecutor,
-            StageResult,
             PassthroughExecutor,
+            StageExecutor,
         )
 
         assert StageExecutor is not None
@@ -47,10 +39,7 @@ class TestModuleExports:
         """Registry classes and functions are exported."""
         from agentforge.core.pipeline import (
             StageExecutorRegistry,
-            StageNotFoundError,
-            DuplicateStageError,
             get_registry,
-            register_stage,
         )
 
         assert StageExecutorRegistry is not None
@@ -61,7 +50,6 @@ class TestModuleExports:
         from agentforge.core.pipeline import (
             ArtifactValidator,
             ValidationError,
-            validate_artifacts,
         )
 
         assert ArtifactValidator is not None
@@ -70,11 +58,8 @@ class TestModuleExports:
     def test_escalation_exports(self):
         """Escalation classes are exported."""
         from agentforge.core.pipeline import (
-            Escalation,
-            EscalationHandler,
             EscalationStatus,
             EscalationType,
-            generate_escalation_id,
         )
 
         assert EscalationType.APPROVAL_REQUIRED is not None
@@ -107,13 +92,23 @@ class TestModuleExports:
     def test_convenience_imports(self):
         """Common imports work from package level."""
         # This is the most common usage pattern
-        from agentforge.core.pipeline import PipelineController, PipelineState
-
-        # Can instantiate
-        from pathlib import Path
         import tempfile
+
+        # Can instantiate and use
+        from pathlib import Path
+
+        from agentforge.core.pipeline import (
+            PipelineController,
+            PipelineResult,
+            PipelineState,
+        )
 
         with tempfile.TemporaryDirectory() as td:
             controller = PipelineController(Path(td))
-            state = controller.create("Test request")
+            # execute() is the public API - returns PipelineResult
+            result = controller.execute("Test request", template="test")
+            assert isinstance(result, PipelineResult)
+            # get_status() returns PipelineState
+            state = controller.get_status(result.pipeline_id)
+            assert isinstance(state, PipelineState)
             assert state.request == "Test request"

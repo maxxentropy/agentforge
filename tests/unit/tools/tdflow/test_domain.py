@@ -1,21 +1,17 @@
 """Tests for TDFLOW domain entities."""
 
-import pytest
 from datetime import datetime
 from pathlib import Path
 
-from tools.tdflow.domain import (
-    TDFlowPhase,
-    ComponentStatus,
-    TestCase,
-    TestFile,
-    ImplementationFile,
+import pytest
+
+from agentforge.core.tdflow.domain import (
     ComponentProgress,
-    TestResult,
-    PhaseResult,
-    VerificationReport,
-    SessionHistory,
+    ComponentStatus,
+    TDFlowPhase,
     TDFlowSession,
+    TestResult,
+    VerificationReport,
 )
 
 

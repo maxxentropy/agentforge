@@ -1,0 +1,156 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Specification: core_pipeline
+# ═══════════════════════════════════════════════════════════════════════════════
+# Generated: 2026-01-02
+# Generator: manual (migration consolidation)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+spec_id: core-pipeline-v1
+name: core_pipeline
+version: '1.0'
+status: as-built
+schema_version: '2.0'
+generated_at: '2026-01-02T12:00:00'
+generated_by: manual
+description: |
+  Pipeline orchestration system for AgentForge workflows.
+
+  Provides:
+  - Stage execution framework (registry, executor, controller)
+  - State management (state, state_store)
+  - Configuration and validation
+  - Built-in stages (intake, clarify, analyze, spec, red, green, refactor, deliver)
+  - Escalation handling for human-in-the-loop workflows
+
+components:
+# === Foundation Components ===
+- name: __init__
+  component_id: pipeline-init
+  location: src/agentforge/core/pipeline/__init__.py
+  test_location: tests/unit/pipeline/test_module_exports.py
+  description: Pipeline module initialization and exports.
+
+- name: registry
+  component_id: pipeline-registry
+  location: src/agentforge/core/pipeline/registry.py
+  test_location: tests/unit/pipeline/test_registry.py
+  description: Stage registry for registering and discovering pipeline stages.
+
+- name: state
+  component_id: pipeline-state
+  location: src/agentforge/core/pipeline/state.py
+  test_location: tests/unit/pipeline/test_state.py
+  description: Pipeline state management - tracks execution state and context.
+
+- name: state_store
+  component_id: pipeline-state-store
+  location: src/agentforge/core/pipeline/state_store.py
+  test_location: tests/unit/pipeline/test_state_store.py
+  description: Persistent state storage for pipeline execution.
+
+- name: controller
+  component_id: pipeline-controller
+  location: src/agentforge/core/pipeline/controller.py
+  test_location: tests/unit/pipeline/test_controller.py
+  description: Main pipeline controller orchestrating stage execution.
+
+- name: stage_executor
+  component_id: pipeline-stage-executor
+  location: src/agentforge/core/pipeline/stage_executor.py
+  test_location: tests/unit/pipeline/test_stage_executor.py
+  description: Executes individual pipeline stages.
+
+- name: validator
+  component_id: pipeline-validator
+  location: src/agentforge/core/pipeline/validator.py
+  test_location: tests/unit/pipeline/test_validator.py
+  description: Validates pipeline configuration and stage outputs.
+
+- name: escalation
+  component_id: pipeline-escalation
+  location: src/agentforge/core/pipeline/escalation.py
+  test_location: tests/unit/pipeline/test_escalation.py
+  description: Handles escalation to human for decisions.
+
+- name: artifacts
+  component_id: pipeline-artifacts
+  location: src/agentforge/core/pipeline/artifacts.py
+  test_location: tests/unit/pipeline/test_artifacts.py
+  description: Pipeline artifact management.
+
+# === Design Pipeline Stages ===
+- name: stages/__init__
+  component_id: pipeline-stages-init
+  location: src/agentforge/core/pipeline/stages/__init__.py
+  test_location: tests/unit/pipeline/stages/test_stages_init.py
+  description: Stage module initialization.
+
+- name: stages/intake
+  component_id: pipeline-stage-intake
+  location: src/agentforge/core/pipeline/stages/intake.py
+  test_location: tests/unit/pipeline/stages/test_intake.py
+  description: Intake stage - captures initial feature request.
+
+- name: stages/clarify
+  component_id: pipeline-stage-clarify
+  location: src/agentforge/core/pipeline/stages/clarify.py
+  test_location: tests/unit/pipeline/stages/test_clarify.py
+  description: Clarify stage - resolves ambiguities via Q&A.
+
+- name: stages/analyze
+  component_id: pipeline-stage-analyze
+  location: src/agentforge/core/pipeline/stages/analyze.py
+  test_location: tests/unit/pipeline/stages/test_analyze.py
+  description: Analyze stage - gathers codebase context.
+
+- name: stages/spec
+  component_id: pipeline-stage-spec
+  location: src/agentforge/core/pipeline/stages/spec.py
+  test_location: tests/unit/pipeline/stages/test_spec.py
+  description: Spec stage - drafts implementation specification.
+
+# === TDD Stages ===
+- name: stages/red
+  component_id: pipeline-stage-red
+  location: src/agentforge/core/pipeline/stages/red.py
+  test_location: tests/unit/pipeline/stages/test_red.py
+  description: Red stage - generates failing tests.
+
+- name: stages/green
+  component_id: pipeline-stage-green
+  location: src/agentforge/core/pipeline/stages/green.py
+  test_location: tests/unit/pipeline/stages/test_green.py
+  description: Green stage - implements code to pass tests.
+
+# === Refactor/Deliver Stages ===
+- name: stages/refactor
+  component_id: pipeline-stage-refactor
+  location: src/agentforge/core/pipeline/stages/refactor.py
+  test_location: tests/unit/pipeline/stages/test_refactor.py
+  description: Refactor stage - improves code quality.
+
+- name: stages/deliver
+  component_id: pipeline-stage-deliver
+  location: src/agentforge/core/pipeline/stages/deliver.py
+  test_location: tests/unit/pipeline/stages/test_deliver.py
+  description: Deliver stage - finalizes and packages output.
+
+# === LLM Integration ===
+- name: llm_stage_executor
+  component_id: pipeline-llm-stage-executor
+  location: src/agentforge/core/pipeline/llm_stage_executor.py
+  test_location: tests/unit/pipeline/test_llm_stage_executor.py
+  description: LLM-powered stage executor for AI-driven stages.
+
+# === Configuration ===
+- name: config
+  component_id: pipeline-config
+  location: src/agentforge/core/pipeline/config.py
+  test_location: tests/unit/pipeline/test_config.py
+  description: Pipeline configuration loading and management.
+
+- name: config_validator
+  component_id: pipeline-config-validator
+  location: src/agentforge/core/pipeline/config_validator.py
+  test_location: tests/unit/pipeline/test_config_validator.py
+  description: Validates pipeline configuration files.

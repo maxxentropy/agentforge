@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-5e20db6ef998
+contract_id: agentforge
+check_id: no-god-classes
+severity: major
+file_path: tools/harness/minimal_context/fix_workflow.py
+message: 'Class ''MinimalContextFixWorkflow'' has 20 methods (max: 15)'
+detected_at: '2025-12-31T17:47:35.694270'
+last_seen_at: '2025-12-31T17:47:35.694270'
+status: stale
+line_number: 32
+fix_hint: Split large classes using composition or inheritance

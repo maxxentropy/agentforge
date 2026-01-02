@@ -12,15 +12,14 @@ Converts tool definitions into executable functions.
 """
 
 import subprocess
-import os
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional
+from typing import Any
 
 from agentforge.core.harness.llm_executor_domain import ToolResult
 
-
 # Type alias for tool executor functions
-ToolExecutor = Callable[[str, Dict[str, Any]], ToolResult]
+ToolExecutor = Callable[[str, dict[str, Any]], ToolResult]
 
 
 class ToolExecutorBridge:
@@ -30,14 +29,14 @@ class ToolExecutorBridge:
     and allows custom tool registration.
     """
 
-    def __init__(self, working_dir: Optional[Path] = None):
+    def __init__(self, working_dir: Path | None = None):
         """Initialize the bridge.
 
         Args:
             working_dir: Working directory for file operations
         """
         self.working_dir = working_dir or Path.cwd()
-        self._custom_tools: Dict[str, ToolExecutor] = {}
+        self._custom_tools: dict[str, ToolExecutor] = {}
 
     def register_custom_tool(self, name: str, executor: ToolExecutor) -> None:
         """Register a custom tool executor.
@@ -48,7 +47,7 @@ class ToolExecutorBridge:
         """
         self._custom_tools[name] = executor
 
-    def get_default_executors(self) -> Dict[str, ToolExecutor]:
+    def get_default_executors(self) -> dict[str, ToolExecutor]:
         """Get default tool executors for common operations.
 
         Returns:
@@ -70,7 +69,7 @@ class ToolExecutorBridge:
 
         return executors
 
-    def _execute_read_file(self, name: str, params: Dict[str, Any]) -> ToolResult:
+    def _execute_read_file(self, name: str, params: dict[str, Any]) -> ToolResult:
         """Read a file's contents."""
         path = params.get("path")
         if not path:
@@ -86,7 +85,7 @@ class ToolExecutorBridge:
         except Exception as e:
             return ToolResult.failure_result(name, f"Error reading file: {e}")
 
-    def _execute_write_file(self, name: str, params: Dict[str, Any]) -> ToolResult:
+    def _execute_write_file(self, name: str, params: dict[str, Any]) -> ToolResult:
         """Write content to a file."""
         path = params.get("path")
         content = params.get("content")
@@ -104,7 +103,7 @@ class ToolExecutorBridge:
         except Exception as e:
             return ToolResult.failure_result(name, f"Error writing file: {e}")
 
-    def _execute_edit_file(self, name: str, params: Dict[str, Any]) -> ToolResult:
+    def _execute_edit_file(self, name: str, params: dict[str, Any]) -> ToolResult:
         """Edit a file using search/replace."""
         path = params.get("path")
         old_string = params.get("old_string")
@@ -135,7 +134,7 @@ class ToolExecutorBridge:
         except Exception as e:
             return ToolResult.failure_result(name, f"Error editing file: {e}")
 
-    def _execute_glob(self, name: str, params: Dict[str, Any]) -> ToolResult:
+    def _execute_glob(self, name: str, params: dict[str, Any]) -> ToolResult:
         """Find files matching a pattern."""
         pattern = params.get("pattern")
         search_path = params.get("path", ".")
@@ -158,7 +157,7 @@ class ToolExecutorBridge:
         except Exception as e:
             return ToolResult.failure_result(name, f"Error searching files: {e}")
 
-    def _execute_grep(self, name: str, params: Dict[str, Any]) -> ToolResult:
+    def _execute_grep(self, name: str, params: dict[str, Any]) -> ToolResult:
         """Search for text in files."""
         pattern = params.get("pattern")
         search_path = params.get("path", ".")
@@ -188,7 +187,7 @@ class ToolExecutorBridge:
         except Exception as e:
             return ToolResult.failure_result(name, f"Error searching: {e}")
 
-    def _execute_bash(self, name: str, params: Dict[str, Any]) -> ToolResult:
+    def _execute_bash(self, name: str, params: dict[str, Any]) -> ToolResult:
         """Execute a shell command."""
         command = params.get("command")
 
@@ -230,7 +229,7 @@ class ToolExecutorBridge:
         except Exception as e:
             return ToolResult.failure_result(name, f"Error executing command: {e}")
 
-    def _execute_run_tests(self, name: str, params: Dict[str, Any]) -> ToolResult:
+    def _execute_run_tests(self, name: str, params: dict[str, Any]) -> ToolResult:
         """Run tests using pytest."""
         test_path = params.get("test_path", "tests/")
 
@@ -257,7 +256,7 @@ class ToolExecutorBridge:
         except Exception as e:
             return ToolResult.failure_result(name, f"Error running tests: {e}")
 
-    def _execute_list_files(self, name: str, params: Dict[str, Any]) -> ToolResult:
+    def _execute_list_files(self, name: str, params: dict[str, Any]) -> ToolResult:
         """List files in a directory."""
         path = params.get("path", ".")
 
@@ -285,7 +284,7 @@ class ToolExecutorBridge:
         return self.working_dir / p
 
 
-def create_tool_bridge(working_dir: Optional[Path] = None) -> ToolExecutorBridge:
+def create_tool_bridge(working_dir: Path | None = None) -> ToolExecutorBridge:
     """Factory function to create a tool executor bridge.
 
     Args:

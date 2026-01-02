@@ -1,13 +1,13 @@
-# @spec_file: specs/tools/01-tool-handlers.yaml
-# @spec_id: tool-handlers-v1
+# @spec_file: .agentforge/specs/core-harness-minimal-context-v1.yaml
+# @spec_id: core-harness-minimal-context-v1
 # @component_id: tool-handler-types
 
 """
 Tests for tool handler types and utilities.
 """
 
+
 import pytest
-from pathlib import Path
 
 from agentforge.core.harness.minimal_context.tool_handlers.types import (
     ActionHandler,
@@ -135,10 +135,10 @@ class TestActionHandler:
 
     def test_handler_is_callable_type(self):
         """ActionHandler is a callable type."""
-        from typing import get_type_hints, Dict, Any
+        from typing import Any
 
         # ActionHandler should accept Dict[str, Any] and return str
-        def my_handler(params: Dict[str, Any]) -> str:
+        def my_handler(params: dict[str, Any]) -> str:
             return "result"
 
         # This is a type check - the function should be compatible

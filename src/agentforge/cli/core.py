@@ -12,22 +12,20 @@ Contains shared functions used across multiple command modules:
 - Contract execution
 """
 
-import os
-import sys
-import click
-import yaml
-import subprocess
-import tempfile
+import contextlib
 import json as json_module
+import os
 import re
+import subprocess
+import sys
+import tempfile
 from pathlib import Path
 from typing import Any
 
-# Add parent to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
+import click
+import yaml
 
-from run_contract import ContractRunner
-
+from agentforge.core.contract_runner import ContractRunner
 
 # YAML enforcement prompt for Claude CLI
 YAML_ENFORCEMENT_PROMPT = """CRITICAL: You are in YAML-only output mode.
@@ -191,10 +189,8 @@ def call_claude_code(system: str, user: str) -> str:
         sys.exit(1)
 
     finally:
-        try:
+        with contextlib.suppress(OSError):
             Path(temp_path).unlink()
-        except OSError:
-            pass
 
 
 def call_anthropic_api(
@@ -331,7 +327,7 @@ def execute_contract(contract_id: str, inputs: dict, use_api: bool = False) -> d
         return parsed
 
     except yaml.YAMLError as e:
-        click.echo(f"\nWarning: Could not parse response as YAML")
+        click.echo("\nWarning: Could not parse response as YAML")
         click.echo(f"Error: {e}")
         click.echo("\nExtracted content:")
         click.echo("-" * 40)

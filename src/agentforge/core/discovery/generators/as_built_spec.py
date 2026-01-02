@@ -13,16 +13,15 @@ The generated specs enable:
 """
 
 import ast
-import hashlib
 import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any
 
 import yaml
 
-from ..domain import TestLinkage, TestAnalysis
+from ..domain import TestAnalysis, TestLinkage
 
 
 @dataclass
@@ -32,8 +31,8 @@ class DiscoveredEntity:
     entity_type: str  # "class", "function", "enum", "dataclass"
     line_number: int
     description: str = ""
-    methods: List[str] = field(default_factory=list)
-    test_methods: List[str] = field(default_factory=list)
+    methods: list[str] = field(default_factory=list)
+    test_methods: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -41,9 +40,9 @@ class DiscoveredComponent:
     """A component (module/file) discovered in code."""
     name: str  # e.g., "context_models"
     location: str  # e.g., "src/agentforge/core/harness/minimal_context/context_models.py"
-    test_location: Optional[str] = None  # e.g., "tests/unit/harness/test_context_models.py"
+    test_location: str | None = None  # e.g., "tests/unit/harness/test_context_models.py"
     description: str = ""
-    entities: List[DiscoveredEntity] = field(default_factory=list)
+    entities: list[DiscoveredEntity] = field(default_factory=list)
 
     @property
     def component_id(self) -> str:
@@ -67,10 +66,10 @@ class AsBuiltSpec:
     version: str = "1.0"
     status: str = "as-built"
     description: str = ""
-    components: List[DiscoveredComponent] = field(default_factory=list)
+    components: list[DiscoveredComponent] = field(default_factory=list)
     generated_at: datetime = field(default_factory=datetime.utcnow)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to YAML-compatible dict."""
         return {
             "spec_id": self.spec_id,
@@ -158,7 +157,7 @@ class AsBuiltSpecGenerator:
         self,
         test_analysis: TestAnalysis,
         zone_name: str = "main",
-    ) -> List[AsBuiltSpec]:
+    ) -> list[AsBuiltSpec]:
         """
         Generate as-built specs from test analysis linkages.
 
@@ -172,7 +171,7 @@ class AsBuiltSpecGenerator:
             List of generated AsBuiltSpec objects
         """
         # Group linkages by directory
-        dir_groups: Dict[str, List[TestLinkage]] = {}
+        dir_groups: dict[str, list[TestLinkage]] = {}
 
         for linkage in test_analysis.linkages:
             source_path = Path(linkage.source_path)
@@ -193,9 +192,9 @@ class AsBuiltSpecGenerator:
     def _generate_spec_for_directory(
         self,
         dir_path: str,
-        linkages: List[TestLinkage],
+        linkages: list[TestLinkage],
         zone_name: str,
-    ) -> Optional[AsBuiltSpec]:
+    ) -> AsBuiltSpec | None:
         """Generate a spec for a single directory."""
         # Simplify the path (removes src-agentforge-, tools-, etc.)
         simplified = self._simplify_path(dir_path)
@@ -224,11 +223,11 @@ class AsBuiltSpecGenerator:
 
         return spec
 
-    def _analyze_source_file(self, linkage: TestLinkage) -> Optional[DiscoveredComponent]:
+    def _analyze_source_file(self, linkage: TestLinkage) -> DiscoveredComponent | None:
         """Analyze a source file to extract component information."""
         source_path = self.root_path / linkage.source_path
 
-        if not source_path.exists() or not source_path.suffix == ".py":
+        if not source_path.exists() or source_path.suffix != ".py":
             return None
 
         try:
@@ -257,7 +256,7 @@ class AsBuiltSpecGenerator:
 
         return component
 
-    def _extract_entities(self, content: str) -> List[DiscoveredEntity]:
+    def _extract_entities(self, content: str) -> list[DiscoveredEntity]:
         """Extract classes, functions, and enums from Python source."""
         entities = []
 
@@ -321,7 +320,7 @@ class AsBuiltSpecGenerator:
         except SyntaxError:
             return ""
 
-    def _match_test_methods(self, entities: List[DiscoveredEntity], test_path: str) -> None:
+    def _match_test_methods(self, entities: list[DiscoveredEntity], test_path: str) -> None:
         """Match test methods to entities by naming convention."""
         full_test_path = self.root_path / test_path
 
@@ -349,7 +348,7 @@ class AsBuiltSpecGenerator:
                         if test_name not in entity.test_methods:
                             entity.test_methods.append(test_name)
 
-    def save_specs(self, specs: List[AsBuiltSpec]) -> List[Path]:
+    def save_specs(self, specs: list[AsBuiltSpec]) -> list[Path]:
         """Save generated specs to disk."""
         self.specs_dir.mkdir(parents=True, exist_ok=True)
 
@@ -382,8 +381,8 @@ class AsBuiltSpecGenerator:
 
     def generate_lineage_updates(
         self,
-        specs: List[AsBuiltSpec],
-    ) -> Dict[str, Dict[str, str]]:
+        specs: list[AsBuiltSpec],
+    ) -> dict[str, dict[str, str]]:
         """
         Generate lineage metadata updates for source files.
 

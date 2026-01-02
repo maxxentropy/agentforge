@@ -1,5 +1,5 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-1-foundation.yaml
-# @spec_id: pipeline-controller-phase1-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
 # @component_id: pipeline-stage-executor
 # @test_path: tests/unit/pipeline/test_stage_executor.py
 
@@ -19,7 +19,7 @@ executor that inherits from StageExecutor. The executor:
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from .state import StageStatus
 
@@ -38,8 +38,8 @@ class StageContext:
     pipeline_id: str
     stage_name: str
     project_path: Path
-    input_artifacts: Dict[str, Any] = field(default_factory=dict)
-    config: Dict[str, Any] = field(default_factory=dict)
+    input_artifacts: dict[str, Any] = field(default_factory=dict)
+    config: dict[str, Any] = field(default_factory=dict)
     state_store: Optional["PipelineStateStore"] = None
     request: str = ""  # Original user request
 
@@ -61,15 +61,15 @@ class StageResult:
     """
 
     status: StageStatus
-    artifacts: Dict[str, Any] = field(default_factory=dict)
-    error: Optional[str] = None
-    next_stage: Optional[str] = None  # Override default next stage
-    escalation: Optional[Dict[str, Any]] = None  # Escalation request
+    artifacts: dict[str, Any] = field(default_factory=dict)
+    error: str | None = None
+    next_stage: str | None = None  # Override default next stage
+    escalation: dict[str, Any] | None = None  # Escalation request
 
     @classmethod
     def success(
         cls,
-        artifacts: Dict[str, Any] = None,
+        artifacts: dict[str, Any] = None,
         next_stage: str = None,
     ) -> "StageResult":
         """Create a successful result."""
@@ -100,8 +100,8 @@ class StageResult:
         cls,
         escalation_type: str,
         message: str,
-        options: List[str] = None,
-        context: Dict[str, Any] = None,
+        options: list[str] = None,
+        context: dict[str, Any] = None,
     ) -> "StageResult":
         """Create an escalation result (pauses pipeline for human input)."""
         return cls(
@@ -147,7 +147,7 @@ class StageExecutor(ABC):
         """
         pass
 
-    def validate_input(self, artifacts: Dict[str, Any]) -> List[str]:
+    def validate_input(self, artifacts: dict[str, Any]) -> list[str]:
         """
         Validate input artifacts.
 
@@ -165,7 +165,7 @@ class StageExecutor(ABC):
                 errors.append(f"Missing required artifact: {required}")
         return errors
 
-    def get_required_inputs(self) -> List[str]:
+    def get_required_inputs(self) -> list[str]:
         """
         Get list of required input artifact keys.
 
@@ -176,7 +176,7 @@ class StageExecutor(ABC):
         """
         return []
 
-    def get_output_schema(self) -> Dict[str, Any]:
+    def get_output_schema(self) -> dict[str, Any]:
         """
         Get JSON schema for output artifacts.
 

@@ -1,0 +1,114 @@
+context_data:
+  check_id: max-cyclomatic-complexity
+  contract_id: agentforge
+  file_path: tools/discovery/providers/python_provider.py
+  fix_hint: Break complex functions into smaller, focused helper functions
+  line_number: 170
+  message: 'Function ''extract_symbols'' has complexity 21 (max: 10)'
+  precomputed:
+    analysis:
+      branches:
+      - for (line 172)
+      - if (line 173)
+      - for (line 175)
+      - if (line 195)
+      - if (line 176)
+      - if (line 199)
+      - for (line 203)
+      - if (line 212)
+      - for (line 217)
+      - if (line 178)
+      - if (line 205)
+      - if (line 218)
+      - for (line 219)
+      - if (line 220)
+      called_functions:
+      - Symbol
+      - _get_annotation_str
+      - _get_attr_name
+      - _get_decorator_name
+      - _get_visibility
+      - append
+      - get_docstring
+      - getattr
+      - isinstance
+      - iter_child_nodes
+      - join
+      - walk
+      complexity: 20
+      local_variables:
+      - bases
+      - decorators
+      - is_async
+      - kind
+      - param
+      - param_strs
+      - params
+      - parent
+      - return_type
+      - signature
+      nesting_depth: 7
+      parameter_count: 5
+    extraction_suggestions:
+    - end_line: 239
+      reason: Loop with complexity 20 - extract body to helper
+      start_line: 172
+      type: loop_body
+    function_lines: 170-239
+    function_source: "    def _process_ast_node(self, Symbol, path, symbols, tree):\n\
+      \        \"\"\"Extracted helper for extract_symbols.\"\"\"\n        for node\
+      \ in ast.walk(tree):\n            if isinstance(node, ast.ClassDef):\n     \
+      \           bases = []\n                for base in node.bases:\n          \
+      \          if isinstance(base, ast.Name):\n                        bases.append(base.id)\n\
+      \                    elif isinstance(base, ast.Attribute):\n               \
+      \         bases.append(self._get_attr_name(base))\n\n                decorators\
+      \ = [self._get_decorator_name(d) for d in node.decorator_list]\n\n         \
+      \       symbols.append(Symbol(\n                    name=node.name,\n      \
+      \              kind=\"class\",\n                    file_path=path,\n      \
+      \              line_number=node.lineno,\n                    end_line=getattr(node,\
+      \ 'end_lineno', None),\n                    visibility=self._get_visibility(node.name),\n\
+      \                    docstring=ast.get_docstring(node),\n                  \
+      \  decorators=decorators,\n                    base_classes=bases,\n       \
+      \         ))\n\n            elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):\n\
+      \                decorators = [self._get_decorator_name(d) for d in node.decorator_list]\n\
+      \n                return_type = None\n                if node.returns:\n   \
+      \                 return_type = self._get_annotation_str(node.returns)\n\n \
+      \               params = []\n                for arg in node.args.args:\n  \
+      \                  param = {\"name\": arg.arg}\n                    if arg.annotation:\n\
+      \                        param[\"type\"] = self._get_annotation_str(arg.annotation)\n\
+      \                    params.append(param)\n\n                is_async = isinstance(node,\
+      \ ast.AsyncFunctionDef)\n                param_strs = [p[\"name\"] for p in\
+      \ params]\n                signature = f\"{'async ' if is_async else ''}def\
+      \ {node.name}({', '.join(param_strs)})\"\n                if return_type:\n\
+      \                    signature += f\" -> {return_type}\"\n\n               \
+      \ # Determine if this is a method or function\n                parent = None\n\
+      \                for potential_parent in ast.walk(tree):\n                 \
+      \   if isinstance(potential_parent, ast.ClassDef):\n                       \
+      \ for child in ast.iter_child_nodes(potential_parent):\n                   \
+      \         if child is node:\n                                parent = potential_parent.name\n\
+      \                                break\n\n                kind = \"method\"\
+      \ if parent else \"function\"\n\n                symbols.append(Symbol(\n  \
+      \                  name=node.name,\n                    kind=kind,\n       \
+      \             file_path=path,\n                    line_number=node.lineno,\n\
+      \                    end_line=getattr(node, 'end_lineno', None),\n         \
+      \           parent=parent,\n                    visibility=self._get_visibility(node.name),\n\
+      \                    signature=signature,\n                    docstring=ast.get_docstring(node),\n\
+      \                    decorators=decorators,\n                    return_type=return_type,\n\
+      \                    parameters=params,\n                ))"
+    violating_function: _process_ast_node
+  severity: major
+  violation_id: V-000dd41679c3
+current_step: 20
+error: null
+last_updated: '2025-12-31T14:00:33.726049'
+phase: init
+verification:
+  checks_failing: 1
+  checks_passing: 0
+  details:
+    last_check: "\u2717 Check 'max-cyclomatic-complexity' FAILED for tools/discovery/providers/python_provider.py\n\
+      Violations (1):\n- Line 170: Function '_process_ast_node' has complexity 20\
+      \ (max: 10)\n  Hint: Break complex functions into smaller, focused helper functions"
+  last_check_time: '2025-12-31T13:58:57.634823'
+  ready_for_completion: false
+  tests_passing: false

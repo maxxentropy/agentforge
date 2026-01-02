@@ -1,0 +1,13 @@
+schema_version: '1.0'
+violation_id: V-7d28d5e15fab
+contract_id: agentforge
+check_id: single-responsibility-modules
+severity: minor
+file_path: tests/unit/harness/test_enhanced_context.py
+message: 'Class ''TestTokenBudgetEnforcement'' has 5 methods (max: 3)'
+detected_at: '2026-01-01T01:39:14.049055'
+last_seen_at: '2026-01-01T01:39:14.049055'
+status: open
+line_number: 1683
+fix_hint: Split modules with too many classes into focused single-class modules
+test_path: tests/unit/harness/test_enhanced_context.py

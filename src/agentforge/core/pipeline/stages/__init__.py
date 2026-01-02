@@ -1,12 +1,6 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-2-design-pipeline.yaml
-# @spec_file: specs/pipeline-controller/implementation/phase-3-tdd-stages.yaml
-# @spec_file: specs/pipeline-controller/implementation/phase-4-refactor-deliver.yaml
-# @spec_id: pipeline-controller-phase2-v1
-# @spec_id: pipeline-controller-phase3-v1
-# @spec_id: pipeline-controller-phase4-v1
-# @component_id: stages-init
-# @component_id: stages-init-tdd
-# @component_id: stages-init-phase4
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
+# @component_id: pipeline-stages-init
 # @test_path: tests/unit/pipeline/stages/test_stages_init.py
 
 """
@@ -30,14 +24,19 @@ Delivery Stages (Phase 4):
 - DELIVER: Git commit and PR creation
 """
 
-from .intake import IntakeExecutor, create_intake_executor
-from .clarify import ClarifyExecutor, create_clarify_executor
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from agentforge.core.pipeline.registry import StageExecutorRegistry
+
 from .analyze import AnalyzeExecutor, create_analyze_executor
-from .spec import SpecExecutor, create_spec_executor
-from .red import RedPhaseExecutor, create_red_executor
-from .green import GreenPhaseExecutor, create_green_executor
-from .refactor import RefactorPhaseExecutor, create_refactor_executor
+from .clarify import ClarifyExecutor, create_clarify_executor
 from .deliver import DeliverPhaseExecutor, DeliveryMode, create_deliver_executor
+from .green import GreenPhaseExecutor, create_green_executor
+from .intake import IntakeExecutor, create_intake_executor
+from .red import RedPhaseExecutor, create_red_executor
+from .refactor import RefactorPhaseExecutor, create_refactor_executor
+from .spec import SpecExecutor, create_spec_executor
 
 __all__ = [
     # Design Pipeline Executor classes

@@ -1,5 +1,5 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-5-cli-commands.yaml
-# @spec_id: pipeline-controller-phase5-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
 # @component_id: pipeline-cli-start, pipeline-cli-design, pipeline-cli-implement
 # @component_id: pipeline-cli-status, pipeline-cli-resume, pipeline-cli-approve
 # @component_id: pipeline-cli-reject, pipeline-cli-abort
@@ -22,10 +22,9 @@ Commands for pipeline operations:
 - artifacts: View artifacts
 """
 
-import click
 from pathlib import Path
-from typing import Optional
 
+import click
 
 # =============================================================================
 # Progress Display Helper
@@ -104,7 +103,7 @@ def _display_result(result, delivery_mode: str) -> None:
         click.echo(f"Stages completed: {', '.join(result.stages_completed)}")
 
 
-def _get_controller(project_path: Optional[Path] = None, config_override: Optional[dict] = None):
+def _get_controller(project_path: Path | None = None, config_override: dict | None = None):
     """Get PipelineController instance."""
     from agentforge.core.pipeline import PipelineController
 
@@ -493,7 +492,7 @@ def reject(ctx, pipeline_id, feedback, abort_flag):
             click.echo(click.style("Pipeline aborted.", fg="yellow"))
         elif feedback:
             controller.provide_feedback(pipeline_id, feedback)
-            click.echo(f"📝 Feedback provided. Pipeline will revise.")
+            click.echo("📝 Feedback provided. Pipeline will revise.")
             # Trigger re-execution of current stage
             controller.execute(user_request="", resume_pipeline_id=pipeline_id)
         else:

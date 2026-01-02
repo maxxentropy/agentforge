@@ -6,7 +6,8 @@ severity: minor
 file_path: tests/unit/tools/conformance/test_domain.py
 message: 'Class ''TestViolation'' has 6 methods (max: 3)'
 detected_at: '2025-12-30T17:10:15.611250'
-last_seen_at: '2025-12-30T20:29:36.721031'
+last_seen_at: '2026-01-01T01:39:14.024146'
 status: open
 line_number: 96
 fix_hint: Split modules with too many classes into focused single-class modules
+test_path: tests/unit/tools/conformance/test_domain.py

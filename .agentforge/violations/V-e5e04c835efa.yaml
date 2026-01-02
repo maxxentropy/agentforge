@@ -1,0 +1,17 @@
+schema_version: '1.0'
+violation_id: V-e5e04c835efa
+contract_id: agentforge
+check_id: use-click-echo
+severity: minor
+file_path: tools/builtin_checks.py
+message: 'Forbidden pattern found: ''print('''
+detected_at: '2025-12-31T18:52:08.865818'
+last_seen_at: '2025-12-31T18:52:08.865818'
+status: resolved
+line_number: 79
+fix_hint: Use click.echo() or rich.print() for CLI output
+resolution:
+  resolved_at: '2025-12-31T19:17:48.608975'
+  resolved_by: system
+  reason: No longer detected in full verification run
+test_path: tests/unit/tools/

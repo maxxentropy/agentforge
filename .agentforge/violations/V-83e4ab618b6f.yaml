@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-83e4ab618b6f
+contract_id: agentforge
+check_id: max-cyclomatic-complexity
+severity: major
+file_path: tools/harness/minimal_context/fix_workflow.py
+message: 'Function ''_wrap_extract_function'' has complexity 27 (max: 10)'
+detected_at: '2025-12-31T17:47:35.597303'
+last_seen_at: '2025-12-31T17:47:35.597303'
+status: stale
+line_number: 654
+fix_hint: Break complex functions into smaller, focused helper functions

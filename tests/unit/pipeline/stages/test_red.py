@@ -1,17 +1,13 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-3-tdd-stages.yaml
-# @spec_id: pipeline-controller-phase3-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
 # @component_id: red-phase-executor
 # @test_path: tests/unit/pipeline/stages/test_red.py
 
 """Unit tests for RedPhaseExecutor."""
 
-from pathlib import Path
-from typing import Any, Dict
-from unittest.mock import MagicMock, patch, Mock
+from unittest.mock import MagicMock, Mock, patch
 
-import pytest
-
-from agentforge.core.pipeline import StageContext, StageStatus
+from agentforge.core.pipeline import StageContext
 from agentforge.core.pipeline.stages.red import RedPhaseExecutor, create_red_executor
 
 
@@ -146,7 +142,7 @@ class TestRedPhaseExecutor:
         """Reports expected failing tests."""
         executor = RedPhaseExecutor()
 
-        context = StageContext(
+        StageContext(
             pipeline_id="PL-test",
             stage_name="red",
             project_path=temp_project_path,

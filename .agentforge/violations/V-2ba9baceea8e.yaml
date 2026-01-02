@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-2ba9baceea8e
+contract_id: agentforge
+check_id: max-function-length
+severity: major
+file_path: src/agentforge/cli/commands/bridge.py
+message: 'Function ''run_bridge_generate'' has 71 lines (max: 50)'
+detected_at: '2026-01-01T01:39:13.646851'
+last_seen_at: '2026-01-01T01:39:13.646851'
+status: open
+line_number: 17
+fix_hint: Extract logic into helper functions or use composition

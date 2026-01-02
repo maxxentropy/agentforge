@@ -1,11 +1,13 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-1-foundation.yaml
-# @spec_file: specs/pipeline-controller/implementation/phase-2-design-pipeline.yaml
-# @spec_file: specs/pipeline-controller/implementation/phase-3-tdd-stages.yaml
-# @spec_file: specs/pipeline-controller/implementation/phase-6-configuration.yaml
-# @spec_id: pipeline-controller-phase1-v1
-# @spec_id: pipeline-controller-phase2-v1
-# @spec_id: pipeline-controller-phase3-v1
-# @spec_id: pipeline-controller-phase6-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
+# @spec_id: core-pipeline-v1
+# @spec_id: core-pipeline-v1
+# @spec_id: core-pipeline-v1
+# @spec_id: core-pipeline-v1
 # @component_id: pipeline-init
 # @test_path: tests/unit/pipeline/test_module_exports.py
 
@@ -44,41 +46,42 @@ Example usage:
 """
 
 # State management
-from .state import (
-    PipelineState,
-    PipelineStatus,
-    StageState,
-    StageStatus,
-    create_pipeline_state,
-    generate_pipeline_id,
-    PIPELINE_TEMPLATES,
+# Phase 2: Artifact dataclasses
+from .artifacts import (
+    AnalyzeArtifact,
+    ClarifyArtifact,
+    DeliverArtifact,
+    GreenArtifact,
+    IntakeArtifact,
+    RedArtifact,
+    RefactorArtifact,
+    SpecArtifact,
 )
 
-# State persistence
-from .state_store import PipelineStateStore
-
-# Stage executor interface
-from .stage_executor import (
-    StageContext,
-    StageExecutor,
-    StageResult,
-    PassthroughExecutor,
+# Phase 6: Configuration System
+from .config import (
+    ConfigurationLoader,
+    GlobalSettings,
+    PipelineConfig,
+    PipelineTemplate,
+    PipelineTemplateLoader,
+    StageConfig,
+    expand_env_vars,
+)
+from .config_validator import (
+    ConfigValidator,
+)
+from .config_validator import (
+    ValidationError as ConfigValidationError,
 )
 
-# Stage registry
-from .registry import (
-    StageExecutorRegistry,
-    StageNotFoundError,
-    DuplicateStageError,
-    get_registry,
-    register_stage,
-)
-
-# Artifact validation
-from .validator import (
-    ArtifactValidator,
-    ValidationError,
-    validate_artifacts,
+# Pipeline controller
+from .controller import (
+    PipelineController,
+    PipelineError,
+    PipelineNotFoundError,
+    PipelineResult,
+    PipelineStateError,
 )
 
 # Escalation handling
@@ -90,47 +93,47 @@ from .escalation import (
     generate_escalation_id,
 )
 
-# Pipeline controller
-from .controller import (
-    PipelineController,
-    PipelineError,
-    PipelineNotFoundError,
-    PipelineStateError,
-)
-
 # Phase 2: LLM Stage Executors
 from .llm_stage_executor import (
     LLMStageExecutor,
-    ToolBasedStageExecutor,
     OutputValidation,
+    ToolBasedStageExecutor,
 )
 
-# Phase 2: Artifact dataclasses
-from .artifacts import (
-    IntakeArtifact,
-    ClarifyArtifact,
-    AnalyzeArtifact,
-    SpecArtifact,
-    RedArtifact,
-    GreenArtifact,
-    RefactorArtifact,
-    DeliverArtifact,
+# Stage registry
+from .registry import (
+    DuplicateStageError,
+    StageExecutorRegistry,
+    StageNotFoundError,
+    get_registry,
+    register_stage,
 )
 
-# Phase 6: Configuration System
-from .config import (
-    StageConfig,
-    PipelineTemplate,
-    GlobalSettings,
-    PipelineConfig,
-    ConfigurationLoader,
-    PipelineTemplateLoader,
-    expand_env_vars,
+# Stage executor interface
+from .stage_executor import (
+    PassthroughExecutor,
+    StageContext,
+    StageExecutor,
+    StageResult,
+)
+from .state import (
+    PIPELINE_TEMPLATES,
+    PipelineState,
+    PipelineStatus,
+    StageState,
+    StageStatus,
+    create_pipeline_state,
+    generate_pipeline_id,
 )
 
-from .config_validator import (
-    ConfigValidator,
-    ValidationError as ConfigValidationError,
+# State persistence
+from .state_store import PipelineStateStore
+
+# Artifact validation
+from .validator import (
+    ArtifactValidator,
+    ValidationError,
+    validate_artifacts,
 )
 
 __all__ = [
@@ -170,6 +173,7 @@ __all__ = [
     "PipelineError",
     "PipelineNotFoundError",
     "PipelineStateError",
+    "PipelineResult",
     # Phase 2: LLM Stage Executors
     "LLMStageExecutor",
     "ToolBasedStageExecutor",

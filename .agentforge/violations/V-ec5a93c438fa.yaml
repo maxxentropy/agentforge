@@ -1,0 +1,13 @@
+schema_version: '1.0'
+violation_id: V-ec5a93c438fa
+contract_id: agentforge
+check_id: max-cyclomatic-complexity
+severity: major
+file_path: tools/discovery/manager.py
+message: 'Function ''_detect_languages'' has complexity 12 (max: 10)'
+detected_at: '2025-12-31T02:40:13.121640'
+last_seen_at: '2026-01-01T01:39:13.468303'
+status: open
+line_number: 220
+fix_hint: Break complex functions into smaller, focused helper functions
+test_path: tests/unit/tools/

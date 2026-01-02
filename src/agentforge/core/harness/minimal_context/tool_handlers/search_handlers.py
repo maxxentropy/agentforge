@@ -1,5 +1,5 @@
-# @spec_file: specs/tools/01-tool-handlers.yaml
-# @spec_id: tool-handlers-v1
+# @spec_file: .agentforge/specs/core-harness-minimal-context-v1.yaml
+# @spec_id: core-harness-minimal-context-v1
 # @component_id: search-handlers
 # @test_path: tests/unit/harness/tool_handlers/test_search_handlers.py
 
@@ -19,7 +19,7 @@ import fnmatch
 import logging
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from .constants import (
     FIND_RELATED_MAX_FILES,
@@ -47,7 +47,7 @@ EXCLUDE_PATTERNS = [
 ]
 
 
-def create_search_code_handler(project_path: Optional[Path] = None) -> ActionHandler:
+def create_search_code_handler(project_path: Path | None = None) -> ActionHandler:
     """
     Create a search_code action handler.
 
@@ -62,7 +62,7 @@ def create_search_code_handler(project_path: Optional[Path] = None) -> ActionHan
     """
     base_path = Path(project_path) if project_path else Path.cwd()
 
-    def handler(params: Dict[str, Any]) -> str:
+    def handler(params: dict[str, Any]) -> str:
         pattern = params.get("pattern", "")
         file_pattern = params.get("file_pattern")
         max_results = params.get("max_results", SEARCH_DEFAULT_MAX_RESULTS)
@@ -84,7 +84,7 @@ def create_search_code_handler(project_path: Optional[Path] = None) -> ActionHan
     def _regex_search(
         base_path: Path,
         pattern: str,
-        file_pattern: Optional[str],
+        file_pattern: str | None,
         max_results: int,
     ) -> str:
         """Grep-style regex search."""
@@ -93,7 +93,7 @@ def create_search_code_handler(project_path: Optional[Path] = None) -> ActionHan
         except re.error as e:
             return f"ERROR: Invalid regex pattern: {e}"
 
-        results: List[Tuple[str, int, str]] = []  # (file, line_num, line_text)
+        results: list[tuple[str, int, str]] = []  # (file, line_num, line_text)
 
         # Determine files to search
         if file_pattern:
@@ -185,7 +185,7 @@ def create_search_code_handler(project_path: Optional[Path] = None) -> ActionHan
     return handler
 
 
-def create_load_context_handler(project_path: Optional[Path] = None) -> ActionHandler:
+def create_load_context_handler(project_path: Path | None = None) -> ActionHandler:
     """
     Create a load_context action handler.
 
@@ -199,7 +199,7 @@ def create_load_context_handler(project_path: Optional[Path] = None) -> ActionHa
     """
     base_path = Path(project_path) if project_path else Path.cwd()
 
-    def handler(params: Dict[str, Any]) -> str:
+    def handler(params: dict[str, Any]) -> str:
         # Support multiple parameter formats
         item = params.get("item", "")
         path = params.get("path") or params.get("file_path") or params.get("file")
@@ -215,7 +215,7 @@ def create_load_context_handler(project_path: Optional[Path] = None) -> ActionHa
             if query:
                 return (
                     "ERROR: Use 'read_file' action to read files, not 'load_context'. "
-                    f"Try: read_file with path parameter."
+                    "Try: read_file with path parameter."
                 )
             return (
                 "ERROR: Missing item or path parameter. "
@@ -245,8 +245,8 @@ def create_load_context_handler(project_path: Optional[Path] = None) -> ActionHa
                 # Try to store in working memory if we have context
                 if task_id:
                     try:
-                        from ..working_memory import WorkingMemoryManager
                         from ..state_store import TaskStateStore
+                        from ..working_memory import WorkingMemoryManager
 
                         state_store = TaskStateStore(base_path)
                         task_dir = state_store._task_dir(task_id)
@@ -278,7 +278,7 @@ def create_load_context_handler(project_path: Optional[Path] = None) -> ActionHa
     return handler
 
 
-def create_find_related_handler(project_path: Optional[Path] = None) -> ActionHandler:
+def create_find_related_handler(project_path: Path | None = None) -> ActionHandler:
     """
     Create a find_related action handler.
 
@@ -293,7 +293,7 @@ def create_find_related_handler(project_path: Optional[Path] = None) -> ActionHa
     """
     base_path = Path(project_path) if project_path else Path.cwd()
 
-    def handler(params: Dict[str, Any]) -> str:
+    def handler(params: dict[str, Any]) -> str:
         path = params.get("path") or params.get("file_path")
         relation_type = params.get("type", "all")  # "imports", "same_dir", "tests", "all"
         logger.debug("find_related: path=%s, type=%s", path, relation_type)

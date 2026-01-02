@@ -1,0 +1,16 @@
+schema_version: '1.0'
+violation_id: V-a686994a8a13
+contract_id: agentforge
+check_id: cli-proper-exit-codes
+severity: minor
+file_path: tools/builtin_checks.py
+message: 'Required pattern not found: ''sys\.exit\s*\(\s*[012]\s*\)|raise\s+(SystemExit|click\.Abort|typer\.Abort)'''
+detected_at: '2025-12-31T18:52:08.865258'
+last_seen_at: '2025-12-31T18:52:08.865258'
+status: resolved
+fix_hint: Use sys.exit(0) for success, sys.exit(1) for errors
+resolution:
+  resolved_at: '2025-12-31T19:17:48.610503'
+  resolved_by: system
+  reason: No longer detected in full verification run
+test_path: tests/unit/tools/

@@ -1,4 +1,4 @@
-# @spec_file: specs/minimal-context-architecture/07-audit.yaml
+# @spec_file: .agentforge/specs/core-context-v1.yaml
 # @spec_id: audit-v1
 # @component_id: context-audit-logger
 # @test_path: tests/unit/context/test_audit.py
@@ -52,9 +52,9 @@ Usage:
 
 import hashlib
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import yaml
 
@@ -87,17 +87,17 @@ class ContextAuditLogger:
         self.audit_dir.mkdir(parents=True, exist_ok=True)
 
         # Track steps logged for summary
-        self._steps_logged: List[int] = []
+        self._steps_logged: list[int] = []
         self._total_thinking_tokens = 0
 
     def log_step(
         self,
         step: int,
-        context: Dict[str, Any],
-        token_breakdown: Dict[str, int],
-        compaction: Optional[Dict[str, Any]] = None,
-        thinking: Optional[str] = None,
-        response: Optional[str] = None,
+        context: dict[str, Any],
+        token_breakdown: dict[str, int],
+        compaction: dict[str, Any] | None = None,
+        thinking: str | None = None,
+        response: str | None = None,
     ) -> None:
         """
         Log complete audit for a single step.
@@ -110,10 +110,10 @@ class ContextAuditLogger:
             thinking: Extended thinking content (if enabled)
             response: LLM response content
         """
-        audit_entry: Dict[str, Any] = {
+        audit_entry: dict[str, Any] = {
             "task_id": self.task_id,
             "step": step,
-            "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            "timestamp": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
             "token_breakdown": token_breakdown,
             "total_tokens": sum(token_breakdown.values()),
             "context_hash": self._hash_context(context),
@@ -168,9 +168,9 @@ class ContextAuditLogger:
         # Calculate effective tokens (cache reduces cost by ~90%)
         effective_tokens = total_tokens - int(cached_tokens * 0.9)
 
-        summary: Dict[str, Any] = {
+        summary: dict[str, Any] = {
             "task_id": self.task_id,
-            "completed_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            "completed_at": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
             "total_steps": total_steps,
             "final_status": final_status,
             "total_input_tokens": total_tokens,
@@ -188,21 +188,21 @@ class ContextAuditLogger:
 
         self._save_yaml("summary.yaml", summary)
 
-    def get_step_audit(self, step: int) -> Optional[Dict[str, Any]]:
+    def get_step_audit(self, step: int) -> dict[str, Any] | None:
         """Retrieve audit entry for a step."""
         path = self.audit_dir / f"step_{step}.yaml"
         if path.exists():
             return yaml.safe_load(path.read_text(encoding="utf-8"))
         return None
 
-    def get_step_context(self, step: int) -> Optional[Dict[str, Any]]:
+    def get_step_context(self, step: int) -> dict[str, Any] | None:
         """Retrieve full context snapshot for a step."""
         path = self.audit_dir / f"step_{step}_context.yaml"
         if path.exists():
             return yaml.safe_load(path.read_text(encoding="utf-8"))
         return None
 
-    def get_thinking(self, step: int) -> Optional[str]:
+    def get_thinking(self, step: int) -> str | None:
         """Retrieve thinking content for a step."""
         path = self.audit_dir / f"step_{step}_thinking.md"
         if path.exists():
@@ -213,16 +213,16 @@ class ContextAuditLogger:
             return content
         return None
 
-    def get_summary(self) -> Optional[Dict[str, Any]]:
+    def get_summary(self) -> dict[str, Any] | None:
         """Retrieve task summary."""
         path = self.audit_dir / "summary.yaml"
         if path.exists():
             return yaml.safe_load(path.read_text(encoding="utf-8"))
         return None
 
-    def list_steps(self) -> List[int]:
+    def list_steps(self) -> list[int]:
         """List all logged step numbers."""
-        steps: List[int] = []
+        steps: list[int] = []
         for path in self.audit_dir.glob("step_*_context.yaml"):
             try:
                 step = int(path.stem.split("_")[1])
@@ -231,13 +231,13 @@ class ContextAuditLogger:
                 continue
         return sorted(steps)
 
-    def _hash_context(self, context: Dict[str, Any]) -> str:
+    def _hash_context(self, context: dict[str, Any]) -> str:
         """Compute reproducibility hash for context."""
         # Sort keys and convert to JSON for consistent hashing
         content = json.dumps(context, sort_keys=True, default=str)
         return hashlib.sha256(content.encode()).hexdigest()[:16]
 
-    def _save_yaml(self, filename: str, data: Dict[str, Any]) -> None:
+    def _save_yaml(self, filename: str, data: dict[str, Any]) -> None:
         """Save data as YAML file."""
         path = self.audit_dir / filename
         yaml_content = yaml.dump(
@@ -270,7 +270,7 @@ class ContextAuditLogger:
         return logger
 
     @classmethod
-    def list_task_audits(cls, project_path: Path) -> List[str]:
+    def list_task_audits(cls, project_path: Path) -> list[str]:
         """List all task IDs with audit data."""
         audit_root = Path(project_path).resolve() / ".agentforge" / "context_audit"
         if not audit_root.exists():

@@ -1,5 +1,5 @@
-# @spec_file: .agentforge/specs/harness-v1.yaml
-# @spec_id: harness-v1
+# @spec_file: .agentforge/specs/core-harness-v1.yaml
+# @spec_id: core-harness-v1
 # @component_id: tools-harness-orchestrator_domain
 # @impl_path: tools/harness/orchestrator_domain.py
 
@@ -19,27 +19,24 @@ Updated to use actual component APIs:
 - ToolSelector: get_tool_names(workflow, phase, domain)
 """
 
-import pytest
 from datetime import datetime
-from pathlib import Path
-from unittest.mock import Mock, MagicMock, patch
-import tempfile
+from unittest.mock import Mock
 
-from tools.harness.agent_orchestrator import AgentOrchestrator
-from tools.harness.orchestrator_domain import (
-    OrchestratorState,
+import pytest
+
+from agentforge.core.harness.agent_orchestrator import AgentOrchestrator
+from agentforge.core.harness.escalation_domain import (
+    EscalationResolution,
+    ResolutionType,
+)
+from agentforge.core.harness.monitor_domain import AgentHealth, HealthStatus, Recommendation
+from agentforge.core.harness.orchestrator_domain import (
     ExecutionMode,
-    AgentTask,
     ExecutionResult,
-    OrchestratorConfig
+    OrchestratorConfig,
 )
-from tools.harness.session_domain import SessionContext, SessionState, TokenBudget
-from tools.harness.monitor_domain import AgentHealth, HealthStatus, Recommendation
-from tools.harness.recovery_domain import RecoveryAttempt, RecoveryAction, RecoveryResult
-from tools.harness.escalation_domain import (
-    Escalation, EscalationStatus, EscalationPriority,
-    EscalationResolution, ResolutionType
-)
+from agentforge.core.harness.recovery_domain import RecoveryAction, RecoveryAttempt, RecoveryResult
+from agentforge.core.harness.session_domain import SessionContext, SessionState, TokenBudget
 
 
 def create_mock_session(

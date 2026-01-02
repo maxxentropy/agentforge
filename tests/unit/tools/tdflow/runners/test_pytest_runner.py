@@ -1,11 +1,11 @@
 """Tests for pytest runner."""
 
-import pytest
 import tempfile
 from pathlib import Path
 
-from tools.tdflow.runners.pytest_runner import PytestRunner
-from tools.tdflow.domain import TestResult
+import pytest
+
+from agentforge.core.tdflow.runners.pytest_runner import PytestRunner
 
 
 class TestPytestRunner:
@@ -111,19 +111,19 @@ class TestTestRunnerDetection:
 
     def test_detect_dotnet(self, tmp_path: Path):
         """Detect .NET project from csproj."""
-        from tools.tdflow.runners.base import TestRunner
+        from agentforge.core.tdflow.runners.base import TestRunner
 
         (tmp_path / "Project.csproj").touch()
 
         runner = TestRunner.detect(tmp_path)
 
-        from tools.tdflow.runners.dotnet import DotNetTestRunner
+        from agentforge.core.tdflow.runners.dotnet import DotNetTestRunner
 
         assert isinstance(runner, DotNetTestRunner)
 
     def test_detect_python(self, tmp_path: Path):
         """Detect Python project from pyproject.toml."""
-        from tools.tdflow.runners.base import TestRunner
+        from agentforge.core.tdflow.runners.base import TestRunner
 
         (tmp_path / "pyproject.toml").touch()
 
@@ -133,7 +133,7 @@ class TestTestRunnerDetection:
 
     def test_detect_python_from_test_files(self, tmp_path: Path):
         """Detect Python project from test files."""
-        from tools.tdflow.runners.base import TestRunner
+        from agentforge.core.tdflow.runners.base import TestRunner
 
         (tmp_path / "tests").mkdir()
         (tmp_path / "tests" / "test_example.py").touch()
@@ -144,15 +144,15 @@ class TestTestRunnerDetection:
 
     def test_detect_fails_unknown(self, tmp_path: Path):
         """Detect fails for unknown project type."""
-        from tools.tdflow.runners.base import TestRunner
+        from agentforge.core.tdflow.runners.base import TestRunner
 
         with pytest.raises(ValueError, match="Cannot detect"):
             TestRunner.detect(tmp_path)
 
     def test_for_framework(self, tmp_path: Path):
         """Get runner for specific framework."""
-        from tools.tdflow.runners.base import TestRunner
-        from tools.tdflow.runners.dotnet import DotNetTestRunner
+        from agentforge.core.tdflow.runners.base import TestRunner
+        from agentforge.core.tdflow.runners.dotnet import DotNetTestRunner
 
         runner = TestRunner.for_framework("xunit", tmp_path)
 
@@ -160,7 +160,7 @@ class TestTestRunnerDetection:
 
     def test_for_framework_pytest(self, tmp_path: Path):
         """Get runner for pytest framework."""
-        from tools.tdflow.runners.base import TestRunner
+        from agentforge.core.tdflow.runners.base import TestRunner
 
         runner = TestRunner.for_framework("pytest", tmp_path)
 
@@ -168,7 +168,7 @@ class TestTestRunnerDetection:
 
     def test_for_framework_unsupported(self, tmp_path: Path):
         """Get runner fails for unsupported framework."""
-        from tools.tdflow.runners.base import TestRunner
+        from agentforge.core.tdflow.runners.base import TestRunner
 
         with pytest.raises(ValueError, match="Unsupported framework"):
             TestRunner.for_framework("unknown", tmp_path)

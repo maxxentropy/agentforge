@@ -1,4 +1,4 @@
-# @spec_file: specs/minimal-context-architecture/02-agent-config.yaml
+# @spec_file: .agentforge/specs/core-context-v1.yaml
 # @spec_id: agent-config-v1
 # @component_id: agent-config-loader
 # @test_path: tests/unit/context/test_agent_config.py
@@ -39,9 +39,9 @@ Usage:
 """
 
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import yaml
 from pydantic import BaseModel, Field
@@ -94,8 +94,8 @@ class ProjectConfig(BaseModel):
     name: str
     language: str
     test_command: str = "pytest"
-    build_command: Optional[str] = None
-    lint_command: Optional[str] = None
+    build_command: str | None = None
+    lint_command: str | None = None
     source_root: str = "src"
     test_root: str = "tests"
 
@@ -113,14 +113,14 @@ class AgentConfig(BaseModel):
 
     preferences: AgentPreferences = Field(default_factory=AgentPreferences)
     defaults: TaskDefaults = Field(default_factory=TaskDefaults)
-    project: Optional[ProjectConfig] = None
-    patterns: Dict[str, str] = Field(default_factory=dict)
-    constraints: List[str] = Field(default_factory=list)
-    instructions: Optional[str] = None
+    project: ProjectConfig | None = None
+    patterns: dict[str, str] = Field(default_factory=dict)
+    constraints: list[str] = Field(default_factory=list)
+    instructions: str | None = None
 
     # Metadata
-    sources: List[str] = Field(default_factory=list)
-    loaded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    sources: list[str] = Field(default_factory=list)
+    loaded_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
     def get_constraint_text(self) -> str:
         """Get constraints as formatted text for context."""
@@ -132,9 +132,9 @@ class AgentConfig(BaseModel):
         """Get instructions for context."""
         return self.instructions or ""
 
-    def to_context_dict(self) -> Dict[str, Any]:
+    def to_context_dict(self) -> dict[str, Any]:
         """Convert to dict for context inclusion."""
-        result: Dict[str, Any] = {
+        result: dict[str, Any] = {
             "preferences": {
                 "style": self.preferences.communication_style,
                 "risk": self.preferences.risk_tolerance,
@@ -191,9 +191,9 @@ class AgentConfigLoader:
             project_path: Root path of the project
         """
         self.project_path = Path(project_path).resolve()
-        self._cache: Dict[str, AgentConfig] = {}
+        self._cache: dict[str, AgentConfig] = {}
 
-    def load(self, task_type: Optional[str] = None) -> AgentConfig:
+    def load(self, task_type: str | None = None) -> AgentConfig:
         """
         Load merged configuration for a task.
 
@@ -234,13 +234,13 @@ class AgentConfigLoader:
                 config.sources.append(str(task_path))
 
         # Update metadata
-        config.loaded_at = datetime.now(timezone.utc)
+        config.loaded_at = datetime.now(UTC)
 
         # Cache and return
         self._cache[cache_key] = config
         return config
 
-    def _load_file(self, path: Path) -> Dict[str, Any]:
+    def _load_file(self, path: Path) -> dict[str, Any]:
         """
         Load configuration from a markdown file with YAML frontmatter.
 
@@ -281,7 +281,7 @@ class AgentConfigLoader:
         # Treat entire content as instructions
         return {"instructions": content.strip()}
 
-    def _merge(self, base: AgentConfig, override: Dict[str, Any]) -> AgentConfig:
+    def _merge(self, base: AgentConfig, override: dict[str, Any]) -> AgentConfig:
         """
         Merge override dict into base config.
 
@@ -311,7 +311,7 @@ class AgentConfigLoader:
 
         return AgentConfig(**base_dict)
 
-    def _deep_merge_dict(self, base: Dict, override: Dict) -> Dict:
+    def _deep_merge_dict(self, base: dict, override: dict) -> dict:
         """Deep merge two dicts."""
         result = dict(base)
         for key, value in override.items():
@@ -321,7 +321,7 @@ class AgentConfigLoader:
                 result[key] = value
         return result
 
-    def invalidate_cache(self, task_type: Optional[str] = None) -> None:
+    def invalidate_cache(self, task_type: str | None = None) -> None:
         """
         Clear cached configuration.
 
@@ -334,6 +334,6 @@ class AgentConfigLoader:
         else:
             self._cache.clear()
 
-    def get_cached_configs(self) -> List[str]:
+    def get_cached_configs(self) -> list[str]:
         """Get list of cached config keys."""
         return list(self._cache.keys())

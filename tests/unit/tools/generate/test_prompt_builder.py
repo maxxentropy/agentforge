@@ -3,16 +3,15 @@ Tests for Prompt Builder
 ========================
 """
 
+
 import pytest
-from pathlib import Path
 
-from tools.generate.prompt_builder import PromptBuilder, PromptTemplates
-from tools.generate.domain import (
+from agentforge.core.generate.domain import (
     GenerationContext,
-    GenerationPhase,
     GenerationMode,
+    GenerationPhase,
 )
-
+from agentforge.core.generate.prompt_builder import PromptBuilder, PromptTemplates
 
 # =============================================================================
 # PromptBuilder Tests

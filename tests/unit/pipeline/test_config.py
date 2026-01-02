@@ -1,11 +1,10 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-6-configuration.yaml
-# @spec_id: pipeline-controller-phase6-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
 # @component_id: config-loader, config-stage-config, config-pipeline-template, config-global-settings
 
 """Unit tests for ConfigurationLoader and related classes."""
 
 import os
-from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -441,7 +440,7 @@ class TestPipelineTemplateLoader:
 
     def test_template_loader_returns_pipeline_config(self, tmp_path):
         """Converts template to PipelineConfig."""
-        from agentforge.core.pipeline.config import PipelineTemplateLoader, PipelineConfig
+        from agentforge.core.pipeline.config import PipelineConfig, PipelineTemplateLoader
 
         loader = PipelineTemplateLoader(tmp_path)
         config = loader.load("implement")

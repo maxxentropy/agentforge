@@ -1,17 +1,16 @@
-# @spec_file: .agentforge/specs/harness-v1.yaml
-# @spec_id: harness-v1
+# @spec_file: .agentforge/specs/core-harness-v1.yaml
+# @spec_id: core-harness-v1
 # @component_id: tools-harness-tool_executor_bridge
 # @impl_path: tools/harness/tool_executor_bridge.py
 
 """Tests for Tool Executor Bridge."""
 
-import pytest
-from pathlib import Path
-from unittest.mock import patch, MagicMock
 import tempfile
-import os
+from pathlib import Path
 
-from tools.harness.tool_executor_bridge import ToolExecutorBridge, create_tool_bridge
+import pytest
+
+from agentforge.core.harness.tool_executor_bridge import ToolExecutorBridge, create_tool_bridge
 
 
 class TestToolExecutorBridge:
@@ -54,7 +53,7 @@ class TestToolExecutorBridge:
     def test_register_custom_tool(self, bridge):
         """Register a custom tool executor."""
         def custom_exec(name, params):
-            from tools.harness.llm_executor_domain import ToolResult
+            from agentforge.core.harness.llm_executor_domain import ToolResult
             return ToolResult.success_result(name, "custom output")
 
         bridge.register_custom_tool("custom", custom_exec)

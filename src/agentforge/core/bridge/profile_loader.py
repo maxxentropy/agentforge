@@ -13,9 +13,9 @@ Extracts zones, patterns, and creates mapping contexts.
 
 import hashlib
 from pathlib import Path
-from typing import List, Dict, Any, Optional, Tuple
+from typing import Any
 
-from bridge.domain import MappingContext
+from .domain import MappingContext
 
 try:
     import yaml
@@ -40,11 +40,11 @@ class ProfileLoader:
             root_path: Root path of the repository
         """
         self.root_path = Path(root_path).resolve()
-        self._profile: Optional[Dict[str, Any]] = None
-        self._profile_path: Optional[Path] = None
-        self._profile_hash: Optional[str] = None
+        self._profile: dict[str, Any] | None = None
+        self._profile_path: Path | None = None
+        self._profile_hash: str | None = None
 
-    def load(self, profile_path: Optional[Path] = None) -> Dict[str, Any]:
+    def load(self, profile_path: Path | None = None) -> dict[str, Any]:
         """
         Load profile from YAML file.
 
@@ -78,7 +78,7 @@ class ProfileLoader:
         return self._profile
 
     @property
-    def profile_path(self) -> Optional[str]:
+    def profile_path(self) -> str | None:
         """Get relative profile path."""
         if self._profile_path:
             try:
@@ -88,12 +88,12 @@ class ProfileLoader:
         return None
 
     @property
-    def profile_hash(self) -> Optional[str]:
+    def profile_hash(self) -> str | None:
         """Get profile content hash."""
         return self._profile_hash
 
     @property
-    def profile_generated_at(self) -> Optional[str]:
+    def profile_generated_at(self) -> str | None:
         """Get profile generation timestamp."""
         if self._profile:
             return self._profile.get("generated_at")
@@ -108,7 +108,7 @@ class ProfileLoader:
             return len(self._profile["zones"]) > 1
         return False
 
-    def get_zones(self) -> List[str]:
+    def get_zones(self) -> list[str]:
         """
         Get list of zone names from profile.
 
@@ -125,7 +125,7 @@ class ProfileLoader:
         # Single-zone format - use 'default' zone
         return ["default"]
 
-    def get_languages(self) -> List[Tuple[str, float]]:
+    def get_languages(self) -> list[tuple[str, float]]:
         """
         Get detected languages with confidence.
 
@@ -148,16 +148,15 @@ class ProfileLoader:
 
         return result
 
-    def get_primary_language(self) -> Optional[str]:
+    def get_primary_language(self) -> str | None:
         """Get the primary language from profile."""
         if not self._profile:
             return None
 
         languages = self._profile.get("languages", [])
         for lang in languages:
-            if isinstance(lang, dict):
-                if lang.get("primary", False):
-                    return lang.get("name")
+            if isinstance(lang, dict) and lang.get("primary", False):
+                return lang.get("name")
 
         # Fallback to first language
         if languages:
@@ -168,7 +167,7 @@ class ProfileLoader:
 
         return None
 
-    def create_context(self, zone_name: Optional[str] = None) -> MappingContext:
+    def create_context(self, zone_name: str | None = None) -> MappingContext:
         """
         Create a mapping context for a zone.
 
@@ -251,7 +250,7 @@ class ProfileLoader:
             zone_paths=zone_paths,
         )
 
-    def _extract_frameworks(self, profile: Dict[str, Any]) -> List[str]:
+    def _extract_frameworks(self, profile: dict[str, Any]) -> list[str]:
         """Extract framework list from profile."""
         frameworks = []
 
@@ -266,16 +265,16 @@ class ProfileLoader:
 
         return list(set(frameworks))
 
-    def _extract_frameworks_from_patterns(self, patterns: Dict[str, Any]) -> List[str]:
+    def _extract_frameworks_from_patterns(self, patterns: dict[str, Any]) -> list[str]:
         """Extract framework names from pattern keys."""
         frameworks = []
-        for key in patterns.keys():
+        for key in patterns:
             if key.startswith("framework_"):
                 fw_name = key.replace("framework_", "")
                 frameworks.append(fw_name)
         return frameworks
 
-    def get_all_contexts(self) -> List[MappingContext]:
+    def get_all_contexts(self) -> list[MappingContext]:
         """
         Get mapping contexts for all zones.
 
@@ -299,7 +298,7 @@ class ProfileLoader:
         return contexts
 
 
-def load_profile(root_path: Path, profile_path: Optional[Path] = None) -> Tuple[ProfileLoader, Dict[str, Any]]:
+def load_profile(root_path: Path, profile_path: Path | None = None) -> tuple[ProfileLoader, dict[str, Any]]:
     """
     Convenience function to load a profile.
 

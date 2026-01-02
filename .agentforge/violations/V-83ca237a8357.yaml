@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-83ca237a8357
+contract_id: agentforge
+check_id: use-click-echo
+severity: minor
+file_path: src/agentforge/cli/commands/ci.py
+message: 'Forbidden pattern found: ''print('''
+detected_at: '2026-01-01T01:39:14.449682'
+last_seen_at: '2026-01-01T01:39:14.539873'
+status: open
+line_number: 61
+fix_hint: Use click.echo() or rich.print() for CLI output

@@ -10,10 +10,9 @@
 
 """Domain entities for human escalation operations."""
 
+from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Optional
-from dataclasses import dataclass
 
 
 class EscalationPriority(Enum):
@@ -62,9 +61,9 @@ class Escalation:
     reason: str
     context: dict
     recommended_actions: list[str]
-    timeout_seconds: Optional[int] = None
-    acknowledged_at: Optional[datetime] = None
-    resolved_at: Optional[datetime] = None
+    timeout_seconds: int | None = None
+    acknowledged_at: datetime | None = None
+    resolved_at: datetime | None = None
 
 
 @dataclass
@@ -74,8 +73,8 @@ class EscalationResolution:
     resolution_type: ResolutionType
     decision: str
     resolved_at: datetime
-    notes: Optional[str] = None
-    resolved_by: Optional[str] = None
+    notes: str | None = None
+    resolved_by: str | None = None
 
 
 @dataclass
@@ -86,4 +85,4 @@ class EscalationRule:
     priority: EscalationPriority
     channels: list[EscalationChannel]
     timeout_seconds: int = 3600
-    auto_resolve_action: Optional[str] = None
+    auto_resolve_action: str | None = None

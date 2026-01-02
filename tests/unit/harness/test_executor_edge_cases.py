@@ -1,4 +1,4 @@
-# @spec_file: specs/minimal-context-architecture/05-llm-integration.yaml
+# @spec_file: .agentforge/specs/core-harness-minimal-context-v1.yaml
 # @spec_id: llm-integration-v1
 # @component_id: executor-edge-case-tests
 # @impl_path: src/agentforge/core/harness/minimal_context/executor.py
@@ -16,20 +16,17 @@ Covers error handling and edge cases:
 - Timeout and retry scenarios
 """
 
-import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from unittest.mock import MagicMock, patch, PropertyMock
 
 import pytest
 
 from agentforge.core.harness.minimal_context.executor import (
+    AdaptiveBudget,
     MinimalContextExecutor,
     StepOutcome,
-    AdaptiveBudget,
-    create_executor,
 )
-from agentforge.core.harness.minimal_context.state_store import TaskPhase
+from agentforge.core.harness.minimal_context.state_store import Phase
 
 
 class TestExecutorErrorHandling:
@@ -83,7 +80,7 @@ dependencies = ["pytest"]
             success_criteria=["Test passes"],
             context_data={"violation": {"id": "V-001"}},
         )
-        executor.state_store.update_phase(state.task_id, TaskPhase.COMPLETE)
+        executor.state_store.update_phase(state.task_id, Phase.COMPLETE)
 
         outcome = executor.execute_step(state.task_id)
 
@@ -104,7 +101,7 @@ dependencies = ["pytest"]
             success_criteria=["Test passes"],
             context_data={"violation": {"id": "V-001"}},
         )
-        executor.state_store.update_phase(state.task_id, TaskPhase.FAILED)
+        executor.state_store.update_phase(state.task_id, Phase.FAILED)
 
         outcome = executor.execute_step(state.task_id)
 
@@ -125,7 +122,7 @@ dependencies = ["pytest"]
             success_criteria=["Test passes"],
             context_data={"violation": {"id": "V-001"}},
         )
-        executor.state_store.update_phase(state.task_id, TaskPhase.ESCALATED)
+        executor.state_store.update_phase(state.task_id, Phase.ESCALATED)
 
         outcome = executor.execute_step(state.task_id)
 
@@ -569,7 +566,7 @@ class TestPhaseTransitionEdgeCases:
         executor._handle_phase_transition(state.task_id, "write_file", action_result, state)
 
         updated_state = executor.state_store.load(state.task_id)
-        assert updated_state.phase == TaskPhase.FAILED
+        assert updated_state.phase == Phase.FAILED
 
     def test_escalate_transitions_to_escalated(self, temp_project):
         """Escalate action transitions to ESCALATED phase."""
@@ -591,7 +588,7 @@ class TestPhaseTransitionEdgeCases:
         executor._handle_phase_transition(state.task_id, "escalate", action_result, state)
 
         updated_state = executor.state_store.load(state.task_id)
-        assert updated_state.phase == TaskPhase.ESCALATED
+        assert updated_state.phase == Phase.ESCALATED
 
     def test_cannot_fix_stores_reason(self, temp_project):
         """cannot_fix action stores the reason in context data."""
@@ -616,7 +613,7 @@ class TestPhaseTransitionEdgeCases:
         executor._handle_phase_transition(state.task_id, "cannot_fix", action_result, state)
 
         updated_state = executor.state_store.load(state.task_id)
-        assert updated_state.phase == TaskPhase.ESCALATED
+        assert updated_state.phase == Phase.ESCALATED
         assert updated_state.context_data.get("cannot_fix_reason") == "Requires architectural changes"
 
 

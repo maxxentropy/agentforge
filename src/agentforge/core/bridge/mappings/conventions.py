@@ -10,11 +10,10 @@ Convention Pattern Mappings
 Mappings for naming conventions, coding standards, and language-specific patterns.
 """
 
-from typing import List
 
-from bridge.mappings.base import PatternMapping
-from bridge.mappings.registry import MappingRegistry
-from bridge.domain import CheckTemplate, MappingContext
+from ..domain import CheckTemplate, MappingContext
+from .base import PatternMapping
+from .registry import MappingRegistry
 
 
 @MappingRegistry.register
@@ -50,7 +49,7 @@ class InterfacePrefixMapping(PatternMapping):
                 return consistency >= 0.8
         return False
 
-    def get_templates(self, context: MappingContext) -> List[CheckTemplate]:
+    def get_templates(self, context: MappingContext) -> list[CheckTemplate]:
         """Get interface prefix check templates."""
         return [
             CheckTemplate(
@@ -96,7 +95,7 @@ class AsyncSuffixMapping(PatternMapping):
                 return consistency >= 0.8
         return False
 
-    def get_templates(self, context: MappingContext) -> List[CheckTemplate]:
+    def get_templates(self, context: MappingContext) -> list[CheckTemplate]:
         """Get async suffix check templates."""
         return [
             CheckTemplate(
@@ -138,7 +137,7 @@ class ResultPatternMapping(PatternMapping):
                     return True
         return False
 
-    def get_templates(self, context: MappingContext) -> List[CheckTemplate]:
+    def get_templates(self, context: MappingContext) -> list[CheckTemplate]:
         """Get Result pattern check templates."""
         if context.language == "csharp":
             return [
@@ -195,12 +194,9 @@ class PytestMarkersMapping(PatternMapping):
             return context.get_pattern_confidence("framework_pytest") >= self.min_confidence
 
         # Check if pytest is in frameworks list
-        if context.has_framework("pytest"):
-            return True
+        return bool(context.has_framework("pytest"))
 
-        return False
-
-    def get_templates(self, context: MappingContext) -> List[CheckTemplate]:
+    def get_templates(self, context: MappingContext) -> list[CheckTemplate]:
         """Get pytest marker check templates."""
         return [
             CheckTemplate(
@@ -246,7 +242,7 @@ class TypeHintsMapping(PatternMapping):
             return type_hints.get("consistency", 0) >= 0.7
         return False
 
-    def get_templates(self, context: MappingContext) -> List[CheckTemplate]:
+    def get_templates(self, context: MappingContext) -> list[CheckTemplate]:
         """Get type hints check templates."""
         return [
             CheckTemplate(
@@ -288,7 +284,7 @@ class DDDValueObjectMapping(PatternMapping):
             return "value_object" in str(meta.get("patterns", [])).lower()
         return False
 
-    def get_templates(self, context: MappingContext) -> List[CheckTemplate]:
+    def get_templates(self, context: MappingContext) -> list[CheckTemplate]:
         """Get DDD Value Object check templates."""
         return [
             CheckTemplate(
@@ -328,7 +324,7 @@ class DDDEntityMapping(PatternMapping):
             return "entity" in str(meta.get("patterns", [])).lower()
         return False
 
-    def get_templates(self, context: MappingContext) -> List[CheckTemplate]:
+    def get_templates(self, context: MappingContext) -> list[CheckTemplate]:
         """Get DDD Entity check templates."""
         return [
             CheckTemplate(

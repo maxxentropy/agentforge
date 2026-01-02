@@ -31,16 +31,14 @@ Return format:
 
 import re
 from pathlib import Path
-from typing import Dict, List, Optional
-
 
 # ==============================================================================
 # Text Pattern Checks (appropriate for regex)
 # ==============================================================================
 
-def check_todo_comments(repo_root: Path, file_paths: List[Path],
+def check_todo_comments(repo_root: Path, file_paths: list[Path],
                         require_ticket: bool = False,
-                        ticket_patterns: Optional[List[str]] = None) -> List[Dict]:
+                        ticket_patterns: list[str] | None = None) -> list[dict]:
     """
     Check for TODO/FIXME comments, optionally requiring ticket references.
 
@@ -62,21 +60,20 @@ def check_todo_comments(repo_root: Path, file_paths: List[Path],
 
         for line_num, line in enumerate(content.split('\n'), 1):
             match = todo_pattern.search(line)
-            if match:
-                if require_ticket and not ticket_regex.search(line):
-                    violations.append({
-                        "message": f"{match.group(1)} comment without ticket reference",
-                        "file": str(file_path.relative_to(repo_root)),
-                        "line": line_num,
-                        "severity": "warning",
-                        "fix_hint": "Add ticket reference (e.g., TODO(AB#1234): ...)"
-                    })
+            if match and require_ticket and not ticket_regex.search(line):
+                violations.append({
+                    "message": f"{match.group(1)} comment without ticket reference",
+                    "file": str(file_path.relative_to(repo_root)),
+                    "line": line_num,
+                    "severity": "warning",
+                    "fix_hint": "Add ticket reference (e.g., TODO(AB#1234): ...)"
+                })
 
     return violations
 
 
-def check_debug_statements(repo_root: Path, file_paths: List[Path],
-                           patterns: Optional[List[str]] = None) -> List[Dict]:
+def check_debug_statements(repo_root: Path, file_paths: list[Path],
+                           patterns: list[str] | None = None) -> list[dict]:
     """
     Check for debug statements that shouldn't be committed.
 
@@ -135,9 +132,9 @@ def check_debug_statements(repo_root: Path, file_paths: List[Path],
 # File/Directory Checks
 # ==============================================================================
 
-def check_file_size(repo_root: Path, file_paths: List[Path],
+def check_file_size(repo_root: Path, file_paths: list[Path],
                     max_lines: int = 500,
-                    max_bytes: int = 50000) -> List[Dict]:
+                    max_bytes: int = 50000) -> list[dict]:
     """
     Check that files don't exceed size limits.
     """
@@ -170,8 +167,8 @@ def check_file_size(repo_root: Path, file_paths: List[Path],
     return violations
 
 
-def check_line_length(repo_root: Path, file_paths: List[Path],
-                      max_length: int = 120) -> List[Dict]:
+def check_line_length(repo_root: Path, file_paths: list[Path],
+                      max_length: int = 120) -> list[dict]:
     """
     Check that lines don't exceed maximum length.
     """
@@ -195,7 +192,7 @@ def check_line_length(repo_root: Path, file_paths: List[Path],
     return violations
 
 
-def check_trailing_whitespace(repo_root: Path, file_paths: List[Path]) -> List[Dict]:
+def check_trailing_whitespace(repo_root: Path, file_paths: list[Path]) -> list[dict]:
     """
     Check for trailing whitespace.
     """
@@ -220,7 +217,7 @@ def check_trailing_whitespace(repo_root: Path, file_paths: List[Path]) -> List[D
     return violations
 
 
-def check_mixed_line_endings(repo_root: Path, file_paths: List[Path]) -> List[Dict]:
+def check_mixed_line_endings(repo_root: Path, file_paths: list[Path]) -> list[dict]:
     """
     Check for mixed line endings (CRLF vs LF).
     """
@@ -252,8 +249,8 @@ def check_mixed_line_endings(repo_root: Path, file_paths: List[Path]) -> List[Di
 # Security Pattern Checks (appropriate for regex)
 # ==============================================================================
 
-def check_hardcoded_secrets(repo_root: Path, file_paths: List[Path],
-                            additional_patterns: Optional[List[str]] = None) -> List[Dict]:
+def check_hardcoded_secrets(repo_root: Path, file_paths: list[Path],
+                            additional_patterns: list[str] | None = None) -> list[dict]:
     """
     Check for potential hardcoded secrets in code.
 
@@ -307,7 +304,7 @@ def check_hardcoded_secrets(repo_root: Path, file_paths: List[Path],
 # Lineage/Audit Trail Checks
 # ==============================================================================
 
-def check_lineage_metadata(repo_root: Path, file_paths: List[Path]) -> List[Dict]:
+def check_lineage_metadata(repo_root: Path, file_paths: list[Path]) -> list[dict]:
     """
     Check that files have lineage metadata for audit trail.
 
@@ -353,8 +350,8 @@ def check_lineage_metadata(repo_root: Path, file_paths: List[Path]) -> List[Dict
                     "severity": "info",
                     "fix_hint": (
                         "Add lineage header to file:\n"
-                        "# @spec_file: specs/your-spec.yaml\n"
-                        "# @spec_id: your-spec-id\n"
+                        "# @spec_file: .agentforge/specs/your-spec-v1.yaml\n"
+                        "# @spec_id: your-spec-v1\n"
                         "# @component_id: component-name\n"
                         + ("# @impl_path: path/to/implementation.py\n" if is_test else "# @test_path: tests/path/to/test.py\n")
                         + "Or regenerate file through TDFLOW to get proper lineage."
@@ -375,17 +372,17 @@ def check_lineage_metadata(repo_root: Path, file_paths: List[Path]) -> List[Dict
 
 try:
     from .builtin_checks_architecture import (
-        check_layer_imports,
+        check_circular_imports,
         check_constructor_injection,
         check_domain_purity,
-        check_circular_imports,
+        check_layer_imports,
     )
 except ImportError:
     from builtin_checks_architecture import (
-        check_layer_imports,
+        check_circular_imports,
         check_constructor_injection,
         check_domain_purity,
-        check_circular_imports,
+        check_layer_imports,
     )
 
 # ==============================================================================
@@ -394,9 +391,9 @@ except ImportError:
 
 def check_minimal_context_validation(
     repo_root: Path,
-    file_paths: List[Path],
+    file_paths: list[Path],
     **params
-) -> List[Dict]:
+) -> list[dict]:
     """
     Check that the Minimal Context Architecture has proper validation in place.
 
@@ -482,6 +479,6 @@ def get_builtin_check(name: str):
     return BUILTIN_CHECKS.get(name)
 
 
-def list_builtin_checks() -> List[str]:
+def list_builtin_checks() -> list[str]:
     """List all available built-in checks."""
     return list(BUILTIN_CHECKS.keys())

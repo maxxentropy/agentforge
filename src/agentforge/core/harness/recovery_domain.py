@@ -10,10 +10,9 @@
 
 """Domain entities for recovery operations."""
 
+from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Optional
-from dataclasses import dataclass
 
 
 class RecoveryAction(Enum):
@@ -44,7 +43,7 @@ class Checkpoint:
     phase: str
     state: dict
     file_backups: list[str]
-    description: Optional[str] = None
+    description: str | None = None
 
 
 @dataclass
@@ -54,8 +53,8 @@ class RecoveryAttempt:
     timestamp: datetime
     trigger: str
     result: RecoveryResult
-    details: Optional[dict] = None
-    error: Optional[str] = None
+    details: dict | None = None
+    error: str | None = None
 
 
 @dataclass

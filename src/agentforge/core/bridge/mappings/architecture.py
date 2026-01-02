@@ -11,11 +11,10 @@ Mappings for architectural patterns like Clean Architecture,
 Hexagonal Architecture, and layer dependency enforcement.
 """
 
-from typing import List
 
-from bridge.mappings.base import PatternMapping
-from bridge.mappings.registry import MappingRegistry
-from bridge.domain import CheckTemplate, MappingContext
+from ..domain import CheckTemplate, MappingContext
+from .base import PatternMapping
+from .registry import MappingRegistry
 
 
 @MappingRegistry.register
@@ -47,7 +46,7 @@ class CleanArchitectureMapping(PatternMapping):
             (context.has_layer("infrastructure") or context.has_layer("presentation"))
         )
 
-    def get_templates(self, context: MappingContext) -> List[CheckTemplate]:
+    def get_templates(self, context: MappingContext) -> list[CheckTemplate]:
         """Get Clean Architecture check templates."""
         templates = []
 
@@ -138,7 +137,7 @@ class HexagonalArchitectureMapping(PatternMapping):
         # Check for port/adapter structure
         return context.has_layer("ports") or context.has_layer("adapters")
 
-    def get_templates(self, context: MappingContext) -> List[CheckTemplate]:
+    def get_templates(self, context: MappingContext) -> list[CheckTemplate]:
         """Get Hexagonal Architecture check templates."""
         templates = []
 
@@ -193,7 +192,7 @@ class LayerViolationMapping(PatternMapping):
         layers = context.structure.get("layers", {})
         return len(layers) >= 2
 
-    def get_templates(self, context: MappingContext) -> List[CheckTemplate]:
+    def get_templates(self, context: MappingContext) -> list[CheckTemplate]:
         """Generate layer checks dynamically based on discovered layers."""
         templates = []
         layers = context.structure.get("layers", {})

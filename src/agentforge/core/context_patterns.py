@@ -8,7 +8,6 @@ Extracted from context_assembler.py for modularity.
 """
 
 import re
-from typing import List
 
 try:
     from .context_assembler_types import PatternMatch
@@ -61,7 +60,7 @@ PATTERN_DEFS = [
 ]
 
 
-def check_pattern_def(pdef: dict, all_content: str, all_symbols: List[str]) -> PatternMatch:
+def check_pattern_def(pdef: dict, all_content: str, all_symbols: list[str]) -> PatternMatch:
     """Check if a pattern definition matches. Returns PatternMatch or None."""
     content_match = False
     symbol_examples = []
@@ -83,7 +82,7 @@ def check_pattern_def(pdef: dict, all_content: str, all_symbols: List[str]) -> P
     )
 
 
-def check_cqrs_pattern(all_symbols: List[str]) -> PatternMatch:
+def check_cqrs_pattern(all_symbols: list[str]) -> PatternMatch:
     """Check for CQRS pattern. Returns PatternMatch or None."""
     commands = [s for s in all_symbols if s.endswith("Command")]
     queries = [s for s in all_symbols if s.endswith("Query")]
@@ -99,7 +98,7 @@ def check_cqrs_pattern(all_symbols: List[str]) -> PatternMatch:
     )
 
 
-def detect_patterns(files: list, symbols: list) -> List[PatternMatch]:
+def detect_patterns(files: list, symbols: list) -> list[PatternMatch]:
     """Detect architectural patterns in assembled context."""
     all_content = "\n".join(f.content for f in files)
     all_symbols = [s.name for s in symbols]

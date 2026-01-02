@@ -1,5 +1,5 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-5-cli-commands.yaml
-# @spec_id: pipeline-controller-phase5-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
 # @component_id: pipeline-cli-start, pipeline-cli-design, pipeline-cli-implement
 # @component_id: pipeline-cli-status, pipeline-cli-resume, pipeline-cli-approve
 # @component_id: pipeline-cli-reject, pipeline-cli-abort
@@ -10,13 +10,9 @@
 """Unit tests for pipeline CLI commands."""
 
 from pathlib import Path
-from typing import Any, Dict
-from unittest.mock import MagicMock, Mock, patch
-from datetime import datetime, timezone
+from unittest.mock import patch
 
 import pytest
-from click.testing import CliRunner
-
 
 # Patch target - where _get_controller is defined
 PATCH_GET_CONTROLLER = "agentforge.cli.click_commands.pipeline._get_controller"

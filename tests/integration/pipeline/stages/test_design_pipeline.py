@@ -1,5 +1,5 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-2-design-pipeline.yaml
-# @spec_id: pipeline-controller-phase2-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
 
 """
 Integration tests for the design pipeline.
@@ -7,23 +7,17 @@ Integration tests for the design pipeline.
 Tests the full INTAKE → CLARIFY → ANALYZE → SPEC flow.
 """
 
-from unittest.mock import patch, MagicMock
-
-import pytest
+from unittest.mock import patch
 
 from agentforge.core.pipeline import (
-    PipelineController,
-    PipelineStateStore,
-    PipelineStatus,
-    StageStatus,
-    StageExecutorRegistry,
     StageContext,
-    StageResult,
+    StageExecutorRegistry,
+    StageStatus,
 )
 from agentforge.core.pipeline.stages import (
-    IntakeExecutor,
-    ClarifyExecutor,
     AnalyzeExecutor,
+    ClarifyExecutor,
+    IntakeExecutor,
     SpecExecutor,
     register_design_stages,
 )

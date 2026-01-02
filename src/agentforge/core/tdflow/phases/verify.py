@@ -7,7 +7,7 @@ Verifies implementation meets specification requirements.
 
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import yaml
 
@@ -44,7 +44,7 @@ class VerifyPhaseExecutor:
         """
         self.session = session
         self.runner = runner
-        self._spec_data: Optional[Dict[str, Any]] = None
+        self._spec_data: dict[str, Any] | None = None
 
     def execute(self, component: ComponentProgress) -> PhaseResult:
         """
@@ -132,7 +132,7 @@ class VerifyPhaseExecutor:
             duration_seconds=time.time() - start_time,
         )
 
-    def verify_all(self) -> List[VerificationReport]:
+    def verify_all(self) -> list[VerificationReport]:
         """
         Verify all components in the session.
 
@@ -148,7 +148,7 @@ class VerifyPhaseExecutor:
 
         return reports
 
-    def _run_conformance_check(self, component: ComponentProgress) -> List[Dict[str, Any]]:
+    def _run_conformance_check(self, component: ComponentProgress) -> list[dict[str, Any]]:
         """
         Run conformance checks on the component.
 
@@ -169,7 +169,7 @@ class VerifyPhaseExecutor:
 
         return []
 
-    def _build_traceability(self, component: ComponentProgress) -> List[Dict[str, str]]:
+    def _build_traceability(self, component: ComponentProgress) -> list[dict[str, str]]:
         """
         Build traceability from requirements to tests to implementation.
 
@@ -202,7 +202,7 @@ class VerifyPhaseExecutor:
 
         return traceability
 
-    def _load_component_spec(self, name: str) -> Optional[Dict[str, Any]]:
+    def _load_component_spec(self, name: str) -> dict[str, Any] | None:
         """
         Load specification for a specific component.
 

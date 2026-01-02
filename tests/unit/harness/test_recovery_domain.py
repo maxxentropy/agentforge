@@ -9,27 +9,25 @@ These tests verify the structure and behavior of recovery domain objects
 including enums, data classes, and their validation logic.
 """
 
-import pytest
 from datetime import datetime
-from typing import Optional
 
-from tools.harness.recovery_domain import (
-    RecoveryAction,
-    RecoveryResult,
+from agentforge.core.harness.recovery_domain import (
     Checkpoint,
+    RecoveryAction,
     RecoveryAttempt,
-    RecoveryPolicy
+    RecoveryPolicy,
+    RecoveryResult,
 )
 
 
 class TestRecoveryAction:
     """Test RecoveryAction enum values and behavior."""
-    
+
     def test_recovery_action_has_all_required_values(self):
         """Test that RecoveryAction enum contains all specified values."""
         expected_values = {
             'CHECKPOINT',
-            'ROLLBACK', 
+            'ROLLBACK',
             'SUMMARIZE',
             'RESET',
             'ESCALATE',
@@ -38,7 +36,7 @@ class TestRecoveryAction:
         }
         actual_values = {action.name for action in RecoveryAction}
         assert actual_values == expected_values
-    
+
     def test_recovery_action_values_are_accessible(self):
         """Test that individual RecoveryAction values can be accessed."""
         assert RecoveryAction.CHECKPOINT
@@ -52,18 +50,18 @@ class TestRecoveryAction:
 
 class TestRecoveryResult:
     """Test RecoveryResult enum values and behavior."""
-    
+
     def test_recovery_result_has_all_required_values(self):
         """Test that RecoveryResult enum contains all specified values."""
         expected_values = {
             'SUCCESS',
             'PARTIAL',
-            'FAILED', 
+            'FAILED',
             'SKIPPED'
         }
         actual_values = {result.name for result in RecoveryResult}
         assert actual_values == expected_values
-    
+
     def test_recovery_result_values_are_accessible(self):
         """Test that individual RecoveryResult values can be accessed."""
         assert RecoveryResult.SUCCESS
@@ -74,7 +72,7 @@ class TestRecoveryResult:
 
 class TestCheckpoint:
     """Test Checkpoint entity structure and behavior."""
-    
+
     def test_checkpoint_creation_with_required_fields(self):
         """Test creating a Checkpoint with all required fields."""
         timestamp = datetime.now()
@@ -86,7 +84,7 @@ class TestCheckpoint:
             state={"key": "value"},
             file_backups=["/path/to/backup1.txt", "/path/to/backup2.txt"]
         )
-        
+
         assert checkpoint.id == "test-checkpoint-1"
         assert checkpoint.timestamp == timestamp
         assert checkpoint.session_id == "session-123"
@@ -94,7 +92,7 @@ class TestCheckpoint:
         assert checkpoint.state == {"key": "value"}
         assert checkpoint.file_backups == ["/path/to/backup1.txt", "/path/to/backup2.txt"]
         assert checkpoint.description is None
-    
+
     def test_checkpoint_creation_with_optional_description(self):
         """Test creating a Checkpoint with optional description field."""
         checkpoint = Checkpoint(
@@ -106,9 +104,9 @@ class TestCheckpoint:
             file_backups=[],
             description="Before risky operation"
         )
-        
+
         assert checkpoint.description == "Before risky operation"
-    
+
     def test_checkpoint_state_can_be_complex_dict(self):
         """Test that Checkpoint state field can hold complex nested data."""
         complex_state = {
@@ -116,7 +114,7 @@ class TestCheckpoint:
             "context": ["item1", "item2"],
             "nested": {"deep": {"value": True}}
         }
-        
+
         checkpoint = Checkpoint(
             id="complex-checkpoint",
             timestamp=datetime.now(),
@@ -125,9 +123,9 @@ class TestCheckpoint:
             state=complex_state,
             file_backups=[]
         )
-        
+
         assert checkpoint.state == complex_state
-    
+
     def test_checkpoint_file_backups_can_be_empty_list(self):
         """Test that Checkpoint can have empty file_backups list."""
         checkpoint = Checkpoint(
@@ -138,13 +136,13 @@ class TestCheckpoint:
             state={},
             file_backups=[]
         )
-        
+
         assert checkpoint.file_backups == []
 
 
 class TestRecoveryAttempt:
     """Test RecoveryAttempt entity structure and behavior."""
-    
+
     def test_recovery_attempt_creation_with_required_fields(self):
         """Test creating a RecoveryAttempt with required fields."""
         timestamp = datetime.now()
@@ -154,14 +152,14 @@ class TestRecoveryAttempt:
             trigger="loop detected",
             result=RecoveryResult.SUCCESS
         )
-        
+
         assert attempt.action == RecoveryAction.CHECKPOINT
         assert attempt.timestamp == timestamp
         assert attempt.trigger == "loop detected"
         assert attempt.result == RecoveryResult.SUCCESS
         assert attempt.details is None
         assert attempt.error is None
-    
+
     def test_recovery_attempt_creation_with_optional_fields(self):
         """Test creating a RecoveryAttempt with optional details and error."""
         attempt = RecoveryAttempt(
@@ -172,10 +170,10 @@ class TestRecoveryAttempt:
             details={"checkpoint_id": "cp-123", "files_restored": 3},
             error="Failed to restore file: permission denied"
         )
-        
+
         assert attempt.details == {"checkpoint_id": "cp-123", "files_restored": 3}
         assert attempt.error == "Failed to restore file: permission denied"
-    
+
     def test_recovery_attempt_supports_all_action_types(self):
         """Test that RecoveryAttempt can be created with all RecoveryAction types."""
         for action in RecoveryAction:
@@ -186,7 +184,7 @@ class TestRecoveryAttempt:
                 result=RecoveryResult.SUCCESS
             )
             assert attempt.action == action
-    
+
     def test_recovery_attempt_supports_all_result_types(self):
         """Test that RecoveryAttempt can be created with all RecoveryResult types."""
         for result in RecoveryResult:
@@ -201,7 +199,7 @@ class TestRecoveryAttempt:
 
 class TestRecoveryPolicy:
     """Test RecoveryPolicy entity structure and behavior."""
-    
+
     def test_recovery_policy_creation_with_required_fields(self):
         """Test creating a RecoveryPolicy with required fields."""
         policy = RecoveryPolicy(
@@ -209,13 +207,13 @@ class TestRecoveryPolicy:
             triggers=["loop", "drift"],
             actions=[RecoveryAction.CHECKPOINT, RecoveryAction.ROLLBACK]
         )
-        
+
         assert policy.name == "test_policy"
         assert policy.triggers == ["loop", "drift"]
         assert policy.actions == [RecoveryAction.CHECKPOINT, RecoveryAction.ROLLBACK]
         assert policy.max_attempts == 3  # default value
         assert policy.cooldown_seconds == 60  # default value
-    
+
     def test_recovery_policy_creation_with_custom_defaults(self):
         """Test creating a RecoveryPolicy with custom max_attempts and cooldown."""
         policy = RecoveryPolicy(
@@ -225,27 +223,27 @@ class TestRecoveryPolicy:
             max_attempts=5,
             cooldown_seconds=120
         )
-        
+
         assert policy.max_attempts == 5
         assert policy.cooldown_seconds == 120
-    
+
     def test_recovery_policy_supports_multiple_triggers(self):
         """Test that RecoveryPolicy can handle multiple trigger conditions."""
         triggers = [
             "loop detected",
-            "Loop detected", 
+            "Loop detected",
             "Repeated action",
             "circular behavior"
         ]
-        
+
         policy = RecoveryPolicy(
             name="multi_trigger_policy",
             triggers=triggers,
             actions=[RecoveryAction.CHECKPOINT]
         )
-        
+
         assert policy.triggers == triggers
-    
+
     def test_recovery_policy_supports_multiple_actions(self):
         """Test that RecoveryPolicy can handle multiple recovery actions."""
         actions = [
@@ -254,15 +252,15 @@ class TestRecoveryPolicy:
             RecoveryAction.ROLLBACK,
             RecoveryAction.ESCALATE
         ]
-        
+
         policy = RecoveryPolicy(
             name="multi_action_policy",
             triggers=["complex issue"],
             actions=actions
         )
-        
+
         assert policy.actions == actions
-    
+
     def test_recovery_policy_empty_triggers_list(self):
         """Test that RecoveryPolicy can be created with empty triggers list."""
         policy = RecoveryPolicy(
@@ -270,9 +268,9 @@ class TestRecoveryPolicy:
             triggers=[],
             actions=[RecoveryAction.ESCALATE]
         )
-        
+
         assert policy.triggers == []
-    
+
     def test_recovery_policy_single_action(self):
         """Test that RecoveryPolicy can be created with single action."""
         policy = RecoveryPolicy(
@@ -280,10 +278,10 @@ class TestRecoveryPolicy:
             triggers=["critical error"],
             actions=[RecoveryAction.ESCALATE]
         )
-        
+
         assert len(policy.actions) == 1
         assert policy.actions[0] == RecoveryAction.ESCALATE
-    
+
     def test_recovery_policy_max_attempts_custom_value(self):
         """Test that RecoveryPolicy accepts custom max_attempts value."""
         policy = RecoveryPolicy(

@@ -1,5 +1,5 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-2-design-pipeline.yaml
-# @spec_id: pipeline-controller-phase2-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
 # @component_id: intake-executor
 # @test_path: tests/unit/pipeline/stages/test_intake.py
 
@@ -16,11 +16,11 @@ and produces an IntakeRecord with:
 """
 
 import logging
-from datetime import datetime, timezone
-from typing import Any, Dict, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 from ..llm_stage_executor import LLMStageExecutor, OutputValidation
-from ..stage_executor import StageContext, StageResult, StageStatus
+from ..stage_executor import StageContext
 
 logger = logging.getLogger(__name__)
 
@@ -115,7 +115,7 @@ estimated_complexity: "medium"  # low, medium, high
 ```
 """
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         super().__init__(config)
         self._request_counter = 0
 
@@ -126,7 +126,7 @@ estimated_complexity: "medium"  # low, medium, high
     def get_user_message(self, context: StageContext) -> str:
         """Build user message from context."""
         # Generate request ID
-        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+        timestamp = datetime.now(UTC).strftime("%Y%m%d%H%M%S")
         self._request_counter += 1
         request_id = f"REQ-{timestamp}-{self._request_counter:04d}"
 
@@ -145,9 +145,9 @@ estimated_complexity: "medium"  # low, medium, high
 
     def parse_response(
         self,
-        llm_result: Dict[str, Any],
+        llm_result: dict[str, Any],
         context: StageContext,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """Parse LLM response into IntakeRecord."""
         # Get text response
         response_text = llm_result.get("response", "")
@@ -183,7 +183,7 @@ estimated_complexity: "medium"  # low, medium, high
 
         return artifact
 
-    def validate_output(self, artifact: Optional[Dict[str, Any]]) -> OutputValidation:
+    def validate_output(self, artifact: dict[str, Any] | None) -> OutputValidation:
         """Validate intake artifact."""
         if artifact is None:
             return OutputValidation(valid=False, errors=["No artifact"])
@@ -221,6 +221,6 @@ estimated_complexity: "medium"  # low, medium, high
         return []
 
 
-def create_intake_executor(config: Optional[Dict] = None) -> IntakeExecutor:
+def create_intake_executor(config: dict | None = None) -> IntakeExecutor:
     """Create IntakeExecutor instance."""
     return IntakeExecutor(config)

@@ -1,0 +1,13 @@
+schema_version: '1.0'
+violation_id: V-6c4f2d9a1228
+contract_id: agentforge
+check_id: max-parameter-count
+severity: major
+file_path: tools/harness/minimal_context/state_store.py
+message: 'Function ''create_task'' has 6 parameters (max: 5)'
+detected_at: '2025-12-31T12:15:09.954339'
+last_seen_at: '2026-01-01T01:39:13.685666'
+status: open
+line_number: 174
+fix_hint: Group related parameters into a dataclass or use **kwargs
+test_path: tests/unit/tools/

@@ -6,7 +6,6 @@
 Tests for simulated LLM client and response strategies.
 """
 
-import pytest
 import tempfile
 from pathlib import Path
 

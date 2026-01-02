@@ -10,13 +10,11 @@ This implements the "Correctness is Upstream" philosophy.
 """
 
 import sys
-import click
 from pathlib import Path
 
+import click
 
-def _ensure_verify_tools():
-    """Add tools directory to path for verification imports."""
-    sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'tools'))
+from agentforge.core.verification_runner import VerificationRunner
 
 
 def run_verify(args):
@@ -25,15 +23,6 @@ def run_verify(args):
     click.echo("=" * 60)
     click.echo("VERIFY - Deterministic Correctness Checks")
     click.echo("=" * 60)
-
-    _ensure_verify_tools()
-
-    try:
-        from verification_runner import VerificationRunner
-    except ImportError as e:
-        click.echo(f"\nError: Could not import verification_runner: {e}")
-        click.echo("Ensure tools/verification_runner.py exists.")
-        sys.exit(1)
 
     project_root = Path(args.project_root) if args.project_root else Path.cwd()
     config_path = Path(args.config) if args.config else None

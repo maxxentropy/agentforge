@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-9d9e0ff7fc12
+contract_id: agentforge
+check_id: single-responsibility-modules
+severity: minor
+file_path: src/agentforge/core/harness/session_store.py
+message: 'Class ''SessionStore'' has 9 methods (max: 3)'
+detected_at: '2026-01-01T01:39:14.172495'
+last_seen_at: '2026-01-01T01:39:14.172495'
+status: open
+line_number: 27
+fix_hint: Split modules with too many classes into focused single-class modules

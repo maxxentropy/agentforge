@@ -1,13 +1,11 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-2-design-pipeline.yaml
-# @spec_id: pipeline-controller-phase2-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
 # @component_id: spec-executor
 # @test_path: tests/unit/pipeline/stages/test_spec.py
 
 """Tests for SpecExecutor."""
 
 from unittest.mock import patch
-
-import pytest
 
 from agentforge.core.pipeline import StageContext, StageStatus
 
@@ -214,7 +212,7 @@ components:
         # Check spec was saved
         specs_dir = tmp_path / ".agentforge" / "specs"
         if specs_dir.exists():
-            spec_files = list(specs_dir.glob("*.yaml"))
+            list(specs_dir.glob("*.yaml"))
             # May or may not exist depending on finalize implementation
             # This is a weak assertion - stronger test in integration
             assert result.status == StageStatus.COMPLETED

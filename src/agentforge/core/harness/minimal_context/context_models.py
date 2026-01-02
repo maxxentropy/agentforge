@@ -1,6 +1,6 @@
 # @spec_file: .agentforge/specs/core-harness-minimal-context-v1.yaml
-# @spec_id: core-harness-minimal-context-v1
-# @component_id: harness-minimal_context-context_models
+# @spec_id: context-templates-v1
+# @component_id: context-models
 # @test_path: tests/unit/harness/test_enhanced_context.py
 
 """
@@ -16,9 +16,9 @@ Key principles:
 - Token-efficient serialization to YAML
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -26,7 +26,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 def _utc_now() -> datetime:
     """Get current UTC time (Python 3.12+ compatible)."""
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -74,7 +74,7 @@ class Fact(BaseModel):
     confidence: float = Field(ge=0.0, le=1.0, description="Confidence 0-1")
     source: str = Field(description="What produced this fact (tool name, inference)")
     step: int = Field(description="Step when fact was established")
-    supersedes: Optional[str] = Field(default=None, description="Fact ID this replaces")
+    supersedes: str | None = Field(default=None, description="Fact ID this replaces")
 
     @field_validator("confidence")
     @classmethod
@@ -93,15 +93,15 @@ class ActionDef(BaseModel):
 
     name: str
     description: str
-    parameters: Dict[str, str] = Field(
+    parameters: dict[str, str] = Field(
         default_factory=dict, description="param -> type hint"
     )
-    preconditions: List[str] = Field(default_factory=list, description="When to use")
-    postconditions: List[str] = Field(
+    preconditions: list[str] = Field(default_factory=list, description="When to use")
+    postconditions: list[str] = Field(
         default_factory=list, description="What happens after"
     )
-    phases: List[str] = Field(default_factory=list, description="Valid phases")
-    value_hints: Dict[str, str] = Field(
+    phases: list[str] = Field(default_factory=list, description="Valid phases")
+    value_hints: dict[str, str] = Field(
         default_factory=dict, description="param -> hint"
     )
     priority: int = Field(default=0, description="Higher = prefer this action")
@@ -112,13 +112,13 @@ class ActionRecord(BaseModel):
 
     step: int
     action: str
-    target: Optional[str] = None
-    parameters: Dict[str, Any] = Field(default_factory=dict)
+    target: str | None = None
+    parameters: dict[str, Any] = Field(default_factory=dict)
     result: ActionResult
     summary: str
-    facts_produced: List[str] = Field(default_factory=list, description="Fact IDs")
-    duration_ms: Optional[int] = None
-    error: Optional[str] = None
+    facts_produced: list[str] = Field(default_factory=list, description="Fact IDs")
+    duration_ms: int | None = None
+    error: str | None = None
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -138,8 +138,8 @@ class TaskSpec(BaseModel):
     task_id: str
     task_type: str
     goal: str
-    success_criteria: List[str]
-    constraints: List[str] = Field(default_factory=list)
+    success_criteria: list[str]
+    constraints: list[str] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=_utc_now)
 
 
@@ -151,11 +151,11 @@ class ViolationSpec(BaseModel):
     violation_id: str
     check_id: str
     file_path: str
-    line_number: Optional[int] = None
+    line_number: int | None = None
     severity: str = "warning"
     message: str = ""
-    fix_hint: Optional[str] = None
-    test_path: Optional[str] = None
+    fix_hint: str | None = None
+    test_path: str | None = None
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -170,7 +170,7 @@ class VerificationState(BaseModel):
     checks_failing: int = 0
     tests_passing: bool = False
     ready_for_completion: bool = False
-    last_check_time: Optional[datetime] = None
+    last_check_time: datetime | None = None
 
 
 class Understanding(BaseModel):
@@ -181,20 +181,20 @@ class Understanding(BaseModel):
     we store conclusions with confidence scores.
     """
 
-    facts: List[Fact] = Field(default_factory=list)
-    superseded_facts: List[str] = Field(
+    facts: list[Fact] = Field(default_factory=list)
+    superseded_facts: list[str] = Field(
         default_factory=list, description="IDs of replaced facts"
     )
 
-    def get_active_facts(self) -> List[Fact]:
+    def get_active_facts(self) -> list[Fact]:
         """Get facts that haven't been superseded."""
         return [f for f in self.facts if f.id not in self.superseded_facts]
 
-    def get_by_category(self, category: FactCategory) -> List[Fact]:
+    def get_by_category(self, category: FactCategory) -> list[Fact]:
         """Get active facts in a category."""
         return [f for f in self.get_active_facts() if f.category == category]
 
-    def get_high_confidence(self, threshold: float = 0.8) -> List[Fact]:
+    def get_high_confidence(self, threshold: float = 0.8) -> list[Fact]:
         """Get facts above confidence threshold."""
         return [f for f in self.get_active_facts() if f.confidence >= threshold]
 
@@ -258,8 +258,8 @@ class PhaseState(BaseModel):
 
     current_phase: str = "init"
     steps_in_phase: int = 0
-    phase_history: List[str] = Field(default_factory=list)
-    blocked_reason: Optional[str] = None
+    phase_history: list[str] = Field(default_factory=list)
+    blocked_reason: str | None = None
 
 
 class StateSpec(BaseModel):
@@ -271,10 +271,10 @@ class StateSpec(BaseModel):
     phase: PhaseState = Field(default_factory=PhaseState)
     verification: VerificationState = Field(default_factory=VerificationState)
     understanding: Understanding = Field(default_factory=Understanding)
-    recent_actions: List[ActionRecord] = Field(default_factory=list)
-    files_modified: List[str] = Field(default_factory=list)
+    recent_actions: list[ActionRecord] = Field(default_factory=list)
+    files_modified: list[str] = Field(default_factory=list)
     last_updated: datetime = Field(default_factory=_utc_now)
-    error: Optional[str] = None
+    error: str | None = None
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -285,9 +285,9 @@ class StateSpec(BaseModel):
 class ActionsSpec(BaseModel):
     """Available actions for current context."""
 
-    available: List[ActionDef]
-    recommended: Optional[str] = Field(default=None, description="Suggested next action")
-    blocked: List[str] = Field(
+    available: list[ActionDef]
+    recommended: str | None = Field(default=None, description="Suggested next action")
+    blocked: list[str] = Field(
         default_factory=list, description="Actions blocked and why"
     )
 
@@ -310,10 +310,10 @@ class AgentContext(BaseModel):
     actions: ActionsSpec
 
     # Task-type specific context (violation details, etc.)
-    domain_context: Dict[str, Any] = Field(default_factory=dict)
+    domain_context: dict[str, Any] = Field(default_factory=dict)
 
     # Precomputed analysis (AST-derived, not LLM-derived)
-    precomputed: Dict[str, Any] = Field(default_factory=dict)
+    precomputed: dict[str, Any] = Field(default_factory=dict)
 
     def estimate_tokens(self, chars_per_token: int = 4) -> int:
         """
@@ -334,7 +334,7 @@ class AgentContext(BaseModel):
     def to_yaml(self) -> str:
         """Serialize to compact YAML for LLM context."""
         # Build output dict with only non-empty fields
-        output: Dict[str, Any] = {
+        output: dict[str, Any] = {
             "task": {
                 "id": self.task.task_id,
                 "goal": self.task.goal,
@@ -374,14 +374,14 @@ class AgentContext(BaseModel):
 
         return yaml.dump(output, default_flow_style=False, allow_unicode=True, sort_keys=False)
 
-    def _format_understanding(self) -> Dict[str, Any]:
+    def _format_understanding(self) -> dict[str, Any]:
         """Format understanding for context."""
         active_facts = self.state.understanding.get_active_facts()
         if not active_facts:
             return {}
 
         # Group by category
-        by_category: Dict[str, List[str]] = {}
+        by_category: dict[str, list[str]] = {}
         for fact in active_facts:
             cat = fact.category.value
             if cat not in by_category:
@@ -390,7 +390,7 @@ class AgentContext(BaseModel):
 
         return by_category
 
-    def _format_actions(self) -> List[Dict[str, str]]:
+    def _format_actions(self) -> list[dict[str, str]]:
         """Format available actions for context."""
         return [
             {
@@ -410,5 +410,5 @@ class AgentResponse(BaseModel):
     """Expected response format from the agent."""
 
     action: str
-    parameters: Dict[str, Any] = Field(default_factory=dict)
-    reasoning: Optional[str] = Field(default=None, description="Brief reasoning if needed")
+    parameters: dict[str, Any] = Field(default_factory=dict)
+    reasoning: str | None = Field(default=None, description="Brief reasoning if needed")

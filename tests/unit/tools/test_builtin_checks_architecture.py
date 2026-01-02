@@ -1,5 +1,5 @@
-# @spec_file: .agentforge/specs/conformance-v1.yaml
-# @spec_id: conformance-v1
+# @spec_file: .agentforge/specs/core-conformance-v1.yaml
+# @spec_id: core-conformance-v1
 # @component_id: tools-conformance-domain
 # @impl_path: tools/conformance/domain.py
 
@@ -12,21 +12,17 @@ These tests validate the AST-based semantic analysis checks for:
 - Circular import detection
 """
 
-import pytest
 from pathlib import Path
 from textwrap import dedent
-import sys
 
-# Add tools directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent / 'tools'))
+import pytest
 
-from builtin_checks import (
-    check_layer_imports,
+from agentforge.core.builtin_checks import (
+    check_circular_imports,
     check_constructor_injection,
     check_domain_purity,
-    check_circular_imports,
+    check_layer_imports,
 )
-
 
 # =============================================================================
 # Fixtures
@@ -677,7 +673,7 @@ class TestCheckCircularImports:
                     pass
         """))
 
-        violations = check_circular_imports(
+        check_circular_imports(
             repo_root=temp_project,
             file_paths=[
                 temp_project / "model.py",
@@ -733,7 +729,7 @@ class TestCheckCircularImports:
             (temp_project / f"{name}.py").write_text(f"from {next_name} import X")
 
         # With max_depth=3, should not detect the 6-module cycle
-        violations = check_circular_imports(
+        check_circular_imports(
             repo_root=temp_project,
             file_paths=[temp_project / f"{n}.py" for n in "abcdef"],
             max_depth=3,

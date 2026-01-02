@@ -1,0 +1,13 @@
+schema_version: '1.0'
+violation_id: V-763ff36d22e9
+contract_id: agentforge
+check_id: fixtures-in-conftest
+severity: minor
+file_path: tests/unit/harness/test_checkpoint_manager.py
+message: 'Forbidden pattern found: ''@pytest.fixture'''
+detected_at: '2025-12-31T06:56:28.209957'
+last_seen_at: '2026-01-01T01:39:14.310041'
+status: open
+line_number: 323
+fix_hint: Move shared fixtures to conftest.py
+test_path: tests/unit/harness/test_checkpoint_manager.py

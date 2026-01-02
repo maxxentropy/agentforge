@@ -20,9 +20,8 @@ import tempfile
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional
 
-from agentforge.core.generate.domain import GeneratedFile, FileAction, WriteError
+from agentforge.core.generate.domain import FileAction, GeneratedFile, WriteError
 
 
 @dataclass
@@ -31,7 +30,7 @@ class WriteOperation:
 
     path: Path
     action: FileAction
-    backup_path: Optional[Path] = None
+    backup_path: Path | None = None
     original_existed: bool = False
     timestamp: datetime = field(default_factory=datetime.utcnow)
 
@@ -58,8 +57,8 @@ class CodeWriter:
 
     def __init__(
         self,
-        project_root: Optional[Path] = None,
-        backup_dir: Optional[Path] = None,
+        project_root: Path | None = None,
+        backup_dir: Path | None = None,
         add_header: bool = True,
         atomic_writes: bool = True,
     ):
@@ -78,7 +77,7 @@ class CodeWriter:
         self.atomic_writes = atomic_writes
 
         # Track operations for rollback
-        self._operations: List[WriteOperation] = []
+        self._operations: list[WriteOperation] = []
 
         # Metadata for headers
         self._spec_name: str = "unknown"
@@ -95,7 +94,7 @@ class CodeWriter:
         self._spec_name = spec_name
         self._phase = phase
 
-    def write(self, files: List[GeneratedFile]) -> List[Path]:
+    def write(self, files: list[GeneratedFile]) -> list[Path]:
         """
         Write generated files to disk.
 
@@ -136,10 +135,7 @@ class CodeWriter:
             Path that was written
         """
         # Resolve path relative to project root
-        if file.path.is_absolute():
-            target_path = file.path
-        else:
-            target_path = self.project_root / file.path
+        target_path = file.path if file.path.is_absolute() else self.project_root / file.path
 
         # Handle different actions
         if file.action == FileAction.DELETE:
@@ -337,10 +333,9 @@ class CodeWriter:
         cutoff = datetime.utcnow().timestamp() - (max_age_days * 24 * 60 * 60)
 
         for backup_file in backup_root.iterdir():
-            if backup_file.is_file():
-                if backup_file.stat().st_mtime < cutoff:
-                    backup_file.unlink()
-                    removed += 1
+            if backup_file.is_file() and backup_file.stat().st_mtime < cutoff:
+                backup_file.unlink()
+                removed += 1
 
         return removed
 

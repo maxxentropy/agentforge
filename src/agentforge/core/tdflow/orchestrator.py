@@ -14,7 +14,7 @@ When no generator is available, falls back to template-based generation.
 """
 
 from pathlib import Path
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from agentforge.core.tdflow.domain import (
     ComponentProgress,
@@ -45,7 +45,7 @@ class TDFlowOrchestrator:
 
     def __init__(
         self,
-        project_path: Optional[Path] = None,
+        project_path: Path | None = None,
         generator: Optional["GenerationEngine"] = None,
     ):
         """
@@ -59,9 +59,9 @@ class TDFlowOrchestrator:
         """
         self.project_path = project_path or Path.cwd()
         self.session_manager = SessionManager(self.project_path)
-        self._session: Optional[TDFlowSession] = None
-        self._runner: Optional[TestRunner] = None
-        self._generator: Optional["GenerationEngine"] = generator
+        self._session: TDFlowSession | None = None
+        self._runner: TestRunner | None = None
+        self._generator: GenerationEngine | None = generator
 
     @property
     def generator(self) -> Optional["GenerationEngine"]:
@@ -74,7 +74,7 @@ class TDFlowOrchestrator:
         self._generator = value
 
     @property
-    def session(self) -> Optional[TDFlowSession]:
+    def session(self) -> TDFlowSession | None:
         """Get current session, loading latest if not set."""
         if self._session is None:
             self._session = self.session_manager.get_latest()
@@ -119,7 +119,7 @@ class TDFlowOrchestrator:
 
         return self._session
 
-    def run_red(self, component_name: Optional[str] = None) -> PhaseResult:
+    def run_red(self, component_name: str | None = None) -> PhaseResult:
         """
         Execute RED phase for a component.
 
@@ -164,7 +164,7 @@ class TDFlowOrchestrator:
 
         return result
 
-    def run_green(self, component_name: Optional[str] = None) -> PhaseResult:
+    def run_green(self, component_name: str | None = None) -> PhaseResult:
         """
         Execute GREEN phase for a component.
 
@@ -209,7 +209,7 @@ class TDFlowOrchestrator:
 
         return result
 
-    def run_refactor(self, component_name: Optional[str] = None) -> PhaseResult:
+    def run_refactor(self, component_name: str | None = None) -> PhaseResult:
         """
         Execute REFACTOR phase for a component.
 
@@ -254,7 +254,7 @@ class TDFlowOrchestrator:
 
         return result
 
-    def verify(self, component_name: Optional[str] = None) -> VerificationReport:
+    def verify(self, component_name: str | None = None) -> VerificationReport:
         """
         Execute VERIFY phase for a component.
 
@@ -387,9 +387,9 @@ class TDFlowOrchestrator:
 
     def _get_component(
         self,
-        name: Optional[str] = None,
-        status: Optional[ComponentStatus] = None,
-    ) -> Optional[ComponentProgress]:
+        name: str | None = None,
+        status: ComponentStatus | None = None,
+    ) -> ComponentProgress | None:
         """
         Get component by name or find appropriate one.
 

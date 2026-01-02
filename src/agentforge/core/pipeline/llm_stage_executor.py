@@ -1,5 +1,5 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-2-design-pipeline.yaml
-# @spec_id: pipeline-controller-phase2-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
 # @component_id: llm-stage-executor
 # @test_path: tests/unit/pipeline/test_llm_stage_executor.py
 
@@ -23,7 +23,7 @@ import json
 import logging
 import re
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import yaml
 
@@ -53,9 +53,9 @@ class LLMStageExecutor(StageExecutor):
     temperature: float = 0.7
 
     # Tools to provide - override in subclasses
-    tools: List[Dict[str, Any]] = []
+    tools: list[dict[str, Any]] = []
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         """
         Initialize LLM stage executor.
 
@@ -149,9 +149,9 @@ class LLMStageExecutor(StageExecutor):
     @abstractmethod
     def parse_response(
         self,
-        llm_result: Dict[str, Any],
+        llm_result: dict[str, Any],
         context: StageContext,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """
         Parse LLM response into stage artifact.
 
@@ -172,8 +172,8 @@ class LLMStageExecutor(StageExecutor):
         context: StageContext,
         system_prompt: str,
         user_message: str,
-        tools: Optional[List[Dict]] = None,
-    ) -> Dict[str, Any]:
+        tools: list[dict] | None = None,
+    ) -> dict[str, Any]:
         """
         Execute LLM-based stage logic.
 
@@ -235,7 +235,7 @@ class LLMStageExecutor(StageExecutor):
 
     # --- Utility Methods ---
 
-    def extract_yaml_from_response(self, response_text: str) -> Optional[Dict]:
+    def extract_yaml_from_response(self, response_text: str) -> dict | None:
         """
         Extract YAML block from LLM response.
 
@@ -268,7 +268,7 @@ class LLMStageExecutor(StageExecutor):
 
         return None
 
-    def extract_json_from_response(self, response_text: str) -> Optional[Dict]:
+    def extract_json_from_response(self, response_text: str) -> dict | None:
         """
         Extract JSON from LLM response.
 
@@ -303,7 +303,7 @@ class LLMStageExecutor(StageExecutor):
 
         return None
 
-    def validate_input(self, artifacts: Dict[str, Any]) -> List[str]:
+    def validate_input(self, artifacts: dict[str, Any]) -> list[str]:
         """Validate input artifacts."""
         errors = []
         for required in self.get_required_inputs():
@@ -311,7 +311,7 @@ class LLMStageExecutor(StageExecutor):
                 errors.append(f"Missing required artifact: {required}")
         return errors
 
-    def validate_output(self, artifact: Optional[Dict[str, Any]]) -> "OutputValidation":
+    def validate_output(self, artifact: dict[str, Any] | None) -> "OutputValidation":
         """
         Validate output artifact.
 
@@ -323,7 +323,6 @@ class LLMStageExecutor(StageExecutor):
         Returns:
             OutputValidation result
         """
-        from .stage_executor import StageResult
 
         if artifact is None:
             return OutputValidation(valid=False, errors=["No artifact produced"])
@@ -344,9 +343,9 @@ class ToolBasedStageExecutor(LLMStageExecutor):
 
     def parse_response(
         self,
-        llm_result: Dict[str, Any],
+        llm_result: dict[str, Any],
         context: StageContext,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """
         Extract artifact from tool use result.
 
@@ -382,5 +381,5 @@ class OutputValidation:
     """Result of output validation."""
 
     valid: bool
-    errors: List[str] = field(default_factory=list)
-    warnings: List[str] = field(default_factory=list)
+    errors: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)

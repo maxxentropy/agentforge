@@ -1,13 +1,11 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-2-design-pipeline.yaml
-# @spec_id: pipeline-controller-phase2-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
 # @component_id: clarify-executor
 # @test_path: tests/unit/pipeline/stages/test_clarify.py
 
 """Tests for ClarifyExecutor."""
 
 from unittest.mock import patch
-
-import pytest
 
 from agentforge.core.pipeline import StageContext, StageStatus
 
@@ -140,7 +138,7 @@ ready_for_analysis: true
         with patch.object(executor, "_run_with_llm") as mock_llm:
             mock_llm.return_value = mock_llm_response(yaml_response)
             # Executor should process with feedback
-            user_msg = executor.get_user_message(context)
+            executor.get_user_message(context)
             # Feedback should be included if provided in context
 
     def test_marks_ready_when_complete(

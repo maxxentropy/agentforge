@@ -1,5 +1,5 @@
-# @spec_file: .agentforge/specs/harness-v1.yaml
-# @spec_id: harness-v1
+# @spec_file: .agentforge/specs/core-harness-v1.yaml
+# @spec_id: core-harness-v1
 # @component_id: tools-harness-agent_prompt_builder
 # @impl_path: tools/harness/agent_prompt_builder.py
 
@@ -7,10 +7,10 @@
 
 import pytest
 
-from tools.harness.agent_prompt_builder import AgentPromptBuilder, SYSTEM_PROMPT
-from tools.harness.llm_executor_domain import (
-    ExecutionContext,
+from agentforge.core.harness.agent_prompt_builder import AgentPromptBuilder
+from agentforge.core.harness.llm_executor_domain import (
     ConversationMessage,
+    ExecutionContext,
     ToolResult,
 )
 

@@ -1,5 +1,5 @@
-# @spec_file: specs/tools/01-tool-handlers.yaml
-# @spec_id: tool-handlers-v1
+# @spec_file: .agentforge/specs/core-harness-minimal-context-v1.yaml
+# @spec_id: core-harness-minimal-context-v1
 # @component_id: tool-handlers-init
 # @test_path: tests/unit/harness/tool_handlers/test_registry.py
 
@@ -33,22 +33,26 @@ Handler Categories:
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from .types import ActionHandler, HandlerContext
-
 from .file_handlers import (
-    create_read_file_handler,
-    create_write_file_handler,
     create_edit_file_handler,
-    create_replace_lines_handler,
     create_insert_lines_handler,
+    create_read_file_handler,
+    create_replace_lines_handler,
+    create_write_file_handler,
 )
-
 from .search_handlers import (
-    create_search_code_handler,
-    create_load_context_handler,
     create_find_related_handler,
+    create_load_context_handler,
+    create_search_code_handler,
 )
-
+from .terminal_handlers import (
+    create_cannot_fix_handler,
+    create_complete_handler,
+    create_escalate_handler,
+    create_plan_fix_handler,
+    create_request_help_handler,
+)
+from .types import ActionHandler, HandlerContext
 from .verify_handlers import (
     create_run_check_handler,
     create_run_check_handler_v2,
@@ -56,18 +60,10 @@ from .verify_handlers import (
     create_validate_python_handler,
 )
 
-from .terminal_handlers import (
-    create_complete_handler,
-    create_escalate_handler,
-    create_cannot_fix_handler,
-    create_request_help_handler,
-    create_plan_fix_handler,
-)
-
 
 def create_standard_handlers(
-    project_path: Optional[Path] = None,
-) -> Dict[str, ActionHandler]:
+    project_path: Path | None = None,
+) -> dict[str, ActionHandler]:
     """
     Create standard action handlers for all base tools.
 
@@ -104,8 +100,8 @@ def create_standard_handlers(
 
 
 def create_fix_violation_handlers(
-    project_path: Optional[Path] = None,
-) -> Dict[str, ActionHandler]:
+    project_path: Path | None = None,
+) -> dict[str, ActionHandler]:
     """
     Create handlers specifically for the fix_violation workflow.
 
@@ -127,8 +123,8 @@ def create_fix_violation_handlers(
 
 
 def create_minimal_handlers(
-    project_path: Optional[Path] = None,
-) -> Dict[str, ActionHandler]:
+    project_path: Path | None = None,
+) -> dict[str, ActionHandler]:
     """
     Create a minimal set of handlers for simple tasks.
 
@@ -166,7 +162,7 @@ class ToolHandlerRegistry:
         ```
     """
 
-    def __init__(self, project_path: Optional[Path] = None):
+    def __init__(self, project_path: Path | None = None):
         """
         Initialize the registry.
 
@@ -174,7 +170,7 @@ class ToolHandlerRegistry:
             project_path: Base path for file operations
         """
         self.project_path = Path(project_path) if project_path else Path.cwd()
-        self._handlers: Dict[str, ActionHandler] = {}
+        self._handlers: dict[str, ActionHandler] = {}
 
     def register(self, name: str, handler: ActionHandler) -> "ToolHandlerRegistry":
         """
@@ -191,7 +187,7 @@ class ToolHandlerRegistry:
         return self
 
     def register_all(
-        self, handlers: Dict[str, ActionHandler]
+        self, handlers: dict[str, ActionHandler]
     ) -> "ToolHandlerRegistry":
         """
         Register multiple handlers.
@@ -262,7 +258,7 @@ class ToolHandlerRegistry:
             .add_terminal_handlers()
         )
 
-    def get_handlers(self) -> Dict[str, ActionHandler]:
+    def get_handlers(self) -> dict[str, ActionHandler]:
         """Get all registered handlers."""
         return dict(self._handlers)
 

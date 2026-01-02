@@ -8,10 +8,9 @@
 # Phase: green
 # Date: 2025-12-31 05:35:32 UTC
 
+from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Optional, List
-from dataclasses import dataclass
 
 
 class ObservationType(Enum):
@@ -27,7 +26,7 @@ class Observation:
     type: ObservationType
     timestamp: datetime
     data: dict
-    context: Optional[str] = None
+    context: str | None = None
 
 
 class HealthStatus(Enum):
@@ -46,10 +45,10 @@ class Recommendation(Enum):
 @dataclass
 class LoopDetection:
     detected: bool
-    pattern: Optional[str] = None
+    pattern: str | None = None
     count: int = 0
-    observations: List[Observation] = None
-    
+    observations: list[Observation] = None
+
     def __post_init__(self):
         if self.observations is None:
             self.observations = []
@@ -58,10 +57,10 @@ class LoopDetection:
 @dataclass
 class ThrashingDetection:
     detected: bool
-    pattern: Optional[str] = None
-    affected_files: List[str] = None
+    pattern: str | None = None
+    affected_files: list[str] = None
     alternation_count: int = 0
-    
+
     def __post_init__(self):
         if self.affected_files is None:
             self.affected_files = []
@@ -70,10 +69,10 @@ class ThrashingDetection:
 @dataclass
 class AgentHealth:
     status: HealthStatus
-    issues: List[str]
+    issues: list[str]
     recommendation: Recommendation
-    loop_detection: Optional[LoopDetection] = None
-    thrashing_detection: Optional[ThrashingDetection] = None
+    loop_detection: LoopDetection | None = None
+    thrashing_detection: ThrashingDetection | None = None
     drift_score: float = 0.0
     context_pressure: float = 0.0
     progress_score: float = 0.0

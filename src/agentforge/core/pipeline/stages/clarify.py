@@ -1,5 +1,5 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-2-design-pipeline.yaml
-# @spec_id: pipeline-controller-phase2-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
 # @component_id: clarify-executor
 # @test_path: tests/unit/pipeline/stages/test_clarify.py
 
@@ -16,7 +16,7 @@ in the user's request by:
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from ..llm_stage_executor import LLMStageExecutor, OutputValidation
 from ..stage_executor import StageContext, StageResult, StageStatus
@@ -108,7 +108,7 @@ ready_for_analysis: true  # false if blocking questions remain
 ```
 """
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         super().__init__(config)
         self.max_clarification_rounds = config.get("max_rounds", 3) if config else 3
 
@@ -187,9 +187,9 @@ ready_for_analysis: true  # false if blocking questions remain
 
     def parse_response(
         self,
-        llm_result: Dict[str, Any],
+        llm_result: dict[str, Any],
         context: StageContext,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """Parse clarification response."""
         response_text = llm_result.get("response", "") or llm_result.get("content", "")
 
@@ -212,7 +212,7 @@ ready_for_analysis: true  # false if blocking questions remain
 
         return artifact
 
-    def _create_passthrough_artifact(self, context: StageContext) -> Dict[str, Any]:
+    def _create_passthrough_artifact(self, context: StageContext) -> dict[str, Any]:
         """Create artifact when no clarification needed."""
         input_artifact = context.input_artifacts
 
@@ -234,7 +234,7 @@ ready_for_analysis: true  # false if blocking questions remain
     def _escalate_for_answers(
         self,
         context: StageContext,
-        blocking_questions: List[Dict],
+        blocking_questions: list[dict],
     ) -> StageResult:
         """Escalate to get answers to blocking questions."""
         questions_text = "\n".join(
@@ -254,7 +254,7 @@ ready_for_analysis: true  # false if blocking questions remain
             },
         )
 
-    def validate_output(self, artifact: Optional[Dict[str, Any]]) -> OutputValidation:
+    def validate_output(self, artifact: dict[str, Any] | None) -> OutputValidation:
         """Validate clarify artifact."""
         if artifact is None:
             return OutputValidation(valid=False, errors=["No artifact"])
@@ -284,6 +284,6 @@ ready_for_analysis: true  # false if blocking questions remain
         return self.required_input_fields
 
 
-def create_clarify_executor(config: Optional[Dict] = None) -> ClarifyExecutor:
+def create_clarify_executor(config: dict | None = None) -> ClarifyExecutor:
     """Create ClarifyExecutor instance."""
     return ClarifyExecutor(config)

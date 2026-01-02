@@ -20,18 +20,25 @@ Directory Structure:
         └── YYYY-MM-DD.yaml
 """
 
+import contextlib
 import os
-import tempfile
 import shutil
-from pathlib import Path
-from typing import List, Optional, Dict, Set
+import tempfile
 from datetime import date, datetime
+from pathlib import Path
+
 import yaml
 
 from .domain import (
-    Violation, ViolationStatus, Severity,
-    Exemption, ExemptionStatus, ExemptionScope, ExemptionScopeType,
-    ConformanceSummary, ConformanceReport
+    ConformanceReport,
+    ConformanceSummary,
+    Exemption,
+    ExemptionScope,
+    ExemptionScopeType,
+    ExemptionStatus,
+    Severity,
+    Violation,
+    ViolationStatus,
 )
 
 
@@ -64,10 +71,8 @@ class AtomicFileWriter:
             shutil.move(self.temp_path, self.target_path)
         else:
             # Error - clean up temp file
-            try:
+            with contextlib.suppress(OSError):
                 os.unlink(self.temp_path)
-            except OSError:
-                pass
         return False
 
 
@@ -81,7 +86,7 @@ class ViolationStore:
 
     def __init__(self, agentforge_path: Path):
         self.violations_path = agentforge_path / "violations"
-        self._cache: Dict[str, Violation] = {}
+        self._cache: dict[str, Violation] = {}
 
     def ensure_directory(self) -> None:
         """Create violations directory if needed."""
@@ -90,7 +95,7 @@ class ViolationStore:
         if not gitkeep.exists():
             gitkeep.touch()
 
-    def load_all(self) -> List[Violation]:
+    def load_all(self) -> list[Violation]:
         """Load all violations from disk into cache."""
         self._cache.clear()
         violations = []
@@ -106,16 +111,16 @@ class ViolationStore:
 
         return violations
 
-    def _load_violation(self, file_path: Path) -> Optional[Violation]:
+    def _load_violation(self, file_path: Path) -> Violation | None:
         """Load a single violation from YAML file."""
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, encoding='utf-8') as f:
                 data = yaml.safe_load(f)
             return self._dict_to_violation(data)
         except Exception:
             return None
 
-    def _dict_to_violation(self, data: Dict) -> Violation:
+    def _dict_to_violation(self, data: dict) -> Violation:
         """Convert dictionary to Violation object."""
         return Violation(
             violation_id=data["violation_id"],
@@ -141,7 +146,7 @@ class ViolationStore:
             test_path=data.get("test_path"),
         )
 
-    def _violation_to_dict(self, violation: Violation) -> Dict:
+    def _violation_to_dict(self, violation: Violation) -> dict:
         """Convert Violation object to dictionary for YAML."""
         data = {
             "schema_version": "1.0",
@@ -179,7 +184,7 @@ class ViolationStore:
 
         return data
 
-    def get(self, violation_id: str) -> Optional[Violation]:
+    def get(self, violation_id: str) -> Violation | None:
         """Get violation by ID (from cache or disk)."""
         if violation_id in self._cache:
             return self._cache[violation_id]
@@ -212,24 +217,24 @@ class ViolationStore:
             return True
         return False
 
-    def find_by_contract(self, contract_id: str) -> List[Violation]:
+    def find_by_contract(self, contract_id: str) -> list[Violation]:
         """Find violations for a specific contract."""
         return [v for v in self._cache.values() if v.contract_id == contract_id]
 
-    def find_by_status(self, status: ViolationStatus) -> List[Violation]:
+    def find_by_status(self, status: ViolationStatus) -> list[Violation]:
         """Find violations by status."""
         return [v for v in self._cache.values() if v.status == status]
 
-    def count_by_status(self) -> Dict[ViolationStatus, int]:
+    def count_by_status(self) -> dict[ViolationStatus, int]:
         """Count violations by status."""
-        counts = {status: 0 for status in ViolationStatus}
+        counts = dict.fromkeys(ViolationStatus, 0)
         for v in self._cache.values():
             counts[v.status] += 1
         return counts
 
-    def count_by_severity(self) -> Dict[Severity, int]:
+    def count_by_severity(self) -> dict[Severity, int]:
         """Count violations by severity."""
-        counts = {severity: 0 for severity in Severity}
+        counts = dict.fromkeys(Severity, 0)
         for v in self._cache.values():
             if v.status == ViolationStatus.OPEN:
                 counts[v.severity] += 1
@@ -237,8 +242,8 @@ class ViolationStore:
 
     def mark_stale(
         self,
-        except_files: Set[str],
-        except_contracts: Set[str]
+        except_files: set[str],
+        except_contracts: set[str]
     ) -> int:
         """Mark violations as stale except for specified scope."""
         count = 0
@@ -264,7 +269,7 @@ class ExemptionRegistry:
 
     def __init__(self, agentforge_path: Path):
         self.exemptions_path = agentforge_path / "exemptions"
-        self._cache: Dict[str, Exemption] = {}
+        self._cache: dict[str, Exemption] = {}
 
     def ensure_directory(self) -> None:
         """Create exemptions directory if needed."""
@@ -273,7 +278,7 @@ class ExemptionRegistry:
         if not gitkeep.exists():
             gitkeep.touch()
 
-    def load_all(self) -> List[Exemption]:
+    def load_all(self) -> list[Exemption]:
         """Load all exemptions from disk."""
         self._cache.clear()
         exemptions = []
@@ -291,16 +296,16 @@ class ExemptionRegistry:
 
         return exemptions
 
-    def _load_exemption(self, file_path: Path) -> Optional[Exemption]:
+    def _load_exemption(self, file_path: Path) -> Exemption | None:
         """Load exemption from YAML file."""
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, encoding='utf-8') as f:
                 data = yaml.safe_load(f)
             return self._dict_to_exemption(data)
         except Exception:
             return None
 
-    def _dict_to_exemption(self, data: Dict) -> Exemption:
+    def _dict_to_exemption(self, data: dict) -> Exemption:
         """Convert dictionary to Exemption object."""
         scope_data = data.get("scope", {"type": "global"})
         scope = ExemptionScope(
@@ -335,7 +340,7 @@ class ExemptionRegistry:
             tags=data.get("tags"),
         )
 
-    def _exemption_to_dict(self, exemption: Exemption) -> Dict:
+    def _exemption_to_dict(self, exemption: Exemption) -> dict:
         """Convert Exemption to dictionary for YAML."""
         scope_dict = {"type": exemption.scope.type.value}
         if exemption.scope.patterns:
@@ -373,7 +378,7 @@ class ExemptionRegistry:
 
         return data
 
-    def get(self, exemption_id: str) -> Optional[Exemption]:
+    def get(self, exemption_id: str) -> Exemption | None:
         """Get exemption by ID."""
         return self._cache.get(exemption_id)
 
@@ -397,22 +402,22 @@ class ExemptionRegistry:
             return True
         return False
 
-    def find_for_violation(self, violation: Violation) -> Optional[Exemption]:
+    def find_for_violation(self, violation: Violation) -> Exemption | None:
         """Find exemption that covers a violation."""
         for exemption in self._cache.values():
             if exemption.covers_violation(violation):
                 return exemption
         return None
 
-    def get_expired(self) -> List[Exemption]:
+    def get_expired(self) -> list[Exemption]:
         """Get all expired exemptions."""
         return [e for e in self._cache.values() if e.is_expired()]
 
-    def get_active(self) -> List[Exemption]:
+    def get_active(self) -> list[Exemption]:
         """Get all active exemptions."""
         return [e for e in self._cache.values() if e.is_active()]
 
-    def get_needs_review(self) -> List[Exemption]:
+    def get_needs_review(self) -> list[Exemption]:
         """Get exemptions that need review."""
         return [e for e in self._cache.values() if e.needs_review()]
 
@@ -457,13 +462,13 @@ class ReportStore:
         with AtomicFileWriter(self.report_path) as f:
             yaml.dump(data, f, default_flow_style=False, sort_keys=False)
 
-    def load(self) -> Optional[ConformanceReport]:
+    def load(self) -> ConformanceReport | None:
         """Load existing conformance report."""
         if not self.report_path.exists():
             return None
 
         try:
-            with open(self.report_path, 'r', encoding='utf-8') as f:
+            with open(self.report_path, encoding='utf-8') as f:
                 data = yaml.safe_load(f)
 
             summary_data = data["summary"]
@@ -487,6 +492,3 @@ class ReportStore:
             )
         except Exception:
             return None
-
-# Re-export HistoryStore for backwards compatibility
-from .history_store import HistoryStore

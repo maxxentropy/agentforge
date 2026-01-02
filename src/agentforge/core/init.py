@@ -11,9 +11,8 @@ it with default agents and pipelines from package resources.
 """
 
 import shutil
-from pathlib import Path
-from typing import Optional
 from importlib import resources
+from pathlib import Path
 
 import yaml
 
@@ -39,8 +38,8 @@ def get_package_resource_path(subpath: str) -> Path:
 
 
 def initialize_project(
-    project_path: Optional[Path] = None,
-    name: Optional[str] = None,
+    project_path: Path | None = None,
+    name: str | None = None,
     force: bool = False,
 ) -> Path:
     """Initialize an AgentForge project.
@@ -145,7 +144,7 @@ def _create_repo_yaml(path: Path, name: str) -> None:
         yaml.dump(config, f, default_flow_style=False, sort_keys=False)
 
 
-def is_initialized(path: Optional[Path] = None) -> bool:
+def is_initialized(path: Path | None = None) -> bool:
     """Check if a directory has been initialized for AgentForge.
 
     Args:
@@ -158,7 +157,7 @@ def is_initialized(path: Optional[Path] = None) -> bool:
     return (path / ".agentforge").exists()
 
 
-def get_agentforge_dir(path: Optional[Path] = None) -> Optional[Path]:
+def get_agentforge_dir(path: Path | None = None) -> Path | None:
     """Find the .agentforge directory for a project.
 
     Searches up the directory tree from the given path.

@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-23863386dc5b
+contract_id: agentforge
+check_id: max-file-lines
+severity: major
+file_path: tools/tdflow/phases/green.py
+message: File exceeds line limit (501 lines > 500)
+detected_at: '2025-12-31T04:36:43.122470'
+last_seen_at: '2026-01-01T01:39:13.722619'
+status: open
+fix_hint: Consider splitting into smaller files
+test_path: tests/unit/tools/tdflow/

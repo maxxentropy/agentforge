@@ -1,12 +1,10 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-5-cli-commands.yaml
-# @spec_id: pipeline-controller-phase5-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
 
 """Shared fixtures for CLI command tests."""
 
-from pathlib import Path
-from typing import Any, Dict, Optional
-from unittest.mock import MagicMock, Mock
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from unittest.mock import MagicMock
 
 import pytest
 from click.testing import CliRunner
@@ -44,8 +42,8 @@ def mock_controller():
     state.completed_stages = ["intake", "clarify", "analyze", "spec", "red", "green", "refactor"]
     state.error = None
     state.user_request = "Add OAuth authentication"
-    state.created_at = datetime(2026, 1, 2, 10, 0, 0, tzinfo=timezone.utc)
-    state.updated_at = datetime(2026, 1, 2, 10, 1, 0, tzinfo=timezone.utc)
+    state.created_at = datetime(2026, 1, 2, 10, 0, 0, tzinfo=UTC)
+    state.updated_at = datetime(2026, 1, 2, 10, 1, 0, tzinfo=UTC)
     state.total_tokens_used = 10000
     state.total_cost_usd = 0.05
     controller.get_status.return_value = state
@@ -74,8 +72,8 @@ def mock_controller_paused():
     state.completed_stages = ["intake", "clarify", "analyze"]
     state.error = None
     state.user_request = "Add feature"
-    state.created_at = datetime(2026, 1, 2, 10, 0, 0, tzinfo=timezone.utc)
-    state.updated_at = datetime(2026, 1, 2, 10, 1, 0, tzinfo=timezone.utc)
+    state.created_at = datetime(2026, 1, 2, 10, 0, 0, tzinfo=UTC)
+    state.updated_at = datetime(2026, 1, 2, 10, 1, 0, tzinfo=UTC)
     state.total_tokens_used = 5000
     state.total_cost_usd = 0.025
     controller.get_status.return_value = state
@@ -98,8 +96,8 @@ def mock_controller_awaiting():
     state.completed_stages = ["intake", "clarify", "analyze"]
     state.error = None
     state.user_request = "Design authentication"
-    state.created_at = datetime(2026, 1, 2, 10, 0, 0, tzinfo=timezone.utc)
-    state.updated_at = datetime(2026, 1, 2, 10, 1, 0, tzinfo=timezone.utc)
+    state.created_at = datetime(2026, 1, 2, 10, 0, 0, tzinfo=UTC)
+    state.updated_at = datetime(2026, 1, 2, 10, 1, 0, tzinfo=UTC)
     state.total_tokens_used = 5000
     state.total_cost_usd = 0.025
     controller.get_status.return_value = state
@@ -133,8 +131,8 @@ def mock_controller_failed():
     state.completed_stages = ["intake", "clarify"]
     state.error = "Analysis failed: could not parse codebase"
     state.user_request = "Add broken feature"
-    state.created_at = datetime(2026, 1, 2, 10, 0, 0, tzinfo=timezone.utc)
-    state.updated_at = datetime(2026, 1, 2, 10, 1, 0, tzinfo=timezone.utc)
+    state.created_at = datetime(2026, 1, 2, 10, 0, 0, tzinfo=UTC)
+    state.updated_at = datetime(2026, 1, 2, 10, 1, 0, tzinfo=UTC)
     state.total_tokens_used = 2000
     state.total_cost_usd = 0.01
     controller.get_status.return_value = state
@@ -256,7 +254,7 @@ def multiple_pipelines():
         state.status.value = status
         state.current_stage = stage
         state.completed_stages = ["intake", "clarify"]
-        state.created_at = datetime(2026, 1, 2, 10, i, 0, tzinfo=timezone.utc)
+        state.created_at = datetime(2026, 1, 2, 10, i, 0, tzinfo=UTC)
         pipelines.append(state)
 
     return pipelines

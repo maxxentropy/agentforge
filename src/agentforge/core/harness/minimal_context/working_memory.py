@@ -1,7 +1,7 @@
 # @spec_file: .agentforge/specs/core-harness-minimal-context-v1.yaml
 # @spec_id: core-harness-minimal-context-v1
-# @component_id: harness-minimal_context-working_memory
-# @test_path: tests/unit/harness/test_enhanced_context.py
+# @component_id: working-memory
+# @test_path: tests/unit/harness/test_minimal_context.py
 
 """
 Working Memory Manager
@@ -14,19 +14,20 @@ unless marked as pinned.
 Enhanced with fact storage for the Understanding Extraction system.
 """
 
-import yaml
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
+
+import yaml
 
 if TYPE_CHECKING:
-    from .context_models import Fact, Understanding
+    from .context_models import Fact
 
 
 def _utc_now() -> datetime:
     """Get current UTC time (Python 3.12+ compatible)."""
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 @dataclass
@@ -36,11 +37,11 @@ class WorkingMemoryItem:
     key: str  # Unique identifier
     content: Any
     added_at: datetime = field(default_factory=_utc_now)
-    step: Optional[int] = None
-    expires_after_steps: Optional[int] = None
+    step: int | None = None
+    expires_after_steps: int | None = None
     pinned: bool = False
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "type": self.item_type,
             "key": self.key,
@@ -52,7 +53,7 @@ class WorkingMemoryItem:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "WorkingMemoryItem":
+    def from_dict(cls, data: dict[str, Any]) -> "WorkingMemoryItem":
         return cls(
             item_type=data["type"],
             key=data["key"],
@@ -91,7 +92,7 @@ class WorkingMemoryManager:
         self.max_items = max_items
         self.memory_file = self.task_dir / "working_memory.yaml"
 
-    def _load(self) -> List[WorkingMemoryItem]:
+    def _load(self) -> list[WorkingMemoryItem]:
         """Load items from disk."""
         if not self.memory_file.exists():
             return []
@@ -102,7 +103,7 @@ class WorkingMemoryManager:
         items = data.get("items", [])
         return [WorkingMemoryItem.from_dict(item) for item in items]
 
-    def _save(self, items: List[WorkingMemoryItem]) -> None:
+    def _save(self, items: list[WorkingMemoryItem]) -> None:
         """Save items to disk."""
         self.task_dir.mkdir(parents=True, exist_ok=True)
 
@@ -119,8 +120,8 @@ class WorkingMemoryManager:
         item_type: str,
         key: str,
         content: Any,
-        step: Optional[int] = None,
-        expires_after_steps: Optional[int] = None,
+        step: int | None = None,
+        expires_after_steps: int | None = None,
         pinned: bool = False,
     ) -> None:
         """
@@ -161,7 +162,7 @@ class WorkingMemoryManager:
         result: str,
         summary: str,
         step: int,
-        target: Optional[str] = None,
+        target: str | None = None,
     ) -> None:
         """
         Convenience method to add an action result.
@@ -206,7 +207,7 @@ class WorkingMemoryManager:
             expires_after_steps=expires_after_steps,
         )
 
-    def get_items(self, current_step: Optional[int] = None) -> List[WorkingMemoryItem]:
+    def get_items(self, current_step: int | None = None) -> list[WorkingMemoryItem]:
         """
         Get all items, optionally filtering expired ones.
 
@@ -229,8 +230,8 @@ class WorkingMemoryManager:
     def get_by_type(
         self,
         item_type: str,
-        current_step: Optional[int] = None,
-    ) -> List[WorkingMemoryItem]:
+        current_step: int | None = None,
+    ) -> list[WorkingMemoryItem]:
         """Get items of a specific type."""
         items = self.get_items(current_step)
         return [i for i in items if i.item_type == item_type]
@@ -238,8 +239,8 @@ class WorkingMemoryManager:
     def get_action_results(
         self,
         limit: int = 3,
-        current_step: Optional[int] = None,
-    ) -> List[Dict[str, Any]]:
+        current_step: int | None = None,
+    ) -> list[dict[str, Any]]:
         """
         Get recent action results formatted for context.
 
@@ -271,8 +272,8 @@ class WorkingMemoryManager:
 
     def get_loaded_context(
         self,
-        current_step: Optional[int] = None,
-    ) -> Dict[str, str]:
+        current_step: int | None = None,
+    ) -> dict[str, str]:
         """
         Get all loaded context items.
 
@@ -317,18 +318,15 @@ class WorkingMemoryManager:
         items = self._load()
         original_count = len(items)
 
-        if keep_pinned:
-            items = [i for i in items if i.pinned]
-        else:
-            items = []
+        items = [i for i in items if i.pinned] if keep_pinned else []
 
         self._save(items)
         return original_count - len(items)
 
     def _evict_if_needed(
         self,
-        items: List[WorkingMemoryItem],
-    ) -> List[WorkingMemoryItem]:
+        items: list[WorkingMemoryItem],
+    ) -> list[WorkingMemoryItem]:
         """
         Evict oldest non-pinned items if over limit.
 
@@ -402,7 +400,7 @@ class WorkingMemoryManager:
         confidence: float,
         source: str,
         step: int,
-        supersedes: Optional[str] = None,
+        supersedes: str | None = None,
     ) -> None:
         """
         Add a fact to working memory.
@@ -436,7 +434,7 @@ class WorkingMemoryManager:
             pinned=confidence >= 0.9,  # High-confidence facts are pinned
         )
 
-    def add_facts_from_list(self, facts: List["Fact"], step: int) -> None:
+    def add_facts_from_list(self, facts: list["Fact"], step: int) -> None:
         """
         Add multiple facts from Fact model objects.
 
@@ -457,10 +455,10 @@ class WorkingMemoryManager:
 
     def get_facts(
         self,
-        current_step: Optional[int] = None,
-        category: Optional[str] = None,
+        current_step: int | None = None,
+        category: str | None = None,
         min_confidence: float = 0.0,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Get facts from working memory.
 
@@ -510,10 +508,10 @@ class WorkingMemoryManager:
 
     def get_high_confidence_facts(
         self,
-        current_step: Optional[int] = None,
+        current_step: int | None = None,
         threshold: float = 0.8,
         limit: int = 10,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Get high-confidence facts for context inclusion.
 
@@ -530,8 +528,8 @@ class WorkingMemoryManager:
 
     def get_facts_for_context(
         self,
-        current_step: Optional[int] = None,
-    ) -> Dict[str, List[str]]:
+        current_step: int | None = None,
+    ) -> dict[str, list[str]]:
         """
         Get facts formatted for context builder.
 
@@ -545,7 +543,7 @@ class WorkingMemoryManager:
         """
         facts = self.get_high_confidence_facts(current_step, threshold=0.7, limit=15)
 
-        by_category: Dict[str, List[str]] = {}
+        by_category: dict[str, list[str]] = {}
         for fact in facts:
             cat = fact.get("category", "other")
             if cat not in by_category:

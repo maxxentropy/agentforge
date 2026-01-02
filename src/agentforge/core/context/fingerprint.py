@@ -1,4 +1,4 @@
-# @spec_file: specs/minimal-context-architecture/03-fingerprint.yaml
+# @spec_file: .agentforge/specs/core-context-v1.yaml
 # @spec_id: fingerprint-v1
 # @component_id: fingerprint-generator
 # @test_path: tests/unit/context/test_fingerprint.py
@@ -34,9 +34,9 @@ Usage:
 
 import hashlib
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, ClassVar, Dict, List, Optional
+from typing import Any, ClassVar
 
 import yaml
 from pydantic import BaseModel, Field
@@ -48,23 +48,23 @@ class ProjectIdentity(BaseModel):
     name: str
     path: str
     content_hash: str = Field(description="For cache invalidation")
-    generated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    generated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 class TechnicalProfile(BaseModel):
     """Technical characteristics of the project."""
 
     language: str
-    version: Optional[str] = None
-    frameworks: List[str] = Field(default_factory=list)
-    build_system: Optional[str] = None
+    version: str | None = None
+    frameworks: list[str] = Field(default_factory=list)
+    build_system: str | None = None
     test_framework: str = "unknown"
 
 
 class DetectedPatterns(BaseModel):
     """Code patterns detected in the project."""
 
-    architecture: Optional[str] = None  # clean_architecture, mvc, etc.
+    architecture: str | None = None  # clean_architecture, mvc, etc.
     naming: str = "unknown"  # snake_case, camelCase
     imports: str = "unknown"  # absolute, relative
     error_handling: str = "unknown"  # exceptions, result_types
@@ -76,8 +76,8 @@ class ProjectStructure(BaseModel):
 
     source_root: str = "src"
     test_root: str = "tests"
-    config_files: List[str] = Field(default_factory=list)
-    entry_points: List[str] = Field(default_factory=list)
+    config_files: list[str] = Field(default_factory=list)
+    entry_points: list[str] = Field(default_factory=list)
 
 
 class ProjectFingerprint(BaseModel):
@@ -93,9 +93,9 @@ class ProjectFingerprint(BaseModel):
     structure: ProjectStructure
 
     # Task-specific (added at runtime, not cached)
-    task_type: Optional[str] = None
-    task_constraints: Dict[str, Any] = Field(default_factory=dict)
-    success_criteria: List[str] = Field(default_factory=list)
+    task_type: str | None = None
+    task_constraints: dict[str, Any] = Field(default_factory=dict)
+    success_criteria: list[str] = Field(default_factory=list)
 
     def to_context_yaml(self) -> str:
         """
@@ -103,7 +103,7 @@ class ProjectFingerprint(BaseModel):
 
         Only includes non-empty, relevant fields.
         """
-        output: Dict[str, Any] = {}
+        output: dict[str, Any] = {}
 
         # Project section (always included)
         output["project"] = {
@@ -116,7 +116,7 @@ class ProjectFingerprint(BaseModel):
             output["project"]["version"] = self.technical.version
 
         # Patterns section (only non-unknown values)
-        patterns: Dict[str, str] = {}
+        patterns: dict[str, str] = {}
         if self.patterns.architecture:
             patterns["architecture"] = self.patterns.architecture
         if self.patterns.naming != "unknown":
@@ -143,8 +143,8 @@ class ProjectFingerprint(BaseModel):
     def with_task_context(
         self,
         task_type: str,
-        constraints: Dict[str, Any],
-        success_criteria: List[str],
+        constraints: dict[str, Any],
+        success_criteria: list[str],
     ) -> "ProjectFingerprint":
         """
         Create a copy with task-specific context.
@@ -173,8 +173,8 @@ class FingerprintGenerator:
     """
 
     # Class-level cache
-    _cache: ClassVar[Dict[str, ProjectFingerprint]] = {}
-    _cache_hashes: ClassVar[Dict[str, str]] = {}
+    _cache: ClassVar[dict[str, ProjectFingerprint]] = {}
+    _cache_hashes: ClassVar[dict[str, str]] = {}
 
     # Files that trigger cache invalidation
     SIGNIFICANT_FILES = [
@@ -226,8 +226,8 @@ class FingerprintGenerator:
     def with_task_context(
         self,
         task_type: str,
-        constraints: Dict[str, Any],
-        success_criteria: List[str],
+        constraints: dict[str, Any],
+        success_criteria: list[str],
     ) -> ProjectFingerprint:
         """
         Get fingerprint with task-specific context.
@@ -266,9 +266,9 @@ class FingerprintGenerator:
     def _detect_technical(self) -> TechnicalProfile:
         """Detect technical characteristics."""
         language = "unknown"
-        version: Optional[str] = None
-        frameworks: List[str] = []
-        build_system: Optional[str] = None
+        version: str | None = None
+        frameworks: list[str] = []
+        build_system: str | None = None
         test_framework = "unknown"
 
         # Python detection
@@ -300,9 +300,8 @@ class FingerprintGenerator:
                 ("typer", "typer"),
             ]
             for pattern, name in framework_patterns:
-                if pattern in content.lower():
-                    if name not in frameworks:
-                        frameworks.append(name)
+                if pattern in content.lower() and name not in frameworks:
+                    frameworks.append(name)
 
             # Python version (matches requires-python = ">=3.11" or python_requires=">=3.11")
             version_match = re.search(
@@ -428,8 +427,8 @@ class FingerprintGenerator:
         """Detect project directory structure."""
         source_root = "src"
         test_root = "tests"
-        config_files: List[str] = []
-        entry_points: List[str] = []
+        config_files: list[str] = []
+        entry_points: list[str] = []
 
         # Find source root
         for candidate in ["src", "lib", "app", "source"]:

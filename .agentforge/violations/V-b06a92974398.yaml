@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-b06a92974398
+contract_id: agentforge
+check_id: max-parameter-count
+severity: major
+file_path: src/agentforge/cli/click_commands/ci.py
+message: 'Function ''ci_run'' has 14 parameters (max: 5)'
+detected_at: '2026-01-01T01:39:13.702907'
+last_seen_at: '2026-01-01T01:39:13.702907'
+status: open
+line_number: 41
+fix_hint: Group related parameters into a dataclass or use **kwargs

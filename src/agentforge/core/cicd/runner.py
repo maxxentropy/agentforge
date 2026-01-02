@@ -13,22 +13,21 @@ Handles parallel execution, caching, and mode-specific logic.
 
 import hashlib
 import json
-import os
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import List, Optional, Dict, Any, Set
+from typing import Any
 
+from agentforge.core.cicd.baseline import BaselineError, BaselineManager, GitHelper
 from agentforge.core.cicd.domain import (
-    CIMode,
-    ExitCode,
-    CIViolation,
-    CIResult,
-    CIConfig,
     BaselineComparison,
+    CIConfig,
+    CIMode,
+    CIResult,
+    CIViolation,
+    ExitCode,
 )
-from agentforge.core.cicd.baseline import BaselineManager, GitHelper, BaselineError
 
 
 class CIRunner:
@@ -42,7 +41,7 @@ class CIRunner:
     - Baseline comparison for PR mode
     """
 
-    def __init__(self, repo_root: Path, config: Optional[CIConfig] = None):
+    def __init__(self, repo_root: Path, config: CIConfig | None = None):
         """
         Initialize CI runner.
 
@@ -57,7 +56,7 @@ class CIRunner:
         )
         self.cache = CheckCache(repo_root / self.config.cache_path) if self.config.cache_enabled else None
 
-    def run(self, contracts: List[Dict[str, Any]]) -> CIResult:
+    def run(self, contracts: list[dict[str, Any]]) -> CIResult:
         """
         Execute CI conformance check.
 
@@ -121,7 +120,7 @@ class CIRunner:
                 time.time() - start_time,
             )
 
-    def _get_files_to_check(self) -> Optional[Set[str]]:
+    def _get_files_to_check(self) -> set[str] | None:
         """
         Get files to check based on mode.
 
@@ -149,9 +148,9 @@ class CIRunner:
 
     def _filter_contracts(
         self,
-        contracts: List[Dict[str, Any]],
-        files_to_check: Optional[Set[str]]
-    ) -> List[Dict[str, Any]]:
+        contracts: list[dict[str, Any]],
+        files_to_check: set[str] | None
+    ) -> list[dict[str, Any]]:
         """
         Filter contracts to those applicable to the files being checked.
 
@@ -170,8 +169,8 @@ class CIRunner:
 
     def _contract_applies_to_files(
         self,
-        contract: Dict[str, Any],
-        files: Set[str]
+        contract: dict[str, Any],
+        files: set[str]
     ) -> bool:
         """Check if contract applies to any of the given files."""
         from pathlib import PurePath
@@ -194,9 +193,9 @@ class CIRunner:
 
     def _execute_checks(
         self,
-        contracts: List[Dict[str, Any]],
-        files_to_check: Optional[Set[str]]
-    ) -> List[CIViolation]:
+        contracts: list[dict[str, Any]],
+        files_to_check: set[str] | None
+    ) -> list[CIViolation]:
         """
         Execute all checks, optionally in parallel.
 
@@ -211,13 +210,13 @@ class CIRunner:
         from agentforge.core.contracts_execution import execute_check
 
         # Flatten to (contract_id, check) pairs
-        check_tasks: List[tuple] = []
+        check_tasks: list[tuple] = []
         for contract in contracts:
             contract_id = contract.get("id", "unknown")
             for check in contract.get("checks", []):
                 check_tasks.append((contract_id, check))
 
-        violations: List[CIViolation] = []
+        violations: list[CIViolation] = []
 
         if self.config.parallel_enabled and len(check_tasks) > 1:
             violations = self._execute_parallel(check_tasks, files_to_check, execute_check)
@@ -228,12 +227,12 @@ class CIRunner:
 
     def _execute_parallel(
         self,
-        check_tasks: List[tuple],
-        files_to_check: Optional[Set[str]],
+        check_tasks: list[tuple],
+        files_to_check: set[str] | None,
         execute_check_fn
-    ) -> List[CIViolation]:
+    ) -> list[CIViolation]:
         """Execute checks in parallel using ThreadPoolExecutor."""
-        violations: List[CIViolation] = []
+        violations: list[CIViolation] = []
 
         with ThreadPoolExecutor(max_workers=self.config.max_workers) as executor:
             futures = {
@@ -264,12 +263,12 @@ class CIRunner:
 
     def _execute_sequential(
         self,
-        check_tasks: List[tuple],
-        files_to_check: Optional[Set[str]],
+        check_tasks: list[tuple],
+        files_to_check: set[str] | None,
         execute_check_fn
-    ) -> List[CIViolation]:
+    ) -> list[CIViolation]:
         """Execute checks sequentially."""
-        violations: List[CIViolation] = []
+        violations: list[CIViolation] = []
 
         for contract_id, check in check_tasks:
             try:
@@ -292,10 +291,10 @@ class CIRunner:
     def _run_single_check(
         self,
         contract_id: str,
-        check: Dict[str, Any],
-        files_to_check: Optional[Set[str]],
+        check: dict[str, Any],
+        files_to_check: set[str] | None,
         execute_check_fn
-    ) -> List[CIViolation]:
+    ) -> list[CIViolation]:
         """
         Run a single check, using cache if available.
 
@@ -347,7 +346,7 @@ class CIRunner:
 
         return violations
 
-    def _get_cache_key(self, check_id: str, files: Optional[Set[str]]) -> str:
+    def _get_cache_key(self, check_id: str, files: set[str] | None) -> str:
         """Generate cache key for a check."""
         if files is None:
             # For full mode, hash based on check_id only (files may change)
@@ -365,14 +364,14 @@ class CIRunner:
         combined = f"{check_id}:{'|'.join(file_hashes)}"
         return hashlib.sha256(combined.encode()).hexdigest()[:16]
 
-    def _compare_baseline(self, violations: List[CIViolation]) -> BaselineComparison:
+    def _compare_baseline(self, violations: list[CIViolation]) -> BaselineComparison:
         """Compare violations against baseline."""
         return self.baseline_manager.compare(violations)
 
     def _determine_exit_code(
         self,
-        violations: List[CIViolation],
-        comparison: Optional[BaselineComparison]
+        violations: list[CIViolation],
+        comparison: BaselineComparison | None
     ) -> ExitCode:
         """Determine exit code based on violations and config."""
         # Check absolute threshold
@@ -401,7 +400,7 @@ class CIRunner:
 
         return ExitCode.SUCCESS
 
-    def _get_commit_sha(self) -> Optional[str]:
+    def _get_commit_sha(self) -> str | None:
         """Get current commit SHA if available."""
         try:
             return GitHelper.get_current_sha()
@@ -449,7 +448,7 @@ class CheckCache:
         self.cache_dir = Path(cache_dir)
         self.ttl = timedelta(hours=ttl_hours)
 
-    def get(self, key: str) -> Optional[List[CIViolation]]:
+    def get(self, key: str) -> list[CIViolation] | None:
         """
         Get cached result if valid.
 
@@ -464,7 +463,7 @@ class CheckCache:
             return None
 
         try:
-            with open(cache_file, "r") as f:
+            with open(cache_file) as f:
                 data = json.load(f)
 
             # Check TTL
@@ -481,7 +480,7 @@ class CheckCache:
         except (json.JSONDecodeError, KeyError, OSError):
             return None
 
-    def set(self, key: str, violations: List[CIViolation]) -> None:
+    def set(self, key: str, violations: list[CIViolation]) -> None:
         """
         Store result in cache.
 
@@ -545,7 +544,7 @@ class CheckCache:
         count = 0
         for cache_file in self.cache_dir.glob("*.json"):
             try:
-                with open(cache_file, "r") as f:
+                with open(cache_file) as f:
                     data = json.load(f)
                 cached_at = datetime.fromisoformat(data["cached_at"])
                 if datetime.utcnow() - cached_at > self.ttl:

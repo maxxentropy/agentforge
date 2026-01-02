@@ -1,0 +1,16 @@
+schema_version: '1.0'
+violation_id: V-2f96e947bb19
+contract_id: agentforge
+check_id: main-guard-pattern
+severity: major
+file_path: tools/builtin_checks.py
+message: 'Required pattern not found: ''if\s+__name__\s*==\s*[''"]__main__[''"]'''
+detected_at: '2025-12-31T18:52:08.864088'
+last_seen_at: '2025-12-31T18:52:08.864088'
+status: resolved
+fix_hint: 'Add: if __name__ == ''__main__'': main()'
+resolution:
+  resolved_at: '2025-12-31T19:17:48.606750'
+  resolved_by: system
+  reason: No longer detected in full verification run
+test_path: tests/unit/tools/

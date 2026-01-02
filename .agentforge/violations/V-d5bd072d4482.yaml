@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-d5bd072d4482
+contract_id: agentforge
+check_id: max-cyclomatic-complexity
+severity: major
+file_path: src/agentforge/core/conformance/domain.py
+message: 'Function ''compute_test_path'' has complexity 23 (max: 10)'
+detected_at: '2026-01-01T01:39:13.553705'
+last_seen_at: '2026-01-01T01:39:13.553705'
+status: open
+line_number: 165
+fix_hint: Break complex functions into smaller, focused helper functions

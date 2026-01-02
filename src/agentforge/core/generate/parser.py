@@ -14,9 +14,8 @@ Handles markdown code blocks with file path markers.
 import ast
 import re
 from pathlib import Path
-from typing import List, Optional, Tuple
 
-from agentforge.core.generate.domain import GeneratedFile, FileAction, ParseError
+from agentforge.core.generate.domain import FileAction, GeneratedFile, ParseError
 
 
 class ResponseParser:
@@ -61,7 +60,7 @@ class ResponseParser:
         """
         self.validate_syntax = validate_syntax
 
-    def parse(self, response: str) -> List[GeneratedFile]:
+    def parse(self, response: str) -> list[GeneratedFile]:
         """
         Parse LLM response and extract code files.
 
@@ -106,7 +105,7 @@ class ResponseParser:
 
         return files
 
-    def _parse_implicit_paths(self, response: str) -> List[GeneratedFile]:
+    def _parse_implicit_paths(self, response: str) -> list[GeneratedFile]:
         """
         Try to extract code blocks and infer paths from context.
 
@@ -206,7 +205,7 @@ class ResponseParser:
     def parse_with_explanation(
         self,
         response: str
-    ) -> Tuple[List[GeneratedFile], str]:
+    ) -> tuple[list[GeneratedFile], str]:
         """
         Parse response and extract both files and explanation.
 
@@ -255,7 +254,7 @@ class MultiLanguageParser(ResponseParser):
         "json": ".json",
     }
 
-    def parse(self, response: str) -> List[GeneratedFile]:
+    def parse(self, response: str) -> list[GeneratedFile]:
         """
         Parse response for multiple languages.
 
@@ -288,7 +287,7 @@ class MultiLanguageParser(ResponseParser):
 def parse_response(
     response: str,
     validate_syntax: bool = True,
-) -> List[GeneratedFile]:
+) -> list[GeneratedFile]:
     """
     Convenience function to parse LLM response.
 

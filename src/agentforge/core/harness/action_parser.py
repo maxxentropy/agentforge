@@ -12,14 +12,12 @@ Handles XML-structured responses from the agent prompt format.
 """
 
 import re
-from typing import Dict, List, Optional, Tuple
-from xml.etree import ElementTree as ET
 
 from agentforge.core.harness.llm_executor_domain import (
+    ActionParseError,
     ActionType,
     AgentAction,
     ToolCall,
-    ActionParseError,
 )
 
 
@@ -103,7 +101,7 @@ class ActionParser:
         match = self.THINKING_PATTERN.search(response)
         return match.group(1).strip() if match else ""
 
-    def _extract_action(self, response: str) -> Tuple[ActionType, str]:
+    def _extract_action(self, response: str) -> tuple[ActionType, str]:
         """Extract action type and content from response.
 
         Returns:
@@ -130,7 +128,7 @@ class ActionParser:
 
         return action_type, action_content
 
-    def _infer_action(self, response: str) -> Tuple[ActionType, str]:
+    def _infer_action(self, response: str) -> tuple[ActionType, str]:
         """Attempt to infer action when XML structure is missing.
 
         This handles cases where the LLM doesn't follow the exact format.
@@ -166,7 +164,7 @@ class ActionParser:
             raw_response=response
         )
 
-    def _parse_tool_calls(self, content: str) -> List[ToolCall]:
+    def _parse_tool_calls(self, content: str) -> list[ToolCall]:
         """Parse tool calls from action content.
 
         Args:
@@ -192,7 +190,7 @@ class ActionParser:
 
         return tool_calls
 
-    def _parse_parameters(self, content: str) -> Dict[str, str]:
+    def _parse_parameters(self, content: str) -> dict[str, str]:
         """Parse parameters from tool content."""
         parameters = {}
 
@@ -203,7 +201,7 @@ class ActionParser:
 
         return parameters
 
-    def _extract_element(self, content: str, element_name: str) -> Optional[str]:
+    def _extract_element(self, content: str, element_name: str) -> str | None:
         """Extract content from a simple XML element.
 
         Args:

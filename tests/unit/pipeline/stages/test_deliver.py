@@ -1,15 +1,12 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-4-refactor-deliver.yaml
-# @spec_id: pipeline-controller-phase4-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
 # @component_id: deliver-phase-executor
 # @test_path: tests/unit/pipeline/stages/test_deliver.py
 
 """Unit tests for DeliverPhaseExecutor."""
 
 from pathlib import Path
-from typing import Any, Dict
-from unittest.mock import MagicMock, patch, Mock
-
-import pytest
+from unittest.mock import Mock, patch
 
 from agentforge.core.pipeline import StageContext, StageStatus
 
@@ -679,8 +676,9 @@ class TestDeliverPhaseGitOperations:
 
     def test_handles_staging_failure(self, sample_refactor_artifact, temp_git_project):
         """Handles file staging failure."""
-        from agentforge.core.pipeline.stages.deliver import DeliverPhaseExecutor
         import subprocess
+
+        from agentforge.core.pipeline.stages.deliver import DeliverPhaseExecutor
 
         executor = DeliverPhaseExecutor()
 
@@ -805,7 +803,7 @@ class TestDeliverPhaseEdgeCases:
             ],
         }
 
-        context = StageContext(
+        StageContext(
             pipeline_id="PL-test",
             stage_name="deliver",
             project_path=temp_git_project,
@@ -858,8 +856,8 @@ class TestCreateDeliverExecutor:
     def test_passes_config(self):
         """Factory passes config to executor."""
         from agentforge.core.pipeline.stages.deliver import (
-            create_deliver_executor,
             DeliveryMode,
+            create_deliver_executor,
         )
 
         config = {"delivery_mode": DeliveryMode.PR, "auto_commit": True}

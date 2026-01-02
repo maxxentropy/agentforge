@@ -6,8 +6,7 @@ Cleans up implementation while maintaining passing tests.
 """
 
 import time
-from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from agentforge.core.tdflow.domain import (
     ComponentProgress,
@@ -174,7 +173,7 @@ class RefactorPhaseExecutor:
             duration_seconds=time.time() - start_time,
         )
 
-    def _run_conformance_check(self, component: ComponentProgress) -> List[Dict[str, Any]]:
+    def _run_conformance_check(self, component: ComponentProgress) -> list[dict[str, Any]]:
         """
         Run conformance checks on the component.
 
@@ -226,8 +225,8 @@ class RefactorPhaseExecutor:
         self,
         component: ComponentProgress,
         content: str,
-        violations: List[Dict[str, Any]],
-    ) -> Optional[str]:
+        violations: list[dict[str, Any]],
+    ) -> str | None:
         """
         Generate refactored implementation.
 

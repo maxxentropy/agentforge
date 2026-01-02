@@ -10,15 +10,12 @@ Tests and manages the context retrieval system for code intelligence.
 Uses LSP and/or vector search to find relevant code context.
 """
 
-import sys
 import json
-import click
 from pathlib import Path
 
+import click
 
-def _ensure_context_tools():
-    """Add tools directory to path for context imports."""
-    sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'tools'))
+from agentforge.core.context_retrieval import ContextRetriever
 
 
 def run_context(args):
@@ -27,14 +24,6 @@ def run_context(args):
     click.echo("=" * 60)
     click.echo("CONTEXT RETRIEVAL")
     click.echo("=" * 60)
-
-    _ensure_context_tools()
-
-    try:
-        from context_retrieval import ContextRetriever
-    except ImportError as e:
-        click.echo(f"\nError: Could not import context_retrieval: {e}")
-        sys.exit(1)
 
     click.echo(f"\n  Project: {args.project}")
 
@@ -70,10 +59,10 @@ def _print_lsp_status(lsp):
     """Print LSP status."""
     click.echo("\n  LSP (Language Server Protocol):")
     if lsp["available"]:
-        click.echo(f"    Status: Available")
+        click.echo("    Status: Available")
         click.echo(f"    Server: {lsp.get('server', 'unknown')}")
     else:
-        click.echo(f"    Status: Not available")
+        click.echo("    Status: Not available")
         if lsp.get("error"):
             click.echo(f"    Error: {lsp['error']}")
         if lsp.get("install_instructions"):
@@ -84,7 +73,7 @@ def _print_embedding_providers():
     """Print embedding provider status."""
     click.echo("\n  Embedding Providers:")
     try:
-        from embedding_providers import list_providers, get_available_providers
+        from embedding_providers import get_available_providers, list_providers
         providers = list_providers()
         available = get_available_providers()
         current = available[0] if available else None
@@ -104,10 +93,10 @@ def _print_vector_status(vec):
     """Print vector search status."""
     click.echo("\n  Vector Search:")
     if vec["available"]:
-        click.echo(f"    Status: Available")
+        click.echo("    Status: Available")
         click.echo(f"    Indexed: {'Yes' if vec.get('indexed') else 'No'}")
     else:
-        click.echo(f"    Status: Not available")
+        click.echo("    Status: Not available")
         if vec.get("error"):
             click.echo(f"    Error: {vec['error']}")
         click.echo("    Install: pip install sentence-transformers faiss-cpu")

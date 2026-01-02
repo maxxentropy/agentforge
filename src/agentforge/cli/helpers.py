@@ -7,8 +7,9 @@ Contains miscellaneous helper functions used by command handlers:
 - Text display utilities
 """
 
-import click
 from typing import Any
+
+import click
 
 
 def build_contracts_output(
@@ -84,7 +85,7 @@ def print_contracts_text(
             if not check_result.passed:
                 _print_failed_check(check_result)
 
-    click.echo(f"\n  Summary:")
+    click.echo("\n  Summary:")
     click.echo(f"    Errors: {total_errors}")
     click.echo(f"    Warnings: {total_warnings}")
     click.echo(f"    Exempted: {total_exempted}")

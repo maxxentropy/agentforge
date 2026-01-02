@@ -1,4 +1,4 @@
-# @spec_file: specs/minimal-context-architecture/05-llm-integration.yaml
+# @spec_file: .agentforge/specs/core-harness-minimal-context-v1.yaml
 # @spec_id: llm-integration-v1
 # @component_id: enhanced-context-tests
 # @impl_path: src/agentforge/core/harness/minimal_context/
@@ -11,43 +11,35 @@ Tests the new Pydantic v2 models, understanding extraction,
 loop detection, and phase machine.
 """
 
+
 import pytest
-from datetime import datetime
 
 from agentforge.core.harness.minimal_context import (
-    # Context Models
-    FactCategory,
-    ActionResult,
-    Fact,
     ActionDef,
     ActionRecord,
-    TaskSpec,
-    ViolationSpec,
-    VerificationState,
-    Understanding,
-    PhaseState,
-    StateSpec,
+    ActionResult,
+    ActionSignature,
     ActionsSpec,
     AgentContext,
     AgentResponse,
     # Understanding
-    ExtractionRule,
-    ExtractionRuleSet,
-    UnderstandingExtractor,
+    Fact,
+    # Context Models
+    FactCategory,
     FactStore,
+    LoopDetection,
+    LoopDetector,
     # Loop Detection
     LoopType,
-    LoopDetection,
-    ActionSignature,
-    LoopDetector,
     # Phase Machine
     Phase,
     PhaseContext,
-    Transition,
-    PhaseConfig,
     PhaseMachine,
+    StateSpec,
+    TaskSpec,
+    Understanding,
+    UnderstandingExtractor,
 )
-
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # Context Models Tests
@@ -1128,12 +1120,11 @@ class TestPhaseMachineIntegration:
     def test_task_state_phase_machine_persistence(self, tmp_path):
         """Test that PhaseMachine state persists across save/load."""
         from agentforge.core.harness.minimal_context import (
+            Phase,
             TaskStateStore,
-            TaskPhase,
         )
         from agentforge.core.harness.minimal_context.phase_machine import (
             PhaseMachine,
-            Phase,
         )
 
         store = TaskStateStore(tmp_path)
@@ -1195,8 +1186,8 @@ class TestPhaseMachineIntegration:
             TaskStateStore,
         )
         from agentforge.core.harness.minimal_context.phase_machine import (
-            PhaseMachine,
             Phase,
+            PhaseMachine,
         )
 
         store = TaskStateStore(tmp_path)
@@ -1226,11 +1217,10 @@ class TestPhaseMachineIntegration:
     def test_phase_context_building(self, tmp_path):
         """Test that PhaseContext is built correctly from state."""
         from agentforge.core.harness.minimal_context import (
-            TaskStateStore,
             MinimalContextExecutor,
+            TaskStateStore,
         )
         from agentforge.core.harness.minimal_context.phase_machine import (
-            PhaseMachine,
             Phase,
         )
 
@@ -1274,15 +1264,14 @@ class TestPhaseMachineIntegration:
         assert context.last_action == "edit_file"
 
     def test_phase_transition_via_handle_method(self, tmp_path):
-        """Test _handle_phase_transition updates both legacy and machine state."""
+        """Test _handle_phase_transition updates both state store and machine state."""
         from agentforge.core.harness.minimal_context import (
-            TaskStateStore,
-            TaskPhase,
             MinimalContextExecutor,
+            Phase,
+            TaskStateStore,
         )
         from agentforge.core.harness.minimal_context.phase_machine import (
             PhaseMachine,
-            Phase,
         )
 
         store = TaskStateStore(tmp_path)
@@ -1313,7 +1302,7 @@ class TestPhaseMachineIntegration:
 
         # Verify both states updated
         loaded = store.load(task.task_id)
-        assert loaded.phase == TaskPhase.COMPLETE
+        assert loaded.phase == Phase.COMPLETE
 
         loaded_machine = loaded.get_phase_machine()
         assert loaded_machine.current_phase == Phase.COMPLETE
@@ -1321,8 +1310,8 @@ class TestPhaseMachineIntegration:
     def test_phase_machine_always_enabled(self, tmp_path):
         """Test that phase machine is always enabled in the unified executor."""
         from agentforge.core.harness.minimal_context import (
-            TaskStateStore,
             MinimalContextExecutor,
+            TaskStateStore,
         )
 
         store = TaskStateStore(tmp_path)
@@ -1476,8 +1465,8 @@ class TestTemplateContextBuilderIntegration:
     def test_executor_uses_template_context_builder(self, tmp_path):
         """Test executor uses template-based context builder."""
         from agentforge.core.harness.minimal_context import (
-            TaskStateStore,
             MinimalContextExecutor,
+            TaskStateStore,
             TemplateContextBuilder,
         )
 
@@ -1503,8 +1492,8 @@ class TestUnifiedArchitecture:
     def test_workflow_uses_unified_executor(self, tmp_path):
         """Test that workflow uses unified executor."""
         from agentforge.core.harness.minimal_context import (
-            MinimalContextFixWorkflow,
             MinimalContextExecutor,
+            MinimalContextFixWorkflow,
             TemplateContextBuilder,
         )
 
@@ -1521,9 +1510,9 @@ class TestUnifiedArchitecture:
     def test_factory_function_creates_workflow(self, tmp_path):
         """Test factory function creates workflow with unified architecture."""
         from agentforge.core.harness.minimal_context import (
-            create_minimal_fix_workflow,
             MinimalContextExecutor,
             TemplateContextBuilder,
+            create_minimal_fix_workflow,
         )
 
         workflow = create_minimal_fix_workflow(project_path=tmp_path)
@@ -1580,11 +1569,11 @@ class TestTokenBudgetEnforcement:
     def test_agent_context_estimate_tokens(self):
         """Test that AgentContext can estimate its token count."""
         from agentforge.core.harness.minimal_context import (
-            AgentContext,
-            TaskSpec,
-            StateSpec,
-            ActionsSpec,
             ActionDef,
+            ActionsSpec,
+            AgentContext,
+            StateSpec,
+            TaskSpec,
         )
 
         context = AgentContext(
@@ -1674,7 +1663,6 @@ reasoning: "Replacing foo with bar to fix the bug"
     def test_parse_validates_against_schema(self):
         """Test that response is validated against AgentResponse schema."""
         from agentforge.core.harness.minimal_context.executor import MinimalContextExecutor
-        from agentforge.core.harness.minimal_context import AgentResponse
 
         executor = MinimalContextExecutor(project_path=Path("/tmp"))
 
@@ -1751,8 +1739,9 @@ class TestSchemaVersioning:
 
     def test_new_task_has_schema_version(self, tmp_path):
         """Test that newly created tasks have schema version."""
-        from agentforge.core.harness.minimal_context import TaskStateStore
         import yaml
+
+        from agentforge.core.harness.minimal_context import TaskStateStore
 
         store = TaskStateStore(tmp_path)
         task = store.create_task(
@@ -1770,8 +1759,9 @@ class TestSchemaVersioning:
 
     def test_migrate_v1_to_v2(self, tmp_path):
         """Test migration from v1.0 (no version) to v2.0."""
-        from agentforge.core.harness.minimal_context import TaskStateStore, TaskPhase
         import yaml
+
+        from agentforge.core.harness.minimal_context import Phase, TaskStateStore
 
         # Create a v1.0 style state (no schema_version, no phase_machine_state)
         task_dir = tmp_path / ".agentforge" / "tasks" / "legacy-task"
@@ -1812,7 +1802,7 @@ class TestSchemaVersioning:
 
         # Verify migration
         assert loaded is not None
-        assert loaded.phase == TaskPhase.INIT
+        assert loaded.phase == Phase.INIT
         assert loaded.current_step == 5
         assert loaded.phase_machine_state == {}  # Added by migration
         assert loaded.verification.ready_for_completion is False  # Added by migration
@@ -1845,8 +1835,9 @@ class TestSchemaVersioning:
 
     def test_migration_preserves_data(self, tmp_path):
         """Test that migration preserves all existing data."""
-        from agentforge.core.harness.minimal_context import TaskStateStore
         import yaml
+
+        from agentforge.core.harness.minimal_context import TaskStateStore
 
         task_dir = tmp_path / ".agentforge" / "tasks" / "preserve-test"
         task_dir.mkdir(parents=True)
@@ -1903,9 +1894,9 @@ class TestFactCompaction:
     def test_understanding_compact_reduces_facts(self):
         """Test that compact() reduces facts to max threshold."""
         from agentforge.core.harness.minimal_context import (
-            Understanding,
             Fact,
             FactCategory,
+            Understanding,
         )
 
         # Create 30 low-confidence facts
@@ -1931,9 +1922,9 @@ class TestFactCompaction:
     def test_understanding_compact_preserves_high_value(self):
         """Test that compaction preserves high-value facts."""
         from agentforge.core.harness.minimal_context import (
-            Understanding,
             Fact,
             FactCategory,
+            Understanding,
         )
 
         # Create mix of low and high value facts
@@ -1980,9 +1971,9 @@ class TestFactCompaction:
     def test_understanding_compact_noop_under_threshold(self):
         """Test that compaction is a no-op under threshold."""
         from agentforge.core.harness.minimal_context import (
-            Understanding,
             Fact,
             FactCategory,
+            Understanding,
         )
 
         facts = [
@@ -2007,9 +1998,9 @@ class TestFactCompaction:
     def test_understanding_compact_prioritizes_categories(self):
         """Test that compaction prioritizes by category importance."""
         from agentforge.core.harness.minimal_context import (
-            Understanding,
             Fact,
             FactCategory,
+            Understanding,
         )
 
         # All same confidence, different categories

@@ -1,5 +1,5 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-6-configuration.yaml
-# @spec_id: pipeline-controller-phase6-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
 # @component_id: config-validator, config-validation-error
 # @test_path: tests/unit/pipeline/test_config_validator.py
 
@@ -15,7 +15,6 @@ Validates pipeline configuration for correctness:
 """
 
 from dataclasses import dataclass
-from typing import List
 
 from .config import GlobalSettings, PipelineTemplate
 
@@ -43,7 +42,7 @@ class ConfigValidator:
         "deliver",
     ]
 
-    def validate_template(self, template: PipelineTemplate) -> List[ValidationError]:
+    def validate_template(self, template: PipelineTemplate) -> list[ValidationError]:
         """
         Validate a pipeline template.
 
@@ -113,7 +112,7 @@ class ConfigValidator:
 
         return errors
 
-    def validate_settings(self, settings: GlobalSettings) -> List[ValidationError]:
+    def validate_settings(self, settings: GlobalSettings) -> list[ValidationError]:
         """
         Validate global settings.
 

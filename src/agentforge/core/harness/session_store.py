@@ -12,11 +12,11 @@ Follows patterns from tools/tdflow/session.py.
 """
 
 import os
-import tempfile
 import shutil
+import tempfile
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import yaml
 
@@ -37,7 +37,7 @@ class SessionStore:
     for crash safety.
     """
 
-    def __init__(self, base_path: Optional[Path] = None):
+    def __init__(self, base_path: Path | None = None):
         """
         Initialize session store.
 
@@ -92,7 +92,7 @@ class SessionStore:
 
         return session_file
 
-    def load(self, session_id: str) -> Optional[SessionContext]:
+    def load(self, session_id: str) -> SessionContext | None:
         """
         Load session from YAML.
 
@@ -128,7 +128,7 @@ class SessionStore:
         session_file = self.base_path / session_id / "session.yaml"
         return session_file.exists()
 
-    def list_sessions(self) -> List[str]:
+    def list_sessions(self) -> list[str]:
         """
         Get list of all session IDs in storage.
 
@@ -162,7 +162,7 @@ class SessionStore:
         shutil.rmtree(session_dir)
         return True
 
-    def _serialize(self, session: SessionContext) -> Dict[str, Any]:
+    def _serialize(self, session: SessionContext) -> dict[str, Any]:
         """
         Serialize session to dictionary for YAML.
 
@@ -205,7 +205,7 @@ class SessionStore:
             ],
         }
 
-    def _deserialize(self, data: Dict[str, Any]) -> SessionContext:
+    def _deserialize(self, data: dict[str, Any]) -> SessionContext:
         """
         Deserialize dictionary to SessionContext.
 

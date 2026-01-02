@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-c85901d7bbac
+contract_id: agentforge
+check_id: no-secrets-in-code
+severity: blocker
+file_path: specs/agent-harness/llm_generation_implementation_plan.md
+message: 'Forbidden pattern found: ''API_KEY="your-key"'''
+detected_at: '2025-12-31T12:15:09.816038'
+last_seen_at: '2026-01-01T01:39:13.455512'
+status: open
+line_number: 2225
+fix_hint: Use environment variables or a secrets manager

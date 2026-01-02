@@ -1,5 +1,5 @@
-# @spec_file: specs/tools/p0-tool-handlers-overview.md
-# @spec_id: p0-tool-handlers-v1
+# @spec_file: .agentforge/specs/core-harness-minimal-context-v1.yaml
+# @spec_id: core-harness-minimal-context-v1
 # @component_id: integration-tests-fix-violation
 # @test_path: tests/integration/workflows/test_fix_violation_workflow.py
 """
@@ -17,16 +17,14 @@ Uses the P0 tool handlers from tool_handlers module:
 - complete, escalate, cannot_fix
 """
 
-import pytest
-from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
-from agentforge.core.harness.minimal_context.tool_handlers import (
-    create_standard_handlers,
-    create_fix_violation_handlers,
-)
 from agentforge.core.harness.minimal_context.native_tool_executor import (
     NativeToolExecutor,
+)
+from agentforge.core.harness.minimal_context.tool_handlers import (
+    create_fix_violation_handlers,
+    create_standard_handlers,
 )
 from agentforge.core.llm.interface import ToolCall
 
@@ -38,7 +36,7 @@ class TestToolHandlerIntegration:
     These tests verify handlers can be chained in a workflow sequence.
     """
 
-    def test_read_file_handler(self, project_with_violation: Dict[str, Any]):
+    def test_read_file_handler(self, project_with_violation: dict[str, Any]):
         """Test that read_file handler works with project files."""
         project_path = project_with_violation["project_path"]
         handlers = create_standard_handlers(project_path)
@@ -58,7 +56,7 @@ class TestToolHandlerIntegration:
         assert "SUCCESS" in result.content
         assert "process_data" in result.content  # Function name should appear
 
-    def test_edit_file_preserves_formatting(self, project_with_violation: Dict[str, Any]):
+    def test_edit_file_preserves_formatting(self, project_with_violation: dict[str, Any]):
         """
         Test that edit_file preserves surrounding code.
 
@@ -71,7 +69,7 @@ class TestToolHandlerIntegration:
 
         # Read original content
         original_content = source_file.read_text()
-        original_lines = original_content.split("\n")
+        original_content.split("\n")
 
         handlers = create_standard_handlers(project_path)
         executor = NativeToolExecutor(actions=handlers)
@@ -112,7 +110,7 @@ class TestToolHandlerIntegration:
         assert 'def process_data(data: dict, mode: str, flags: list) -> dict:' in new_content
         assert 'if mode == "parse":' in new_content
 
-    def test_replace_lines_handler(self, project_with_violation: Dict[str, Any]):
+    def test_replace_lines_handler(self, project_with_violation: dict[str, Any]):
         """Test that replace_lines works correctly with line numbers."""
         project_path = project_with_violation["project_path"]
         source_file = project_with_violation["source_file"]
@@ -149,7 +147,7 @@ class TestToolHandlerIntegration:
         new_content = source_file.read_text()
         assert "refactored for clarity" in new_content
 
-    def test_insert_lines_handler(self, project_with_violation: Dict[str, Any]):
+    def test_insert_lines_handler(self, project_with_violation: dict[str, Any]):
         """Test that insert_lines adds code at the correct position."""
         project_path = project_with_violation["project_path"]
         source_file = project_with_violation["source_file"]
@@ -192,7 +190,7 @@ class TestToolHandlerIntegration:
         assert process_idx is not None, "process_data not found"
         assert validate_idx < process_idx, "_validate_mode should come before process_data"
 
-    def test_search_code_finds_patterns(self, project_with_violation: Dict[str, Any]):
+    def test_search_code_finds_patterns(self, project_with_violation: dict[str, Any]):
         """Test that search_code finds code patterns across files."""
         project_path = project_with_violation["project_path"]
 
@@ -213,7 +211,7 @@ class TestToolHandlerIntegration:
         assert not result.is_error, f"Unexpected error: {result.content}"
         assert "complex_module.py" in result.content or "process_data" in result.content
 
-    def test_complete_handler(self, project_with_violation: Dict[str, Any]):
+    def test_complete_handler(self, project_with_violation: dict[str, Any]):
         """Test that complete handler returns proper completion message."""
         project_path = project_with_violation["project_path"]
 
@@ -233,7 +231,7 @@ class TestToolHandlerIntegration:
         assert "COMPLETE" in result.content
         assert "Fixed complexity" in result.content
 
-    def test_cannot_fix_handler(self, project_with_generated_file: Dict[str, Any]):
+    def test_cannot_fix_handler(self, project_with_generated_file: dict[str, Any]):
         """Test that cannot_fix handler creates proper escalation."""
         project_path = project_with_generated_file["project_path"]
 
@@ -261,7 +259,7 @@ class TestWorkflowSequence:
     These test realistic sequences of tool calls as an agent would make them.
     """
 
-    def test_read_search_edit_sequence(self, project_with_violation: Dict[str, Any]):
+    def test_read_search_edit_sequence(self, project_with_violation: dict[str, Any]):
         """
         Test a realistic sequence: read -> search -> edit.
 
@@ -326,7 +324,7 @@ class TestWorkflowSequence:
         assert all(entry["success"] for entry in log)
 
     def test_handler_returns_success_on_valid_replacement(
-        self, project_with_violation: Dict[str, Any]
+        self, project_with_violation: dict[str, Any]
     ):
         """
         Test that replace_lines returns SUCCESS when replacement is valid.
@@ -361,7 +359,7 @@ class TestWorkflowSequence:
         final_content = source_file.read_text()
         compile(final_content, source_file.name, 'exec')
 
-    def test_context_injection(self, project_with_violation: Dict[str, Any]):
+    def test_context_injection(self, project_with_violation: dict[str, Any]):
         """
         Test that context is properly injected into handlers.
 
@@ -395,7 +393,7 @@ class TestWorkflowSequence:
 class TestEdgeCases:
     """Tests for edge cases and error handling."""
 
-    def test_read_nonexistent_file(self, project_with_violation: Dict[str, Any]):
+    def test_read_nonexistent_file(self, project_with_violation: dict[str, Any]):
         """Test reading a file that doesn't exist returns proper error."""
         project_path = project_with_violation["project_path"]
 
@@ -411,7 +409,7 @@ class TestEdgeCases:
         # Should return an error message, not crash
         assert "ERROR" in result.content or "not found" in result.content.lower()
 
-    def test_edit_with_no_match(self, project_with_violation: Dict[str, Any]):
+    def test_edit_with_no_match(self, project_with_violation: dict[str, Any]):
         """Test editing with old_text that doesn't exist returns error."""
         project_path = project_with_violation["project_path"]
 
@@ -430,7 +428,7 @@ class TestEdgeCases:
 
         assert "ERROR" in result.content or "not found" in result.content.lower()
 
-    def test_unknown_tool_returns_error(self, project_with_violation: Dict[str, Any]):
+    def test_unknown_tool_returns_error(self, project_with_violation: dict[str, Any]):
         """Test calling an unknown tool returns helpful error."""
         project_path = project_with_violation["project_path"]
 
@@ -448,7 +446,7 @@ class TestEdgeCases:
         # Should list available tools
         assert "read_file" in result.content or "Available" in result.content
 
-    def test_replace_lines_invalid_range(self, project_with_violation: Dict[str, Any]):
+    def test_replace_lines_invalid_range(self, project_with_violation: dict[str, Any]):
         """Test replace_lines with invalid line range returns error."""
         project_path = project_with_violation["project_path"]
 
@@ -473,7 +471,7 @@ class TestHandlerRegistry:
     """Tests for handler registration and lookup."""
 
     def test_create_standard_handlers_returns_all_handlers(
-        self, project_with_violation: Dict[str, Any]
+        self, project_with_violation: dict[str, Any]
     ):
         """Test that create_standard_handlers includes all expected handlers."""
         project_path = project_with_violation["project_path"]
@@ -497,7 +495,7 @@ class TestHandlerRegistry:
             assert handler_name in handlers, f"Missing handler: {handler_name}"
 
     def test_create_fix_violation_handlers(
-        self, project_with_violation: Dict[str, Any]
+        self, project_with_violation: dict[str, Any]
     ):
         """Test the specialized fix_violation handler set."""
         project_path = project_with_violation["project_path"]
@@ -510,7 +508,7 @@ class TestHandlerRegistry:
         assert "cannot_fix" in handlers
 
     def test_executor_register_action_dynamically(
-        self, project_with_violation: Dict[str, Any]
+        self, project_with_violation: dict[str, Any]
     ):
         """Test that actions can be registered dynamically."""
         project_path = project_with_violation["project_path"]

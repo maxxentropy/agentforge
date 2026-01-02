@@ -1,16 +1,18 @@
 """Tests for VerificationRunner class."""
 
-import pytest
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import patch
+
+import pytest
 import yaml
-import sys
 
-# Add tools to path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent / 'tools'))
-
-from verification_runner import VerificationRunner
-from verification_types import CheckResult, CheckStatus, Severity, VerificationReport
+from agentforge.core.verification_runner import VerificationRunner
+from agentforge.core.verification_types import (
+    CheckResult,
+    CheckStatus,
+    Severity,
+    VerificationReport,
+)
 
 
 class TestVerificationRunnerInit:
@@ -325,7 +327,7 @@ class TestFailFast:
             )
 
         with patch.object(runner, '_run_command_check', side_effect=mock_run_check):
-            report = runner.run_checks(all_checks=True)
+            runner.run_checks(all_checks=True)
 
         assert call_count[0] == 2  # Both checks ran
 

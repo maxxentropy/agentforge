@@ -1,0 +1,11 @@
+schema_version: '1.0'
+violation_id: V-e4fc46542d09
+contract_id: agentforge
+check_id: max-file-lines
+severity: major
+file_path: src/agentforge/core/discovery/providers/dotnet_provider.py
+message: File exceeds line limit (585 lines > 500)
+detected_at: '2026-01-01T01:39:13.728495'
+last_seen_at: '2026-01-01T01:39:13.728495'
+status: open
+fix_hint: Consider splitting into smaller files

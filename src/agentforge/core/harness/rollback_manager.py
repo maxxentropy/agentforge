@@ -7,11 +7,12 @@ Manages rollback of failed fix attempts.
 
 import shutil
 import subprocess
-import yaml
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
+
+import yaml
 
 from .llm_executor_domain import ToolResult
 
@@ -22,10 +23,10 @@ class BackupManifest:
 
     backup_id: str
     created_at: datetime
-    files: List[Dict[str, Any]] = field(default_factory=list)
-    label: Optional[str] = None
+    files: list[dict[str, Any]] = field(default_factory=list)
+    label: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dict."""
         return {
             "backup_id": self.backup_id,
@@ -35,7 +36,7 @@ class BackupManifest:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "BackupManifest":
+    def from_dict(cls, data: dict[str, Any]) -> "BackupManifest":
         """Deserialize from dict."""
         return cls(
             backup_id=data["backup_id"],
@@ -59,9 +60,9 @@ class RollbackManager:
         """
         self.project_path = Path(project_path)
         self.backup_dir = self.project_path / ".agentforge" / "backups"
-        self._current_backup: Optional[str] = None
+        self._current_backup: str | None = None
 
-    def create_backup(self, files: List[str], label: Optional[str] = None) -> str:
+    def create_backup(self, files: list[str], label: str | None = None) -> str:
         """
         Create backup of files before modification.
 
@@ -113,11 +114,11 @@ class RollbackManager:
         self._current_backup = backup_id
         return backup_id
 
-    def get_current_backup(self) -> Optional[str]:
+    def get_current_backup(self) -> str | None:
         """Get the current backup ID."""
         return self._current_backup
 
-    def list_backups(self, limit: int = 20) -> List[BackupManifest]:
+    def list_backups(self, limit: int = 20) -> list[BackupManifest]:
         """
         List available backups.
 
@@ -146,7 +147,7 @@ class RollbackManager:
 
         return backups
 
-    def rollback(self, backup_id: Optional[str] = None) -> ToolResult:
+    def rollback(self, backup_id: str | None = None) -> ToolResult:
         """
         Rollback to a backup.
 
@@ -249,7 +250,7 @@ class RollbackManager:
 
         return deleted
 
-    def git_rollback(self, files: Optional[List[str]] = None) -> ToolResult:
+    def git_rollback(self, files: list[str] | None = None) -> ToolResult:
         """
         Rollback using git checkout.
 
@@ -260,10 +261,7 @@ class RollbackManager:
             ToolResult
         """
         try:
-            if files:
-                cmd = ["git", "checkout", "--"] + files
-            else:
-                cmd = ["git", "checkout", "--", "."]
+            cmd = ["git", "checkout", "--"] + files if files else ["git", "checkout", "--", "."]
 
             result = subprocess.run(
                 cmd, capture_output=True, text=True, cwd=str(self.project_path)
@@ -277,7 +275,7 @@ class RollbackManager:
         except Exception as e:
             return ToolResult.failure_result("git_rollback", f"Error: {e}")
 
-    def git_stash(self, message: Optional[str] = None) -> ToolResult:
+    def git_stash(self, message: str | None = None) -> ToolResult:
         """
         Stash current changes.
 
@@ -327,7 +325,7 @@ class RollbackManager:
         except Exception as e:
             return ToolResult.failure_result("git_stash_pop", f"Error: {e}")
 
-    def get_tool_executors(self) -> Dict[str, Any]:
+    def get_tool_executors(self) -> dict[str, Any]:
         """Get dict of tool executors for registration."""
         return {
             "rollback": lambda n, p: self.rollback(p.get("backup_id")),

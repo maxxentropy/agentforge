@@ -1,5 +1,5 @@
-# @spec_file: specs/minimal-context-architecture/05-llm-integration.yaml
-# @spec_id: llm-integration-v1
+# @spec_file: .agentforge/specs/core-llm-v1.yaml
+# @spec_id: core-llm-v1
 # @component_id: llm-tools
 # @test_path: tests/unit/llm/test_tools.py
 
@@ -32,10 +32,8 @@ Usage:
     ```
 """
 
-from typing import Dict, List, Set
 
 from .interface import ToolDefinition
-
 
 # =============================================================================
 # Base Tools (all task types)
@@ -619,7 +617,7 @@ GENERATE_REVIEW_SUMMARY = ToolDefinition(
 # Tool Collections by Category
 # =============================================================================
 
-BASE_TOOLS: List[ToolDefinition] = [
+BASE_TOOLS: list[ToolDefinition] = [
     READ_FILE,
     WRITE_FILE,
     EDIT_FILE,
@@ -631,7 +629,7 @@ BASE_TOOLS: List[ToolDefinition] = [
     CANNOT_FIX,
 ]
 
-REFACTORING_TOOLS: List[ToolDefinition] = [
+REFACTORING_TOOLS: list[ToolDefinition] = [
     EXTRACT_FUNCTION,
     SIMPLIFY_CONDITIONAL,
     RUN_CHECK,
@@ -639,19 +637,19 @@ REFACTORING_TOOLS: List[ToolDefinition] = [
     RENAME_SYMBOL,
 ]
 
-DISCOVERY_TOOLS: List[ToolDefinition] = [
+DISCOVERY_TOOLS: list[ToolDefinition] = [
     ANALYZE_DEPENDENCIES,
     DETECT_PATTERNS,
     MAP_STRUCTURE,
     CREATE_MAPPING,
 ]
 
-TESTING_TOOLS: List[ToolDefinition] = [
+TESTING_TOOLS: list[ToolDefinition] = [
     GENERATE_TEST,
     RUN_SINGLE_TEST,
 ]
 
-REVIEW_TOOLS: List[ToolDefinition] = [
+REVIEW_TOOLS: list[ToolDefinition] = [
     ANALYZE_DIFF,
     ADD_REVIEW_COMMENT,
     GENERATE_REVIEW_SUMMARY,
@@ -662,7 +660,7 @@ REVIEW_TOOLS: List[ToolDefinition] = [
 # Task Type to Tools Mapping
 # =============================================================================
 
-_TASK_TOOLS: Dict[str, Set[str]] = {
+_TASK_TOOLS: dict[str, set[str]] = {
     "fix_violation": {
         # Base
         "read_file", "write_file", "edit_file", "search_code", "load_context",
@@ -715,7 +713,7 @@ _TASK_TOOLS: Dict[str, Set[str]] = {
 }
 
 # Build a lookup from tool name to definition
-_ALL_TOOLS: Dict[str, ToolDefinition] = {
+_ALL_TOOLS: dict[str, ToolDefinition] = {
     tool.name: tool
     for tool in (
         BASE_TOOLS + REFACTORING_TOOLS + DISCOVERY_TOOLS +
@@ -724,7 +722,7 @@ _ALL_TOOLS: Dict[str, ToolDefinition] = {
 }
 
 
-def get_tools_for_task(task_type: str) -> List[ToolDefinition]:
+def get_tools_for_task(task_type: str) -> list[ToolDefinition]:
     """
     Get the list of tools available for a specific task type.
 
@@ -772,7 +770,7 @@ def get_tool_by_name(name: str) -> ToolDefinition:
     return _ALL_TOOLS[name]
 
 
-def list_task_types() -> List[str]:
+def list_task_types() -> list[str]:
     """
     List all supported task types.
 
@@ -782,7 +780,7 @@ def list_task_types() -> List[str]:
     return sorted(_TASK_TOOLS.keys())
 
 
-def list_all_tools() -> List[str]:
+def list_all_tools() -> list[str]:
     """
     List all available tool names.
 
@@ -792,7 +790,7 @@ def list_all_tools() -> List[str]:
     return sorted(_ALL_TOOLS.keys())
 
 
-def get_tools_by_category(category: str) -> List[ToolDefinition]:
+def get_tools_by_category(category: str) -> list[ToolDefinition]:
     """
     Get tools by category.
 

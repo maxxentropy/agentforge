@@ -25,19 +25,26 @@ Priority Order:
 4. Related code from same layer
 """
 
-import re
 import fnmatch
 from pathlib import Path
-from typing import List, Dict, Any, Set
+from typing import Any
 
 try:
     from .context_assembler_types import (
-        ArchitectureLayer, SymbolInfo, FileContext, PatternMatch, CodeContext
+        ArchitectureLayer,
+        CodeContext,
+        FileContext,
+        PatternMatch,
+        SymbolInfo,
     )
     from .context_patterns import detect_patterns
 except ImportError:
     from context_assembler_types import (
-        ArchitectureLayer, SymbolInfo, FileContext, PatternMatch, CodeContext
+        ArchitectureLayer,
+        CodeContext,
+        FileContext,
+        PatternMatch,
+        SymbolInfo,
     )
     from context_patterns import detect_patterns
 
@@ -75,7 +82,7 @@ class ContextAssembler:
         # Layer detection patterns
         self._layer_patterns = self._build_layer_patterns()
 
-    def _build_layer_patterns(self) -> Dict[str, List[str]]:
+    def _build_layer_patterns(self) -> dict[str, list[str]]:
         """Build patterns for detecting architectural layers."""
         layer_config = self.config.get("layer_detection", {}).get("patterns", {})
 
@@ -145,7 +152,7 @@ class ContextAssembler:
         return len(text) // 4
 
     def _process_vector_results(
-        self, vector_results: List[Any], file_data: Dict[str, Dict[str, Any]]
+        self, vector_results: list[Any], file_data: dict[str, dict[str, Any]]
     ) -> None:
         """Process vector search results into file_data."""
         if not vector_results:
@@ -172,7 +179,7 @@ class ContextAssembler:
                 file_data[file_path]["content"] += result.chunk
 
     def _process_lsp_symbols(
-        self, lsp_symbols: List[Any], query: str, file_data: Dict[str, Dict[str, Any]]
+        self, lsp_symbols: list[Any], query: str, file_data: dict[str, dict[str, Any]]
     ) -> None:
         """Process LSP symbols into file_data."""
         if not lsp_symbols:
@@ -203,7 +210,7 @@ class ContextAssembler:
             ))
 
     def _apply_entry_point_boosts(
-        self, entry_points: List[str], file_data: Dict[str, Dict[str, Any]]
+        self, entry_points: list[str], file_data: dict[str, dict[str, Any]]
     ) -> None:
         """Boost scores for files matching entry points."""
         if not entry_points:
@@ -222,7 +229,7 @@ class ContextAssembler:
         try:
             full_path = self.project_path / file_path
             if full_path.exists():
-                with open(full_path, 'r', encoding='utf-8', errors='replace') as f:
+                with open(full_path, encoding='utf-8', errors='replace') as f:
                     return f.read()
         except Exception:
             pass
@@ -243,13 +250,13 @@ class ContextAssembler:
 
     def _build_file_contexts(
         self,
-        sorted_files: List[tuple],
+        sorted_files: list[tuple],
         budget: int,
         context: CodeContext
     ) -> int:
         """Build FileContext objects within token budget. Returns tokens used."""
         current_tokens = 0
-        seen_symbols: Set[str] = set()
+        seen_symbols: set[str] = set()
 
         for file_path, data in sorted_files:
             content = self._get_file_content(file_path, data["content"])
@@ -284,9 +291,9 @@ class ContextAssembler:
     def assemble(
         self,
         query: str,
-        lsp_symbols: List[Any] = None,
-        vector_results: List[Any] = None,
-        entry_points: List[str] = None,
+        lsp_symbols: list[Any] = None,
+        vector_results: list[Any] = None,
+        entry_points: list[str] = None,
         budget_tokens: int = None,
     ) -> CodeContext:
         """
@@ -312,7 +319,7 @@ class ContextAssembler:
             "vector_results": len(vector_results) if vector_results else 0,
         }
 
-        file_data: Dict[str, Dict[str, Any]] = {}
+        file_data: dict[str, dict[str, Any]] = {}
         self._process_vector_results(vector_results, file_data)
         self._process_lsp_symbols(lsp_symbols, query, file_data)
         self._apply_entry_point_boosts(entry_points, file_data)
@@ -343,13 +350,13 @@ class ContextAssembler:
 
         return truncated + "\n// ... (truncated)"
 
-    def _detect_patterns(self, context: CodeContext) -> List[PatternMatch]:
+    def _detect_patterns(self, context: CodeContext) -> list[PatternMatch]:
         """Detect architectural patterns in the assembled context."""
         return detect_patterns(context.files, context.symbols)
 
     def assemble_from_files(
         self,
-        file_paths: List[str],
+        file_paths: list[str],
         budget_tokens: int = None,
     ) -> CodeContext:
         """
@@ -364,7 +371,7 @@ class ContextAssembler:
         for file_path in file_paths:
             try:
                 full_path = self.project_path / file_path
-                with open(full_path, 'r', encoding='utf-8', errors='replace') as f:
+                with open(full_path, encoding='utf-8', errors='replace') as f:
                     content = f.read()
             except Exception:
                 continue

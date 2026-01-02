@@ -12,12 +12,14 @@ workspace_ref > workspace.yaml in current/parent dir > single-repo mode.
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional, List
+
 import yaml
 
 from .workspace_types import (
-    WorkspaceError, RepoNotFoundError, WorkspaceSchemaError,
-    WorkspaceNotFoundError, RepoConfig, WorkspaceContext
+    RepoConfig,
+    WorkspaceContext,
+    WorkspaceError,
+    WorkspaceSchemaError,
 )
 
 
@@ -26,17 +28,13 @@ class RepoMetadata:
     """Metadata for a repository in a workspace."""
     repo_type: str = 'service'
     language: str = 'csharp'
-    framework: Optional[str] = None
-    lsp: Optional[str] = None
-    layers: List[str] = field(default_factory=list)
-    tags: List[str] = field(default_factory=list)
+    framework: str | None = None
+    lsp: str | None = None
+    layers: list[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
 
 
-from .workspace_config import (
-    ConfigContext, discover_config, format_config_status,
-    load_yaml_file, find_upward, expand_path
-)
-
+from .workspace_config import discover_config, find_upward, format_config_status, load_yaml_file
 
 # =============================================================================
 # Discovery Functions
@@ -201,7 +199,7 @@ def init_workspace(directory: Path, name: str, description: str = None, force: b
 
 def add_repo_to_workspace(
     ctx: WorkspaceContext, name: str, path: str,
-    metadata: Optional[RepoMetadata] = None, create_repo_yaml: bool = True
+    metadata: RepoMetadata | None = None, create_repo_yaml: bool = True
 ) -> RepoConfig:
     """Add a repository to the workspace."""
     if not ctx.is_workspace_mode:

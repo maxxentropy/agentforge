@@ -1,5 +1,5 @@
-# @spec_file: .agentforge/specs/harness-v1.yaml
-# @spec_id: harness-v1
+# @spec_file: .agentforge/specs/core-harness-v1.yaml
+# @spec_id: core-harness-v1
 # @component_id: tools-harness-tool_domain
 # @impl_path: tools/harness/tool_domain.py
 
@@ -10,12 +10,13 @@
 
 """Tests for tool registry."""
 
-import pytest
 from pathlib import Path
-from unittest.mock import Mock, patch, mock_open
+from unittest.mock import mock_open, patch
 
-from tools.harness.tool_registry import ToolRegistry, DuplicateToolError
-from tools.harness.tool_domain import ToolDefinition, ToolProfile
+import pytest
+
+from agentforge.core.harness.tool_domain import ToolDefinition, ToolProfile
+from agentforge.core.harness.tool_registry import DuplicateToolError, ToolRegistry
 
 
 class TestToolRegistry:
@@ -24,7 +25,7 @@ class TestToolRegistry:
     def test_init_without_config_creates_empty_registry(self):
         """Test that registry initializes empty without config."""
         registry = ToolRegistry()
-        
+
         assert registry.list_tools() == []
         assert registry.list_profiles() == []
 
@@ -34,7 +35,7 @@ class TestToolRegistry:
 
         with patch.object(Path, 'exists', return_value=True):
             with patch.object(ToolRegistry, 'load_from_yaml') as mock_load:
-                registry = ToolRegistry(config_path=config_path)
+                ToolRegistry(config_path=config_path)
                 mock_load.assert_called_once_with(config_path)
 
     def test_register_tool_adds_tool_to_registry(self):
@@ -46,9 +47,9 @@ class TestToolRegistry:
             parameters={},
             category="test"
         )
-        
+
         registry.register_tool(tool)
-        
+
         assert "test_tool" in registry.list_tools()
         assert registry.get_tool("test_tool") == tool
 
@@ -67,9 +68,9 @@ class TestToolRegistry:
             parameters={},
             category="test"
         )
-        
+
         registry.register_tool(tool1)
-        
+
         with pytest.raises(DuplicateToolError):
             registry.register_tool(tool2)
 
@@ -81,18 +82,18 @@ class TestToolRegistry:
             phase="test_phase",
             tools=["tool1", "tool2"]
         )
-        
+
         registry.register_profile(profile)
-        
+
         result = registry.get_profile("test_workflow", "test_phase")
         assert result == profile
 
     def test_register_domain_tools_adds_domain_tools(self):
         """Test that register_domain_tools adds domain-specific tools."""
         registry = ToolRegistry()
-        
+
         registry.register_domain_tools("python", ["pytest", "ruff"])
-        
+
         # This should be accessible through some method (implementation detail)
         # For now, we'll test that it doesn't raise an error
         assert True  # Will be updated when implementation exists
@@ -107,17 +108,17 @@ class TestToolRegistry:
             category="test"
         )
         registry.register_tool(tool)
-        
+
         result = registry.get_tool("test_tool")
-        
+
         assert result == tool
 
     def test_get_tool_returns_none_when_not_exists(self):
         """Test that get_tool returns None when tool doesn't exist."""
         registry = ToolRegistry()
-        
+
         result = registry.get_tool("nonexistent_tool")
-        
+
         assert result is None
 
     def test_get_profile_returns_profile_when_exists(self):
@@ -129,17 +130,17 @@ class TestToolRegistry:
             tools=["tool1"]
         )
         registry.register_profile(profile)
-        
+
         result = registry.get_profile("test_workflow", "test_phase")
-        
+
         assert result == profile
 
     def test_get_profile_returns_none_when_not_exists(self):
         """Test that get_profile returns None when profile doesn't exist."""
         registry = ToolRegistry()
-        
+
         result = registry.get_profile("nonexistent_workflow", "nonexistent_phase")
-        
+
         assert result is None
 
     def test_list_tools_returns_all_tool_names(self):
@@ -147,12 +148,12 @@ class TestToolRegistry:
         registry = ToolRegistry()
         tool1 = ToolDefinition(name="tool1", description="Tool 1", parameters={}, category="test")
         tool2 = ToolDefinition(name="tool2", description="Tool 2", parameters={}, category="test")
-        
+
         registry.register_tool(tool1)
         registry.register_tool(tool2)
-        
+
         result = registry.list_tools()
-        
+
         assert set(result) == {"tool1", "tool2"}
 
     def test_list_profiles_returns_all_profiles(self):
@@ -160,12 +161,12 @@ class TestToolRegistry:
         registry = ToolRegistry()
         profile1 = ToolProfile(workflow="wf1", phase="p1", tools=["tool1"])
         profile2 = ToolProfile(workflow="wf2", phase="p2", tools=["tool2"])
-        
+
         registry.register_profile(profile1)
         registry.register_profile(profile2)
-        
+
         result = registry.list_profiles()
-        
+
         assert len(result) == 2
         assert profile1 in result
         assert profile2 in result
@@ -184,7 +185,7 @@ class TestToolRegistry:
             phase: test_phase
             tools: [test_tool]
         """
-        
+
         with patch("builtins.open", mock_open(read_data=yaml_content)):
             with patch("yaml.safe_load") as mock_yaml:
                 mock_yaml.return_value = {
@@ -200,9 +201,9 @@ class TestToolRegistry:
                         "tools": ["test_tool"]
                     }]
                 }
-                
+
                 registry.load_from_yaml(Path("test.yaml"))
-                
+
                 assert "test_tool" in registry.list_tools()
                 assert registry.get_profile("test_workflow", "test_phase") is not None
 
@@ -215,10 +216,9 @@ class TestToolRegistry:
         registry.register_tool(tool)
         registry.register_profile(profile)
 
-        with patch("pathlib.Path.mkdir"):
-            with patch("builtins.open", mock_open()) as mock_file:
-                with patch("yaml.safe_dump") as mock_yaml:
-                    registry.save_to_yaml(Path("output.yaml"))
+        with patch("pathlib.Path.mkdir"), patch("builtins.open", mock_open()) as mock_file:
+            with patch("yaml.safe_dump") as mock_yaml:
+                registry.save_to_yaml(Path("output.yaml"))
 
-                    mock_file.assert_called_once()
-                    mock_yaml.assert_called_once()
+                mock_file.assert_called_once()
+                mock_yaml.assert_called_once()

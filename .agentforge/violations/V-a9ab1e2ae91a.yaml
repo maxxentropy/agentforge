@@ -6,10 +6,7 @@ severity: major
 file_path: cli/commands/contracts.py
 message: File exceeds line limit (505 lines > 500)
 detected_at: '2025-12-30T18:24:35.571611'
-last_seen_at: '2025-12-30T18:44:40.377131'
-status: resolved
+last_seen_at: '2026-01-01T01:39:13.724330'
+status: open
 fix_hint: Consider splitting into smaller files
-resolution:
-  resolved_at: '2025-12-30T18:47:38.752890'
-  resolved_by: system
-  reason: No longer detected in full verification run
+test_path: tests/integration/

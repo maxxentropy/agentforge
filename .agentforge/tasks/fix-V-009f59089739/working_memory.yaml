@@ -1,0 +1,89 @@
+items:
+- added_at: '2025-12-31T17:54:58.502744'
+  content:
+    action: read_file
+    result: success
+    summary: Read tests/unit/tools/conformance/test_domain.py lines 334-397 (violation
+      at line 363)
+    target: tests/unit/tools/conformance/test_domain.py
+  expires_after_steps: null
+  key: action_step_33
+  pinned: false
+  step: 33
+  type: action_result
+- added_at: '2025-12-31T17:54:58.463513'
+  content: " 334: \n 335:     def test_compliance_rate_calculation(self):\n 336: \
+    \        \"\"\"Test compliance rate calculation.\"\"\"\n 337:         summary\
+    \ = ConformanceSummary(total=100, passed=80, failed=15, exempted=5)\n 338:   \
+    \      assert summary.compliance_rate == 0.8\n 339: \n 340:     def test_open_issues(self):\n\
+    \ 341:         \"\"\"Test open issues count.\"\"\"\n 342:         summary = ConformanceSummary(failed=10,\
+    \ stale=5)\n 343:         assert summary.open_issues == 15\n 344: \n 345: \n 346:\
+    \ class TestConformanceReport:\n 347:     \"\"\"Tests for ConformanceReport.\"\
+    \"\"\n 348: \n 349: \n 350: \n 351:     def test_has_blockers_true(self, report):\n\
+    \ 352:         \"\"\"Test has_blockers with blockers.\"\"\"\n 353:         assert\
+    \ report.has_blockers()\n 354: \n 355:     def test_has_blockers_false(self, report):\n\
+    \ 356:         \"\"\"Test has_blockers without blockers.\"\"\"\n 357:        \
+    \ report.by_severity = {\"major\": 5}\n 358:         assert not report.has_blockers()\n\
+    \ 359: \n 360:     def test_has_critical_true(self, report):\n 361:         \"\
+    \"\"Test has_critical with critical.\"\"\"\n 362:         report.by_severity[\"\
+    critical\"] = 1\n 363:         assert report.has_critical()\n 364: \n 365:   \
+    \  def test_has_critical_false(self, report):\n 366:         \"\"\"Test has_critical\
+    \ without critical.\"\"\"\n 367:         assert not report.has_critical()\n 368:\
+    \ \n 369:     def test_is_passing_with_blockers(self, report):\n 370:        \
+    \ \"\"\"Test is_passing fails with blockers at blocker threshold.\"\"\"\n 371:\
+    \         assert not report.is_passing(threshold=Severity.BLOCKER)\n 372: \n 373:\
+    \     def test_is_passing_without_blockers(self, report):\n 374:         \"\"\"\
+    Test is_passing succeeds without blockers at blocker threshold.\"\"\"\n 375: \
+    \        report.by_severity = {\"major\": 5}\n 376:         assert report.is_passing(threshold=Severity.BLOCKER)\n\
+    \ 377: \n 378:     def test_is_passing_at_major_threshold(self, report):\n 379:\
+    \         \"\"\"Test is_passing at major threshold.\"\"\"\n 380:         report.by_severity\
+    \ = {\"major\": 5}\n 381:         assert not report.is_passing(threshold=Severity.MAJOR)\n\
+    \ 382: \n 383: \n 384: class TestHistorySnapshot:\n 385:     \"\"\"Tests for HistorySnapshot.\"\
+    \"\"\n 386: \n 387: \n 388: \n 389:     def test_delta_calculation(self, snapshots):\n\
+    \ 390:         \"\"\"Test delta calculation between snapshots.\"\"\"\n 391:  \
+    \       old, new = snapshots\n 392:         delta = new.delta_from(old)\n 393:\
+    \ \n 394:         assert delta[\"passed_delta\"] == 10  # 90 - 80\n 395:     \
+    \    assert delta[\"failed_delta\"] == -7  # 8 - 15\n 396:         assert delta[\"\
+    exempted_delta\"] == -3  # 2 - 5\n 397: "
+  expires_after_steps: 2
+  key: full_file:tests/unit/tools/conformance/test_domain.py
+  pinned: false
+  step: 32
+  type: loaded_context
+- added_at: '2025-12-31T17:54:54.077954'
+  content:
+    action: read_file
+    result: success
+    summary: Read tests/unit/tools/conformance/test_domain.py lines 334-397 (violation
+      at line 363)
+    target: tests/unit/tools/conformance/test_domain.py
+  expires_after_steps: null
+  key: action_step_32
+  pinned: false
+  step: 32
+  type: action_result
+- added_at: '2025-12-31T17:54:50.083822'
+  content:
+    action: read_file
+    result: success
+    summary: Read tests/unit/tools/conformance/test_domain.py lines 334-397 (violation
+      at line 363)
+    target: tests/unit/tools/conformance/test_domain.py
+  expires_after_steps: null
+  key: action_step_31
+  pinned: false
+  step: 31
+  type: action_result
+- added_at: '2025-12-31T17:54:46.150005'
+  content:
+    action: read_file
+    result: success
+    summary: Read tests/unit/tools/conformance/test_domain.py lines 334-397 (violation
+      at line 363)
+    target: tests/unit/tools/conformance/test_domain.py
+  expires_after_steps: null
+  key: action_step_30
+  pinned: false
+  step: 30
+  type: action_result
+max_items: 5

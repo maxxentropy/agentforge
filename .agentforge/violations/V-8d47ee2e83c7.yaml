@@ -1,0 +1,13 @@
+schema_version: '1.0'
+violation_id: V-8d47ee2e83c7
+contract_id: agentforge
+check_id: single-responsibility-modules
+severity: minor
+file_path: tests/unit/harness/test_recovery_domain.py
+message: 'Class ''TestRecoveryPolicy'' has 8 methods (max: 3)'
+detected_at: '2025-12-31T06:56:28.110299'
+last_seen_at: '2026-01-01T01:39:14.084413'
+status: open
+line_number: 202
+fix_hint: Split modules with too many classes into focused single-class modules
+test_path: tests/unit/harness/test_recovery_domain.py

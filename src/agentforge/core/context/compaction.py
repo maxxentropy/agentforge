@@ -1,4 +1,4 @@
-# @spec_file: specs/minimal-context-architecture/06-compaction.yaml
+# @spec_file: .agentforge/specs/core-context-v1.yaml
 # @spec_id: compaction-v1
 # @component_id: compaction-manager
 # @test_path: tests/unit/context/test_compaction.py
@@ -38,9 +38,9 @@ Usage:
     ```
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Protocol, Tuple
+from typing import Any, Protocol
 
 import yaml
 
@@ -79,7 +79,7 @@ class CompactionRule:
 
     section: str  # Dot notation: "precomputed.analysis"
     strategy: CompactionStrategy
-    param: Optional[int] = None  # Strategy-specific parameter
+    param: int | None = None  # Strategy-specific parameter
     priority: int = 0  # Lower = compact first
 
     def __lt__(self, other: "CompactionRule") -> bool:
@@ -87,7 +87,7 @@ class CompactionRule:
 
 
 # Default compaction rules in priority order
-DEFAULT_RULES: List[CompactionRule] = [
+DEFAULT_RULES: list[CompactionRule] = [
     # Phase 1: Truncate precomputed
     CompactionRule("target_source", CompactionStrategy.TRUNCATE_MIDDLE, 800, priority=1),
     CompactionRule("similar_fixes", CompactionStrategy.KEEP_FIRST, 2, priority=2),
@@ -117,9 +117,9 @@ class CompactionAudit:
     original_tokens: int
     final_tokens: int
     budget: int
-    rules_applied: List[Dict[str, Any]]
+    rules_applied: list[dict[str, Any]]
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "applied": len(self.rules_applied) > 0,
             "original_tokens": self.original_tokens,
@@ -145,8 +145,8 @@ class CompactionManager:
         self,
         threshold: float = 0.90,
         max_budget: int = 4000,
-        rules: Optional[List[CompactionRule]] = None,
-        summarizer: Optional[Summarizer] = None,
+        rules: list[CompactionRule] | None = None,
+        summarizer: Summarizer | None = None,
     ):
         """
         Initialize compaction manager.
@@ -163,12 +163,12 @@ class CompactionManager:
         self.summarizer = summarizer
         self._summarization_calls = 0  # Track summarization usage
 
-    def estimate_tokens(self, context: Dict[str, Any]) -> int:
+    def estimate_tokens(self, context: dict[str, Any]) -> int:
         """Estimate total tokens in a context dictionary."""
         yaml_str = yaml.dump(context, default_flow_style=False)
         return len(yaml_str) // 4
 
-    def needs_compaction(self, context: Dict[str, Any]) -> bool:
+    def needs_compaction(self, context: dict[str, Any]) -> bool:
         """
         Check if compaction is needed.
 
@@ -179,9 +179,9 @@ class CompactionManager:
 
     def compact(
         self,
-        context: Dict[str, Any],
-        preserve: Optional[List[str]] = None,
-    ) -> Tuple[Dict[str, Any], CompactionAudit]:
+        context: dict[str, Any],
+        preserve: list[str] | None = None,
+    ) -> tuple[dict[str, Any], CompactionAudit]:
         """
         Compact context to fit within budget.
 
@@ -197,7 +197,7 @@ class CompactionManager:
         preserve_set = set(preserve or []) | PRESERVED_SECTIONS
         original_tokens = self.estimate_tokens(context)
 
-        rules_applied: List[Dict[str, Any]] = []
+        rules_applied: list[dict[str, Any]] = []
         result = dict(context)
 
         for rule in self.rules:
@@ -240,14 +240,11 @@ class CompactionManager:
         if section in preserve_set:
             return True
         # Check if section starts with any preserved section
-        for p in preserve_set:
-            if section.startswith(p + "."):
-                return True
-        return False
+        return any(section.startswith(p + ".") for p in preserve_set)
 
     def _apply_rule(
-        self, context: Dict[str, Any], rule: CompactionRule
-    ) -> Tuple[Dict[str, Any], bool]:
+        self, context: dict[str, Any], rule: CompactionRule
+    ) -> tuple[dict[str, Any], bool]:
         """
         Apply a compaction rule to the context.
 
@@ -356,9 +353,9 @@ class CompactionManager:
             return value[:keep] + "\n...(middle truncated)...\n" + value[-keep:]
         return value
 
-    def get_section_tokens(self, context: Dict[str, Any]) -> Dict[str, int]:
+    def get_section_tokens(self, context: dict[str, Any]) -> dict[str, int]:
         """Get token breakdown by top-level section."""
-        breakdown: Dict[str, int] = {}
+        breakdown: dict[str, int] = {}
         for key, value in context.items():
             section_yaml = yaml.dump({key: value}, default_flow_style=False)
             breakdown[key] = len(section_yaml) // 4
@@ -373,7 +370,7 @@ class CompactionManager:
         """
         self.summarizer = summarizer
 
-    def get_summarization_stats(self) -> Dict[str, int]:
+    def get_summarization_stats(self) -> dict[str, int]:
         """Get summarization usage statistics."""
         return {
             "summarization_calls": self._summarization_calls,
@@ -395,7 +392,7 @@ class SimpleLLMSummarizer:
     def __init__(
         self,
         model: str = "claude-sonnet-4-20250514",
-        system_prompt: Optional[str] = None,
+        system_prompt: str | None = None,
     ):
         """
         Initialize the summarizer.
@@ -453,7 +450,7 @@ class SimpleLLMSummarizer:
 
 
 # Rules that include summarization as a last resort
-SUMMARIZE_RULES: List[CompactionRule] = [
+SUMMARIZE_RULES: list[CompactionRule] = [
     # Phase 1-6: Same as default rules
     *DEFAULT_RULES,
     # Phase 7: Summarize large sections as last resort

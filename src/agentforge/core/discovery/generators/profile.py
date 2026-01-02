@@ -10,19 +10,23 @@ Profile Generator
 Generates codebase_profile.yaml from discovery results.
 """
 
-from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Any, Optional
+from typing import Any
+
 import yaml
 
-from ..domain import (
-    CodebaseProfile, DiscoveryMetadata, LanguageInfo, DependencyInfo,
-    PatternDetection, Detection, DetectionSource, TestAnalysis,
-    OnboardingProgress, OnboardingStatus, DiscoveryPhase,
-)
-from ..analyzers.structure import StructureAnalysisResult
 from ..analyzers.patterns import PatternAnalysisResult
+from ..analyzers.structure import StructureAnalysisResult
+from ..domain import (
+    CodebaseProfile,
+    DependencyInfo,
+    Detection,
+    DetectionSource,
+    DiscoveryMetadata,
+    LanguageInfo,
+    TestAnalysis,
+)
 
 
 class ProfileGenerator:
@@ -37,17 +41,17 @@ class ProfileGenerator:
 
     def __init__(self, root_path: Path):
         self.root_path = root_path
-        self._profile: Optional[CodebaseProfile] = None
+        self._profile: CodebaseProfile | None = None
 
     def generate(
         self,
-        languages: List[LanguageInfo],
+        languages: list[LanguageInfo],
         structure_result: StructureAnalysisResult,
         pattern_result: PatternAnalysisResult,
-        dependencies: List[DependencyInfo],
-        phases_completed: List[str],
+        dependencies: list[DependencyInfo],
+        phases_completed: list[str],
         duration_seconds: float,
-        test_analysis: Optional[TestAnalysis] = None,
+        test_analysis: TestAnalysis | None = None,
     ) -> CodebaseProfile:
         """
         Generate a CodebaseProfile from analysis results.
@@ -100,7 +104,7 @@ class ProfileGenerator:
 
         return self._profile
 
-    def _build_structure_dict(self, result: StructureAnalysisResult) -> Dict[str, Any]:
+    def _build_structure_dict(self, result: StructureAnalysisResult) -> dict[str, Any]:
         """Build structure section of profile."""
         return {
             "architecture_style": result.architecture_style,
@@ -121,7 +125,7 @@ class ProfileGenerator:
             "signals": result.signals[:10],
         }
 
-    def _build_patterns_dict(self, result: PatternAnalysisResult) -> Dict[str, Any]:
+    def _build_patterns_dict(self, result: PatternAnalysisResult) -> dict[str, Any]:
         """Build patterns section of profile."""
         patterns_dict = {}
 
@@ -147,7 +151,7 @@ class ProfileGenerator:
 
         return patterns_dict
 
-    def _build_architecture_dict(self, result: StructureAnalysisResult) -> Dict[str, Any]:
+    def _build_architecture_dict(self, result: StructureAnalysisResult) -> dict[str, Any]:
         """Build architecture section of profile."""
         return {
             "style": result.architecture_style,
@@ -164,7 +168,7 @@ class ProfileGenerator:
         data = self._profile_to_dict(self._profile)
         return yaml.dump(data, default_flow_style=False, sort_keys=False, allow_unicode=True)
 
-    def save(self, output_path: Optional[Path] = None) -> Path:
+    def save(self, output_path: Path | None = None) -> Path:
         """
         Save profile to YAML file.
 
@@ -187,7 +191,7 @@ class ProfileGenerator:
 
         return output_path
 
-    def _profile_to_dict(self, profile: CodebaseProfile) -> Dict[str, Any]:
+    def _profile_to_dict(self, profile: CodebaseProfile) -> dict[str, Any]:
         """Convert CodebaseProfile to serializable dict."""
         return {
             "schema_version": profile.schema_version,
@@ -244,7 +248,7 @@ class ProfileGenerator:
         return generator
 
     @classmethod
-    def _dict_to_profile(cls, data: Dict[str, Any], root_path: Path) -> CodebaseProfile:
+    def _dict_to_profile(cls, data: dict[str, Any], root_path: Path) -> CodebaseProfile:
         """Convert dict back to CodebaseProfile."""
         metadata = DiscoveryMetadata(
             discovery_version=data.get("discovery_metadata", {}).get("discovery_version", "1.0"),

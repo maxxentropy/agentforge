@@ -1,5 +1,5 @@
-# @spec_file: specs/tools/01-tool-handlers.yaml
-# @spec_id: tool-handlers-v1
+# @spec_file: .agentforge/specs/core-harness-minimal-context-v1.yaml
+# @spec_id: core-harness-minimal-context-v1
 # @component_id: terminal-handlers
 # @test_path: tests/unit/harness/tool_handlers/test_terminal_handlers.py
 
@@ -13,9 +13,9 @@ These handlers signal the end of a task execution with different outcomes.
 """
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import yaml
 
@@ -35,7 +35,7 @@ def create_complete_handler() -> ActionHandler:
         Handler function: (params: Dict[str, Any]) -> str
     """
 
-    def handler(params: Dict[str, Any]) -> str:
+    def handler(params: dict[str, Any]) -> str:
         summary = params.get("summary", "Task completed")
         files_modified = params.get("files_modified", [])
         logger.debug("complete: summary=%s", summary[:50] if len(summary) > 50 else summary)
@@ -66,7 +66,7 @@ def create_escalate_handler() -> ActionHandler:
         Handler function: (params: Dict[str, Any]) -> str
     """
 
-    def handler(params: Dict[str, Any]) -> str:
+    def handler(params: dict[str, Any]) -> str:
         reason = params.get("reason", "Unknown reason")
         priority = params.get("priority", "medium")
         suggestions = params.get("suggestions", [])
@@ -85,7 +85,7 @@ def create_escalate_handler() -> ActionHandler:
     return handler
 
 
-def create_cannot_fix_handler(project_path: Optional[Path] = None) -> ActionHandler:
+def create_cannot_fix_handler(project_path: Path | None = None) -> ActionHandler:
     """
     Create a cannot_fix action handler.
 
@@ -100,7 +100,7 @@ def create_cannot_fix_handler(project_path: Optional[Path] = None) -> ActionHand
     """
     base_path = Path(project_path) if project_path else Path.cwd()
 
-    def handler(params: Dict[str, Any]) -> str:
+    def handler(params: dict[str, Any]) -> str:
         reason = params.get("reason", "")
         constraints = params.get("constraints", [])
         alternatives = params.get("alternatives", [])
@@ -119,14 +119,14 @@ def create_cannot_fix_handler(project_path: Optional[Path] = None) -> ActionHand
             escalation_dir = base_path / ".agentforge" / "escalations"
             escalation_dir.mkdir(parents=True, exist_ok=True)
 
-            escalation_id = f"ESC-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}"
+            escalation_id = f"ESC-{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}"
 
             escalation_record = {
                 "escalation_id": escalation_id,
                 "type": "cannot_fix",
                 "violation_id": violation_id,
                 "task_id": task_id,
-                "created_at": datetime.now(timezone.utc).isoformat(),
+                "created_at": datetime.now(UTC).isoformat(),
                 "status": "pending",
                 "reason": reason,
                 "constraints": constraints,
@@ -201,7 +201,7 @@ def create_cannot_fix_handler(project_path: Optional[Path] = None) -> ActionHand
     return handler
 
 
-def create_request_help_handler(project_path: Optional[Path] = None) -> ActionHandler:
+def create_request_help_handler(project_path: Path | None = None) -> ActionHandler:
     """
     Create a request_help action handler.
 
@@ -216,7 +216,7 @@ def create_request_help_handler(project_path: Optional[Path] = None) -> ActionHa
     """
     base_path = Path(project_path) if project_path else Path.cwd()
 
-    def handler(params: Dict[str, Any]) -> str:
+    def handler(params: dict[str, Any]) -> str:
         question = params.get("question", "")
         options = params.get("options", [])
         context_info = params.get("context", "")
@@ -234,13 +234,13 @@ def create_request_help_handler(project_path: Optional[Path] = None) -> ActionHa
             help_dir = base_path / ".agentforge" / "help_requests"
             help_dir.mkdir(parents=True, exist_ok=True)
 
-            request_id = f"HELP-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}"
+            request_id = f"HELP-{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}"
 
             request_record = {
                 "request_id": request_id,
                 "task_id": task_id,
                 "step": current_step,
-                "created_at": datetime.now(timezone.utc).isoformat(),
+                "created_at": datetime.now(UTC).isoformat(),
                 "status": "pending",
                 "question": question,
                 "options": options,
@@ -271,7 +271,7 @@ def create_request_help_handler(project_path: Optional[Path] = None) -> ActionHa
     return handler
 
 
-def create_plan_fix_handler(project_path: Optional[Path] = None) -> ActionHandler:
+def create_plan_fix_handler(project_path: Path | None = None) -> ActionHandler:
     """
     Create a plan_fix action handler.
 
@@ -286,7 +286,7 @@ def create_plan_fix_handler(project_path: Optional[Path] = None) -> ActionHandle
     """
     base_path = Path(project_path) if project_path else Path.cwd()
 
-    def handler(params: Dict[str, Any]) -> str:
+    def handler(params: dict[str, Any]) -> str:
         diagnosis = params.get("diagnosis", "")
         approach = params.get("approach", "")
         steps = params.get("steps", [])
@@ -301,13 +301,13 @@ def create_plan_fix_handler(project_path: Optional[Path] = None) -> ActionHandle
         if task_id:
             # Try to update task state
             try:
-                from ..state_store import TaskStateStore, TaskPhase
+                from ..state_store import Phase, TaskStateStore
 
                 state_store = TaskStateStore(base_path)
                 state_store.update_context_data(task_id, "diagnosis", diagnosis)
                 state_store.update_context_data(task_id, "approach", approach)
                 state_store.update_context_data(task_id, "planned_steps", steps)
-                state_store.update_phase(task_id, TaskPhase.IMPLEMENT)
+                state_store.update_phase(task_id, Phase.IMPLEMENT)
 
             except Exception:
                 pass  # Non-critical if state update fails

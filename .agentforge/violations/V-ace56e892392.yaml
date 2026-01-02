@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-ace56e892392
+contract_id: agentforge
+check_id: max-function-length
+severity: major
+file_path: tools/harness/agent_orchestrator.py
+message: 'Function ''execute_step'' has 62 lines (max: 50)'
+detected_at: '2025-12-31T07:19:19.199294'
+last_seen_at: '2025-12-31T07:19:19.199294'
+status: stale
+line_number: 128
+fix_hint: Extract logic into helper functions or use composition

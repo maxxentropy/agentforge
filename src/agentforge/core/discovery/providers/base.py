@@ -15,7 +15,7 @@ and dependency analysis.
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Optional, Dict, Any, Set
+from typing import Any
 
 
 @dataclass
@@ -25,24 +25,24 @@ class Symbol:
     kind: str  # "class", "function", "method", "property", "variable"
     file_path: Path
     line_number: int
-    end_line: Optional[int] = None
-    parent: Optional[str] = None  # For methods, the class name
+    end_line: int | None = None
+    parent: str | None = None  # For methods, the class name
     visibility: str = "public"  # "public", "private", "protected"
-    signature: Optional[str] = None
-    docstring: Optional[str] = None
-    decorators: List[str] = field(default_factory=list)
-    base_classes: List[str] = field(default_factory=list)
-    return_type: Optional[str] = None
-    parameters: List[Dict[str, str]] = field(default_factory=list)
+    signature: str | None = None
+    docstring: str | None = None
+    decorators: list[str] = field(default_factory=list)
+    base_classes: list[str] = field(default_factory=list)
+    return_type: str | None = None
+    parameters: list[dict[str, str]] = field(default_factory=list)
 
 
 @dataclass
 class Import:
     """An import/using statement."""
     module: str
-    names: List[str] = field(default_factory=list)
-    alias: Optional[str] = None
-    file_path: Optional[Path] = None
+    names: list[str] = field(default_factory=list)
+    alias: str | None = None
+    file_path: Path | None = None
     line_number: int = 0
     is_relative: bool = False
 
@@ -51,8 +51,8 @@ class Import:
 class Dependency:
     """An external package dependency."""
     name: str
-    version: Optional[str] = None
-    version_constraint: Optional[str] = None
+    version: str | None = None
+    version_constraint: str | None = None
     is_dev: bool = False
     source: str = "unknown"  # "pypi", "nuget", "npm"
 
@@ -77,18 +77,18 @@ class LanguageProvider(ABC):
 
     @property
     @abstractmethod
-    def file_extensions(self) -> Set[str]:
+    def file_extensions(self) -> set[str]:
         """Return supported file extensions (e.g., {'.py', '.pyi'})."""
         pass
 
     @property
     @abstractmethod
-    def project_markers(self) -> Set[str]:
+    def project_markers(self) -> set[str]:
         """Return project marker files (e.g., {'pyproject.toml', 'setup.py'})."""
         pass
 
     @abstractmethod
-    def detect_project(self, path: Path) -> Optional[Dict[str, Any]]:
+    def detect_project(self, path: Path) -> dict[str, Any] | None:
         """
         Detect if path contains a project of this language.
 
@@ -98,7 +98,7 @@ class LanguageProvider(ABC):
         pass
 
     @abstractmethod
-    def parse_file(self, path: Path) -> Optional[Any]:
+    def parse_file(self, path: Path) -> Any | None:
         """
         Parse a source file and return its AST.
 
@@ -108,21 +108,21 @@ class LanguageProvider(ABC):
         pass
 
     @abstractmethod
-    def extract_symbols(self, path: Path) -> List[Symbol]:
+    def extract_symbols(self, path: Path) -> list[Symbol]:
         """Extract all symbols from a source file."""
         pass
 
     @abstractmethod
-    def get_imports(self, path: Path) -> List[Import]:
+    def get_imports(self, path: Path) -> list[Import]:
         """Extract all imports from a source file."""
         pass
 
     @abstractmethod
-    def get_dependencies(self, project_path: Path) -> List[Dependency]:
+    def get_dependencies(self, project_path: Path) -> list[Dependency]:
         """Extract dependencies from project configuration."""
         pass
 
-    def get_source_files(self, root: Path, exclude_patterns: List[str] = None) -> List[Path]:
+    def get_source_files(self, root: Path, exclude_patterns: list[str] = None) -> list[Path]:
         """Find all source files under root."""
         exclude_patterns = exclude_patterns or []
         default_excludes = [
@@ -148,7 +148,7 @@ class LanguageProvider(ABC):
     def count_lines(self, path: Path) -> int:
         """Count non-empty, non-comment lines of code."""
         try:
-            with open(path, 'r', encoding='utf-8', errors='ignore') as f:
+            with open(path, encoding='utf-8', errors='ignore') as f:
                 return sum(1 for line in f if line.strip() and not line.strip().startswith('#'))
         except Exception:
             return 0

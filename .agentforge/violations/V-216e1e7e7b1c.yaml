@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-216e1e7e7b1c
+contract_id: agentforge
+check_id: max-nesting-depth
+severity: major
+file_path: src/agentforge/core/harness/minimal_context/fix_workflow.py
+message: 'Function ''_precompute_violation_context'' has nesting depth 10 (max: 4)'
+detected_at: '2026-01-01T01:39:13.676006'
+last_seen_at: '2026-01-01T01:39:13.676006'
+status: open
+line_number: 1135
+fix_hint: Use early returns, guard clauses, or extract nested logic

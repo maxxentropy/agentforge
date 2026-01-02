@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class TDFlowPhase(Enum):
@@ -56,7 +56,7 @@ class TestFile:
 
     path: Path
     content: str
-    test_cases: List[TestCase] = field(default_factory=list)
+    test_cases: list[TestCase] = field(default_factory=list)
     framework: str = "xunit"  # xunit | nunit | pytest | jest
 
 
@@ -76,11 +76,11 @@ class ComponentProgress:
 
     name: str
     status: ComponentStatus = ComponentStatus.PENDING
-    tests: Optional[TestFile] = None
-    implementation: Optional[ImplementationFile] = None
+    tests: TestFile | None = None
+    implementation: ImplementationFile | None = None
     coverage: float = 0.0
     conformance_clean: bool = True
-    errors: List[str] = field(default_factory=list)
+    errors: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -93,7 +93,7 @@ class TestResult:
     errors: int
     duration_seconds: float
     output: str
-    coverage: Optional[float] = None
+    coverage: float | None = None
 
     @property
     def all_passed(self) -> bool:
@@ -113,9 +113,9 @@ class PhaseResult:
     phase: TDFlowPhase
     success: bool
     component: str
-    artifacts: Dict[str, Path] = field(default_factory=dict)
-    test_result: Optional[TestResult] = None
-    errors: List[str] = field(default_factory=list)
+    artifacts: dict[str, Path] = field(default_factory=dict)
+    test_result: TestResult | None = None
+    errors: list[str] = field(default_factory=list)
     duration_seconds: float = 0.0
 
 
@@ -128,10 +128,10 @@ class VerificationReport:
     tests_total: int
     coverage: float
     conformance_violations: int
-    traceability: List[Dict[str, str]] = field(default_factory=list)
+    traceability: list[dict[str, str]] = field(default_factory=list)
     verified: bool = False
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "component": self.component,
@@ -152,9 +152,9 @@ class SessionHistory:
 
     timestamp: datetime
     action: str
-    phase: Optional[TDFlowPhase] = None
-    component: Optional[str] = None
-    details: Optional[str] = None
+    phase: TDFlowPhase | None = None
+    component: str | None = None
+    details: str | None = None
 
 
 @dataclass
@@ -176,28 +176,28 @@ class TDFlowSession:
     auto_refactor: bool = False
 
     # Progress
-    components: List[ComponentProgress] = field(default_factory=list)
+    components: list[ComponentProgress] = field(default_factory=list)
     current_phase: TDFlowPhase = TDFlowPhase.INIT
-    current_component: Optional[str] = None
+    current_component: str | None = None
 
     # History
-    history: List[SessionHistory] = field(default_factory=list)
+    history: list[SessionHistory] = field(default_factory=list)
 
-    def get_component(self, name: str) -> Optional[ComponentProgress]:
+    def get_component(self, name: str) -> ComponentProgress | None:
         """Get component by name."""
         for comp in self.components:
             if comp.name == name:
                 return comp
         return None
 
-    def get_next_pending(self) -> Optional[ComponentProgress]:
+    def get_next_pending(self) -> ComponentProgress | None:
         """Get next component to process."""
         for comp in self.components:
             if comp.status == ComponentStatus.PENDING:
                 return comp
         return None
 
-    def get_current_component(self) -> Optional[ComponentProgress]:
+    def get_current_component(self) -> ComponentProgress | None:
         """Get the current component being worked on."""
         if self.current_component:
             return self.get_component(self.current_component)
@@ -210,9 +210,9 @@ class TDFlowSession:
     def add_history(
         self,
         action: str,
-        phase: Optional[TDFlowPhase] = None,
-        component: Optional[str] = None,
-        details: Optional[str] = None,
+        phase: TDFlowPhase | None = None,
+        component: str | None = None,
+        details: str | None = None,
     ) -> None:
         """Add history entry."""
         self.history.append(
@@ -225,9 +225,9 @@ class TDFlowSession:
             )
         )
 
-    def get_progress_summary(self) -> Dict[str, int]:
+    def get_progress_summary(self) -> dict[str, int]:
         """Get summary of component statuses."""
-        summary: Dict[str, int] = {}
+        summary: dict[str, int] = {}
         for comp in self.components:
             status = comp.status.value
             summary[status] = summary.get(status, 0) + 1

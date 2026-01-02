@@ -1,0 +1,43 @@
+context_data:
+  check_id: single-responsibility-modules
+  contract_id: agentforge
+  file_path: tools/context_retrieval.py
+  fix_hint: Split modules with too many classes into focused single-class modules
+  line_number: 59
+  message: 'Class ''ContextRetriever'' has 14 methods (max: 3)'
+  precomputed:
+    check_definition: "Check Definition for 'single-responsibility-modules':\nid:\
+      \ single-responsibility-modules\nname: Single Responsibility Modules\ntype:\
+      \ ast_check\nseverity: info\nenabled: true\ndescription: Modules should focus\
+      \ on a single responsibility\nconfig:\n  metric: class_size\n  threshold: 3\n\
+      \  scope: file\nfix_hint: Split modules with too many classes into focused single-class\
+      \ modules\napplies_to:\n  paths:\n  - '**/*.py'\n  exclude_paths:\n  - '**/tests/**'\n\
+      \  - '**/__init__.py'\n"
+    file_context: "      50:     symbol_count: int = 0\n      51:     duration_ms:\
+      \ int = 0\n      52:     errors: List[str] = None\n      53: \n      54:   \
+      \  def __post_init__(self):\n      55:         if self.errors is None:\n   \
+      \   56:             self.errors = []\n      57: \n      58: \n>>>   59: class\
+      \ ContextRetriever:\n      60:     \"\"\"\n      61:     Main entry point for\
+      \ context retrieval.\n      62: \n      63:     Combines LSP (structural) and\
+      \ Vector (semantic) search to provide\n      64:     comprehensive code context\
+      \ for LLM consumption.\n      65: \n      66:     Example:\n      67:      \
+      \   retriever = ContextRetriever(\"/path/to/dotnet/project\")\n      68:   \
+      \      context = retriever.retrieve(\"order discount processing\", budget_tokens=6000)\n\
+      \      69:         print(context.to_prompt_text())"
+  severity: minor
+  test_path: tests/unit/tools/
+  violation_id: V-0184c1dad49a
+current_step: 8
+error: null
+last_updated: '2026-01-01T07:25:22.248674'
+phase: init
+verification:
+  checks_failing: 1
+  checks_passing: 0
+  details:
+    last_check: "\u2717 Check 'single-responsibility-modules' FAILED for tools/context_retrieval.py\n\
+      Violations (1):\n- Line 59: Class 'ContextRetriever' has 14 methods (max: 3)\n\
+      \  Hint: Split modules with too many classes into focused single-class modules"
+  last_check_time: '2026-01-01T07:24:15.554753'
+  ready_for_completion: false
+  tests_passing: false

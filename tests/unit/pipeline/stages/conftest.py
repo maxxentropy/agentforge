@@ -1,15 +1,12 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-2-design-pipeline.yaml
-# @spec_file: specs/pipeline-controller/implementation/phase-3-tdd-stages.yaml
-# @spec_file: specs/pipeline-controller/implementation/phase-4-refactor-deliver.yaml
-# @spec_id: pipeline-controller-phase2-v1
-# @spec_id: pipeline-controller-phase3-v1
-# @spec_id: pipeline-controller-phase4-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
+# @spec_id: core-pipeline-v1
+# @spec_id: core-pipeline-v1
 
 """Shared fixtures for stage unit tests."""
 
-from pathlib import Path
-from typing import Any, Dict
-from unittest.mock import MagicMock
 
 import pytest
 

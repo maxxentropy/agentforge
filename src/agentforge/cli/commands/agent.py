@@ -11,25 +11,23 @@ Implementation functions for agent CLI commands.
 These functions are called by the Click commands in cli/click_commands/agent.py.
 """
 
-import click
 from pathlib import Path
-from typing import Optional
-from datetime import datetime
+
+import click
 
 
 def _create_orchestrator():
     """Create and return a configured AgentOrchestrator instance."""
-    from agentforge.core.harness.session_manager import SessionManager
-    from agentforge.core.harness.memory_manager import MemoryManager
-    from agentforge.core.harness.memory_store import MemoryStore
-    from agentforge.core.harness.tool_selector import ToolSelector
-    from agentforge.core.harness.tool_registry import ToolRegistry
     from agentforge.core.harness.agent_monitor import AgentMonitor
-    from agentforge.core.harness.recovery_executor import RecoveryExecutor
+    from agentforge.core.harness.agent_orchestrator import AgentOrchestrator
     from agentforge.core.harness.checkpoint_manager import CheckpointManager
     from agentforge.core.harness.escalation_manager import EscalationManager
-    from agentforge.core.harness.agent_orchestrator import AgentOrchestrator
-    from agentforge.core.harness.orchestrator_domain import OrchestratorConfig, ExecutionMode
+    from agentforge.core.harness.memory_manager import MemoryManager
+    from agentforge.core.harness.memory_store import MemoryStore
+    from agentforge.core.harness.recovery_executor import RecoveryExecutor
+    from agentforge.core.harness.session_manager import SessionManager
+    from agentforge.core.harness.tool_registry import ToolRegistry
+    from agentforge.core.harness.tool_selector import ToolSelector
 
     # Create components
     session_manager = SessionManager()
@@ -55,7 +53,7 @@ def _create_orchestrator():
     return orchestrator
 
 
-def _get_current_session_id() -> Optional[str]:
+def _get_current_session_id() -> str | None:
     """Get the current active session ID from state file."""
     state_file = Path(".agentforge/harness/current_session.txt")
     if state_file.exists():
@@ -89,7 +87,7 @@ def run_start(task: str, workflow: str, phase: str, token_budget: int, mode: str
 
     orchestrator = _create_orchestrator()
 
-    click.echo(f"Starting agent session...")
+    click.echo("Starting agent session...")
     click.echo(f"  Task: {task}")
     click.echo(f"  Workflow: {workflow}")
     click.echo(f"  Initial phase: {phase}")
@@ -115,7 +113,7 @@ def run_start(task: str, workflow: str, phase: str, token_budget: int, mode: str
     click.echo("  agentforge agent status   # Check status")
 
 
-def run_status(session_id: Optional[str], verbose: bool) -> None:
+def run_status(session_id: str | None, verbose: bool) -> None:
     """Show session status."""
     if session_id is None:
         session_id = _get_current_session_id()
@@ -147,14 +145,13 @@ def run_status(session_id: Optional[str], verbose: bool) -> None:
         else:
             click.echo(click.style(f"  Health: {health_status}", fg="red"))
 
-    if verbose and health and hasattr(health, 'issues'):
-        if health.issues:
-            click.echo("  Issues:")
-            for issue in health.issues:
-                click.echo(f"    - {issue}")
+    if verbose and health and hasattr(health, 'issues') and health.issues:
+        click.echo("  Issues:")
+        for issue in health.issues:
+            click.echo(f"    - {issue}")
 
 
-def run_resume(session_id: Optional[str]) -> None:
+def run_resume(session_id: str | None) -> None:
     """Resume a paused session."""
     if session_id is None:
         # Try to find most recent paused session
@@ -173,7 +170,7 @@ def run_resume(session_id: Optional[str]) -> None:
         click.echo(click.style(f"✗ Failed to resume session: {session_id}", fg="red"))
 
 
-def run_pause(session_id: Optional[str], reason: str) -> None:
+def run_pause(session_id: str | None, reason: str) -> None:
     """Pause the current session."""
     if session_id is None:
         session_id = _get_current_session_id()
@@ -191,7 +188,7 @@ def run_pause(session_id: Optional[str], reason: str) -> None:
         click.echo(click.style(f"✗ Failed to pause session: {session_id}", fg="red"))
 
 
-def run_stop(session_id: Optional[str], force: bool) -> None:
+def run_stop(session_id: str | None, force: bool) -> None:
     """Stop and abort the current session."""
     if session_id is None:
         session_id = _get_current_session_id()
@@ -199,10 +196,9 @@ def run_stop(session_id: Optional[str], force: bool) -> None:
             click.echo(click.style("No active session to stop.", fg="yellow"))
             return
 
-    if not force:
-        if not click.confirm(f"Stop session {session_id}? This cannot be undone."):
-            click.echo("Cancelled.")
-            return
+    if not force and not click.confirm(f"Stop session {session_id}? This cannot be undone."):
+        click.echo("Cancelled.")
+        return
 
     orchestrator = _create_orchestrator()
     success = orchestrator.fail_session(session_id, "User requested stop")
@@ -214,7 +210,7 @@ def run_stop(session_id: Optional[str], force: bool) -> None:
         click.echo(click.style(f"✗ Failed to stop session: {session_id}", fg="red"))
 
 
-def run_step(session_id: Optional[str]) -> None:
+def run_step(session_id: str | None) -> None:
     """Execute a single step."""
     if session_id is None:
         session_id = _get_current_session_id()
@@ -228,7 +224,7 @@ def run_step(session_id: Optional[str]) -> None:
     result = orchestrator.execute_step(session_id)
 
     if result.success:
-        click.echo(click.style(f"✓ Step completed", fg="green"))
+        click.echo(click.style("✓ Step completed", fg="green"))
         click.echo(f"  Task ID: {result.task_id}")
         click.echo(f"  Duration: {result.duration_seconds:.2f}s")
         if result.tools_used:
@@ -236,12 +232,12 @@ def run_step(session_id: Optional[str]) -> None:
         if result.output:
             click.echo(f"  Output: {result.output}")
     else:
-        click.echo(click.style(f"✗ Step failed", fg="red"))
+        click.echo(click.style("✗ Step failed", fg="red"))
         if result.error:
             click.echo(f"  Error: {result.error}")
 
 
-def run_until_complete(session_id: Optional[str], max_iterations: Optional[int]) -> None:
+def run_until_complete(session_id: str | None, max_iterations: int | None) -> None:
     """Run until completion or iteration limit."""
     if session_id is None:
         session_id = _get_current_session_id()
@@ -258,9 +254,9 @@ def run_until_complete(session_id: Optional[str], max_iterations: Optional[int])
     result = orchestrator.run_until_complete(session_id, max_iterations)
 
     if result.success:
-        click.echo(click.style(f"✓ Session completed successfully", fg="green"))
+        click.echo(click.style("✓ Session completed successfully", fg="green"))
     else:
-        click.echo(click.style(f"✗ Session ended with errors", fg="red"))
+        click.echo(click.style("✗ Session ended with errors", fg="red"))
         if result.error:
             click.echo(f"  Error: {result.error}")
 
@@ -270,8 +266,8 @@ def run_until_complete(session_id: Optional[str], max_iterations: Optional[int])
 
 def run_list(state: str, limit: int) -> None:
     """List agent sessions."""
-    from agentforge.core.harness.session_store import SessionStore
     from agentforge.core.harness.session_domain import SessionState
+    from agentforge.core.harness.session_store import SessionStore
 
     store = SessionStore()
     session_ids = store.list_sessions()
@@ -327,7 +323,7 @@ def run_list(state: str, limit: int) -> None:
     click.echo(f"Showing {shown} of {len(session_ids)} sessions")
 
 
-def run_history(session_id: Optional[str], limit: int) -> None:
+def run_history(session_id: str | None, limit: int) -> None:
     """Show execution history."""
     if session_id is None:
         session_id = _get_current_session_id()
@@ -391,17 +387,17 @@ def run_fix_violation(
         auto_commit: Auto-commit without approval
     """
     import yaml
+
     from agentforge.core.harness.minimal_context.fix_workflow import (
-        MinimalContextFixWorkflow,
         create_minimal_fix_workflow,
     )
-    from agentforge.core.harness.minimal_context.state_store import TaskPhase
+    from agentforge.core.harness.minimal_context.state_store import Phase
 
     project_path = Path.cwd()
 
     click.echo(f"Fixing violation: {violation_id}")
     click.echo(f"Project: {project_path}")
-    click.echo(f"Architecture: Minimal Context (bounded tokens)")
+    click.echo("Architecture: Minimal Context (bounded tokens)")
     click.echo()
 
     # Check violation exists
@@ -476,7 +472,7 @@ def run_fix_violation(
             click.echo()
             click.echo("Run 'agentforge agent approve-commit' to apply")
 
-    elif result.get("phase") == TaskPhase.FAILED.value:
+    elif result.get("phase") == Phase.FAILED.value:
         click.echo(click.style("Fix failed", fg="red"))
         click.echo(f"  Error: {result.get('error')}")
         click.echo(f"  Steps attempted: {result.get('steps_taken', 0)}")
@@ -494,7 +490,7 @@ def run_fix_violation(
 
 def run_fix_violations_batch(
     limit: int = 5,
-    severity: Optional[str] = None,
+    severity: str | None = None,
     dry_run: bool = False,
     verbose: bool = False,
 ) -> None:
@@ -507,8 +503,8 @@ def run_fix_violations_batch(
         dry_run: Don't make actual changes
         verbose: Show detailed output
     """
-    from agentforge.core.harness.violation_tools import ViolationTools
     from agentforge.core.harness.minimal_context.fix_workflow import create_minimal_fix_workflow
+    from agentforge.core.harness.violation_tools import ViolationTools
 
     project_path = Path.cwd()
     tools = ViolationTools(project_path)
@@ -611,7 +607,7 @@ def run_approve_commit() -> None:
         git_tools.clear_pending_commit()
 
 
-def run_list_violations(status: str = "open", severity: Optional[str] = None, limit: int = 20) -> None:
+def run_list_violations(status: str = "open", severity: str | None = None, limit: int = 20) -> None:
     """List violations that can be fixed."""
     from agentforge.core.harness.violation_tools import ViolationTools
 

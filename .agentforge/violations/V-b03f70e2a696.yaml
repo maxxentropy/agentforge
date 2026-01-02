@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-b03f70e2a696
+contract_id: agentforge
+check_id: single-responsibility-modules
+severity: minor
+file_path: tools/tdflow/orchestrator.py
+message: 'Class ''TDFlowOrchestrator'' has 11 methods (max: 3)'
+detected_at: '2025-12-31T02:40:13.205284'
+last_seen_at: '2025-12-31T03:25:16.556262'
+status: stale
+line_number: 27
+fix_hint: Split modules with too many classes into focused single-class modules

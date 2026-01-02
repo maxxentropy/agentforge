@@ -16,9 +16,8 @@ import ast
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple
 
-from ..domain import TestLinkage, TestAnalysis, TestInventory
+from ..domain import TestAnalysis, TestInventory, TestLinkage
 
 
 @dataclass
@@ -31,8 +30,8 @@ class TestLinkageAnalyzer:
     """
 
     root_path: Path
-    test_directories: List[str] = field(default_factory=lambda: ["tests", "test"])
-    source_directories: List[str] = field(default_factory=lambda: ["src", "tools", "lib"])
+    test_directories: list[str] = field(default_factory=lambda: ["tests", "test"])
+    source_directories: list[str] = field(default_factory=lambda: ["src", "tools", "lib"])
 
     def analyze(self) -> TestAnalysis:
         """
@@ -48,7 +47,7 @@ class TestLinkageAnalyzer:
         source_files = self._find_source_files()
 
         # Build mappings using multiple detection methods
-        linkages: Dict[str, TestLinkage] = {}
+        linkages: dict[str, TestLinkage] = {}
 
         for test_file in test_files:
             # Analyze imports in test file
@@ -109,7 +108,7 @@ class TestLinkageAnalyzer:
             estimated_coverage=len(linkages) / max(len(source_files), 1),
         )
 
-    def _find_test_files(self) -> List[Path]:
+    def _find_test_files(self) -> list[Path]:
         """Find all test files in the project."""
         test_files = []
         for test_dir in self.test_directories:
@@ -121,7 +120,7 @@ class TestLinkageAnalyzer:
                     test_files.append(f)
         return test_files
 
-    def _find_source_files(self) -> List[Path]:
+    def _find_source_files(self) -> list[Path]:
         """Find all source files (non-test Python files)."""
         source_files = []
         for source_dir in self.source_directories:
@@ -133,7 +132,7 @@ class TestLinkageAnalyzer:
                         source_files.append(f)
         return source_files
 
-    def _extract_imports(self, test_file: Path) -> Set[str]:
+    def _extract_imports(self, test_file: Path) -> set[str]:
         """Extract all import statements from a test file."""
         imports = set()
         try:
@@ -144,20 +143,19 @@ class TestLinkageAnalyzer:
                 if isinstance(node, ast.Import):
                     for alias in node.names:
                         imports.add(alias.name)
-                elif isinstance(node, ast.ImportFrom):
-                    if node.module:
-                        imports.add(node.module)
-                        # Also add the full path for each imported name
-                        for alias in node.names:
-                            imports.add(f"{node.module}.{alias.name}")
+                elif isinstance(node, ast.ImportFrom) and node.module:
+                    imports.add(node.module)
+                    # Also add the full path for each imported name
+                    for alias in node.names:
+                        imports.add(f"{node.module}.{alias.name}")
         except (SyntaxError, UnicodeDecodeError):
             pass
 
         return imports
 
     def _check_import_linkage(
-        self, source_file: Path, test_file: Path, imports: Set[str]
-    ) -> Tuple[float, str]:
+        self, source_file: Path, test_file: Path, imports: set[str]
+    ) -> tuple[float, str]:
         """
         Check if test file imports the source module.
 
@@ -187,7 +185,7 @@ class TestLinkageAnalyzer:
 
         return (0.0, "none")
 
-    def _check_naming_convention(self, source_file: Path) -> Tuple[Optional[str], float]:
+    def _check_naming_convention(self, source_file: Path) -> tuple[str | None, float]:
         """
         Check if there's a test file matching naming convention.
 
@@ -217,7 +215,7 @@ class TestLinkageAnalyzer:
 
         return (None, 0.0)
 
-    def _count_test_methods(self, test_files: List[Path]) -> int:
+    def _count_test_methods(self, test_files: list[Path]) -> int:
         """Count total test methods across all test files."""
         count = 0
         for test_file in test_files:
@@ -225,11 +223,11 @@ class TestLinkageAnalyzer:
                 content = test_file.read_text()
                 # Simple regex count for test methods
                 count += len(re.findall(r"def test_\w+", content))
-            except (UnicodeDecodeError, IOError):
+            except (OSError, UnicodeDecodeError):
                 pass
         return count
 
-    def _detect_frameworks(self, test_files: List[Path]) -> List[str]:
+    def _detect_frameworks(self, test_files: list[Path]) -> list[str]:
         """Detect test frameworks in use."""
         frameworks = set()
         for test_file in test_files:
@@ -241,13 +239,13 @@ class TestLinkageAnalyzer:
                     frameworks.add("unittest")
                 if "@pytest.fixture" in content:
                     frameworks.add("pytest")
-            except (UnicodeDecodeError, IOError):
+            except (OSError, UnicodeDecodeError):
                 pass
         return list(frameworks)
 
-    def _categorize_tests(self, test_files: List[Path]) -> Dict[str, int]:
+    def _categorize_tests(self, test_files: list[Path]) -> dict[str, int]:
         """Categorize tests by type (unit, integration, etc.)."""
-        categories: Dict[str, int] = {}
+        categories: dict[str, int] = {}
         for test_file in test_files:
             rel_path = str(test_file.relative_to(self.root_path))
             if "/unit/" in rel_path:

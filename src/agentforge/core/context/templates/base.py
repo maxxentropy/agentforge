@@ -1,4 +1,4 @@
-# @spec_file: specs/minimal-context-architecture/04-context-templates.yaml
+# @spec_file: .agentforge/specs/core-context-v1.yaml
 # @spec_id: context-templates-v1
 # @component_id: context-templates-base
 # @test_path: tests/unit/context/test_templates.py
@@ -31,16 +31,16 @@ Usage:
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import yaml
 
+from ..fingerprint import ProjectFingerprint
 from .models import (
     CompactionLevel,
     ContextSection,
     TierDefinition,
 )
-from ..fingerprint import ProjectFingerprint
 
 
 class BaseContextTemplate(ABC):
@@ -132,7 +132,7 @@ reasoning: brief explanation
 
     @property
     @abstractmethod
-    def phases(self) -> List[str]:
+    def phases(self) -> list[str]:
         """Return the valid phases for this task type."""
         pass
 
@@ -141,7 +141,7 @@ reasoning: brief explanation
         """Get tier 2 definition for a specific phase."""
         pass
 
-    def get_phase_mapping(self) -> Dict[str, str]:
+    def get_phase_mapping(self) -> dict[str, str]:
         """
         Map standard PhaseMachine phases to this template's phases.
 
@@ -186,7 +186,7 @@ reasoning: brief explanation
             return self.phases[0]
         return template_phase
 
-    def get_system_prompt(self, phase: Optional[str] = None) -> str:
+    def get_system_prompt(self, phase: str | None = None) -> str:
         """
         Get the system prompt for this task type.
 
@@ -194,7 +194,7 @@ reasoning: brief explanation
         """
         return self.BASE_SYSTEM_PROMPT
 
-    def get_all_tiers(self, phase: str) -> List[TierDefinition]:
+    def get_all_tiers(self, phase: str) -> list[TierDefinition]:
         """Get all tier definitions for a phase."""
         return [
             self.TIER1_ALWAYS,
@@ -216,9 +216,9 @@ reasoning: brief explanation
         task_spec: Any,
         state_spec: Any,
         phase: str,
-        precomputed: Dict[str, Any],
-        domain_context: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        precomputed: dict[str, Any],
+        domain_context: dict[str, Any],
+    ) -> dict[str, Any]:
         """
         Build the context dictionary from components.
 
@@ -235,7 +235,7 @@ reasoning: brief explanation
         Returns:
             Complete context dictionary ready for LLM
         """
-        context: Dict[str, Any] = {}
+        context: dict[str, Any] = {}
 
         # Tier 1: Always present
         context["fingerprint"] = fingerprint.to_context_yaml()
@@ -287,10 +287,10 @@ reasoning: brief explanation
     def _get_section_value(
         self,
         section: ContextSection,
-        precomputed: Dict[str, Any],
-        domain_context: Dict[str, Any],
+        precomputed: dict[str, Any],
+        domain_context: dict[str, Any],
         state_spec: Any,
-    ) -> Optional[Any]:
+    ) -> Any | None:
         """Get the value for a section based on its source."""
         # Check precomputed first
         if section.name in precomputed:
@@ -342,7 +342,7 @@ reasoning: brief explanation
 
         return value
 
-    def estimate_context_tokens(self, context: Dict[str, Any]) -> int:
+    def estimate_context_tokens(self, context: dict[str, Any]) -> int:
         """Estimate total tokens in a context dictionary."""
         yaml_str = yaml.dump(context, default_flow_style=False)
         return len(yaml_str) // 4

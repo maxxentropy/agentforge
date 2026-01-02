@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-d359c2afd774
+contract_id: agentforge
+check_id: max-nesting-depth
+severity: major
+file_path: src/agentforge/core/harness/minimal_context/enhanced_context_builder.py
+message: 'Function ''_populate_value_hints'' has nesting depth 6 (max: 4)'
+detected_at: '2026-01-01T01:39:13.678119'
+last_seen_at: '2026-01-01T01:39:13.678119'
+status: open
+line_number: 671
+fix_hint: Use early returns, guard clauses, or extract nested logic

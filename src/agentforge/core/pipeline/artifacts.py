@@ -1,9 +1,9 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-2-design-pipeline.yaml
-# @spec_file: specs/pipeline-controller/implementation/phase-3-tdd-stages.yaml
-# @spec_file: specs/pipeline-controller/implementation/phase-4-refactor-deliver.yaml
-# @spec_id: pipeline-controller-phase2-v1
-# @spec_id: pipeline-controller-phase3-v1
-# @spec_id: pipeline-controller-phase4-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
+# @spec_id: core-pipeline-v1
+# @spec_id: core-pipeline-v1
 # @component_id: pipeline-artifacts
 # @component_id: tdd-artifacts
 # @component_id: phase4-artifacts
@@ -23,7 +23,7 @@ These dataclasses provide:
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 @dataclass
@@ -39,9 +39,9 @@ class IntakeArtifact:
     original_request: str
     detected_scope: str  # bug_fix, feature_addition, refactoring, documentation, testing, unclear
     priority: str  # low, medium, high, critical
-    initial_questions: List[Dict[str, Any]] = field(default_factory=list)
-    detected_components: List[str] = field(default_factory=list)
-    keywords: List[str] = field(default_factory=list)
+    initial_questions: list[dict[str, Any]] = field(default_factory=list)
+    detected_components: list[str] = field(default_factory=list)
+    keywords: list[str] = field(default_factory=list)
     confidence: float = 0.5
     estimated_complexity: str = "medium"
 
@@ -57,9 +57,9 @@ class ClarifyArtifact:
     request_id: str
     clarified_requirements: str
     scope_confirmed: bool = False
-    answered_questions: List[Dict[str, Any]] = field(default_factory=list)
-    remaining_questions: List[Dict[str, Any]] = field(default_factory=list)
-    refined_scope: Optional[str] = None
+    answered_questions: list[dict[str, Any]] = field(default_factory=list)
+    remaining_questions: list[dict[str, Any]] = field(default_factory=list)
+    refined_scope: str | None = None
     ready_for_analysis: bool = False
 
 
@@ -73,11 +73,11 @@ class AnalyzeArtifact:
     """
 
     request_id: str
-    analysis: Dict[str, Any] = field(default_factory=dict)
-    affected_files: List[Dict[str, Any]] = field(default_factory=list)
-    components: List[Dict[str, Any]] = field(default_factory=list)
-    dependencies: List[str] = field(default_factory=list)
-    risks: List[Dict[str, Any]] = field(default_factory=list)
+    analysis: dict[str, Any] = field(default_factory=dict)
+    affected_files: list[dict[str, Any]] = field(default_factory=list)
+    components: list[dict[str, Any]] = field(default_factory=list)
+    dependencies: list[str] = field(default_factory=list)
+    risks: list[dict[str, Any]] = field(default_factory=list)
 
 
 @dataclass
@@ -93,13 +93,13 @@ class SpecArtifact:
     request_id: str
     title: str = ""
     version: str = "1.0"
-    overview: Dict[str, Any] = field(default_factory=dict)
-    components: List[Dict[str, Any]] = field(default_factory=list)
-    test_cases: List[Dict[str, Any]] = field(default_factory=list)
-    interfaces: List[Dict[str, Any]] = field(default_factory=list)
-    data_models: List[Dict[str, Any]] = field(default_factory=list)
-    implementation_order: List[Dict[str, Any]] = field(default_factory=list)
-    acceptance_criteria: List[str] = field(default_factory=list)
+    overview: dict[str, Any] = field(default_factory=dict)
+    components: list[dict[str, Any]] = field(default_factory=list)
+    test_cases: list[dict[str, Any]] = field(default_factory=list)
+    interfaces: list[dict[str, Any]] = field(default_factory=list)
+    data_models: list[dict[str, Any]] = field(default_factory=list)
+    implementation_order: list[dict[str, Any]] = field(default_factory=list)
+    acceptance_criteria: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -113,11 +113,11 @@ class RedArtifact:
 
     spec_id: str
     request_id: str = ""
-    test_files: List[Dict[str, str]] = field(default_factory=list)
-    test_results: Dict[str, Any] = field(default_factory=dict)
-    failing_tests: List[str] = field(default_factory=list)
-    unexpected_passes: List[str] = field(default_factory=list)
-    warnings: List[str] = field(default_factory=list)
+    test_files: list[dict[str, str]] = field(default_factory=list)
+    test_results: dict[str, Any] = field(default_factory=dict)
+    failing_tests: list[str] = field(default_factory=list)
+    unexpected_passes: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -130,12 +130,12 @@ class GreenArtifact:
 
     spec_id: str
     request_id: str = ""
-    implementation_files: List[str] = field(default_factory=list)
-    test_results: Dict[str, Any] = field(default_factory=dict)
+    implementation_files: list[str] = field(default_factory=list)
+    test_results: dict[str, Any] = field(default_factory=dict)
     passing_tests: int = 0
     iterations: int = 0
     all_tests_pass: bool = False
-    error: Optional[str] = None
+    error: str | None = None
 
 
 @dataclass
@@ -149,12 +149,12 @@ class RefactorArtifact:
 
     spec_id: str
     request_id: str = ""
-    refactored_files: List[Dict[str, str]] = field(default_factory=list)
-    improvements: List[Dict[str, str]] = field(default_factory=list)
-    final_files: List[str] = field(default_factory=list)
-    test_results: Dict[str, Any] = field(default_factory=dict)
+    refactored_files: list[dict[str, str]] = field(default_factory=list)
+    improvements: list[dict[str, str]] = field(default_factory=list)
+    final_files: list[str] = field(default_factory=list)
+    test_results: dict[str, Any] = field(default_factory=dict)
     conformance_passed: bool = False
-    remaining_violations: List[Dict[str, Any]] = field(default_factory=list)
+    remaining_violations: list[dict[str, Any]] = field(default_factory=list)
 
 
 @dataclass
@@ -168,12 +168,12 @@ class DeliverArtifact:
     spec_id: str
     request_id: str = ""
     deliverable_type: str = "commit"  # commit, pr, files, patch
-    commit_sha: Optional[str] = None
+    commit_sha: str | None = None
     commit_message: str = ""
-    branch_name: Optional[str] = None
-    pr_url: Optional[str] = None
-    patch_file: Optional[str] = None
-    files_modified: List[str] = field(default_factory=list)
-    files_staged: List[str] = field(default_factory=list)
+    branch_name: str | None = None
+    pr_url: str | None = None
+    patch_file: str | None = None
+    files_modified: list[str] = field(default_factory=list)
+    files_staged: list[str] = field(default_factory=list)
     summary: str = ""
     status: str = ""

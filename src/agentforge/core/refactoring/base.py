@@ -13,21 +13,20 @@ Abstract base class for language-specific refactoring providers.
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Optional, Tuple
 
 
 @dataclass
 class RefactoringResult:
     """Result of a refactoring operation."""
     success: bool
-    new_content: Optional[str] = None
-    error: Optional[str] = None
+    new_content: str | None = None
+    error: str | None = None
     changes_description: str = ""
 
     # Details about what was created
-    new_function_name: Optional[str] = None
-    new_function_location: Optional[Tuple[int, int]] = None  # (start_line, end_line)
-    call_replacement: Optional[str] = None
+    new_function_name: str | None = None
+    new_function_location: tuple[int, int] | None = None  # (start_line, end_line)
+    call_replacement: str | None = None
 
     @classmethod
     def failure(cls, error: str) -> "RefactoringResult":
@@ -38,7 +37,7 @@ class RefactoringResult:
         cls,
         new_content: str,
         description: str,
-        new_function_name: Optional[str] = None,
+        new_function_name: str | None = None,
     ) -> "RefactoringResult":
         return cls(
             success=True,
@@ -54,10 +53,10 @@ class CanExtractResult:
     can_extract: bool
     reason: str
     # If extraction is possible, these describe what would happen
-    suggested_name: Optional[str] = None
-    parameters_needed: List[str] = field(default_factory=list)
+    suggested_name: str | None = None
+    parameters_needed: list[str] = field(default_factory=list)
     has_early_return: bool = False
-    complexity_reduction: Optional[int] = None
+    complexity_reduction: int | None = None
 
 
 class RefactoringProvider(ABC):
@@ -74,7 +73,7 @@ class RefactoringProvider(ABC):
     """
 
     # File extensions this provider handles
-    FILE_EXTENSIONS: List[str] = []
+    FILE_EXTENSIONS: list[str] = []
 
     def __init__(self, project_path: Path):
         self.project_path = Path(project_path)

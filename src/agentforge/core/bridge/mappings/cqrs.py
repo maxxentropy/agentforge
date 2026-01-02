@@ -10,11 +10,10 @@ CQRS/MediatR Pattern Mappings
 Mappings for CQRS pattern detection, particularly MediatR-based implementations.
 """
 
-from typing import List
 
-from bridge.mappings.base import PatternMapping
-from bridge.mappings.registry import MappingRegistry
-from bridge.domain import CheckTemplate, MappingContext
+from ..domain import CheckTemplate, MappingContext
+from .base import PatternMapping
+from .registry import MappingRegistry
 
 
 @MappingRegistry.register
@@ -50,7 +49,7 @@ class CQRSMediatRMapping(PatternMapping):
         primary = context.get_pattern_primary("cqrs")
         return primary in ("MediatR", None) or context.has_framework("MediatR")
 
-    def get_templates(self, context: MappingContext) -> List[CheckTemplate]:
+    def get_templates(self, context: MappingContext) -> list[CheckTemplate]:
         """Get CQRS check templates."""
         return [
             CheckTemplate(
@@ -141,7 +140,7 @@ class CQRSGenericMapping(PatternMapping):
         primary = context.get_pattern_primary("cqrs")
         return primary not in ("MediatR",) and not context.has_framework("MediatR")
 
-    def get_templates(self, context: MappingContext) -> List[CheckTemplate]:
+    def get_templates(self, context: MappingContext) -> list[CheckTemplate]:
         """Get generic CQRS check templates."""
         return [
             CheckTemplate(

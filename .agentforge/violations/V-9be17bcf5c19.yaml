@@ -1,0 +1,13 @@
+schema_version: '1.0'
+violation_id: V-9be17bcf5c19
+contract_id: agentforge
+check_id: max-parameter-count
+severity: major
+file_path: tools/generate/domain.py
+message: 'Function ''success_result'' has 6 parameters (max: 5)'
+detected_at: '2025-12-31T04:36:43.116617'
+last_seen_at: '2026-01-01T01:39:13.688713'
+status: open
+line_number: 313
+fix_hint: Group related parameters into a dataclass or use **kwargs
+test_path: tests/unit/tools/generate/

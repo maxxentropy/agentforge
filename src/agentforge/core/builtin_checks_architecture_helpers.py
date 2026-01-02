@@ -11,8 +11,6 @@ Extracted from builtin_checks_architecture.py to reduce complexity and file leng
 
 import ast
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple
-
 
 # Standard library modules (for import classification)
 STDLIB_MODULES = {
@@ -52,16 +50,16 @@ def get_relative_path(file_path: Path, repo_root: Path) -> str:
         return str(file_path)
 
 
-def parse_source_safe(file_path: Path) -> Optional[ast.Module]:
+def parse_source_safe(file_path: Path) -> ast.Module | None:
     """Parse a Python file, returning None on error."""
     try:
         source = file_path.read_text(encoding="utf-8")
         return ast.parse(source)
-    except (SyntaxError, IOError, UnicodeDecodeError):
+    except (OSError, SyntaxError, UnicodeDecodeError):
         return None
 
 
-def get_layer_for_path(file_path: Path, repo_root: Path, layer_detection: Dict[str, str]) -> Optional[str]:
+def get_layer_for_path(file_path: Path, repo_root: Path, layer_detection: dict[str, str]) -> str | None:
     """Determine which layer a file belongs to based on its path."""
     rel_path = get_relative_path(file_path, repo_root).replace("\\", "/")
     path_parts = rel_path.lower().split("/")
@@ -75,7 +73,7 @@ def get_layer_for_path(file_path: Path, repo_root: Path, layer_detection: Dict[s
     return None
 
 
-def get_layer_for_import(import_name: str, layer_detection: Dict[str, str]) -> Optional[str]:
+def get_layer_for_import(import_name: str, layer_detection: dict[str, str]) -> str | None:
     """Determine which layer an import belongs to based on module name."""
     parts = import_name.split(".")
     for pattern, layer in layer_detection.items():
@@ -87,7 +85,7 @@ def get_layer_for_import(import_name: str, layer_detection: Dict[str, str]) -> O
     return None
 
 
-def extract_import_names(node: ast.AST) -> List[Tuple[str, int]]:
+def extract_import_names(node: ast.AST) -> list[tuple[str, int]]:
     """Extract import names and line numbers from an AST node."""
     if isinstance(node, ast.Import):
         return [(alias.name, node.lineno) for alias in node.names]
@@ -132,11 +130,9 @@ def is_type_checking_block(node: ast.If) -> bool:
     """Check if an If node is a TYPE_CHECKING guard."""
     if isinstance(node.test, ast.Name) and node.test.id == "TYPE_CHECKING":
         return True
-    if isinstance(node.test, ast.Attribute) and getattr(node.test, 'attr', '') == "TYPE_CHECKING":
-        return True
-    return False
+    return bool(isinstance(node.test, ast.Attribute) and getattr(node.test, 'attr', '') == "TYPE_CHECKING")
 
 
-def create_violation(message: str, file: str, line: int, severity: str, fix_hint: str) -> Dict:
+def create_violation(message: str, file: str, line: int, severity: str, fix_hint: str) -> dict:
     """Create a standardized violation dictionary."""
     return {"message": message, "file": file, "line": line, "severity": severity, "fix_hint": fix_hint}

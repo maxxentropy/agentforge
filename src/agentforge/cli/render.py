@@ -5,9 +5,10 @@ Contains functions to render YAML specifications to human-readable Markdown.
 """
 
 import sys
+from pathlib import Path
+
 import click
 import yaml
-from pathlib import Path
 
 
 def _render_metadata(meta: dict) -> list:

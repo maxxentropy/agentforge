@@ -1,0 +1,117 @@
+items:
+- added_at: '2026-01-01T07:25:22.271240'
+  content:
+    action: edit_file
+    result: failure
+    summary: ''
+    target: tools/context_config.py
+  expires_after_steps: null
+  key: action_step_8
+  pinned: false
+  step: 8
+  type: action_result
+- added_at: '2026-01-01T07:25:11.229019'
+  content:
+    action: edit_file
+    result: failure
+    summary: ''
+    target: tools/context_config.py
+  expires_after_steps: null
+  key: action_step_7
+  pinned: false
+  step: 7
+  type: action_result
+- added_at: '2026-01-01T07:24:59.368619'
+  content:
+    action: edit_file
+    result: failure
+    summary: ''
+    target: tools/context_config.py
+  expires_after_steps: null
+  key: action_step_6
+  pinned: false
+  step: 6
+  type: action_result
+- added_at: '2026-01-01T07:24:48.289133'
+  content:
+    action: load_context
+    result: success
+    summary: Loaded tools/context_retrieval.py into context
+    target: tools/context_retrieval.py
+  expires_after_steps: null
+  key: action_step_5
+  pinned: false
+  step: 5
+  type: action_result
+- added_at: '2026-01-01T07:24:48.264809'
+  content: "#!/usr/bin/env python3\n\"\"\"\nContext Retrieval System\n========================\n\
+    \nHybrid LSP + Vector retrieval for code context.\nImplements \"Correctness is\
+    \ Upstream\" - agents need real code to write accurate specs.\n\nThis is the main\
+    \ entry point that combines:\n- LSP: Compiler-accurate structural information\
+    \ (symbols, definitions, references)\n- Vector: Semantic similarity search (related\
+    \ code, concepts)\n\nUsage:\n    from tools.context_retrieval import ContextRetriever\n\
+    \n    retriever = ContextRetriever(project_path=\"/path/to/project\")\n    context\
+    \ = retriever.retrieve(\n        query=\"discount code handling\",\n        budget_tokens=6000\n\
+    \    )\n\nDependencies:\n    Required: pip install pyyaml\n    For vector search:\
+    \ pip install openai faiss-cpu\n    For C#: dotnet tool install -g csharp-ls\n\
+    \"\"\"\n\nimport os\nimport sys\nimport yaml\nfrom pathlib import Path\nfrom dataclasses\
+    \ import dataclass\nfrom typing import List, Optional, Dict, Any\n\n# Import components\n\
+    from tools.context_assembler import (\n    ContextAssembler,\n    CodeContext,\n\
+    \    FileContext,\n    SymbolInfo,\n    PatternMatch,\n)\n\n\n@dataclass\nclass\
+    \ IndexStats:\n    \"\"\"Statistics from indexing operation.\"\"\"\n    file_count:\
+    \ int = 0\n    chunk_count: int = 0\n    symbol_count: int = 0\n    duration_ms:\
+    \ int = 0\n    errors: List[str] = None\n\n    def __post_init__(self):\n    \
+    \    if self.errors is None:\n            self.errors = []\n\n\nclass ContextRetriever:\n\
+    \    \"\"\"\n    Main entry point for context retrieval.\n\n    Combines LSP (structural)\
+    \ and Vector (semantic) search to provide\n    comprehensive code context for\
+    \ LLM consumption.\n\n    Example:\n        retriever = ContextRetriever(\"/path/to/dotnet/project\"\
+    )\n        context = retriever.retrieve(\"order discount processing\", budget_tokens=6000)\n\
+    \        print(context.to_prompt_text())\n    \"\"\"\n\n    def __init__(self,\
+    \ project_path: str, config_path: str = None, provider: str = None):\n       \
+    \ \"\"\"\n        Initialize retriever for a project.\n\n        Args:\n     \
+    \       project_path: Root of the codebase to analyze\n            config_path:\
+    \ Optional path to context_retrieval.yaml\n            provider: Force specific\
+    \ embedding provider (\"local\", \"openai\", \"voyage\")\n        \"\"\"\n   \
+    \     self.project_path = Path(project_path).resolve()\n        self.config_path\
+    \ = config_path\n        self.config = self._load_config()\n        self.provider\
+    \ = provider\n\n        # Components (lazy-loaded)\n        self._lsp_adapter\
+    \ = None\n        self._vector_search = None\n        self._assembler = None\n\
+    \n        # State\n        self._lsp_available = None\n        self._vector_available\
+    \ = None\n\n    def _load_config(self) -> Dict[str, Any]:\n        \"\"\"Load\
+    \ retrieval configuration.\"\"\"\n        config_paths = [\n            self.config_path,\n\
+    \            self.project_path / \".agentforge\" / \"context_retrieval.yaml\"\
+    ,\n            self.project_path / \"config\" / \"context_retrieval.yaml\",\n\
+    \            Path(__file__).parent.parent / \"config\" / \"context_retrieval.yaml\"\
+    ,\n        ]\n\n        for path in config_paths:\n            if path and Path(path).exists():\n\
+    \                with open(path) as f:\n                    return yaml.safe_load(f)\n\
+    \n        return {\n            \"retrieval\": {\n                \"budget\":\
+    \ {\n                    \"default_tokens\": 6000,\n                    \"max_tokens\"\
+    : 12000,\n                },\n            },\n            \"filters\": {\n   \
+    \             \"include_patterns\": [\"**/*.cs\", \"**/*.py\", \"**/*.ts\"],\n\
+    \                \"exclude_patterns\": [\"**/bin/**\", \"**/obj/**\", \"**/node_modules/**\"\
+    ],\n            },\n        }\n\n    @property\n    def assembler(self) -> ContextAssembler:\n\
+    \        \"\"\"Get or create context assembler.\"\"\"\n        if self._assembler\
+    \ is None:\n            self._assembler = ContextAssembler(str(self.project_path),\
+    \ self.config)\n        return self._assembler\n\n    @property\n    def lsp_adapter(self):\n\
+    \        \"\"\"Get or create LSP adapter. Returns None if not available.\"\"\"\
+    \n        if self._lsp_adapter is None and self._lsp_available is None:\n    \
+    \        try:\n                from tools.lsp_adapter import get_adapter_for_project,\
+    \ LSPServerNotFound\n\n                adapter = get_adapter_for_project(str(self.project_path))\n\
+    \                adapter.initialize()\n                self._lsp_adapter = adapter\n\
+    \                self._lsp_available = True\n\n            except ImportError:\n\
+    \                self._lsp_available = False\n\n            except Exception as\
+    \ e:\n                print(f\"LSP initialization failed: {e}\", file=sys.stderr)\n\
+    \                self._lsp_available = False\n\n        return self._lsp_adapter\n\
+    \n    @property\n    def vector_search(self):\n        \"\"\"Get or create vector\
+    \ search. Returns None if not available.\"\"\"\n        if self._vector_search\
+    \ is None and self._vector_available is None:\n            try:\n            \
+    \    from tools.vector_search import VectorSearch\n\n                self._vector_search\
+    \ = VectorSearch(\n                    str(self.project_path),\n             \
+    \       self.config.get(\"semantic\", {}),\n                    provider=self.provider\n\
+    \               "
+  expires_after_steps: 3
+  key: full_file:tools/context_retrieval.py
+  pinned: false
+  step: 4
+  type: loaded_context
+max_items: 5

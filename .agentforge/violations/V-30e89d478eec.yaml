@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-30e89d478eec
+contract_id: agentforge
+check_id: max-imports
+severity: minor
+file_path: src/agentforge/core/vector_search.py
+message: 'File has 31 imports (max: 30)'
+detected_at: '2026-01-01T01:39:14.211877'
+last_seen_at: '2026-01-01T01:39:14.597293'
+status: open
+line_number: 1
+fix_hint: Consider splitting module or consolidating imports

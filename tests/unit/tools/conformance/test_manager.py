@@ -1,29 +1,25 @@
-# @spec_file: .agentforge/specs/conformance-v1.yaml
-# @spec_id: conformance-v1
+# @spec_file: .agentforge/specs/core-conformance-v1.yaml
+# @spec_id: core-conformance-v1
 # @component_id: tools-conformance-manager
 # @impl_path: tools/conformance/manager.py
 
 """Tests for ConformanceManager."""
 
-import pytest
 from datetime import date, datetime, timedelta
 from pathlib import Path
-import sys
 
-# Add tools to path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent.parent / 'tools'))
+import pytest
 
-from conformance.domain import (
-    Severity,
-    ViolationStatus,
-    ExemptionStatus,
-    ExemptionScopeType,
-    ExemptionScope,
-    Violation,
+from agentforge.core.conformance.domain import (
     Exemption,
-    ConformanceSummary,
+    ExemptionScope,
+    ExemptionScopeType,
+    ExemptionStatus,
+    Severity,
+    Violation,
+    ViolationStatus,
 )
-from conformance.manager import ConformanceManager
+from agentforge.core.conformance.manager import ConformanceManager
 
 
 def _make_violation(vid: str, message: str, detected: datetime, status: ViolationStatus) -> Violation:

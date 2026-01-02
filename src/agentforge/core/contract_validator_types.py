@@ -9,7 +9,6 @@ Extracted from contract_validator.py for modularity.
 """
 
 from dataclasses import dataclass, field
-from typing import List, Optional
 from enum import Enum
 
 
@@ -29,7 +28,7 @@ class ValidationResult:
     passed: bool
     severity: Severity
     message: str
-    details: Optional[str] = None
+    details: str | None = None
 
 
 @dataclass
@@ -38,7 +37,7 @@ class ContractValidationReport:
     contract_id: str
     contract_version: str
     is_valid: bool
-    results: List[ValidationResult] = field(default_factory=list)
+    results: list[ValidationResult] = field(default_factory=list)
     blocking_failures: int = 0
     required_failures: int = 0
     advisory_warnings: int = 0

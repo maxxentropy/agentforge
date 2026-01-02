@@ -1,0 +1,13 @@
+schema_version: '1.0'
+violation_id: V-7577cb3cac6c
+contract_id: agentforge
+check_id: single-responsibility-modules
+severity: minor
+file_path: tests/unit/harness/test_escalation_manager.py
+message: 'Class ''TestAcknowledgeEscalation'' has 5 methods (max: 3)'
+detected_at: '2025-12-31T07:19:19.385374'
+last_seen_at: '2026-01-01T01:39:14.107321'
+status: open
+line_number: 139
+fix_hint: Split modules with too many classes into focused single-class modules
+test_path: tests/unit/harness/test_escalation_manager.py

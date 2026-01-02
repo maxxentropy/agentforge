@@ -5,15 +5,15 @@ Contains the revision workflow for addressing specification issues.
 Apply logic is in revision_apply.py.
 """
 
-import sys
+import re
+import uuid
+from datetime import datetime
+from pathlib import Path
+
 import click
 import yaml
-from pathlib import Path
-from datetime import datetime
-import uuid
-import re
 
-from agentforge.cli.core import execute_contract, call_claude_code, call_anthropic_api, extract_yaml_from_response
+from agentforge.cli.core import call_anthropic_api, call_claude_code, extract_yaml_from_response
 
 
 def run_revise(args):
@@ -219,7 +219,7 @@ def _handle_issue_interactive(issue: dict, idx: int, total: int, session: dict) 
             choice = input("Your choice (or 'q' to save & quit): ").strip()
             if choice.lower() == 'q':
                 save_revision_session(session)
-                click.echo(f"\nSession saved. Resume with: python execute.py revise --continue")
+                click.echo("\nSession saved. Resume with: python execute.py revise --continue")
                 return False
 
             selected = next((o for o in issue['options'] if o['id'] == choice), None)
@@ -228,7 +228,7 @@ def _handle_issue_interactive(issue: dict, idx: int, total: int, session: dict) 
             click.echo(f"Invalid choice. Enter one of: {', '.join(o['id'] for o in issue['options'])}")
         except (EOFError, KeyboardInterrupt):
             save_revision_session(session)
-            click.echo(f"\nSession saved. Resume with: python execute.py revise --continue")
+            click.echo("\nSession saved. Resume with: python execute.py revise --continue")
             return False
 
     resolution = selected['resolution']

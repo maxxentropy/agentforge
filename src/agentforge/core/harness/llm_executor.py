@@ -12,25 +12,23 @@ This is the core component that enables the Agent Harness to actually run.
 """
 
 import time
-from typing import Any, Callable, Dict, List, Optional
+from collections.abc import Callable
+from typing import Any
 
 from agentforge.core.generate.provider import LLMProvider, get_provider
+from agentforge.core.harness.action_parser import ActionParser
+from agentforge.core.harness.agent_prompt_builder import AgentPromptBuilder
 from agentforge.core.harness.llm_executor_domain import (
     ActionType,
-    AgentAction,
     ExecutionContext,
+    LLMExecutorError,
     StepResult,
     ToolCall,
     ToolResult,
-    LLMExecutorError,
-    ToolExecutionError,
 )
-from agentforge.core.harness.agent_prompt_builder import AgentPromptBuilder
-from agentforge.core.harness.action_parser import ActionParser
-
 
 # Type alias for tool executors
-ToolExecutor = Callable[[str, Dict[str, Any]], ToolResult]
+ToolExecutor = Callable[[str, dict[str, Any]], ToolResult]
 
 
 class LLMExecutor:
@@ -46,10 +44,10 @@ class LLMExecutor:
 
     def __init__(
         self,
-        provider: Optional[LLMProvider] = None,
-        prompt_builder: Optional[AgentPromptBuilder] = None,
-        action_parser: Optional[ActionParser] = None,
-        tool_executors: Optional[Dict[str, ToolExecutor]] = None,
+        provider: LLMProvider | None = None,
+        prompt_builder: AgentPromptBuilder | None = None,
+        action_parser: ActionParser | None = None,
+        tool_executors: dict[str, ToolExecutor] | None = None,
         model: str = "claude-sonnet-4-20250514",
         max_tokens: int = 4096,
     ):
@@ -79,7 +77,7 @@ class LLMExecutor:
         """
         self.tool_executors[name] = executor
 
-    def register_tools(self, executors: Dict[str, ToolExecutor]) -> None:
+    def register_tools(self, executors: dict[str, ToolExecutor]) -> None:
         """Register multiple tool executors.
 
         Args:
@@ -137,7 +135,7 @@ class LLMExecutor:
             duration = time.time() - start_time
             return StepResult.failure_step(f"Unexpected error: {e}", duration)
 
-    def _call_llm(self, messages: List[dict]) -> tuple[str, int]:
+    def _call_llm(self, messages: list[dict]) -> tuple[str, int]:
         """Call the LLM provider.
 
         Args:
@@ -191,7 +189,7 @@ class LLMExecutor:
 
         return response_text, tokens_used
 
-    def _messages_to_prompt(self, messages: List[dict]) -> str:
+    def _messages_to_prompt(self, messages: list[dict]) -> str:
         """Convert message list to a single prompt string.
 
         This formats messages for providers that expect a single prompt
@@ -212,7 +210,7 @@ class LLMExecutor:
 
         return "\n".join(parts)
 
-    def _execute_tools(self, tool_calls: List[ToolCall]) -> List[ToolResult]:
+    def _execute_tools(self, tool_calls: list[ToolCall]) -> list[ToolResult]:
         """Execute a list of tool calls.
 
         Args:
@@ -275,8 +273,8 @@ class LLMExecutor:
         self,
         context: ExecutionContext,
         max_iterations: int = 50,
-        on_step: Optional[Callable[[StepResult], None]] = None,
-    ) -> List[StepResult]:
+        on_step: Callable[[StepResult], None] | None = None,
+    ) -> list[StepResult]:
         """Run the agent until completion or max iterations.
 
         Args:
@@ -289,7 +287,7 @@ class LLMExecutor:
         """
         results = []
 
-        for i in range(max_iterations):
+        for _i in range(max_iterations):
             # Check token budget
             if context.tokens_remaining <= 0:
                 results.append(StepResult.failure_step("Token budget exhausted"))
@@ -311,7 +309,7 @@ class LLMExecutor:
 
 
 def create_default_executor(
-    tool_executors: Optional[Dict[str, ToolExecutor]] = None,
+    tool_executors: dict[str, ToolExecutor] | None = None,
     model: str = "claude-sonnet-4-20250514",
 ) -> LLMExecutor:
     """Create an LLM executor with default configuration.

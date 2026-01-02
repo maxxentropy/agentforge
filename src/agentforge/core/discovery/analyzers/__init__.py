@@ -6,8 +6,8 @@ Provides analysis capabilities for detecting patterns, structure,
 and conventions in existing codebases.
 """
 
-from .structure import StructureAnalyzer
 from .patterns import PatternAnalyzer
+from .structure import StructureAnalyzer
 from .test_linkage import TestLinkageAnalyzer
 
 __all__ = ["StructureAnalyzer", "PatternAnalyzer", "TestLinkageAnalyzer"]

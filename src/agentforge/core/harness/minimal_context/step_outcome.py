@@ -1,5 +1,5 @@
-# @spec_file: specs/minimal-context-architecture/05-llm-integration.yaml
-# @spec_id: llm-integration-v1
+# @spec_file: .agentforge/specs/core-harness-minimal-context-v1.yaml
+# @spec_id: core-harness-minimal-context-v1
 # @component_id: step-outcome
 # @test_path: tests/unit/harness/test_executor.py
 
@@ -12,7 +12,7 @@ Extracted from executor.py for modularity.
 """
 
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any
 
 from .loop_detector import LoopDetection
 
@@ -37,16 +37,16 @@ class StepOutcome:
 
     success: bool
     action_name: str
-    action_params: Dict[str, Any]
+    action_params: dict[str, Any]
     result: str  # "success", "failure", "partial"
     summary: str
     should_continue: bool
     tokens_used: int
     duration_ms: int
-    error: Optional[str] = None
-    loop_detected: Optional[LoopDetection] = None
+    error: str | None = None
+    loop_detected: LoopDetection | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert to dictionary representation.
 

@@ -25,22 +25,20 @@ Usage:
     results = vs.search("discount code validation", top_k=10)
 """
 
-import os
-import sys
-import json
-import hashlib
-import glob
 import fnmatch
-from pathlib import Path
-from typing import List, Dict, Any, Optional
+import glob
+import hashlib
+import json
+import sys
 from datetime import datetime
+from pathlib import Path
 
 try:
-    from .vector_types import Chunk, SearchResult, IndexStats
     from .code_chunker import CodeChunker
+    from .vector_types import Chunk, IndexStats, SearchResult
 except ImportError:
-    from vector_types import Chunk, SearchResult, IndexStats
     from code_chunker import CodeChunker
+    from vector_types import Chunk, IndexStats, SearchResult
 
 
 class VectorSearch:
@@ -74,7 +72,7 @@ class VectorSearch:
 
         self.chunker = CodeChunker(self.chunk_size, self.chunk_overlap)
         self._index = None
-        self._metadata: List[Chunk] = []
+        self._metadata: list[Chunk] = []
 
         self.include_patterns = self.config.get("include_patterns", ["**/*.cs", "**/*.py", "**/*.ts"])
         self.exclude_patterns = self.config.get("exclude_patterns", [
@@ -108,7 +106,7 @@ class VectorSearch:
         """Path to metadata pickle file."""
         return self.index_dir / "metadata.pkl"
 
-    def _get_files(self) -> List[Path]:
+    def _get_files(self) -> list[Path]:
         """Get all files matching include/exclude patterns."""
         all_files = []
         for pattern in self.include_patterns:
@@ -141,7 +139,7 @@ class VectorSearch:
         if not self.metadata_file.exists():
             return False
         try:
-            with open(self.metadata_file, 'r', encoding='utf-8') as f:
+            with open(self.metadata_file, encoding='utf-8') as f:
                 cached = json.load(f)
             if cached.get('project_hash') != project_hash:
                 return False
@@ -154,12 +152,12 @@ class VectorSearch:
         except Exception:
             return False
 
-    def _chunk_files(self, files: List[Path], stats: IndexStats) -> List[Chunk]:
+    def _chunk_files(self, files: list[Path], stats: IndexStats) -> list[Chunk]:
         """Chunk all files and collect errors."""
         all_chunks = []
         for file_path in files:
             try:
-                with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
+                with open(file_path, encoding='utf-8', errors='replace') as f:
                     content = f.read()
                 language = self._detect_language(str(file_path))
                 rel_path = str(file_path.relative_to(self.project_path))
@@ -181,7 +179,7 @@ class VectorSearch:
         index.add(vectors)
         return index
 
-    def _save_index(self, index, chunks: List[Chunk], project_hash: str, file_count: int):
+    def _save_index(self, index, chunks: list[Chunk], project_hash: str, file_count: int):
         """Save index and metadata to disk."""
         import faiss
         self.index_dir.mkdir(parents=True, exist_ok=True)
@@ -250,14 +248,14 @@ class VectorSearch:
         try:
             import faiss
             self._index = faiss.read_index(str(self.index_file))
-            with open(self.metadata_file, 'r', encoding='utf-8') as f:
+            with open(self.metadata_file, encoding='utf-8') as f:
                 cached = json.load(f)
                 self._metadata = [Chunk.from_dict(c) for c in cached['chunks']]
             return True
         except Exception:
             return False
 
-    def search(self, query: str, top_k: int = 10) -> List[SearchResult]:
+    def search(self, query: str, top_k: int = 10) -> list[SearchResult]:
         """Search for code relevant to query."""
         try:
             import faiss
@@ -280,7 +278,7 @@ class VectorSearch:
         scores, indices = self._index.search(query_embedding, k)
 
         results = []
-        for score, idx in zip(scores[0], indices[0]):
+        for score, idx in zip(scores[0], indices[0], strict=False):
             if idx < 0 or idx >= len(self._metadata):
                 continue
             chunk = self._metadata[idx]
@@ -305,7 +303,7 @@ def _run_index(vs, args):
     """Run index command."""
     print(f"Indexing {args.project}...")
     stats = vs.index(force_rebuild=args.force)
-    print(f"\nIndex complete:")
+    print("\nIndex complete:")
     print(f"  Files: {stats.file_count}")
     print(f"  Chunks: {stats.chunk_count}")
     print(f"  Tokens: {stats.total_tokens}")

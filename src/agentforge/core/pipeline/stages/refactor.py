@@ -1,5 +1,5 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-4-refactor-deliver.yaml
-# @spec_id: pipeline-controller-phase4-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
 # @component_id: refactor-phase-executor
 # @test_path: tests/unit/pipeline/stages/test_refactor.py
 
@@ -9,15 +9,14 @@ The REFACTOR phase improves code quality while maintaining behavior (tests pass)
 This completes the RED-GREEN-REFACTOR cycle.
 """
 
-from typing import Any, Dict, List, Optional
-from pathlib import Path
 import logging
 import re
 import subprocess
 import sys
+from typing import Any
 
-from ..stage_executor import StageExecutor, StageContext, StageResult, StageStatus
 from ..llm_stage_executor import OutputValidation
+from ..stage_executor import StageContext, StageExecutor, StageResult
 
 logger = logging.getLogger(__name__)
 
@@ -101,7 +100,7 @@ Instructions:
 6. Call 'complete' when done
 """
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         """Initialize RefactorPhaseExecutor."""
         self._config = config or {}
         self.max_iterations = self._config.get("max_iterations", 10)
@@ -162,7 +161,7 @@ Instructions:
                 error=str(e),
             )
 
-    def _run_tests(self, context: StageContext) -> Dict[str, Any]:
+    def _run_tests(self, context: StageContext) -> dict[str, Any]:
         """Run test suite."""
         try:
             cmd = [sys.executable, "-m", "pytest", "-v", "--tb=short"]
@@ -188,7 +187,7 @@ Instructions:
         except Exception as e:
             return {"error": str(e), "passed": 0, "failed": 1}
 
-    def _run_conformance(self, context: StageContext) -> Dict[str, Any]:
+    def _run_conformance(self, context: StageContext) -> dict[str, Any]:
         """Run conformance checks."""
         try:
             # Use agentforge conformance check
@@ -249,9 +248,9 @@ Instructions:
 
     def _build_task(
         self,
-        artifact: Dict[str, Any],
-        test_results: Dict[str, Any],
-        conformance: Dict[str, Any],
+        artifact: dict[str, Any],
+        test_results: dict[str, Any],
+        conformance: dict[str, Any],
     ) -> str:
         """Build refactoring task description."""
         files = artifact.get("implementation_files", [])
@@ -273,8 +272,8 @@ Instructions:
     def _create_passthrough_artifact(
         self,
         context: StageContext,
-        test_results: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        test_results: dict[str, Any],
+    ) -> dict[str, Any]:
         """Create artifact when no refactoring needed."""
         input_artifact = context.input_artifacts
         impl_files = input_artifact.get("implementation_files", [])
@@ -304,10 +303,10 @@ Instructions:
     def _build_artifact(
         self,
         context: StageContext,
-        result: Dict[str, Any],
-        test_results: Dict[str, Any],
-        conformance: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        result: dict[str, Any],
+        test_results: dict[str, Any],
+        conformance: dict[str, Any],
+    ) -> dict[str, Any]:
         """Build REFACTOR artifact."""
         input_artifact = context.input_artifacts
         impl_files = input_artifact.get("implementation_files", [])
@@ -334,7 +333,7 @@ Instructions:
             "original_request": input_artifact.get("original_request"),
         }
 
-    def validate_output(self, artifact: Optional[Dict[str, Any]]) -> OutputValidation:
+    def validate_output(self, artifact: dict[str, Any] | None) -> OutputValidation:
         """Validate REFACTOR phase artifact."""
         if artifact is None:
             return OutputValidation(
@@ -364,6 +363,6 @@ Instructions:
         )
 
 
-def create_refactor_executor(config: Optional[Dict] = None) -> RefactorPhaseExecutor:
+def create_refactor_executor(config: dict | None = None) -> RefactorPhaseExecutor:
     """Create RefactorPhaseExecutor instance."""
     return RefactorPhaseExecutor(config)

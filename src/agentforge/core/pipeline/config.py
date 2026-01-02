@@ -1,5 +1,5 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-6-configuration.yaml
-# @spec_id: pipeline-controller-phase6-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
 # @component_id: config-loader, config-stage-config, config-pipeline-template, config-global-settings, config-env-expand, config-template-loader
 # @test_path: tests/unit/pipeline/test_config.py
 
@@ -19,7 +19,7 @@ import os
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import yaml
 
@@ -39,8 +39,8 @@ class StageConfig:
     enabled: bool = True
     timeout_seconds: int = 600
     max_iterations: int = 3
-    tools: Dict[str, Any] = field(default_factory=dict)
-    custom: Dict[str, Any] = field(default_factory=dict)
+    tools: dict[str, Any] = field(default_factory=dict)
+    custom: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -49,11 +49,11 @@ class PipelineTemplate:
 
     name: str
     description: str
-    stages: List[str]
-    defaults: Dict[str, Any] = field(default_factory=dict)
-    stage_config: Dict[str, StageConfig] = field(default_factory=dict)
-    exit_conditions: Dict[str, Any] = field(default_factory=dict)
-    required_context: List[str] = field(default_factory=list)
+    stages: list[str]
+    defaults: dict[str, Any] = field(default_factory=dict)
+    stage_config: dict[str, StageConfig] = field(default_factory=dict)
+    exit_conditions: dict[str, Any] = field(default_factory=dict)
+    required_context: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -77,8 +77,8 @@ class PipelineConfig:
     """
 
     pipeline_type: str
-    stages: List[str]
-    exit_after: Optional[str] = None
+    stages: list[str]
+    exit_after: str | None = None
     supervised: bool = False
     iteration_enabled: bool = True
     max_iterations_per_stage: int = 3
@@ -163,9 +163,9 @@ class ConfigurationLoader:
         self.config_path = self.project_path / ".agentforge" / "config"
         self.pipelines_path = self.project_path / ".agentforge" / "pipelines"
 
-        self._settings: Optional[GlobalSettings] = None
-        self._templates: Dict[str, PipelineTemplate] = {}
-        self._stage_configs: Dict[str, StageConfig] = {}
+        self._settings: GlobalSettings | None = None
+        self._templates: dict[str, PipelineTemplate] = {}
+        self._stage_configs: dict[str, StageConfig] = {}
 
     def load_settings(self) -> GlobalSettings:
         """Load global settings."""
@@ -283,7 +283,7 @@ class ConfigurationLoader:
         self._stage_configs[stage_name] = config
         return config
 
-    def list_available_pipelines(self) -> List[str]:
+    def list_available_pipelines(self) -> list[str]:
         """List all available pipeline types."""
         pipelines = set(self.DEFAULT_PIPELINES.keys())
 

@@ -1,0 +1,80 @@
+context_data:
+  check_id: max-function-length
+  contract_id: agentforge
+  file_path: tools/harness/minimal_context/fix_workflow.py
+  fix_hint: Extract logic into helper functions or use composition
+  line_number: 375
+  message: 'Function ''_fuzzy_find_and_replace'' has 51 lines (max: 50)'
+  precomputed:
+    analysis:
+      branch_count: 3
+      cognitive_complexity: 7
+      cyclomatic_complexity: 6
+      line_count: 71
+      loop_count: 2
+      nesting_depth: 3
+    extraction_suggestions:
+    - description: Extract if block (18 lines)
+      end_line: 436
+      extractable: true
+      impact: Reduces function length by 18 lines
+      start_line: 419
+    fix_strategy: Extract logical sections into helper functions
+    function_lines: 375-445
+    function_source: "    def _fuzzy_find_and_replace(\n        self, content: str,\
+      \ old_text: str, new_text: str\n    ) -> Optional[str]:\n        \"\"\"\n  \
+      \      Find old_text in content with fuzzy whitespace matching.\n\n        Strategy:\n\
+      \        1. Normalize both to find the match location\n        2. Find the actual\
+      \ text span in the original\n        3. Replace with properly indented new_text\n\
+      \        \"\"\"\n        import re\n\n        # Normalize whitespace for matching\n\
+      \        def normalize(s: str) -> str:\n            # Replace leading whitespace\
+      \ on each line with a marker\n            lines = s.split('\\n')\n         \
+      \   return '\\n'.join(line.lstrip() for line in lines)\n\n        norm_content\
+      \ = normalize(content)\n        norm_old = normalize(old_text)\n\n        if\
+      \ norm_old not in norm_content:\n            return None\n\n        # Find where\
+      \ the normalized text appears\n        norm_start = norm_content.find(norm_old)\n\
+      \n        # Map back to original content by counting newlines\n        content_lines\
+      \ = content.split('\\n')\n        norm_lines_before = norm_content[:norm_start].count('\\\
+      n')\n\n        # Find the actual start line in original content\n        start_line\
+      \ = norm_lines_before\n\n        # Count how many lines in old_text\n      \
+      \  old_lines = old_text.strip().split('\\n')\n        num_lines = len(old_lines)\n\
+      \n        # Detect indentation from the first line of the match\n        base_indent\
+      \ = self._detect_base_indentation(start_line, content_lines)\n\n        # Re-indent\
+      \ new_text to match\n        new_lines = new_text.strip().split('\\n')\n   \
+      \     if new_lines:\n            # Detect the indentation in new_text\n    \
+      \        first_new_line = new_lines[0]\n            new_indent = len(first_new_line)\
+      \ - len(first_new_line.lstrip())\n\n            # Adjust each line\n       \
+      \     adjusted_lines = []\n            for line in new_lines:\n            \
+      \    if line.strip():\n                    line_indent = len(line) - len(line.lstrip())\n\
+      \                    relative_indent = line_indent - new_indent\n          \
+      \          adjusted_lines.append(base_indent + ' ' * max(0, relative_indent)\
+      \ + line.lstrip())\n                else:\n                    adjusted_lines.append('')\n\
+      \n            new_text_adjusted = '\\n'.join(adjusted_lines)\n        else:\n\
+      \            new_text_adjusted = new_text\n\n        # Replace the lines\n \
+      \       result_lines = (\n            content_lines[:start_line] +\n       \
+      \     new_text_adjusted.split('\\n') +\n            content_lines[start_line\
+      \ + num_lines:]\n        )\n\n        return '\\n'.join(result_lines)"
+    violating_function: _fuzzy_find_and_replace
+  severity: major
+  test_path: tests/unit/tools/
+  violation_id: V-0425b5607c2b
+current_step: 5
+error: null
+last_updated: '2026-01-01T01:36:46.459463'
+phase: init
+verification:
+  checks_failing: 1
+  checks_passing: 0
+  details:
+    baseline_passed: false
+    last_check: "\u2717 Check 'max-function-length' FAILED for tools/harness/minimal_context/fix_workflow.py\n\
+      Violations (9):\n- Line 144: Function '_with_test_verification' has 80 lines\
+      \ (max: 50)\n  Hint: Extract logic into helper functions or use composition\n\
+      - Line 456: Function '_action_replace_lines' has 61 lines (max: 50)\n  Hint:\
+      \ Extract logic into helper functions or use composition\n- Line 536: Function\
+      \ '_action_insert_lines' has 70 lines (max: 50)\n  Hint: Extract logic into\
+      \ helper functions or use composition\n- L"
+    tests_verified: true
+  last_check_time: '2026-01-01T01:35:51.254354'
+  ready_for_completion: false
+  tests_passing: false

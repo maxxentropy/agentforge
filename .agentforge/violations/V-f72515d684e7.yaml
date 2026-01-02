@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-f72515d684e7
+contract_id: agentforge
+check_id: single-responsibility-modules
+severity: minor
+file_path: src/agentforge/core/generate/provider.py
+message: 'Class ''ManualProvider'' has 5 methods (max: 3)'
+detected_at: '2026-01-01T01:39:14.196079'
+last_seen_at: '2026-01-01T01:39:14.196079'
+status: open
+line_number: 224
+fix_hint: Split modules with too many classes into focused single-class modules

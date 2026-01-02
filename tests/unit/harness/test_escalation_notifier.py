@@ -1,5 +1,5 @@
-# @spec_file: .agentforge/specs/harness-v1.yaml
-# @spec_id: harness-v1
+# @spec_file: .agentforge/specs/core-harness-v1.yaml
+# @spec_id: core-harness-v1
 # @component_id: tools-harness-escalation_notifier
 # @impl_path: tools/harness/escalation_notifier.py
 
@@ -13,20 +13,21 @@ Tests for EscalationNotifier - sends notifications through configured channels.
 These tests verify notification formatting and delivery across CLI, file, and webhook channels.
 """
 
-import pytest
+import json
+import tempfile
 from datetime import datetime
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
-import tempfile
-import json
+from unittest.mock import Mock, patch
 
-from tools.harness.escalation_notifier import EscalationNotifier
-from tools.harness.escalation_domain import (
+import pytest
+
+from agentforge.core.harness.escalation_domain import (
+    Escalation,
+    EscalationChannel,
     EscalationPriority,
     EscalationStatus,
-    EscalationChannel,
-    Escalation
 )
+from agentforge.core.harness.escalation_notifier import EscalationNotifier
 
 
 class TestEscalationNotifierInit:
@@ -394,7 +395,7 @@ class TestEscalationNotifierIntegration:
     def test_full_notification_flow(self):
         """Test complete notification through multiple channels."""
         with tempfile.TemporaryDirectory() as temp_dir:
-            file_path = Path(temp_dir) / "test_esc.json"
+            Path(temp_dir) / "test_esc.json"
             notifier = EscalationNotifier(
                 channels=[EscalationChannel.CLI, EscalationChannel.FILE],
                 config={"file_path_base": temp_dir}

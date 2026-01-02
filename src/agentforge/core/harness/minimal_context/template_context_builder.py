@@ -30,7 +30,7 @@ Usage:
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import yaml
 
@@ -38,20 +38,19 @@ from ...context import (
     FingerprintGenerator,
     get_template_for_task,
 )
-from ...context.templates.base import BaseContextTemplate
-from .state_store import TaskStateStore, TaskState
-from .working_memory import WorkingMemoryManager
 from .context_models import (
-    TaskSpec,
-    StateSpec,
-    PhaseState,
-    VerificationState,
-    Understanding,
     ActionRecord,
+    ActionResult,
     Fact,
     FactCategory,
-    ActionResult,
+    PhaseState,
+    StateSpec,
+    TaskSpec,
+    Understanding,
+    VerificationState,
 )
+from .state_store import TaskState, TaskStateStore
+from .working_memory import WorkingMemoryManager
 
 
 @dataclass
@@ -61,7 +60,7 @@ class TemplateStepContext:
     system_prompt: str
     user_message: str
     total_tokens: int
-    sections: Dict[str, int]  # Section name -> token count
+    sections: dict[str, int]  # Section name -> token count
     template_name: str
     phase: str
 
@@ -82,7 +81,7 @@ class TemplateContextBuilder:
         project_path: Path,
         state_store: TaskStateStore,
         task_type: str = "fix_violation",
-        fingerprint_generator: Optional[FingerprintGenerator] = None,
+        fingerprint_generator: FingerprintGenerator | None = None,
     ):
         """
         Initialize the template context builder.
@@ -111,8 +110,8 @@ class TemplateContextBuilder:
         )
 
         # Cache for built contexts
-        self._last_context: Optional[Dict[str, Any]] = None
-        self._last_token_breakdown: Optional[Dict[str, int]] = None
+        self._last_context: dict[str, Any] | None = None
+        self._last_token_breakdown: dict[str, int] | None = None
 
     def build(self, task_id: str) -> TemplateStepContext:
         """
@@ -186,7 +185,7 @@ class TemplateContextBuilder:
             phase=phase,
         )
 
-    def build_messages(self, task_id: str) -> List[Dict[str, str]]:
+    def build_messages(self, task_id: str) -> list[dict[str, str]]:
         """
         Build messages list for LLM call (compatible with executor interface).
 
@@ -203,7 +202,7 @@ class TemplateContextBuilder:
             {"role": "user", "content": context.user_message},
         ]
 
-    def get_token_breakdown(self, task_id: str) -> Dict[str, int]:
+    def get_token_breakdown(self, task_id: str) -> dict[str, int]:
         """
         Get token breakdown for last built context.
 
@@ -240,7 +239,7 @@ class TemplateContextBuilder:
                 phase_name = machine.current_phase.value if hasattr(machine.current_phase, 'value') else str(machine.current_phase)
                 return phase_name.lower()
 
-        # Fall back to TaskPhase enum mapping
+        # Fall back to Phase enum mapping
         phase_map = {
             "init": "init",
             "analyzing": "analyze",
@@ -325,7 +324,7 @@ class TemplateContextBuilder:
 
     def _get_precomputed(
         self, state: TaskState, memory_manager: WorkingMemoryManager
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Get precomputed data from state and working memory."""
         precomputed = {}
 
@@ -360,7 +359,7 @@ class TemplateContextBuilder:
 
         return precomputed
 
-    def _get_domain_context(self, state: TaskState) -> Dict[str, Any]:
+    def _get_domain_context(self, state: TaskState) -> dict[str, Any]:
         """Get domain-specific context from state."""
         domain_context = {}
 
@@ -402,7 +401,7 @@ class TemplateContextBuilder:
 
         return domain_context
 
-    def _format_user_message(self, context_dict: Dict[str, Any], state: TaskState) -> str:
+    def _format_user_message(self, context_dict: dict[str, Any], state: TaskState) -> str:
         """Format the user message from context dict."""
         # Format as YAML with clear sections
         sections = []
@@ -420,7 +419,7 @@ class TemplateContextBuilder:
             sections.append(f"# Phase\n{phase_yaml}")
 
         # Add tier 2 sections (phase-specific)
-        tier2_keys = [k for k in context_dict.keys()
+        tier2_keys = [k for k in context_dict
                       if k not in ["fingerprint", "task", "phase", "understanding", "recent", "additional"]]
         for key in tier2_keys:
             value = context_dict[key]
@@ -485,7 +484,7 @@ class TemplateContextBuilder:
                 "- complete: Mark task as complete",
             ])
 
-        return f"# Available Actions\n" + "\n".join(actions)
+        return "# Available Actions\n" + "\n".join(actions)
 
     def _format_directive(self) -> str:
         """Format the step directive."""
@@ -499,8 +498,8 @@ reasoning: brief explanation
 ```"""
 
     def _calculate_token_breakdown(
-        self, context_dict: Dict[str, Any], system_prompt: str
-    ) -> Dict[str, int]:
+        self, context_dict: dict[str, Any], system_prompt: str
+    ) -> dict[str, int]:
         """Calculate token breakdown by section."""
         breakdown = {
             "system_prompt": len(system_prompt) // 4,
@@ -516,6 +515,6 @@ reasoning: brief explanation
         return breakdown
 
     @property
-    def phases(self) -> List[str]:
+    def phases(self) -> list[str]:
         """Get valid phases from the template."""
         return self.template.phases

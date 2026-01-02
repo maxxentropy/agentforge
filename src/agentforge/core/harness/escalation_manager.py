@@ -14,15 +14,14 @@ import json
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 from .escalation_domain import (
-    EscalationPriority,
-    EscalationStatus,
-    EscalationChannel,
-    ResolutionType,
     Escalation,
-    EscalationResolution
+    EscalationChannel,
+    EscalationPriority,
+    EscalationResolution,
+    EscalationStatus,
+    ResolutionType,
 )
 
 
@@ -33,7 +32,7 @@ class EscalationManager:
         self,
         storage_path: Path,
         default_timeout: int = 3600,
-        channels: Optional[list[EscalationChannel]] = None
+        channels: list[EscalationChannel] | None = None
     ):
         """Initialize escalation manager.
 
@@ -53,8 +52,8 @@ class EscalationManager:
         reason: str,
         context: dict,
         priority: EscalationPriority = EscalationPriority.MEDIUM,
-        recommended_actions: Optional[list[str]] = None,
-        timeout_seconds: Optional[int] = None
+        recommended_actions: list[str] | None = None,
+        timeout_seconds: int | None = None
     ) -> Escalation:
         """Create a new escalation request.
 
@@ -89,7 +88,7 @@ class EscalationManager:
     def acknowledge_escalation(
         self,
         escalation_id: str,
-        acknowledged_by: Optional[str] = None
+        acknowledged_by: str | None = None
     ) -> bool:
         """Mark escalation as seen by human.
 
@@ -114,8 +113,8 @@ class EscalationManager:
         escalation_id: str,
         resolution_type: ResolutionType,
         decision: str,
-        notes: Optional[str] = None,
-        resolved_by: Optional[str] = None
+        notes: str | None = None,
+        resolved_by: str | None = None
     ) -> EscalationResolution:
         """Record human's resolution.
 
@@ -149,7 +148,7 @@ class EscalationManager:
         self._save_resolution(resolution)
         return resolution
 
-    def get_escalation(self, escalation_id: str) -> Optional[Escalation]:
+    def get_escalation(self, escalation_id: str) -> Escalation | None:
         """Get escalation by ID.
 
         Args:
@@ -171,9 +170,9 @@ class EscalationManager:
 
     def list_escalations(
         self,
-        session_id: Optional[str] = None,
-        status: Optional[EscalationStatus] = None,
-        priority: Optional[EscalationPriority] = None
+        session_id: str | None = None,
+        status: EscalationStatus | None = None,
+        priority: EscalationPriority | None = None
     ) -> list[Escalation]:
         """List escalations with filters.
 
@@ -209,7 +208,7 @@ class EscalationManager:
 
     def get_pending_escalations(
         self,
-        session_id: Optional[str] = None
+        session_id: str | None = None
     ) -> list[Escalation]:
         """Get all unresolved escalations.
 

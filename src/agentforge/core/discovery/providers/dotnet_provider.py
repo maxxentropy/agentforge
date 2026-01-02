@@ -11,9 +11,9 @@ Provides .NET/C#-specific analysis using:
 import re
 import xml.etree.ElementTree as ET
 from pathlib import Path
-from typing import List, Optional, Dict, Any, Set
+from typing import Any
 
-from .base import LanguageProvider, Symbol, Import, Dependency
+from .base import Dependency, Import, LanguageProvider, Symbol
 
 
 class DotNetProvider(LanguageProvider):
@@ -29,20 +29,20 @@ class DotNetProvider(LanguageProvider):
         return "csharp"
 
     @property
-    def file_extensions(self) -> Set[str]:
+    def file_extensions(self) -> set[str]:
         return {".cs", ".csx"}
 
     @property
-    def project_markers(self) -> Set[str]:
+    def project_markers(self) -> set[str]:
         return {"*.sln", "*.csproj"}
 
     def __init__(self):
         self._lsp_adapter = None
         self._lsp_available = None
-        self._solution_info: Optional[Dict[str, Any]] = None
-        self._projects: Dict[str, Dict[str, Any]] = {}
+        self._solution_info: dict[str, Any] | None = None
+        self._projects: dict[str, dict[str, Any]] = {}
 
-    def detect_project(self, path: Path) -> Optional[Dict[str, Any]]:
+    def detect_project(self, path: Path) -> dict[str, Any] | None:
         """Detect .NET project and extract metadata."""
         if not path.is_dir():
             path = path.parent
@@ -62,7 +62,7 @@ class DotNetProvider(LanguageProvider):
 
         return None
 
-    def _parse_solution(self, sln_path: Path) -> Dict[str, Any]:
+    def _parse_solution(self, sln_path: Path) -> dict[str, Any]:
         """Parse .sln file to extract solution structure."""
         result = {
             "name": sln_path.stem,
@@ -101,7 +101,7 @@ class DotNetProvider(LanguageProvider):
 
         return result
 
-    def _parse_csproj(self, csproj_path: Path) -> Dict[str, Any]:
+    def _parse_csproj(self, csproj_path: Path) -> dict[str, Any]:
         """Parse .csproj file to extract project metadata."""
         result = {
             "name": csproj_path.stem,
@@ -180,7 +180,7 @@ class DotNetProvider(LanguageProvider):
 
         return result
 
-    def _detect_frameworks_from_package(self, package_name: str) -> List[str]:
+    def _detect_frameworks_from_package(self, package_name: str) -> list[str]:
         """Detect frameworks from NuGet package names."""
         frameworks = []
         pkg_lower = package_name.lower()
@@ -214,14 +214,14 @@ class DotNetProvider(LanguageProvider):
 
         return frameworks
 
-    def parse_file(self, path: Path) -> Optional[Any]:
+    def parse_file(self, path: Path) -> Any | None:
         """Parse C# file - returns content for regex analysis."""
         try:
             return path.read_text(encoding='utf-8')
         except Exception:
             return None
 
-    def extract_symbols(self, path: Path) -> List[Symbol]:
+    def extract_symbols(self, path: Path) -> list[Symbol]:
         """Extract symbols from C# file using LSP or regex fallback."""
         # Try LSP first
         symbols = self._extract_symbols_lsp(path)
@@ -231,7 +231,7 @@ class DotNetProvider(LanguageProvider):
         # Fallback to regex
         return self._extract_symbols_regex(path)
 
-    def _extract_symbols_lsp(self, path: Path) -> List[Symbol]:
+    def _extract_symbols_lsp(self, path: Path) -> list[Symbol]:
         """Extract symbols using LSP adapter."""
         if not self._ensure_lsp():
             return []
@@ -263,7 +263,7 @@ class DotNetProvider(LanguageProvider):
         self._lsp_available = False
         return False
 
-    def _convert_lsp_symbols(self, lsp_symbols: List, path: Path) -> List[Symbol]:
+    def _convert_lsp_symbols(self, lsp_symbols: list, path: Path) -> list[Symbol]:
         """Convert LSP symbols to discovery symbols."""
         symbols = []
 
@@ -301,7 +301,7 @@ class DotNetProvider(LanguageProvider):
 
         return symbols
 
-    def _extract_symbols_regex(self, path: Path) -> List[Symbol]:
+    def _extract_symbols_regex(self, path: Path) -> list[Symbol]:
         """Extract symbols using regex patterns (fallback)."""
         content = self.parse_file(path)
         if not content:
@@ -409,7 +409,7 @@ class DotNetProvider(LanguageProvider):
             return "private"
         return "public"
 
-    def get_imports(self, path: Path) -> List[Import]:
+    def get_imports(self, path: Path) -> list[Import]:
         """Extract using statements from C# file."""
         content = self.parse_file(path)
         if not content:
@@ -455,7 +455,7 @@ class DotNetProvider(LanguageProvider):
 
         return imports
 
-    def get_dependencies(self, project_path: Path) -> List[Dependency]:
+    def get_dependencies(self, project_path: Path) -> list[Dependency]:
         """Extract NuGet dependencies from project files."""
         dependencies = []
 
@@ -482,7 +482,7 @@ class DotNetProvider(LanguageProvider):
 
         return dependencies
 
-    def get_project_references(self, csproj_path: Path) -> List[str]:
+    def get_project_references(self, csproj_path: Path) -> list[str]:
         """Get project references from a csproj file."""
         if str(csproj_path) in self._projects:
             return self._projects[str(csproj_path)].get("project_references", [])
@@ -490,7 +490,7 @@ class DotNetProvider(LanguageProvider):
         proj_info = self._parse_csproj(csproj_path)
         return proj_info.get("project_references", [])
 
-    def detect_layer_from_project_name(self, project_name: str) -> Optional[str]:
+    def detect_layer_from_project_name(self, project_name: str) -> str | None:
         """
         Detect architectural layer from project name.
 
@@ -524,7 +524,7 @@ class DotNetProvider(LanguageProvider):
 
         return None
 
-    def get_source_files(self, root: Path, exclude_patterns: List[str] = None) -> List[Path]:
+    def get_source_files(self, root: Path, exclude_patterns: list[str] = None) -> list[Path]:
         """Find all C# source files under root."""
         exclude_patterns = exclude_patterns or []
         default_excludes = [
@@ -549,7 +549,7 @@ class DotNetProvider(LanguageProvider):
     def count_lines(self, path: Path) -> int:
         """Count non-empty, non-comment lines of code."""
         try:
-            with open(path, 'r', encoding='utf-8', errors='ignore') as f:
+            with open(path, encoding='utf-8', errors='ignore') as f:
                 count = 0
                 in_block_comment = False
 

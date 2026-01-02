@@ -1,5 +1,5 @@
-# @spec_file: .agentforge/specs/harness-v1.yaml
-# @spec_id: harness-v1
+# @spec_file: .agentforge/specs/core-harness-v1.yaml
+# @spec_id: core-harness-v1
 # @component_id: tools-harness-violation_tools
 # @impl_path: tools/harness/violation_tools.py
 
@@ -10,17 +10,18 @@ Tests for Self-Hosting Tools
 Tests for violation, git, and test runner tools used in self-hosting workflow.
 """
 
+import subprocess
+import tempfile
+from pathlib import Path
+from unittest.mock import MagicMock, patch
+
 import pytest
 import yaml
-import subprocess
-from pathlib import Path
-import tempfile
-from unittest.mock import patch, MagicMock
 
-from tools.harness.violation_tools import ViolationTools, ViolationInfo
-from tools.harness.git_tools import GitTools
-from tools.harness.test_runner_tools import TestRunnerTools
-from tools.harness.conformance_tools import ConformanceTools
+from agentforge.core.harness.conformance_tools import ConformanceTools
+from agentforge.core.harness.git_tools import GitTools
+from agentforge.core.harness.test_runner_tools import TestRunnerTools
+from agentforge.core.harness.violation_tools import ViolationInfo, ViolationTools
 
 
 class TestViolationInfo:

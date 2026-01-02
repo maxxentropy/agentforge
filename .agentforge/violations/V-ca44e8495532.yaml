@@ -1,0 +1,13 @@
+schema_version: '1.0'
+violation_id: V-ca44e8495532
+contract_id: agentforge
+check_id: single-responsibility-modules
+severity: minor
+file_path: tools/harness/auto_fix_daemon.py
+message: 'Class ''AutoFixDaemon'' has 10 methods (max: 3)'
+detected_at: '2025-12-31T12:15:10.017826'
+last_seen_at: '2026-01-01T01:39:13.937028'
+status: open
+line_number: 92
+fix_hint: Split modules with too many classes into focused single-class modules
+test_path: tests/unit/tools/

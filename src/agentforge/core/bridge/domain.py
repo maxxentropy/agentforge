@@ -14,8 +14,7 @@ Transforms discovered patterns into enforceable contract checks.
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from pathlib import Path
-from typing import List, Optional, Dict, Any
+from typing import Any
 
 
 class ConfidenceTier(Enum):
@@ -82,12 +81,12 @@ class CheckTemplate:
     name: str
     description: str
     check_type: str                     # "naming", "ast", "architecture", "regex"
-    config: Dict[str, Any]
+    config: dict[str, Any]
     severity: str = "warning"           # "error", "warning", "info"
-    applies_to_paths: Optional[List[str]] = None
-    exclude_paths: Optional[List[str]] = None
-    fix_hint: Optional[str] = None
-    review_reason: Optional[str] = None  # Why review is needed
+    applies_to_paths: list[str] | None = None
+    exclude_paths: list[str] | None = None
+    fix_hint: str | None = None
+    review_reason: str | None = None  # Why review is needed
 
     def resolve_id(self, zone_name: str) -> str:
         """Resolve template placeholders in ID."""
@@ -105,17 +104,17 @@ class GeneratedCheck:
     check_type: str
     enabled: bool
     severity: str
-    config: Dict[str, Any]
-    applies_to: Dict[str, Any]
+    config: dict[str, Any]
+    applies_to: dict[str, Any]
     # Generation metadata
     source_pattern: str
     source_confidence: float
     mapping_version: str = "1.0"
     review_required: bool = False
-    review_reason: Optional[str] = None
-    fix_hint: Optional[str] = None
+    review_reason: str | None = None
+    fix_hint: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for YAML serialization."""
         result = {
             "id": self.id,
@@ -148,12 +147,12 @@ class GenerationMetadata:
     source_hash: str
     generated_at: datetime
     generator_version: str
-    zone: Optional[str] = None
+    zone: str | None = None
     confidence_threshold: float = 0.6
-    patterns_mapped: Dict[str, float] = field(default_factory=dict)
-    regenerate_command: Optional[str] = None
+    patterns_mapped: dict[str, float] = field(default_factory=dict)
+    regenerate_command: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "source_profile": self.source_profile,
             "source_hash": self.source_hash,
@@ -174,14 +173,14 @@ class GeneratedContract:
     A complete generated contract for a zone.
     """
     name: str
-    zone: Optional[str]
+    zone: str | None
     language: str
-    checks: List[GeneratedCheck]
+    checks: list[GeneratedCheck]
     metadata: GenerationMetadata
-    description: Optional[str] = None
-    applies_to_paths: Optional[List[str]] = None
-    exclude_paths: Optional[List[str]] = None
-    tags: List[str] = field(default_factory=list)
+    description: str | None = None
+    applies_to_paths: list[str] | None = None
+    exclude_paths: list[str] | None = None
+    tags: list[str] = field(default_factory=list)
 
     @property
     def enabled_count(self) -> int:
@@ -195,7 +194,7 @@ class GeneratedContract:
     def review_required_count(self) -> int:
         return sum(1 for c in self.checks if c.review_required)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for YAML serialization."""
         contract_dict = {
             "name": self.name,
@@ -232,13 +231,13 @@ class Conflict:
     """A detected conflict between generated and existing contracts."""
     conflict_type: ConflictType
     generated_check_id: str
-    existing_contract: Optional[str] = None
-    existing_check_id: Optional[str] = None
+    existing_contract: str | None = None
+    existing_check_id: str | None = None
     resolution: ResolutionStrategy = ResolutionStrategy.SKIP
-    reason: Optional[str] = None
-    new_id: Optional[str] = None  # For rename resolution
+    reason: str | None = None
+    new_id: str | None = None  # For rename resolution
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         result = {
             "type": self.conflict_type.value,
             "generated_check": self.generated_check_id,
@@ -259,14 +258,14 @@ class Conflict:
 class ContractSummary:
     """Summary of a generated contract."""
     path: str
-    zone: Optional[str]
+    zone: str | None
     language: str
     total_checks: int
     enabled_checks: int
     disabled_checks: int
-    patterns_mapped: Dict[str, Dict[str, Any]]
+    patterns_mapped: dict[str, dict[str, Any]]
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "path": self.path,
             "zone": self.zone,
@@ -288,7 +287,7 @@ class ReviewItem:
     reason: str
     action: str
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "id": self.check_id,
             "reason": self.reason,
@@ -307,7 +306,7 @@ class GenerationReport:
     # Source info
     profile_path: str = ""
     profile_hash: str = ""
-    profile_generated: Optional[str] = None
+    profile_generated: str | None = None
     # Configuration
     confidence_threshold: float = 0.6
     output_directory: str = "contracts/"
@@ -321,12 +320,12 @@ class GenerationReport:
     conflicts_detected: int = 0
     conflicts_resolved: int = 0
     # Details
-    contracts: List[ContractSummary] = field(default_factory=list)
-    conflicts: List[Conflict] = field(default_factory=list)
-    review_required: Dict[str, List[ReviewItem]] = field(default_factory=dict)
-    next_steps: List[str] = field(default_factory=list)
+    contracts: list[ContractSummary] = field(default_factory=list)
+    conflicts: list[Conflict] = field(default_factory=list)
+    review_required: dict[str, list[ReviewItem]] = field(default_factory=dict)
+    next_steps: list[str] = field(default_factory=list)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "schema_version": self.schema_version,
             "generated_at": self.generated_at.isoformat(),
@@ -368,13 +367,13 @@ class MappingContext:
     Contains profile data and helper methods for accessing
     patterns, structure, and zone information.
     """
-    zone_name: Optional[str]
+    zone_name: str | None
     language: str
-    patterns: Dict[str, Any]
-    structure: Dict[str, Any]
-    conventions: Optional[Dict[str, Any]] = None
-    frameworks: List[str] = field(default_factory=list)
-    zone_paths: Optional[List[str]] = None
+    patterns: dict[str, Any]
+    structure: dict[str, Any]
+    conventions: dict[str, Any] | None = None
+    frameworks: list[str] = field(default_factory=list)
+    zone_paths: list[str] | None = None
 
     def is_pattern_detected(self, pattern_key: str) -> bool:
         """Check if a pattern was detected."""
@@ -390,21 +389,21 @@ class MappingContext:
             return pattern.get("confidence", 0.0)
         return 0.0
 
-    def get_pattern_primary(self, pattern_key: str) -> Optional[str]:
+    def get_pattern_primary(self, pattern_key: str) -> str | None:
         """Get primary implementation of a pattern (e.g., 'MediatR' for cqrs)."""
         pattern = self.patterns.get(pattern_key, {})
         if isinstance(pattern, dict):
             return pattern.get("primary")
         return None
 
-    def get_pattern_metadata(self, pattern_key: str) -> Dict[str, Any]:
+    def get_pattern_metadata(self, pattern_key: str) -> dict[str, Any]:
         """Get all metadata for a pattern."""
         pattern = self.patterns.get(pattern_key, {})
         if isinstance(pattern, dict):
             return pattern
         return {}
 
-    def get_layer_paths(self, layer_name: str) -> List[str]:
+    def get_layer_paths(self, layer_name: str) -> list[str]:
         """Get paths for a specific architectural layer."""
         layers = self.structure.get("layers", {})
         layer = layers.get(layer_name, {})
@@ -415,7 +414,7 @@ class MappingContext:
         layers = self.structure.get("layers", {})
         return layer_name in layers
 
-    def get_architecture_style(self) -> Optional[str]:
+    def get_architecture_style(self) -> str | None:
         """Get the detected architecture style."""
         style = self.structure.get("style") or self.structure.get("architecture_style")
         return style

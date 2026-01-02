@@ -14,9 +14,12 @@ Supports LLM-powered code generation when ANTHROPIC_API_KEY is set.
 
 import os
 from pathlib import Path
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 import click
+
+if TYPE_CHECKING:
+    from agentforge.core.generate.engine import GenerationEngine
 
 
 def _get_generator() -> Optional["GenerationEngine"]:
@@ -83,7 +86,7 @@ def run_start(spec_file: Path, framework: str, coverage: float) -> None:
         click.echo(f"Error: {e}", err=True)
 
 
-def run_red(component_name: Optional[str]) -> None:
+def run_red(component_name: str | None) -> None:
     """
     Execute RED phase.
 
@@ -116,12 +119,12 @@ def run_red(component_name: Optional[str]) -> None:
         click.echo("Run 'agentforge tdflow green' to implement.")
     else:
         click.echo()
-        click.secho(f"[FAILED] RED phase failed", fg="red")
+        click.secho("[FAILED] RED phase failed", fg="red")
         for error in result.errors:
             click.echo(f"  - {error}")
 
 
-def run_green(component_name: Optional[str]) -> None:
+def run_green(component_name: str | None) -> None:
     """
     Execute GREEN phase.
 
@@ -156,12 +159,12 @@ def run_green(component_name: Optional[str]) -> None:
         click.echo("Run 'agentforge tdflow verify' or 'tdflow refactor'.")
     else:
         click.echo()
-        click.secho(f"[FAILED] GREEN phase failed", fg="red")
+        click.secho("[FAILED] GREEN phase failed", fg="red")
         for error in result.errors:
             click.echo(f"  - {error}")
 
 
-def run_refactor(component_name: Optional[str]) -> None:
+def run_refactor(component_name: str | None) -> None:
     """
     Execute REFACTOR phase.
 
@@ -194,12 +197,12 @@ def run_refactor(component_name: Optional[str]) -> None:
         click.echo("Run 'agentforge tdflow verify' to complete.")
     else:
         click.echo()
-        click.secho(f"[FAILED] REFACTOR phase failed", fg="red")
+        click.secho("[FAILED] REFACTOR phase failed", fg="red")
         for error in result.errors:
             click.echo(f"  - {error}")
 
 
-def run_verify(component_name: Optional[str]) -> None:
+def run_verify(component_name: str | None) -> None:
     """
     Execute VERIFY phase.
 

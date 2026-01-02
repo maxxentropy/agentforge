@@ -10,8 +10,9 @@ TDFLOW CLI Commands
 Commands for the Test-Driven Flow workflow.
 """
 
-import click
 from pathlib import Path
+
+import click
 
 
 @click.group("tdflow", help="Test-Driven Flow workflow commands")
@@ -53,10 +54,7 @@ def start(spec: str, framework: str, coverage: float):
             runner = TestRunner.detect(Path.cwd())
             # Map runner class to framework name
             from agentforge.core.tdflow.runners.pytest_runner import PytestRunner
-            if isinstance(runner, PytestRunner):
-                framework = "pytest"
-            else:
-                framework = "xunit"
+            framework = "pytest" if isinstance(runner, PytestRunner) else "xunit"
             click.echo(f"Auto-detected framework: {framework}")
         except ValueError:
             click.echo("Could not auto-detect framework, defaulting to pytest")

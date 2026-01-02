@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-8a86707ee010
+contract_id: agentforge
+check_id: max-nesting-depth
+severity: major
+file_path: src/agentforge/core/harness/tool_selector.py
+message: 'Function ''get_tools'' has nesting depth 5 (max: 4)'
+detected_at: '2026-01-01T01:39:13.672601'
+last_seen_at: '2026-01-01T01:39:13.672601'
+status: open
+line_number: 20
+fix_hint: Use early returns, guard clauses, or extract nested logic

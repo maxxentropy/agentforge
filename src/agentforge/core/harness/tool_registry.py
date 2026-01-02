@@ -9,10 +9,10 @@
 # Date: 2025-12-31 05:26:10 UTC
 
 from pathlib import Path
-from typing import Optional, Dict, List
+
 import yaml
 
-from .tool_domain import ToolDefinition, ToolProfile, DomainTools
+from .tool_domain import DomainTools, ToolDefinition, ToolProfile
 
 
 class DuplicateToolError(Exception):
@@ -22,28 +22,28 @@ class DuplicateToolError(Exception):
 
 class ToolRegistry:
     """Central registry for tool definitions and profiles."""
-    
-    def __init__(self, config_path: Optional[Path] = None):
+
+    def __init__(self, config_path: Path | None = None):
         """Initialize registry with optional config path."""
-        self._tools: Dict[str, ToolDefinition] = {}
-        self._profiles: Dict[tuple[str, str], ToolProfile] = {}  # (workflow, phase) -> profile
-        self._domain_tools: Dict[str, DomainTools] = {}
-        
+        self._tools: dict[str, ToolDefinition] = {}
+        self._profiles: dict[tuple[str, str], ToolProfile] = {}  # (workflow, phase) -> profile
+        self._domain_tools: dict[str, DomainTools] = {}
+
         if config_path and config_path.exists():
             self.load_from_yaml(config_path)
-    
+
     def register_tool(self, tool: ToolDefinition) -> None:
         """Register a tool definition."""
         if tool.name in self._tools:
             raise DuplicateToolError(f"Tool '{tool.name}' already exists")
         self._tools[tool.name] = tool
-    
+
     def register_profile(self, profile: ToolProfile) -> None:
         """Register a workflow phase profile."""
         key = (profile.workflow, profile.phase)
         self._profiles[key] = profile
-    
-    def register_domain_tools(self, domain: str, tools: List[str]) -> None:
+
+    def register_domain_tools(self, domain: str, tools: list[str]) -> None:
         """Register domain-specific tools."""
         # Create a DomainTools instance with empty detection patterns
         domain_tools = DomainTools(
@@ -52,51 +52,51 @@ class ToolRegistry:
             detection_patterns=[]
         )
         self._domain_tools[domain] = domain_tools
-    
-    def get_tool(self, name: str) -> Optional[ToolDefinition]:
+
+    def get_tool(self, name: str) -> ToolDefinition | None:
         """Get tool definition by name."""
         return self._tools.get(name)
-    
-    def get_profile(self, workflow: str, phase: str) -> Optional[ToolProfile]:
+
+    def get_profile(self, workflow: str, phase: str) -> ToolProfile | None:
         """Get profile for workflow/phase combination."""
         key = (workflow, phase)
         return self._profiles.get(key)
-    
-    def list_tools(self) -> List[str]:
+
+    def list_tools(self) -> list[str]:
         """List all registered tool names."""
         return list(self._tools.keys())
-    
-    def list_profiles(self) -> List[ToolProfile]:
+
+    def list_profiles(self) -> list[ToolProfile]:
         """List all registered profiles."""
         return list(self._profiles.values())
 
-    def get_base_tools(self) -> List[ToolDefinition]:
+    def get_base_tools(self) -> list[ToolDefinition]:
         """Get tools marked as base tools (category='base' or always available)."""
         return [t for t in self._tools.values() if t.category == "base" or t.category == "file"]
 
-    def get_domain_tools(self, domain: str) -> Optional[DomainTools]:
+    def get_domain_tools(self, domain: str) -> DomainTools | None:
         """Get domain tools for a specific domain."""
         return self._domain_tools.get(domain)
-    
+
     def load_from_yaml(self, path: Path) -> None:
         """Load tools and profiles from YAML config."""
-        with open(path, 'r') as f:
+        with open(path) as f:
             data = yaml.safe_load(f)
-        
+
         # Load tools
         if 'tools' in data:
             for tool_data in data['tools']:
                 tool = ToolDefinition.from_dict(tool_data)
                 # Don't raise error for duplicates when loading from YAML
                 self._tools[tool.name] = tool
-        
+
         # Load profiles
         if 'profiles' in data:
             for profile_data in data['profiles']:
                 profile = ToolProfile.from_dict(profile_data)
                 key = (profile.workflow, profile.phase)
                 self._profiles[key] = profile
-        
+
         # Load domain tools
         if 'domain_tools' in data:
             for domain, domain_data in data['domain_tools'].items():
@@ -106,7 +106,7 @@ class ToolRegistry:
                     detection_patterns=domain_data.get('detection_patterns', [])
                 )
                 self._domain_tools[domain] = domain_tools
-    
+
     def save_to_yaml(self, path: Path) -> None:
         """Save current registry to YAML."""
         data = {
@@ -120,7 +120,7 @@ class ToolRegistry:
                 for domain, dt in self._domain_tools.items()
             }
         }
-        
+
         path.parent.mkdir(parents=True, exist_ok=True)
         with open(path, 'w') as f:
             yaml.safe_dump(data, f, default_flow_style=False, sort_keys=True)

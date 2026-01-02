@@ -1,0 +1,13 @@
+schema_version: '1.0'
+violation_id: V-866f4ce93fd6
+contract_id: agentforge
+check_id: single-responsibility-modules
+severity: minor
+file_path: tests/unit/tools/cicd/test_baseline.py
+message: 'Class ''TestBaselineManager'' has 15 methods (max: 3)'
+detected_at: '2025-12-31T02:40:13.232250'
+last_seen_at: '2026-01-01T01:39:13.993491'
+status: open
+line_number: 13
+fix_hint: Split modules with too many classes into focused single-class modules
+test_path: tests/unit/tools/cicd/test_baseline.py

@@ -1,0 +1,1713 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Minimal Context Architecture Specification
+# ═══════════════════════════════════════════════════════════════════════════════
+# Generated: 2025-12-31
+# Status: Implemented
+# Test File: tests/unit/harness/test_enhanced_context.py (86 tests)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+spec_id: minimal-context-architecture-v1
+name: minimal_context_architecture
+version: "2.0"
+status: implemented
+schema_version: "2.0"
+
+description: |
+  The Minimal Context Architecture implements stateless step execution with verified state
+  for autonomous agent workflows. Each step is a fresh conversation with exactly 2 messages:
+  1. System prompt (phase-appropriate)
+  2. Current context (built from persisted state)
+
+  Key principle: Context size is bounded (~5000 tokens per step) regardless of step count.
+  All state persists to disk, making workflows resumable after crashes.
+
+  Enhanced Context Engineering (v2) features are always enabled:
+  - PhaseMachine: Explicit phase transitions with guards
+  - EnhancedContextBuilder: Pydantic v2 models for validated, typed context
+  - Understanding Extraction: Fact-based reasoning instead of raw tool output
+  - Enhanced Loop Detection: Semantic analysis (identical actions, error cycles)
+  - Token Budget Enforcement: Progressive compaction when over budget
+  - Fact Compaction: Proactive pruning (max 20 facts, prioritized by value)
+  - Value Hints: Precomputed context mapped to action parameter hints
+
+research_basis:
+  - source: "Anthropic Engineering - Context Window Management"
+    insight: "Bounded context prevents runaway token costs and improves coherence"
+  - source: "State Machine Patterns"
+    insight: "Explicit phase transitions with guards prevent invalid state changes"
+  - source: "Fact-Based Reasoning"
+    insight: "Extracting facts from tool outputs reduces noise and improves decision quality"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# COMPONENT 1: Context Models (Pydantic v2)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+components:
+  - name: context_models
+    description: |
+      Pydantic v2 models for typed, validated context structures. All models are
+      immutable (frozen) where appropriate and use strict validation. The models
+      form a hierarchy from atomic Facts up to the full AgentContext.
+    location: src/agentforge/core/harness/minimal_context/context_models.py
+    test_location: tests/unit/harness/test_enhanced_context.py::TestFact
+
+    entities:
+      - name: FactCategory
+        type: enum
+        description: Categories for classifying facts by their nature and importance
+        values:
+          - CODE_STRUCTURE: "Structural code information (functions, classes)"
+          - INFERENCE: "Inferred information from analysis"
+          - PATTERN: "Detected code patterns"
+          - VERIFICATION: "Results from verification checks"
+          - ERROR: "Error information from failed operations"
+        test_methods:
+          - TestFact::test_create_fact
+
+      - name: ActionResult
+        type: enum
+        description: Possible outcomes of an action execution
+        values:
+          - SUCCESS: "Action completed successfully"
+          - FAILURE: "Action failed completely"
+          - PARTIAL: "Action partially succeeded"
+
+      - name: Fact
+        type: class
+        description: |
+          Immutable fact with confidence scoring. Facts are the atomic units of
+          understanding extracted from tool outputs. High-confidence facts (>=0.9)
+          are pinned in working memory.
+        fields:
+          - name: id
+            type: str
+            description: Unique identifier for the fact
+          - name: category
+            type: FactCategory
+            description: Classification category
+          - name: statement
+            type: str
+            description: Human-readable fact statement
+          - name: confidence
+            type: float
+            description: Confidence score 0.0-1.0, rounded to 2 decimals
+          - name: source
+            type: str
+            description: What produced this fact (e.g., "run_check:test")
+          - name: step
+            type: int
+            description: Step number when fact was established
+          - name: supersedes
+            type: Optional[str]
+            description: ID of fact this replaces (for updates)
+        test_methods:
+          - TestFact::test_create_fact
+          - TestFact::test_fact_immutable
+          - TestFact::test_confidence_rounding
+          - TestFact::test_confidence_bounds
+
+      - name: ActionDef
+        type: class
+        description: |
+          Definition of an action available to the agent. Includes parameter
+          schema, preconditions, postconditions, and value hints from precomputed
+          context.
+        fields:
+          - name: name
+            type: str
+            description: Action identifier (e.g., "extract_function")
+          - name: description
+            type: str
+            description: Human-readable description of what action does
+          - name: parameters
+            type: Dict[str, str]
+            description: Parameter name to type hint mapping
+          - name: preconditions
+            type: List[str]
+            description: Conditions that must be true before action
+          - name: postconditions
+            type: List[str]
+            description: Expected outcomes after action
+          - name: phases
+            type: List[str]
+            description: Phases where this action is valid
+          - name: value_hints
+            type: Dict[str, str]
+            description: Precomputed hints for parameter values
+          - name: priority
+            type: int
+            description: Ordering priority (higher = more preferred)
+        test_methods:
+          - TestEnhancedContextBuilder::test_phase_aware_actions
+          - TestValueHintsPopulation::test_extract_function_gets_hints_from_candidates
+
+      - name: ActionRecord
+        type: class
+        description: Record of an action that was executed
+        fields:
+          - name: step
+            type: int
+            description: Step number when action was taken
+          - name: action
+            type: str
+            description: Action name
+          - name: target
+            type: Optional[str]
+            description: Target file or resource
+          - name: parameters
+            type: Dict[str, Any]
+            description: Parameters used
+          - name: result
+            type: ActionResult
+            description: Outcome of the action
+          - name: summary
+            type: str
+            description: One-line summary of result
+          - name: error
+            type: Optional[str]
+            description: Error message if failed
+        test_methods:
+          - TestLoopDetector::test_detect_identical_loop
+
+      - name: Understanding
+        type: class
+        description: |
+          Collection of facts representing agent's current understanding.
+          Supports filtering by category, confidence, and supersession.
+          Includes compact() method for proactive fact pruning.
+        fields:
+          - name: facts
+            type: List[Fact]
+            description: All facts in understanding
+          - name: superseded_facts
+            type: List[str]
+            description: IDs of superseded facts to filter out
+        methods:
+          - name: get_active_facts
+            params: []
+            returns: List[Fact]
+            description: Returns only non-superseded facts
+          - name: get_by_category
+            params: ["category: FactCategory"]
+            returns: List[Fact]
+            description: Filter facts by category
+          - name: get_high_confidence
+            params: ["threshold: float = 0.8"]
+            returns: List[Fact]
+            description: Filter facts above confidence threshold
+          - name: compact
+            params: ["max_facts: int = 20"]
+            returns: Understanding
+            description: |
+              Proactively prune facts to stay under threshold. Scoring:
+              - Category weight: VERIFICATION=0.3, ERROR=0.2, CODE_STRUCTURE=0.1, others=0.0
+              - Score = confidence + category_weight
+              Keeps top N facts by score.
+        test_methods:
+          - TestUnderstanding::test_get_active_facts
+          - TestUnderstanding::test_get_by_category
+          - TestUnderstanding::test_get_high_confidence
+          - TestFactCompaction::test_understanding_compact_reduces_facts
+          - TestFactCompaction::test_understanding_compact_preserves_high_value
+          - TestFactCompaction::test_understanding_compact_noop_under_threshold
+          - TestFactCompaction::test_understanding_compact_prioritizes_categories
+
+      - name: TaskSpec
+        type: class
+        description: Immutable task specification
+        fields:
+          - name: task_id
+            type: str
+            description: Unique task identifier
+          - name: task_type
+            type: str
+            description: Type of task (e.g., "fix_violation")
+          - name: goal
+            type: str
+            description: Single sentence goal description
+          - name: success_criteria
+            type: List[str]
+            description: Measurable criteria for success
+          - name: constraints
+            type: List[str]
+            description: Constraints on the solution
+        test_methods:
+          - TestAgentContext::test_to_yaml
+
+      - name: ViolationSpec
+        type: class
+        description: Specification for a conformance violation
+        fields:
+          - name: id
+            type: str
+            description: Violation identifier
+          - name: check_id
+            type: str
+            description: Check that was violated
+          - name: file_path
+            type: str
+            description: File containing violation
+          - name: line_number
+            type: int
+            description: Line number of violation
+          - name: message
+            type: str
+            description: Violation message
+          - name: severity
+            type: str
+            description: Severity level
+
+      - name: PhaseState
+        type: class
+        description: Serializable state of the phase machine
+        fields:
+          - name: current_phase
+            type: str
+            description: Current phase name
+          - name: steps_in_phase
+            type: int
+            description: Steps taken in current phase
+          - name: phase_history
+            type: List[str]
+            description: Phases traversed
+          - name: blocked_reason
+            type: Optional[str]
+            description: Reason if currently blocked
+        test_methods:
+          - TestPhaseMachine::test_to_state_and_from_state
+
+      - name: StateSpec
+        type: class
+        description: Mutable state of the task
+        fields:
+          - name: current_step
+            type: int
+            description: Current step number
+          - name: phase
+            type: PhaseState
+            description: Phase machine state
+          - name: verification
+            type: VerificationState
+            description: Verification status
+          - name: understanding
+            type: Understanding
+            description: Current understanding
+          - name: recent_actions
+            type: List[ActionRecord]
+            description: Recent action history
+        test_methods:
+          - TestEnhancedContextBuilder::test_build_from_task_state
+
+      - name: ActionsSpec
+        type: class
+        description: Available actions for current phase
+        fields:
+          - name: available
+            type: List[ActionDef]
+            description: Actions agent can take
+          - name: blocked
+            type: List[str]
+            description: Blocked actions with reasons
+          - name: recommended
+            type: Optional[str]
+            description: Recommended next action
+        test_methods:
+          - TestEnhancedContextBuilder::test_recommended_action
+          - TestEnhancedContextBuilder::test_blocked_actions
+
+      - name: AgentContext
+        type: class
+        description: |
+          Top-level context passed to LLM. Combines all specs into a single
+          validated structure with YAML serialization and token estimation.
+        fields:
+          - name: task
+            type: TaskSpec
+            description: Task specification
+          - name: state
+            type: StateSpec
+            description: Current state
+          - name: actions
+            type: ActionsSpec
+            description: Available actions
+          - name: domain_context
+            type: Dict[str, Any]
+            description: Task-specific context (e.g., violation details)
+          - name: precomputed
+            type: Dict[str, Any]
+            description: Pre-computed analysis from AST tools
+        methods:
+          - name: to_yaml
+            params: []
+            returns: str
+            description: Serialize to YAML for LLM consumption
+          - name: estimate_tokens
+            params: ["chars_per_token: int = 4"]
+            returns: int
+            description: Estimate token count (uses 4 chars/token)
+        test_methods:
+          - TestAgentContext::test_to_yaml
+          - TestTokenBudgetEnforcement::test_agent_context_estimate_tokens
+
+      - name: AgentResponse
+        type: class
+        description: Schema for validating LLM responses
+        fields:
+          - name: action
+            type: str
+            description: Action name to execute
+          - name: parameters
+            type: Dict[str, Any]
+            description: Action parameters
+          - name: reasoning
+            type: Optional[str]
+            description: Optional reasoning explanation
+        test_methods:
+          - TestResponseValidation::test_parse_validates_against_schema
+
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # COMPONENT 2: Enhanced Context Builder
+  # ═══════════════════════════════════════════════════════════════════════════════
+
+  - name: enhanced_context_builder
+    description: |
+      Builds validated AgentContext from task state with token budget enforcement.
+      Implements progressive compaction when context exceeds budget, and populates
+      value hints from precomputed analysis.
+    location: src/agentforge/core/harness/minimal_context/enhanced_context_builder.py
+    test_location: tests/unit/harness/test_enhanced_context.py::TestEnhancedContextBuilder
+
+    entities:
+      - name: EnhancedContextBuilder
+        type: class
+        description: |
+          Builder for typed, validated context with token budget enforcement.
+          Always enabled (no feature flag) as of v2.0.
+        fields:
+          - name: project_path
+            type: Path
+            description: Project root directory
+          - name: state_store
+            type: TaskStateStore
+            description: State persistence store
+          - name: max_tokens
+            type: int
+            description: Token budget (default 6000)
+        methods:
+          - name: build_from_task_state
+            params: ["task_id: str"]
+            returns: AgentContext
+            description: Build context from persisted task state
+          - name: build_context
+            params: ["task_spec: TaskSpec", "state_spec: StateSpec", "domain_context: Dict", "precomputed: Dict", "phase_machine: PhaseMachine"]
+            returns: AgentContext
+            description: Build context from components
+          - name: build_messages
+            params: ["task_id: str"]
+            returns: List[Dict]
+            description: Build [system, user] messages for LLM
+          - name: get_token_breakdown
+            params: ["task_id: str"]
+            returns: Dict
+            description: Get token counts by section
+          - name: _compact_context
+            params: ["context: AgentContext", "target_tokens: int"]
+            returns: AgentContext
+            description: |
+              Progressive compaction in 5 phases:
+              1. Reduce precomputed content
+              2. Compact facts to 10
+              3. Limit recent actions to 2
+              4. Truncate domain context
+              5. Emergency: clear precomputed
+          - name: _populate_value_hints
+            params: ["actions: List[ActionDef]", "precomputed: Dict"]
+            returns: List[ActionDef]
+            description: |
+              Map precomputed analysis to action parameter hints:
+              - extraction_candidates -> extract_function hints
+              - file_path/line_number -> read_file/edit_file hints
+          - name: _build_actions
+            params: ["phase: Phase", "state: StateSpec", "precomputed: Dict"]
+            returns: List[ActionDef]
+            description: Build phase-filtered actions with hints
+        test_methods:
+          - TestEnhancedContextBuilder::test_build_from_task_state
+          - TestEnhancedContextBuilder::test_phase_aware_actions
+          - TestEnhancedContextBuilder::test_recommended_action
+          - TestEnhancedContextBuilder::test_blocked_actions
+          - TestEnhancedContextBuilder::test_build_messages
+          - TestEnhancedContextBuilder::test_token_breakdown
+          - TestTokenBudgetEnforcement::test_compaction_triggered_when_over_budget
+          - TestTokenBudgetEnforcement::test_compaction_preserves_high_confidence_facts
+          - TestTokenBudgetEnforcement::test_compaction_truncates_precomputed_first
+          - TestTokenBudgetEnforcement::test_normal_context_not_compacted
+          - TestValueHintsPopulation::test_extract_function_gets_hints_from_candidates
+          - TestValueHintsPopulation::test_read_file_gets_path_hint
+          - TestValueHintsPopulation::test_edit_file_gets_line_hint
+          - TestValueHintsPopulation::test_no_hints_without_precomputed
+
+    integration:
+      domain_context_extraction: |
+        Supports two context_data formats:
+        - Old: {"violation": {...}, "precomputed": {...}}
+        - New: {"file_path": ..., "check_id": ..., "precomputed": {...}}
+        New format has violation fields at root level (not nested).
+
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # COMPONENT 3: Minimal Context Executor
+  # ═══════════════════════════════════════════════════════════════════════════════
+
+  - name: executor
+    description: |
+      Executes agent steps with stateless context. Each step is a fresh 2-message
+      conversation. Handles response parsing, action execution, and phase transitions.
+    location: src/agentforge/core/harness/minimal_context/executor.py
+    test_location: tests/unit/harness/test_enhanced_context.py::TestResponseValidation
+
+    entities:
+      - name: StepOutcome
+        type: dataclass
+        description: Result of a single execution step
+        fields:
+          - name: success
+            type: bool
+            description: Whether step succeeded
+          - name: action_name
+            type: str
+            description: Action that was taken
+          - name: action_params
+            type: Dict
+            description: Parameters used
+          - name: result
+            type: str
+            description: Result status
+          - name: summary
+            type: str
+            description: One-line summary
+          - name: should_continue
+            type: bool
+            description: Whether to continue execution
+          - name: tokens_used
+            type: int
+            description: Tokens consumed
+          - name: duration_ms
+            type: int
+            description: Execution time
+          - name: loop_detected
+            type: Optional[LoopDetection]
+            description: Loop detection result if detected
+        test_methods:
+          - TestAdaptiveBudgetEnhancedLoopDetection::test_step_outcome_includes_loop_info
+
+      - name: AdaptiveBudget
+        type: dataclass
+        description: |
+          Manages step budget with extension on progress. Integrates enhanced
+          loop detection for semantic loop identification.
+        fields:
+          - name: base_budget
+            type: int
+            description: Initial step budget (default 15)
+          - name: max_budget
+            type: int
+            description: Hard ceiling (default 50)
+          - name: runaway_threshold
+            type: int
+            description: Failed action threshold (default 3)
+          - name: use_enhanced_loop_detection
+            type: bool
+            description: Enable semantic loop detection
+          - name: loop_detector
+            type: Optional[LoopDetector]
+            description: Loop detector instance
+        methods:
+          - name: check_continue
+            params: ["step: int", "actions: List[Dict]", "facts: List[Fact]"]
+            returns: Tuple[bool, str, Optional[LoopDetection]]
+            description: Check if execution should continue
+          - name: get_loop_suggestions
+            params: []
+            returns: List[str]
+            description: Get suggestions from last loop detection
+        test_methods:
+          - TestAdaptiveBudgetEnhancedLoopDetection::test_identical_loop_detection
+          - TestAdaptiveBudgetEnhancedLoopDetection::test_error_cycle_detection
+          - TestAdaptiveBudgetEnhancedLoopDetection::test_no_loop_with_progress
+          - TestAdaptiveBudgetEnhancedLoopDetection::test_legacy_fallback
+          - TestAdaptiveBudgetEnhancedLoopDetection::test_get_loop_suggestions
+          - TestAdaptiveBudgetEnhancedLoopDetection::test_budget_exhaustion
+
+      - name: MinimalContextExecutor
+        type: class
+        description: |
+          Executes steps with minimal, bounded context. Integrates with
+          EnhancedContextBuilder and PhaseMachine.
+        fields:
+          - name: project_path
+            type: Path
+            description: Project root
+          - name: state_store
+            type: TaskStateStore
+            description: State persistence
+          - name: action_executors
+            type: Dict[str, Callable]
+            description: Action name to executor mapping
+          - name: use_phase_machine
+            type: bool
+            description: Always True as of v2.0
+          - name: use_enhanced_context_builder
+            type: bool
+            description: Always True as of v2.0
+          - name: enable_understanding_extraction
+            type: bool
+            description: Always True as of v2.0
+          - name: context_builder
+            type: EnhancedContextBuilder
+            description: Context builder instance
+        methods:
+          - name: run_step
+            params: ["task_id: str"]
+            returns: StepOutcome
+            description: Execute single step
+          - name: run_until_complete
+            params: ["task_id: str", "max_iterations: int", "on_step: Callable", "adaptive_budget: AdaptiveBudget"]
+            returns: List[StepOutcome]
+            description: Execute until completion or budget exhausted
+          - name: _parse_action
+            params: ["response: str"]
+            returns: Tuple[str, Dict]
+            description: Parse LLM response to action
+          - name: _parse_and_validate_yaml
+            params: ["yaml_content: str", "block_type: str"]
+            returns: Optional[Tuple[str, Dict]]
+            description: Parse YAML and validate against AgentResponse schema
+          - name: _handle_phase_transition
+            params: ["task_id: str", "action_name: str", "action_result: Dict", "state: TaskState"]
+            returns: None
+            description: Update phase based on action outcome
+          - name: _build_phase_context
+            params: ["machine: PhaseMachine", "state: TaskState", "last_action: str", "last_result: str"]
+            returns: PhaseContext
+            description: Build context for phase machine decisions
+        test_methods:
+          - TestEnhancedContextBuilder::test_executor_uses_enhanced_builder
+          - TestResponseValidation::test_parse_action_block_format
+          - TestResponseValidation::test_parse_yaml_block_format
+          - TestResponseValidation::test_parse_with_reasoning
+          - TestResponseValidation::test_parse_validates_against_schema
+          - TestResponseValidation::test_parse_fallback_to_simple_pattern
+          - TestResponseValidation::test_parse_handles_malformed_yaml
+          - TestResponseValidation::test_parse_handles_empty_parameters
+          - TestPhaseMachineIntegration::test_phase_context_building
+          - TestPhaseMachineIntegration::test_phase_transition_via_handle_method
+          - TestPhaseMachineIntegration::test_legacy_mode_fallback
+
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # COMPONENT 4: Phase Machine
+  # ═══════════════════════════════════════════════════════════════════════════════
+
+  - name: phase_machine
+    description: |
+      Explicit phase transitions with guards. Ensures valid state transitions
+      and provides phase-appropriate action filtering.
+    location: src/agentforge/core/harness/minimal_context/phase_machine.py
+    test_location: tests/unit/harness/test_enhanced_context.py::TestPhaseMachine
+
+    entities:
+      - name: Phase
+        type: enum
+        description: Valid phases in the agent lifecycle
+        values:
+          - INIT: "Initial state, reading context"
+          - ANALYZE: "Analyzing the problem"
+          - PLAN: "Planning the fix (optional)"
+          - IMPLEMENT: "Making changes"
+          - VERIFY: "Verifying changes work"
+          - COMPLETE: "Successfully completed"
+          - FAILED: "Failed, cannot continue"
+          - ESCALATED: "Escalated to human"
+        test_methods:
+          - TestPhaseMachine::test_initial_phase
+
+      - name: PhaseContext
+        type: dataclass
+        description: Context for making phase transition decisions
+        fields:
+          - name: current_phase
+            type: Phase
+            description: Current phase
+          - name: steps_in_phase
+            type: int
+            description: Steps in current phase
+          - name: total_steps
+            type: int
+            description: Total steps taken
+          - name: verification_passing
+            type: bool
+            description: Are verification checks passing
+          - name: tests_passing
+            type: bool
+            description: Are tests passing
+          - name: files_modified
+            type: List[str]
+            description: Files that have been modified
+          - name: facts
+            type: List[Fact]
+            description: Current facts
+          - name: last_action
+            type: Optional[str]
+            description: Last action taken
+          - name: last_action_result
+            type: Optional[str]
+            description: Result of last action
+        methods:
+          - name: has_modifications
+            params: []
+            returns: bool
+            description: Check if any files have been modified
+          - name: has_fact_of_type
+            params: ["category: str"]
+            returns: bool
+            description: Check if facts of category exist
+        test_methods:
+          - TestPhaseContext::test_has_modifications
+          - TestPhaseContext::test_has_fact_of_type
+
+      - name: Transition
+        type: dataclass
+        description: Definition of a valid phase transition
+        fields:
+          - name: from_phase
+            type: Phase
+            description: Source phase
+          - name: to_phase
+            type: Phase
+            description: Target phase
+          - name: guard
+            type: Callable[[PhaseContext], bool]
+            description: Guard function that must return True
+          - name: description
+            type: str
+            description: Human-readable description
+
+      - name: PhaseConfig
+        type: dataclass
+        description: Configuration for a phase
+        fields:
+          - name: phase
+            type: Phase
+            description: Phase this configures
+          - name: max_steps
+            type: int
+            description: Maximum steps before auto-transition
+          - name: valid_transitions
+            type: List[Phase]
+            description: Valid target phases
+          - name: success_condition
+            type: Optional[Callable]
+            description: Condition for success transition
+          - name: failure_condition
+            type: Optional[Callable]
+            description: Condition for failure transition
+
+      - name: PhaseMachine
+        type: class
+        description: |
+          State machine for phase management. Validates transitions using guards
+          and persists state for resumability.
+        fields:
+          - name: _current_phase
+            type: Phase
+            description: Current phase
+          - name: _steps_in_phase
+            type: int
+            description: Steps in current phase
+          - name: _phase_history
+            type: List[Phase]
+            description: Phases traversed
+          - name: _blocked_reason
+            type: Optional[str]
+            description: Reason if blocked
+        methods:
+          - name: current_phase
+            params: []
+            returns: Phase
+            description: Get current phase (property)
+          - name: steps_in_phase
+            params: []
+            returns: int
+            description: Get steps in phase (property)
+          - name: phase_history
+            params: []
+            returns: List[Phase]
+            description: Get phase history (property)
+          - name: advance_step
+            params: []
+            returns: None
+            description: Increment step counter
+          - name: can_transition
+            params: ["to_phase: Phase", "context: PhaseContext"]
+            returns: bool
+            description: Check if transition is valid
+          - name: transition
+            params: ["to_phase: Phase", "context: PhaseContext"]
+            returns: bool
+            description: Attempt transition, returns success
+          - name: should_auto_transition
+            params: ["context: PhaseContext"]
+            returns: Optional[Phase]
+            description: Check if auto-transition needed (max steps exceeded)
+          - name: get_available_transitions
+            params: ["context: PhaseContext"]
+            returns: List[Transition]
+            description: Get valid transitions from current phase
+          - name: to_state
+            params: []
+            returns: PhaseState
+            description: Serialize to persistable state
+          - name: from_state
+            params: ["state: PhaseState"]
+            returns: PhaseMachine
+            description: Restore from persisted state (classmethod)
+        test_methods:
+          - TestPhaseMachine::test_initial_phase
+          - TestPhaseMachine::test_advance_step
+          - TestPhaseMachine::test_transition_init_to_analyze
+          - TestPhaseMachine::test_guard_blocks_transition
+          - TestPhaseMachine::test_verify_to_complete
+          - TestPhaseMachine::test_max_steps_triggers_auto_transition
+          - TestPhaseMachine::test_to_state_and_from_state
+          - TestPhaseMachine::test_get_available_transitions
+          - TestPhaseMachineIntegration::test_task_state_phase_machine_persistence
+          - TestPhaseMachineIntegration::test_task_state_backward_compatible
+          - TestPhaseMachineIntegration::test_update_phase_machine_method
+
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # COMPONENT 5: Loop Detector
+  # ═══════════════════════════════════════════════════════════════════════════════
+
+  - name: loop_detector
+    description: |
+      Semantic loop detection to identify when agent is stuck. Detects multiple
+      loop patterns: identical actions, error cycles, no progress, and oscillation.
+    location: src/agentforge/core/harness/minimal_context/loop_detector.py
+    test_location: tests/unit/harness/test_enhanced_context.py::TestLoopDetector
+
+    entities:
+      - name: LoopType
+        type: enum
+        description: Types of detected loops
+        values:
+          - IDENTICAL_ACTION: "Same action repeated multiple times"
+          - SEMANTIC_LOOP: "Semantically similar actions repeated"
+          - ERROR_CYCLE: "A->B->A->B error pattern"
+          - NO_PROGRESS: "Read-only actions without modifications"
+          - OSCILLATION: "Alternating between two strategies"
+        test_methods:
+          - TestLoopDetector::test_detect_identical_loop
+          - TestLoopDetector::test_detect_no_progress
+          - TestLoopDetector::test_error_cycle_detection
+
+      - name: LoopDetection
+        type: dataclass
+        description: Result of loop detection analysis
+        fields:
+          - name: detected
+            type: bool
+            description: Whether a loop was detected
+          - name: loop_type
+            type: Optional[LoopType]
+            description: Type of loop if detected
+          - name: confidence
+            type: float
+            description: Confidence in detection 0.0-1.0
+          - name: description
+            type: str
+            description: Human-readable description
+          - name: suggestions
+            type: List[str]
+            description: Suggested actions to break loop
+        test_methods:
+          - TestAdaptiveBudgetEnhancedLoopDetection::test_step_outcome_includes_loop_info
+
+      - name: ActionSignature
+        type: dataclass
+        description: Semantic signature of an action for comparison
+        fields:
+          - name: action_type
+            type: str
+            description: Normalized action type (edit, read, check)
+          - name: target_file
+            type: Optional[str]
+            description: Target file if applicable
+          - name: target_entity
+            type: Optional[str]
+            description: Target function/class if applicable
+          - name: outcome
+            type: ActionResult
+            description: Outcome of action
+        methods:
+          - name: matches
+            params: ["other: ActionSignature", "strict: bool = True"]
+            returns: bool
+            description: Compare signatures for similarity
+        test_methods:
+          - TestActionSignature::test_signature_matching
+
+      - name: LoopDetector
+        type: class
+        description: |
+          Detects various loop patterns in action history. Uses semantic analysis
+          rather than exact matching to identify stuck states.
+        fields:
+          - name: identical_threshold
+            type: int
+            description: Threshold for identical action loop (default 3)
+          - name: cycle_threshold
+            type: int
+            description: Threshold for error cycles (default 2)
+          - name: no_progress_threshold
+            type: int
+            description: Threshold for no-progress detection (default 4)
+        methods:
+          - name: check
+            params: ["actions: List[ActionRecord]", "facts: List[Fact]"]
+            returns: LoopDetection
+            description: Analyze actions for loop patterns
+          - name: _detect_identical_loop
+            params: ["actions: List[ActionRecord]"]
+            returns: Optional[LoopDetection]
+            description: Detect repeated identical actions
+          - name: _detect_error_cycle
+            params: ["actions: List[ActionRecord]"]
+            returns: Optional[LoopDetection]
+            description: Detect A->B->A error cycling
+          - name: _detect_no_progress
+            params: ["actions: List[ActionRecord]"]
+            returns: Optional[LoopDetection]
+            description: Detect read-only loops
+          - name: _get_suggestions
+            params: ["loop_type: LoopType", "actions: List[ActionRecord]"]
+            returns: List[str]
+            description: Generate suggestions to break loop
+        test_methods:
+          - TestLoopDetector::test_detect_identical_loop
+          - TestLoopDetector::test_no_loop_with_different_actions
+          - TestLoopDetector::test_detect_no_progress
+          - TestLoopDetector::test_error_cycle_detection
+
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # COMPONENT 6: Understanding Extraction
+  # ═══════════════════════════════════════════════════════════════════════════════
+
+  - name: understanding
+    description: |
+      Extracts facts from tool outputs using pattern-based rules. Converts raw
+      tool output into structured facts with confidence scores.
+    location: src/agentforge/core/harness/minimal_context/understanding.py
+    test_location: tests/unit/harness/test_enhanced_context.py::TestExtractionRuleSet
+
+    entities:
+      - name: ExtractionRule
+        type: dataclass
+        description: Rule for extracting a fact from tool output
+        fields:
+          - name: pattern
+            type: str
+            description: Regex pattern to match
+          - name: category
+            type: FactCategory
+            description: Category for extracted fact
+          - name: statement_template
+            type: str
+            description: Template for fact statement with {group} placeholders
+          - name: confidence
+            type: float
+            description: Confidence score for this rule
+
+      - name: ExtractionRuleSet
+        type: class
+        description: Collection of extraction rules organized by tool
+        fields:
+          - name: rules_by_tool
+            type: Dict[str, List[ExtractionRule]]
+            description: Rules indexed by tool name
+        methods:
+          - name: get_rules
+            params: ["tool_name: str"]
+            returns: List[ExtractionRule]
+            description: Get rules for a specific tool
+
+      - name: UnderstandingExtractor
+        type: class
+        description: |
+          Extracts facts from tool outputs. Uses rule-based pattern matching
+          to convert unstructured output to structured facts.
+        fields:
+          - name: rule_set
+            type: ExtractionRuleSet
+            description: Rules to apply
+        methods:
+          - name: extract
+            params: ["tool_name: str", "output: str", "result: ActionResult", "step: int"]
+            returns: List[Fact]
+            description: Extract facts from tool output
+        test_methods:
+          - TestExtractionRuleSet::test_extract_check_passed
+          - TestExtractionRuleSet::test_extract_complexity_violation
+          - TestExtractionRuleSet::test_extract_test_results
+
+      - name: FactStore
+        type: class
+        description: |
+          Manages fact collection with automatic supersession and compaction.
+          Facts are superseded when newer facts of the same category from the
+          same source are added.
+        fields:
+          - name: facts
+            type: List[Fact]
+            description: All facts
+          - name: superseded
+            type: Set[str]
+            description: IDs of superseded facts
+          - name: max_facts
+            type: int
+            description: Maximum facts before compaction
+          - name: compaction_threshold
+            type: int
+            description: Threshold to trigger compaction
+        methods:
+          - name: add
+            params: ["fact: Fact"]
+            returns: None
+            description: Add fact, handling supersession
+          - name: get_active
+            params: []
+            returns: List[Fact]
+            description: Get non-superseded facts
+          - name: to_understanding
+            params: []
+            returns: Understanding
+            description: Convert to Understanding model
+        test_methods:
+          - TestFactStore::test_add_fact
+          - TestFactStore::test_supersession
+          - TestFactStore::test_compaction
+          - TestFactStore::test_to_understanding
+
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # COMPONENT 7: State Store
+  # ═══════════════════════════════════════════════════════════════════════════════
+
+  - name: state_store
+    description: |
+      Manages task state persistence to disk. All agent state lives here -
+      the agent has no memory except what's loaded from the state store.
+      Includes schema versioning for migration support.
+    location: src/agentforge/core/harness/minimal_context/state_store.py
+    test_location: tests/unit/harness/test_enhanced_context.py::TestSchemaVersioning
+
+    constants:
+      - name: SCHEMA_VERSION
+        type: str
+        value: "2.0"
+        description: Current schema version
+        test_methods:
+          - TestSchemaVersioning::test_schema_version_exported
+
+    entities:
+      - name: TaskPhase
+        type: enum
+        description: Task execution phases (legacy, kept for compatibility)
+        values:
+          - INIT
+          - ANALYZE
+          - PLAN
+          - IMPLEMENT
+          - VERIFY
+          - COMMIT
+          - COMPLETE
+          - FAILED
+          - ESCALATED
+
+      - name: ActionRecord
+        type: dataclass
+        description: Record of an executed action (for persistence)
+        fields:
+          - name: step
+            type: int
+          - name: action
+            type: str
+          - name: target
+            type: Optional[str]
+          - name: parameters
+            type: Dict[str, Any]
+          - name: result
+            type: str
+          - name: summary
+            type: str
+          - name: timestamp
+            type: datetime
+          - name: duration_ms
+            type: Optional[int]
+          - name: error
+            type: Optional[str]
+        methods:
+          - name: to_dict
+            returns: Dict[str, Any]
+          - name: from_dict
+            returns: ActionRecord
+
+      - name: VerificationStatus
+        type: dataclass
+        description: Current verification status for a task
+        fields:
+          - name: checks_passing
+            type: int
+          - name: checks_failing
+            type: int
+          - name: tests_passing
+            type: bool
+          - name: ready_for_completion
+            type: bool
+            description: Added in v2.0 schema
+          - name: last_check_time
+            type: Optional[datetime]
+          - name: details
+            type: Dict[str, Any]
+
+      - name: TaskState
+        type: dataclass
+        description: Complete state for a task
+        fields:
+          - name: task_id
+            type: str
+          - name: task_type
+            type: str
+          - name: goal
+            type: str
+          - name: success_criteria
+            type: List[str]
+          - name: constraints
+            type: List[str]
+          - name: created_at
+            type: datetime
+          - name: phase
+            type: TaskPhase
+          - name: current_step
+            type: int
+          - name: verification
+            type: VerificationStatus
+          - name: last_updated
+            type: datetime
+          - name: error
+            type: Optional[str]
+          - name: context_data
+            type: Dict[str, Any]
+          - name: phase_machine_state
+            type: Dict[str, Any]
+            description: Added in v2.0 schema
+        methods:
+          - name: get_phase_machine
+            returns: PhaseMachine
+            description: Get PhaseMachine from persisted state
+          - name: set_phase_machine
+            params: ["machine: PhaseMachine"]
+            description: Persist PhaseMachine state
+        test_methods:
+          - TestPhaseMachineIntegration::test_task_state_phase_machine_persistence
+
+      - name: TaskStateStore
+        type: class
+        description: |
+          Manages task state on disk. Directory structure:
+          .agentforge/tasks/{task_id}/
+          ├── task.yaml (immutable)
+          ├── state.yaml (mutable, includes schema_version)
+          ├── actions.yaml (append-only)
+          ├── working_memory.yaml (rolling buffer)
+          └── artifacts/
+        fields:
+          - name: project_path
+            type: Path
+          - name: tasks_dir
+            type: Path
+        methods:
+          - name: create_task
+            params: ["task_type: str", "goal: str", "success_criteria: List[str]", "constraints: List[str]", "context_data: Dict", "task_id: str"]
+            returns: TaskState
+          - name: load
+            params: ["task_id: str"]
+            returns: Optional[TaskState]
+            description: Load with automatic schema migration
+          - name: _migrate_state
+            params: ["state_data: Dict"]
+            returns: Tuple[Dict, bool]
+            description: |
+              Migrate from older schema versions:
+              - 1.0 -> 2.0: Add phase_machine_state, ready_for_completion
+          - name: update_phase
+            params: ["task_id: str", "phase: TaskPhase"]
+          - name: update_phase_machine
+            params: ["task_id: str", "machine: PhaseMachine"]
+          - name: increment_step
+            params: ["task_id: str"]
+            returns: int
+          - name: record_action
+            params: ["task_id: str", "action: str", "target: str", "parameters: Dict", "result: str", "summary: str"]
+            returns: ActionRecord
+          - name: update_verification
+            params: ["task_id: str", "checks_passing: int", "checks_failing: int", "tests_passing: bool"]
+          - name: save_artifact
+            params: ["task_id: str", "artifact_type: str", "name: str", "content: str"]
+            returns: Path
+        test_methods:
+          - TestSchemaVersioning::test_new_task_has_schema_version
+          - TestSchemaVersioning::test_migrate_v1_to_v2
+          - TestSchemaVersioning::test_load_current_version_no_migration
+          - TestSchemaVersioning::test_migration_preserves_data
+          - TestPhaseMachineIntegration::test_update_phase_machine_method
+
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # COMPONENT 8: Token Budget
+  # ═══════════════════════════════════════════════════════════════════════════════
+
+  - name: token_budget
+    description: |
+      Enforces hard token limits for each context section. Uses conservative
+      4 chars/token estimation and compression strategies.
+    location: src/agentforge/core/harness/minimal_context/token_budget.py
+    test_location: tests/unit/harness/test_enhanced_context.py::TestEnhancedContextAlwaysEnabled
+
+    constants:
+      - name: TOKEN_BUDGET_LIMITS
+        type: Dict[str, int]
+        description: Legacy token limits (8000 total)
+        value:
+          system_prompt: 1000
+          task_frame: 500
+          current_state: 4500
+          recent_actions: 1000
+          verification_status: 200
+          available_actions: 800
+        test_methods:
+          - TestEnhancedContextAlwaysEnabled::test_enhanced_token_limits_exported
+
+      - name: ENHANCED_TOKEN_LIMITS
+        type: Dict[str, int]
+        description: Enhanced token limits (5000 total, 40% reduction)
+        value:
+          system_prompt: 800
+          task_frame: 200
+          understanding: 600
+          verification: 100
+          precomputed: 2000
+          recent_actions: 400
+          available_actions: 400
+          domain_context: 500
+        test_methods:
+          - TestEnhancedContextAlwaysEnabled::test_enhanced_token_limits_exported
+
+      - name: CHARS_PER_TOKEN
+        type: int
+        value: 4
+        description: Conservative chars per token estimate
+
+    entities:
+      - name: BudgetAllocation
+        type: dataclass
+        description: Token allocation for a content section
+        fields:
+          - name: section
+            type: str
+          - name: content
+            type: str
+          - name: estimated_tokens
+            type: int
+          - name: budget
+            type: int
+          - name: over_budget
+            type: bool
+          - name: compressed
+            type: bool
+
+      - name: TokenBudget
+        type: class
+        description: Enforces token budget limits with compression
+        methods:
+          - name: check_allocation
+            params: ["section: str", "content: str"]
+            returns: BudgetAllocation
+          - name: compress_to_fit
+            params: ["section: str", "content: str"]
+            returns: Tuple[str, bool]
+          - name: allocate_all
+            params: ["sections: Dict[str, str]"]
+            returns: Dict[str, BudgetAllocation]
+
+    functions:
+      - name: estimate_tokens
+        params: ["text: str"]
+        returns: int
+        description: Estimate token count (4 chars/token)
+
+      - name: compress_file_content
+        params: ["content: str", "budget_tokens: int"]
+        returns: str
+        description: Compress file keeping first/last lines
+
+      - name: compress_recent_actions
+        params: ["content: str", "budget_tokens: int"]
+        returns: str
+        description: Keep most recent actions that fit
+
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # COMPONENT 9: Working Memory
+  # ═══════════════════════════════════════════════════════════════════════════════
+
+  - name: working_memory
+    description: |
+      Manages bounded rolling buffer of recent context items and facts.
+      Items automatically evicted (FIFO) when buffer full unless pinned.
+    location: src/agentforge/core/harness/minimal_context/working_memory.py
+    test_location: tests/unit/harness/test_enhanced_context.py::TestWorkingMemoryFactStorage
+
+    entities:
+      - name: WorkingMemoryItem
+        type: dataclass
+        description: Single item in working memory
+        fields:
+          - name: item_type
+            type: str
+            description: "action_result", "loaded_context", "note", or "fact"
+          - name: key
+            type: str
+            description: Unique identifier
+          - name: content
+            type: Any
+          - name: added_at
+            type: datetime
+          - name: step
+            type: Optional[int]
+          - name: expires_after_steps
+            type: Optional[int]
+          - name: pinned
+            type: bool
+        methods:
+          - name: is_expired
+            params: ["current_step: int"]
+            returns: bool
+
+      - name: WorkingMemoryManager
+        type: class
+        description: |
+          Manages rolling buffer with fact storage. High-confidence facts (>=0.9)
+          are automatically pinned.
+        fields:
+          - name: task_dir
+            type: Path
+          - name: max_items
+            type: int
+          - name: memory_file
+            type: Path
+        methods:
+          - name: add
+            params: ["item_type: str", "key: str", "content: Any", "step: int", "expires_after_steps: int", "pinned: bool"]
+          - name: add_action_result
+            params: ["action: str", "result: str", "summary: str", "step: int"]
+          - name: load_context
+            params: ["context_key: str", "content: str", "step: int"]
+          - name: get_items
+            params: ["current_step: int"]
+            returns: List[WorkingMemoryItem]
+          - name: add_fact
+            params: ["fact_id: str", "category: str", "statement: str", "confidence: float", "source: str", "step: int", "supersedes: str"]
+            description: Add fact (high confidence auto-pinned)
+          - name: add_facts_from_list
+            params: ["facts: List[Fact]", "step: int"]
+          - name: get_facts
+            params: ["current_step: int", "category: str", "min_confidence: float"]
+            returns: List[Dict]
+          - name: get_facts_for_context
+            params: ["current_step: int"]
+            returns: Dict[str, List[str]]
+            description: Facts grouped by category for context building
+          - name: clear_facts
+            returns: int
+        test_methods:
+          - TestWorkingMemoryFactStorage::test_add_and_get_fact
+          - TestWorkingMemoryFactStorage::test_supersession
+          - TestWorkingMemoryFactStorage::test_get_facts_for_context
+          - TestWorkingMemoryFactStorage::test_high_confidence_pinning
+          - TestWorkingMemoryFactStorage::test_add_facts_from_list
+          - TestWorkingMemoryFactStorage::test_clear_facts
+
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # COMPONENT 10: Fix Workflow
+  # ═══════════════════════════════════════════════════════════════════════════════
+
+  - name: fix_workflow
+    description: |
+      Orchestrates violation fixing using minimal context architecture.
+      Includes test verification with auto-revert, pre-computed context,
+      and extraction validation.
+    location: src/agentforge/core/harness/minimal_context/fix_workflow.py
+    test_location: tests/unit/harness/test_enhanced_context.py::TestEnhancedContextAlwaysEnabled
+
+    entities:
+      - name: MinimalContextFixWorkflow
+        type: class
+        description: |
+          Fix violation workflow with minimal context. Enhanced Context Engineering
+          features are always enabled (no feature flags as of v2.0).
+        fields:
+          - name: project_path
+            type: Path
+          - name: base_iterations
+            type: int
+            description: Initial step budget (default 15)
+          - name: max_iterations
+            type: int
+            description: Hard ceiling (default 50)
+          - name: require_commit_approval
+            type: bool
+          - name: state_store
+            type: TaskStateStore
+          - name: executor
+            type: MinimalContextExecutor
+          - name: violation_tools
+            type: ViolationTools
+          - name: conformance_tools
+            type: ConformanceTools
+          - name: git_tools
+            type: GitTools
+          - name: test_tools
+            type: TestRunnerTools
+          - name: refactoring_tools
+            type: RefactoringTools
+        methods:
+          - name: fix_violation
+            params: ["violation_id: str", "on_step: Callable"]
+            returns: Dict[str, Any]
+            description: Attempt to fix a violation
+          - name: resume_task
+            params: ["task_id: str", "on_step: Callable"]
+            returns: Dict[str, Any]
+            description: Resume an existing task
+          - name: _with_test_verification
+            params: ["action_fn: Callable"]
+            returns: Callable
+            description: |
+              Wrap file-modifying action with test verification:
+              1. Run TARGETED tests BEFORE (baseline)
+              2. Save original file content
+              3. Execute modification
+              4. Run TARGETED tests AFTER
+              5. If MORE failures: REVERT and return failure
+          - name: _precompute_violation_context
+            params: ["violation_data: Dict"]
+            returns: Dict[str, Any]
+            description: |
+              Pre-compute context using deterministic AST tools:
+              - function_source
+              - analysis (complexity, branches, nesting)
+              - extraction_suggestions (validated)
+              - check_definition
+              - surrounding_context
+          - name: _validate_extraction_suggestions
+            params: ["file_path: Path", "suggestions: List[Dict]"]
+            returns: List[Dict]
+            description: |
+              Validate extraction suggestions with rope refactoring provider.
+              Only includes suggestions that can actually be extracted without
+              breaking control flow.
+        test_methods:
+          - TestEnhancedContextAlwaysEnabled::test_workflow_has_enhanced_context_enabled
+          - TestEnhancedContextAlwaysEnabled::test_factory_function_creates_enhanced_workflow
+          - TestEnhancedContextAlwaysEnabled::test_workflow_preserves_custom_iterations
+
+    functions:
+      - name: create_minimal_fix_workflow
+        params: ["project_path: Path", "require_commit_approval: bool", "base_iterations: int", "max_iterations: int"]
+        returns: MinimalContextFixWorkflow
+        description: Factory function to create workflow
+        test_methods:
+          - TestEnhancedContextAlwaysEnabled::test_factory_function_creates_enhanced_workflow
+
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # COMPONENT 11: Context Schemas (Legacy)
+  # ═══════════════════════════════════════════════════════════════════════════════
+
+  - name: context_schemas
+    description: |
+      Defines context schemas and system prompts for different task types.
+      Used by legacy context builder but still provides system prompts.
+    location: src/agentforge/core/harness/minimal_context/context_schemas.py
+    test_location: tests/unit/harness/test_enhanced_context.py::TestEnhancedContextBuilder
+
+    entities:
+      - name: ContextSchema
+        type: class
+        description: Base class for context schemas (abstract)
+        methods:
+          - name: get_current_state
+            params: ["state: TaskState"]
+            returns: Dict[str, Any]
+          - name: get_available_actions
+            params: ["state: TaskState"]
+            returns: List[AvailableAction]
+          - name: get_system_prompt
+            params: ["state: TaskState"]
+            returns: str
+
+      - name: FixViolationSchema
+        type: class
+        description: Schema for fix_violation tasks
+        fields:
+          - name: schema_name
+            type: str
+            value: "fix_violation"
+          - name: max_tokens
+            type: int
+            value: 8000
+
+      - name: ImplementFeatureSchema
+        type: class
+        description: Schema for implement_feature tasks
+
+      - name: WriteTestsSchema
+        type: class
+        description: Schema for write_tests (RED phase) tasks
+
+    constants:
+      - name: SYSTEM_PROMPTS
+        type: Dict[str, str]
+        description: Phase-appropriate system prompts by task type
+        keys:
+          - fix_violation: Main system prompt for violation fixing
+          - fix_violation_analyze: Analyze phase guidance
+          - fix_violation_implement: Implement phase guidance
+          - fix_violation_verify: Verify phase guidance
+          - implement_feature: Feature implementation guidance
+          - write_tests: Test writing (RED phase) guidance
+
+    functions:
+      - name: get_schema_for_task
+        params: ["task_type: str", "project_path: Path"]
+        returns: ContextSchema
+        description: Get appropriate schema for task type
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# INTEGRATION FLOWS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+integration:
+  - flow: "Context Building"
+    description: How context is built for each step
+    steps:
+      - EnhancedContextBuilder receives task_id
+      - Loads TaskState from state_store
+      - Gets PhaseMachine from task state
+      - Builds TaskSpec from immutable task data
+      - Builds StateSpec from mutable state including Understanding from working memory
+      - Builds actions filtered by current phase
+      - Merges key fields (file_path, line_number) into hints context
+      - Populates value_hints from precomputed analysis
+      - Constructs AgentContext
+      - Estimates tokens and compacts if over budget
+      - Returns validated AgentContext
+
+  - flow: "Step Execution"
+    description: How a single step is executed
+    steps:
+      - Executor calls context_builder.build_messages(task_id)
+      - Receives [system_prompt, user_message] tuple
+      - Sends to LLM and gets response
+      - Parses response with _parse_action(), validates against AgentResponse
+      - Looks up action_executor for action name
+      - Executes action with state
+      - Records action to actions.yaml
+      - Extracts facts from tool output using UnderstandingExtractor
+      - Stores facts in working memory
+      - Updates phase via _handle_phase_transition()
+      - Checks AdaptiveBudget.check_continue() with loop detection
+      - Returns StepOutcome
+
+  - flow: "Phase Transitions"
+    description: How phases transition
+    steps:
+      - Executor builds PhaseContext from current state
+      - Checks PhaseMachine.should_auto_transition() for max_steps
+      - If action is "complete" or "escalate", transitions to terminal phase
+      - Otherwise checks PhaseMachine.can_transition() with guards
+      - If valid, calls PhaseMachine.transition()
+      - Persists updated machine to state via store.update_phase_machine()
+      - Also updates legacy TaskPhase for compatibility
+
+  - flow: "Token Budget Enforcement"
+    description: How token limits are enforced
+    steps:
+      - Context is built with all available data
+      - AgentContext.estimate_tokens() calculates size
+      - If over max_tokens, _compact_context() is called
+      - Phase 1: Reduce precomputed to 50% of content
+      - Phase 2: Compact facts to 10 via Understanding.compact()
+      - Phase 3: Limit recent_actions to 2
+      - Phase 4: Truncate domain_context to 200 chars
+      - Phase 5 (emergency): Clear precomputed entirely
+      - Returns compacted context within budget
+
+  - flow: "Loop Detection"
+    description: How stuck states are detected
+    steps:
+      - AdaptiveBudget.check_continue() is called with action history
+      - Converts fact dicts to Fact objects if enhanced detection enabled
+      - LoopDetector.check() analyzes actions
+      - Checks for IDENTICAL_ACTION (same action repeated)
+      - Checks for ERROR_CYCLE (A->B->A pattern)
+      - Checks for NO_PROGRESS (read-only operations)
+      - Returns LoopDetection with suggestions
+      - If detected, execution stops with suggestions
+
+  - flow: "Test Verification (Correctness First)"
+    description: How file modifications are verified
+    steps:
+      - _with_test_verification() wraps file-modifying actions
+      - Runs TARGETED tests BEFORE to establish baseline
+      - Saves original file content
+      - Executes the modification
+      - Runs TARGETED tests AFTER
+      - Compares failure counts
+      - If MORE failures, REVERTS original content and returns failure
+      - If not worse, continues and appends verification status
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ARCHITECTURAL CONSTRAINTS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+constraints:
+  - name: Stateless Steps
+    description: Each step is a fresh 2-message conversation
+    rationale: Prevents context accumulation and runaway token costs
+    enforced_by: EnhancedContextBuilder always builds fresh context
+
+  - name: Token Budget
+    description: Total context never exceeds 5000 tokens (enhanced) or 6000 (default)
+    rationale: Ensures bounded cost per step regardless of step count
+    enforced_by: AgentContext.estimate_tokens() + _compact_context()
+
+  - name: Immutable Facts
+    description: Facts are frozen after creation
+    rationale: Prevents accidental mutation and ensures audit trail
+    enforced_by: Pydantic frozen=True configuration
+
+  - name: Phase Guards
+    description: Phase transitions require guard validation
+    rationale: Prevents invalid state changes
+    enforced_by: PhaseMachine.can_transition() checks guards
+
+  - name: Response Schema Validation
+    description: LLM responses must validate against AgentResponse
+    rationale: Ensures structured, parseable responses
+    enforced_by: _parse_and_validate_yaml() validates against AgentResponse
+
+  - name: Correctness First
+    description: File modifications cannot break more tests than before
+    rationale: Agent cannot go from "violation" to "broken"
+    enforced_by: _with_test_verification() wrapper with auto-revert
+
+  - name: Schema Versioning
+    description: State schema includes version for migration
+    rationale: Allows evolving state format without breaking existing tasks
+    enforced_by: SCHEMA_VERSION in state.yaml, _migrate_state() on load
+
+  - name: Extraction Validation
+    description: Extraction suggestions validated with refactoring provider
+    rationale: Prevents repeatedly attempting invalid extractions
+    enforced_by: _validate_extraction_suggestions() uses rope
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# TEST COVERAGE SUMMARY
+# ═══════════════════════════════════════════════════════════════════════════════
+
+test_coverage:
+  file: tests/unit/harness/test_enhanced_context.py
+  total_tests: 90
+
+  test_classes:
+    - name: TestFact
+      tests: 4
+      covers: Fact model validation, immutability, confidence bounds
+
+    - name: TestUnderstanding
+      tests: 3
+      covers: Fact filtering, supersession, confidence thresholds
+
+    - name: TestAgentContext
+      tests: 1
+      covers: YAML serialization
+
+    - name: TestExtractionRuleSet
+      tests: 3
+      covers: Fact extraction from tool outputs
+
+    - name: TestFactStore
+      tests: 4
+      covers: Fact storage, supersession, compaction
+
+    - name: TestLoopDetector
+      tests: 4
+      covers: Loop pattern detection
+
+    - name: TestActionSignature
+      tests: 1
+      covers: Semantic action comparison
+
+    - name: TestPhaseMachine
+      tests: 9
+      covers: Phase transitions, guards, persistence
+
+    - name: TestPhaseContext
+      tests: 2
+      covers: Context helper methods
+
+    - name: TestWorkingMemoryFactStorage
+      tests: 7
+      covers: Fact storage in working memory
+
+    - name: TestAdaptiveBudgetEnhancedLoopDetection
+      tests: 8
+      covers: Budget with loop detection integration
+
+    - name: TestPhaseMachineIntegration
+      tests: 6
+      covers: Phase machine with state store
+
+    - name: TestEnhancedContextBuilder
+      tests: 7
+      covers: Context building, phase filtering
+
+    - name: TestEnhancedContextAlwaysEnabled
+      tests: 6
+      covers: Feature flags removed, always enabled
+
+    - name: TestTokenBudgetEnforcement
+      tests: 5
+      covers: Token estimation, compaction
+
+    - name: TestResponseValidation
+      tests: 8
+      covers: Response parsing, schema validation
+
+    - name: TestValueHintsPopulation
+      tests: 4
+      covers: Value hints from precomputed
+
+    - name: TestSchemaVersioning
+      tests: 5
+      covers: Schema migration v1->v2
+
+    - name: TestFactCompaction
+      tests: 4
+      covers: Understanding.compact()

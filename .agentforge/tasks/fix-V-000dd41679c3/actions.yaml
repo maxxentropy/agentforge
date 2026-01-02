@@ -1,0 +1,328 @@
+actions:
+- action: extract_function
+  duration_ms: 4921
+  error: null
+  parameters:
+    end_line: 246
+    file_path: tools/discovery/providers/python_provider.py
+    new_function_name: _process_ast_node
+    source_function: extract_symbols
+    start_line: 179
+  result: success
+  step: 1
+  summary: "\u2713 Extracted _process_ast_node from extract_symbols\n  Lines 179-246\
+    \ \u2192 new helper function\n  Parameters: self, Symbol, path, symbols, tree\n\
+    \  Returns: param, decorators, node, param_strs, arg, base, d, b"
+  target: tools/discovery/providers/python_provider.py
+  timestamp: '2025-12-31T13:58:53.798643'
+- action: run_check
+  duration_ms: 3870
+  error: null
+  parameters: {}
+  result: partial
+  step: 2
+  summary: "\u2717 Check 'max-cyclomatic-complexity' FAILED for tools/discovery/providers/python_provider.py\n\
+    Violations (1):\n- Line 170: Function '_process_ast_node' has complexity 20 (max:\
+    \ 10)\n  Hint: Break complex f"
+  target: null
+  timestamp: '2025-12-31T13:58:57.674292'
+- action: extract_function
+  duration_ms: 7714
+  error: 'Cannot analyze extracted code - might be incomplete block: invalid syntax
+    (<unknown>, line 2)'
+  parameters:
+    end_line: 239
+    file_path: tools/discovery/providers/python_provider.py
+    new_function_name: _process_function_node
+    source_function: _process_ast_node
+    start_line: 195
+  result: failure
+  step: 3
+  summary: ''
+  target: tools/discovery/providers/python_provider.py
+  timestamp: '2025-12-31T13:59:05.396854'
+- action: extract_function
+  duration_ms: 5661
+  error: 'Cannot analyze extracted code - might be incomplete block: invalid syntax
+    (<unknown>, line 2)'
+  parameters:
+    end_line: 239
+    file_path: tools/discovery/providers/python_provider.py
+    new_function_name: _process_function_node
+    source_function: _process_ast_node
+    start_line: 195
+  result: failure
+  step: 4
+  summary: ''
+  target: tools/discovery/providers/python_provider.py
+  timestamp: '2025-12-31T13:59:11.068772'
+- action: extract_function
+  duration_ms: 4454
+  error: 'Refactoring would produce invalid Python: invalid syntax (<unknown>, line
+    199)
+
+    This is a bug in the refactoring tool.'
+  parameters:
+    end_line: 193
+    file_path: tools/discovery/providers/python_provider.py
+    new_function_name: _process_class_node
+    source_function: _process_ast_node
+    start_line: 173
+  result: failure
+  step: 5
+  summary: ''
+  target: tools/discovery/providers/python_provider.py
+  timestamp: '2025-12-31T13:59:15.536576'
+- action: extract_function
+  duration_ms: 4831
+  error: 'Refactoring would produce invalid Python: invalid syntax (<unknown>, line
+    199)
+
+    This is a bug in the refactoring tool.'
+  parameters:
+    end_line: 193
+    file_path: tools/discovery/providers/python_provider.py
+    new_function_name: _process_class_node
+    source_function: _process_ast_node
+    start_line: 173
+  result: failure
+  step: 6
+  summary: ''
+  target: tools/discovery/providers/python_provider.py
+  timestamp: '2025-12-31T13:59:20.381491'
+- action: extract_function
+  duration_ms: 5577
+  error: 'Refactoring would produce invalid Python: invalid syntax (<unknown>, line
+    199)
+
+    This is a bug in the refactoring tool.'
+  parameters:
+    end_line: 193
+    file_path: tools/discovery/providers/python_provider.py
+    new_function_name: _process_class_node
+    source_function: _process_ast_node
+    start_line: 173
+  result: failure
+  step: 7
+  summary: ''
+  target: tools/discovery/providers/python_provider.py
+  timestamp: '2025-12-31T13:59:25.973349'
+- action: extract_function
+  duration_ms: 5454
+  error: 'Refactoring would produce invalid Python: invalid syntax (<unknown>, line
+    199)
+
+    This is a bug in the refactoring tool.'
+  parameters:
+    end_line: 193
+    file_path: tools/discovery/providers/python_provider.py
+    new_function_name: _process_class_node
+    source_function: _process_ast_node
+    start_line: 173
+  result: failure
+  step: 8
+  summary: ''
+  target: tools/discovery/providers/python_provider.py
+  timestamp: '2025-12-31T13:59:31.443411'
+- action: extract_function
+  duration_ms: 5163
+  error: 'Refactoring would produce invalid Python: invalid syntax (<unknown>, line
+    199)
+
+    This is a bug in the refactoring tool.'
+  parameters:
+    end_line: 193
+    file_path: tools/discovery/providers/python_provider.py
+    new_function_name: _process_class_node
+    source_function: _process_ast_node
+    start_line: 173
+  result: failure
+  step: 9
+  summary: ''
+  target: tools/discovery/providers/python_provider.py
+  timestamp: '2025-12-31T13:59:36.624824'
+- action: extract_function
+  duration_ms: 5083
+  error: 'Refactoring would produce invalid Python: invalid syntax (<unknown>, line
+    199)
+
+    This is a bug in the refactoring tool.'
+  parameters:
+    end_line: 193
+    file_path: tools/discovery/providers/python_provider.py
+    new_function_name: _process_class_node
+    source_function: _process_ast_node
+    start_line: 173
+  result: failure
+  step: 10
+  summary: ''
+  target: tools/discovery/providers/python_provider.py
+  timestamp: '2025-12-31T13:59:41.729970'
+- action: extract_function
+  duration_ms: 5089
+  error: 'Refactoring would produce invalid Python: invalid syntax (<unknown>, line
+    199)
+
+    This is a bug in the refactoring tool.'
+  parameters:
+    end_line: 193
+    file_path: tools/discovery/providers/python_provider.py
+    new_function_name: _process_class_node
+    source_function: _process_ast_node
+    start_line: 173
+  result: failure
+  step: 11
+  summary: ''
+  target: tools/discovery/providers/python_provider.py
+  timestamp: '2025-12-31T13:59:46.840032'
+- action: extract_function
+  duration_ms: 5039
+  error: 'Refactoring would produce invalid Python: invalid syntax (<unknown>, line
+    199)
+
+    This is a bug in the refactoring tool.'
+  parameters:
+    end_line: 193
+    file_path: tools/discovery/providers/python_provider.py
+    new_function_name: _process_class_node
+    source_function: _process_ast_node
+    start_line: 173
+  result: failure
+  step: 12
+  summary: ''
+  target: tools/discovery/providers/python_provider.py
+  timestamp: '2025-12-31T13:59:51.901288'
+- action: extract_function
+  duration_ms: 5566
+  error: 'Refactoring would produce invalid Python: invalid syntax (<unknown>, line
+    199)
+
+    This is a bug in the refactoring tool.'
+  parameters:
+    end_line: 193
+    file_path: tools/discovery/providers/python_provider.py
+    new_function_name: _process_class_node
+    source_function: _process_ast_node
+    start_line: 173
+  result: failure
+  step: 13
+  summary: ''
+  target: tools/discovery/providers/python_provider.py
+  timestamp: '2025-12-31T13:59:57.491720'
+- action: extract_function
+  duration_ms: 5336
+  error: 'Refactoring would produce invalid Python: invalid syntax (<unknown>, line
+    199)
+
+    This is a bug in the refactoring tool.'
+  parameters:
+    end_line: 193
+    file_path: tools/discovery/providers/python_provider.py
+    new_function_name: _process_class_node
+    source_function: _process_ast_node
+    start_line: 173
+  result: failure
+  step: 14
+  summary: ''
+  target: tools/discovery/providers/python_provider.py
+  timestamp: '2025-12-31T14:00:02.850087'
+- action: extract_function
+  duration_ms: 5253
+  error: 'Refactoring would produce invalid Python: invalid syntax (<unknown>, line
+    199)
+
+    This is a bug in the refactoring tool.'
+  parameters:
+    end_line: 193
+    file_path: tools/discovery/providers/python_provider.py
+    new_function_name: _process_class_node
+    source_function: _process_ast_node
+    start_line: 173
+  result: failure
+  step: 15
+  summary: ''
+  target: tools/discovery/providers/python_provider.py
+  timestamp: '2025-12-31T14:00:08.128226'
+- action: extract_function
+  duration_ms: 5094
+  error: 'Refactoring would produce invalid Python: invalid syntax (<unknown>, line
+    199)
+
+    This is a bug in the refactoring tool.'
+  parameters:
+    end_line: 193
+    file_path: tools/discovery/providers/python_provider.py
+    new_function_name: _process_class_node
+    source_function: _process_ast_node
+    start_line: 173
+  result: failure
+  step: 16
+  summary: ''
+  target: tools/discovery/providers/python_provider.py
+  timestamp: '2025-12-31T14:00:13.249445'
+- action: extract_function
+  duration_ms: 4831
+  error: 'Refactoring would produce invalid Python: invalid syntax (<unknown>, line
+    199)
+
+    This is a bug in the refactoring tool.'
+  parameters:
+    end_line: 193
+    file_path: tools/discovery/providers/python_provider.py
+    new_function_name: _process_class_node
+    source_function: _process_ast_node
+    start_line: 173
+  result: failure
+  step: 17
+  summary: ''
+  target: tools/discovery/providers/python_provider.py
+  timestamp: '2025-12-31T14:00:18.109503'
+- action: extract_function
+  duration_ms: 5033
+  error: 'Refactoring would produce invalid Python: invalid syntax (<unknown>, line
+    199)
+
+    This is a bug in the refactoring tool.'
+  parameters:
+    end_line: 193
+    file_path: tools/discovery/providers/python_provider.py
+    new_function_name: _process_class_node
+    source_function: _process_ast_node
+    start_line: 173
+  result: failure
+  step: 18
+  summary: ''
+  target: tools/discovery/providers/python_provider.py
+  timestamp: '2025-12-31T14:00:23.167114'
+- action: extract_function
+  duration_ms: 4974
+  error: 'Refactoring would produce invalid Python: invalid syntax (<unknown>, line
+    199)
+
+    This is a bug in the refactoring tool.'
+  parameters:
+    end_line: 193
+    file_path: tools/discovery/providers/python_provider.py
+    new_function_name: _process_class_node
+    source_function: _process_ast_node
+    start_line: 173
+  result: failure
+  step: 19
+  summary: ''
+  target: tools/discovery/providers/python_provider.py
+  timestamp: '2025-12-31T14:00:28.170683'
+- action: extract_function
+  duration_ms: 5536
+  error: 'Cannot analyze extracted code - might be incomplete block: invalid syntax
+    (<unknown>, line 3)'
+  parameters:
+    end_line: 239
+    file_path: tools/discovery/providers/python_provider.py
+    new_function_name: _process_function_node
+    source_function: _process_ast_node
+    start_line: 194
+  result: failure
+  step: 20
+  summary: ''
+  target: tools/discovery/providers/python_provider.py
+  timestamp: '2025-12-31T14:00:33.734651'

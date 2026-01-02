@@ -10,16 +10,13 @@
 
 """Recovery executor for automated agent recovery strategies."""
 
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
-from typing import Optional, List, Dict, Any
+from typing import Any
 
-from .recovery_domain import (
-    RecoveryAction, RecoveryResult, Checkpoint,
-    RecoveryAttempt, RecoveryPolicy
-)
 from .checkpoint_manager import CheckpointManager
 from .monitor_domain import AgentHealth
+from .recovery_domain import RecoveryAction, RecoveryAttempt, RecoveryPolicy, RecoveryResult
 
 
 class RecoveryExecutor:
@@ -66,19 +63,19 @@ class RecoveryExecutor:
     def __init__(
         self,
         checkpoint_manager: CheckpointManager,
-        policies: Optional[List[RecoveryPolicy]] = None
+        policies: list[RecoveryPolicy] | None = None
     ):
         """Initialize executor with checkpoint manager and policies."""
         self.checkpoint_manager = checkpoint_manager
         self.policies = policies if policies is not None else self.DEFAULT_POLICIES.copy()
-        self.recovery_history: List[RecoveryAttempt] = []
-        self.last_recovery_times: Dict[str, datetime] = {}
+        self.recovery_history: list[RecoveryAttempt] = []
+        self.last_recovery_times: dict[str, datetime] = {}
 
     def execute_recovery(
         self,
         health: AgentHealth,
         session_id: str,
-        current_state: Dict[str, Any]
+        current_state: dict[str, Any]
     ) -> RecoveryAttempt:
         """Execute appropriate recovery based on health issues."""
         if not health.issues:
@@ -136,7 +133,7 @@ class RecoveryExecutor:
     def execute_action(
         self,
         action: RecoveryAction,
-        context: Dict[str, Any]
+        context: dict[str, Any]
     ) -> RecoveryAttempt:
         """Execute a single recovery action."""
         session_id = context.get("session_id", "unknown")
@@ -199,8 +196,8 @@ class RecoveryExecutor:
         self,
         session_id: str,
         phase: str,
-        state: Dict[str, Any],
-        files: Optional[List[Path]] = None
+        state: dict[str, Any],
+        files: list[Path] | None = None
     ) -> RecoveryAttempt:
         """Create a checkpoint."""
         try:
@@ -330,7 +327,7 @@ class RecoveryExecutor:
     def reset_state(
         self,
         session_id: str,
-        preserve_keys: List[str]
+        preserve_keys: list[str]
     ) -> RecoveryAttempt:
         """Clear problematic state."""
         try:
@@ -356,7 +353,7 @@ class RecoveryExecutor:
                 error=str(e)
             )
 
-    def escalate(self, reason: str, context: Dict[str, Any]) -> RecoveryAttempt:
+    def escalate(self, reason: str, context: dict[str, Any]) -> RecoveryAttempt:
         """Trigger human escalation."""
         # Escalation always succeeds - it's the fallback
         escalation_data = {
@@ -383,9 +380,9 @@ class RecoveryExecutor:
 
     def get_recovery_history(
         self,
-        session_id: Optional[str] = None,
+        session_id: str | None = None,
         limit: int = 10
-    ) -> List[RecoveryAttempt]:
+    ) -> list[RecoveryAttempt]:
         """Get recent recovery attempts."""
         history = self.recovery_history
 
@@ -403,7 +400,7 @@ class RecoveryExecutor:
         self.policies = [p for p in self.policies if p.name != policy.name]
         self.policies.append(policy)
 
-    def get_policy_for_issue(self, issue: str) -> Optional[RecoveryPolicy]:
+    def get_policy_for_issue(self, issue: str) -> RecoveryPolicy | None:
         """Find matching policy for an issue."""
         issue_lower = issue.lower()
         for policy in self.policies:

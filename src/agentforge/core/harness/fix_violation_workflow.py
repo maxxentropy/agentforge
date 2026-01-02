@@ -5,21 +5,22 @@ Fix Violation Workflow
 Orchestrates the process of fixing a conformance violation.
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
+from .conformance_tools import CONFORMANCE_TOOL_DEFINITIONS, ConformanceTools
+from .git_tools import GIT_TOOL_DEFINITIONS, GitTools
 from .llm_executor_domain import (
     ActionType,
     ExecutionContext,
     StepResult,
 )
-from .violation_tools import ViolationTools, VIOLATION_TOOL_DEFINITIONS
-from .conformance_tools import ConformanceTools, CONFORMANCE_TOOL_DEFINITIONS
-from .git_tools import GitTools, GIT_TOOL_DEFINITIONS
-from .test_runner_tools import TestRunnerTools, TEST_TOOL_DEFINITIONS
+from .test_runner_tools import TEST_TOOL_DEFINITIONS, TestRunnerTools
+from .violation_tools import VIOLATION_TOOL_DEFINITIONS, ViolationTools
 
 
 class FixPhase(Enum):
@@ -41,15 +42,15 @@ class FixAttempt:
     violation_id: str
     started_at: datetime
     phase: FixPhase
-    steps: List[StepResult] = field(default_factory=list)
-    files_modified: List[str] = field(default_factory=list)
+    steps: list[StepResult] = field(default_factory=list)
+    files_modified: list[str] = field(default_factory=list)
     tests_passed: bool = False
     conformance_passed: bool = False
     committed: bool = False
-    error: Optional[str] = None
-    completed_at: Optional[datetime] = None
+    error: str | None = None
+    completed_at: datetime | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dict."""
         return {
             "violation_id": self.violation_id,
@@ -65,7 +66,7 @@ class FixAttempt:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "FixAttempt":
+    def from_dict(cls, data: dict[str, Any]) -> "FixAttempt":
         """Deserialize from dict."""
         return cls(
             violation_id=data["violation_id"],
@@ -209,7 +210,7 @@ class FixViolationWorkflow:
 
         return "\n".join(lines)
 
-    def _format_step_history(self, steps: List[StepResult]) -> str:
+    def _format_step_history(self, steps: list[StepResult]) -> str:
         """Format step history for prompt."""
         if not steps:
             return "No steps yet"
@@ -226,7 +227,7 @@ class FixViolationWorkflow:
     def fix_violation(
         self,
         violation_id: str,
-        on_step: Optional[Callable[[StepResult], None]] = None,
+        on_step: Callable[[StepResult], None] | None = None,
     ) -> FixAttempt:
         """
         Attempt to fix a violation.
@@ -281,7 +282,7 @@ class FixViolationWorkflow:
         exec_context.add_user_message(initial_message)
 
         # Run agent loop
-        for i in range(self.max_iterations):
+        for _i in range(self.max_iterations):
             step_result = self.llm_executor.execute_step(exec_context)
             attempt.steps.append(step_result)
 

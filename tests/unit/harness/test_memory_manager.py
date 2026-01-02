@@ -1,5 +1,5 @@
-# @spec_file: .agentforge/specs/harness-v1.yaml
-# @spec_id: harness-v1
+# @spec_file: .agentforge/specs/core-harness-v1.yaml
+# @spec_id: core-harness-v1
 # @component_id: tools-harness-memory_manager
 # @impl_path: tools/harness/memory_manager.py
 
@@ -10,35 +10,36 @@
 
 """Tests for memory_manager module - high-level memory operations with search and context assembly."""
 
-import pytest
-from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime, timedelta
+from unittest.mock import Mock, patch
 
-from tools.harness.memory_manager import MemoryManager
-from tools.harness.memory_domain import MemoryTier, MemoryEntry
-from tools.harness.memory_store import MemoryStore
+import pytest
+
+from agentforge.core.harness.memory_domain import MemoryEntry, MemoryTier
+from agentforge.core.harness.memory_manager import MemoryManager
+from agentforge.core.harness.memory_store import MemoryStore
 
 
 class TestMemoryManagerInit:
     """Test MemoryManager initialization."""
-    
+
     def test_init_with_store_only_creates_manager(self):
         """Test that manager can be initialized with just a store."""
         mock_store = Mock(spec=MemoryStore)
-        
+
         manager = MemoryManager(mock_store)
-        
+
         assert manager.store == mock_store
         assert manager.session_id is None
         assert manager.task_id is None
-    
+
     def test_init_with_session_context_sets_session_id(self):
         """Test that manager can be initialized with session context."""
         mock_store = Mock(spec=MemoryStore)
         session_id = "test-session-123"
-        
+
         manager = MemoryManager(mock_store, session_id=session_id)
-        
+
         assert manager.store == mock_store
         assert manager.session_id == session_id
         assert manager.task_id is None
@@ -46,7 +47,7 @@ class TestMemoryManagerInit:
 
 class TestMemoryManagerGet:
     """Test MemoryManager.get method."""
-    
+
     def test_get_from_specific_tier_returns_value(self):
         """Test getting value from a specific tier returns the value."""
         mock_store = Mock(spec=MemoryStore)
@@ -54,58 +55,58 @@ class TestMemoryManagerGet:
         mock_entry.value = "test_value"
         mock_entry.is_expired.return_value = False
         mock_store.get.return_value = mock_entry
-        
+
         manager = MemoryManager(mock_store)
         result = manager.get("test_key", MemoryTier.PROJECT)
-        
+
         assert result == "test_value"
         mock_store.get.assert_called_once_with("test_key", MemoryTier.PROJECT)
-    
+
     def test_get_with_fallback_searches_lower_tiers(self):
         """Test that get with fallback searches lower tiers when key not found."""
         mock_store = Mock(spec=MemoryStore)
         mock_entry = Mock(spec=MemoryEntry)
         mock_entry.value = "fallback_value"
         mock_entry.is_expired.return_value = False
-        
+
         # First call returns None, second returns entry
         mock_store.get.side_effect = [None, mock_entry]
-        
+
         manager = MemoryManager(mock_store)
         result = manager.get("test_key", MemoryTier.TASK, fallback=True)
-        
+
         assert result == "fallback_value"
         assert mock_store.get.call_count == 2
         mock_store.get.assert_any_call("test_key", MemoryTier.TASK)
         mock_store.get.assert_any_call("test_key", MemoryTier.PROJECT)
-    
+
     def test_get_expired_entry_returns_none(self):
         """Test that getting an expired entry returns None."""
         mock_store = Mock(spec=MemoryStore)
         mock_entry = Mock(spec=MemoryEntry)
         mock_entry.is_expired.return_value = True
         mock_store.get.return_value = mock_entry
-        
+
         manager = MemoryManager(mock_store)
         result = manager.get("test_key", MemoryTier.SESSION)
-        
+
         assert result is None
-    
+
     def test_get_nonexistent_key_returns_none(self):
         """Test that getting a nonexistent key returns None."""
         mock_store = Mock(spec=MemoryStore)
         mock_store.get.return_value = None
-        
+
         manager = MemoryManager(mock_store)
         result = manager.get("nonexistent_key", MemoryTier.SESSION)
-        
+
         assert result is None
 
 
 class TestMemoryManagerSet:
     """Test MemoryManager.set method."""
-    
-    @patch('tools.harness.memory_manager.MemoryEntry')
+
+    @patch('agentforge.core.harness.memory_manager.MemoryEntry')
     def test_set_creates_entry_and_stores(self, mock_entry_class):
         """Test that set creates a memory entry and stores it."""
         mock_store = Mock(spec=MemoryStore)
@@ -119,8 +120,8 @@ class TestMemoryManagerSet:
             key="test_key", value="test_value", ttl=None, metadata=None
         )
         mock_store.set.assert_called_once_with("test_key", mock_entry, MemoryTier.SESSION)
-    
-    @patch('tools.harness.memory_manager.MemoryEntry')
+
+    @patch('agentforge.core.harness.memory_manager.MemoryEntry')
     def test_set_with_ttl_and_metadata(self, mock_entry_class):
         """Test that set can include TTL and metadata."""
         mock_store = Mock(spec=MemoryStore)
@@ -141,7 +142,7 @@ class TestMemoryManagerSet:
 
 class TestMemoryManagerMerge:
     """Test MemoryManager.merge method."""
-    
+
     def test_merge_updates_existing_dict_entry(self):
         """Test that merge updates an existing dictionary entry."""
         mock_store = Mock(spec=MemoryStore)
@@ -149,17 +150,17 @@ class TestMemoryManagerMerge:
         existing_entry.value = {"key1": "value1", "key2": "value2"}
         existing_entry.is_expired.return_value = False
         mock_store.get.return_value = existing_entry
-        
+
         manager = MemoryManager(mock_store)
         partial_value = {"key2": "updated_value2", "key3": "value3"}
-        
+
         manager.merge("test_key", partial_value, MemoryTier.PROJECT)
-        
+
         expected_merged = {"key1": "value1", "key2": "updated_value2", "key3": "value3"}
         existing_entry.value = expected_merged
         mock_store.set.assert_called_once_with("test_key", existing_entry, MemoryTier.PROJECT)
-    
-    @patch('tools.harness.memory_manager.MemoryEntry')
+
+    @patch('agentforge.core.harness.memory_manager.MemoryEntry')
     def test_merge_creates_new_entry_if_not_exists(self, mock_entry_class):
         """Test that merge creates a new entry if key doesn't exist."""
         mock_store = Mock(spec=MemoryStore)
@@ -174,7 +175,7 @@ class TestMemoryManagerMerge:
 
         mock_entry_class.create.assert_called_once_with(key="test_key", value=partial_value, ttl=None, metadata=None)
         mock_store.set.assert_called_once_with("test_key", mock_entry, MemoryTier.SESSION)
-    
+
     def test_merge_non_dict_value_raises_error(self):
         """Test that merge raises error when trying to merge into non-dict value."""
         mock_store = Mock(spec=MemoryStore)
@@ -182,16 +183,16 @@ class TestMemoryManagerMerge:
         existing_entry.value = "not_a_dict"
         existing_entry.is_expired.return_value = False
         mock_store.get.return_value = existing_entry
-        
+
         manager = MemoryManager(mock_store)
-        
+
         with pytest.raises(ValueError, match="Cannot merge into non-dict value"):
             manager.merge("test_key", {"key": "value"}, MemoryTier.SESSION)
 
 
 class TestMemoryManagerSearch:
     """Test MemoryManager.search method."""
-    
+
     def test_search_finds_matching_entries_across_tiers(self):
         """Test that search finds entries matching query across all tiers."""
         mock_store = Mock(spec=MemoryStore)
@@ -232,7 +233,7 @@ class TestMemoryManagerSearch:
         assert len(results) == 2
         assert any(r["key"] == "session_key1" for r in results)
         assert any(r["key"] == "task_key1" for r in results)
-    
+
     def test_search_with_tier_filter_searches_specific_tier(self):
         """Test that search can be limited to specific tiers."""
         mock_store = Mock(spec=MemoryStore)
@@ -250,67 +251,67 @@ class TestMemoryManagerSearch:
 
         mock_store.list_keys.assert_called_once_with(MemoryTier.PROJECT)
         assert len(results) == 2
-    
+
     def test_search_excludes_expired_entries(self):
         """Test that search excludes expired entries."""
         mock_store = Mock(spec=MemoryStore)
         mock_store.list_keys.return_value = ["key1"]
-        
+
         expired_entry = Mock(spec=MemoryEntry)
         expired_entry.is_expired.return_value = True
         mock_store.get.return_value = expired_entry
-        
+
         manager = MemoryManager(mock_store)
         results = manager.search("keyword")
-        
+
         assert len(results) == 0
 
 
 class TestMemoryManagerGetContext:
     """Test MemoryManager.get_context method."""
-    
+
     def test_get_context_assembles_from_all_tiers(self):
         """Test that get_context assembles relevant memories from all tiers."""
         mock_store = Mock(spec=MemoryStore)
-        
+
         # Mock entries from different tiers
         entries = []
-        for i, tier in enumerate([MemoryTier.SESSION, MemoryTier.TASK, MemoryTier.PROJECT]):
+        for i, _tier in enumerate([MemoryTier.SESSION, MemoryTier.TASK, MemoryTier.PROJECT]):
             entry = Mock(spec=MemoryEntry)
             entry.value = f"content from tier {i}"
             entry.timestamp = datetime.now() - timedelta(minutes=i)
             entry.is_expired.return_value = False
             entries.append(entry)
-        
+
         mock_store.list_keys.side_effect = [["key1"], ["key2"], ["key3"], []]
         mock_store.get.side_effect = entries
-        
+
         manager = MemoryManager(mock_store)
         context = manager.get_context(max_tokens=1000)
-        
+
         assert "content from tier 0" in context
         assert "content from tier 1" in context
         assert "content from tier 2" in context
-    
+
     def test_get_context_respects_token_limit(self):
         """Test that get_context respects the token limit."""
         mock_store = Mock(spec=MemoryStore)
-        
+
         # Create a large entry that would exceed token limit
         large_entry = Mock(spec=MemoryEntry)
         large_entry.value = "x" * 1000  # Large content
         large_entry.timestamp = datetime.now()
         large_entry.is_expired.return_value = False
-        
+
         mock_store.list_keys.return_value = ["key1"]
         mock_store.get.return_value = large_entry
-        
+
         manager = MemoryManager(mock_store)
         context = manager.get_context(max_tokens=100)
-        
+
         # Context should be truncated or limited
         assert len(context) <= 500  # Rough token-to-char conversion
-    
+
     def test_get_context_prioritizes_recent_entries(self):
         """Test that get_context prioritizes more recent entries."""
         mock_store = Mock(spec=MemoryStore)
@@ -339,71 +340,71 @@ class TestMemoryManagerGetContext:
 
 class TestMemoryManagerLinkSession:
     """Test MemoryManager.link_session method."""
-    
+
     def test_link_session_sets_session_id(self):
         """Test that link_session sets the session ID for tier 1 operations."""
         mock_store = Mock(spec=MemoryStore)
         manager = MemoryManager(mock_store)
-        
+
         session_id = "test-session-456"
         manager.link_session(session_id)
-        
+
         assert manager.session_id == session_id
-    
+
     def test_link_session_enables_session_tier_operations(self):
         """Test that linking session enables session tier operations."""
         mock_store = Mock(spec=MemoryStore)
         manager = MemoryManager(mock_store)
-        
+
         # Initially no session linked
         assert manager.session_id is None
-        
+
         # Link session
         session_id = "test-session-789"
         manager.link_session(session_id)
-        
+
         # Now session operations should work
         assert manager.session_id == session_id
 
 
 class TestMemoryManagerLinkTask:
     """Test MemoryManager.link_task method."""
-    
+
     def test_link_task_sets_task_id(self):
         """Test that link_task sets the task ID for tier 2 operations."""
         mock_store = Mock(spec=MemoryStore)
         manager = MemoryManager(mock_store)
-        
+
         task_id = "test-task-123"
         manager.link_task(task_id)
-        
+
         assert manager.task_id == task_id
-    
+
     def test_link_task_enables_task_tier_operations(self):
         """Test that linking task enables task tier operations."""
         mock_store = Mock(spec=MemoryStore)
         manager = MemoryManager(mock_store)
-        
+
         # Initially no task linked
         assert manager.task_id is None
-        
+
         # Link task
         task_id = "test-task-456"
         manager.link_task(task_id)
-        
+
         # Now task operations should work
         assert manager.task_id == task_id
-    
+
     def test_link_task_can_change_existing_task(self):
         """Test that link_task can change an existing task association."""
         mock_store = Mock(spec=MemoryStore)
         manager = MemoryManager(mock_store)
-        
+
         # Link first task
         first_task = "task-1"
         manager.link_task(first_task)
         assert manager.task_id == first_task
-        
+
         # Link different task
         second_task = "task-2"
         manager.link_task(second_task)
@@ -412,23 +413,23 @@ class TestMemoryManagerLinkTask:
 
 class TestMemoryManagerIntegration:
     """Integration tests for MemoryManager with multiple operations."""
-    
+
     def test_full_workflow_with_session_and_task_linking(self):
         """Test a complete workflow with session and task linking."""
         mock_store = Mock(spec=MemoryStore)
         manager = MemoryManager(mock_store)
-        
+
         # Link session and task
         manager.link_session("session-123")
         manager.link_task("task-456")
-        
+
         # Set values in different tiers
         manager.set("session_key", "session_value", MemoryTier.SESSION)
         manager.set("task_key", "task_value", MemoryTier.TASK)
-        
+
         # Verify store was called correctly
         assert mock_store.set.call_count == 2
-        
+
         # Verify session and task are linked
         assert manager.session_id == "session-123"
         assert manager.task_id == "task-456"

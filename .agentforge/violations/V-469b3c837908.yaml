@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-469b3c837908
+contract_id: agentforge
+check_id: max-function-length
+severity: major
+file_path: tools/harness/minimal_context/fix_workflow.py
+message: 'Function ''_fuzzy_find_and_replace'' has 51 lines (max: 50)'
+detected_at: '2025-12-31T17:47:35.633419'
+last_seen_at: '2025-12-31T17:47:35.633419'
+status: stale
+line_number: 356
+fix_hint: Extract logic into helper functions or use composition

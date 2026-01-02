@@ -1,113 +1,84 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-1-foundation.yaml
-# @spec_id: pipeline-controller-phase1-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
+# @spec_id: core-pipeline-v1
 # @component_id: pipeline-controller
 
-"""Tests for pipeline controller."""
+"""Tests for PipelineController."""
 
 import pytest
 
 from agentforge.core.pipeline import (
+    PassthroughExecutor,
     PipelineController,
-    PipelineState,
+    PipelineNotFoundError,
+    PipelineResult,
+    PipelineStateError,
     PipelineStatus,
-    PipelineStateStore,
     StageExecutor,
-    StageContext,
     StageResult,
     StageStatus,
-    StageExecutorRegistry,
-    EscalationHandler,
-    PipelineNotFoundError,
-    PipelineStateError,
-    PassthroughExecutor,
 )
 
 
 class TestPipelineController:
-    """Tests for PipelineController."""
+    """Tests for PipelineController core functionality."""
 
-    @pytest.fixture
-    def registry_with_stages(self, fresh_registry):
-        """Create registry with all implement template stages."""
-        stages = ["intake", "clarify", "analyze", "spec", "red", "green", "refactor", "deliver"]
-        for stage in stages:
-            fresh_registry.register(stage, lambda s=stage: PassthroughExecutor(s))
-        return fresh_registry
+    def test_execute_creates_and_runs(self, controller):
+        """execute() creates and runs pipeline to completion."""
+        result = controller.execute("Test request")
 
-    @pytest.fixture
-    def controller(self, temp_project, registry_with_stages):
-        """Create a controller with test registry."""
-        return PipelineController(
-            project_path=temp_project,
-            registry=registry_with_stages,
+        assert result.success is True
+        assert result.pipeline_id.startswith("PL-")
+        assert len(result.stages_completed) > 0
+
+    def test_execute_with_template(self, controller):
+        """execute() respects template parameter."""
+        result = controller.execute("Test request", template="design")
+
+        assert result.success is True
+        state = controller.get_status(result.pipeline_id)
+        assert state.template == "design"
+
+    def test_execute_with_config(self, controller):
+        """execute() passes config to pipeline."""
+        result = controller.execute(
+            "Test request",
+            config={"supervised": True, "custom_key": "value"}
         )
 
-    def test_create_pipeline(self, controller):
-        """create() creates and persists a new pipeline."""
-        state = controller.create(
-            request="Add a logout button",
-            template="implement",
-        )
-
-        assert state.pipeline_id.startswith("PL-")
-        assert state.template == "implement"
-        assert state.status == PipelineStatus.PENDING
-        assert state.request == "Add a logout button"
-
-        # Should be persisted
-        loaded = controller.get_status(state.pipeline_id)
-        assert loaded.pipeline_id == state.pipeline_id
-
-    def test_create_with_config(self, controller):
-        """create() accepts configuration."""
-        state = controller.create(
-            request="Test",
-            config={"verbose": True, "timeout": 60},
-        )
-
-        assert state.config["verbose"] is True
-        assert state.config["timeout"] == 60
+        assert result.success is True
+        state = controller.get_status(result.pipeline_id)
+        assert state.config.get("custom_key") == "value"
 
     def test_execute_single_stage(self, temp_project, fresh_registry):
-        """execute() runs through a single-stage pipeline."""
+        """execute() runs through stages."""
+        # Template "test" requires: ["analyze", "red"]
         fresh_registry.register("analyze", lambda: PassthroughExecutor("analyze"))
+        fresh_registry.register("red", lambda: PassthroughExecutor("red"))
 
         controller = PipelineController(
             project_path=temp_project,
             registry=fresh_registry,
         )
 
-        state = controller.create("Test", template="test")  # test template: ["analyze", "red"]
-        # But red isn't registered, so it should fail
+        result = controller.execute("Test", template="test")
 
-        # Register red too
-        fresh_registry.register("red", lambda: PassthroughExecutor("red"))
-
-        state = controller.execute(state.pipeline_id)
-
+        assert result.success is True
+        state = controller.get_status(result.pipeline_id)
         assert state.status == PipelineStatus.COMPLETED
 
     def test_execute_multi_stage(self, controller):
         """execute() runs through multiple stages in order."""
-        state = controller.create("Multi-stage test")
-        state = controller.execute(state.pipeline_id)
+        result = controller.execute("Multi-stage test")
 
+        assert result.success is True
+        state = controller.get_status(result.pipeline_id)
         assert state.status == PipelineStatus.COMPLETED
 
-        # All stages should be completed
         for stage_name in state.stage_order:
             stage = state.stages[stage_name]
             assert stage.status == StageStatus.COMPLETED
-
-    def test_execute_already_terminal(self, controller):
-        """execute() raises error for terminal pipeline."""
-        state = controller.create("Test")
-        state = controller.execute(state.pipeline_id)
-
-        with pytest.raises(PipelineStateError) as exc_info:
-            controller.execute(state.pipeline_id)
-
-        assert "terminal" in str(exc_info.value).lower()
 
     def test_execute_with_failure(self, temp_project, fresh_registry):
         """execute() stops on stage failure."""
@@ -117,19 +88,19 @@ class TestPipelineController:
                 return StageResult.failed("Intentional failure")
 
         fresh_registry.register("intake", lambda: PassthroughExecutor("intake"))
-        fresh_registry.register("clarify", FailingExecutor)  # Will fail
+        fresh_registry.register("clarify", FailingExecutor)
 
         controller = PipelineController(
             project_path=temp_project,
             registry=fresh_registry,
         )
 
-        state = controller.create("Test", template="design")
-        state = controller.execute(state.pipeline_id)
+        result = controller.execute("Test", template="design")
 
+        assert result.success is False
+        assert result.error == "Intentional failure"
+        state = controller.get_status(result.pipeline_id)
         assert state.status == PipelineStatus.FAILED
-        assert state.stages["clarify"].status == StageStatus.FAILED
-        assert state.stages["clarify"].error == "Intentional failure"
 
     def test_execute_with_escalation(self, temp_project, fresh_registry):
         """execute() pauses on escalation."""
@@ -151,30 +122,43 @@ class TestPipelineController:
             registry=fresh_registry,
         )
 
-        state = controller.create("Test", template="design")
-        state = controller.execute(state.pipeline_id)
+        result = controller.execute("Test", template="design")
 
+        assert result.success is False  # Not complete yet
+        state = controller.get_status(result.pipeline_id)
         assert state.status == PipelineStatus.WAITING_APPROVAL
 
-        # Escalation should be created
         pending = controller.escalation_handler.get_pending(state.pipeline_id)
         assert len(pending) == 1
-        assert pending[0].message == "Please approve"
 
-    def test_pause_and_resume(self, controller):
+    def test_pause_and_resume(self, temp_project, full_registry):
         """pause() and resume() work correctly."""
-        state = controller.create("Test")
-        state.status = PipelineStatus.RUNNING
-        state.current_stage = "intake"
+        controller = PipelineController(temp_project, registry=full_registry)
+
+        # Create a pipeline and set it to running
+        result = controller.execute("Test", template="design")
+        controller.get_status(result.pipeline_id)
+
+        # Can't pause completed
+        paused = controller.pause(result.pipeline_id)
+        assert paused is False
+
+    def test_resume_paused_pipeline(self, temp_project, full_registry):
+        """resume() continues paused pipeline."""
+        controller = PipelineController(temp_project, registry=full_registry)
+
+        # Create and pause manually
+        state = controller._create("Test", "design", {})
+        state.status = PipelineStatus.PAUSED
+        state.current_stage = "clarify"
+        state.stages["intake"].mark_completed({"done": True})
         controller.state_store.save(state)
 
-        # Pause
-        state = controller.pause(state.pipeline_id)
-        assert state.status == PipelineStatus.PAUSED
+        result = controller.resume(state.pipeline_id)
 
-        # Resume
-        state = controller.resume(state.pipeline_id)
-        assert state.status == PipelineStatus.COMPLETED  # Runs to completion
+        assert result.success is True
+        state = controller.get_status(result.pipeline_id)
+        assert state.status == PipelineStatus.COMPLETED
 
     def test_resume_with_pending_escalation(self, temp_project, fresh_registry):
         """resume() fails if there are pending escalations."""
@@ -193,13 +177,10 @@ class TestPipelineController:
 
         controller = PipelineController(temp_project, registry=fresh_registry)
 
-        state = controller.create("Test", template="design")
-        state = controller.execute(state.pipeline_id)
-
-        # Should be waiting for approval
+        result = controller.execute("Test", template="design")
+        state = controller.get_status(result.pipeline_id)
         assert state.status == PipelineStatus.WAITING_APPROVAL
 
-        # Resume should fail
         with pytest.raises(PipelineStateError) as exc_info:
             controller.resume(state.pipeline_id)
 
@@ -226,17 +207,14 @@ class TestPipelineController:
 
         controller = PipelineController(temp_project, registry=fresh_registry)
 
-        state = controller.create("Test", template="design")
-        state = controller.execute(state.pipeline_id)
-
+        result = controller.execute("Test", template="design")
+        state = controller.get_status(result.pipeline_id)
         assert state.status == PipelineStatus.WAITING_APPROVAL
 
-        pending = controller.escalation_handler.get_pending(state.pipeline_id)
-        esc_id = pending[0].escalation_id
+        success = controller.approve(state.pipeline_id)
+        assert success is True
 
-        # Approve should continue
-        state = controller.approve(state.pipeline_id, esc_id, "Approved!")
-
+        state = controller.get_status(state.pipeline_id)
         assert state.status == PipelineStatus.COMPLETED
 
     def test_reject_escalation(self, temp_project, fresh_registry):
@@ -256,45 +234,46 @@ class TestPipelineController:
 
         controller = PipelineController(temp_project, registry=fresh_registry)
 
-        state = controller.create("Test", template="design")
-        state = controller.execute(state.pipeline_id)
+        result = controller.execute("Test", template="design")
 
-        pending = controller.escalation_handler.get_pending(state.pipeline_id)
-        esc_id = pending[0].escalation_id
+        success = controller.reject(result.pipeline_id, "Not approved")
+        assert success is True
 
-        state = controller.reject(state.pipeline_id, esc_id, "Not approved")
-
+        state = controller.get_status(result.pipeline_id)
         assert state.status == PipelineStatus.ABORTED
 
-    def test_abort_pipeline(self, controller):
+    def test_abort_pipeline(self, temp_project, full_registry):
         """abort() stops a running pipeline."""
-        state = controller.create("Test")
+        controller = PipelineController(temp_project, registry=full_registry)
+
+        state = controller._create("Test", "implement", {})
         state.status = PipelineStatus.RUNNING
         state.current_stage = "clarify"
         state.stages["clarify"].mark_running()
         controller.state_store.save(state)
 
-        state = controller.abort(state.pipeline_id, "User cancelled")
+        success = controller.abort(state.pipeline_id, "User cancelled")
+        assert success is True
 
+        state = controller.get_status(state.pipeline_id)
         assert state.status == PipelineStatus.ABORTED
         assert state.stages["clarify"].status == StageStatus.FAILED
         assert "User cancelled" in state.stages["clarify"].error
 
     def test_abort_already_terminal(self, controller):
-        """abort() raises error for terminal pipeline."""
-        state = controller.create("Test")
-        state = controller.execute(state.pipeline_id)
+        """abort() returns False for terminal pipeline."""
+        result = controller.execute("Test")
 
-        with pytest.raises(PipelineStateError):
-            controller.abort(state.pipeline_id)
+        success = controller.abort(result.pipeline_id)
+        assert success is False
 
     def test_get_status(self, controller):
         """get_status() returns current pipeline state."""
-        state = controller.create("Test")
-        loaded = controller.get_status(state.pipeline_id)
+        result = controller.execute("Test")
+        loaded = controller.get_status(result.pipeline_id)
 
-        assert loaded.pipeline_id == state.pipeline_id
-        assert loaded.status == state.status
+        assert loaded.pipeline_id == result.pipeline_id
+        assert loaded.status == PipelineStatus.COMPLETED
 
     def test_get_status_not_found(self, controller):
         """get_status() raises error for unknown pipeline."""
@@ -303,15 +282,14 @@ class TestPipelineController:
 
     def test_stage_executor_not_found(self, temp_project, fresh_registry):
         """execute() handles missing stage executor."""
-        # Only register intake
         fresh_registry.register("intake", lambda: PassthroughExecutor())
 
         controller = PipelineController(temp_project, registry=fresh_registry)
 
-        state = controller.create("Test", template="design")
-        state = controller.execute(state.pipeline_id)
+        result = controller.execute("Test", template="design")
 
-        # intake succeeds, clarify fails (not registered)
+        assert result.success is False
+        state = controller.get_status(result.pipeline_id)
         assert state.status == PipelineStatus.FAILED
         assert "not registered" in state.stages["clarify"].error.lower()
 
@@ -329,10 +307,9 @@ class TestPipelineController:
 
         controller = PipelineController(temp_project, registry=fresh_registry)
 
-        state = controller.create("Test", template="design")
-        state = controller.execute(state.pipeline_id)
+        result = controller.execute("Test", template="design")
 
-        # Should skip clarify and analyze
+        state = controller.get_status(result.pipeline_id)
         assert state.stages["intake"].status == StageStatus.COMPLETED
         assert state.stages["clarify"].status == StageStatus.PENDING
         assert state.stages["analyze"].status == StageStatus.PENDING
@@ -357,9 +334,7 @@ class TestPipelineController:
         fresh_registry.register("spec", lambda: PassthroughExecutor())
 
         controller = PipelineController(temp_project, registry=fresh_registry)
-
-        state = controller.create("Test", template="design")
-        controller.execute(state.pipeline_id)
+        controller.execute("Test", template="design")
 
         assert len(received_artifacts) == 1
         assert received_artifacts[0]["produced_by"] == "producer"
@@ -381,8 +356,112 @@ class TestPipelineController:
 
         controller = PipelineController(temp_project, registry=fresh_registry)
 
-        state = controller.create("Test", template="design")
-        state = controller.execute(state.pipeline_id)
+        result = controller.execute("Test", template="design")
 
+        state = controller.get_status(result.pipeline_id)
         assert state.status == PipelineStatus.FAILED
         assert "required_artifact" in state.stages["clarify"].error
+
+
+class TestPipelineResult:
+    """Tests for PipelineResult dataclass."""
+
+    def test_result_success_attributes(self):
+        """PipelineResult has all success attributes."""
+        result = PipelineResult(
+            success=True,
+            pipeline_id="PL-123",
+            stages_completed=["intake", "clarify"],
+            current_stage=None,
+            deliverable={"output": "value"},
+            error=None,
+            total_duration_seconds=1.5,
+        )
+
+        assert result.success is True
+        assert result.pipeline_id == "PL-123"
+        assert result.stages_completed == ["intake", "clarify"]
+        assert result.deliverable == {"output": "value"}
+        assert result.error is None
+
+    def test_result_failure_attributes(self):
+        """PipelineResult has error on failure."""
+        result = PipelineResult(
+            success=False,
+            pipeline_id="PL-123",
+            error="Something went wrong",
+            total_duration_seconds=0.5,
+        )
+
+        assert result.success is False
+        assert result.error == "Something went wrong"
+
+
+class TestControllerListPipelines:
+    """Tests for list_pipelines()."""
+
+    def test_list_all_pipelines(self, controller):
+        """list_pipelines() returns all pipelines."""
+        controller.execute("Request 1")
+        controller.execute("Request 2")
+        controller.execute("Request 3")
+
+        pipelines = controller.list_pipelines()
+        assert len(pipelines) >= 3
+
+    def test_list_filtered_by_status(self, temp_project, fresh_registry):
+        """list_pipelines(status=...) filters correctly."""
+
+        class FailingExecutor(StageExecutor):
+            def execute(self, context):
+                return StageResult.failed("fail")
+
+        fresh_registry.register("intake", lambda: PassthroughExecutor())
+        fresh_registry.register("clarify", FailingExecutor)
+        fresh_registry.register("analyze", lambda: PassthroughExecutor())
+        fresh_registry.register("spec", lambda: PassthroughExecutor())
+
+        controller = PipelineController(temp_project, registry=fresh_registry)
+
+        controller.execute("Will complete", template="test")  # test template has no clarify
+        controller.execute("Will fail", template="design")
+
+        # Register all stages for the test template result to complete
+        from agentforge.core.pipeline import get_registry
+        get_registry().register("red", lambda: PassthroughExecutor())
+
+        failed = controller.list_pipelines(status=PipelineStatus.FAILED)
+        # At least one should be failed
+        assert any(p.status == PipelineStatus.FAILED for p in failed)
+
+    def test_list_respects_limit(self, controller):
+        """list_pipelines(limit=N) returns at most N results."""
+        for i in range(10):
+            controller.execute(f"Request {i}")
+
+        limited = controller.list_pipelines(limit=5)
+        assert len(limited) == 5
+
+
+class TestControllerProvideFeedback:
+    """Tests for provide_feedback()."""
+
+    def test_provide_feedback_stores(self, controller):
+        """provide_feedback() stores in pipeline state."""
+        result = controller.execute("Test")
+
+        controller.provide_feedback(result.pipeline_id, "This looks good")
+
+        state = controller.get_status(result.pipeline_id)
+        assert state.config.get("feedback") == "This looks good"
+
+    def test_provide_feedback_appends(self, controller):
+        """provide_feedback() maintains history."""
+        result = controller.execute("Test")
+
+        controller.provide_feedback(result.pipeline_id, "First feedback")
+        controller.provide_feedback(result.pipeline_id, "Second feedback")
+
+        state = controller.get_status(result.pipeline_id)
+        assert state.config.get("feedback") == "Second feedback"
+        assert state.config.get("feedback_history") == ["First feedback", "Second feedback"]

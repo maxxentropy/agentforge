@@ -6,7 +6,8 @@ severity: minor
 file_path: tests/unit/tools/test_builtin_checks_architecture.py
 message: 'Forbidden pattern found: ''@pytest.fixture'''
 detected_at: '2025-12-30T17:10:15.635061'
-last_seen_at: '2025-12-30T20:29:36.736755'
+last_seen_at: '2026-01-01T01:39:14.254007'
 status: open
 line_number: 291
 fix_hint: Move shared fixtures to conftest.py
+test_path: tests/unit/tools/test_builtin_checks_architecture.py

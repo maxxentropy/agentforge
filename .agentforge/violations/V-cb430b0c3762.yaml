@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-cb430b0c3762
+contract_id: agentforge
+check_id: max-function-length
+severity: major
+file_path: tools/harness/refactoring_tools.py
+message: 'Function ''simplify_conditional'' has 103 lines (max: 50)'
+detected_at: '2025-12-31T14:51:44.142579'
+last_seen_at: '2025-12-31T14:51:44.142579'
+status: stale
+line_number: 377
+fix_hint: Extract logic into helper functions or use composition

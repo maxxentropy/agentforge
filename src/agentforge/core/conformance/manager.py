@@ -11,20 +11,23 @@ Application layer orchestration for conformance operations.
 Coordinates between verification engine, stores, and CLI.
 """
 
-import uuid
 import fnmatch
+import uuid
 from datetime import date, datetime
 from pathlib import Path
-from typing import List, Optional, Dict, Set
-import yaml
 
 from .domain import (
-    Violation, ViolationStatus, Severity,
-    Exemption, ExemptionStatus,
-    ConformanceReport, ConformanceSummary, HistorySnapshot
+    ConformanceReport,
+    ConformanceSummary,
+    Exemption,
+    ExemptionStatus,
+    HistorySnapshot,
+    Severity,
+    Violation,
+    ViolationStatus,
 )
-from .stores import ViolationStore, ExemptionRegistry, AtomicFileWriter, ReportStore
 from .history_store import HistoryStore
+from .stores import ExemptionRegistry, ReportStore, ViolationStore
 
 
 class ConformanceManager:
@@ -47,7 +50,7 @@ class ConformanceManager:
         self.history_store = HistoryStore(self.agentforge_path)
         self.report_store = ReportStore(self.agentforge_path)
 
-        self._previous_report: Optional[ConformanceReport] = None
+        self._previous_report: ConformanceReport | None = None
 
     def is_initialized(self) -> bool:
         """Check if conformance tracking is initialized."""
@@ -103,7 +106,7 @@ class ConformanceManager:
             gitignore_path.write_text(f"# AgentForge local config\n{entry}\n")
 
     def run_conformance_check(
-        self, verification_results: List[Dict], contracts_checked: List[str],
+        self, verification_results: list[dict], contracts_checked: list[str],
         files_checked: int, is_full_run: bool = True, save_history: bool = True
     ) -> ConformanceReport:
         """Process verification results and update conformance state."""
@@ -120,7 +123,7 @@ class ConformanceManager:
                         v.mark_exemption_expired()
                         self.violation_store.save(v)
 
-        seen_violation_ids: Set[str] = set()
+        seen_violation_ids: set[str] = set()
         for result in verification_results:
             violation = self._create_or_update_violation(result)
             seen_violation_ids.add(violation.violation_id)
@@ -148,7 +151,7 @@ class ConformanceManager:
 
         return report
 
-    def _create_or_update_violation(self, result: Dict) -> Violation:
+    def _create_or_update_violation(self, result: dict) -> Violation:
         """Create new violation or update existing one."""
         violation_id = Violation.generate_id(
             contract_id=result["contract_id"],
@@ -193,7 +196,7 @@ class ConformanceManager:
         )
 
     def _mark_unseen_violations(
-        self, seen_ids: Set[str], contracts_checked: List[str], resolve: bool
+        self, seen_ids: set[str], contracts_checked: list[str], resolve: bool
     ) -> None:
         """Mark violations as resolved or stale if not seen in current run."""
         checked = set(contracts_checked)
@@ -209,7 +212,7 @@ class ConformanceManager:
 
     def _generate_report(
         self,
-        contracts_checked: List[str],
+        contracts_checked: list[str],
         files_checked: int,
         is_full_run: bool
     ) -> ConformanceReport:
@@ -223,13 +226,13 @@ class ConformanceManager:
         stale_violations = [v for v in all_violations if v.status == ViolationStatus.STALE]
 
         # Count by severity (only failed, non-exempted)
-        by_severity: Dict[str, int] = {}
+        by_severity: dict[str, int] = {}
         for v in failed_violations:
             severity_name = v.severity.value
             by_severity[severity_name] = by_severity.get(severity_name, 0) + 1
 
         # Count by contract (only failed, non-exempted)
-        by_contract: Dict[str, int] = {}
+        by_contract: dict[str, int] = {}
         for v in failed_violations:
             by_contract[v.contract_id] = by_contract.get(v.contract_id, 0) + 1
 
@@ -265,18 +268,18 @@ class ConformanceManager:
             trend=trend,
         )
 
-    def get_report(self) -> Optional[ConformanceReport]:
+    def get_report(self) -> ConformanceReport | None:
         """Get current conformance report."""
         return self.report_store.load()
 
     def list_violations(
         self,
-        status: Optional[ViolationStatus] = None,
-        severity: Optional[Severity] = None,
-        contract_id: Optional[str] = None,
-        file_pattern: Optional[str] = None,
+        status: ViolationStatus | None = None,
+        severity: Severity | None = None,
+        contract_id: str | None = None,
+        file_pattern: str | None = None,
         limit: int = 50
-    ) -> List[Violation]:
+    ) -> list[Violation]:
         """List violations with optional filters."""
         violations = self.violation_store.load_all()
 
@@ -294,7 +297,7 @@ class ConformanceManager:
 
         return violations[:limit]
 
-    def get_violation(self, violation_id: str) -> Optional[Violation]:
+    def get_violation(self, violation_id: str) -> Violation | None:
         """Get a specific violation by ID."""
         self.violation_store.load_all()
         return self.violation_store.get(violation_id)
@@ -304,7 +307,7 @@ class ConformanceManager:
         violation_id: str,
         reason: str,
         resolved_by: str = "user"
-    ) -> Optional[Violation]:
+    ) -> Violation | None:
         """Mark a violation as resolved."""
         self.violation_store.load_all()
         violation = self.violation_store.get(violation_id)
@@ -337,7 +340,7 @@ class ConformanceManager:
 
         return len(to_prune)
 
-    def get_history(self, days: int = 30) -> List[HistorySnapshot]:
+    def get_history(self, days: int = 30) -> list[HistorySnapshot]:
         """Get conformance history for trend analysis."""
         from datetime import timedelta
         end_date = date.today()
@@ -346,9 +349,9 @@ class ConformanceManager:
 
     def get_exemptions(
         self,
-        status: Optional[ExemptionStatus] = None,
-        contract_id: Optional[str] = None
-    ) -> List[Exemption]:
+        status: ExemptionStatus | None = None,
+        contract_id: str | None = None
+    ) -> list[Exemption]:
         """List exemptions with optional filters."""
         exemptions = self.exemption_registry.load_all()
 
@@ -359,7 +362,7 @@ class ConformanceManager:
 
         return exemptions
 
-    def get_summary_stats(self) -> Dict:
+    def get_summary_stats(self) -> dict:
         """Get summary statistics for dashboard display."""
         report = self.get_report()
         if not report:

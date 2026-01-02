@@ -1,5 +1,5 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-2-design-pipeline.yaml
-# @spec_id: pipeline-controller-phase2-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
 # @component_id: spec-executor
 # @test_path: tests/unit/pipeline/stages/test_spec.py
 
@@ -18,14 +18,13 @@ This is a critical stage that bridges analysis to implementation.
 """
 
 import logging
-from datetime import datetime, timezone
-from pathlib import Path
-from typing import Any, Dict, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 import yaml
 
 from ..llm_stage_executor import LLMStageExecutor, OutputValidation
-from ..stage_executor import StageContext, StageResult, StageStatus
+from ..stage_executor import StageContext, StageResult
 
 logger = logging.getLogger(__name__)
 
@@ -202,7 +201,7 @@ performance_requirements:
 ```
 """
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         super().__init__(config)
         self._spec_counter = 0
 
@@ -216,7 +215,7 @@ performance_requirements:
         analysis = artifact.get("analysis", {})
 
         # Generate spec ID
-        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+        timestamp = datetime.now(UTC).strftime("%Y%m%d%H%M%S")
         self._spec_counter += 1
         spec_id = f"SPEC-{timestamp}-{self._spec_counter:04d}"
 
@@ -266,14 +265,14 @@ performance_requirements:
             risks=risks_str,
             spec_id=spec_id,
             request_id=artifact.get("request_id", "REQ-UNKNOWN"),
-            timestamp=datetime.now(timezone.utc).isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
         )
 
     def parse_response(
         self,
-        llm_result: Dict[str, Any],
+        llm_result: dict[str, Any],
         context: StageContext,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """Parse specification from LLM response."""
         response_text = llm_result.get("response", "") or llm_result.get("content", "")
 
@@ -285,7 +284,7 @@ performance_requirements:
 
         # Ensure required fields
         if "spec_id" not in spec:
-            timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+            timestamp = datetime.now(UTC).strftime("%Y%m%d%H%M%S")
             spec["spec_id"] = f"SPEC-{timestamp}"
 
         spec.setdefault("request_id", context.input_artifacts.get("request_id"))
@@ -296,7 +295,7 @@ performance_requirements:
 
         return spec
 
-    def validate_output(self, artifact: Optional[Dict[str, Any]]) -> OutputValidation:
+    def validate_output(self, artifact: dict[str, Any] | None) -> OutputValidation:
         """Validate specification artifact."""
         if artifact is None:
             return OutputValidation(valid=False, errors=["No artifact"])
@@ -367,6 +366,6 @@ performance_requirements:
         return self.required_input_fields
 
 
-def create_spec_executor(config: Optional[Dict] = None) -> SpecExecutor:
+def create_spec_executor(config: dict | None = None) -> SpecExecutor:
     """Create SpecExecutor instance."""
     return SpecExecutor(config)

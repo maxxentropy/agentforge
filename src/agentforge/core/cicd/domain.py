@@ -12,11 +12,11 @@ These entities represent the core business logic for baseline comparison,
 violation tracking, and CI result management.
 """
 
+import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum, IntEnum
-from typing import List, Optional, Dict, Any, Set
-import hashlib
+from typing import Any
 
 
 class CIMode(Enum):
@@ -57,16 +57,16 @@ class CIViolation:
     """
     check_id: str
     file_path: str
-    line: Optional[int]
+    line: int | None
     message: str
     severity: str  # "error" | "warning" | "info"
-    rule_id: Optional[str] = None
-    contract_id: Optional[str] = None
-    column: Optional[int] = None
-    end_line: Optional[int] = None
-    end_column: Optional[int] = None
-    fix_hint: Optional[str] = None
-    code_snippet: Optional[str] = None
+    rule_id: str | None = None
+    contract_id: str | None = None
+    column: int | None = None
+    end_line: int | None = None
+    end_column: int | None = None
+    fix_hint: str | None = None
+    code_snippet: str | None = None
 
     @property
     def hash(self) -> str:
@@ -81,7 +81,7 @@ class CIViolation:
         composite = f"{self.check_id}:{self.file_path}:{line_str}:{self.message}"
         return hashlib.sha256(composite.encode()).hexdigest()[:16]
 
-    def to_sarif_result(self) -> Dict[str, Any]:
+    def to_sarif_result(self) -> dict[str, Any]:
         """
         Convert to SARIF 2.1.0 result format.
 
@@ -97,7 +97,7 @@ class CIViolation:
         level = level_map.get(self.severity, "warning")
 
         # Build physical location
-        physical_location: Dict[str, Any] = {
+        physical_location: dict[str, Any] = {
             "artifactLocation": {
                 "uri": self.file_path,
                 "uriBaseId": "%SRCROOT%",
@@ -106,7 +106,7 @@ class CIViolation:
 
         # Add region if line is specified
         if self.line:
-            region: Dict[str, Any] = {"startLine": self.line}
+            region: dict[str, Any] = {"startLine": self.line}
             if self.column:
                 region["startColumn"] = self.column
             if self.end_line:
@@ -115,7 +115,7 @@ class CIViolation:
                 region["endColumn"] = self.end_column
             physical_location["region"] = region
 
-        result: Dict[str, Any] = {
+        result: dict[str, Any] = {
             "ruleId": self.rule_id or self.check_id,
             "level": level,
             "message": {"text": self.message},
@@ -135,7 +135,7 @@ class CIViolation:
 
         return result
 
-    def to_junit_testcase(self, suite_name: str) -> Dict[str, Any]:
+    def to_junit_testcase(self, suite_name: str) -> dict[str, Any]:
         """
         Convert to JUnit XML testcase format.
 
@@ -171,7 +171,7 @@ class BaselineEntry:
     hash: str
     check_id: str
     file_path: str
-    line: Optional[int]
+    line: int | None
     message_preview: str  # First 100 chars of message
     first_seen: datetime
     last_seen: datetime
@@ -190,7 +190,7 @@ class BaselineEntry:
             last_seen=now,
         )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "hash": self.hash,
@@ -203,7 +203,7 @@ class BaselineEntry:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "BaselineEntry":
+    def from_dict(cls, data: dict[str, Any]) -> "BaselineEntry":
         """Create from dictionary."""
         return cls(
             hash=data["hash"],
@@ -227,14 +227,14 @@ class Baseline:
     schema_version: str
     created_at: datetime
     updated_at: datetime
-    commit_sha: Optional[str]
-    entries: Dict[str, BaselineEntry]  # hash -> entry
+    commit_sha: str | None
+    entries: dict[str, BaselineEntry]  # hash -> entry
 
     def contains(self, violation: CIViolation) -> bool:
         """Check if violation exists in baseline."""
         return violation.hash in self.entries
 
-    def get_entry(self, violation: CIViolation) -> Optional[BaselineEntry]:
+    def get_entry(self, violation: CIViolation) -> BaselineEntry | None:
         """Get baseline entry for a violation if it exists."""
         return self.entries.get(violation.hash)
 
@@ -255,7 +255,7 @@ class Baseline:
             return True
         return False
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "schema_version": self.schema_version,
@@ -266,7 +266,7 @@ class Baseline:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "Baseline":
+    def from_dict(cls, data: dict[str, Any]) -> "Baseline":
         """Create from dictionary."""
         entries = {
             h: BaselineEntry.from_dict(e)
@@ -281,7 +281,7 @@ class Baseline:
         )
 
     @classmethod
-    def create_empty(cls, commit_sha: Optional[str] = None) -> "Baseline":
+    def create_empty(cls, commit_sha: str | None = None) -> "Baseline":
         """Create a new empty baseline."""
         now = datetime.utcnow()
         return cls(
@@ -303,9 +303,9 @@ class BaselineComparison:
     - fixed: Resolved in this PR (celebrate!)
     - existing: Already in baseline (tech debt)
     """
-    new_violations: List[CIViolation]
-    fixed_violations: List[BaselineEntry]
-    existing_violations: List[CIViolation]
+    new_violations: list[CIViolation]
+    fixed_violations: list[BaselineEntry]
+    existing_violations: list[CIViolation]
 
     @property
     def introduces_violations(self) -> bool:
@@ -328,12 +328,12 @@ class BaselineComparison:
         return len(self.fixed_violations) > 0
 
     @property
-    def new_errors(self) -> List[CIViolation]:
+    def new_errors(self) -> list[CIViolation]:
         """Get only error-level new violations."""
         return [v for v in self.new_violations if v.severity == "error"]
 
     @property
-    def new_warnings(self) -> List[CIViolation]:
+    def new_warnings(self) -> list[CIViolation]:
         """Get only warning-level new violations."""
         return [v for v in self.new_violations if v.severity == "warning"]
 
@@ -350,12 +350,10 @@ class BaselineComparison:
         """
         if fail_on_new_errors and len(self.new_errors) > 0:
             return True
-        if fail_on_new_warnings and len(self.new_warnings) > 0:
-            return True
-        return False
+        return bool(fail_on_new_warnings and len(self.new_warnings) > 0)
 
     @classmethod
-    def compare(cls, violations: List[CIViolation], baseline: Baseline) -> "BaselineComparison":
+    def compare(cls, violations: list[CIViolation], baseline: Baseline) -> "BaselineComparison":
         """
         Compare violations against baseline.
 
@@ -366,9 +364,9 @@ class BaselineComparison:
         Returns:
             BaselineComparison with categorized violations
         """
-        current_hashes: Set[str] = set()
-        new_violations: List[CIViolation] = []
-        existing_violations: List[CIViolation] = []
+        current_hashes: set[str] = set()
+        new_violations: list[CIViolation] = []
+        existing_violations: list[CIViolation] = []
 
         for violation in violations:
             current_hashes.add(violation.hash)
@@ -378,7 +376,7 @@ class BaselineComparison:
                 new_violations.append(violation)
 
         # Find fixed violations (in baseline but not in current)
-        fixed_violations: List[BaselineEntry] = []
+        fixed_violations: list[BaselineEntry] = []
         for hash_val, entry in baseline.entries.items():
             if hash_val not in current_hashes:
                 fixed_violations.append(entry)
@@ -400,17 +398,17 @@ class CIResult:
     """
     mode: CIMode
     exit_code: ExitCode
-    violations: List[CIViolation]
-    comparison: Optional[BaselineComparison]  # Only for PR mode
+    violations: list[CIViolation]
+    comparison: BaselineComparison | None  # Only for PR mode
     files_checked: int
     checks_run: int
     duration_seconds: float
     started_at: datetime
     completed_at: datetime
-    commit_sha: Optional[str] = None
-    base_ref: Optional[str] = None
-    head_ref: Optional[str] = None
-    errors: List[str] = field(default_factory=list)
+    commit_sha: str | None = None
+    base_ref: str | None = None
+    head_ref: str | None = None
+    errors: list[str] = field(default_factory=list)
 
     @property
     def total_violations(self) -> int:
@@ -437,27 +435,27 @@ class CIResult:
         """Check if the result indicates success."""
         return self.exit_code == ExitCode.SUCCESS
 
-    def get_violations_by_file(self) -> Dict[str, List[CIViolation]]:
+    def get_violations_by_file(self) -> dict[str, list[CIViolation]]:
         """Group violations by file path."""
-        by_file: Dict[str, List[CIViolation]] = {}
+        by_file: dict[str, list[CIViolation]] = {}
         for violation in self.violations:
             if violation.file_path not in by_file:
                 by_file[violation.file_path] = []
             by_file[violation.file_path].append(violation)
         return by_file
 
-    def get_violations_by_check(self) -> Dict[str, List[CIViolation]]:
+    def get_violations_by_check(self) -> dict[str, list[CIViolation]]:
         """Group violations by check ID."""
-        by_check: Dict[str, List[CIViolation]] = {}
+        by_check: dict[str, list[CIViolation]] = {}
         for violation in self.violations:
             if violation.check_id not in by_check:
                 by_check[violation.check_id] = []
             by_check[violation.check_id].append(violation)
         return by_check
 
-    def to_summary_dict(self) -> Dict[str, Any]:
+    def to_summary_dict(self) -> dict[str, Any]:
         """Generate summary dictionary for logging/reporting."""
-        summary: Dict[str, Any] = {
+        summary: dict[str, Any] = {
             "mode": self.mode.value,
             "exit_code": self.exit_code.value,
             "exit_code_description": self.exit_code.description,
@@ -500,7 +498,7 @@ class CIConfig:
     max_workers: int = 4
     fail_on_new_errors: bool = True
     fail_on_new_warnings: bool = False
-    total_errors_threshold: Optional[int] = None  # Absolute cap
+    total_errors_threshold: int | None = None  # Absolute cap
     baseline_path: str = ".agentforge/baseline.json"
     output_sarif: bool = True
     output_junit: bool = False
@@ -511,11 +509,11 @@ class CIConfig:
     cache_enabled: bool = True
     cache_path: str = ".agentforge/cache/"
     cache_ttl_hours: int = 24
-    incremental_paths: Optional[List[str]] = None  # Files to check in incremental mode
-    base_ref: Optional[str] = None  # Git base ref for PR mode
-    head_ref: Optional[str] = None  # Git head ref for PR mode
+    incremental_paths: list[str] | None = None  # Files to check in incremental mode
+    base_ref: str | None = None  # Git base ref for PR mode
+    head_ref: str | None = None  # Git head ref for PR mode
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "mode": self.mode.value,
@@ -542,7 +540,7 @@ class CIConfig:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "CIConfig":
+    def from_dict(cls, data: dict[str, Any]) -> "CIConfig":
         """Create from dictionary."""
         parallel = data.get("parallel", {})
         fail_on = data.get("fail_on", {})

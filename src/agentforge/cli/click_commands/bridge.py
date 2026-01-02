@@ -16,9 +16,9 @@ Commands:
 - bridge refresh: Regenerate contracts from updated profile
 """
 
-import sys
-import click
 from pathlib import Path
+
+import click
 
 
 @click.group('bridge', help='Profile-to-Conformance Bridge commands')

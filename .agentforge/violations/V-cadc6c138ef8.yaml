@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-cadc6c138ef8
+contract_id: agentforge
+check_id: max-nesting-depth
+severity: major
+file_path: src/agentforge/core/harness/recovery_executor.py
+message: 'Function ''execute_action'' has nesting depth 8 (max: 4)'
+detected_at: '2026-01-01T01:39:13.671975'
+last_seen_at: '2026-01-01T01:39:13.671975'
+status: open
+line_number: 131
+fix_hint: Use early returns, guard clauses, or extract nested logic

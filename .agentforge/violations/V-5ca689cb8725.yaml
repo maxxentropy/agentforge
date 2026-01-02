@@ -6,7 +6,8 @@ severity: minor
 file_path: tests/unit/tools/conformance/test_stores.py
 message: 'Class ''TestViolationStore'' has 10 methods (max: 3)'
 detected_at: '2025-12-30T17:10:15.617888'
-last_seen_at: '2025-12-30T20:29:36.726930'
+last_seen_at: '2026-01-01T01:39:14.030167'
 status: open
 line_number: 76
 fix_hint: Split modules with too many classes into focused single-class modules
+test_path: tests/unit/tools/conformance/test_stores.py

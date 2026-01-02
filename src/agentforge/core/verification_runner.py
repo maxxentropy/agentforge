@@ -26,30 +26,32 @@ Usage:
 """
 
 import sys
-import yaml
-from pathlib import Path
-from typing import List, Dict, Any, Optional, Callable
+from collections.abc import Callable
 from datetime import datetime
+from pathlib import Path
+from typing import Any
+
+import yaml
 
 # Import types
 try:
-    from .verification_types import Severity, CheckStatus, CheckResult, VerificationReport
     from .verification_checks import CheckRunner
     from .verification_reports import ReportGenerator
+    from .verification_types import CheckResult, CheckStatus, Severity, VerificationReport
 except ImportError:
-    from verification_types import Severity, CheckStatus, CheckResult, VerificationReport
     from verification_checks import CheckRunner
     from verification_reports import ReportGenerator
+    from verification_types import CheckResult, CheckStatus, Severity, VerificationReport
 
 # Import runners
 try:
-    from .pyright_runner import PyrightRunner
     from .command_runner import CommandRunner
+    from .pyright_runner import PyrightRunner
     from .verification_ast import ASTChecker
 except ImportError:
     # Allow running as standalone script
-    from pyright_runner import PyrightRunner
     from command_runner import CommandRunner
+    from pyright_runner import PyrightRunner
     from verification_ast import ASTChecker
 
 
@@ -69,7 +71,7 @@ class VerificationRunner(CheckRunner, ReportGenerator):
                 self.config = yaml.safe_load(f)
         else:
             self.config = {"checks": [], "profiles": {}, "settings": {}}
-        self.context: Dict[str, Any] = {}
+        self.context: dict[str, Any] = {}
         self._pyright_runner = None
         self._command_runner = None
         self._ast_checker = None
@@ -116,7 +118,7 @@ class VerificationRunner(CheckRunner, ReportGenerator):
     # Profile and Check Management
     # =========================================================================
 
-    def get_checks_for_profile(self, profile_name: str) -> List[Dict]:
+    def get_checks_for_profile(self, profile_name: str) -> list[dict]:
         """Get check definitions for a profile."""
         profiles = self.config.get("profiles", {})
         profile = profiles.get(profile_name)
@@ -132,7 +134,7 @@ class VerificationRunner(CheckRunner, ReportGenerator):
 
         return [all_checks[cid] for cid in check_ids if cid in all_checks]
 
-    def get_checks_by_ids(self, check_ids: List[str]) -> List[Dict]:
+    def get_checks_by_ids(self, check_ids: list[str]) -> list[dict]:
         """Get specific checks by ID."""
         all_checks = {c["id"]: c for c in self.config.get("checks", [])}
         return [all_checks[cid] for cid in check_ids if cid in all_checks]
@@ -145,7 +147,7 @@ class VerificationRunner(CheckRunner, ReportGenerator):
 
         return self._run_checks(checks, settings, profile_name)
 
-    def run_checks(self, check_ids: List[str] = None, all_checks: bool = False) -> VerificationReport:
+    def run_checks(self, check_ids: list[str] = None, all_checks: bool = False) -> VerificationReport:
         """Run specific checks or all checks."""
         if all_checks:
             checks = self.config.get("checks", [])
@@ -161,11 +163,11 @@ class VerificationRunner(CheckRunner, ReportGenerator):
     # Check Execution
     # =========================================================================
 
-    def _check_deps_met(self, deps: List[str], completed: set, results: list) -> bool:
+    def _check_deps_met(self, deps: list[str], completed: set, results: list) -> bool:
         """Check if dependencies are met."""
         return all(d in completed and any(r.check_id == d and r.passed for r in results) for d in deps)
 
-    def _create_skip_result(self, check: Dict, message: str) -> CheckResult:
+    def _create_skip_result(self, check: dict, message: str) -> CheckResult:
         """Create a skipped check result."""
         return CheckResult(
             check_id=check["id"], check_name=check.get("name", check["id"]),
@@ -173,8 +175,8 @@ class VerificationRunner(CheckRunner, ReportGenerator):
             message=message,
         )
 
-    def _run_checks(self, checks: List[Dict], settings: Dict[str, Any],
-                    profile: Optional[str]) -> VerificationReport:
+    def _run_checks(self, checks: list[dict], settings: dict[str, Any],
+                    profile: str | None) -> VerificationReport:
         """Execute a list of checks and generate report."""
         start_time = datetime.now()
         report = VerificationReport(
@@ -205,7 +207,7 @@ class VerificationRunner(CheckRunner, ReportGenerator):
         report.duration_ms = int((datetime.now() - start_time).total_seconds() * 1000)
         return report
 
-    def _get_check_handlers(self) -> Dict[str, Callable]:
+    def _get_check_handlers(self) -> dict[str, Callable]:
         """Return dispatch table for check types."""
         return {
             "command": self._run_command_check,
@@ -218,7 +220,7 @@ class VerificationRunner(CheckRunner, ReportGenerator):
             "ast_check": self._run_ast_check,
         }
 
-    def run_check(self, check: Dict, settings: Dict[str, Any] = None) -> CheckResult:
+    def run_check(self, check: dict, settings: dict[str, Any] = None) -> CheckResult:
         """Run a single verification check."""
         settings = settings or {}
         check_id = check["id"]

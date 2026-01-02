@@ -1,7 +1,7 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-2-design-pipeline.yaml
-# @spec_file: specs/pipeline-controller/implementation/phase-3-tdd-stages.yaml
-# @spec_id: pipeline-controller-phase2-v1
-# @spec_id: pipeline-controller-phase3-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
+# @spec_id: core-pipeline-v1
 # @component_id: pipeline-artifacts
 # @component_id: tdd-artifacts
 # @test_path: tests/unit/pipeline/test_artifacts.py
@@ -9,8 +9,6 @@
 """Tests for artifact dataclasses."""
 
 from dataclasses import asdict
-
-import pytest
 
 
 class TestIntakeArtifact:

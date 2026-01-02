@@ -1,5 +1,5 @@
-# @spec_file: specs/minimal-context-architecture/05-llm-integration.yaml
-# @spec_id: llm-integration-v1
+# @spec_file: .agentforge/specs/core-llm-v1.yaml
+# @spec_id: core-llm-v1
 # @component_id: llm-recording
 # @test_path: tests/unit/llm/test_recording.py
 
@@ -37,7 +37,7 @@ Usage:
 import atexit
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import yaml
 
@@ -81,7 +81,7 @@ class RecordingLLMClient(LLMClient):
         self.auto_save = auto_save
 
         # Recording data
-        self._recording: Dict[str, Any] = {
+        self._recording: dict[str, Any] = {
             "metadata": {
                 "created": datetime.now().isoformat(),
                 "description": "Recorded LLM session",
@@ -98,9 +98,9 @@ class RecordingLLMClient(LLMClient):
     def complete(
         self,
         system: str,
-        messages: List[Dict[str, Any]],
-        tools: Optional[List[ToolDefinition]] = None,
-        thinking: Optional[ThinkingConfig] = None,
+        messages: list[dict[str, Any]],
+        tools: list[ToolDefinition] | None = None,
+        thinking: ThinkingConfig | None = None,
         tool_choice: str = "auto",
         max_tokens: int = 4096,
     ) -> LLMResponse:
@@ -142,9 +142,9 @@ class RecordingLLMClient(LLMClient):
         self,
         step: int,
         system: str,
-        messages: List[Dict[str, Any]],
-        tools: Optional[List[ToolDefinition]],
-        thinking: Optional[ThinkingConfig],
+        messages: list[dict[str, Any]],
+        tools: list[ToolDefinition] | None,
+        thinking: ThinkingConfig | None,
         response: LLMResponse,
         duration: float,
     ) -> None:
@@ -175,7 +175,7 @@ class RecordingLLMClient(LLMClient):
 
         self._recording["responses"].append(record)
 
-    def _preview_message(self, message: Dict[str, Any]) -> str:
+    def _preview_message(self, message: dict[str, Any]) -> str:
         """Create a preview of a message for debugging."""
         content = message.get("content", "")
         if isinstance(content, str):
@@ -211,7 +211,7 @@ class RecordingLLMClient(LLMClient):
                 allow_unicode=True,
             )
 
-    def get_usage_stats(self) -> Dict[str, int]:
+    def get_usage_stats(self) -> dict[str, int]:
         """Get cumulative usage statistics from real client."""
         return self.real_client.get_usage_stats()
 
@@ -219,7 +219,7 @@ class RecordingLLMClient(LLMClient):
         """Reset usage statistics on real client."""
         self.real_client.reset_usage_stats()
 
-    def get_recording(self) -> Dict[str, Any]:
+    def get_recording(self) -> dict[str, Any]:
         """Get the current recording data."""
         return dict(self._recording)
 

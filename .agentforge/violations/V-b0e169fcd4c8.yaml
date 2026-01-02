@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-b0e169fcd4c8
+contract_id: agentforge
+check_id: max-nesting-depth
+severity: major
+file_path: src/agentforge/core/discovery/providers/dotnet_provider.py
+message: 'Function ''count_lines'' has nesting depth 7 (max: 4)'
+detected_at: '2026-01-01T01:39:13.670168'
+last_seen_at: '2026-01-01T01:39:13.670168'
+status: open
+line_number: 549
+fix_hint: Use early returns, guard clauses, or extract nested logic

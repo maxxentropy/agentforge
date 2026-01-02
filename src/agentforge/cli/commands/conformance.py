@@ -15,34 +15,31 @@ Provides commands for managing per-repository conformance state:
 - exemptions: Manage exemptions (redirect to existing exemptions command)
 """
 
+import contextlib
 import sys
-import click
 from pathlib import Path
 
+import click
+
 from agentforge.cli.commands.conformance_formatters import (
+    print_history_json,
+    print_history_text,
+    print_history_yaml,
+    print_report_json,
     print_report_summary,
     print_report_text,
-    print_report_json,
     print_report_yaml,
-    print_violations_table,
     print_violations_json,
+    print_violations_table,
     print_violations_yaml,
-    print_history_text,
-    print_history_json,
-    print_history_yaml,
 )
+from agentforge.core.conformance.domain import Severity, ViolationStatus
+from agentforge.core.conformance.manager import ConformanceManager
 
 
 def _get_manager():
     """Get ConformanceManager for current directory."""
-    sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'tools'))
-    from conformance.manager import ConformanceManager
     return ConformanceManager(Path.cwd())
-
-
-def _ensure_tools():
-    """Add tools directory to path."""
-    sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'tools'))
 
 
 def run_conformance(args):
@@ -76,7 +73,7 @@ def run_conformance_init(args):
 
 def _run_contract_checks(registry, repo_root, contract_filter, file_list):
     """Run contract checks and return results."""
-    from contracts import run_contract, run_all_contracts
+    from agentforge.core.contracts import run_all_contracts, run_contract
 
     if contract_filter:
         contract = registry.get_contract(contract_filter)
@@ -128,8 +125,7 @@ def run_conformance_check(args):
         click.echo("  Run 'agentforge conformance init' first.")
         sys.exit(1)
 
-    _ensure_tools()
-    from contracts import ContractRegistry
+    from agentforge.core.contracts_registry import ContractRegistry
 
     is_full = getattr(args, 'full', False)
     click.echo(f"\n  Mode: {'full' if is_full else 'incremental'}")
@@ -212,21 +208,15 @@ def run_conformance_violations_list(args):
         click.echo("Error: Conformance tracking not initialized.")
         sys.exit(1)
 
-    from conformance.domain import ViolationStatus, Severity
-
     status = None
     if getattr(args, 'status', None):
-        try:
+        with contextlib.suppress(ValueError):
             status = ViolationStatus(args.status)
-        except ValueError:
-            pass
 
     severity = None
     if getattr(args, 'severity', None):
-        try:
+        with contextlib.suppress(ValueError):
             severity = Severity(args.severity)
-        except ValueError:
-            pass
 
     violations = manager.list_violations(
         status=status,
@@ -278,7 +268,7 @@ def run_conformance_violations_show(args):
     if violation.exemption_id:
         click.echo(f"\n  Exemption: {violation.exemption_id}")
     if violation.resolution:
-        click.echo(f"\n  Resolution:")
+        click.echo("\n  Resolution:")
         click.echo(f"    Resolved At: {violation.resolution.get('resolved_at')}")
         click.echo(f"    Resolved By: {violation.resolution.get('resolved_by')}")
         click.echo(f"    Reason: {violation.resolution.get('reason')}")

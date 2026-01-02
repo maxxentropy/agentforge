@@ -1,5 +1,5 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-3-tdd-stages.yaml
-# @spec_id: pipeline-controller-phase3-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
 # @component_id: red-phase-executor
 # @test_path: tests/unit/pipeline/stages/test_red.py
 
@@ -18,13 +18,11 @@ This stage:
 TDD Philosophy: "Write tests first, watch them fail"
 """
 
-from typing import Any, Dict, List, Optional
-from pathlib import Path
-from datetime import datetime, timezone
 import logging
+import re
 import subprocess
 import sys
-import re
+from typing import Any
 
 from ..llm_stage_executor import LLMStageExecutor, OutputValidation
 from ..stage_executor import StageContext, StageResult, StageStatus
@@ -108,7 +106,7 @@ Requirements:
 5. Tests should be runnable but will fail (no implementation yet)
 """
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         super().__init__(config)
         self.test_runner = config.get("test_runner", "pytest") if config else "pytest"
 
@@ -138,13 +136,12 @@ Requirements:
         # Step 4: Validate that tests failed appropriately
         validation = self._validate_red_results(test_results)
 
-        if not validation["valid"]:
-            if validation.get("unexpected_passes"):
-                # Some tests passed - implementation may already exist
-                logger.warning(f"Unexpected passing tests: {validation['unexpected_passes']}")
-                artifact["warnings"] = [
-                    f"Some tests passed unexpectedly: {validation['unexpected_passes']}"
-                ]
+        if not validation["valid"] and validation.get("unexpected_passes"):
+            # Some tests passed - implementation may already exist
+            logger.warning(f"Unexpected passing tests: {validation['unexpected_passes']}")
+            artifact["warnings"] = [
+                f"Some tests passed unexpectedly: {validation['unexpected_passes']}"
+            ]
 
         # Update artifact with results
         artifact["test_files"] = [{"path": f, "content": ""} for f in written_files]
@@ -212,9 +209,9 @@ Requirements:
 
     def parse_response(
         self,
-        llm_result: Dict[str, Any],
+        llm_result: dict[str, Any],
         context: StageContext,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """Parse generated test files from response."""
         response_text = llm_result.get("response", "") or llm_result.get("content", "")
 
@@ -232,7 +229,7 @@ Requirements:
             "failing_tests": [],
         }
 
-    def _extract_file_blocks(self, response_text: str) -> List[Dict[str, str]]:
+    def _extract_file_blocks(self, response_text: str) -> list[dict[str, str]]:
         """Extract file path and content blocks from response."""
         files = []
 
@@ -256,8 +253,8 @@ Requirements:
     def _write_test_files(
         self,
         context: StageContext,
-        test_files: List[Dict[str, str]],
-    ) -> List[str]:
+        test_files: list[dict[str, str]],
+    ) -> list[str]:
         """Write test files to disk."""
         written = []
 
@@ -282,8 +279,8 @@ Requirements:
     def _run_tests(
         self,
         context: StageContext,
-        test_files: List[str],
-    ) -> Dict[str, Any]:
+        test_files: list[str],
+    ) -> dict[str, Any]:
         """Run tests and collect results."""
         results = {
             "passed": 0,
@@ -326,7 +323,7 @@ Requirements:
 
         return results
 
-    def _parse_pytest_output(self, output: str, results: Dict[str, Any]) -> None:
+    def _parse_pytest_output(self, output: str, results: dict[str, Any]) -> None:
         """Parse pytest output to extract test counts."""
         # Extract test results with full path format
         passed_tests = re.findall(r"(\S+::\S+)\s+PASSED", output)
@@ -350,7 +347,7 @@ Requirements:
                 "status": "passed",
             })
 
-    def _validate_red_results(self, test_results: Dict[str, Any]) -> Dict[str, Any]:
+    def _validate_red_results(self, test_results: dict[str, Any]) -> dict[str, Any]:
         """
         Validate RED phase results.
 
@@ -396,7 +393,7 @@ Requirements:
 
         return validation
 
-    def validate_output(self, artifact: Optional[Dict[str, Any]]) -> OutputValidation:
+    def validate_output(self, artifact: dict[str, Any] | None) -> OutputValidation:
         """Validate RED phase artifact."""
         if artifact is None:
             return OutputValidation(valid=False, errors=["No artifact"])
@@ -422,6 +419,6 @@ Requirements:
         )
 
 
-def create_red_executor(config: Optional[Dict] = None) -> RedPhaseExecutor:
+def create_red_executor(config: dict | None = None) -> RedPhaseExecutor:
     """Create RedPhaseExecutor instance."""
     return RedPhaseExecutor(config)

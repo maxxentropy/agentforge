@@ -22,162 +22,162 @@ Components:
 """
 
 # Phase 1: Session Management
-from agentforge.core.harness.session_domain import (
-    SessionState,
-    TokenBudget,
-    SessionArtifact,
-    SessionHistory,
-    SessionContext,
-)
-from agentforge.core.harness.session_store import SessionStore
-from agentforge.core.harness.session_manager import (
-    SessionManager,
-    SessionAlreadyActive,
-    NoActiveSession,
-    InvalidStateTransition,
-)
-
-# Phase 2: Memory System
-from agentforge.core.harness.memory_domain import (
-    MemoryTier,
-    MemoryEntry,
-)
-from agentforge.core.harness.memory_store import (
-    MemoryStore,
-    MemoryWriteError,
-)
-from agentforge.core.harness.memory_manager import MemoryManager
-
-# Phase 3: Tool Selection
-from agentforge.core.harness.tool_domain import (
-    ToolDefinition,
-    ToolProfile,
-    DomainTools,
-)
-from agentforge.core.harness.tool_registry import (
-    ToolRegistry,
-    DuplicateToolError,
-)
-from agentforge.core.harness.tool_selector import ToolSelector
-
-# Phase 4: Agent Monitor
-from agentforge.core.harness.monitor_domain import (
-    ObservationType,
-    Observation,
-    HealthStatus,
-    Recommendation,
-    LoopDetection,
-    ThrashingDetection,
-    AgentHealth,
-)
+from agentforge.core.harness.action_parser import ActionParser
 from agentforge.core.harness.agent_monitor import AgentMonitor, MonitorConfig
-
-# Phase 5: Recovery System
-from agentforge.core.harness.recovery_domain import (
-    RecoveryAction,
-    RecoveryResult,
-    Checkpoint,
-    RecoveryAttempt,
-    RecoveryPolicy,
+from agentforge.core.harness.agent_orchestrator import AgentOrchestrator
+from agentforge.core.harness.agent_prompt_builder import AgentPromptBuilder
+from agentforge.core.harness.auto_fix_daemon import (
+    AutoFixConfig,
+    AutoFixDaemon,
+    DaemonStatus,
+    create_auto_fix_daemon,
 )
 from agentforge.core.harness.checkpoint_manager import CheckpointManager
-from agentforge.core.harness.recovery_executor import RecoveryExecutor
+from agentforge.core.harness.conformance_tools import (
+    CONFORMANCE_TOOL_DEFINITIONS,
+    ConformanceTools,
+)
 
 # Phase 6: Human Escalation
 from agentforge.core.harness.escalation_domain import (
-    EscalationPriority,
-    EscalationStatus,
-    EscalationChannel,
-    ResolutionType,
     Escalation,
+    EscalationChannel,
+    EscalationPriority,
     EscalationResolution,
     EscalationRule,
+    EscalationStatus,
+    ResolutionType,
 )
 from agentforge.core.harness.escalation_manager import EscalationManager
 from agentforge.core.harness.escalation_notifier import EscalationNotifier
-
-# Phase 7: Orchestrator
-from agentforge.core.harness.orchestrator_domain import (
-    OrchestratorState,
-    ExecutionMode,
-    AgentTask,
-    ExecutionResult,
-    OrchestratorConfig,
-)
-from agentforge.core.harness.agent_orchestrator import AgentOrchestrator
-
-# Phase 8: LLM Executor
-from agentforge.core.harness.llm_executor_domain import (
-    ActionType,
-    ToolCategory,
-    ToolCall,
-    ToolResult,
-    AgentAction,
-    ConversationMessage,
-    ExecutionContext,
-    StepResult,
-    TokenUsage,
-    LLMExecutorError,
-    ActionParseError,
-    ToolExecutionError,
-)
-from agentforge.core.harness.llm_executor import LLMExecutor, create_default_executor
-from agentforge.core.harness.action_parser import ActionParser
-from agentforge.core.harness.agent_prompt_builder import AgentPromptBuilder
-from agentforge.core.harness.tool_executor_bridge import ToolExecutorBridge, create_tool_bridge
 from agentforge.core.harness.execution_context_store import (
     ExecutionContextStore,
     create_execution_store,
 )
-
-# Self-Hosting (Phase 9)
-from agentforge.core.harness.violation_tools import (
-    ViolationTools,
-    ViolationInfo,
-    VIOLATION_TOOL_DEFINITIONS,
-)
-from agentforge.core.harness.conformance_tools import (
-    ConformanceTools,
-    CONFORMANCE_TOOL_DEFINITIONS,
-)
-from agentforge.core.harness.git_tools import (
-    GitTools,
-    GIT_TOOL_DEFINITIONS,
-)
-from agentforge.core.harness.test_runner_tools import (
-    TestRunnerTools,
-    TEST_TOOL_DEFINITIONS,
-)
 from agentforge.core.harness.fix_violation_workflow import (
-    FixViolationWorkflow,
-    FixPhase,
     FixAttempt,
+    FixPhase,
+    FixViolationWorkflow,
     create_fix_workflow,
 )
-from agentforge.core.harness.auto_fix_daemon import (
-    AutoFixDaemon,
-    AutoFixConfig,
-    DaemonStatus,
-    create_auto_fix_daemon,
+from agentforge.core.harness.git_tools import (
+    GIT_TOOL_DEFINITIONS,
+    GitTools,
 )
-from agentforge.core.harness.rollback_manager import (
-    RollbackManager,
-    BackupManifest,
-    ROLLBACK_TOOL_DEFINITIONS,
+from agentforge.core.harness.llm_executor import LLMExecutor, create_default_executor
+
+# Phase 8: LLM Executor
+from agentforge.core.harness.llm_executor_domain import (
+    ActionParseError,
+    ActionType,
+    AgentAction,
+    ConversationMessage,
+    ExecutionContext,
+    LLMExecutorError,
+    StepResult,
+    TokenUsage,
+    ToolCall,
+    ToolCategory,
+    ToolExecutionError,
+    ToolResult,
+)
+
+# Phase 2: Memory System
+from agentforge.core.harness.memory_domain import (
+    MemoryEntry,
+    MemoryTier,
+)
+from agentforge.core.harness.memory_manager import MemoryManager
+from agentforge.core.harness.memory_store import (
+    MemoryStore,
+    MemoryWriteError,
 )
 
 # Minimal Context Architecture
 from agentforge.core.harness.minimal_context import (
-    TaskStateStore,
-    TaskState,
-    TaskPhase,
-    WorkingMemoryManager,
-    WorkingMemoryItem,
-    MinimalContextExecutor,
-    StepOutcome,
     AdaptiveBudget,
+    MinimalContextExecutor,
     MinimalContextFixWorkflow,
+    Phase,
+    StepOutcome,
+    TaskState,
+    TaskStateStore,
+    WorkingMemoryItem,
+    WorkingMemoryManager,
     create_minimal_fix_workflow,
+)
+
+# Phase 4: Agent Monitor
+from agentforge.core.harness.monitor_domain import (
+    AgentHealth,
+    HealthStatus,
+    LoopDetection,
+    Observation,
+    ObservationType,
+    Recommendation,
+    ThrashingDetection,
+)
+
+# Phase 7: Orchestrator
+from agentforge.core.harness.orchestrator_domain import (
+    AgentTask,
+    ExecutionMode,
+    ExecutionResult,
+    OrchestratorConfig,
+    OrchestratorState,
+)
+
+# Phase 5: Recovery System
+from agentforge.core.harness.recovery_domain import (
+    Checkpoint,
+    RecoveryAction,
+    RecoveryAttempt,
+    RecoveryPolicy,
+    RecoveryResult,
+)
+from agentforge.core.harness.recovery_executor import RecoveryExecutor
+from agentforge.core.harness.rollback_manager import (
+    ROLLBACK_TOOL_DEFINITIONS,
+    BackupManifest,
+    RollbackManager,
+)
+from agentforge.core.harness.session_domain import (
+    SessionArtifact,
+    SessionContext,
+    SessionHistory,
+    SessionState,
+    TokenBudget,
+)
+from agentforge.core.harness.session_manager import (
+    InvalidStateTransition,
+    NoActiveSession,
+    SessionAlreadyActive,
+    SessionManager,
+)
+from agentforge.core.harness.session_store import SessionStore
+from agentforge.core.harness.test_runner_tools import (
+    TEST_TOOL_DEFINITIONS,
+    TestRunnerTools,
+)
+
+# Phase 3: Tool Selection
+from agentforge.core.harness.tool_domain import (
+    DomainTools,
+    ToolDefinition,
+    ToolProfile,
+)
+from agentforge.core.harness.tool_executor_bridge import ToolExecutorBridge, create_tool_bridge
+from agentforge.core.harness.tool_registry import (
+    DuplicateToolError,
+    ToolRegistry,
+)
+from agentforge.core.harness.tool_selector import ToolSelector
+
+# Self-Hosting (Phase 9)
+from agentforge.core.harness.violation_tools import (
+    VIOLATION_TOOL_DEFINITIONS,
+    ViolationInfo,
+    ViolationTools,
 )
 
 __all__ = [
@@ -285,7 +285,7 @@ __all__ = [
     # Minimal Context Architecture
     "TaskStateStore",
     "TaskState",
-    "TaskPhase",
+    "Phase",
     "WorkingMemoryManager",
     "WorkingMemoryItem",
     "MinimalContextExecutor",

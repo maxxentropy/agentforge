@@ -10,9 +10,9 @@ Language-aware refactoring using proper tooling:
 This replaces the hand-rolled AST manipulation with real refactoring tools.
 """
 
-from .base import RefactoringProvider, RefactoringResult, CanExtractResult
-from .rope_provider import RopeRefactoringProvider
+from .base import CanExtractResult, RefactoringProvider, RefactoringResult
 from .registry import get_refactoring_provider
+from .rope_provider import RopeRefactoringProvider
 
 __all__ = [
     "RefactoringProvider",

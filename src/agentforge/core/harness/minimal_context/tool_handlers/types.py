@@ -1,5 +1,5 @@
-# @spec_file: specs/tools/01-tool-handlers.yaml
-# @spec_id: tool-handlers-v1
+# @spec_file: .agentforge/specs/core-harness-minimal-context-v1.yaml
+# @spec_id: core-harness-minimal-context-v1
 # @component_id: tool-handler-types
 # @test_path: tests/unit/harness/tool_handlers/test_types.py
 
@@ -16,12 +16,12 @@ Handlers return result strings (not exceptions) so the LLM can understand
 and potentially recover from errors.
 """
 
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional, Protocol, Tuple, runtime_checkable
-
+from typing import Any, Protocol, runtime_checkable
 
 # Type alias for action handlers
-ActionHandler = Callable[[Dict[str, Any]], str]
+ActionHandler = Callable[[dict[str, Any]], str]
 
 
 class PathValidationError(Exception):
@@ -34,7 +34,7 @@ def validate_path_security(
     path: str,
     base_path: Path,
     allow_create: bool = False,
-) -> Tuple[Path, Optional[str]]:
+) -> tuple[Path, str | None]:
     """
     Validate a path is safe and within the allowed base directory.
 

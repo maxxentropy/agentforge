@@ -1,15 +1,15 @@
 """Tests for LLM Executor."""
 
-import pytest
-from unittest.mock import Mock, MagicMock, patch
+from unittest.mock import Mock, patch
 
-from tools.harness.llm_executor import LLMExecutor, create_default_executor
-from tools.harness.llm_executor_domain import (
+import pytest
+
+from agentforge.core.harness.llm_executor import LLMExecutor, create_default_executor
+from agentforge.core.harness.llm_executor_domain import (
     ActionType,
     ExecutionContext,
     ToolCall,
     ToolResult,
-    StepResult,
 )
 
 
@@ -18,7 +18,7 @@ class TestLLMExecutorInit:
 
     def test_default_initialization(self):
         """Executor initializes with defaults."""
-        with patch("tools.harness.llm_executor.get_provider") as mock_get:
+        with patch("agentforge.core.harness.llm_executor.get_provider") as mock_get:
             mock_provider = Mock()
             mock_get.return_value = mock_provider
 
@@ -54,7 +54,7 @@ class TestToolRegistration:
 
     def test_register_single_tool(self):
         """Register a single tool."""
-        with patch("tools.harness.llm_executor.get_provider"):
+        with patch("agentforge.core.harness.llm_executor.get_provider"):
             executor = LLMExecutor()
             executor.register_tool("my_tool", lambda n, p: ToolResult.success_result(n, "ok"))
 
@@ -62,7 +62,7 @@ class TestToolRegistration:
 
     def test_register_multiple_tools(self):
         """Register multiple tools at once."""
-        with patch("tools.harness.llm_executor.get_provider"):
+        with patch("agentforge.core.harness.llm_executor.get_provider"):
             executor = LLMExecutor()
             executor.register_tools({
                 "tool1": lambda n, p: ToolResult.success_result(n, "1"),
@@ -201,7 +201,7 @@ class TestToolExecution:
 
     def test_tool_success(self):
         """Successful tool execution."""
-        with patch("tools.harness.llm_executor.get_provider"):
+        with patch("agentforge.core.harness.llm_executor.get_provider"):
             executor = LLMExecutor()
             executor.register_tool("test", lambda n, p: ToolResult.success_result(n, "done"))
 
@@ -213,7 +213,7 @@ class TestToolExecution:
 
     def test_tool_failure(self):
         """Failed tool execution."""
-        with patch("tools.harness.llm_executor.get_provider"):
+        with patch("agentforge.core.harness.llm_executor.get_provider"):
             executor = LLMExecutor()
             executor.register_tool("test", lambda n, p: ToolResult.failure_result(n, "failed"))
 
@@ -225,7 +225,7 @@ class TestToolExecution:
 
     def test_tool_exception_caught(self):
         """Tool exceptions are caught and converted to failures."""
-        with patch("tools.harness.llm_executor.get_provider"):
+        with patch("agentforge.core.harness.llm_executor.get_provider"):
             executor = LLMExecutor()
 
             def bad_tool(name, params):
@@ -242,7 +242,7 @@ class TestToolExecution:
 
     def test_tool_returns_non_result(self):
         """Tool returning non-ToolResult is wrapped."""
-        with patch("tools.harness.llm_executor.get_provider"):
+        with patch("agentforge.core.harness.llm_executor.get_provider"):
             executor = LLMExecutor()
             executor.register_tool("raw", lambda n, p: "raw output")
 
@@ -374,7 +374,7 @@ class TestMessagesToPrompt:
 
     def test_system_message_format(self):
         """System messages are formatted correctly."""
-        with patch("tools.harness.llm_executor.get_provider"):
+        with patch("agentforge.core.harness.llm_executor.get_provider"):
             executor = LLMExecutor()
 
             messages = [{"role": "system", "content": "You are helpful."}]
@@ -386,7 +386,7 @@ class TestMessagesToPrompt:
 
     def test_user_message_format(self):
         """User messages are formatted correctly."""
-        with patch("tools.harness.llm_executor.get_provider"):
+        with patch("agentforge.core.harness.llm_executor.get_provider"):
             executor = LLMExecutor()
 
             messages = [{"role": "user", "content": "Hello"}]
@@ -397,7 +397,7 @@ class TestMessagesToPrompt:
 
     def test_assistant_message_format(self):
         """Assistant messages are formatted correctly."""
-        with patch("tools.harness.llm_executor.get_provider"):
+        with patch("agentforge.core.harness.llm_executor.get_provider"):
             executor = LLMExecutor()
 
             messages = [{"role": "assistant", "content": "Hi there"}]
@@ -412,7 +412,7 @@ class TestCreateDefaultExecutor:
 
     def test_creates_executor(self):
         """Factory creates configured executor."""
-        with patch("tools.harness.llm_executor.get_provider"):
+        with patch("agentforge.core.harness.llm_executor.get_provider"):
             executor = create_default_executor()
             assert isinstance(executor, LLMExecutor)
 
@@ -420,12 +420,12 @@ class TestCreateDefaultExecutor:
         """Factory accepts tool executors."""
         tools = {"my_tool": lambda n, p: ToolResult.success_result(n, "ok")}
 
-        with patch("tools.harness.llm_executor.get_provider"):
+        with patch("agentforge.core.harness.llm_executor.get_provider"):
             executor = create_default_executor(tool_executors=tools)
             assert "my_tool" in executor.tool_executors
 
     def test_accepts_model(self):
         """Factory accepts model parameter."""
-        with patch("tools.harness.llm_executor.get_provider"):
+        with patch("agentforge.core.harness.llm_executor.get_provider"):
             executor = create_default_executor(model="claude-opus-4-20250514")
             assert executor.model == "claude-opus-4-20250514"

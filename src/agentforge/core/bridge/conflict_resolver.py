@@ -6,14 +6,14 @@ Detects and resolves conflicts between generated and existing contracts.
 """
 
 from pathlib import Path
-from typing import List, Dict, Any, Optional, Set
+from typing import Any
 
-from bridge.domain import (
+from .domain import (
     Conflict,
     ConflictType,
-    ResolutionStrategy,
     GeneratedCheck,
     GeneratedContract,
+    ResolutionStrategy,
 )
 
 try:
@@ -50,8 +50,8 @@ class ConflictResolver:
         self.root_path = Path(root_path).resolve()
         self.contracts_dir = self.root_path / contracts_dir
         self.default_strategy = resolution_strategy
-        self._existing_checks: Dict[str, Dict[str, Any]] = {}
-        self._existing_contracts: Dict[str, Dict[str, Any]] = {}
+        self._existing_checks: dict[str, dict[str, Any]] = {}
+        self._existing_contracts: dict[str, dict[str, Any]] = {}
 
     def load_existing_contracts(self) -> None:
         """Load all existing contracts from contracts directory."""
@@ -88,7 +88,7 @@ class ConflictResolver:
     def detect_conflicts(
         self,
         generated_contract: GeneratedContract
-    ) -> List[Conflict]:
+    ) -> list[Conflict]:
         """
         Detect conflicts between a generated contract and existing ones.
 
@@ -120,7 +120,7 @@ class ConflictResolver:
 
         return conflicts
 
-    def _check_overlapping_scope(self, check: GeneratedCheck) -> Optional[Conflict]:
+    def _check_overlapping_scope(self, check: GeneratedCheck) -> Conflict | None:
         """Check if generated check overlaps with existing checks."""
         check_paths = set(check.applies_to.get("paths", []))
         if not check_paths:
@@ -159,7 +159,7 @@ class ConflictResolver:
 
     def resolve_conflicts(
         self,
-        conflicts: List[Conflict],
+        conflicts: list[Conflict],
         generated_contract: GeneratedContract
     ) -> GeneratedContract:
         """
@@ -173,7 +173,7 @@ class ConflictResolver:
             Modified contract with conflicts resolved
         """
         checks_to_keep = []
-        renamed_checks: Set[str] = set()
+        renamed_checks: set[str] = set()
 
         for check in generated_contract.checks:
             # Find conflicts for this check
@@ -214,7 +214,7 @@ class ConflictResolver:
         generated_contract.checks = checks_to_keep
         return generated_contract
 
-    def _generate_unique_id(self, base_id: str, existing: Set[str]) -> str:
+    def _generate_unique_id(self, base_id: str, existing: set[str]) -> str:
         """Generate a unique check ID by adding suffix."""
         counter = 1
         new_id = f"{base_id}-v{counter}"
@@ -225,10 +225,10 @@ class ConflictResolver:
 
         return new_id
 
-    def get_existing_check_ids(self) -> Set[str]:
+    def get_existing_check_ids(self) -> set[str]:
         """Get set of all existing check IDs."""
         return set(self._existing_checks.keys())
 
-    def get_existing_contract_names(self) -> Set[str]:
+    def get_existing_contract_names(self) -> set[str]:
         """Get set of all existing contract names."""
         return set(self._existing_contracts.keys())

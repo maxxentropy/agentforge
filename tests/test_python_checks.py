@@ -1,17 +1,16 @@
-# @spec_file: .agentforge/specs/cicd-v1.yaml
-# @spec_id: cicd-v1
+# @spec_file: .agentforge/specs/core-cicd-v1.yaml
+# @spec_id: core-cicd-v1
 # @component_id: tools-cicd-runner
 # @impl_path: tools/cicd/runner.py
 
 """Test Python contract check implementations."""
 
-import tempfile
 from pathlib import Path
 
 import pytest
 
-from tools.pyright_runner import PyrightRunner, check_python_types
-from tools.command_runner import CommandRunner
+from agentforge.core.command_runner import CommandRunner
+from agentforge.core.pyright_runner import PyrightRunner, check_python_types
 
 
 class TestPyrightRunner:
@@ -101,7 +100,7 @@ class TestVerificationRunner:
 
     def test_ast_check_function_length(self, tmp_path: Path):
         """Test AST check for function length."""
-        from tools.verification_runner import VerificationRunner
+        from agentforge.core.verification_runner import VerificationRunner
 
         # Create a file with a long function
         test_file = tmp_path / "long_func.py"
@@ -131,7 +130,7 @@ class TestVerificationRunner:
 
     def test_ast_check_nesting_depth(self, tmp_path: Path):
         """Test AST check for nesting depth."""
-        from tools.verification_runner import VerificationRunner
+        from agentforge.core.verification_runner import VerificationRunner
 
         # Create a file with deeply nested code
         test_file = tmp_path / "nested.py"
@@ -164,7 +163,7 @@ def deep_nesting():
 
     def test_lsp_query_check(self, tmp_path: Path):
         """Test LSP query check using pyright."""
-        from tools.verification_runner import VerificationRunner
+        from agentforge.core.verification_runner import VerificationRunner
 
         # Create a valid Python file
         test_file = tmp_path / "valid.py"

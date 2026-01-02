@@ -1,0 +1,13 @@
+schema_version: '1.0'
+violation_id: V-544e7fab75bd
+contract_id: agentforge
+check_id: single-responsibility-modules
+severity: minor
+file_path: tests/unit/harness/test_session_manager.py
+message: 'Class ''TestSessionManagerCleanup'' has 6 methods (max: 3)'
+detected_at: '2025-12-31T03:24:07.610796'
+last_seen_at: '2026-01-01T01:39:14.098030'
+status: open
+line_number: 330
+fix_hint: Split modules with too many classes into focused single-class modules
+test_path: tests/unit/harness/test_session_manager.py

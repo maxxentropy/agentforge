@@ -3,13 +3,13 @@ Tests for Code Writer
 =====================
 """
 
-import pytest
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
-from tools.generate.writer import CodeWriter, WriteOperation
-from tools.generate.domain import GeneratedFile, FileAction, WriteError
+import pytest
 
+from agentforge.core.generate.domain import FileAction, GeneratedFile, WriteError
+from agentforge.core.generate.writer import CodeWriter, WriteOperation
 
 # =============================================================================
 # CodeWriter Basic Tests

@@ -1,5 +1,5 @@
-# @spec_file: .agentforge/specs/harness-v1.yaml
-# @spec_id: harness-v1
+# @spec_file: .agentforge/specs/core-harness-v1.yaml
+# @spec_id: core-harness-v1
 # @component_id: tools-harness-memory_store
 # @impl_path: tools/harness/memory_store.py
 
@@ -10,23 +10,23 @@
 
 """Tests for memory store persistence layer."""
 
-import pytest
 import tempfile
-import os
 from pathlib import Path
-from unittest.mock import patch, mock_open
+from unittest.mock import mock_open, patch
 
-from tools.harness.memory_store import MemoryStore, MemoryWriteError
-from tools.harness.memory_domain import MemoryTier, MemoryEntry
+import pytest
+
+from agentforge.core.harness.memory_domain import MemoryEntry, MemoryTier
+from agentforge.core.harness.memory_store import MemoryStore, MemoryWriteError
 
 
 class TestMemoryStoreInit:
     """Test MemoryStore initialization."""
-    
+
     def test_init_with_default_paths(self):
         """Test initialization with default tier paths."""
         store = MemoryStore()
-        
+
         # Should have paths configured for each tier
         assert hasattr(store, '_tier_paths')
         assert len(store._tier_paths) == 4
@@ -34,7 +34,7 @@ class TestMemoryStoreInit:
         assert MemoryTier.TASK in store._tier_paths
         assert MemoryTier.PROJECT in store._tier_paths
         assert MemoryTier.ORGANIZATION in store._tier_paths
-    
+
     def test_init_with_custom_paths(self):
         """Test initialization with custom tier paths."""
         custom_paths = {
@@ -43,170 +43,170 @@ class TestMemoryStoreInit:
             MemoryTier.PROJECT: Path("/custom/project.yaml"),
             MemoryTier.ORGANIZATION: Path("/custom/org.yaml")
         }
-        
+
         store = MemoryStore(tier_paths=custom_paths)
-        
+
         assert store._tier_paths == custom_paths
 
 
 class TestMemoryStoreGet:
     """Test MemoryStore.get method."""
-    
+
     def test_get_existing_key_from_memory_tier(self):
         """Test retrieving existing key from in-memory tier."""
         store = MemoryStore()
-        
+
         # Setup: Add entry to session tier
         entry = MemoryEntry.create(key="test_key", value="test_value", metadata={"source": "test"})
         store._data = {MemoryTier.SESSION: {"test_key": entry}}
-        
+
         result = store.get("test_key", MemoryTier.SESSION)
-        
+
         assert result == entry
-    
+
     def test_get_existing_key_from_persistent_tier(self):
         """Test retrieving existing key from persistent tier."""
         store = MemoryStore()
-        
+
         # Mock file loading
         with patch.object(store, '_load_tier') as mock_load:
             entry = MemoryEntry.create(key="test_key", value="test_value", metadata={"source": "file"})
             mock_load.return_value = {"test_key": entry}
-            
+
             result = store.get("test_key", MemoryTier.PROJECT)
-            
+
             assert result == entry
             mock_load.assert_called_once_with(MemoryTier.PROJECT)
-    
+
     def test_get_nonexistent_key_returns_none(self):
         """Test retrieving non-existent key returns None."""
         store = MemoryStore()
-        
+
         result = store.get("nonexistent", MemoryTier.SESSION)
-        
+
         assert result is None
-    
+
     def test_get_from_corrupted_tier_returns_none(self):
         """Test retrieving from corrupted tier returns None gracefully."""
         store = MemoryStore()
-        
+
         with patch.object(store, '_load_tier', side_effect=Exception("Corrupted file")):
             result = store.get("test_key", MemoryTier.PROJECT)
-            
+
             assert result is None
 
 
 class TestMemoryStoreSet:
     """Test MemoryStore.set method."""
-    
+
     def test_set_in_memory_tier(self):
         """Test storing value in memory tier."""
         store = MemoryStore()
         entry = MemoryEntry.create(key="test_key", value="test_value", metadata={"source": "test"})
-        
+
         store.set("test_key", entry, MemoryTier.SESSION)
-        
+
         # Should be stored in memory
         assert MemoryTier.SESSION in store._data
         assert store._data[MemoryTier.SESSION]["test_key"] == entry
-    
+
     def test_set_in_persistent_tier_auto_saves(self):
         """Test storing value in persistent tier triggers auto-save."""
         store = MemoryStore()
         entry = MemoryEntry.create(key="test_key", value="test_value", metadata={"source": "test"})
-        
+
         with patch.object(store, '_save_tier') as mock_save:
             store.set("test_key", entry, MemoryTier.PROJECT)
-            
+
             mock_save.assert_called_once_with(MemoryTier.PROJECT)
-    
+
     def test_set_persistent_tier_write_error(self):
         """Test handling write errors in persistent tier."""
         store = MemoryStore()
         entry = MemoryEntry.create(key="test_key", value="test_value", metadata={"source": "test"})
-        
+
         with patch.object(store, '_save_tier', side_effect=MemoryWriteError("Disk full")):
             with pytest.raises(MemoryWriteError):
                 store.set("test_key", entry, MemoryTier.PROJECT)
-    
+
     def test_set_overwrites_existing_key(self):
         """Test setting existing key overwrites previous value."""
         store = MemoryStore()
         old_entry = MemoryEntry.create(key="test_key", value="old_value", metadata={"source": "old"})
         new_entry = MemoryEntry.create(key="test_key", value="new_value", metadata={"source": "new"})
-        
+
         store.set("test_key", old_entry, MemoryTier.SESSION)
         store.set("test_key", new_entry, MemoryTier.SESSION)
-        
+
         assert store._data[MemoryTier.SESSION]["test_key"] == new_entry
 
 
 class TestMemoryStoreDelete:
     """Test MemoryStore.delete method."""
-    
+
     def test_delete_existing_key_from_memory_tier(self):
         """Test deleting existing key from memory tier."""
         store = MemoryStore()
         entry = MemoryEntry.create(key="test_key", value="test_value", metadata={"source": "test"})
         store._data = {MemoryTier.SESSION: {"test_key": entry}}
-        
+
         store.delete("test_key", MemoryTier.SESSION)
-        
+
         assert "test_key" not in store._data[MemoryTier.SESSION]
-    
+
     def test_delete_existing_key_from_persistent_tier(self):
         """Test deleting existing key from persistent tier triggers save."""
         store = MemoryStore()
         entry = MemoryEntry.create(key="test_key", value="test_value", metadata={"source": "test"})
-        
+
         with patch.object(store, '_load_tier', return_value={"test_key": entry}):
             with patch.object(store, '_save_tier') as mock_save:
                 store.delete("test_key", MemoryTier.PROJECT)
-                
+
                 mock_save.assert_called_once_with(MemoryTier.PROJECT)
-    
+
     def test_delete_nonexistent_key_no_error(self):
         """Test deleting non-existent key doesn't raise error."""
         store = MemoryStore()
-        
+
         # Should not raise exception
         store.delete("nonexistent", MemoryTier.SESSION)
-    
+
     def test_delete_from_empty_tier_no_error(self):
         """Test deleting from empty tier doesn't raise error."""
         store = MemoryStore()
-        
+
         # Should not raise exception
         store.delete("test_key", MemoryTier.SESSION)
 
 
 class TestMemoryStoreListKeys:
     """Test MemoryStore.list_keys method."""
-    
+
     def test_list_keys_from_memory_tier(self):
         """Test listing keys from memory tier."""
         store = MemoryStore()
         entry1 = MemoryEntry.create(key="key1", value="value1")
         entry2 = MemoryEntry.create(key="key2", value="value2")
         store._data = {MemoryTier.SESSION: {"key1": entry1, "key2": entry2}}
-        
+
         keys = store.list_keys(MemoryTier.SESSION)
-        
+
         assert set(keys) == {"key1", "key2"}
-    
+
     def test_list_keys_from_persistent_tier(self):
         """Test listing keys from persistent tier."""
         store = MemoryStore()
-        
+
         with patch.object(store, '_load_tier') as mock_load:
             entry1 = MemoryEntry.create(key="key1", value="value1")
             entry2 = MemoryEntry.create(key="key2", value="value2")
             mock_load.return_value = {"key1": entry1, "key2": entry2}
-            
+
             keys = store.list_keys(MemoryTier.PROJECT)
-            
+
             assert set(keys) == {"key1", "key2"}
-    
+
     def test_list_keys_with_prefix_filter(self):
         """Test listing keys filtered by prefix."""
         store = MemoryStore()
@@ -218,58 +218,59 @@ class TestMemoryStoreListKeys:
             "user_key2": entry2,
             "system_key": entry3
         }}
-        
+
         keys = store.list_keys(MemoryTier.SESSION, prefix="user_")
-        
+
         assert set(keys) == {"user_key1", "user_key2"}
-    
+
     def test_list_keys_empty_tier(self):
         """Test listing keys from empty tier returns empty list."""
         store = MemoryStore()
-        
+
         keys = store.list_keys(MemoryTier.SESSION)
-        
+
         assert keys == []
 
 
 class TestMemoryStoreClearTier:
     """Test MemoryStore.clear_tier method."""
-    
+
     def test_clear_memory_tier(self):
         """Test clearing memory tier removes all entries."""
         store = MemoryStore()
         entry1 = MemoryEntry.create(key="key1", value="value1")
         entry2 = MemoryEntry.create(key="key2", value="value2")
         store._data = {MemoryTier.SESSION: {"key1": entry1, "key2": entry2}}
-        
+
         store.clear_tier(MemoryTier.SESSION)
-        
+
         assert store._data[MemoryTier.SESSION] == {}
-    
+
     def test_clear_persistent_tier_triggers_save(self):
         """Test clearing persistent tier triggers save."""
         store = MemoryStore()
-        
+
         with patch.object(store, '_load_tier', return_value={"key1": "value1"}):
             with patch.object(store, '_save_tier') as mock_save:
                 store.clear_tier(MemoryTier.PROJECT)
-                
+
                 mock_save.assert_called_once_with(MemoryTier.PROJECT)
-    
+
     def test_clear_empty_tier_no_error(self):
         """Test clearing empty tier doesn't raise error."""
         store = MemoryStore()
-        
+
         # Should not raise exception
         store.clear_tier(MemoryTier.SESSION)
 
 
 class TestMemoryStoreLoadTier:
     """Test MemoryStore._load_tier method."""
-    
+
     def test_load_tier_existing_file(self):
         """Test loading tier from existing YAML file."""
         import tempfile
+
         import yaml
 
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -298,109 +299,108 @@ class TestMemoryStoreLoadTier:
             data = store._load_tier(MemoryTier.PROJECT)
 
             assert "key1" in data
-    
+
     def test_load_tier_missing_file_returns_empty(self):
         """Test loading missing file returns empty dict gracefully."""
         store = MemoryStore()
-        
+
         with patch("builtins.open", side_effect=FileNotFoundError()):
             data = store._load_tier(MemoryTier.PROJECT)
-            
+
             assert data == {}
-    
+
     def test_load_tier_corrupted_file_returns_empty(self):
         """Test loading corrupted file returns empty dict gracefully."""
         store = MemoryStore()
-        
+
         with patch("builtins.open", mock_open(read_data="invalid: yaml: content:")):
             with patch("yaml.safe_load", side_effect=Exception("YAML error")):
                 data = store._load_tier(MemoryTier.PROJECT)
-                
+
                 assert data == {}
-    
+
     def test_load_tier_session_tier_returns_memory_data(self):
         """Test loading session tier returns in-memory data."""
         store = MemoryStore()
         entry = MemoryEntry.create(key="test_key", value="test_value")
         store._data = {MemoryTier.SESSION: {"key1": entry}}
-        
+
         data = store._load_tier(MemoryTier.SESSION)
-        
+
         assert data == {"key1": entry}
 
 
 class TestMemoryStoreSaveTier:
     """Test MemoryStore._save_tier method."""
-    
+
     def test_save_tier_creates_directory(self):
         """Test saving tier creates parent directories."""
         store = MemoryStore()
         entry = MemoryEntry.create(key="test_key", value="test_value")
         store._data = {MemoryTier.PROJECT: {"key1": entry}}
-        
-        with patch("pathlib.Path.mkdir") as mock_mkdir:
-            with patch("builtins.open", mock_open()):
-                with patch("yaml.dump") as mock_yaml:
-                    store._save_tier(MemoryTier.PROJECT)
-                    
-                    mock_mkdir.assert_called_once_with(parents=True, exist_ok=True)
-    
+
+        with patch("pathlib.Path.mkdir") as mock_mkdir, patch("builtins.open", mock_open()):
+            with patch("yaml.dump"):
+                store._save_tier(MemoryTier.PROJECT)
+
+                mock_mkdir.assert_called_once_with(parents=True, exist_ok=True)
+
     def test_save_tier_uses_atomic_writes(self):
         """Test saving tier uses atomic writes with temp files."""
         store = MemoryStore()
         entry = MemoryEntry.create(key="test_key", value="test_value")
         store._data = {MemoryTier.PROJECT: {"key1": entry}}
-        
+
         with patch("tempfile.NamedTemporaryFile") as mock_temp:
             with patch("pathlib.Path.replace") as mock_replace:
-                with patch("yaml.dump") as mock_yaml:
+                with patch("yaml.dump"):
                     store._save_tier(MemoryTier.PROJECT)
-                    
+
                     mock_temp.assert_called_once()
                     mock_replace.assert_called_once()
-    
+
     def test_save_tier_serializes_entries(self):
         """Test saving tier serializes memory entries to dict."""
         store = MemoryStore()
         entry = MemoryEntry.create(key="test_key", value="test_value", metadata={"source": "test"})
         store._data = {MemoryTier.PROJECT: {"key1": entry}}
-        
+
         with patch("tempfile.NamedTemporaryFile", mock_open()):
             with patch("pathlib.Path.replace"):
                 with patch("yaml.dump") as mock_yaml:
                     with patch.object(entry, 'to_dict', return_value={"serialized": True}) as mock_to_dict:
                         store._save_tier(MemoryTier.PROJECT)
-                        
+
                         mock_to_dict.assert_called_once()
                         # Verify YAML dump was called with serialized data
                         mock_yaml.assert_called_once()
-    
+
     def test_save_tier_write_error_raises_exception(self):
         """Test save tier raises MemoryWriteError on write failure."""
         store = MemoryStore()
         entry = MemoryEntry.create(key="test_key", value="test_value")
         store._data = {MemoryTier.PROJECT: {"key1": entry}}
-        
+
         with patch("tempfile.NamedTemporaryFile", side_effect=OSError("Disk full")):
             with pytest.raises(MemoryWriteError):
                 store._save_tier(MemoryTier.PROJECT)
-    
+
     def test_save_tier_session_tier_no_op(self):
         """Test saving session tier is no-op (in-memory only)."""
         store = MemoryStore()
         entry = MemoryEntry.create(key="test_key", value="test_value")
         store._data = {MemoryTier.SESSION: {"key1": entry}}
-        
+
         # Should not attempt any file operations
         with patch("builtins.open") as mock_open_file:
             store._save_tier(MemoryTier.SESSION)
-            
+
             mock_open_file.assert_not_called()
 
 
 class TestMemoryStoreIntegration:
     """Integration tests for MemoryStore."""
-    
+
     def test_full_lifecycle_persistent_tier(self):
         """Test complete lifecycle of persistent tier operations."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -411,21 +411,21 @@ class TestMemoryStoreIntegration:
                 MemoryTier.PROJECT: tier_path,
                 MemoryTier.ORGANIZATION: tier_path
             }
-            
+
             store = MemoryStore(tier_paths=custom_paths)
             entry = MemoryEntry.create(key="test_key", value="test_value", metadata={"source": "integration"})
-            
+
             # Set value
             store.set("test_key", entry, MemoryTier.PROJECT)
-            
+
             # Verify it can be retrieved
             retrieved = store.get("test_key", MemoryTier.PROJECT)
             assert retrieved.value == "test_value"
-            
+
             # Verify it's in key list
             keys = store.list_keys(MemoryTier.PROJECT)
             assert "test_key" in keys
-            
+
             # Delete and verify removal
             store.delete("test_key", MemoryTier.PROJECT)
             assert store.get("test_key", MemoryTier.PROJECT) is None

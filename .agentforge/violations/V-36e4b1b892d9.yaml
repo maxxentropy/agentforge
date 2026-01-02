@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-36e4b1b892d9
+contract_id: agentforge
+check_id: max-cyclomatic-complexity
+severity: major
+file_path: tools/harness/minimal_context/fix_workflow.py
+message: 'Function ''_action_read_file'' has complexity 11 (max: 10)'
+detected_at: '2025-12-31T17:47:35.594897'
+last_seen_at: '2025-12-31T17:47:35.594897'
+status: stale
+line_number: 237
+fix_hint: Break complex functions into smaller, focused helper functions

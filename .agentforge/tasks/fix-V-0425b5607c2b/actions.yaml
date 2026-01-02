@@ -1,0 +1,75 @@
+actions:
+- action: extract_function
+  duration_ms: 32716
+  error: null
+  parameters:
+    end_line: 441
+    file_path: tools/harness/minimal_context/fix_workflow.py
+    new_function_name: _adjust_indentation
+    source_function: _fuzzy_find_and_replace
+    start_line: 424
+  result: success
+  step: 1
+  summary: "\u2713 Extracted '_adjust_indentation' from lines 424-441\n  Refactoring\
+    \ validated by rope - semantics preserved | \u2713 No new failures | \u25CB Check\
+    \ still failing"
+  target: tools/harness/minimal_context/fix_workflow.py
+  timestamp: '2026-01-01T01:35:20.039596'
+- action: extract_function
+  duration_ms: 31269
+  error: null
+  parameters:
+    end_line: 420
+    file_path: tools/harness/minimal_context/fix_workflow.py
+    new_function_name: _detect_base_indentation
+    source_function: _fuzzy_find_and_replace
+    start_line: 415
+  result: success
+  step: 2
+  summary: "\u2713 Extracted '_detect_base_indentation' from lines 415-420\n  Refactoring\
+    \ validated by rope - semantics preserved | \u2713 No new failures | \u25CB Check\
+    \ still failing"
+  target: tools/harness/minimal_context/fix_workflow.py
+  timestamp: '2026-01-01T01:35:51.314931'
+- action: extract_function
+  duration_ms: 18078
+  error: "\u2717 Cannot extract: Extracted piece should contain complete statements."
+  parameters:
+    end_line: 436
+    file_path: tools/harness/minimal_context/fix_workflow.py
+    new_function_name: _process_new_text_indentation
+    source_function: _fuzzy_find_and_replace
+    start_line: 419
+  result: failure
+  step: 3
+  summary: ''
+  target: tools/harness/minimal_context/fix_workflow.py
+  timestamp: '2026-01-01T01:36:09.401093'
+- action: extract_function
+  duration_ms: 18635
+  error: "\u2717 Cannot extract: Extracted piece should contain complete statements."
+  parameters:
+    end_line: 436
+    file_path: tools/harness/minimal_context/fix_workflow.py
+    new_function_name: _process_new_text_indentation
+    source_function: _fuzzy_find_and_replace
+    start_line: 419
+  result: failure
+  step: 4
+  summary: ''
+  target: tools/harness/minimal_context/fix_workflow.py
+  timestamp: '2026-01-01T01:36:28.046506'
+- action: extract_function
+  duration_ms: 18406
+  error: "\u2717 Cannot extract: Extracted piece should contain complete statements."
+  parameters:
+    end_line: 436
+    file_path: tools/harness/minimal_context/fix_workflow.py
+    new_function_name: _adjust_new_text_indentation
+    source_function: _fuzzy_find_and_replace
+    start_line: 419
+  result: failure
+  step: 5
+  summary: ''
+  target: tools/harness/minimal_context/fix_workflow.py
+  timestamp: '2026-01-01T01:36:46.465875'

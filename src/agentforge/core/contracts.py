@@ -22,26 +22,25 @@ For implementation details, see:
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional
 
 
 @dataclass
 class RegistryOptions:
     """Options for contract registry configuration."""
-    workspace_root: Optional[Path] = None
-    global_root: Optional[Path] = None
+    workspace_root: Path | None = None
+    global_root: Path | None = None
     include_abstract: bool = False
 
 
 # Re-export types for backwards compatibility
 try:
-    from .contracts_types import CheckResult, ContractResult, Exemption, Contract
-    from .contracts_registry import ContractRegistry, BUILTIN_CONTRACTS_DIR
     from .contracts_execution import execute_check
+    from .contracts_registry import BUILTIN_CONTRACTS_DIR, ContractRegistry
+    from .contracts_types import CheckResult, Contract, ContractResult, Exemption
 except ImportError:
-    from contracts_types import CheckResult, ContractResult, Exemption, Contract
-    from contracts_registry import ContractRegistry, BUILTIN_CONTRACTS_DIR
     from contracts_execution import execute_check
+    from contracts_registry import ContractRegistry
+    from contracts_types import Contract, ContractResult
 
 
 # ==============================================================================
@@ -50,7 +49,7 @@ except ImportError:
 
 def run_contract(contract: Contract, repo_root: Path,
                  registry: ContractRegistry,
-                 file_paths: Optional[List[Path]] = None) -> ContractResult:
+                 file_paths: list[Path] | None = None) -> ContractResult:
     """
     Run all checks in a contract.
 
@@ -100,9 +99,9 @@ def run_contract(contract: Contract, repo_root: Path,
 
 
 def run_all_contracts(
-    repo_root: Path, language: Optional[str] = None, repo_type: Optional[str] = None,
-    file_paths: Optional[List[Path]] = None, options: Optional[RegistryOptions] = None
-) -> List[ContractResult]:
+    repo_root: Path, language: str | None = None, repo_type: str | None = None,
+    file_paths: list[Path] | None = None, options: RegistryOptions | None = None
+) -> list[ContractResult]:
     """Run all applicable contracts for a repository."""
     opts = options or RegistryOptions()
     registry = ContractRegistry(repo_root, opts.workspace_root, opts.global_root)

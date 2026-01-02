@@ -12,20 +12,17 @@ This applies "correctness is upstream" to the prompts themselves:
 - Verification checks must be well-formed
 """
 
-import yaml
-import jsonschema
-from pathlib import Path
 import re
+from pathlib import Path
+
+import jsonschema
+import yaml
 
 try:
-    from .contract_validator_types import (
-        Severity, ValidationResult, ContractValidationReport
-    )
+    from .contract_validator_types import ContractValidationReport, Severity, ValidationResult
     from .output_validator import OutputValidator
 except ImportError:
-    from contract_validator_types import (
-        Severity, ValidationResult, ContractValidationReport
-    )
+    from contract_validator_types import ContractValidationReport, Severity, ValidationResult
     from output_validator import OutputValidator
 
 # Re-export types for backwards compatibility
@@ -316,7 +313,7 @@ def validate_contract_cli(contract_path: str, schema_path: str = None):
     report = validator.validate_contract(Path(contract_path))
 
     print(f"\n{'=' * 60}")
-    print(f"Contract Validation Report")
+    print("Contract Validation Report")
     print(f"{'=' * 60}")
     print(f"Contract: {report.contract_id} v{report.contract_version}")
     print(f"Status: {'VALID' if report.is_valid else 'INVALID'}")
@@ -329,7 +326,7 @@ def validate_contract_cli(contract_path: str, schema_path: str = None):
     if report.advisory_warnings > 0:
         print(f"\nADVISORY WARNINGS: {report.advisory_warnings}")
 
-    print(f"\nDetailed Results:")
+    print("\nDetailed Results:")
     print("-" * 60)
 
     for result in report.results:

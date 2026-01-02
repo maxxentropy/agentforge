@@ -1,14 +1,9 @@
 """Shared pytest fixtures for AgentForge test suite."""
 
-import pytest
 from pathlib import Path
-from unittest.mock import Mock, MagicMock, patch
-import tempfile
-import sys
+from unittest.mock import Mock, patch
 
-# Add tools directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent / 'tools'))
-
+import pytest
 
 # =============================================================================
 # Pytest Configuration
@@ -298,10 +293,10 @@ def mock_token_counter():
 @pytest.fixture
 def verification_runner(tmp_path: Path, correctness_config: dict):
     """Create a configured VerificationRunner instance."""
-    from verification_runner import VerificationRunner
-
     # Write config to temp file
     import yaml
+
+    from agentforge.core.verification_runner import VerificationRunner
     config_path = tmp_path / "correctness.yaml"
     config_path.write_text(yaml.dump(correctness_config))
 
@@ -315,7 +310,7 @@ def verification_runner(tmp_path: Path, correctness_config: dict):
 @pytest.fixture
 def verification_runner_no_config(tmp_path: Path):
     """Create a VerificationRunner without config file."""
-    from verification_runner import VerificationRunner
+    from agentforge.core.verification_runner import VerificationRunner
     return VerificationRunner(project_root=tmp_path)
 
 

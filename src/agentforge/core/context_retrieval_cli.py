@@ -14,8 +14,8 @@ Command-line interface for context retrieval.
 Extracted from context_retrieval.py for modularity.
 """
 
-import sys
 import argparse
+import sys
 
 
 def build_parser():

@@ -34,7 +34,7 @@ Providers:
 
 import os
 from abc import ABC, abstractmethod
-from typing import List, Optional
+
 import numpy as np
 
 
@@ -45,7 +45,7 @@ class EmbeddingProvider(ABC):
     dimension: int  # Output embedding dimension
 
     @abstractmethod
-    def embed(self, texts: List[str]) -> np.ndarray:
+    def embed(self, texts: list[str]) -> np.ndarray:
         """
         Generate embeddings for a list of texts.
 
@@ -101,8 +101,9 @@ class LocalEmbeddingProvider(EmbeddingProvider):
         """Lazy load model on first use."""
         if self._model is None:
             try:
-                from sentence_transformers import SentenceTransformer
                 import sys
+
+                from sentence_transformers import SentenceTransformer
                 print(f"Loading embedding model: {self.model_name}", file=sys.stderr)
                 self._model = SentenceTransformer(self.model_name)
                 self.dimension = self._model.get_sentence_embedding_dimension()
@@ -113,7 +114,7 @@ class LocalEmbeddingProvider(EmbeddingProvider):
                 )
         return self._model
 
-    def embed(self, texts: List[str]) -> np.ndarray:
+    def embed(self, texts: list[str]) -> np.ndarray:
         model = self._load_model()
         # show_progress_bar for large batches
         embeddings = model.encode(
@@ -161,7 +162,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
                 )
         return self._client
 
-    def embed(self, texts: List[str]) -> np.ndarray:
+    def embed(self, texts: list[str]) -> np.ndarray:
         client = self._get_client()
 
         # OpenAI has a limit of 8191 tokens per request, batch if needed
@@ -219,7 +220,7 @@ class VoyageEmbeddingProvider(EmbeddingProvider):
                 )
         return self._client
 
-    def embed(self, texts: List[str]) -> np.ndarray:
+    def embed(self, texts: list[str]) -> np.ndarray:
         client = self._get_client()
 
         # Voyage has batch limits too
@@ -309,7 +310,7 @@ def get_embedding_provider(provider_name: str = None, config: dict = None) -> Em
     )
 
 
-def list_providers() -> List[dict]:
+def list_providers() -> list[dict]:
     """
     List all embedding providers with their status.
 
@@ -329,7 +330,7 @@ def list_providers() -> List[dict]:
     return result
 
 
-def get_available_providers() -> List[str]:
+def get_available_providers() -> list[str]:
     """List names of all available embedding providers."""
     available = []
     for name, cls in PROVIDERS.items():

@@ -1,5 +1,5 @@
-# @spec_file: specs/minimal-context-architecture/05-llm-integration.yaml
-# @spec_id: llm-integration-v1
+# @spec_file: .agentforge/specs/core-harness-minimal-context-v1.yaml
+# @spec_id: core-harness-minimal-context-v1
 # @component_id: native-tool-executor
 # @test_path: tests/unit/harness/test_native_tool_executor.py
 
@@ -48,7 +48,8 @@ Usage:
 
 import logging
 import traceback
-from typing import Any, Callable, Dict, Optional
+from collections.abc import Callable
+from typing import Any
 
 from ...llm.interface import ToolCall, ToolExecutor, ToolResult
 
@@ -56,7 +57,7 @@ logger = logging.getLogger(__name__)
 
 
 # Type alias for action handlers
-ActionHandler = Callable[[Dict[str, Any]], Any]
+ActionHandler = Callable[[dict[str, Any]], Any]
 
 
 class NativeToolExecutor(ToolExecutor):
@@ -73,8 +74,8 @@ class NativeToolExecutor(ToolExecutor):
 
     def __init__(
         self,
-        actions: Optional[Dict[str, ActionHandler]] = None,
-        context: Optional[Dict[str, Any]] = None,
+        actions: dict[str, ActionHandler] | None = None,
+        context: dict[str, Any] | None = None,
     ):
         """
         Initialize the executor.
@@ -83,8 +84,8 @@ class NativeToolExecutor(ToolExecutor):
             actions: Initial action handlers dict
             context: Shared context for handlers
         """
-        self.actions: Dict[str, ActionHandler] = actions or {}
-        self.context: Dict[str, Any] = context or {}
+        self.actions: dict[str, ActionHandler] = actions or {}
+        self.context: dict[str, Any] = context or {}
         self._execution_log: list = []
 
     def register_action(self, name: str, handler: ActionHandler) -> None:
@@ -98,7 +99,7 @@ class NativeToolExecutor(ToolExecutor):
         self.actions[name] = handler
         logger.debug(f"Registered action handler: {name}")
 
-    def register_actions(self, handlers: Dict[str, ActionHandler]) -> None:
+    def register_actions(self, handlers: dict[str, ActionHandler]) -> None:
         """
         Register multiple action handlers.
 
@@ -182,8 +183,8 @@ class NativeToolExecutor(ToolExecutor):
     def _log_execution(
         self,
         tool_call: ToolCall,
-        result: Optional[str] = None,
-        error: Optional[str] = None,
+        result: str | None = None,
+        error: str | None = None,
     ) -> None:
         """Log tool execution for audit trail."""
         self._execution_log.append({
@@ -212,7 +213,7 @@ class NativeToolExecutor(ToolExecutor):
         return sorted(self.actions.keys())
 
 
-def create_enhanced_handlers(project_path=None) -> Dict[str, ActionHandler]:
+def create_enhanced_handlers(project_path=None) -> dict[str, ActionHandler]:
     """
     Create enhanced action handlers from the tool_handlers module.
 
@@ -233,7 +234,7 @@ def create_enhanced_handlers(project_path=None) -> Dict[str, ActionHandler]:
     return create_full_handlers(project_path)
 
 
-def create_fix_violation_handlers(project_path=None) -> Dict[str, ActionHandler]:
+def create_fix_violation_handlers(project_path=None) -> dict[str, ActionHandler]:
     """
     Create handlers specifically for the fix_violation workflow.
 

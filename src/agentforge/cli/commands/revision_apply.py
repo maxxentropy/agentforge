@@ -5,13 +5,14 @@ Contains the apply_revision_session function for applying revision decisions to 
 """
 
 import shutil
+from datetime import datetime
+from pathlib import Path
+
 import click
 import yaml
-from pathlib import Path
-from datetime import datetime
 
-from agentforge.cli.core import call_claude_code, call_anthropic_api, extract_yaml_from_response
 from agentforge.cli.commands.revision import save_revision_session
+from agentforge.cli.core import call_anthropic_api, call_claude_code, extract_yaml_from_response
 
 
 def apply_revision_session(args):

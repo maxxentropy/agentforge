@@ -7,10 +7,11 @@ The revision commands are in cli/commands/revision.py.
 """
 
 import sys
+from datetime import datetime
+from pathlib import Path
+
 import click
 import yaml
-from pathlib import Path
-from datetime import datetime
 
 from agentforge.cli.core import execute_contract
 
@@ -98,7 +99,7 @@ def _handle_clarify_result(result: dict):
         click.echo("-" * 60)
         click.echo(f"\n  {question.get('text', 'No question')}\n")
         click.echo("Run with your answer:")
-        click.echo(f"  python execute.py clarify --answer \"your answer here\"")
+        click.echo("  python execute.py clarify --answer \"your answer here\"")
     elif mode == 'complete':
         output_path = Path('outputs/clarification_log.yaml')
         with open(output_path, 'w') as f:
@@ -137,8 +138,7 @@ def _retrieve_context(project_path: str, intake_record: dict) -> str | None:
     """Retrieve code context from project. Returns None on failure."""
     click.echo(f"\n  Retrieving context from: {project_path}")
     try:
-        sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'tools'))
-        from context_retrieval import ContextRetriever
+        from agentforge.core.context_retrieval import ContextRetriever
 
         retriever = ContextRetriever(project_path)
         query_parts = [intake_record.get('detected_intent', ''), intake_record.get('detected_scope', ''), intake_record.get('original_request', '')]
@@ -241,31 +241,175 @@ def _save_draft_failure(result):
     with open(raw_path, 'w') as f:
         f.write(raw_content)
 
-    click.echo(f"\nCould not parse output as YAML")
+    click.echo("\nCould not parse output as YAML")
     click.echo(f"   Raw output saved to: {raw_path}")
     click.echo(f"   Error: {result.get('_parse_error', 'Unknown')}")
     click.echo()
     click.echo("Try re-running the draft step.")
 
 
+def _extract_locations_from_analysis(analysis_report: dict) -> list:
+    """Extract target file locations from analysis report."""
+    locations = []
+
+    # Look for affected_files, implementation_locations, etc.
+    for key in ['affected_files', 'implementation_locations', 'files', 'locations']:
+        if key in analysis_report:
+            items = analysis_report[key]
+            if isinstance(items, list):
+                for item in items:
+                    if isinstance(item, str) and item.startswith('src/'):
+                        locations.append(item)
+                    elif isinstance(item, dict):
+                        path = item.get('path') or item.get('location') or item.get('file')
+                        if path and path.startswith('src/'):
+                            locations.append(path)
+
+    return locations
+
+
+def _analyze_draft_placement(analysis_report: dict, extend_spec: str, new_spec: bool):
+    """Analyze where the drafted spec should be placed."""
+    from agentforge.core.spec.placement import (
+        PlacementAction,
+        PlacementDecision,
+        SpecPlacementAnalyzer,
+    )
+
+    # If --new-spec flag, always create new
+    if new_spec:
+        return PlacementDecision(
+            action=PlacementAction.CREATE,
+            reason="Forced new spec creation (--new-spec flag)",
+        )
+
+    analyzer = SpecPlacementAnalyzer()
+
+    # Extract locations from analysis
+    target_locations = _extract_locations_from_analysis(analysis_report)
+
+    # Analyze placement
+    decision = analyzer.analyze(
+        feature_description="Greenfield spec draft",
+        target_locations=target_locations,
+        explicit_spec_id=extend_spec,
+    )
+
+    return decision
+
+
+def _handle_draft_escalation(decision) -> str:
+    """Handle ESCALATE decision by asking user to choose."""
+    click.echo()
+    click.echo("-" * 60)
+    click.echo("SPEC PLACEMENT DECISION NEEDED")
+    click.echo("-" * 60)
+    click.echo(f"\n  {decision.reason}\n")
+    click.echo("  Multiple specs could cover this feature:\n")
+
+    for i, opt in enumerate(decision.options, 1):
+        click.echo(f"    [{i}] {opt['spec_id']}")
+        desc = opt.get('description', 'No description')
+        click.echo(f"        {desc[:60]}")
+
+    click.echo("    [N] Create NEW spec")
+    click.echo()
+
+    while True:
+        choice = click.prompt("  Select option", type=str)
+
+        if choice.upper() == 'N':
+            return None
+
+        try:
+            idx = int(choice) - 1
+            if 0 <= idx < len(decision.options):
+                return decision.options[idx]['spec_id']
+        except ValueError:
+            pass
+
+        click.echo("  Invalid choice. Try again.")
+
+
 def run_draft(args):
     """Execute DRAFT contract."""
+    from agentforge.core.spec.placement import PlacementAction
+
     click.echo()
     click.echo("=" * 60)
     click.echo("DRAFT")
     click.echo("=" * 60)
 
+    intake_record = _load_required_file(Path(args.intake_file))
+    clarification_log = _load_required_file(Path(args.clarification_file))
+    analysis_report = _load_required_file(Path(args.analysis_file))
+
+    # === SPEC PLACEMENT ANALYSIS ===
+    extend_spec = getattr(args, 'extend_spec', None)
+    new_spec = getattr(args, 'new_spec', False)
+
+    click.echo("\n" + "-" * 60)
+    click.echo("SPEC PLACEMENT ANALYSIS")
+    click.echo("-" * 60)
+
+    decision = _analyze_draft_placement(analysis_report, extend_spec, new_spec)
+
+    target_spec_id = None
+    if decision.action == PlacementAction.EXTEND:
+        click.echo("\n  Decision: EXTEND existing spec")
+        click.echo(f"  Spec: {decision.spec_id}")
+        click.echo(f"  Reason: {decision.reason}")
+        target_spec_id = decision.spec_id
+
+    elif decision.action == PlacementAction.CREATE:
+        click.echo("\n  Decision: CREATE new spec")
+        if decision.suggested_spec_id:
+            click.echo(f"  Suggested ID: {decision.suggested_spec_id}")
+        click.echo(f"  Reason: {decision.reason}")
+
+    elif decision.action == PlacementAction.ESCALATE:
+        selected = _handle_draft_escalation(decision)
+        if selected:
+            target_spec_id = selected
+            click.echo(f"\n  User selected: EXTEND {target_spec_id}")
+        else:
+            click.echo("\n  User selected: CREATE new spec")
+
+    # === BUILD INPUTS ===
     inputs = {
-        'intake_record': _load_required_file(Path(args.intake_file)),
-        'clarification_log': _load_required_file(Path(args.clarification_file)),
-        'analysis_report': _load_required_file(Path(args.analysis_file)),
+        'intake_record': intake_record,
+        'clarification_log': clarification_log,
+        'analysis_report': analysis_report,
     }
+
+    # Pass placement decision to contract
+    if target_spec_id:
+        inputs['extend_spec_id'] = target_spec_id
+        inputs['placement_action'] = 'extend'
+        click.echo(f"\n  Mode: Extending {target_spec_id}")
+    else:
+        inputs['placement_action'] = 'create'
+
+    # === EXECUTE DRAFT ===
+    click.echo("\n" + "-" * 60)
+    click.echo("Generating specification...")
+    click.echo("-" * 60)
 
     result = execute_contract('spec.draft.v1', inputs, args.use_api)
     output_path = Path('outputs/specification.yaml')
 
     if isinstance(result, dict) and '_raw' not in result:
         _save_draft_success(result, output_path)
+
+        # Show placement info
+        if target_spec_id:
+            click.echo()
+            click.echo("-" * 60)
+            click.echo("SPEC EXTENSION")
+            click.echo("-" * 60)
+            click.echo(f"  This feature will extend: {target_spec_id}")
+            click.echo("  Components should be added to the existing spec")
+            click.echo("  after validation and approval.")
     else:
         _save_draft_failure(result)
 
@@ -278,11 +422,11 @@ def _load_spec_content(spec_path: Path) -> tuple:
     if spec_path.suffix in ['.yaml', '.yml']:
         try:
             specification_data = yaml.safe_load(spec_content)
-            click.echo(f"  Spec format: YAML (structured)")
+            click.echo("  Spec format: YAML (structured)")
         except yaml.YAMLError:
-            click.echo(f"  Spec format: YAML (parse failed, using raw)")
+            click.echo("  Spec format: YAML (parse failed, using raw)")
     else:
-        click.echo(f"  Spec format: Markdown")
+        click.echo("  Spec format: Markdown")
 
     return spec_content, specification_data
 

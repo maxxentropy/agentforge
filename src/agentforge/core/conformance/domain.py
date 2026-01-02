@@ -12,12 +12,12 @@ These entities represent the core business logic for tracking violations,
 exemptions, and conformance state.
 """
 
-from dataclasses import dataclass, field
+import fnmatch
+import hashlib
+from dataclasses import dataclass
 from datetime import date, datetime
 from enum import Enum
-from typing import List, Optional, Dict
-import hashlib
-import fnmatch
+from pathlib import Path
 
 
 class Severity(Enum):
@@ -79,9 +79,9 @@ class ExemptionScopeType(Enum):
 class ExemptionScope:
     """Defines what violations an exemption covers."""
     type: ExemptionScopeType
-    patterns: Optional[List[str]] = None
-    violation_ids: Optional[List[str]] = None
-    lines: Optional[tuple] = None  # (start, end)
+    patterns: list[str] | None = None
+    violation_ids: list[str] | None = None
+    lines: tuple | None = None  # (start, end)
 
     def matches_file(self, file_path: str) -> bool:
         """Check if file path matches scope patterns."""
@@ -99,7 +99,7 @@ class ExemptionScope:
             return violation_id in self.violation_ids
         return False
 
-    def matches_line(self, line_number: Optional[int]) -> bool:
+    def matches_line(self, line_number: int | None) -> bool:
         """Check if line number falls within scope."""
         if not self.lines:
             return True
@@ -121,25 +121,25 @@ class Violation:
     detected_at: datetime
     last_seen_at: datetime
     status: ViolationStatus
-    line_number: Optional[int] = None
-    column_number: Optional[int] = None
-    rule_id: Optional[str] = None
-    fix_hint: Optional[str] = None
-    code_snippet: Optional[str] = None
-    resolution: Optional[Dict] = None
-    exemption_id: Optional[str] = None
-    exemption_expired_at: Optional[datetime] = None
+    line_number: int | None = None
+    column_number: int | None = None
+    rule_id: str | None = None
+    fix_hint: str | None = None
+    code_snippet: str | None = None
+    resolution: dict | None = None
+    exemption_id: str | None = None
+    exemption_expired_at: datetime | None = None
     # Test path for verification during fixes - computed at detection time
     # This is the path to run pytest on to verify changes don't break tests
-    test_path: Optional[str] = None
+    test_path: str | None = None
 
     @staticmethod
     def generate_id(
         contract_id: str,
         check_id: str,
         file_path: str,
-        line_number: Optional[int],
-        rule_id: Optional[str] = None
+        line_number: int | None,
+        rule_id: str | None = None
     ) -> str:
         """
         Generate deterministic violation ID from composite key.
@@ -167,7 +167,7 @@ class Violation:
         return f"V-{hash_digest}"
 
     @staticmethod
-    def compute_test_path(file_path: str, project_root: "Path") -> Optional[str]:
+    def compute_test_path(file_path: str, project_root: "Path") -> str | None:
         """
         Compute the test path for verifying changes to a file.
 
@@ -287,17 +287,17 @@ class Exemption:
     """Approved exception to contract checks."""
     id: str
     contract_id: str
-    check_ids: List[str]
+    check_ids: list[str]
     reason: str
     approved_by: str
     approved_date: date
     status: ExemptionStatus
     scope: ExemptionScope
-    expires: Optional[date] = None
-    review_date: Optional[date] = None
-    notes: Optional[str] = None
-    ticket: Optional[str] = None
-    tags: Optional[List[str]] = None
+    expires: date | None = None
+    review_date: date | None = None
+    notes: str | None = None
+    ticket: str | None = None
+    tags: list[str] | None = None
 
     def is_expired(self) -> bool:
         """Check if exemption has expired."""
@@ -388,11 +388,11 @@ class ConformanceReport:
     run_id: str
     run_type: str  # "full" or "incremental"
     summary: ConformanceSummary
-    by_severity: Dict[str, int]
-    by_contract: Dict[str, int]
-    contracts_checked: List[str]
+    by_severity: dict[str, int]
+    by_contract: dict[str, int]
+    contracts_checked: list[str]
     files_checked: int
-    trend: Optional[Dict] = None
+    trend: dict | None = None
 
     def has_blockers(self) -> bool:
         """Check if there are any blocker-level violations."""
@@ -430,12 +430,12 @@ class HistorySnapshot:
     date: date
     generated_at: datetime
     summary: ConformanceSummary
-    by_severity: Dict[str, int]
-    by_contract: Dict[str, int]
+    by_severity: dict[str, int]
+    by_contract: dict[str, int]
     files_analyzed: int
-    contracts_checked: List[str]
+    contracts_checked: list[str]
 
-    def delta_from(self, previous: "HistorySnapshot") -> Dict[str, int]:
+    def delta_from(self, previous: "HistorySnapshot") -> dict[str, int]:
         """Calculate delta from a previous snapshot."""
         return {
             "total_delta": self.summary.total - previous.summary.total,

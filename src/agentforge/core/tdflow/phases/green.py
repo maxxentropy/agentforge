@@ -22,7 +22,7 @@ When using template generation, you get:
 import asyncio
 import time
 from pathlib import Path
-from typing import Any, Dict, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Optional
 
 import yaml
 
@@ -73,7 +73,7 @@ class GreenPhaseExecutor:
         self.session = session
         self.runner = runner
         self.generator = generator
-        self._spec_data: Optional[Dict[str, Any]] = None
+        self._spec_data: dict[str, Any] | None = None
 
     def execute(self, component: ComponentProgress) -> PhaseResult:
         """
@@ -165,7 +165,7 @@ class GreenPhaseExecutor:
             duration_seconds=time.time() - start_time,
         )
 
-    def _load_component_spec(self, name: str) -> Optional[Dict[str, Any]]:
+    def _load_component_spec(self, name: str) -> dict[str, Any] | None:
         """
         Load specification for a specific component.
 
@@ -192,9 +192,9 @@ class GreenPhaseExecutor:
     def _generate_implementation(
         self,
         component: ComponentProgress,
-        spec: Dict[str, Any],
+        spec: dict[str, Any],
         iteration: int,
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Generate implementation via LLM or templates.
 
@@ -224,9 +224,9 @@ class GreenPhaseExecutor:
     def _generate_impl_with_llm(
         self,
         component: ComponentProgress,
-        spec: Dict[str, Any],
+        spec: dict[str, Any],
         iteration: int,
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Generate implementation using LLM via GenerationEngine.
 
@@ -242,7 +242,7 @@ class GreenPhaseExecutor:
             return None
 
         try:
-            from agentforge.core.generate.domain import GenerationContext, GenerationPhase
+            from agentforge.core.generate.domain import GenerationContext
 
             # Get existing test content for context
             existing_tests = None
@@ -272,7 +272,7 @@ class GreenPhaseExecutor:
     def _generate_csharp_impl(
         self,
         component: ComponentProgress,
-        spec: Dict[str, Any],
+        spec: dict[str, Any],
     ) -> str:
         """
         Generate C# implementation from specification.
@@ -357,7 +357,7 @@ public class {class_name}
     def _generate_python_impl(
         self,
         component: ComponentProgress,
-        spec: Dict[str, Any],
+        spec: dict[str, Any],
     ) -> str:
         """
         Generate Python implementation from specification.
@@ -437,7 +437,7 @@ class {class_name}:
 {methods_str}
 '''
 
-    def _get_impl_path(self, component: ComponentProgress, spec: Dict[str, Any]) -> Path:
+    def _get_impl_path(self, component: ComponentProgress, spec: dict[str, Any]) -> Path:
         """
         Determine implementation file path.
 
@@ -462,19 +462,13 @@ class {class_name}:
         if self.session.test_framework in ("xunit", "nunit", "mstest"):
             # Look for src directory
             src_dirs = list(project_root.glob("**/src"))
-            if src_dirs:
-                src_root = src_dirs[0]
-            else:
-                src_root = project_root / "src"
+            src_root = src_dirs[0] if src_dirs else project_root / "src"
 
             return src_root / layer / f"{component.name}.cs"
         else:
             # Python implementation
             src_dirs = list(project_root.glob("**/src"))
-            if src_dirs:
-                src_root = src_dirs[0]
-            else:
-                src_root = project_root / "src"
+            src_root = src_dirs[0] if src_dirs else project_root / "src"
 
             return src_root / f"{self._to_snake_case(component.name)}.py"
 

@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-c292c82eabd2
+contract_id: agentforge
+check_id: max-cyclomatic-complexity
+severity: major
+file_path: tools/harness/refactoring_tools.py
+message: 'Function ''_extract_function_impl'' has complexity 40 (max: 10)'
+detected_at: '2025-12-31T14:51:44.110314'
+last_seen_at: '2025-12-31T14:51:44.110314'
+status: stale
+line_number: 169
+fix_hint: Break complex functions into smaller, focused helper functions

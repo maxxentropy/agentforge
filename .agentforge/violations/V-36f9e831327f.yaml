@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-36f9e831327f
+contract_id: agentforge
+check_id: single-responsibility-modules
+severity: minor
+file_path: tools/tdflow/phases/refactor.py
+message: 'Class ''RefactorPhaseExecutor'' has 6 methods (max: 3)'
+detected_at: '2025-12-31T04:36:43.170949'
+last_seen_at: '2025-12-31T14:51:44.274584'
+status: stale
+line_number: 31
+fix_hint: Split modules with too many classes into focused single-class modules

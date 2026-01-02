@@ -1,0 +1,13 @@
+schema_version: '1.0'
+violation_id: V-3c6d2fdcd26d
+contract_id: agentforge
+check_id: max-imports
+severity: minor
+file_path: tools/harness/__init__.py
+message: 'File has 107 imports (max: 30)'
+detected_at: '2025-12-31T12:15:10.172287'
+last_seen_at: '2026-01-01T01:39:14.593795'
+status: open
+line_number: 1
+fix_hint: Consider splitting module or consolidating imports
+test_path: tests/unit/tools/

@@ -1,5 +1,5 @@
-# @spec_file: .agentforge/specs/harness-v1.yaml
-# @spec_id: harness-v1
+# @spec_file: .agentforge/specs/core-harness-v1.yaml
+# @spec_id: core-harness-v1
 # @component_id: tools-harness-refactoring_tools
 # @impl_path: tools/harness/refactoring_tools.py
 
@@ -11,48 +11,44 @@ Tests end-to-end workflows with real component integration.
 LLM calls are mocked to avoid API dependencies.
 """
 
-import pytest
 import tempfile
 from pathlib import Path
-from unittest.mock import Mock, patch
-from datetime import timedelta
+from unittest.mock import Mock
 
-from tools.harness import (
-    # Session
-    SessionManager,
-    SessionState,
-    SessionContext,
-    # Memory
-    MemoryManager,
-    MemoryTier,
-    # Tools
-    ToolRegistry,
-    ToolSelector,
-    ToolDefinition,
-    ToolProfile,
+import pytest
+
+from agentforge.core.harness import (
+    AgentAction,
     # Monitor
     AgentMonitor,
-    HealthStatus,
+    # Orchestrator
+    AgentOrchestrator,
     # Recovery
     CheckpointManager,
-    RecoveryExecutor,
     # Escalation
     EscalationManager,
     EscalationPriority,
-    ResolutionType,
-    # Orchestrator
-    AgentOrchestrator,
-    OrchestratorConfig,
-    ExecutionMode,
+    ExecutionContext,
+    ExecutionContextStore,
+    HealthStatus,
     # LLM
     LLMExecutor,
-    ExecutionContext,
+    # Memory
+    MemoryManager,
+    MemoryTier,
+    OrchestratorConfig,
+    RecoveryExecutor,
+    ResolutionType,
+    SessionManager,
+    SessionState,
     StepResult,
-    AgentAction,
-    ActionType,
     ToolCall,
+    ToolDefinition,
+    ToolProfile,
+    # Tools
+    ToolRegistry,
     ToolResult,
-    ExecutionContextStore,
+    ToolSelector,
 )
 
 
@@ -68,7 +64,7 @@ class TestSessionLifecycle:
     @pytest.fixture
     def session_manager(self, temp_dir):
         """Create session manager with temp storage."""
-        from tools.harness.session_store import SessionStore
+        from agentforge.core.harness.session_store import SessionStore
         store = SessionStore(temp_dir / "sessions")
         return SessionManager(store=store)
 
@@ -117,7 +113,7 @@ class TestSessionLifecycle:
         session_manager.pause()
 
         # Create new manager with same store
-        from tools.harness.session_store import SessionStore
+        from agentforge.core.harness.session_store import SessionStore
         new_store = SessionStore(temp_dir / "sessions")
         new_manager = SessionManager(store=new_store)
 
@@ -141,7 +137,7 @@ class TestMemoryIntegration:
 
     @pytest.fixture
     def memory_manager(self, temp_dir):
-        from tools.harness.memory_store import MemoryStore
+        from agentforge.core.harness.memory_store import MemoryStore
         # MemoryStore takes tier_paths as dict mapping tiers to paths
         tier_paths = {
             MemoryTier.SESSION: temp_dir / "session_memory.yaml",
@@ -353,8 +349,8 @@ class TestOrchestratorIntegration:
     @pytest.fixture
     def orchestrator(self, temp_dir, mock_llm_executor):
         """Create orchestrator with real components but mocked LLM."""
-        from tools.harness.session_store import SessionStore
-        from tools.harness.memory_store import MemoryStore
+        from agentforge.core.harness.memory_store import MemoryStore
+        from agentforge.core.harness.session_store import SessionStore
 
         session_store = SessionStore(temp_dir / "sessions")
         tier_paths = {
@@ -536,7 +532,7 @@ class TestEndToEndWorkflow:
 
     def test_tdflow_red_green_refactor(self, temp_dir):
         """Test TDFlow workflow through red-green-refactor phases."""
-        from tools.harness.session_store import SessionStore
+        from agentforge.core.harness.session_store import SessionStore
 
         store = SessionStore(temp_dir / "sessions")
         manager = SessionManager(store=store)

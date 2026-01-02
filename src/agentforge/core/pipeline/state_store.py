@@ -1,6 +1,9 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-1-foundation.yaml
-# @spec_id: pipeline-controller-phase1-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
+# @spec_id: core-pipeline-v1
 # @component_id: pipeline-state-store
+# @component_id: state-store-list
 # @test_path: tests/unit/pipeline/test_state_store.py
 
 """
@@ -19,7 +22,7 @@ import fcntl
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import yaml
 
@@ -103,7 +106,7 @@ class PipelineStateStore:
 
         logger.debug(f"Saved pipeline state: {state.pipeline_id} -> {file_path}")
 
-    def load(self, pipeline_id: str) -> Optional[PipelineState]:
+    def load(self, pipeline_id: str) -> PipelineState | None:
         """
         Load pipeline state by ID.
 
@@ -128,7 +131,7 @@ class PipelineStateStore:
         logger.debug(f"Pipeline not found: {pipeline_id}")
         return None
 
-    def _load_from_file(self, file_path: Path) -> Optional[PipelineState]:
+    def _load_from_file(self, file_path: Path) -> PipelineState | None:
         """Load state from a specific file with error recovery."""
         try:
             data = self._read_yaml(file_path)
@@ -150,7 +153,7 @@ class PipelineStateStore:
         except OSError as e:
             logger.error(f"Failed to quarantine corrupted file: {e}")
 
-    def list_active(self) -> List[PipelineState]:
+    def list_active(self) -> list[PipelineState]:
         """
         List all active (non-completed) pipelines.
 
@@ -167,7 +170,7 @@ class PipelineStateStore:
         states.sort(key=lambda s: s.updated_at, reverse=True)
         return states
 
-    def list_completed(self, limit: int = 20) -> List[PipelineState]:
+    def list_completed(self, limit: int = 20) -> list[PipelineState]:
         """
         List recent completed pipelines.
 
@@ -236,7 +239,7 @@ class PipelineStateStore:
         logger.info(f"Archived pipeline: {pipeline_id}")
         return True
 
-    def _write_yaml(self, file_path: Path, data: Dict[str, Any]) -> None:
+    def _write_yaml(self, file_path: Path, data: dict[str, Any]) -> None:
         """Write YAML with file locking."""
         with open(file_path, "w") as f:
             fcntl.flock(f.fileno(), fcntl.LOCK_EX)
@@ -245,10 +248,10 @@ class PipelineStateStore:
             finally:
                 fcntl.flock(f.fileno(), fcntl.LOCK_UN)
 
-    def _read_yaml(self, file_path: Path) -> Optional[Dict[str, Any]]:
+    def _read_yaml(self, file_path: Path) -> dict[str, Any] | None:
         """Read YAML with file locking."""
         try:
-            with open(file_path, "r") as f:
+            with open(file_path) as f:
                 fcntl.flock(f.fileno(), fcntl.LOCK_SH)
                 try:
                     return yaml.safe_load(f)
@@ -278,7 +281,7 @@ class PipelineStateStore:
             del index["pipelines"][pipeline_id]
             self._write_yaml(self.index_file, index)
 
-    def get_by_status(self, status: PipelineStatus) -> List[PipelineState]:
+    def get_by_status(self, status: PipelineStatus) -> list[PipelineState]:
         """
         Get all pipelines with a specific status.
 
@@ -290,6 +293,36 @@ class PipelineStateStore:
         """
         all_states = self.list_active() + self.list_completed()
         return [s for s in all_states if s.status == status]
+
+    def list(
+        self,
+        status: PipelineStatus | None = None,
+        limit: int = 10,
+    ) -> list[PipelineState]:
+        """
+        List pipelines with optional filtering.
+
+        Unified method combining active and completed pipelines.
+
+        Args:
+            status: Filter by status (None = all)
+            limit: Maximum number to return (default: 10)
+
+        Returns:
+            List of PipelineState objects, newest first (by created_at)
+        """
+        # Gather all pipelines
+        all_states = self.list_active() + self.list_completed(limit=1000)
+
+        # Filter by status if specified
+        if status is not None:
+            all_states = [s for s in all_states if s.status == status]
+
+        # Sort by created_at descending (newest first)
+        all_states.sort(key=lambda s: s.created_at, reverse=True)
+
+        # Apply limit
+        return all_states[:limit]
 
     def cleanup_old_completed(self, days: int = 30) -> int:
         """

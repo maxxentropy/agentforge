@@ -1,0 +1,13 @@
+schema_version: '1.0'
+violation_id: V-f40da0b071bf
+contract_id: agentforge
+check_id: max-function-length
+severity: major
+file_path: tools/harness/minimal_context/executor.py
+message: 'Function ''execute_step'' has 95 lines (max: 50)'
+detected_at: '2025-12-31T17:47:35.638647'
+last_seen_at: '2026-01-01T01:39:13.587954'
+status: open
+line_number: 269
+fix_hint: Extract logic into helper functions or use composition
+test_path: tests/unit/tools/

@@ -18,38 +18,51 @@ import fnmatch
 from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional, Set
 
 try:
     from .builtin_checks_architecture_helpers import (
-        is_stdlib_or_thirdparty, get_relative_path, parse_source_safe,
-        get_layer_for_path, get_layer_for_import, extract_import_names,
-        get_call_string, path_to_module, is_type_checking_block, create_violation,
+        create_violation,
+        extract_import_names,
+        get_call_string,
+        get_layer_for_import,
+        get_layer_for_path,
+        get_relative_path,
+        is_stdlib_or_thirdparty,
+        is_type_checking_block,
+        parse_source_safe,
+        path_to_module,
     )
 except ImportError:
     from builtin_checks_architecture_helpers import (
-        is_stdlib_or_thirdparty, get_relative_path, parse_source_safe,
-        get_layer_for_path, get_layer_for_import, extract_import_names,
-        get_call_string, path_to_module, is_type_checking_block, create_violation,
+        create_violation,
+        extract_import_names,
+        get_call_string,
+        get_layer_for_import,
+        get_layer_for_path,
+        get_relative_path,
+        is_stdlib_or_thirdparty,
+        is_type_checking_block,
+        parse_source_safe,
+        path_to_module,
     )
 
 
 @dataclass
 class CycleContext:
     """Context for cycle detection to reduce parameter passing."""
-    import_graph: Dict[str, Set[str]]
-    module_to_path: Dict[str, Path]
+    import_graph: dict[str, set[str]]
+    module_to_path: dict[str, Path]
     repo_root: Path
     max_depth: int
-    visited: Set[str] = field(default_factory=set)
-    rec_stack: Set[str] = field(default_factory=set)
-    detected_cycles: Set[frozenset] = field(default_factory=set)
+    visited: set[str] = field(default_factory=set)
+    rec_stack: set[str] = field(default_factory=set)
+    detected_cycles: set[frozenset] = field(default_factory=set)
 
 
 def check_layer_imports(
-    repo_root: Path, file_paths: List[Path],
-    layer_detection: Dict[str, str], layer_rules: Dict[str, Dict]
-) -> List[Dict]:
+    repo_root: Path, file_paths: list[Path],
+    layer_detection: dict[str, str], layer_rules: dict[str, dict]
+) -> list[dict]:
     """Detect Clean Architecture layer boundary violations using AST import analysis."""
     violations = []
 
@@ -81,7 +94,7 @@ def check_layer_imports(
     return violations
 
 
-def _check_class_init(node: ast.ClassDef, rel_file: str, check_for_init_params: bool) -> List[Dict]:
+def _check_class_init(node: ast.ClassDef, rel_file: str, check_for_init_params: bool) -> list[dict]:
     """Check a single class for __init__ injection issues."""
     violations = []
     init_method = next((item for item in node.body
@@ -106,8 +119,8 @@ def _check_class_init(node: ast.ClassDef, rel_file: str, check_for_init_params: 
 
 
 def _check_forbidden_instantiations(
-    init_method: ast.FunctionDef, class_name: str, rel_file: str, forbidden: List[str]
-) -> List[Dict]:
+    init_method: ast.FunctionDef, class_name: str, rel_file: str, forbidden: list[str]
+) -> list[dict]:
     """Check for forbidden instantiations in __init__ method."""
     violations = []
     for child in ast.walk(init_method):
@@ -122,20 +135,20 @@ def _check_forbidden_instantiations(
     return violations
 
 
-def _matches_class_pattern(name: str, patterns: List[str]) -> bool:
+def _matches_class_pattern(name: str, patterns: list[str]) -> bool:
     """Check if class name matches any pattern."""
     return any(fnmatch.fnmatch(name, p) for p in patterns)
 
 
-def _get_init_method(node: ast.ClassDef) -> Optional[ast.FunctionDef]:
+def _get_init_method(node: ast.ClassDef) -> ast.FunctionDef | None:
     """Get __init__ method from class node."""
     return next((item for item in node.body if isinstance(item, ast.FunctionDef) and item.name == "__init__"), None)
 
 
 def check_constructor_injection(
-    repo_root: Path, file_paths: List[Path], class_patterns: List[str],
-    forbidden_instantiations: Optional[List[str]] = None, check_for_init_params: bool = True
-) -> List[Dict]:
+    repo_root: Path, file_paths: list[Path], class_patterns: list[str],
+    forbidden_instantiations: list[str] | None = None, check_for_init_params: bool = True
+) -> list[dict]:
     """Verify that service classes use constructor injection."""
     violations = []
     forbidden = forbidden_instantiations or []
@@ -170,12 +183,12 @@ DEFAULT_FORBIDDEN_CALLS = [
 ]
 
 
-def _is_forbidden_import(name: str, forbidden: List[str]) -> bool:
+def _is_forbidden_import(name: str, forbidden: list[str]) -> bool:
     """Check if an import name matches any forbidden pattern."""
     return any(name == f or name.startswith(f + ".") for f in forbidden)
 
 
-def _check_import_purity(node: ast.AST, rel_file: str, forbidden: List[str]) -> List[Dict]:
+def _check_import_purity(node: ast.AST, rel_file: str, forbidden: list[str]) -> list[dict]:
     """Check a single import node for domain purity violations."""
     names_to_check = []
     if isinstance(node, ast.Import):
@@ -188,7 +201,7 @@ def _check_import_purity(node: ast.AST, rel_file: str, forbidden: List[str]) -> 
             for name in names_to_check if _is_forbidden_import(name, forbidden)]
 
 
-def _check_call_purity(node: ast.Call, rel_file: str, forbidden: List[str]) -> List[Dict]:
+def _check_call_purity(node: ast.Call, rel_file: str, forbidden: list[str]) -> list[dict]:
     """Check a single call node for domain purity violations."""
     call_str = get_call_string(node)
     for f in forbidden:
@@ -201,9 +214,9 @@ def _check_call_purity(node: ast.Call, rel_file: str, forbidden: List[str]) -> L
 
 
 def check_domain_purity(
-    repo_root: Path, file_paths: List[Path],
-    forbidden_imports: Optional[List[str]] = None, forbidden_calls: Optional[List[str]] = None
-) -> List[Dict]:
+    repo_root: Path, file_paths: list[Path],
+    forbidden_imports: list[str] | None = None, forbidden_calls: list[str] | None = None
+) -> list[dict]:
     """Ensure domain layer contains no I/O operations."""
     violations = []
     forbidden_imports = forbidden_imports or DEFAULT_FORBIDDEN_IMPORTS
@@ -225,13 +238,13 @@ def check_domain_purity(
     return violations
 
 
-def _is_local_import(imported: str, module_to_path: Dict[str, Path]) -> bool:
+def _is_local_import(imported: str, module_to_path: dict[str, Path]) -> bool:
     """Check if an import is from within the project."""
     return imported in module_to_path or any(
         imported.startswith(m + ".") or m.startswith(imported + ".") for m in module_to_path)
 
 
-def _record_cycle(cycle: List[str], module: str, ctx: CycleContext) -> List[Dict]:
+def _record_cycle(cycle: list[str], module: str, ctx: CycleContext) -> list[dict]:
     """Record a detected cycle as a violation."""
     cycle_set = frozenset(cycle)
     if cycle_set in ctx.detected_cycles:
@@ -246,7 +259,7 @@ def _record_cycle(cycle: List[str], module: str, ctx: CycleContext) -> List[Dict
         "2) Using TYPE_CHECKING guard, 3) Restructuring dependencies")]
 
 
-def _find_cycles(module: str, path: List[str], ctx: CycleContext) -> List[Dict]:
+def _find_cycles(module: str, path: list[str], ctx: CycleContext) -> list[dict]:
     """DFS cycle detection helper."""
     if len(path) > ctx.max_depth:
         return []
@@ -271,10 +284,10 @@ def _find_cycles(module: str, path: List[str], ctx: CycleContext) -> List[Dict]:
 
 
 def _build_import_graph(
-    file_paths: List[Path], repo_root: Path, ignore_type_checking: bool
-) -> Dict[str, Set[str]]:
+    file_paths: list[Path], repo_root: Path, ignore_type_checking: bool
+) -> dict[str, set[str]]:
     """Build the import graph from source files."""
-    import_graph: Dict[str, Set[str]] = defaultdict(set)
+    import_graph: dict[str, set[str]] = defaultdict(set)
     for file_path in file_paths:
         module_name = path_to_module(file_path, repo_root)
         tree = parse_source_safe(file_path)
@@ -289,9 +302,9 @@ def _build_import_graph(
 
 
 def check_circular_imports(
-    repo_root: Path, file_paths: List[Path],
+    repo_root: Path, file_paths: list[Path],
     ignore_type_checking: bool = True, max_depth: int = 5
-) -> List[Dict]:
+) -> list[dict]:
     """Detect circular import dependencies between modules."""
     import_graph = _build_import_graph(file_paths, repo_root, ignore_type_checking)
     module_to_path = {path_to_module(fp, repo_root): fp for fp in file_paths}

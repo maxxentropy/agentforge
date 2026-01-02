@@ -1,0 +1,268 @@
+actions:
+- action: load_context
+  duration_ms: 4079
+  error: null
+  parameters:
+    path: tools/context_retrieval.py
+  result: success
+  step: 1
+  summary: Loaded tools/context_retrieval.py into context
+  target: tools/context_retrieval.py
+  timestamp: '2026-01-01T07:24:09.937661'
+- action: run_check
+  duration_ms: 5617
+  error: null
+  parameters: {}
+  result: partial
+  step: 2
+  summary: "\u2717 Check 'single-responsibility-modules' FAILED for tools/context_retrieval.py\n\
+    Violations (1):\n- Line 59: Class 'ContextRetriever' has 14 methods (max: 3)\n\
+    \  Hint: Split modules with too many classes in"
+  target: null
+  timestamp: '2026-01-01T07:24:15.564802'
+- action: edit_file
+  duration_ms: 22967
+  error: 'old_text not found in file. Looking for: class ContextRetriever: """ Main
+    entry point for context retrieval.\nCombines LSP (structural) and Ve...'
+  parameters:
+    new_text: 'class ConfigManager: """Handles configuration loading for context retrieval."""
+
+      def __init__(self, project_path: Path, config_path: str = None): self.project_path
+      = project_path self.config_path = config_path self.config = self._load_config()
+
+      def _load_config(self) -> Dict[str, Any]: """Load retrieval configuration."""
+      config_paths = [ self.config_path, self.project_path / ".agentforge" / "context_retrieval.yaml",
+      self.project_path / "config" / "context_retrieval.yaml", Path(__file__).parent.parent
+      / "config" / "context_retrieval.yaml", ]
+
+      for path in config_paths: if path and Path(path).exists(): with open(path) as
+      f: return yaml.safe_load(f)
+
+      return { "retrieval": { "budget": { "default_tokens": 6000, "max_tokens": 12000,
+      }, }, "filters": { "include_patterns": ["**/*.cs", "**/*.py", "**/*.ts"], "exclude_patterns":
+      ["**/bin/**", "**/obj/**", "**/node_modules/**"], }, }
+
+
+      class ComponentManager: """Manages LSP and Vector Search components with lazy
+      loading."""
+
+      def __init__(self, project_path: Path, config: Dict[str, Any], provider: str
+      = None): self.project_path = project_path self.config = config self.provider
+      = provider
+
+      # Components (lazy-loaded) self._lsp_adapter = None self._vector_search = None
+      self._assembler = None
+
+      # State self._lsp_available = None self._vector_available = None
+
+      @property def assembler(self) -> ContextAssembler: """Get or create context
+      assembler.""" if self._assembler is None: self._assembler = ContextAssembler(str(self.project_path),
+      self.config) return self._assembler
+
+      @property def lsp_adapter(self): """Get or create LSP adapter. Returns None
+      if not available.""" if self._lsp_adapter is None and self._lsp_available is
+      None: try: from tools.lsp_adapter import get_adapter_for_project, LSPServerNotFound
+
+      adapter = get_adapter_for_project(str(self.project_path)) adapter.initialize()
+      self._lsp_adapter = adapter self._lsp_available = True
+
+      except ImportError: self._lsp_available = False
+
+      except Exception as e: print(f"LSP initialization failed: {e}", file=sys.stderr)
+      self._lsp_available = False
+
+      return self._lsp_adapter
+
+      @property def vector_search(self): """Get or create vector search. Returns None
+      if not available.""" if self._vector_search is None and self._vector_available
+      is None: try: from tools.vector_search import VectorSearch
+
+      self._vector_search = VectorSearch( str(self.project_path), self.config.get("semantic",
+      {}), provider=self.provider ) self._vector_available = True
+
+      except ImportError: self._vector_available = False
+
+      except Exception as e: print(f"Vector search initialization failed: {e}", file=sys.stderr)
+      self._vector_available = False
+
+      return self._vector_search
+
+
+      class ContextRetriever: """ Main entry point for context retrieval.
+
+      Combines LSP (structural) and Vector (semantic) search to provide comprehensive
+      code context for LLM consumption.
+
+      Example: retriever = ContextRetriever("/path/to/dotnet/project") context = retriever.retrieve("order
+      discount processing", budget_tokens=6000) print(context.to_prompt_text()) """
+
+      def __init__(self, project_path: str, config_path: str = None, provider: str
+      = None): """ Initialize retriever for a project.
+
+      Args: project_path: Root of the codebase to analyze config_path: Optional path
+      to context_retrieval.yaml provider: Force specific embedding provider ("local",
+      "openai", "voyage") """ self.project_path = Path(project_path).resolve()
+
+      # Initialize managers self.config_manager = ConfigManager(self.project_path,
+      config_path) self.component_manager = ComponentManager(self.project_path, self.config_manager.config,
+      provider)
+
+      @property def config(self): """Get configuration.""" return self.config_manager.config'
+    old_text: 'class ContextRetriever: """ Main entry point for context retrieval.
+
+      Combines LSP (structural) and Vector (semantic) search to provide comprehensive
+      code context for LLM consumption.
+
+      Example: retriever = ContextRetriever("/path/to/dotnet/project") context = retriever.retrieve("order
+      discount processing", budget_tokens=6000) print(context.to_prompt_text()) """
+
+      def __init__(self, project_path: str, config_path: str = None, provider: str
+      = None): """ Initialize retriever for a project.
+
+      Args: project_path: Root of the codebase to analyze config_path: Optional path
+      to context_retrieval.yaml provider: Force specific embedding provider ("local",
+      "openai", "voyage") """ self.project_path = Path(project_path).resolve() self.config_path
+      = config_path self.config = self._load_config() self.provider = provider
+
+      # Components (lazy-loaded) self._lsp_adapter = None self._vector_search = None
+      self._assembler = None
+
+      # State self._lsp_available = None self._vector_available = None
+
+      def _load_config(self) -> Dict[str, Any]: """Load retrieval configuration."""
+      config_paths = [ self.config_path, self.project_path / ".agentforge" / "context_retrieval.yaml",
+      self.project_path / "config" / "context_retrieval.yaml", Path(__file__).parent.parent
+      / "config" / "context_retrieval.yaml", ]
+
+      for path in config_paths: if path and Path(path).exists(): with open(path) as
+      f: return yaml.safe_load(f)
+
+      return { "retrieval": { "budget": { "default_tokens": 6000, "max_tokens": 12000,
+      }, }, "filters": { "include_patterns": ["**/*.cs", "**/*.py", "**/*.ts"], "exclude_patterns":
+      ["**/bin/**", "**/obj/**", "**/node_modules/**"], }, }'
+    path: tools/context_retrieval.py
+  result: failure
+  step: 3
+  summary: ''
+  target: tools/context_retrieval.py
+  timestamp: '2026-01-01T07:24:38.545413'
+- action: read_file
+  duration_ms: 5008
+  error: null
+  parameters:
+    path: tools/context_retrieval.py
+  result: success
+  step: 4
+  summary: Read tools/context_retrieval.py lines 30-129 (violation at line 59)
+  target: tools/context_retrieval.py
+  timestamp: '2026-01-01T07:24:43.571684'
+- action: load_context
+  duration_ms: 4684
+  error: null
+  parameters:
+    path: tools/context_retrieval.py
+  result: success
+  step: 5
+  summary: Loaded tools/context_retrieval.py into context
+  target: tools/context_retrieval.py
+  timestamp: '2026-01-01T07:24:48.276423'
+- action: edit_file
+  duration_ms: 11054
+  error: 'File not found: tools/context_config.py'
+  parameters:
+    new_text: "#!/usr/bin/env python3\n\"\"\"\nContext Retrieval Configuration\n==============================\n\
+      \nConfiguration management for context retrieval system.\n\"\"\"\n\nimport yaml\n\
+      from pathlib import Path\nfrom typing import Dict, Any\n\n\nclass ContextConfig:\n\
+      \    \"\"\"Manages configuration for context retrieval.\"\"\"\n\n    def __init__(self,\
+      \ project_path: Path, config_path: str = None):\n        self.project_path =\
+      \ project_path\n        self.config_path = config_path\n        self.config\
+      \ = self._load_config()\n\n    def _load_config(self) -> Dict[str, Any]:\n \
+      \       \"\"\"Load retrieval configuration.\"\"\"\n        config_paths = [\n\
+      \            self.config_path,\n            self.project_path / \".agentforge\"\
+      \ / \"context_retrieval.yaml\",\n            self.project_path / \"config\"\
+      \ / \"context_retrieval.yaml\",\n            Path(__file__).parent.parent /\
+      \ \"config\" / \"context_retrieval.yaml\",\n        ]\n\n        for path in\
+      \ config_paths:\n            if path and Path(path).exists():\n            \
+      \    with open(path) as f:\n                    return yaml.safe_load(f)\n\n\
+      \        return {\n            \"retrieval\": {\n                \"budget\"\
+      : {\n                    \"default_tokens\": 6000,\n                    \"max_tokens\"\
+      : 12000,\n                },\n            },\n            \"filters\": {\n \
+      \               \"include_patterns\": [\"**/*.cs\", \"**/*.py\", \"**/*.ts\"\
+      ],\n                \"exclude_patterns\": [\"**/bin/**\", \"**/obj/**\", \"\
+      **/node_modules/**\"],\n            },\n        }\n\n    def get(self, key:\
+      \ str, default=None):\n        \"\"\"Get configuration value.\"\"\"\n      \
+      \  return self.config.get(key, default)\n"
+    old_text: ''
+    path: tools/context_config.py
+  result: failure
+  step: 6
+  summary: ''
+  target: tools/context_config.py
+  timestamp: '2026-01-01T07:24:59.354732'
+- action: edit_file
+  duration_ms: 11832
+  error: 'File not found: tools/context_config.py'
+  parameters:
+    new_text: "#!/usr/bin/env python3\n\"\"\"\nContext Configuration Manager\n============================\n\
+      \nHandles loading and managing configuration for context retrieval.\n\"\"\"\n\
+      \nimport yaml\nfrom pathlib import Path\nfrom typing import Dict, Any\n\n\n\
+      class ContextConfig:\n    \"\"\"Manages configuration for context retrieval.\"\
+      \"\"\n    \n    def __init__(self, project_path: str, config_path: str = None):\n\
+      \        self.project_path = Path(project_path).resolve()\n        self.config_path\
+      \ = config_path\n        self.config = self._load_config()\n    \n    def _load_config(self)\
+      \ -> Dict[str, Any]:\n        \"\"\"Load retrieval configuration.\"\"\"\n  \
+      \      config_paths = [\n            self.config_path,\n            self.project_path\
+      \ / \".agentforge\" / \"context_retrieval.yaml\",\n            self.project_path\
+      \ / \"config\" / \"context_retrieval.yaml\",\n            Path(__file__).parent.parent\
+      \ / \"config\" / \"context_retrieval.yaml\",\n        ]\n\n        for path\
+      \ in config_paths:\n            if path and Path(path).exists():\n         \
+      \       with open(path) as f:\n                    return yaml.safe_load(f)\n\
+      \n        return {\n            \"retrieval\": {\n                \"budget\"\
+      : {\n                    \"default_tokens\": 6000,\n                    \"max_tokens\"\
+      : 12000,\n                },\n            },\n            \"filters\": {\n \
+      \               \"include_patterns\": [\"**/*.cs\", \"**/*.py\", \"**/*.ts\"\
+      ],\n                \"exclude_patterns\": [\"**/bin/**\", \"**/obj/**\", \"\
+      **/node_modules/**\"],\n            },\n        }\n    \n    def get(self, key:\
+      \ str, default=None):\n        \"\"\"Get configuration value.\"\"\"\n      \
+      \  return self.config.get(key, default)\n"
+    old_text: ''
+    path: tools/context_config.py
+  result: failure
+  step: 7
+  summary: ''
+  target: tools/context_config.py
+  timestamp: '2026-01-01T07:25:11.213064'
+- action: edit_file
+  duration_ms: 11010
+  error: 'File not found: tools/context_config.py'
+  parameters:
+    new_text: "#!/usr/bin/env python3\n\"\"\"\nContext Configuration Management\n\
+      ================================\n\nHandles loading and managing configuration\
+      \ for context retrieval.\n\"\"\"\n\nimport yaml\nfrom pathlib import Path\n\
+      from typing import Dict, Any\n\n\nclass ContextConfig:\n    \"\"\"\n    Manages\
+      \ configuration loading for context retrieval.\n    \"\"\"\n\n    def __init__(self,\
+      \ project_path: str, config_path: str = None):\n        self.project_path =\
+      \ Path(project_path).resolve()\n        self.config_path = config_path\n   \
+      \     self.config = self._load_config()\n\n    def _load_config(self) -> Dict[str,\
+      \ Any]:\n        \"\"\"Load retrieval configuration.\"\"\"\n        config_paths\
+      \ = [\n            self.config_path,\n            self.project_path / \".agentforge\"\
+      \ / \"context_retrieval.yaml\",\n            self.project_path / \"config\"\
+      \ / \"context_retrieval.yaml\",\n            Path(__file__).parent.parent /\
+      \ \"config\" / \"context_retrieval.yaml\",\n        ]\n\n        for path in\
+      \ config_paths:\n            if path and Path(path).exists():\n            \
+      \    with open(path) as f:\n                    return yaml.safe_load(f)\n\n\
+      \        return {\n            \"retrieval\": {\n                \"budget\"\
+      : {\n                    \"default_tokens\": 6000,\n                    \"max_tokens\"\
+      : 12000,\n                },\n            },\n            \"filters\": {\n \
+      \               \"include_patterns\": [\"**/*.cs\", \"**/*.py\", \"**/*.ts\"\
+      ],\n                \"exclude_patterns\": [\"**/bin/**\", \"**/obj/**\", \"\
+      **/node_modules/**\"],\n            },\n        }\n\n    def get_config(self)\
+      \ -> Dict[str, Any]:\n        \"\"\"Get the loaded configuration.\"\"\"\n  \
+      \      return self.config\n"
+    old_text: ''
+    path: tools/context_config.py
+  result: failure
+  step: 8
+  summary: ''
+  target: tools/context_config.py
+  timestamp: '2026-01-01T07:25:22.252639'

@@ -1,5 +1,5 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-1-foundation.yaml
-# @spec_id: pipeline-controller-phase1-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
 # @component_id: pipeline-registry
 # @test_path: tests/unit/pipeline/test_registry.py
 
@@ -14,7 +14,8 @@ Uses factory pattern to create fresh executor instances.
 """
 
 import logging
-from typing import Callable, Dict, List, Optional, Type
+from collections.abc import Callable
+from typing import Optional
 
 from .stage_executor import StageExecutor
 
@@ -44,7 +45,7 @@ class StageExecutorRegistry:
 
     def __init__(self):
         """Initialize empty registry."""
-        self._factories: Dict[str, Callable[[], StageExecutor]] = {}
+        self._factories: dict[str, Callable[[], StageExecutor]] = {}
 
     @classmethod
     def get_instance(cls) -> "StageExecutorRegistry":
@@ -87,7 +88,7 @@ class StageExecutorRegistry:
     def register_class(
         self,
         stage_name: str,
-        executor_class: Type[StageExecutor],
+        executor_class: type[StageExecutor],
         allow_override: bool = False,
     ) -> None:
         """
@@ -122,7 +123,7 @@ class StageExecutorRegistry:
 
         return self._factories[stage_name]()
 
-    def list_stages(self) -> List[str]:
+    def list_stages(self) -> list[str]:
         """
         List all registered stage names.
 
@@ -194,7 +195,7 @@ def register_stage(
             ...
     """
 
-    def decorator(cls: Type[StageExecutor]) -> Type[StageExecutor]:
+    def decorator(cls: type[StageExecutor]) -> type[StageExecutor]:
         get_registry().register_class(stage_name, cls, allow_override)
         return cls
 

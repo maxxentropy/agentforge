@@ -17,13 +17,11 @@ Detection priority:
 """
 
 from pathlib import Path
-from typing import List, Optional, Dict, Tuple
 
 from agentforge.core.discovery.domain import Zone, ZoneDetectionMode
 
-
 # Marker priority (higher = checked first, takes precedence)
-ZONE_MARKERS: List[Tuple[str, str, int]] = [
+ZONE_MARKERS: list[tuple[str, str, int]] = [
     # (pattern, language, priority)
     ("*.sln", "csharp", 100),        # Solution-level .NET
     ("*.csproj", "csharp", 90),      # Project-level .NET
@@ -63,18 +61,18 @@ class ZoneDetector:
     def __init__(self, repo_root: Path):
         self.repo_root = repo_root
 
-    def detect_zones(self) -> List[Zone]:
+    def detect_zones(self) -> list[Zone]:
         """
         Auto-detect language zones from project markers.
 
         Returns zones sorted by path (shortest first, i.e., outer zones first).
         """
-        zones: List[Zone] = []
+        zones: list[Zone] = []
 
         # Process markers by priority (highest first)
         sorted_markers = sorted(ZONE_MARKERS, key=lambda x: x[2], reverse=True)
 
-        for pattern, language, priority in sorted_markers:
+        for pattern, language, _priority in sorted_markers:
             for marker_path in self._find_markers(pattern):
                 # Skip if already covered by an existing zone
                 if self._is_in_existing_zone(marker_path, zones):
@@ -89,7 +87,7 @@ class ZoneDetector:
 
         return zones
 
-    def _find_markers(self, pattern: str) -> List[Path]:
+    def _find_markers(self, pattern: str) -> list[Path]:
         """Find all marker files matching the pattern."""
         results = []
         for path in self.repo_root.rglob(pattern):
@@ -99,14 +97,11 @@ class ZoneDetector:
             results.append(path)
         return results
 
-    def _is_in_existing_zone(self, path: Path, zones: List[Zone]) -> bool:
+    def _is_in_existing_zone(self, path: Path, zones: list[Zone]) -> bool:
         """Check if path is already covered by an existing zone."""
-        for zone in zones:
-            if zone.contains_path(path.parent):
-                return True
-        return False
+        return any(zone.contains_path(path.parent) for zone in zones)
 
-    def _create_zone_from_marker(self, marker: Path, language: str) -> Optional[Zone]:
+    def _create_zone_from_marker(self, marker: Path, language: str) -> Zone | None:
         """Create a zone from a marker file."""
         zone_name = self._derive_zone_name(marker)
         zone_path = self._derive_zone_path(marker)
@@ -140,7 +135,7 @@ class ZoneDetector:
         return marker.parent
 
 
-def detect_zones(repo_root: Path) -> List[Zone]:
+def detect_zones(repo_root: Path) -> list[Zone]:
     """
     Convenience function for zone detection.
 

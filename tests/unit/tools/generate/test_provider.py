@@ -3,23 +3,21 @@ Tests for LLM Provider Abstraction
 ==================================
 """
 
-import asyncio
 import os
-import pytest
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 # Configure pytest-asyncio mode
 pytest_plugins = ("pytest_asyncio",)
 
-from tools.generate.provider import (
-    LLMProvider,
+from agentforge.core.generate.domain import APIError
+from agentforge.core.generate.provider import (
     ClaudeProvider,
     ManualProvider,
     get_provider,
 )
-from tools.generate.domain import APIError, TokenUsage
-
 
 # =============================================================================
 # ClaudeProvider Tests
@@ -277,7 +275,7 @@ class TestGetProvider:
 
     def test_returns_manual_provider_without_api_key(self):
         with patch.dict(os.environ, {}, clear=True):
-            with patch("tools.generate.provider._load_dotenv_if_needed"):
+            with patch("agentforge.core.generate.provider._load_dotenv_if_needed"):
                 provider = get_provider()
                 assert isinstance(provider, ManualProvider)
 

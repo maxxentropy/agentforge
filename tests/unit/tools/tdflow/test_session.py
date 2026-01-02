@@ -1,22 +1,20 @@
-# @spec_file: .agentforge/specs/tdflow-v1.yaml
-# @spec_id: tdflow-v1
+# @spec_file: .agentforge/specs/core-tdflow-v1.yaml
+# @spec_id: core-tdflow-v1
 # @component_id: tools-tdflow-session
 # @impl_path: tools/tdflow/session.py
 
 """Tests for TDFLOW session management."""
 
-import pytest
 import tempfile
-from datetime import datetime
 from pathlib import Path
 
-from tools.tdflow.domain import (
-    ComponentProgress,
+import pytest
+
+from agentforge.core.tdflow.domain import (
     ComponentStatus,
     TDFlowPhase,
-    TDFlowSession,
 )
-from tools.tdflow.session import SessionManager
+from agentforge.core.tdflow.session import SessionManager
 
 
 class TestSessionManager:
@@ -125,7 +123,7 @@ components:
         self, manager: SessionManager, spec_file: Path, temp_dir: Path
     ):
         """Session with artifacts serializes correctly."""
-        from tools.tdflow.domain import TestFile, ImplementationFile
+        from agentforge.core.tdflow.domain import ImplementationFile, TestFile
 
         session = manager.create(spec_file)
 

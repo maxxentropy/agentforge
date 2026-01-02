@@ -1,0 +1,1091 @@
+<system>
+You are an expert software engineer generating code for a Python project.
+You follow clean architecture principles and write high-quality, tested code.
+You output code using markdown code blocks with file paths.
+</system>
+
+<context>
+
+<specification>
+metadata:
+  version: '1.0'
+  status: draft
+  feature_name: Session Manager for Agent Harness
+  created_date: '2025-12-30'
+components:
+- name: session_domain
+  description: Domain entities for session management
+  module: tools.harness.session_domain
+  test_file: tests/unit/harness/test_session_domain.py
+  impl_file: tools/harness/session_domain.py
+  methods:
+  - name: TokenBudget.record_usage
+    behavior: Adds tokens to tokens_used counter
+    errors: []
+  - name: TokenBudget.can_continue
+    behavior: Returns True if tokens_remaining >= required_tokens
+    errors: []
+  - name: TokenBudget.extend
+    behavior: Increases total_budget by additional_tokens
+    errors: []
+  - name: TokenBudget.is_warning
+    behavior: Returns True if utilization >= 80%
+    errors: []
+  - name: SessionContext.add_artifact
+    behavior: Records artifact with current timestamp
+    errors: []
+  - name: SessionContext.add_history
+    behavior: Records history entry with current timestamp
+    errors: []
+- name: session_store
+  description: Persistence layer for sessions using atomic YAML writes
+  module: tools.harness.session_store
+  test_file: tests/unit/harness/test_session_store.py
+  impl_file: tools/harness/session_store.py
+  methods:
+  - name: save
+    behavior: Persists session to YAML using atomic write
+    errors:
+    - WriteError
+  - name: load
+    behavior: Loads session from YAML, returns None if not found
+    errors:
+    - SessionNotFound
+    - SessionCorrupted
+  - name: exists
+    behavior: Checks if session file exists
+    errors: []
+  - name: list_sessions
+    behavior: Returns list of all session IDs
+    errors: []
+  - name: delete
+    behavior: Removes session directory
+    errors: []
+- name: session_manager
+  description: Application service orchestrating session lifecycle
+  module: tools.harness.session_manager
+  test_file: tests/unit/harness/test_session_manager.py
+  impl_file: tools/harness/session_manager.py
+  methods:
+  - name: create
+    behavior: Creates new session with unique ID, persists immediately
+    errors:
+    - SessionAlreadyActive
+  - name: load
+    behavior: Loads existing session from storage
+    errors:
+    - SessionNotFound
+    - SessionCorrupted
+  - name: pause
+    behavior: Transitions current session to PAUSED state
+    errors:
+    - NoActiveSession
+    - InvalidStateTransition
+  - name: resume
+    behavior: Transitions current session from PAUSED to ACTIVE
+    errors:
+    - NoActiveSession
+    - InvalidStateTransition
+  - name: complete
+    behavior: Transitions current session to COMPLETED state
+    errors:
+    - NoActiveSession
+    - InvalidStateTransition
+  - name: abort
+    behavior: Transitions current session to ABORTED state
+    errors:
+    - NoActiveSession
+  - name: advance_phase
+    behavior: Updates phase, records history, triggers auto-checkpoint
+    errors:
+    - NoActiveSession
+    - InvalidStateForPhaseAdvance
+  - name: record_tokens
+    behavior: Records token usage, checks for budget warning
+    errors:
+    - NoActiveSession
+  - name: cleanup_old_sessions
+    behavior: Removes old COMPLETED/ABORTED sessions
+    errors: []
+overview:
+  purpose: "Provide a general-purpose Session Manager component that manages long-running\
+    \ \nagent sessions with persistent state, token budget tracking, and workflow\
+    \ \nintegration. Implements the Initializer-Worker pattern where an initializer\
+    \ \ncreates session state that workers can resume after context window resets.\n"
+  background: "This component is part of the Agent Harness layer being added to AgentForge.\n\
+    It integrates with existing SPEC and TDFLOW workflows. State must be \nexternalized\
+    \ to survive context window resets, enabling multi-phase workflows \nto resume\
+    \ from checkpoints.\n"
+  scope:
+    includes:
+    - Session lifecycle management (create, pause, resume, complete, abort)
+    - State persistence to .agentforge/sessions/{session_id}/
+    - Token budget tracking with configurable default (100K) and 80% warning threshold
+    - Workflow and phase tracking integration
+    - Session artifact tracking (files created/modified)
+    - Automatic checkpointing at phase boundaries
+    - Manual checkpoint_session() method for mid-phase saves
+    - cleanup_old_sessions(days) utility for manual session management
+    - extend_budget() for dynamic budget adjustment
+    excludes:
+    - Internal concurrency management (single-session per instance design)
+    - Session ownership or locking mechanisms (any worker with ID can resume)
+    - Automatic session expiry (manual cleanup utility preferred)
+    - Automatic retry of failed phases (waits for explicit instruction)
+  assumptions:
+  - AgentForge is Python-based (all related files are .py)
+  - Token counting uses ~4 chars per token heuristic (consistent with ContextAssembler)
+  - Session IDs use timestamp format for uniqueness and sorting
+  - State writes use atomic temp-file-then-rename pattern for crash safety
+  constraints:
+  - Must use dataclasses for domain entities
+  - Must follow AgentForge patterns (Result pattern, atomic writes, history tracking)
+  - Must be fully testable with no external dependencies
+  - State format must be YAML for human readability
+  - Single session per SessionManager instance
+requirements:
+  functional:
+  - id: FR-001
+    title: Session Creation
+    priority: must
+    description: "The system SHALL create new sessions with unique timestamp-based\
+      \ IDs \nfollowing the format: session_{YYYYMMDD}_{HHMMSS}_{microseconds}.\n\n\
+      The system SHALL initialize session state to ACTIVE upon creation.\nThe system\
+      \ SHALL record creation timestamp in session metadata.\nThe system SHALL accept\
+      \ optional workflow_type and initial_phase parameters.\nThe system SHALL accept\
+      \ optional token_budget parameter (default 100,000).\n"
+    rationale: Sessions require unique identifiers for persistence and resumption
+    acceptance_criteria:
+    - id: AC-001
+      given: SessionManager instance exists
+      when: create() is called with no parameters
+      then: New session created with unique ID, ACTIVE state, 100K token budget
+    - id: AC-002
+      given: SessionManager instance exists
+      when: create() is called with workflow_type='spec' and token_budget=50000
+      then: New session created with specified workflow type and 50K budget
+    - id: AC-003
+      given: Two sessions created in rapid succession
+      when: Session IDs are compared
+      then: IDs are unique due to microsecond precision
+  - id: FR-002
+    title: Session State Transitions
+    priority: must
+    description: "The system SHALL support the following session states: ACTIVE, PAUSED,\
+      \ \nCOMPLETED, ABORTED.\n\nThe system SHALL enforce valid state transitions:\n\
+      - ACTIVE -> PAUSED, COMPLETED, ABORTED\n- PAUSED -> ACTIVE, ABORTED\n- COMPLETED\
+      \ -> (terminal, no transitions)\n- ABORTED -> (terminal, no transitions)\n\n\
+      The system SHALL record all state transitions in session history with \ntimestamp\
+      \ and action description.\n"
+    rationale: State machine ensures predictable session lifecycle behavior
+    acceptance_criteria:
+    - id: AC-004
+      given: Session in ACTIVE state
+      when: pause() is called
+      then: Session transitions to PAUSED, history entry recorded
+    - id: AC-005
+      given: Session in PAUSED state
+      when: resume() is called
+      then: Session transitions to ACTIVE, history entry recorded
+    - id: AC-006
+      given: Session in COMPLETED state
+      when: pause() is called
+      then: Operation fails with InvalidStateTransition error
+  - id: FR-003
+    title: State Persistence
+    priority: must
+    description: "The system SHALL persist session state to \n.agentforge/sessions/{session_id}/session.yaml.\n\
+      \nThe system SHALL use AtomicFileWriter for all state writes to prevent \ncorruption\
+      \ on interruption.\n\nThe system SHALL create the sessions directory with .gitkeep\
+      \ if it \ndoes not exist.\n\nThe system SHALL serialize all fields including:\n\
+      - session_id, state, workflow_type, current_phase\n- created_at, updated_at,\
+      \ completed_at timestamps (ISO format)\n- token_budget (total, used, remaining)\n\
+      - artifacts list\n- history list\n"
+    rationale: Persistent state enables session recovery after context window resets
+    acceptance_criteria:
+    - id: AC-007
+      given: Active session with state changes
+      when: save() is called
+      then: Session.yaml written atomically with all fields serialized
+    - id: AC-008
+      given: Process interrupted during save()
+      when: Save operation is incomplete
+      then: Original session.yaml remains intact (atomic write)
+    - id: AC-009
+      given: Sessions directory does not exist
+      when: First session is created
+      then: Directory created with .gitkeep file
+  - id: FR-004
+    title: Session Loading and Recovery
+    priority: must
+    description: "The system SHALL load existing sessions by session_id from persisted\
+      \ \nYAML files.\n\nThe system SHALL deserialize all fields back to domain objects\
+      \ \n(datetime, enums, dataclasses).\n\nThe system SHALL return None or appropriate\
+      \ error if session file \nis missing or corrupted.\n\nThe system SHALL NOT automatically\
+      \ retry failed phases on recovery; \nit SHALL wait for explicit instruction.\n"
+    rationale: Recovery enables workers to resume sessions created by initializers
+    acceptance_criteria:
+    - id: AC-010
+      given: Valid session.yaml exists for session_id
+      when: load(session_id) is called
+      then: SessionContext returned with all fields restored
+    - id: AC-011
+      given: No session.yaml exists for session_id
+      when: load(session_id) is called
+      then: None returned (or Result.Failure)
+    - id: AC-012
+      given: Corrupted session.yaml exists
+      when: load(session_id) is called
+      then: Error returned with descriptive message, no crash
+  - id: FR-005
+    title: Token Budget Tracking
+    priority: must
+    description: "The system SHALL track token budget with:\n- total_budget: Maximum\
+      \ tokens allocated (default 100,000)\n- tokens_used: Running count of tokens\
+      \ consumed\n- tokens_remaining: Calculated as total_budget - tokens_used\n\n\
+      The system SHALL provide utilization_percent property.\n\nThe system SHALL trigger\
+      \ budget warning when utilization exceeds 80%.\n\nThe system SHALL provide can_continue(required_tokens)\
+      \ method returning \nboolean indicating if budget allows the operation.\n\n\
+      The system SHALL provide extend_budget(additional_tokens) method for \ndynamic\
+      \ budget adjustment.\n"
+    rationale: Token tracking prevents runaway sessions and enables budget management
+    acceptance_criteria:
+    - id: AC-013
+      given: Session with 100K budget, 0 tokens used
+      when: record_tokens(50000) is called
+      then: tokens_used=50000, tokens_remaining=50000, utilization=50%
+    - id: AC-014
+      given: Session with 80K tokens used of 100K budget
+      when: Token usage is checked
+      then: Budget warning is indicated (utilization >= 80%)
+    - id: AC-015
+      given: Session with 95K tokens used
+      when: can_continue(10000) is called
+      then: Returns False (would exceed budget)
+    - id: AC-016
+      given: Session at budget limit
+      when: extend_budget(50000) is called
+      then: total_budget increased to 150K, can continue operations
+  - id: FR-006
+    title: Workflow and Phase Tracking
+    priority: must
+    description: "The system SHALL track current workflow type (e.g., 'spec', 'tdflow',\
+      \ \n'custom').\n\nThe system SHALL track current phase within workflow as string\
+      \ \n(workflow-specific phases).\n\nThe system SHALL track attempt_number for\
+      \ retry scenarios.\n\nThe system SHALL provide advance_phase(new_phase) method\
+      \ that:\n- Updates current_phase\n- Increments phase history\n- Triggers automatic\
+      \ checkpoint (save)\n- Records phase transition in history\n"
+    rationale: Phase tracking enables workflow orchestration and progress monitoring
+    acceptance_criteria:
+    - id: AC-017
+      given: Session in phase 'analyze'
+      when: advance_phase('implement') is called
+      then: Phase updated, checkpoint saved, history recorded
+    - id: AC-018
+      given: Session with workflow_type='tdflow'
+      when: Phase transitions through RED->GREEN->REFACTOR
+      then: Each transition triggers auto-checkpoint
+  - id: FR-007
+    title: Session Artifacts Tracking
+    priority: must
+    description: "The system SHALL maintain list of artifacts (files) created or modified\
+      \ \nduring session.\n\nEach artifact SHALL include:\n- path: Relative file path\n\
+      - artifact_type: 'created' or 'modified'\n- timestamp: When artifact was recorded\n\
+      - phase: Which phase produced the artifact\n\nThe system SHALL provide add_artifact(path,\
+      \ artifact_type, phase) method.\n\nThe system SHALL provide get_artifacts(phase=None)\
+      \ method to retrieve \nartifacts, optionally filtered by phase.\n"
+    rationale: Artifact tracking enables context retrieval and change auditing
+    acceptance_criteria:
+    - id: AC-019
+      given: Active session
+      when: add_artifact('src/foo.py', 'created', 'implement') called
+      then: Artifact recorded with timestamp and phase
+    - id: AC-020
+      given: Session with artifacts from multiple phases
+      when: get_artifacts(phase='implement') called
+      then: Only artifacts from 'implement' phase returned
+  - id: FR-008
+    title: Automatic Checkpointing
+    priority: must
+    description: "The system SHALL automatically save session state (checkpoint) after\
+      \ \neach phase transition via advance_phase().\n\nThe system SHALL also provide\
+      \ manual checkpoint_session() method for \nmid-phase saves.\n\nThe system SHALL\
+      \ update the updated_at timestamp on each checkpoint.\n"
+    rationale: Auto-checkpoint ensures recovery always has at least phase-boundary
+      state
+    acceptance_criteria:
+    - id: AC-021
+      given: Session advances from phase A to phase B
+      when: advance_phase() completes
+      then: Session state automatically persisted to YAML
+    - id: AC-022
+      given: Mid-phase work in progress
+      when: checkpoint_session() called explicitly
+      then: Current state persisted without phase change
+  - id: FR-009
+    title: Session History and Audit Trail
+    priority: must
+    description: 'The system SHALL maintain history list tracking all significant
+      events:
+
+      - State transitions (created, paused, resumed, completed, aborted)
+
+      - Phase transitions
+
+      - Budget extensions
+
+      - Checkpoints
+
+
+      Each history entry SHALL include:
+
+      - timestamp: When event occurred
+
+      - action: Description of action
+
+      - phase: Current phase (if applicable)
+
+      - details: Optional additional context
+
+      '
+    rationale: History enables debugging, auditing, and understanding session progress
+    acceptance_criteria:
+    - id: AC-023
+      given: New session created
+      when: History is examined
+      then: Contains 'session_created' entry with timestamp
+    - id: AC-024
+      given: Session with multiple operations
+      when: History is examined
+      then: All state transitions and phase changes recorded chronologically
+  - id: FR-010
+    title: Session Cleanup Utility
+    priority: should
+    description: "The system SHALL provide cleanup_old_sessions(days) method that\
+      \ removes \nsessions older than specified days.\n\nThe system SHALL only cleanup\
+      \ sessions with status COMPLETED or ABORTED.\n\nThe system SHALL never delete\
+      \ ACTIVE or PAUSED sessions regardless of age.\n\nThe system SHOULD provide\
+      \ dry_run option to preview deletions without \nexecuting them.\n"
+    rationale: Manual cleanup prevents unbounded storage growth while protecting active
+      work
+    acceptance_criteria:
+    - id: AC-025
+      given: Mix of old COMPLETED and ACTIVE sessions
+      when: cleanup_old_sessions(30) called
+      then: Only COMPLETED/ABORTED sessions older than 30 days removed
+    - id: AC-026
+      given: PAUSED session from 60 days ago
+      when: cleanup_old_sessions(30) called
+      then: Session preserved (not deleted despite age)
+    - id: AC-027
+      given: Sessions to cleanup
+      when: cleanup_old_sessions(30, dry_run=True) called
+      then: List of sessions returned but not deleted
+  non_functional:
+  - id: NFR-001
+    title: State Write Durability
+    priority: must
+    description: "All state writes SHALL use atomic file operations (write to temp\
+      \ file, \nthen rename) to prevent corruption on process interruption.\n"
+    acceptance_criteria:
+    - id: AC-028
+      given: Process killed during save operation
+      when: System restarts and loads session
+      then: Previous valid state is intact (no partial writes)
+  - id: NFR-002
+    title: Human-Readable State Format
+    priority: must
+    description: 'Session state files SHALL be valid YAML with human-readable formatting:
+
+      - No single-line JSON-style output
+
+      - Proper indentation
+
+      - ISO format for timestamps
+
+      '
+    acceptance_criteria:
+    - id: AC-029
+      given: Session state saved
+      when: session.yaml opened in text editor
+      then: Content is readable and properly formatted YAML
+  - id: NFR-003
+    title: Testability
+    priority: must
+    description: 'All components SHALL be testable without external dependencies.
+
+      SessionStore SHALL accept base_path parameter for test isolation.
+
+      '
+    acceptance_criteria:
+    - id: AC-030
+      given: Unit test with temporary directory
+      when: SessionManager created with temp path
+      then: All operations work in isolated test environment
+entities:
+- name: SessionState
+  layer: Domain
+  type: enum
+  description: 'Enumeration of valid session lifecycle states.
+
+    '
+  properties:
+  - name: ACTIVE
+    type: str
+    nullable: false
+    constraints:
+    - value='active'
+    description: Session is actively being worked on
+  - name: PAUSED
+    type: str
+    nullable: false
+    constraints:
+    - value='paused'
+    description: Session is paused, awaiting resumption
+  - name: COMPLETED
+    type: str
+    nullable: false
+    constraints:
+    - value='completed'
+    description: Session finished successfully (terminal)
+  - name: ABORTED
+    type: str
+    nullable: false
+    constraints:
+    - value='aborted'
+    description: Session was aborted (terminal)
+  invariants:
+  - COMPLETED and ABORTED are terminal states with no outgoing transitions
+- name: TokenBudget
+  layer: Domain
+  type: value_object
+  description: 'Tracks token consumption against allocated budget for a session.
+
+    Provides budget monitoring and extension capabilities.
+
+    '
+  properties:
+  - name: total_budget
+    type: int
+    nullable: false
+    constraints:
+    - positive
+    - default=100000
+    description: Maximum tokens allocated to session
+  - name: tokens_used
+    type: int
+    nullable: false
+    constraints:
+    - non-negative
+    - default=0
+    description: Running count of tokens consumed
+  methods:
+  - name: tokens_remaining
+    returns: int
+    parameters: []
+    description: Property returning total_budget - tokens_used
+  - name: utilization_percent
+    returns: float
+    parameters: []
+    description: Property returning (tokens_used / total_budget) * 100
+  - name: is_warning
+    returns: bool
+    parameters: []
+    description: Property returning True if utilization >= 80%
+  - name: can_continue
+    returns: bool
+    parameters:
+    - name: required_tokens
+      type: int
+    description: Returns True if tokens_remaining >= required_tokens
+  - name: record_usage
+    returns: None
+    parameters:
+    - name: tokens
+      type: int
+    description: Adds tokens to tokens_used
+  - name: extend
+    returns: None
+    parameters:
+    - name: additional_tokens
+      type: int
+    description: Increases total_budget by additional_tokens
+  invariants:
+  - tokens_used <= total_budget (enforced by can_continue checks)
+  - total_budget > 0
+- name: SessionArtifact
+  layer: Domain
+  type: value_object
+  description: 'Represents a file created or modified during session execution.
+
+    '
+  properties:
+  - name: path
+    type: str
+    nullable: false
+    constraints:
+    - relative path from project root
+    description: Relative file path of the artifact
+  - name: artifact_type
+    type: str
+    nullable: false
+    constraints:
+    - 'one of: ''created'', ''modified'''
+    description: Whether file was newly created or modified
+  - name: timestamp
+    type: datetime
+    nullable: false
+    constraints: []
+    description: When the artifact was recorded
+  - name: phase
+    type: str
+    nullable: true
+    constraints: []
+    description: Which workflow phase produced this artifact
+  invariants:
+  - artifact_type must be 'created' or 'modified'
+- name: SessionHistory
+  layer: Domain
+  type: value_object
+  description: 'A history entry tracking a significant session event.
+
+    '
+  properties:
+  - name: timestamp
+    type: datetime
+    nullable: false
+    constraints: []
+    description: When the event occurred
+  - name: action
+    type: str
+    nullable: false
+    constraints:
+    - non-empty
+    description: Description of the action (e.g., 'session_created', 'phase_advanced')
+  - name: phase
+    type: str
+    nullable: true
+    constraints: []
+    description: Current phase when event occurred
+  - name: details
+    type: str
+    nullable: true
+    constraints: []
+    description: Optional additional context about the event
+  invariants: []
+- name: SessionContext
+  layer: Domain
+  type: entity
+  description: 'Main session entity containing all session state and metadata.
+
+    This is the primary domain object managed by SessionManager.
+
+    '
+  properties:
+  - name: session_id
+    type: str
+    nullable: false
+    constraints:
+    - 'format: session_{YYYYMMDD}_{HHMMSS}_{microseconds}'
+    - immutable after creation
+    description: Unique identifier for the session
+  - name: state
+    type: SessionState
+    nullable: false
+    constraints:
+    - default=SessionState.ACTIVE
+    description: Current lifecycle state of the session
+  - name: workflow_type
+    type: str
+    nullable: true
+    constraints: []
+    description: Type of workflow (e.g., 'spec', 'tdflow', 'custom')
+  - name: current_phase
+    type: str
+    nullable: true
+    constraints: []
+    description: Current phase within the workflow
+  - name: attempt_number
+    type: int
+    nullable: false
+    constraints:
+    - positive
+    - default=1
+    description: Current attempt number for retry scenarios
+  - name: created_at
+    type: datetime
+    nullable: false
+    constraints: []
+    description: When the session was created
+  - name: updated_at
+    type: datetime
+    nullable: false
+    constraints: []
+    description: When the session was last updated
+  - name: completed_at
+    type: datetime
+    nullable: true
+    constraints: []
+    description: When the session reached terminal state (if applicable)
+  - name: token_budget
+    type: TokenBudget
+    nullable: false
+    constraints: []
+    description: Token budget tracking for this session
+  - name: artifacts
+    type: List[SessionArtifact]
+    nullable: false
+    constraints:
+    - default=[]
+    description: Files created or modified during session
+  - name: history
+    type: List[SessionHistory]
+    nullable: false
+    constraints:
+    - default=[]
+    description: Audit trail of session events
+  methods:
+  - name: add_artifact
+    returns: None
+    parameters:
+    - name: path
+      type: str
+    - name: artifact_type
+      type: str
+    - name: phase
+      type: Optional[str]
+    description: Records a new artifact with current timestamp
+  - name: get_artifacts
+    returns: List[SessionArtifact]
+    parameters:
+    - name: phase
+      type: Optional[str]
+    description: Returns artifacts, optionally filtered by phase
+  - name: add_history
+    returns: None
+    parameters:
+    - name: action
+      type: str
+    - name: phase
+      type: Optional[str]
+    - name: details
+      type: Optional[str]
+    description: Records a history entry with current timestamp
+  invariants:
+  - created_at <= updated_at
+  - completed_at is None unless state is COMPLETED or ABORTED
+  - history is never empty (at minimum contains creation entry)
+- name: SessionStore
+  layer: Infrastructure
+  type: dto
+  description: "Persistence layer for SessionContext. Handles serialization to/from\
+    \ \nYAML files using atomic writes for crash safety.\n"
+  properties:
+  - name: base_path
+    type: Path
+    nullable: false
+    constraints:
+    - default=.agentforge/sessions
+    description: Base directory for session storage
+  methods:
+  - name: ensure_directory
+    returns: None
+    parameters: []
+    description: Creates base directory with .gitkeep if needed
+  - name: save
+    returns: Path
+    parameters:
+    - name: session
+      type: SessionContext
+    description: Persists session to YAML using AtomicFileWriter
+  - name: load
+    returns: Optional[SessionContext]
+    parameters:
+    - name: session_id
+      type: str
+    description: Loads session from YAML, returns None if not found
+  - name: exists
+    returns: bool
+    parameters:
+    - name: session_id
+      type: str
+    description: Checks if session file exists
+  - name: list_sessions
+    returns: List[str]
+    parameters: []
+    description: Returns list of all session IDs in storage
+  - name: delete
+    returns: bool
+    parameters:
+    - name: session_id
+      type: str
+    description: Removes session directory, returns True if deleted
+  invariants:
+  - All writes use AtomicFileWriter
+  - Session stored at {base_path}/{session_id}/session.yaml
+- name: SessionManager
+  layer: Application
+  type: dto
+  description: "Application service orchestrating session lifecycle. Single session\
+    \ \nper instance. Provides all session management operations.\n"
+  properties:
+  - name: store
+    type: SessionStore
+    nullable: false
+    constraints: []
+    description: Persistence layer for sessions
+  - name: current_session
+    type: SessionContext
+    nullable: true
+    constraints: []
+    description: Currently active session (if any)
+  methods:
+  - name: create
+    returns: SessionContext
+    parameters:
+    - name: workflow_type
+      type: Optional[str]
+    - name: initial_phase
+      type: Optional[str]
+    - name: token_budget
+      type: int
+    description: Creates new session with unique ID, persists immediately
+  - name: load
+    returns: Optional[SessionContext]
+    parameters:
+    - name: session_id
+      type: str
+    description: Loads existing session from storage
+  - name: save
+    returns: Path
+    parameters: []
+    description: Persists current session state
+  - name: pause
+    returns: SessionContext
+    parameters: []
+    description: Transitions current session to PAUSED state
+  - name: resume
+    returns: SessionContext
+    parameters: []
+    description: Transitions current session from PAUSED to ACTIVE
+  - name: complete
+    returns: SessionContext
+    parameters: []
+    description: Transitions current session to COMPLETED state
+  - name: abort
+    returns: SessionContext
+    parameters:
+    - name: reason
+      type: Optional[str]
+    description: Transitions current session to ABORTED state
+  - name: advance_phase
+    returns: SessionContext
+    parameters:
+    - name: new_phase
+      type: str
+    description: Updates phase, records history, triggers auto-checkpoint
+  - name: checkpoint_session
+    returns: Path
+    parameters: []
+    description: Manual checkpoint - saves current state
+  - name: record_tokens
+    returns: None
+    parameters:
+    - name: tokens
+      type: int
+    description: Records token usage, checks for budget warning
+  - name: extend_budget
+    returns: None
+    parameters:
+    - name: additional_tokens
+      type: int
+    description: Extends token budget for current session
+  - name: add_artifact
+    returns: None
+    parameters:
+    - name: path
+      type: str
+    - name: artifact_type
+      type: str
+    description: Records artifact for current session and phase
+  - name: cleanup_old_sessions
+    returns: List[str]
+    parameters:
+    - name: days
+      type: int
+    - name: dry_run
+      type: bool
+    description: Removes old COMPLETED/ABORTED sessions, returns deleted IDs
+  invariants:
+  - Only one session active per SessionManager instance
+  - State transitions follow defined state machine
+  - Auto-checkpoint on every phase transition
+interfaces:
+- name: CreateSession
+  type: command
+  path: SessionManager.create()
+  request:
+    body: 'workflow_type: Optional[str] = None
+
+      initial_phase: Optional[str] = None
+
+      token_budget: int = 100000
+
+      '
+  response:
+    success: SessionContext
+    error_codes:
+    - SessionAlreadyActive
+  authorization: none (local component)
+- name: LoadSession
+  type: query
+  path: SessionManager.load(session_id)
+  request:
+    body: 'session_id: str
+
+      '
+  response:
+    success: Optional[SessionContext]
+    error_codes:
+    - SessionNotFound
+    - SessionCorrupted
+  authorization: none (local component)
+- name: AdvancePhase
+  type: command
+  path: SessionManager.advance_phase(new_phase)
+  request:
+    body: 'new_phase: str
+
+      '
+  response:
+    success: SessionContext
+    error_codes:
+    - NoActiveSession
+    - InvalidStateForPhaseAdvance
+  authorization: none (local component)
+- name: CleanupSessions
+  type: command
+  path: SessionManager.cleanup_old_sessions(days, dry_run)
+  request:
+    body: 'days: int
+
+      dry_run: bool = False
+
+      '
+  response:
+    success: List[str]
+    error_codes: []
+  authorization: none (local component)
+workflows:
+- name: Initialize and Execute Session
+  trigger: Agent starts long-running workflow (SPEC, TDFLOW, etc.)
+  actors:
+  - Initializer Agent
+  - Worker Agent
+  - SessionManager
+  steps:
+  - step: 1
+    actor: Initializer Agent
+    action: Calls SessionManager.create(workflow_type='spec')
+  - step: 2
+    actor: SessionManager
+    action: Generates unique session ID, creates SessionContext, persists to YAML
+  - step: 3
+    actor: Initializer Agent
+    action: Performs initial work, calls advance_phase() as phases complete
+  - step: 4
+    actor: SessionManager
+    action: Auto-checkpoints on each phase transition
+  - step: 5
+    actor: Initializer Agent
+    action: Approaches context limit, calls pause() with session_id noted
+  - step: 6
+    actor: Worker Agent
+    action: New context, calls SessionManager.load(session_id)
+  - step: 7
+    actor: SessionManager
+    action: Loads session state from YAML, returns SessionContext
+  - step: 8
+    actor: Worker Agent
+    action: Calls resume(), continues work from last phase
+  - step: 9
+    actor: Worker Agent
+    action: Completes all phases, calls complete()
+  - step: 10
+    actor: SessionManager
+    action: Transitions to COMPLETED, records completion timestamp
+  success_outcome: Session completed with full history preserved
+  failure_outcomes:
+  - Session aborted due to unrecoverable error
+  - Session left paused if worker cannot resume
+- name: Token Budget Management
+  trigger: Agent performs token-consuming operations
+  actors:
+  - Agent
+  - SessionManager
+  steps:
+  - step: 1
+    actor: Agent
+    action: Performs LLM call, estimates tokens used
+  - step: 2
+    actor: Agent
+    action: Calls SessionManager.record_tokens(estimated_tokens)
+  - step: 3
+    actor: SessionManager
+    action: Updates token_budget.tokens_used, checks utilization
+    alternatives:
+    - If utilization >= 80%, returns budget warning indication
+  - step: 4
+    actor: Agent
+    action: Checks can_continue(required) before next operation
+    alternatives:
+    - If False, calls extend_budget() or pauses session
+  success_outcome: Token usage tracked, warnings issued at 80%
+  failure_outcomes:
+  - Agent exceeds budget without extension
+- name: Session Cleanup
+  trigger: Operator wants to clean up old sessions
+  actors:
+  - Operator
+  - SessionManager
+  steps:
+  - step: 1
+    actor: Operator
+    action: Calls cleanup_old_sessions(days=30, dry_run=True)
+  - step: 2
+    actor: SessionManager
+    action: Scans sessions, identifies COMPLETED/ABORTED older than 30 days
+  - step: 3
+    actor: SessionManager
+    action: Returns list of session IDs that would be deleted
+  - step: 4
+    actor: Operator
+    action: Reviews list, calls cleanup_old_sessions(days=30, dry_run=False)
+  - step: 5
+    actor: SessionManager
+    action: Deletes identified sessions, returns deleted IDs
+  success_outcome: Old terminal sessions cleaned up, active sessions preserved
+  failure_outcomes:
+  - No sessions match criteria (empty list returned)
+error_handling:
+- error_code: SessionAlreadyActive
+  condition: create() called when current_session is not None
+  response: Return Result.Failure with error message
+  user_message: A session is already active. Complete or abort it first.
+- error_code: NoActiveSession
+  condition: Operation requiring active session called when current_session is None
+  response: Return Result.Failure with error message
+  user_message: No active session. Create or load a session first.
+- error_code: InvalidStateTransition
+  condition: State transition not allowed (e.g., COMPLETED -> PAUSED)
+  response: Return Result.Failure with current state and attempted transition
+  user_message: Cannot transition from {current_state} to {target_state}.
+- error_code: SessionNotFound
+  condition: load() called with non-existent session_id
+  response: Return None
+  user_message: Session {session_id} not found.
+- error_code: SessionCorrupted
+  condition: YAML parsing fails or required fields missing
+  response: Return Result.Failure with parse error details
+  user_message: 'Session {session_id} state file is corrupted: {details}'
+- error_code: BudgetExceeded
+  condition: can_continue() returns False and operation proceeds anyway
+  response: Log warning, allow operation but mark session as over-budget
+  user_message: Token budget exceeded. Consider extending budget or completing session.
+testing_notes:
+  unit_test_focus:
+  - SessionState enum transitions - valid and invalid
+  - TokenBudget calculations - utilization, remaining, can_continue
+  - SessionContext history tracking - all event types recorded
+  - SessionStore serialization/deserialization round-trip
+  - SessionManager state machine - all state transitions
+  - cleanup_old_sessions filtering logic - only terminal, respects age
+  integration_test_scenarios:
+  - 'Full session lifecycle: create -> phase advances -> complete'
+  - 'Session recovery: create -> pause -> (new context) -> load -> resume'
+  - Token budget warning at 80% threshold
+  - Atomic write durability (simulate interruption)
+  edge_cases:
+  - Session ID collision prevention (rapid successive creates)
+  - Load corrupted YAML file
+  - Cleanup with no matching sessions
+  - extend_budget after reaching limit
+  - Artifact tracking across multiple phases
+  - History with very long details field
+open_questions:
+- question: Should verification results per phase be tracked as separate entity?
+  context: "Intake mentions 'Track verification results per phase' but current design\
+    \ \nembeds this in history. May need dedicated VerificationResult dataclass.\n"
+  proposed_answer: "Defer to implementation. Track in history initially; extract to\
+    \ dedicated \nentity if verification tracking becomes complex.\n"
+  status: resolved
+- question: How should workflow bridges integrate with existing TDFLOW SessionManager?
+  context: "Existing tools/tdflow/session.py has its own SessionManager. New harness\
+    \ \nSessionManager could wrap or replace it.\n"
+  proposed_answer: "Use composition - harness SessionContext can contain workflow-specific\
+    \ state. \nBridge classes adapt existing workflows. Deferred to optional step\
+    \ 8.\n"
+  status: resolved
+glossary:
+- term: Session
+  definition: "A long-running agent work context that persists across context window\
+    \ resets. \nContains all state needed to resume work.\n"
+- term: SessionState
+  definition: 'One of: ACTIVE, PAUSED, COMPLETED, ABORTED'
+- term: Initializer
+  definition: The first agent instance that creates session state
+- term: Worker
+  definition: An agent instance that can resume and execute session work
+- term: Checkpoint
+  definition: Persisted snapshot of session state for recovery
+- term: Token Budget
+  definition: Maximum tokens allocated to a session (default 100K)
+- term: Budget Warning
+  definition: Alert triggered at 80% of token budget consumption
+- term: Phase
+  definition: A discrete step in a workflow (e.g., SPEC phases, TDFLOW phases)
+- term: Artifact
+  definition: A file created or modified during session execution
+- term: AtomicFileWriter
+  definition: "Context manager that writes to temp file then renames, preventing \n\
+    corruption on interruption"
+</specification>
+
+<phase>red</phase>
+<mode>full</mode>
+<component>session_domain</component>
+</context>
+
+<instructions>
+Generate failing tests for the specification.
+
+Requirements:
+1. Use pytest with clear arrange-act-assert structure
+2. Tests should FAIL because implementation doesn't exist yet
+3. Each test should verify ONE specific behavior from the spec
+4. Use descriptive test names: test_{method}_{scenario}_{expected_result}
+5. Include both positive and negative test cases
+6. Mock external dependencies appropriately
+
+Output format:
+- Use ```python:path/to/test_file.py``` markers
+- One test file per component
+- Include all necessary imports
+
+</instructions>
+
+<output_format>
+Output your code using markdown code blocks with file paths:
+
+```python:path/to/file.py
+# Your code here
+```
+
+Important:
+- Use the EXACT paths from the specification when provided
+- Include ALL necessary imports at the top of each file
+- One code block per file
+- Add a brief explanation before each code block
+
+Expected test file: tests/unit/harness/test_session_domain.py
+</output_format>

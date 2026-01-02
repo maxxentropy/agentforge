@@ -12,7 +12,7 @@ Supports: cyclomatic_complexity, function_length, nesting_depth,
 
 import ast
 from pathlib import Path
-from typing import Dict, List, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from agentforge.core.command_runners import CommandRunner
@@ -31,7 +31,7 @@ class ASTChecker:
         metric: str,
         max_value: int,
         file_path: Path
-    ) -> List[Dict]:
+    ) -> list[dict]:
         """Check a specific AST metric and return violations."""
         metric_handlers = {
             "function_length": self._check_function_length,
@@ -52,7 +52,7 @@ class ASTChecker:
 
     def _check_function_length(
         self, tree: ast.AST, max_lines: int, file_path: Path
-    ) -> List[Dict]:
+    ) -> list[dict]:
         """Check function lengths."""
         violations = []
 
@@ -73,7 +73,7 @@ class ASTChecker:
 
     def _check_nesting_depth(
         self, tree: ast.AST, max_depth: int, file_path: Path
-    ) -> List[Dict]:
+    ) -> list[dict]:
         """Check nesting depth."""
         violations = []
         nesting_nodes = (ast.If, ast.For, ast.While, ast.With, ast.Try, ast.ExceptHandler)
@@ -105,7 +105,7 @@ class ASTChecker:
 
     def _check_parameter_count(
         self, tree: ast.AST, max_params: int, file_path: Path
-    ) -> List[Dict]:
+    ) -> list[dict]:
         """Check function parameter count."""
         violations = []
 
@@ -136,7 +136,7 @@ class ASTChecker:
 
     def _check_class_size(
         self, tree: ast.AST, max_methods: int, file_path: Path
-    ) -> List[Dict]:
+    ) -> list[dict]:
         """Check class method count."""
         violations = []
 
@@ -160,7 +160,7 @@ class ASTChecker:
 
     def _check_import_count(
         self, tree: ast.AST, max_imports: int, file_path: Path
-    ) -> List[Dict]:
+    ) -> list[dict]:
         """Check module import count."""
         import_count = sum(
             1 for node in ast.walk(tree)
@@ -180,7 +180,7 @@ class ASTChecker:
 
     def _check_complexity_with_radon(
         self, file_path: Path, max_complexity: int
-    ) -> List[Dict]:
+    ) -> list[dict]:
         """Check cyclomatic complexity using radon."""
         if not self.command_runner:
             return []

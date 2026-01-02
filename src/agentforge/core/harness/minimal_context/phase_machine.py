@@ -1,6 +1,6 @@
 # @spec_file: .agentforge/specs/core-harness-minimal-context-v1.yaml
 # @spec_id: core-harness-minimal-context-v1
-# @component_id: harness-minimal_context-phase_machine
+# @component_id: phase-machine
 # @test_path: tests/unit/harness/test_enhanced_context.py
 
 """
@@ -47,9 +47,10 @@ Phase Diagram:
   [Any phase can transition to FAILED or ESCALATED]
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
 from .context_models import PhaseState
 
@@ -81,10 +82,10 @@ class PhaseContext:
     total_steps: int
     verification_passing: bool
     tests_passing: bool
-    files_modified: List[str]
-    facts: List[Any]  # List[Fact] from context_models
-    last_action: Optional[str] = None
-    last_action_result: Optional[str] = None
+    files_modified: list[str]
+    facts: list[Any]  # List[Fact] from context_models
+    last_action: str | None = None
+    last_action_result: str | None = None
 
     def has_modifications(self) -> bool:
         return len(self.files_modified) > 0
@@ -120,7 +121,7 @@ class PhaseConfig:
     phase: Phase
     max_steps: int
     success_condition: Callable[[PhaseContext], bool]
-    failure_condition: Optional[Callable[[PhaseContext], bool]] = None
+    failure_condition: Callable[[PhaseContext], bool] | None = None
     description: str = ""
 
 
@@ -136,11 +137,11 @@ class PhaseMachine:
     """
 
     def __init__(self):
-        self._transitions: Dict[Phase, List[Transition]] = {}
-        self._phase_configs: Dict[Phase, PhaseConfig] = {}
+        self._transitions: dict[Phase, list[Transition]] = {}
+        self._phase_configs: dict[Phase, PhaseConfig] = {}
         self._current_phase: Phase = Phase.INIT
         self._steps_in_phase: int = 0
-        self._phase_history: List[Phase] = []
+        self._phase_history: list[Phase] = []
 
         # Initialize with default configuration
         self._setup_default_transitions()
@@ -327,7 +328,7 @@ class PhaseMachine:
         return self._steps_in_phase
 
     @property
-    def phase_history(self) -> List[Phase]:
+    def phase_history(self) -> list[Phase]:
         return list(self._phase_history)
 
     def can_transition(self, to_phase: Phase, context: PhaseContext) -> bool:
@@ -342,7 +343,7 @@ class PhaseMachine:
 
         return False
 
-    def get_available_transitions(self, context: PhaseContext) -> List[Transition]:
+    def get_available_transitions(self, context: PhaseContext) -> list[Transition]:
         """Get all currently valid transitions."""
         transitions = self._transitions.get(self._current_phase, [])
         return [t for t in transitions if all(guard(context) for guard in t.guards)]
@@ -384,7 +385,7 @@ class PhaseMachine:
         """Record that a step was taken in current phase."""
         self._steps_in_phase += 1
 
-    def validate_state(self, context: PhaseContext) -> List[str]:
+    def validate_state(self, context: PhaseContext) -> list[str]:
         """
         Validate current phase state and return any issues.
 
@@ -416,16 +417,15 @@ class PhaseMachine:
         available = self.get_available_transitions(context)
         config = self._phase_configs.get(self._current_phase)
 
-        if config and self._steps_in_phase >= config.max_steps // 2:
-            if not available:
-                issues.append(
-                    f"No transitions available from {self._current_phase.value} "
-                    f"after {self._steps_in_phase} steps. May get stuck."
-                )
+        if config and self._steps_in_phase >= config.max_steps // 2 and not available:
+            issues.append(
+                f"No transitions available from {self._current_phase.value} "
+                f"after {self._steps_in_phase} steps. May get stuck."
+            )
 
         return issues
 
-    def should_auto_transition(self, context: PhaseContext) -> Optional[Phase]:
+    def should_auto_transition(self, context: PhaseContext) -> Phase | None:
         """
         Check if we should automatically transition based on conditions.
 
@@ -475,7 +475,7 @@ class PhaseMachine:
 
         return None
 
-    def get_phase_info(self) -> Dict[str, Any]:
+    def get_phase_info(self) -> dict[str, Any]:
         """Get current phase information for context."""
         config = self._phase_configs.get(self._current_phase)
         return {

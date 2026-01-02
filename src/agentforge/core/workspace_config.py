@@ -11,12 +11,13 @@ Manages configuration from three tiers:
 Extracted from workspace.py for modularity.
 """
 
+import contextlib
 import os
-from pathlib import Path
 from dataclasses import dataclass, field
-from typing import Optional, Dict, List, Any
-import yaml
+from pathlib import Path
+from typing import Any
 
+import yaml
 
 # =============================================================================
 # Data Classes
@@ -33,32 +34,32 @@ class ConfigContext:
     """
 
     # Tier 1: Global
-    global_path: Optional[Path] = None
-    global_config: Optional[Dict] = None
-    global_contracts: Dict[str, Any] = field(default_factory=dict)
+    global_path: Path | None = None
+    global_config: dict | None = None
+    global_contracts: dict[str, Any] = field(default_factory=dict)
 
     # Tier 2: Workspace
-    workspace_path: Optional[Path] = None
-    workspace_config: Optional[Dict] = None
-    workspace_contracts: Dict[str, Any] = field(default_factory=dict)
-    available_repos: Dict[str, Path] = field(default_factory=dict)
-    unavailable_repos: List[str] = field(default_factory=list)
+    workspace_path: Path | None = None
+    workspace_config: dict | None = None
+    workspace_contracts: dict[str, Any] = field(default_factory=dict)
+    available_repos: dict[str, Path] = field(default_factory=dict)
+    unavailable_repos: list[str] = field(default_factory=list)
 
     # Tier 3: Repo
-    repo_path: Optional[Path] = None
-    repo_config: Optional[Dict] = None
-    repo_contracts: Dict[str, Any] = field(default_factory=dict)
-    current_repo_name: Optional[str] = None
+    repo_path: Path | None = None
+    repo_config: dict | None = None
+    repo_contracts: dict[str, Any] = field(default_factory=dict)
+    current_repo_name: str | None = None
 
     # Local overrides (not checked in)
-    local_config: Optional[Dict] = None
+    local_config: dict | None = None
 
     # Merged results
-    effective_config: Dict = field(default_factory=dict)
-    effective_contracts: Dict[str, Any] = field(default_factory=dict)
+    effective_config: dict = field(default_factory=dict)
+    effective_contracts: dict[str, Any] = field(default_factory=dict)
 
     # Discovery metadata
-    discovery_log: List[str] = field(default_factory=list)
+    discovery_log: list[str] = field(default_factory=list)
     mode: str = "unknown"  # single-repo | workspace | no-config
 
     @property
@@ -76,7 +77,7 @@ class ConfigContext:
 # Helper Functions
 # =============================================================================
 
-def find_upward(filename: str, start: Path = None) -> Optional[Path]:
+def find_upward(filename: str, start: Path = None) -> Path | None:
     """Search for filename in start directory and all parents."""
     current = start or Path.cwd()
     while current != current.parent:
@@ -97,7 +98,7 @@ def expand_path(path_str: str, relative_to: Path = None) -> Path:
     return path
 
 
-def load_yaml_file(path: Path) -> Optional[Dict]:
+def load_yaml_file(path: Path) -> dict | None:
     """Load a YAML file, returning None if it doesn't exist."""
     if path and path.exists():
         try:
@@ -107,15 +108,13 @@ def load_yaml_file(path: Path) -> Optional[Dict]:
     return None
 
 
-def load_contracts_from_dir(contracts_dir: Path) -> Dict[str, Any]:
+def load_contracts_from_dir(contracts_dir: Path) -> dict[str, Any]:
     """Load all contract files from a directory."""
     contracts = {}
     if contracts_dir and contracts_dir.exists():
         for f in contracts_dir.glob("*.contract.yaml"):
-            try:
+            with contextlib.suppress(Exception):
                 contracts[f.stem.replace('.contract', '')] = yaml.safe_load(f.read_text())
-            except Exception:
-                pass
     return contracts
 
 
@@ -123,7 +122,7 @@ def load_contracts_from_dir(contracts_dir: Path) -> Dict[str, Any]:
 # Config Merge Functions
 # =============================================================================
 
-def deep_merge(base: Dict, override: Dict) -> Dict:
+def deep_merge(base: dict, override: dict) -> dict:
     """Deep merge override into base, modifying base in place."""
     for key, value in override.items():
         if key in base and isinstance(base[key], dict) and isinstance(value, dict):
@@ -133,7 +132,7 @@ def deep_merge(base: Dict, override: Dict) -> Dict:
     return base
 
 
-def merge_configs(*configs: Dict) -> Dict:
+def merge_configs(*configs: dict) -> dict:
     """Merge multiple config dicts, later values override earlier."""
     result = {}
     for config in configs:
@@ -142,7 +141,7 @@ def merge_configs(*configs: Dict) -> Dict:
     return result
 
 
-def _merge_contract_into(result: Dict, name: str, contract: Dict):
+def _merge_contract_into(result: dict, name: str, contract: dict):
     """Merge a single contract into result, combining checks arrays."""
     if name not in result:
         result[name] = contract
@@ -156,8 +155,8 @@ def _merge_contract_into(result: Dict, name: str, contract: Dict):
             result[name][key] = value
 
 
-def merge_contracts(global_contracts: Dict, workspace_contracts: Dict,
-                   repo_contracts: Dict, strategy: str = "extend") -> Dict:
+def merge_contracts(global_contracts: dict, workspace_contracts: dict,
+                   repo_contracts: dict, strategy: str = "extend") -> dict:
     """Merge contracts according to strategy (override | extend | strict)."""
     if strategy == "override":
         return repo_contracts or workspace_contracts or global_contracts or {}

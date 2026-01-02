@@ -1,5 +1,5 @@
-# @spec_file: .agentforge/specs/harness-v1.yaml
-# @spec_id: harness-v1
+# @spec_file: .agentforge/specs/core-harness-v1.yaml
+# @spec_id: core-harness-v1
 # @component_id: tools-harness-tool_selector
 # @impl_path: tools/harness/tool_selector.py
 
@@ -10,15 +10,14 @@
 
 """Tests for tool selector."""
 
-import pytest
-import tempfile
 import json
+import tempfile
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock
 
-from tools.harness.tool_selector import ToolSelector
-from tools.harness.tool_registry import ToolRegistry
-from tools.harness.tool_domain import ToolDefinition, ToolProfile, DomainTools
+from agentforge.core.harness.tool_domain import DomainTools, ToolDefinition, ToolProfile
+from agentforge.core.harness.tool_registry import ToolRegistry
+from agentforge.core.harness.tool_selector import ToolSelector
 
 
 class TestToolSelector:

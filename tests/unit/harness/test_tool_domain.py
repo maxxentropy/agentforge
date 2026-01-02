@@ -5,8 +5,7 @@
 
 """Tests for tool domain entities."""
 
-import pytest
-from tools.harness.tool_domain import ToolDefinition, ToolProfile, DomainTools
+from agentforge.core.harness.tool_domain import DomainTools, ToolDefinition, ToolProfile
 
 
 class TestToolDefinition:
@@ -20,7 +19,7 @@ class TestToolDefinition:
             parameters={"param1": {"type": "string"}},
             category="test"
         )
-        
+
         assert tool.name == "test_tool"
         assert tool.description == "A test tool"
         assert tool.parameters == {"param1": {"type": "string"}}
@@ -38,7 +37,7 @@ class TestToolDefinition:
             requires_approval=True,
             category="test"
         )
-        
+
         assert tool.name == "test_tool"
         assert tool.description == "A test tool"
         assert tool.parameters == {"param1": {"type": "string"}}
@@ -56,9 +55,9 @@ class TestToolDefinition:
             requires_approval=True,
             category="test"
         )
-        
+
         result = tool.to_dict()
-        
+
         expected = {
             "name": "test_tool",
             "description": "A test tool",
@@ -79,9 +78,9 @@ class TestToolDefinition:
             "requires_approval": True,
             "category": "test"
         }
-        
+
         tool = ToolDefinition.from_dict(data)
-        
+
         assert tool.name == "test_tool"
         assert tool.description == "A test tool"
         assert tool.parameters == {"param1": {"type": "string"}}
@@ -97,9 +96,9 @@ class TestToolDefinition:
             "parameters": {},
             "category": "test"
         }
-        
+
         tool = ToolDefinition.from_dict(data)
-        
+
         assert tool.name == "test_tool"
         assert tool.handler is None
         assert tool.requires_approval is False
@@ -115,7 +114,7 @@ class TestToolProfile:
             phase="test_phase",
             tools=["tool1", "tool2"]
         )
-        
+
         assert profile.workflow == "test_workflow"
         assert profile.phase == "test_phase"
         assert profile.tools == ["tool1", "tool2"]
@@ -129,7 +128,7 @@ class TestToolProfile:
             tools=["tool1", "tool2"],
             description="Test profile"
         )
-        
+
         assert profile.workflow == "test_workflow"
         assert profile.phase == "test_phase"
         assert profile.tools == ["tool1", "tool2"]
@@ -143,9 +142,9 @@ class TestToolProfile:
             tools=["tool1", "tool2"],
             description="Test profile"
         )
-        
+
         result = profile.to_dict()
-        
+
         expected = {
             "workflow": "test_workflow",
             "phase": "test_phase",
@@ -162,9 +161,9 @@ class TestToolProfile:
             "tools": ["tool1", "tool2"],
             "description": "Test profile"
         }
-        
+
         profile = ToolProfile.from_dict(data)
-        
+
         assert profile.workflow == "test_workflow"
         assert profile.phase == "test_phase"
         assert profile.tools == ["tool1", "tool2"]
@@ -181,7 +180,7 @@ class TestDomainTools:
             tools=["pytest", "ruff"],
             detection_patterns=["*.py", "pyproject.toml"]
         )
-        
+
         assert domain_tools.domain == "python"
         assert domain_tools.tools == ["pytest", "ruff"]
         assert domain_tools.detection_patterns == ["*.py", "pyproject.toml"]

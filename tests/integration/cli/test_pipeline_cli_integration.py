@@ -1,5 +1,5 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-5-cli-commands.yaml
-# @spec_id: pipeline-controller-phase5-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
 # @component_id: pipeline-cli-start, pipeline-cli-design, pipeline-cli-implement
 # @component_id: pipeline-cli-status, pipeline-cli-resume, pipeline-cli-approve
 # @component_id: pipeline-cli-reject, pipeline-cli-abort
@@ -12,14 +12,9 @@ These tests verify end-to-end behavior of CLI commands with mocked
 PipelineController, focusing on command integration and output formatting.
 """
 
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Dict
-from unittest.mock import MagicMock, Mock, patch
-from datetime import datetime, timezone
-
-import pytest
-from click.testing import CliRunner
-
+from unittest.mock import MagicMock, patch
 
 # =============================================================================
 # Command Integration Tests
@@ -358,7 +353,7 @@ class TestPipelinesIntegration:
             state.status = MagicMock()
             state.status.value = status
             state.current_stage = "spec"
-            state.created_at = datetime(2026, 1, 2, 10, i, 0, tzinfo=timezone.utc)
+            state.created_at = datetime(2026, 1, 2, 10, i, 0, tzinfo=UTC)
             pipelines.append(state)
 
         mock_pipeline_controller.list_pipelines.return_value = pipelines
@@ -553,7 +548,7 @@ class TestOutputFormatting:
             state.status = MagicMock()
             state.status.value = "completed"
             state.current_stage = "deliver"
-            state.created_at = datetime(2026, 1, 2, 10, i, 0, tzinfo=timezone.utc)
+            state.created_at = datetime(2026, 1, 2, 10, i, 0, tzinfo=UTC)
             pipelines.append(state)
 
         mock_pipeline_controller.list_pipelines.return_value = pipelines

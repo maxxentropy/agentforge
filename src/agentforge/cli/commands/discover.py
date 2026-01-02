@@ -1,17 +1,11 @@
 """Brownfield Discovery command implementation."""
 
-import sys
 import json
-import click
-import yaml
+import sys
 from pathlib import Path
 
-
-def _ensure_tools_path():
-    """Add tools directory to path for imports."""
-    tools_path = str(Path(__file__).parent.parent.parent / 'tools')
-    if tools_path not in sys.path:
-        sys.path.insert(0, tools_path)
+import click
+import yaml
 
 
 def run_discover(args):
@@ -25,8 +19,6 @@ def run_discover(args):
     click.echo("=" * 60)
     click.echo("BROWNFIELD DISCOVERY")
     click.echo("=" * 60)
-
-    _ensure_tools_path()
 
     root_path = Path(args.path).resolve()
     click.echo(f"\nAnalyzing: {root_path}")
@@ -48,7 +40,7 @@ def run_discover(args):
 def _run_single_zone_discovery(args, root_path, progress_callback):
     """Run traditional single-zone discovery."""
     try:
-        from discovery import DiscoveryManager, DiscoveryPhase
+        from agentforge.core.discovery import DiscoveryManager, DiscoveryPhase
     except ImportError as e:
         click.echo(f"\nError: Could not import discovery module: {e}")
         sys.exit(1)
@@ -107,7 +99,7 @@ def _run_single_zone_discovery(args, root_path, progress_callback):
 def _run_multi_zone_discovery(args, root_path, progress_callback):
     """Run multi-zone discovery."""
     try:
-        from discovery import MultiZoneDiscoveryManager
+        from agentforge.core.discovery import MultiZoneDiscoveryManager
     except ImportError as e:
         click.echo(f"\nError: Could not import multi-zone discovery module: {e}")
         sys.exit(1)
@@ -251,7 +243,7 @@ def _output_multi_zone_summary(result, args):
         # Patterns
         patterns = profile.patterns
         if patterns:
-            code_patterns = [k for k in patterns.keys() if not k.startswith('framework_')]
+            code_patterns = [k for k in patterns if not k.startswith('framework_')]
             if code_patterns:
                 click.echo(f"  Patterns: {', '.join(code_patterns[:5])}")
 
@@ -354,7 +346,7 @@ def _output_summary(result, args):
 def _output_yaml(result):
     """Output full profile as YAML."""
     if result.profile:
-        from discovery.generators.profile import ProfileGenerator
+        from agentforge.core.discovery.generators.profile import ProfileGenerator
         generator = ProfileGenerator(Path("."))
         generator._profile = result.profile
         click.echo(generator.to_yaml())
@@ -363,7 +355,7 @@ def _output_yaml(result):
 def _output_json(result):
     """Output full profile as JSON."""
     if result.profile:
-        from discovery.generators.profile import ProfileGenerator
+        from agentforge.core.discovery.generators.profile import ProfileGenerator
         generator = ProfileGenerator(Path("."))
         generator._profile = result.profile
         data = generator._profile_to_dict(result.profile)

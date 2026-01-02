@@ -13,23 +13,22 @@
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
+from .escalation_domain import EscalationResolution, ResolutionType
+from .monitor_domain import HealthStatus
 from .orchestrator_domain import (
-    OrchestratorState,
     ExecutionMode,
     ExecutionResult,
-    OrchestratorConfig
+    OrchestratorConfig,
+    OrchestratorState,
 )
-from .session_domain import SessionState, SessionContext
-from .monitor_domain import HealthStatus
 from .recovery_domain import RecoveryAttempt
-from .escalation_domain import EscalationResolution, ResolutionType
 
 if TYPE_CHECKING:
+    from .execution_context_store import ExecutionContextStore
     from .llm_executor import LLMExecutor
     from .llm_executor_domain import ExecutionContext
-    from .execution_context_store import ExecutionContextStore
 
 
 class AgentOrchestrator:
@@ -51,9 +50,9 @@ class AgentOrchestrator:
         agent_monitor,
         recovery_executor,
         escalation_manager,
-        config: Optional[OrchestratorConfig] = None,
+        config: OrchestratorConfig | None = None,
         llm_executor: Optional["LLMExecutor"] = None,
-        working_dir: Optional[Path] = None,
+        working_dir: Path | None = None,
         execution_store: Optional["ExecutionContextStore"] = None
     ):
         """Initialize orchestrator with all components.
@@ -94,13 +93,13 @@ class AgentOrchestrator:
         self._session_tasks: dict[str, str] = {}
         self._session_contexts: dict[str, dict] = {}
         # Store LLM execution contexts per session
-        self._llm_contexts: dict[str, "ExecutionContext"] = {}
+        self._llm_contexts: dict[str, ExecutionContext] = {}
 
     def start_session(
         self,
         task_description: str,
-        context: Optional[dict] = None,
-        execution_mode: Optional[ExecutionMode] = None,
+        context: dict | None = None,
+        execution_mode: ExecutionMode | None = None,
         workflow_type: str = "agent",
         initial_phase: str = "execute",
         token_budget: int = 100000
@@ -140,8 +139,9 @@ class AgentOrchestrator:
 
         # Store initial context in memory if memory_manager supports it
         if context and hasattr(self.memory_manager, 'set'):
-            from .memory_domain import MemoryTier
             from datetime import timedelta
+
+            from .memory_domain import MemoryTier
             self.memory_manager.set(
                 key=f"session:{session_id}:context",
                 value=context,
@@ -227,7 +227,7 @@ class AgentOrchestrator:
     def execute_step(
         self,
         session_id: str,
-        input_data: Optional[dict] = None
+        input_data: dict | None = None
     ) -> ExecutionResult:
         """Execute one iteration of agent work.
 
@@ -396,7 +396,7 @@ class AgentOrchestrator:
     def run_until_complete(
         self,
         session_id: str,
-        max_iterations: Optional[int] = None
+        max_iterations: int | None = None
     ) -> ExecutionResult:
         """Run agent until task completion or limit.
 
@@ -517,7 +517,7 @@ class AgentOrchestrator:
             domain=None  # Auto-detect from project
         )
 
-    def handle_health_check(self, session_id: str) -> Optional[RecoveryAttempt]:
+    def handle_health_check(self, session_id: str) -> RecoveryAttempt | None:
         """Check health and trigger recovery if needed.
 
         Args:

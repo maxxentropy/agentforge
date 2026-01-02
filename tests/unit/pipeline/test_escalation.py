@@ -1,11 +1,11 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-1-foundation.yaml
-# @spec_id: pipeline-controller-phase1-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
 # @component_id: pipeline-escalation
 
 """Tests for escalation handling."""
 
+
 import pytest
-from datetime import datetime
 
 from agentforge.core.pipeline import (
     Escalation,

@@ -1,0 +1,13 @@
+schema_version: '1.0'
+violation_id: V-50e58bdb1908
+contract_id: agentforge
+check_id: single-responsibility-modules
+severity: minor
+file_path: tests/unit/tools/cicd/test_outputs.py
+message: 'Class ''TestJunitOutput'' has 6 methods (max: 3)'
+detected_at: '2025-12-31T02:40:13.237807'
+last_seen_at: '2026-01-01T01:39:13.999796'
+status: open
+line_number: 162
+fix_hint: Split modules with too many classes into focused single-class modules
+test_path: tests/unit/tools/cicd/test_outputs.py

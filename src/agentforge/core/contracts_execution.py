@@ -27,7 +27,7 @@ import re
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 try:
     from .contracts_types import CheckResult
@@ -41,14 +41,14 @@ class CheckContext:
     check_id: str
     check_name: str
     severity: str
-    config: Dict[str, Any]
+    config: dict[str, Any]
     repo_root: Path
-    file_paths: List[Path]
-    fix_hint: Optional[str] = None
+    file_paths: list[Path]
+    fix_hint: str | None = None
 
 
-def execute_check(check: Dict[str, Any], repo_root,
-                  file_paths: Optional[List[Path]] = None) -> List[CheckResult]:
+def execute_check(check: dict[str, Any], repo_root,
+                  file_paths: list[Path] | None = None) -> list[CheckResult]:
     """
     Execute a single check against the repo or specific files.
 
@@ -114,7 +114,7 @@ def execute_check(check: Dict[str, Any], repo_root,
     return handler(ctx)
 
 
-def _get_files_for_check(check: Dict[str, Any], repo_root: Path) -> List[Path]:
+def _get_files_for_check(check: dict[str, Any], repo_root: Path) -> list[Path]:
     """Get list of files this check should run against."""
     applies_to = check.get("applies_to", {})
     paths = applies_to.get("paths", ["**/*"])
@@ -168,7 +168,7 @@ def _compile_regex(pattern: str, multiline: bool, case_insensitive: bool):
 
 
 def _check_forbid_matches(matches, content: str, ctx: CheckContext,
-                          file_path: Path) -> List[CheckResult]:
+                          file_path: Path) -> list[CheckResult]:
     """Generate results for forbidden pattern matches."""
     results = []
     for match in matches:
@@ -182,7 +182,7 @@ def _check_forbid_matches(matches, content: str, ctx: CheckContext,
     return results
 
 
-def _execute_regex_check(ctx: CheckContext) -> List[CheckResult]:
+def _execute_regex_check(ctx: CheckContext) -> list[CheckResult]:
     """Execute a regex-based check."""
     pattern = ctx.config.get("pattern")
     mode = ctx.config.get("mode", "forbid")
@@ -222,7 +222,7 @@ def _execute_regex_check(ctx: CheckContext) -> List[CheckResult]:
 # Command Check
 # =============================================================================
 
-def _execute_command_check(ctx: CheckContext) -> List[CheckResult]:
+def _execute_command_check(ctx: CheckContext) -> list[CheckResult]:
     """Execute a command-based check."""
     command = ctx.config.get("command")
     args = ctx.config.get("args", [])
@@ -267,7 +267,7 @@ def _execute_command_check(ctx: CheckContext) -> List[CheckResult]:
 # File Exists Check
 # =============================================================================
 
-def _execute_file_exists_check(ctx: CheckContext) -> List[CheckResult]:
+def _execute_file_exists_check(ctx: CheckContext) -> list[CheckResult]:
     """Execute a file existence check."""
     required_files = ctx.config.get("required_files", [])
     forbidden_files = ctx.config.get("forbidden_files", [])
@@ -299,7 +299,7 @@ def _execute_file_exists_check(ctx: CheckContext) -> List[CheckResult]:
 # Custom Check
 # =============================================================================
 
-def _execute_custom_check(ctx: CheckContext) -> List[CheckResult]:
+def _execute_custom_check(ctx: CheckContext) -> list[CheckResult]:
     """Execute a custom Python check."""
     import importlib.util
 
@@ -390,13 +390,13 @@ _SYMBOL_PATTERNS = {
 }
 
 
-def _get_symbol_pattern(symbol_type: str, file_suffix: str) -> Optional[str]:
+def _get_symbol_pattern(symbol_type: str, file_suffix: str) -> str | None:
     """Get regex pattern for extracting symbols of given type from file."""
     type_patterns = _SYMBOL_PATTERNS.get(symbol_type, {})
     return type_patterns.get(file_suffix)
 
 
-def _extract_symbols(content: str, symbol_type: str, file_suffix: str) -> List[tuple]:
+def _extract_symbols(content: str, symbol_type: str, file_suffix: str) -> list[tuple]:
     """
     Extract symbols from file content.
 
@@ -418,7 +418,7 @@ def _extract_symbols(content: str, symbol_type: str, file_suffix: str) -> List[t
     return symbols
 
 
-def _execute_naming_check(ctx: CheckContext) -> List[CheckResult]:
+def _execute_naming_check(ctx: CheckContext) -> list[CheckResult]:
     """
     Execute a naming convention check.
 
@@ -499,7 +499,7 @@ _CLASS_WITH_INHERITANCE = {
 }
 
 
-def _extract_class_with_bases(content: str, file_suffix: str) -> List[tuple]:
+def _extract_class_with_bases(content: str, file_suffix: str) -> list[tuple]:
     """
     Extract classes with their base classes/interfaces.
 
@@ -535,7 +535,7 @@ def _extract_class_with_bases(content: str, file_suffix: str) -> List[tuple]:
     return classes
 
 
-def _parse_inheritance_list(bases_str: str, file_suffix: str) -> List[str]:
+def _parse_inheritance_list(bases_str: str, file_suffix: str) -> list[str]:
     """Parse inheritance string into list of base/interface names."""
     if not bases_str:
         return []
@@ -556,7 +556,7 @@ def _parse_inheritance_list(bases_str: str, file_suffix: str) -> List[str]:
     return result
 
 
-def _execute_ast_interface_check(ctx: CheckContext) -> List[CheckResult]:
+def _execute_ast_interface_check(ctx: CheckContext) -> list[CheckResult]:
     """
     Execute an AST-based structural check.
 
@@ -666,7 +666,7 @@ _METHOD_PATTERNS = {
 
 def _extract_methods_with_return_types(
     content: str, file_suffix: str, scope: str = "public"
-) -> List[tuple]:
+) -> list[tuple]:
     """
     Extract methods with their return types.
 
@@ -708,7 +708,7 @@ def _extract_methods_with_return_types(
     return methods
 
 
-def _execute_return_type_check(ctx: CheckContext) -> List[CheckResult]:
+def _execute_return_type_check(ctx: CheckContext) -> list[CheckResult]:
     """
     Execute a return type pattern check.
 
@@ -750,7 +750,7 @@ def _execute_return_type_check(ctx: CheckContext) -> List[CheckResult]:
         methods = _extract_methods_with_return_types(content, file_path.suffix, method_scope)
         relative_path = str(file_path.relative_to(ctx.repo_root))
 
-        for method_name, return_type, line_num, visibility in methods:
+        for method_name, return_type, line_num, _visibility in methods:
             # Skip excluded methods
             if method_name in exclude_methods:
                 continue

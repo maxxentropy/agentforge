@@ -11,6 +11,7 @@ Runs linting/analysis tools as subprocesses and parses their output.
 
 from __future__ import annotations
 
+import contextlib
 import json
 import subprocess
 from dataclasses import dataclass
@@ -53,10 +54,8 @@ class CommandRunner:
 
         parsed = None
         if parse_json and result.stdout:
-            try:
+            with contextlib.suppress(json.JSONDecodeError):
                 parsed = json.loads(result.stdout)
-            except json.JSONDecodeError:
-                pass
 
         return CommandResult(
             result.returncode in success_codes, result.returncode,

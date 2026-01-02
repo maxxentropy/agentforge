@@ -16,20 +16,21 @@ Key improvements in this version:
 """
 
 import subprocess
-import yaml
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
+
+import yaml
 
 from .llm_executor_domain import ToolResult
 
 # Import contracts system for direct check execution
 try:
-    from ..contracts_registry import ContractRegistry
     from ..contracts_execution import execute_check
+    from ..contracts_registry import ContractRegistry
     from ..contracts_types import CheckResult
 except ImportError:
-    from agentforge.core.contracts_registry import ContractRegistry
     from agentforge.core.contracts_execution import execute_check
+    from agentforge.core.contracts_registry import ContractRegistry
     from agentforge.core.contracts_types import CheckResult
 
 
@@ -50,8 +51,8 @@ class ConformanceTools:
         """
         self.project_path = Path(project_path)
         self.timeout = timeout
-        self._registry: Optional[ContractRegistry] = None
-        self._check_cache: Dict[str, Dict[str, Any]] = {}
+        self._registry: ContractRegistry | None = None
+        self._check_cache: dict[str, dict[str, Any]] = {}
 
     def _get_registry(self) -> ContractRegistry:
         """Lazy-load the contract registry."""
@@ -59,7 +60,7 @@ class ConformanceTools:
             self._registry = ContractRegistry(self.project_path)
         return self._registry
 
-    def _find_check_by_id(self, check_id: str) -> Optional[Dict[str, Any]]:
+    def _find_check_by_id(self, check_id: str) -> dict[str, Any] | None:
         """
         Find a check definition by its ID across all contracts.
 
@@ -84,7 +85,7 @@ class ConformanceTools:
 
         return None
 
-    def check_file(self, name: str, params: Dict[str, Any]) -> ToolResult:
+    def check_file(self, name: str, params: dict[str, Any]) -> ToolResult:
         """
         Run conformance check on a specific file.
 
@@ -141,7 +142,7 @@ class ConformanceTools:
         except Exception as e:
             return ToolResult.failure_result("check_file", f"Error running check: {e}")
 
-    def verify_violation_fixed(self, name: str, params: Dict[str, Any]) -> ToolResult:
+    def verify_violation_fixed(self, name: str, params: dict[str, Any]) -> ToolResult:
         """
         Verify that a specific violation has been fixed.
 
@@ -201,7 +202,7 @@ class ConformanceTools:
                 "verify_violation_fixed", f"Error verifying fix: {e}"
             )
 
-    def run_full_check(self, name: str, params: Dict[str, Any]) -> ToolResult:
+    def run_full_check(self, name: str, params: dict[str, Any]) -> ToolResult:
         """
         Run full conformance check on the project.
 
@@ -239,7 +240,7 @@ class ConformanceTools:
         except Exception as e:
             return ToolResult.failure_result("run_full_check", f"Error running check: {e}")
 
-    def run_conformance_check(self, name: str, params: Dict[str, Any]) -> ToolResult:
+    def run_conformance_check(self, name: str, params: dict[str, Any]) -> ToolResult:
         """
         Run a specific conformance check by ID on a file.
 
@@ -283,7 +284,7 @@ class ConformanceTools:
 
         try:
             # Execute the check directly
-            results: List[CheckResult] = execute_check(
+            results: list[CheckResult] = execute_check(
                 check, self.project_path, [target_path]
             )
 
@@ -326,7 +327,7 @@ class ConformanceTools:
                 "run_conformance_check", f"Error executing check: {e}"
             )
 
-    def get_check_definition(self, name: str, params: Dict[str, Any]) -> ToolResult:
+    def get_check_definition(self, name: str, params: dict[str, Any]) -> ToolResult:
         """
         Get the definition of a conformance check.
 
@@ -392,7 +393,7 @@ class ConformanceTools:
             f"Check Definition for '{check_id}':\n{output}"
         )
 
-    def get_tool_executors(self) -> Dict[str, Any]:
+    def get_tool_executors(self) -> dict[str, Any]:
         """Get dict of tool executors for registration."""
         return {
             "check_file": self.check_file,

@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-026ae45aeb08
+contract_id: agentforge
+check_id: single-responsibility-modules
+severity: minor
+file_path: src/agentforge/core/harness/tool_executor_bridge.py
+message: 'Class ''ToolExecutorBridge'' has 12 methods (max: 3)'
+detected_at: '2026-01-01T01:39:14.176293'
+last_seen_at: '2026-01-01T01:39:14.176293'
+status: open
+line_number: 21
+fix_hint: Split modules with too many classes into focused single-class modules

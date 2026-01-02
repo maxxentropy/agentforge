@@ -7,7 +7,7 @@ Tools for running tests to verify fixes.
 
 import subprocess
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 from .llm_executor_domain import ToolResult
 
@@ -26,7 +26,7 @@ class TestRunnerTools:
         self.project_path = Path(project_path)
         self.timeout = timeout
 
-    def run_tests(self, name: str, params: Dict[str, Any]) -> ToolResult:
+    def run_tests(self, name: str, params: dict[str, Any]) -> ToolResult:
         """
         Run pytest on specified path.
 
@@ -84,7 +84,7 @@ class TestRunnerTools:
         except Exception as e:
             return ToolResult.failure_result("run_tests", f"Error: {e}")
 
-    def run_single_test(self, name: str, params: Dict[str, Any]) -> ToolResult:
+    def run_single_test(self, name: str, params: dict[str, Any]) -> ToolResult:
         """
         Run a single test file or test function.
 
@@ -123,7 +123,7 @@ class TestRunnerTools:
         except Exception as e:
             return ToolResult.failure_result("run_single_test", f"Error: {e}")
 
-    def run_affected_tests(self, name: str, params: Dict[str, Any]) -> ToolResult:
+    def run_affected_tests(self, name: str, params: dict[str, Any]) -> ToolResult:
         """
         Run tests that might be affected by changes to specific files.
 
@@ -178,7 +178,7 @@ class TestRunnerTools:
             {"test_path": " ".join(test_paths), "verbose": True, "fail_fast": True},
         )
 
-    def get_tool_executors(self) -> Dict[str, Any]:
+    def get_tool_executors(self) -> dict[str, Any]:
         """Get dict of tool executors for registration."""
         return {
             "run_tests": self.run_tests,

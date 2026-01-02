@@ -31,20 +31,19 @@ Dependencies:
     For C#: dotnet tool install -g csharp-ls
 """
 
-import os
+import contextlib
 import sys
-import yaml
-from pathlib import Path
 from dataclasses import dataclass
-from typing import List, Optional, Dict, Any
+from pathlib import Path
+from typing import Any
+
+import yaml
 
 # Import components
 from agentforge.core.context_assembler import (
-    ContextAssembler,
     CodeContext,
+    ContextAssembler,
     FileContext,
-    SymbolInfo,
-    PatternMatch,
 )
 
 
@@ -55,7 +54,7 @@ class IndexStats:
     chunk_count: int = 0
     symbol_count: int = 0
     duration_ms: int = 0
-    errors: List[str] = None
+    errors: list[str] = None
 
     def __post_init__(self):
         if self.errors is None:
@@ -98,7 +97,7 @@ class ContextRetriever:
         self._lsp_available = None
         self._vector_available = None
 
-    def _load_config(self) -> Dict[str, Any]:
+    def _load_config(self) -> dict[str, Any]:
         """Load retrieval configuration."""
         config_paths = [
             self.config_path,
@@ -137,7 +136,7 @@ class ContextRetriever:
         """Get or create LSP adapter. Returns None if not available."""
         if self._lsp_adapter is None and self._lsp_available is None:
             try:
-                from agentforge.core.lsp_adapter import get_adapter_for_project, LSPServerNotFound
+                from agentforge.core.lsp_adapter import LSPServerNotFound, get_adapter_for_project
 
                 adapter = get_adapter_for_project(str(self.project_path))
                 adapter.initialize()
@@ -173,7 +172,7 @@ class ContextRetriever:
 
         return self._vector_search
 
-    def _retrieve_lsp_symbols(self, query: str, entry_points: List[str] = None) -> list:
+    def _retrieve_lsp_symbols(self, query: str, entry_points: list[str] = None) -> list:
         """Retrieve symbols via LSP for query keywords and entry points."""
         if not self.lsp_adapter:
             return []
@@ -207,7 +206,7 @@ class ContextRetriever:
         self,
         query: str,
         budget_tokens: int = None,
-        entry_points: List[str] = None,
+        entry_points: list[str] = None,
         use_lsp: bool = True,
         use_vector: bool = True,
     ) -> CodeContext:
@@ -245,7 +244,7 @@ class ContextRetriever:
 
         return context
 
-    def _extract_keywords(self, query: str) -> List[str]:
+    def _extract_keywords(self, query: str) -> list[str]:
         """Extract searchable keywords from query."""
         import re
 
@@ -272,7 +271,7 @@ class ContextRetriever:
 
         return keywords
 
-    def get_symbol_context(self, symbol_name: str) -> Optional[CodeContext]:
+    def get_symbol_context(self, symbol_name: str) -> CodeContext | None:
         """Get context for a specific symbol using LSP."""
         if not self.lsp_adapter:
             return None
@@ -309,7 +308,7 @@ class ContextRetriever:
             print(f"Symbol context failed: {e}", file=sys.stderr)
             return None
 
-    def get_file_context(self, file_path: str) -> Optional[FileContext]:
+    def get_file_context(self, file_path: str) -> FileContext | None:
         """Get full context for a specific file."""
         return self.assembler.assemble_from_files([file_path]).files[0] if file_path else None
 
@@ -329,7 +328,7 @@ class ContextRetriever:
 
         return stats
 
-    def check_dependencies(self) -> Dict[str, Dict[str, Any]]:
+    def check_dependencies(self) -> dict[str, dict[str, Any]]:
         """Check availability of retrieval components."""
         status = {
             "lsp": {"available": False, "server": None, "error": None},
@@ -369,10 +368,8 @@ class ContextRetriever:
     def shutdown(self):
         """Clean up resources."""
         if self._lsp_adapter:
-            try:
+            with contextlib.suppress(Exception):
                 self._lsp_adapter.shutdown()
-            except Exception:
-                pass
             self._lsp_adapter = None
 
 

@@ -1,15 +1,11 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-4-refactor-deliver.yaml
-# @spec_id: pipeline-controller-phase4-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
 # @component_id: refactor-phase-executor, deliver-phase-executor
 # @test_path: tests/integration/pipeline/stages/test_refactor_deliver_pipeline.py
 
 """Integration tests for REFACTOR & DELIVER pipeline."""
 
-from pathlib import Path
-from typing import Any, Dict
-from unittest.mock import MagicMock, patch, Mock
-
-import pytest
+from unittest.mock import MagicMock, patch
 
 from agentforge.core.pipeline import StageContext, StageStatus
 
@@ -25,7 +21,7 @@ class TestRefactorIntegration:
         """GREEN artifact flows correctly to REFACTOR phase."""
         from agentforge.core.pipeline.stages.refactor import RefactorPhaseExecutor
 
-        executor = RefactorPhaseExecutor()
+        RefactorPhaseExecutor()
 
         context = StageContext(
             pipeline_id="PL-test",
@@ -154,7 +150,7 @@ class TestDeliverIntegration:
         """REFACTOR artifact flows correctly to DELIVER phase."""
         from agentforge.core.pipeline.stages.deliver import DeliverPhaseExecutor
 
-        executor = DeliverPhaseExecutor()
+        DeliverPhaseExecutor()
 
         context = StageContext(
             pipeline_id="PL-test",
@@ -229,8 +225,8 @@ class TestFullPipelineIntegration:
         temp_project_for_refactor,
     ):
         """Full GREEN → REFACTOR → DELIVER flow."""
-        from agentforge.core.pipeline.stages.refactor import RefactorPhaseExecutor
         from agentforge.core.pipeline.stages.deliver import DeliverPhaseExecutor, DeliveryMode
+        from agentforge.core.pipeline.stages.refactor import RefactorPhaseExecutor
 
         # REFACTOR Phase
         refactor_executor = RefactorPhaseExecutor()
@@ -275,8 +271,8 @@ class TestFullPipelineIntegration:
         temp_project_for_refactor,
     ):
         """Full pipeline completes successfully."""
-        from agentforge.core.pipeline.stages.refactor import RefactorPhaseExecutor
         from agentforge.core.pipeline.stages.deliver import DeliverPhaseExecutor, DeliveryMode
+        from agentforge.core.pipeline.stages.refactor import RefactorPhaseExecutor
 
         # REFACTOR Phase
         refactor_executor = RefactorPhaseExecutor()

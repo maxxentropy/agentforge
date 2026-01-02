@@ -1,5 +1,5 @@
-# @spec_file: .agentforge/specs/harness-v1.yaml
-# @spec_id: harness-v1
+# @spec_file: .agentforge/specs/core-harness-v1.yaml
+# @spec_id: core-harness-v1
 # @component_id: tools-harness-recovery_executor
 # @impl_path: tools/harness/recovery_executor.py
 
@@ -14,21 +14,24 @@ These tests verify the recovery strategy execution logic including policy matchi
 action execution, and various recovery operations like checkpoint, rollback, summarize, etc.
 """
 
-import pytest
 from datetime import datetime, timedelta
 from pathlib import Path
-from unittest.mock import Mock, MagicMock, patch
+from unittest.mock import Mock, patch
 
-from tools.harness.recovery_executor import RecoveryExecutor
-from tools.harness.recovery_domain import (
-    RecoveryAction, RecoveryResult, RecoveryAttempt, RecoveryPolicy, Checkpoint
+from agentforge.core.harness.checkpoint_manager import CheckpointManager
+from agentforge.core.harness.recovery_domain import (
+    Checkpoint,
+    RecoveryAction,
+    RecoveryAttempt,
+    RecoveryPolicy,
+    RecoveryResult,
 )
-from tools.harness.checkpoint_manager import CheckpointManager
+from agentforge.core.harness.recovery_executor import RecoveryExecutor
 
 
 class TestRecoveryExecutorInit:
     """Test RecoveryExecutor initialization."""
-    
+
     def test_init_with_checkpoint_manager_and_policies(self):
         """Test initialization with checkpoint manager and policies."""
         checkpoint_manager = Mock(spec=CheckpointManager)
@@ -41,19 +44,19 @@ class TestRecoveryExecutorInit:
                 cooldown_seconds=60
             )
         ]
-        
+
         executor = RecoveryExecutor(checkpoint_manager, policies)
-        
+
         assert executor.checkpoint_manager == checkpoint_manager
         assert len(executor.policies) == 1
         assert executor.policies[0].name == "test_policy"
-    
+
     def test_init_with_default_policies_when_none_provided(self):
         """Test initialization loads default policies when none provided."""
         checkpoint_manager = Mock(spec=CheckpointManager)
-        
+
         executor = RecoveryExecutor(checkpoint_manager)
-        
+
         # Should have default policies loaded
         assert len(executor.policies) > 0
         policy_names = [p.name for p in executor.policies]
@@ -64,7 +67,7 @@ class TestRecoveryExecutorInit:
 
 class TestExecuteRecovery:
     """Test main recovery execution logic."""
-    
+
     def test_execute_recovery_matches_health_issues_to_policies(self):
         """Test that recovery execution matches health issues to appropriate policies."""
         checkpoint_manager = Mock(spec=CheckpointManager)
@@ -76,11 +79,11 @@ class TestExecuteRecovery:
             cooldown_seconds=30
         )
         executor = RecoveryExecutor(checkpoint_manager, [policy])
-        
+
         # Mock health with loop issue
         health = Mock()
         health.issues = ["Loop detected in workflow"]
-        
+
         with patch.object(executor, 'execute_action') as mock_execute:
             mock_execute.return_value = RecoveryAttempt(
                 action=RecoveryAction.CHECKPOINT,
@@ -88,13 +91,13 @@ class TestExecuteRecovery:
                 trigger="Loop detected in workflow",
                 result=RecoveryResult.SUCCESS
             )
-            
+
             result = executor.execute_recovery(health, "session123", {"state": "data"})
-            
+
             assert result.action == RecoveryAction.CHECKPOINT
             assert result.trigger == "Loop detected in workflow"
             mock_execute.assert_called_once()
-    
+
     def test_execute_recovery_respects_cooldown_periods(self):
         """Test that recovery execution respects cooldown periods between attempts."""
         checkpoint_manager = Mock(spec=CheckpointManager)
@@ -117,7 +120,7 @@ class TestExecuteRecovery:
 
         # Should skip because cooldown hasn't passed, resulting in no matching policy
         assert result.result == RecoveryResult.SKIPPED
-    
+
     def test_execute_recovery_tries_actions_in_order_until_success(self):
         """Test that recovery tries actions in order until one succeeds."""
         checkpoint_manager = Mock(spec=CheckpointManager)
@@ -129,25 +132,25 @@ class TestExecuteRecovery:
             cooldown_seconds=0
         )
         executor = RecoveryExecutor(checkpoint_manager, [policy])
-        
+
         health = Mock()
         health.issues = ["error occurred"]
-        
+
         # Mock first action fails, second succeeds
         with patch.object(executor, 'execute_action') as mock_execute:
             mock_execute.side_effect = [
-                RecoveryAttempt(action=RecoveryAction.CHECKPOINT, timestamp=datetime.now(), 
+                RecoveryAttempt(action=RecoveryAction.CHECKPOINT, timestamp=datetime.now(),
                               trigger="error", result=RecoveryResult.FAILED),
                 RecoveryAttempt(action=RecoveryAction.ROLLBACK, timestamp=datetime.now(),
                               trigger="error", result=RecoveryResult.SUCCESS)
             ]
-            
+
             result = executor.execute_recovery(health, "session123", {"state": "data"})
-            
+
             assert result.action == RecoveryAction.ROLLBACK
             assert result.result == RecoveryResult.SUCCESS
             assert mock_execute.call_count == 2
-    
+
     def test_execute_recovery_records_attempt_result(self):
         """Test that recovery execution records the attempt result."""
         checkpoint_manager = Mock(spec=CheckpointManager)
@@ -166,7 +169,7 @@ class TestExecuteRecovery:
 
 class TestExecuteAction:
     """Test individual recovery action execution."""
-    
+
     def test_execute_action_checkpoint_calls_checkpoint_method(self):
         """Test that CHECKPOINT action calls the checkpoint method."""
         checkpoint_manager = Mock(spec=CheckpointManager)
@@ -190,14 +193,14 @@ class TestExecuteAction:
             # Implementation calls with keyword args and uses state.get("phase")
             mock_checkpoint.assert_called_once()
             assert result.action == RecoveryAction.CHECKPOINT
-    
+
     def test_execute_action_rollback_calls_rollback_method(self):
         """Test that ROLLBACK action calls the rollback method."""
         checkpoint_manager = Mock(spec=CheckpointManager)
         executor = RecoveryExecutor(checkpoint_manager, [])
-        
+
         context = {"session_id": "session123"}
-        
+
         with patch.object(executor, 'rollback') as mock_rollback:
             mock_rollback.return_value = RecoveryAttempt(
                 action=RecoveryAction.ROLLBACK,
@@ -205,30 +208,30 @@ class TestExecuteAction:
                 trigger="test",
                 result=RecoveryResult.SUCCESS
             )
-            
+
             result = executor.execute_action(RecoveryAction.ROLLBACK, context)
-            
+
             mock_rollback.assert_called_once_with("session123")
             assert result.action == RecoveryAction.ROLLBACK
-    
+
     def test_execute_action_unknown_action_returns_failed_attempt(self):
         """Test that unknown action returns a failed attempt."""
         checkpoint_manager = Mock(spec=CheckpointManager)
         executor = RecoveryExecutor(checkpoint_manager, [])
-        
+
         # Use a mock action that doesn't exist
         unknown_action = "UNKNOWN_ACTION"
         context = {"session_id": "session123"}
-        
+
         result = executor.execute_action(unknown_action, context)
-        
+
         assert result.result == RecoveryResult.FAILED
         assert "unknown action" in result.error.lower()
 
 
 class TestCheckpointMethod:
     """Test checkpoint creation method."""
-    
+
     def test_checkpoint_creates_checkpoint_successfully(self):
         """Test successful checkpoint creation."""
         checkpoint_manager = Mock(spec=CheckpointManager)
@@ -256,16 +259,16 @@ class TestCheckpointMethod:
         assert result.action == RecoveryAction.CHECKPOINT
         assert result.result == RecoveryResult.SUCCESS
         assert result.details["checkpoint_id"] == "checkpoint123"
-    
+
     def test_checkpoint_handles_creation_failure(self):
         """Test checkpoint creation failure handling."""
         checkpoint_manager = Mock(spec=CheckpointManager)
         checkpoint_manager.create_checkpoint.side_effect = Exception("Disk full")
-        
+
         executor = RecoveryExecutor(checkpoint_manager, [])
-        
+
         result = executor.checkpoint("session123", "analysis", {"key": "value"})
-        
+
         assert result.action == RecoveryAction.CHECKPOINT
         assert result.result == RecoveryResult.FAILED
         assert "Disk full" in result.error
@@ -273,7 +276,7 @@ class TestCheckpointMethod:
 
 class TestRollbackMethod:
     """Test rollback to checkpoint method."""
-    
+
     def test_rollback_restores_last_checkpoint_successfully(self):
         """Test successful rollback to last checkpoint."""
         checkpoint_manager = Mock(spec=CheckpointManager)
@@ -287,29 +290,29 @@ class TestRollbackMethod:
         )
         checkpoint_manager.list_checkpoints.return_value = [checkpoint]
         checkpoint_manager.restore_checkpoint.return_value = True
-        
+
         executor = RecoveryExecutor(checkpoint_manager, [])
-        
+
         result = executor.rollback("session123")
-        
+
         checkpoint_manager.list_checkpoints.assert_called_once_with("session123")
         checkpoint_manager.restore_checkpoint.assert_called_once_with("checkpoint123")
         assert result.action == RecoveryAction.ROLLBACK
         assert result.result == RecoveryResult.SUCCESS
-    
+
     def test_rollback_fails_when_no_checkpoints_available(self):
         """Test rollback failure when no checkpoints are available."""
         checkpoint_manager = Mock(spec=CheckpointManager)
         checkpoint_manager.list_checkpoints.return_value = []
-        
+
         executor = RecoveryExecutor(checkpoint_manager, [])
-        
+
         result = executor.rollback("session123")
-        
+
         assert result.action == RecoveryAction.ROLLBACK
         assert result.result == RecoveryResult.FAILED
         assert "no checkpoints" in result.error.lower()
-    
+
     def test_rollback_fails_when_restore_fails(self):
         """Test rollback failure when checkpoint restore fails."""
         checkpoint_manager = Mock(spec=CheckpointManager)
@@ -323,18 +326,18 @@ class TestRollbackMethod:
         )
         checkpoint_manager.list_checkpoints.return_value = [checkpoint]
         checkpoint_manager.restore_checkpoint.return_value = False
-        
+
         executor = RecoveryExecutor(checkpoint_manager, [])
-        
+
         result = executor.rollback("session123")
-        
+
         assert result.action == RecoveryAction.ROLLBACK
         assert result.result == RecoveryResult.FAILED
 
 
 class TestSummarizeContext:
     """Test context summarization method."""
-    
+
     def test_summarize_context_compresses_long_context(self):
         """Test that long context gets compressed appropriately."""
         checkpoint_manager = Mock(spec=CheckpointManager)
@@ -351,32 +354,32 @@ class TestSummarizeContext:
         assert "original_length" in result.details
         assert "new_length" in result.details  # Implementation uses "new_length"
         assert result.details["new_length"] < result.details["original_length"]
-    
+
     def test_summarize_context_preserves_first_and_last_tokens(self):
         """Test that summarization preserves first and last portions."""
         checkpoint_manager = Mock(spec=CheckpointManager)
         executor = RecoveryExecutor(checkpoint_manager, [])
-        
+
         context = "FIRST " + "middle " * 100 + "LAST"
         max_tokens = 50
-        
+
         result = executor.summarize_context(context, max_tokens)
-        
+
         summarized = result.details["summarized_context"]
         assert "FIRST" in summarized
         assert "LAST" in summarized
         assert result.result == RecoveryResult.SUCCESS
-    
+
     def test_summarize_context_handles_short_context(self):
         """Test that short context is returned unchanged."""
         checkpoint_manager = Mock(spec=CheckpointManager)
         executor = RecoveryExecutor(checkpoint_manager, [])
-        
+
         short_context = "This is short"
         max_tokens = 100
-        
+
         result = executor.summarize_context(short_context, max_tokens)
-        
+
         assert result.action == RecoveryAction.SUMMARIZE
         assert result.result == RecoveryResult.SUCCESS
         assert result.details["summarized_context"] == short_context
@@ -384,7 +387,7 @@ class TestSummarizeContext:
 
 class TestResetState:
     """Test state reset method."""
-    
+
     def test_reset_state_clears_problematic_state(self):
         """Test that reset clears state while preserving specified keys."""
         checkpoint_manager = Mock(spec=CheckpointManager)
@@ -399,14 +402,14 @@ class TestResetState:
         assert result.details["preserved_keys"] == preserve_keys
         assert result.details["reset_complete"] is True
         assert result.details["session_id"] == "session123"
-    
+
     def test_reset_state_handles_empty_preserve_keys(self):
         """Test reset with no keys to preserve."""
         checkpoint_manager = Mock(spec=CheckpointManager)
         executor = RecoveryExecutor(checkpoint_manager, [])
-        
+
         result = executor.reset_state("session123", [])
-        
+
         assert result.action == RecoveryAction.RESET
         assert result.result == RecoveryResult.SUCCESS
         assert result.details["preserved_keys"] == []
@@ -414,7 +417,7 @@ class TestResetState:
 
 class TestEscalate:
     """Test human escalation method."""
-    
+
     def test_escalate_creates_escalation_record(self):
         """Test that escalation creates proper escalation record."""
         checkpoint_manager = Mock(spec=CheckpointManager)
@@ -431,7 +434,7 @@ class TestEscalate:
         assert result.details["session_id"] == "session123"
         assert "timestamp" in result.details
         assert "recommended_actions" in result.details
-    
+
     def test_escalate_includes_state_and_health_info(self):
         """Test that escalation includes state snapshot and health status."""
         checkpoint_manager = Mock(spec=CheckpointManager)
@@ -451,7 +454,7 @@ class TestEscalate:
 
 class TestRecoveryHistory:
     """Test recovery history management."""
-    
+
     def test_get_recovery_history_returns_recent_attempts(self):
         """Test getting recent recovery attempts."""
         checkpoint_manager = Mock(spec=CheckpointManager)
@@ -477,18 +480,18 @@ class TestRecoveryHistory:
         history = executor.get_recovery_history()
 
         assert len(history) == 2
-    
+
     def test_get_recovery_history_filters_by_session(self):
         """Test getting recovery history filtered by session."""
         checkpoint_manager = Mock(spec=CheckpointManager)
         executor = RecoveryExecutor(checkpoint_manager, [])
-        
+
         # This test assumes session filtering is implemented
         # The actual implementation would need to track session_id in attempts
         history = executor.get_recovery_history("session123")
-        
+
         assert isinstance(history, list)
-    
+
     def test_get_recovery_history_respects_limit(self):
         """Test that history limit is respected."""
         checkpoint_manager = Mock(spec=CheckpointManager)
@@ -512,12 +515,12 @@ class TestRecoveryHistory:
 
 class TestPolicyManagement:
     """Test recovery policy management."""
-    
+
     def test_register_policy_adds_new_policy(self):
         """Test registering a new recovery policy."""
         checkpoint_manager = Mock(spec=CheckpointManager)
         executor = RecoveryExecutor(checkpoint_manager, [])
-        
+
         policy = RecoveryPolicy(
             name="custom_policy",
             triggers=["custom_issue"],
@@ -525,12 +528,12 @@ class TestPolicyManagement:
             max_attempts=2,
             cooldown_seconds=30
         )
-        
+
         executor.register_policy(policy)
-        
+
         assert policy in executor.policies
         assert executor.get_policy_for_issue("custom_issue") == policy
-    
+
     def test_get_policy_for_issue_finds_matching_policy(self):
         """Test finding policy that matches an issue."""
         checkpoint_manager = Mock(spec=CheckpointManager)
@@ -542,20 +545,20 @@ class TestPolicyManagement:
             cooldown_seconds=60
         )
         executor = RecoveryExecutor(checkpoint_manager, [policy])
-        
+
         found_policy = executor.get_policy_for_issue("Loop detected in workflow")
-        
+
         assert found_policy == policy
-    
+
     def test_get_policy_for_issue_returns_none_when_no_match(self):
         """Test that no policy is returned when no triggers match."""
         checkpoint_manager = Mock(spec=CheckpointManager)
         executor = RecoveryExecutor(checkpoint_manager, [])
-        
+
         found_policy = executor.get_policy_for_issue("unknown issue type")
-        
+
         assert found_policy is None
-    
+
     def test_get_policy_for_issue_matches_partial_triggers(self):
         """Test that policy matching works with partial trigger matches."""
         checkpoint_manager = Mock(spec=CheckpointManager)
@@ -567,40 +570,40 @@ class TestPolicyManagement:
             cooldown_seconds=60
         )
         executor = RecoveryExecutor(checkpoint_manager, [policy])
-        
+
         # Should match "drift" trigger
         found_policy = executor.get_policy_for_issue("Context drift detected")
-        
+
         assert found_policy == policy
 
 
 class TestDefaultPolicies:
     """Test that default policies are properly configured."""
-    
+
     def test_default_policies_include_all_expected_policies(self):
         """Test that all expected default policies are loaded."""
         checkpoint_manager = Mock(spec=CheckpointManager)
         executor = RecoveryExecutor(checkpoint_manager)
-        
+
         policy_names = [p.name for p in executor.policies]
         expected_policies = [
             "loop_recovery",
-            "drift_recovery", 
+            "drift_recovery",
             "thrashing_recovery",
             "context_pressure_recovery",
             "stall_recovery"
         ]
-        
+
         for expected in expected_policies:
             assert expected in policy_names
-    
+
     def test_loop_recovery_policy_configuration(self):
         """Test loop recovery policy has correct configuration."""
         checkpoint_manager = Mock(spec=CheckpointManager)
         executor = RecoveryExecutor(checkpoint_manager)
-        
+
         policy = executor.get_policy_for_issue("Loop detected")
-        
+
         assert policy is not None
         assert policy.name == "loop_recovery"
         assert RecoveryAction.CHECKPOINT in policy.actions
@@ -608,14 +611,14 @@ class TestDefaultPolicies:
         assert RecoveryAction.RESET in policy.actions
         assert policy.max_attempts == 3
         assert policy.cooldown_seconds == 30
-    
+
     def test_context_pressure_recovery_policy_configuration(self):
         """Test context pressure recovery policy configuration."""
         checkpoint_manager = Mock(spec=CheckpointManager)
         executor = RecoveryExecutor(checkpoint_manager)
-        
+
         policy = executor.get_policy_for_issue("Critical context pressure")
-        
+
         assert policy is not None
         assert policy.name == "context_pressure_recovery"
         assert RecoveryAction.SUMMARIZE in policy.actions
@@ -626,7 +629,7 @@ class TestDefaultPolicies:
 
 class TestConstraints:
     """Test that recovery executor respects specified constraints."""
-    
+
     def test_cooldown_enforced_between_recovery_attempts(self):
         """Test that cooldown period is enforced between recovery attempts."""
         checkpoint_manager = Mock(spec=CheckpointManager)
@@ -649,17 +652,17 @@ class TestConstraints:
 
         # Should skip because cooldown hasn't expired
         assert result.result == RecoveryResult.SKIPPED
-    
+
     def test_escalation_always_succeeds_as_fallback(self):
         """Test that escalation always succeeds and serves as fallback."""
         checkpoint_manager = Mock(spec=CheckpointManager)
         executor = RecoveryExecutor(checkpoint_manager, [])
-        
+
         result = executor.escalate("Test escalation", {"context": "data"})
-        
+
         assert result.result == RecoveryResult.SUCCESS
         assert result.action == RecoveryAction.ESCALATE
-    
+
     def test_recovery_attempts_are_logged_for_audit(self):
         """Test that recovery attempts during execute_recovery are logged."""
         checkpoint_manager = Mock(spec=CheckpointManager)

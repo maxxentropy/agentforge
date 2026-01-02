@@ -1,20 +1,19 @@
-# @spec_file: specs/tools/01-tool-handlers.yaml
-# @spec_id: tool-handlers-v1
+# @spec_file: .agentforge/specs/core-harness-minimal-context-v1.yaml
+# @spec_id: core-harness-minimal-context-v1
 # @component_id: tool-handlers-init
 
 """
 Tests for tool handler registry and factory functions.
 """
 
+
 import pytest
-from pathlib import Path
 
 from agentforge.core.harness.minimal_context.tool_handlers import (
-    create_standard_handlers,
+    ToolHandlerRegistry,
     create_fix_violation_handlers,
     create_minimal_handlers,
-    ToolHandlerRegistry,
-    ActionHandler,
+    create_standard_handlers,
 )
 
 

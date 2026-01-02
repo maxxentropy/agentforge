@@ -1,0 +1,91 @@
+context_data:
+  check_id: max-cyclomatic-complexity
+  contract_id: agentforge
+  file_path: tools/harness/llm_executor_domain.py
+  files_modified:
+  - tools/harness/llm_executor_domain.py
+  fix_hint: Break complex functions into smaller, focused helper functions
+  line_number: 51
+  message: 'Function ''_infer_category'' has complexity 15 (max: 10)'
+  precomputed:
+    analysis:
+      branch_count: 7
+      cognitive_complexity: 7
+      cyclomatic_complexity: 15
+      line_count: 20
+      loop_count: 7
+      nesting_depth: 1
+    check_definition: "Check Definition for 'max-cyclomatic-complexity':\nid: max-cyclomatic-complexity\n\
+      name: Maximum Cyclomatic Complexity\ntype: ast_check\nseverity: warning\nenabled:\
+      \ true\ndescription: Functions should not exceed complexity threshold\nconfig:\n\
+      \  metric: cyclomatic_complexity\n  threshold: 10\nfix_hint: Break complex functions\
+      \ into smaller, focused helper functions\napplies_to:\n  paths:\n  - '**/*.py'\n\
+      \  exclude_paths:\n  - '**/tests/**'\n"
+    class_methods:
+    - end_line: 49
+      line: 46
+      name: __post_init__
+    - end_line: 70
+      line: 51
+      name: _infer_category
+    - end_line: 78
+      line: 72
+      name: to_dict
+    - end_line: 88
+      line: 81
+      name: from_dict
+    file_context: "      42:     name: str\n      43:     parameters: Dict[str, Any]\
+      \ = field(default_factory=dict)\n      44:     category: Optional[ToolCategory]\
+      \ = None\n      45: \n      46:     def __post_init__(self):\n      47:    \
+      \     \"\"\"Infer category from tool name if not provided.\"\"\"\n      48:\
+      \         if self.category is None:\n      49:             self.category = self._infer_category()\n\
+      \      50: \n>>>   51:     def _infer_category(self) -> ToolCategory:\n    \
+      \  52:         \"\"\"Infer tool category from name.\"\"\"\n      53:       \
+      \  name_lower = self.name.lower()\n      54: \n      55:         if any(x in\
+      \ name_lower for x in [\"read\", \"write\", \"edit\", \"file\"]):\n      56:\
+      \             return ToolCategory.FILE\n      57:         if any(x in name_lower\
+      \ for x in [\"grep\", \"glob\", \"search\", \"find\"]):\n      58:         \
+      \    return ToolCategory.SEARCH\n      59:         if any(x in name_lower for\
+      \ x in [\"bash\", \"shell\", \"command\"]):\n      60:             return ToolCategory.SHELL\n\
+      \      61:         if any(x in name_lower for x in [\"test\", \"pytest\"]):"
+    fix_strategy: Extract loops and conditional blocks into helper functions
+    function_lines: 51-70
+    function_source: "    def _infer_category(self) -> ToolCategory:\n        \"\"\
+      \"Infer tool category from name.\"\"\"\n        name_lower = self.name.lower()\n\
+      \n        if any(x in name_lower for x in [\"read\", \"write\", \"edit\", \"\
+      file\"]):\n            return ToolCategory.FILE\n        if any(x in name_lower\
+      \ for x in [\"grep\", \"glob\", \"search\", \"find\"]):\n            return\
+      \ ToolCategory.SEARCH\n        if any(x in name_lower for x in [\"bash\", \"\
+      shell\", \"command\"]):\n            return ToolCategory.SHELL\n        if any(x\
+      \ in name_lower for x in [\"test\", \"pytest\"]):\n            return ToolCategory.TEST\n\
+      \        if any(x in name_lower for x in [\"git\", \"commit\", \"push\"]):\n\
+      \            return ToolCategory.GIT\n        if any(x in name_lower for x in\
+      \ [\"analyze\", \"lint\", \"check\"]):\n            return ToolCategory.ANALYSIS\n\
+      \        if any(x in name_lower for x in [\"memory\", \"remember\", \"recall\"\
+      ]):\n            return ToolCategory.MEMORY\n\n        return ToolCategory.SHELL\
+      \  # Default"
+    parent_class: ToolCall
+    violating_function: _infer_category
+  severity: major
+  test_path: tests/unit/tools/
+  violation_id: V-078847bf8318
+current_step: 7
+error: null
+last_updated: '2026-01-01T01:00:35.976210+00:00'
+phase: verify
+phase_machine_state:
+  blocked_reason: null
+  current_phase: verify
+  phase_history:
+  - init
+  - analyze
+  - implement
+  steps_in_phase: 3
+schema_version: '2.0'
+verification:
+  checks_failing: 0
+  checks_passing: 0
+  details: {}
+  last_check_time: null
+  ready_for_completion: false
+  tests_passing: false

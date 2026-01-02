@@ -11,10 +11,9 @@ Registry for pattern-to-check mappings.
 Provides decorator-based registration and lookup.
 """
 
-from typing import List, Dict, Type, Optional
 
-from bridge.mappings.base import PatternMapping
-from bridge.domain import MappingContext, GeneratedCheck
+from ..domain import GeneratedCheck, MappingContext
+from .base import PatternMapping
 
 
 class MappingRegistry:
@@ -31,11 +30,11 @@ class MappingRegistry:
         mappings = MappingRegistry.get_mappings_for_language("csharp")
     """
 
-    _mappings: Dict[str, Type[PatternMapping]] = {}
-    _instances: Dict[str, PatternMapping] = {}
+    _mappings: dict[str, type[PatternMapping]] = {}
+    _instances: dict[str, PatternMapping] = {}
 
     @classmethod
-    def register(cls, mapping_class: Type[PatternMapping]) -> Type[PatternMapping]:
+    def register(cls, mapping_class: type[PatternMapping]) -> type[PatternMapping]:
         """
         Decorator to register a pattern mapping.
 
@@ -50,7 +49,7 @@ class MappingRegistry:
         return mapping_class
 
     @classmethod
-    def get_all_mappings(cls) -> List[PatternMapping]:
+    def get_all_mappings(cls) -> list[PatternMapping]:
         """Get instances of all registered mappings."""
         result = []
         for key, mapping_class in cls._mappings.items():
@@ -60,7 +59,7 @@ class MappingRegistry:
         return result
 
     @classmethod
-    def get_mappings_for_language(cls, language: str) -> List[PatternMapping]:
+    def get_mappings_for_language(cls, language: str) -> list[PatternMapping]:
         """Get mappings that apply to a specific language."""
         all_mappings = cls.get_all_mappings()
         return [
@@ -69,13 +68,13 @@ class MappingRegistry:
         ]
 
     @classmethod
-    def get_mappings_for_pattern(cls, pattern_key: str) -> List[PatternMapping]:
+    def get_mappings_for_pattern(cls, pattern_key: str) -> list[PatternMapping]:
         """Get mappings that handle a specific pattern."""
         all_mappings = cls.get_all_mappings()
         return [m for m in all_mappings if m.pattern_key == pattern_key]
 
     @classmethod
-    def get_mapping_info(cls) -> List[dict]:
+    def get_mapping_info(cls) -> list[dict]:
         """Get info about all registered mappings."""
         return [m.get_info() for m in cls.get_all_mappings()]
 
@@ -83,8 +82,8 @@ class MappingRegistry:
     def generate_checks(
         cls,
         context: MappingContext,
-        pattern_filter: Optional[str] = None
-    ) -> List[GeneratedCheck]:
+        pattern_filter: str | None = None
+    ) -> list[GeneratedCheck]:
         """
         Generate checks for a context using all applicable mappings.
 

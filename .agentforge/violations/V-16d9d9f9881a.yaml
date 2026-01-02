@@ -1,0 +1,13 @@
+schema_version: '1.0'
+violation_id: V-16d9d9f9881a
+contract_id: agentforge
+check_id: single-responsibility-modules
+severity: minor
+file_path: tools/harness/llm_executor_domain.py
+message: 'Class ''ToolResult'' has 4 methods (max: 3)'
+detected_at: '2025-12-31T12:15:10.014152'
+last_seen_at: '2025-12-31T19:17:48.183895'
+status: stale
+line_number: 92
+fix_hint: Split modules with too many classes into focused single-class modules
+test_path: tests/unit/tools/

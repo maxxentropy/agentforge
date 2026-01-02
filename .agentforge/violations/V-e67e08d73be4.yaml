@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-e67e08d73be4
+contract_id: agentforge
+check_id: max-cyclomatic-complexity
+severity: major
+file_path: tools/harness/minimal_context/fix_workflow.py
+message: 'Function ''_precompute_violation_context'' has complexity 36 (max: 10)'
+detected_at: '2025-12-31T17:47:35.598786'
+last_seen_at: '2025-12-31T17:47:35.598786'
+status: stale
+line_number: 1002
+fix_hint: Break complex functions into smaller, focused helper functions

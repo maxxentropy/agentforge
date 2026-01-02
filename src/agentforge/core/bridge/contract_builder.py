@@ -12,9 +12,8 @@ Builds and writes contract YAML files from generated checks.
 
 from datetime import datetime
 from pathlib import Path
-from typing import List, Dict, Any, Optional
 
-from bridge.domain import (
+from .domain import (
     GeneratedCheck,
     GeneratedContract,
     GenerationMetadata,
@@ -71,9 +70,9 @@ class ContractBuilder:
 
     def build_contract(
         self,
-        zone_name: Optional[str],
+        zone_name: str | None,
         language: str,
-        checks: List[GeneratedCheck],
+        checks: list[GeneratedCheck],
         profile_path: str,
         profile_hash: str,
         confidence_threshold: float = 0.6,
@@ -136,9 +135,9 @@ class ContractBuilder:
             tags=tags,
         )
 
-    def _group_patterns(self, checks: List[GeneratedCheck]) -> Dict[str, float]:
+    def _group_patterns(self, checks: list[GeneratedCheck]) -> dict[str, float]:
         """Group checks by source pattern with max confidence."""
-        patterns: Dict[str, float] = {}
+        patterns: dict[str, float] = {}
         for check in checks:
             pattern = check.source_pattern
             if pattern not in patterns or check.source_confidence > patterns[pattern]:
@@ -149,7 +148,7 @@ class ContractBuilder:
         self,
         contract: GeneratedContract,
         dry_run: bool = False,
-    ) -> Optional[Path]:
+    ) -> Path | None:
         """
         Write contract to YAML file.
 
@@ -199,7 +198,7 @@ class ContractBuilder:
         # Don't include empty checks here - we'll add them manually below
 
         # Sort checks by source pattern
-        checks_by_pattern: Dict[str, List[dict]] = {}
+        checks_by_pattern: dict[str, list[dict]] = {}
         for check in checks:
             pattern = check.get("generation", {}).get("source_pattern", "other")
             if pattern not in checks_by_pattern:

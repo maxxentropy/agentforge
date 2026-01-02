@@ -1,0 +1,12 @@
+constraints:
+- Only modify files directly related to the violation
+- Follow existing code patterns
+- Do not introduce new violations
+created_at: '2025-12-31T13:58:48.863536'
+goal: Fix conformance violation V-000dd41679c3
+success_criteria:
+- Conformance check passes for the affected file
+- All existing tests continue to pass
+- Minimal changes made to fix the issue
+task_id: fix-V-000dd41679c3
+task_type: fix_violation

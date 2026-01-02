@@ -24,8 +24,13 @@ Multi-zone usage:
         print(f"{zone_name}: {profile.zone.language}")
 """
 
-from .manager import DiscoveryManager, DiscoveryResult, MultiZoneDiscoveryManager, MultiZoneDiscoveryResult
-from .domain import CodebaseProfile, DiscoveryPhase, Zone, Interaction, ZoneProfile
+from .domain import CodebaseProfile, DiscoveryPhase, Interaction, Zone, ZoneProfile
+from .manager import (
+    DiscoveryManager,
+    DiscoveryResult,
+    MultiZoneDiscoveryManager,
+    MultiZoneDiscoveryResult,
+)
 
 __all__ = [
     "DiscoveryManager",

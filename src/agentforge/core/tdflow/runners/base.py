@@ -12,7 +12,7 @@ Abstract base class for test runners.
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from agentforge.core.tdflow.domain import TestResult
@@ -35,7 +35,7 @@ class TestRunner(ABC):
         self.project_path = project_path
 
     @abstractmethod
-    def run_tests(self, filter_pattern: Optional[str] = None) -> "TestResult":
+    def run_tests(self, filter_pattern: str | None = None) -> "TestResult":
         """
         Run tests and return results.
 
@@ -58,7 +58,7 @@ class TestRunner(ABC):
         pass
 
     @abstractmethod
-    def discover_tests(self) -> List[str]:
+    def discover_tests(self) -> list[str]:
         """
         Discover available tests.
 

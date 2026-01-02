@@ -1,19 +1,15 @@
-# @spec_file: .agentforge/specs/bridge-v1.yaml
-# @spec_id: bridge-v1
+# @spec_file: .agentforge/specs/core-bridge-v1.yaml
+# @spec_id: core-bridge-v1
 # @component_id: tools-bridge-contract_builder
 # @impl_path: tools/bridge/contract_builder.py
 
 """Unit tests for contract builder."""
 
+
 import pytest
-from datetime import datetime
-from pathlib import Path
 
-import sys
-sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent.parent / "tools"))
-
-from bridge.contract_builder import ContractBuilder
-from bridge.domain import GeneratedCheck
+from agentforge.core.bridge.contract_builder import ContractBuilder
+from agentforge.core.bridge.domain import GeneratedCheck
 
 
 class TestContractBuilder:

@@ -1,16 +1,13 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-2-design-pipeline.yaml
-# @spec_id: pipeline-controller-phase2-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
 # @component_id: llm-stage-executor
 # @test_path: tests/unit/pipeline/test_llm_stage_executor.py
 
 """Tests for LLMStageExecutor and ToolBasedStageExecutor."""
 
-from typing import Any, Dict, Optional
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
-import pytest
-
-from agentforge.core.pipeline import StageContext, StageResult, StageStatus
+from agentforge.core.pipeline import StageContext, StageStatus
 
 
 class TestLLMStageExecutor:
@@ -50,7 +47,7 @@ class TestLLMStageExecutor:
         # Mock the LLM execution
         with patch.object(executor, "_run_with_llm") as mock_llm:
             mock_llm.return_value = {"response": "LLM response"}
-            result = executor.execute(context)
+            executor.execute(context)
 
         assert "get_system_prompt" in calls
         assert "get_user_message" in calls

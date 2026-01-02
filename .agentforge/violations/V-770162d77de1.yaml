@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-770162d77de1
+contract_id: agentforge
+check_id: max-function-length
+severity: major
+file_path: src/agentforge/core/harness/minimal_context/context_schemas.py
+message: 'Function ''get_available_actions'' has 57 lines (max: 50)'
+detected_at: '2026-01-01T01:39:13.622148'
+last_seen_at: '2026-01-01T01:39:13.622148'
+status: open
+line_number: 194
+fix_hint: Extract logic into helper functions or use composition

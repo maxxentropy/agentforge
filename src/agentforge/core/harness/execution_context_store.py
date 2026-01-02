@@ -11,10 +11,10 @@ Persists LLM execution context to YAML for auditability and recovery.
 Follows the same patterns as other harness stores (session_store, memory_store).
 """
 
-import yaml
-from pathlib import Path
-from typing import Optional, List
 from datetime import datetime
+from pathlib import Path
+
+import yaml
 
 from .llm_executor_domain import ExecutionContext, StepResult
 
@@ -73,7 +73,7 @@ class ExecutionContextStore:
 
         return context_file
 
-    def load_context(self, session_id: str) -> Optional[ExecutionContext]:
+    def load_context(self, session_id: str) -> ExecutionContext | None:
         """Load execution context from YAML.
 
         Args:
@@ -142,7 +142,7 @@ class ExecutionContextStore:
 
         return history_file
 
-    def get_history(self, session_id: str) -> List[StepResult]:
+    def get_history(self, session_id: str) -> list[StepResult]:
         """Load step history for session.
 
         Args:
@@ -201,7 +201,7 @@ class ExecutionContextStore:
 
         return deleted
 
-    def list_sessions(self) -> List[str]:
+    def list_sessions(self) -> list[str]:
         """List all sessions with execution context.
 
         Returns:
@@ -242,7 +242,7 @@ class ExecutionContextStore:
         return len(data["steps"])
 
 
-def create_execution_store(base_path: Optional[Path] = None) -> ExecutionContextStore:
+def create_execution_store(base_path: Path | None = None) -> ExecutionContextStore:
     """Factory function to create an ExecutionContextStore.
 
     Args:

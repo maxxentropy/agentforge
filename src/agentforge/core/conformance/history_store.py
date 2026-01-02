@@ -6,12 +6,12 @@ Manages history/ directory for trend analysis.
 One snapshot per day (YYYY-MM-DD.yaml).
 """
 
-from pathlib import Path
-from typing import List, Optional, Dict
 from datetime import date, datetime, timedelta
+from pathlib import Path
+
 import yaml
 
-from .domain import HistorySnapshot, ConformanceSummary
+from .domain import ConformanceSummary, HistorySnapshot
 from .stores import AtomicFileWriter
 
 
@@ -59,20 +59,20 @@ class HistoryStore:
         with AtomicFileWriter(file_path) as f:
             yaml.dump(data, f, default_flow_style=False, sort_keys=False)
 
-    def get_snapshot(self, snapshot_date: date) -> Optional[HistorySnapshot]:
+    def get_snapshot(self, snapshot_date: date) -> HistorySnapshot | None:
         """Get snapshot for specific date."""
         file_path = self.history_path / f"{snapshot_date.isoformat()}.yaml"
         if not file_path.exists():
             return None
 
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, encoding='utf-8') as f:
                 data = yaml.safe_load(f)
             return self._dict_to_snapshot(data)
         except Exception:
             return None
 
-    def _dict_to_snapshot(self, data: Dict) -> HistorySnapshot:
+    def _dict_to_snapshot(self, data: dict) -> HistorySnapshot:
         """Convert dictionary to HistorySnapshot."""
         summary_data = data["summary"]
         return HistorySnapshot(
@@ -92,7 +92,7 @@ class HistoryStore:
             contracts_checked=data["contracts_checked"],
         )
 
-    def get_range(self, start_date: date, end_date: date) -> List[HistorySnapshot]:
+    def get_range(self, start_date: date, end_date: date) -> list[HistorySnapshot]:
         """Get snapshots for date range (inclusive)."""
         snapshots = []
         current = start_date
@@ -105,7 +105,7 @@ class HistoryStore:
 
         return snapshots
 
-    def get_latest(self, n: int = 1) -> List[HistorySnapshot]:
+    def get_latest(self, n: int = 1) -> list[HistorySnapshot]:
         """Get the N most recent snapshots."""
         if not self.history_path.exists():
             return []
@@ -151,7 +151,7 @@ class HistoryStore:
 
         return count
 
-    def get_trend(self, days: int = 7) -> Dict[str, List]:
+    def get_trend(self, days: int = 7) -> dict[str, list]:
         """Get trend data for visualization."""
         end_date = date.today()
         start_date = end_date - timedelta(days=days - 1)

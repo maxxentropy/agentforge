@@ -14,7 +14,7 @@ Defines the structures for agent actions, tool calls, and execution context.
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class ActionType(Enum):
@@ -45,8 +45,8 @@ class ToolCall:
     """A request to execute a specific tool."""
 
     name: str
-    parameters: Dict[str, Any] = field(default_factory=dict)
-    category: Optional[ToolCategory] = None
+    parameters: dict[str, Any] = field(default_factory=dict)
+    category: ToolCategory | None = None
 
     def __post_init__(self):
         """Infer category from tool name if not provided."""
@@ -74,7 +74,7 @@ class ToolCall:
 
         return ToolCategory.SHELL  # Default
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to YAML-compatible dict."""
         return {
             "name": self.name,
@@ -83,7 +83,7 @@ class ToolCall:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "ToolCall":
+    def from_dict(cls, data: dict[str, Any]) -> "ToolCall":
         """Deserialize from dict."""
         category = ToolCategory(data["category"]) if data.get("category") else None
         return cls(
@@ -100,7 +100,7 @@ class ToolResult:
     tool_name: str
     success: bool
     output: Any = None
-    error: Optional[str] = None
+    error: str | None = None
     duration_seconds: float = 0.0
 
     @classmethod
@@ -123,7 +123,7 @@ class ToolResult:
             duration_seconds=duration,
         )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to YAML-compatible dict."""
         # Ensure output is serializable (convert to string if needed)
         output_value = self.output
@@ -138,7 +138,7 @@ class ToolResult:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "ToolResult":
+    def from_dict(cls, data: dict[str, Any]) -> "ToolResult":
         """Deserialize from dict."""
         return cls(
             tool_name=data["tool_name"],
@@ -155,12 +155,12 @@ class AgentAction:
 
     action_type: ActionType
     reasoning: str = ""  # Agent's reasoning for this action
-    tool_calls: List[ToolCall] = field(default_factory=list)
-    response: Optional[str] = None  # For RESPOND/ASK_USER types
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    tool_calls: list[ToolCall] = field(default_factory=list)
+    response: str | None = None  # For RESPOND/ASK_USER types
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
-    def tool_action(cls, tool_calls: List[ToolCall], reasoning: str = "") -> "AgentAction":
+    def tool_action(cls, tool_calls: list[ToolCall], reasoning: str = "") -> "AgentAction":
         """Create a tool call action."""
         return cls(
             action_type=ActionType.TOOL_CALL,
@@ -202,7 +202,7 @@ class AgentAction:
             reasoning=reason,
         )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to YAML-compatible dict."""
         return {
             "action_type": self.action_type.value,
@@ -213,7 +213,7 @@ class AgentAction:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "AgentAction":
+    def from_dict(cls, data: dict[str, Any]) -> "AgentAction":
         """Deserialize from dict."""
         return cls(
             action_type=ActionType(data["action_type"]),
@@ -231,8 +231,8 @@ class ConversationMessage:
     role: str  # "user", "assistant", "tool_result"
     content: str
     timestamp: datetime = field(default_factory=datetime.utcnow)
-    tool_calls: Optional[List[ToolCall]] = None
-    tool_results: Optional[List[ToolResult]] = None
+    tool_calls: list[ToolCall] | None = None
+    tool_results: list[ToolResult] | None = None
 
     @classmethod
     def user_message(cls, content: str) -> "ConversationMessage":
@@ -243,13 +243,13 @@ class ConversationMessage:
     def assistant_message(
         cls,
         content: str,
-        tool_calls: Optional[List[ToolCall]] = None
+        tool_calls: list[ToolCall] | None = None
     ) -> "ConversationMessage":
         """Create an assistant message."""
         return cls(role="assistant", content=content, tool_calls=tool_calls)
 
     @classmethod
-    def tool_result_message(cls, results: List[ToolResult]) -> "ConversationMessage":
+    def tool_result_message(cls, results: list[ToolResult]) -> "ConversationMessage":
         """Create a tool result message."""
         content = "\n".join(
             f"[{r.tool_name}]: {'Success' if r.success else 'Error'}: {r.output or r.error}"
@@ -257,7 +257,7 @@ class ConversationMessage:
         )
         return cls(role="tool_result", content=content, tool_results=results)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to YAML-compatible dict."""
         return {
             "role": self.role,
@@ -268,7 +268,7 @@ class ConversationMessage:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "ConversationMessage":
+    def from_dict(cls, data: dict[str, Any]) -> "ConversationMessage":
         """Deserialize from dict."""
         return cls(
             role=data["role"],
@@ -286,9 +286,9 @@ class ExecutionContext:
     session_id: str
     task_description: str
     current_phase: str
-    available_tools: List[str]
-    conversation_history: List[ConversationMessage] = field(default_factory=list)
-    memory_context: Dict[str, Any] = field(default_factory=dict)
+    available_tools: list[str]
+    conversation_history: list[ConversationMessage] = field(default_factory=list)
+    memory_context: dict[str, Any] = field(default_factory=dict)
     iteration: int = 0
     tokens_used: int = 0
     token_budget: int = 100000
@@ -299,7 +299,7 @@ class ExecutionContext:
         return self.token_budget - self.tokens_used
 
     @property
-    def recent_messages(self) -> List[ConversationMessage]:
+    def recent_messages(self) -> list[ConversationMessage]:
         """Get recent conversation messages (last 10)."""
         return self.conversation_history[-10:]
 
@@ -310,20 +310,20 @@ class ExecutionContext:
     def add_assistant_message(
         self,
         content: str,
-        tool_calls: Optional[List[ToolCall]] = None
+        tool_calls: list[ToolCall] | None = None
     ) -> None:
         """Add an assistant message to history."""
         self.conversation_history.append(
             ConversationMessage.assistant_message(content, tool_calls)
         )
 
-    def add_tool_results(self, results: List[ToolResult]) -> None:
+    def add_tool_results(self, results: list[ToolResult]) -> None:
         """Add tool results to history."""
         self.conversation_history.append(
             ConversationMessage.tool_result_message(results)
         )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to YAML-compatible dict."""
         return {
             "session_id": self.session_id,
@@ -338,7 +338,7 @@ class ExecutionContext:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "ExecutionContext":
+    def from_dict(cls, data: dict[str, Any]) -> "ExecutionContext":
         """Deserialize from dict."""
         return cls(
             session_id=data["session_id"],
@@ -358,18 +358,18 @@ class StepResult:
     """Result of executing one agent step."""
 
     success: bool
-    action: Optional[AgentAction] = None
-    tool_results: List[ToolResult] = field(default_factory=list)
+    action: AgentAction | None = None
+    tool_results: list[ToolResult] = field(default_factory=list)
     tokens_used: int = 0
     duration_seconds: float = 0.0
-    error: Optional[str] = None
+    error: str | None = None
     should_continue: bool = True  # False if task is complete or failed
 
     @classmethod
     def success_step(
         cls,
         action: AgentAction,
-        tool_results: List[ToolResult],
+        tool_results: list[ToolResult],
         tokens_used: int,
         duration: float,
     ) -> "StepResult":
@@ -400,7 +400,7 @@ class StepResult:
             should_continue=False,
         )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to YAML-compatible dict."""
         return {
             "success": self.success,
@@ -413,7 +413,7 @@ class StepResult:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "StepResult":
+    def from_dict(cls, data: dict[str, Any]) -> "StepResult":
         """Deserialize from dict."""
         return cls(
             success=data["success"],
@@ -438,7 +438,7 @@ class TokenUsage:
         """Total tokens used."""
         return self.prompt_tokens + self.completion_tokens
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to YAML-compatible dict."""
         return {
             "prompt_tokens": self.prompt_tokens,
@@ -446,7 +446,7 @@ class TokenUsage:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "TokenUsage":
+    def from_dict(cls, data: dict[str, Any]) -> "TokenUsage":
         """Deserialize from dict."""
         return cls(
             prompt_tokens=data.get("prompt_tokens", 0),
@@ -459,7 +459,7 @@ class TokenUsage:
 class LLMExecutorError(Exception):
     """Base exception for LLM executor errors."""
 
-    def __init__(self, message: str, details: Optional[Dict[str, Any]] = None):
+    def __init__(self, message: str, details: dict[str, Any] | None = None):
         super().__init__(message)
         self.message = message
         self.details = details or {}
@@ -468,7 +468,7 @@ class LLMExecutorError(Exception):
 class ActionParseError(LLMExecutorError):
     """Error parsing agent action from LLM response."""
 
-    def __init__(self, message: str, raw_response: Optional[str] = None):
+    def __init__(self, message: str, raw_response: str | None = None):
         super().__init__(message, {"raw_response": raw_response})
         self.raw_response = raw_response
 
@@ -476,7 +476,7 @@ class ActionParseError(LLMExecutorError):
 class ToolExecutionError(LLMExecutorError):
     """Error executing a tool."""
 
-    def __init__(self, message: str, tool_name: str, original_error: Optional[Exception] = None):
+    def __init__(self, message: str, tool_name: str, original_error: Exception | None = None):
         super().__init__(message, {"tool_name": tool_name})
         self.tool_name = tool_name
         self.original_error = original_error

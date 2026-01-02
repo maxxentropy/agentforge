@@ -1,4 +1,4 @@
-# @spec_file: specs/minimal-context-architecture/04-context-templates.yaml
+# @spec_file: .agentforge/specs/core-context-v1.yaml
 # @spec_id: context-templates-v1
 # @component_id: context-template-code-review
 # @test_path: tests/unit/context/test_templates.py
@@ -20,7 +20,6 @@ Token budget prioritizes:
 - report phase: 1200 tokens (findings + suggestions)
 """
 
-from typing import Dict, List, Optional
 
 from .base import BaseContextTemplate
 from .models import CompactionLevel, ContextSection, TierDefinition
@@ -34,10 +33,10 @@ class CodeReviewTemplate(BaseContextTemplate):
         return "code_review"
 
     @property
-    def phases(self) -> List[str]:
+    def phases(self) -> list[str]:
         return ["init", "analyze", "report"]
 
-    def get_phase_mapping(self) -> Dict[str, str]:
+    def get_phase_mapping(self) -> dict[str, str]:
         """Map standard phases to code_review phases."""
         return {
             "init": "init",
@@ -127,7 +126,7 @@ class CodeReviewTemplate(BaseContextTemplate):
 
         return definitions.get(phase, definitions["init"])
 
-    def get_system_prompt(self, phase: Optional[str] = None) -> str:
+    def get_system_prompt(self, phase: str | None = None) -> str:
         """System prompt for code_review tasks."""
         return """You are an expert code reviewer.
 

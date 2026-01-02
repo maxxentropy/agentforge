@@ -1,6 +1,6 @@
 # @spec_file: .agentforge/specs/core-harness-minimal-context-v1.yaml
 # @spec_id: core-harness-minimal-context-v1
-# @component_id: harness-minimal_context-understanding
+# @component_id: understanding-extractor
 # @test_path: tests/unit/harness/test_enhanced_context.py
 
 """
@@ -18,11 +18,11 @@ Key principles:
 
 import re
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
 from .context_models import ActionResult, Fact, FactCategory, Understanding
-
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # Extraction Rules
@@ -45,7 +45,7 @@ class ExtractionRule:
     pattern: str | Callable[[str], bool]
     category: FactCategory
     confidence: float
-    extractor: Callable[[str, Optional[re.Match]], str]
+    extractor: Callable[[str, re.Match | None], str]
 
 
 class ExtractionRuleSet:
@@ -53,13 +53,13 @@ class ExtractionRuleSet:
 
     def __init__(self, tool_name: str):
         self.tool_name = tool_name
-        self.rules: List[ExtractionRule] = []
+        self.rules: list[ExtractionRule] = []
 
     def add_rule(self, rule: ExtractionRule) -> "ExtractionRuleSet":
         self.rules.append(rule)
         return self
 
-    def extract(self, output: str, step: int) -> List[Fact]:
+    def extract(self, output: str, step: int) -> list[Fact]:
         """Apply all rules and return extracted facts."""
         facts = []
         for rule in self.rules:
@@ -279,7 +279,7 @@ class UnderstandingExtractor:
     """
 
     def __init__(
-        self, llm_extractor: Optional[Callable[[str, str], List[Dict[str, Any]]]] = None
+        self, llm_extractor: Callable[[str, str], list[dict[str, Any]]] | None = None
     ):
         """
         Initialize extractor.
@@ -289,7 +289,7 @@ class UnderstandingExtractor:
                           Signature: (tool_name, output) -> List[{statement, category, confidence}]
         """
         self.llm_extractor = llm_extractor
-        self.rule_sets: Dict[str, ExtractionRuleSet] = {
+        self.rule_sets: dict[str, ExtractionRuleSet] = {
             "run_check": _build_conformance_rules(),
             "run_conformance_check": _build_conformance_rules(),
             "run_tests": _build_test_rules(),
@@ -310,7 +310,7 @@ class UnderstandingExtractor:
         result: ActionResult,
         step: int,
         use_llm_fallback: bool = False,
-    ) -> List[Fact]:
+    ) -> list[Fact]:
         """
         Extract facts from tool output.
 
@@ -324,7 +324,7 @@ class UnderstandingExtractor:
         Returns:
             List of extracted facts
         """
-        facts: List[Fact] = []
+        facts: list[Fact] = []
 
         # 1. Try rule-based extraction
         if tool_name in self.rule_sets:
@@ -352,7 +352,7 @@ class UnderstandingExtractor:
 
         return facts
 
-    def _llm_extract(self, tool_name: str, output: str, step: int) -> List[Fact]:
+    def _llm_extract(self, tool_name: str, output: str, step: int) -> list[Fact]:
         """Use LLM to extract facts from complex output."""
         if not self.llm_extractor:
             return []
@@ -393,7 +393,7 @@ class FactStore:
     """
 
     def __init__(self, max_facts: int = 20, compaction_threshold: int = 15):
-        self.facts: List[Fact] = []
+        self.facts: list[Fact] = []
         self.superseded: set[str] = set()
         self.max_facts = max_facts
         self.compaction_threshold = compaction_threshold
@@ -421,20 +421,20 @@ class FactStore:
         if len(self.get_active()) > self.compaction_threshold:
             self._compact()
 
-    def add_many(self, facts: List[Fact]) -> None:
+    def add_many(self, facts: list[Fact]) -> None:
         """Add multiple facts."""
         for fact in facts:
             self.add(fact)
 
-    def get_active(self) -> List[Fact]:
+    def get_active(self) -> list[Fact]:
         """Get all non-superseded facts."""
         return [f for f in self.facts if f.id not in self.superseded]
 
-    def get_by_category(self, category: FactCategory) -> List[Fact]:
+    def get_by_category(self, category: FactCategory) -> list[Fact]:
         """Get active facts in a category."""
         return [f for f in self.get_active() if f.category == category]
 
-    def get_recent(self, n: int = 5) -> List[Fact]:
+    def get_recent(self, n: int = 5) -> list[Fact]:
         """Get most recent active facts."""
         active = self.get_active()
         return sorted(active, key=lambda f: f.step, reverse=True)[:n]

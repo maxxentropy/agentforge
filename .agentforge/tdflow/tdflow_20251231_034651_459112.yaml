@@ -1,0 +1,35 @@
+auto_refactor: false
+components:
+- conformance_clean: true
+  coverage: 0.0
+  errors: []
+  impl_file: null
+  name: Counter
+  status: red
+  tests_file: /Users/sean/source/tools/agentforge/tests/integration/harness/test_e2e_counter.py
+  tests_framework: pytest
+coverage_threshold: 80.0
+current_component: Counter
+current_phase: green
+history:
+- action: session_created
+  component: null
+  details: null
+  phase: null
+  timestamp: '2025-12-31T03:46:51.461406'
+- action: red_phase
+  component: Counter
+  details: success
+  phase: red
+  timestamp: '2025-12-31T03:46:57.723321'
+- action: green_phase
+  component: Counter
+  details: 'failed: [''Failed to pass tests after 3 iterations'']'
+  phase: green
+  timestamp: '2025-12-31T03:47:10.452566'
+schema_version: '1.0'
+session_id: tdflow_20251231_034651_459112
+spec_file: outputs/test_e2e_spec.yaml
+spec_hash: c35b30d9a58111f9
+started_at: '2025-12-31T03:46:51.461401'
+test_framework: pytest

@@ -1,0 +1,13 @@
+schema_version: '1.0'
+violation_id: V-8b22aaa080aa
+contract_id: agentforge
+check_id: no-secrets-in-code
+severity: blocker
+file_path: tests/unit/tools/generate/test_provider.py
+message: 'Forbidden pattern found: ''api_key="test-key"'''
+detected_at: '2025-12-31T04:36:43.066763'
+last_seen_at: '2026-01-01T01:39:13.460206'
+status: open
+line_number: 96
+fix_hint: Use environment variables or a secrets manager
+test_path: tests/unit/tools/generate/test_provider.py

@@ -1,14 +1,12 @@
 """Tests for ContextAssembler class."""
 
-import pytest
 from pathlib import Path
-from unittest.mock import Mock, patch
-import sys
+from unittest.mock import Mock
 
-sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent / 'tools'))
+import pytest
 
-from context_assembler import ContextAssembler, CodeContext, FileContext
-from context_assembler_types import SymbolInfo, PatternMatch, ArchitectureLayer
+from agentforge.core.context_assembler import CodeContext, ContextAssembler, FileContext
+from agentforge.core.context_assembler_types import ArchitectureLayer, PatternMatch, SymbolInfo
 
 
 class TestContextAssemblerInit:

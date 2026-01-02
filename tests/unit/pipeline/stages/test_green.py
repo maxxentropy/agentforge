@@ -1,17 +1,13 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-3-tdd-stages.yaml
-# @spec_id: pipeline-controller-phase3-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
 # @component_id: green-phase-executor
 # @test_path: tests/unit/pipeline/stages/test_green.py
 
 """Unit tests for GreenPhaseExecutor."""
 
-from pathlib import Path
-from typing import Any, Dict
-from unittest.mock import MagicMock, patch, Mock
+from unittest.mock import Mock, patch
 
-import pytest
-
-from agentforge.core.pipeline import StageContext, StageStatus
+from agentforge.core.pipeline import StageContext
 from agentforge.core.pipeline.stages.green import GreenPhaseExecutor, create_green_executor
 
 
@@ -305,7 +301,7 @@ class TestGreenPhaseTestExecution:
                 returncode=0,
             )
 
-            results = executor._run_all_tests(
+            executor._run_all_tests(
                 context,
                 ["tests/test.py"],
                 specific_test="test_specific"

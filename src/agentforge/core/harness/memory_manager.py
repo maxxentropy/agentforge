@@ -10,10 +10,10 @@
 
 """High-level memory operations with search and context assembly."""
 
-from typing import Optional, List, Dict, Any, Union
 from datetime import timedelta
+from typing import Any
 
-from agentforge.core.harness.memory_domain import MemoryTier, MemoryEntry
+from agentforge.core.harness.memory_domain import MemoryEntry, MemoryTier
 from agentforge.core.harness.memory_store import MemoryStore
 
 
@@ -28,7 +28,7 @@ class MemoryManager:
         MemoryTier.ORGANIZATION: 3,
     }
 
-    def __init__(self, store: MemoryStore, session_id: Optional[str] = None):
+    def __init__(self, store: MemoryStore, session_id: str | None = None):
         """Initialize manager with store and optional session context.
 
         Args:
@@ -37,24 +37,24 @@ class MemoryManager:
         """
         self.store = store
         self.session_id = session_id
-        self.task_id: Optional[str] = None
-    
+        self.task_id: str | None = None
+
     def get(self, key: str, tier: MemoryTier, fallback: bool = False) -> Any:
         """Get value from tier, with fallback to lower tiers if not found.
-        
+
         Args:
             key: The key to retrieve
             tier: The memory tier to search
             fallback: Whether to search lower tiers if not found
-            
+
         Returns:
             The value if found and not expired, None otherwise
         """
         entry = self.store.get(key, tier)
-        
+
         if entry is not None and not entry.is_expired():
             return entry.value
-        
+
         if fallback:
             # Search lower tiers (higher tier order = more general)
             current_order = self.TIER_ORDER[tier]
@@ -63,11 +63,11 @@ class MemoryManager:
                     entry = self.store.get(key, tier_enum)
                     if entry is not None and not entry.is_expired():
                         return entry.value
-        
+
         return None
-    
+
     def set(self, key: str, value: Any, tier: MemoryTier,
-            ttl: Optional[timedelta] = None, metadata: Optional[Dict[str, Any]] = None):
+            ttl: timedelta | None = None, metadata: dict[str, Any] | None = None):
         """Set value in tier with optional TTL and metadata.
 
         Args:
@@ -80,23 +80,23 @@ class MemoryManager:
         ttl_seconds = int(ttl.total_seconds()) if ttl else None
         entry = MemoryEntry.create(key=key, value=value, ttl=ttl_seconds, metadata=metadata)
         self.store.set(key, entry, tier)
-    
-    def merge(self, key: str, partial_value: Dict[str, Any], tier: MemoryTier,
-              ttl: Optional[timedelta] = None, metadata: Optional[Dict[str, Any]] = None):
+
+    def merge(self, key: str, partial_value: dict[str, Any], tier: MemoryTier,
+              ttl: timedelta | None = None, metadata: dict[str, Any] | None = None):
         """Merge partial value into existing entry (dict update).
-        
+
         Args:
             key: The key to merge into
             partial_value: The partial value to merge
             tier: The memory tier to operate on
             ttl: Optional time-to-live for the entry
             metadata: Optional metadata for the entry
-            
+
         Raises:
             ValueError: If trying to merge into a non-dict value
         """
         existing_entry = self.store.get(key, tier)
-        
+
         if existing_entry is None or existing_entry.is_expired():
             # Create new entry
             ttl_seconds = int(ttl.total_seconds()) if ttl else None
@@ -106,33 +106,33 @@ class MemoryManager:
             # Merge into existing
             if not isinstance(existing_entry.value, dict):
                 raise ValueError("Cannot merge into non-dict value")
-            
+
             existing_entry.value.update(partial_value)
             self.store.set(key, existing_entry, tier)
-    
-    def search(self, query: str, tiers: Optional[List[MemoryTier]] = None) -> List[Dict[str, Any]]:
+
+    def search(self, query: str, tiers: list[MemoryTier] | None = None) -> list[dict[str, Any]]:
         """Search across tiers for entries matching query (keyword-based).
-        
+
         Args:
             query: The search query (keyword-based)
             tiers: Optional list of tiers to search, defaults to all tiers
-            
+
         Returns:
             List of matching entries with metadata
         """
         if tiers is None:
             tiers = list(MemoryTier)
-        
+
         results = []
-        
+
         for tier in tiers:
             keys = self.store.list_keys(tier)
-            
+
             for key in keys:
                 entry = self.store.get(key, tier)
                 if entry is None or entry.is_expired():
                     continue
-                
+
                 # Simple keyword search in value
                 value_str = str(entry.value).lower()
                 if query.lower() in value_str:
@@ -143,24 +143,24 @@ class MemoryManager:
                         "timestamp": entry.timestamp,
                         "metadata": entry.metadata
                     })
-        
+
         return results
-    
+
     def get_context(self, max_tokens: int = 4000) -> str:
         """Assemble context from all tiers up to max_tokens limit.
-        
+
         Args:
             max_tokens: Maximum number of tokens to include
-            
+
         Returns:
             Assembled context string
         """
         all_entries = []
-        
+
         # Collect entries from all tiers
         for tier in MemoryTier:
             keys = self.store.list_keys(tier)
-            
+
             for key in keys:
                 entry = self.store.get(key, tier)
                 if entry is not None and not entry.is_expired():
@@ -169,39 +169,39 @@ class MemoryManager:
                         "entry": entry,
                         "tier": tier
                     })
-        
+
         # Sort by timestamp (most recent first)
         all_entries.sort(key=lambda x: x["entry"].timestamp, reverse=True)
-        
+
         # Build context within token limit
         context_parts = []
         current_length = 0
-        
+
         # Rough token-to-character conversion (1 token ≈ 4 characters)
         max_chars = max_tokens * 4
-        
+
         for item in all_entries:
             entry_text = f"{item['key']}: {item['entry'].value}"
-            
+
             if current_length + len(entry_text) > max_chars:
                 break
-            
+
             context_parts.append(entry_text)
             current_length += len(entry_text)
-        
+
         return "\n".join(context_parts)
-    
+
     def link_session(self, session_id: str):
         """Associate memory manager with a session for tier 1 operations.
-        
+
         Args:
             session_id: The session ID to link
         """
         self.session_id = session_id
-    
+
     def link_task(self, task_id: str):
         """Associate memory manager with a task for tier 2 operations.
-        
+
         Args:
             task_id: The task ID to link
         """

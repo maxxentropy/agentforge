@@ -1,0 +1,13 @@
+schema_version: '1.0'
+violation_id: V-eb594d240135
+contract_id: agentforge
+check_id: max-parameter-count
+severity: major
+file_path: tools/discovery/generators/profile.py
+message: 'Function ''generate'' has 6 parameters (max: 5)'
+detected_at: '2025-12-31T02:40:13.158977'
+last_seen_at: '2026-01-01T01:39:13.681970'
+status: open
+line_number: 37
+fix_hint: Group related parameters into a dataclass or use **kwargs
+test_path: tests/unit/tools/

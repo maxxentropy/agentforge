@@ -11,11 +11,12 @@ Extracted from verification_runner.py for modularity.
 """
 
 import json
-import yaml
 from typing import TYPE_CHECKING
 
+import yaml
+
 if TYPE_CHECKING:
-    from .verification_types import VerificationReport, CheckResult, CheckStatus
+    from .verification_types import CheckResult, VerificationReport
 
 
 class ReportGenerator:

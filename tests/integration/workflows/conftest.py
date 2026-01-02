@@ -1,4 +1,4 @@
-# @spec_file: specs/tools/p0-tool-handlers-overview.md
+# @spec_file: .agentforge/specs/core-harness-minimal-context-v1.yaml
 # @test_path: tests/integration/workflows/test_fix_violation_workflow.py
 """
 Fixtures for fix_violation workflow integration tests.
@@ -8,21 +8,21 @@ Provides:
 - simulated_llm_client: Pre-configured SimulatedLLMClient for testing
 """
 
+from pathlib import Path
+from typing import Any
+
 import pytest
 import yaml
-from pathlib import Path
-from typing import Any, Dict, List
 
 from agentforge.core.llm.simulated import (
+    SequentialStrategy,
     SimulatedLLMClient,
     SimulatedResponse,
-    ScriptedResponseStrategy,
-    SequentialStrategy,
 )
 
 
 @pytest.fixture
-def project_with_violation(tmp_path: Path) -> Dict[str, Any]:
+def project_with_violation(tmp_path: Path) -> dict[str, Any]:
     """
     Create a test project with a cyclomatic complexity violation.
 
@@ -186,7 +186,7 @@ def test_simple_helper():
 
 
 @pytest.fixture
-def project_with_generated_file(tmp_path: Path) -> Dict[str, Any]:
+def project_with_generated_file(tmp_path: Path) -> dict[str, Any]:
     """
     Create a test project with a violation in an auto-generated file.
 
@@ -285,7 +285,7 @@ def validate_type(data: dict, type_name: str, strict: bool = False) -> bool:
 
 
 @pytest.fixture
-def simulated_fix_workflow_responses() -> List[Dict[str, Any]]:
+def simulated_fix_workflow_responses() -> list[dict[str, Any]]:
     """
     Scripted LLM responses for a successful fix_violation workflow.
 
@@ -378,7 +378,7 @@ def simulated_fix_workflow_responses() -> List[Dict[str, Any]]:
 
 
 @pytest.fixture
-def simulated_cannot_fix_responses() -> List[Dict[str, Any]]:
+def simulated_cannot_fix_responses() -> list[dict[str, Any]]:
     """
     Scripted LLM responses for a cannot_fix escalation.
 
@@ -416,7 +416,7 @@ def simulated_cannot_fix_responses() -> List[Dict[str, Any]]:
 
 @pytest.fixture
 def simulated_llm_client(
-    simulated_fix_workflow_responses: List[Dict[str, Any]]
+    simulated_fix_workflow_responses: list[dict[str, Any]]
 ) -> SimulatedLLMClient:
     """
     Create a SimulatedLLMClient with the fix workflow responses.
@@ -435,7 +435,7 @@ def simulated_llm_client(
 
 @pytest.fixture
 def simulated_escalation_client(
-    simulated_cannot_fix_responses: List[Dict[str, Any]]
+    simulated_cannot_fix_responses: list[dict[str, Any]]
 ) -> SimulatedLLMClient:
     """
     Create a SimulatedLLMClient for the escalation scenario.

@@ -1,0 +1,16 @@
+schema_version: '1.0'
+violation_id: V-63c2ba38ad97
+contract_id: agentforge
+check_id: no-god-classes
+severity: major
+file_path: tools/discovery/providers/python_provider.py
+message: 'Class ''PythonProvider'' has 20 methods (max: 15)'
+detected_at: '2025-12-31T02:40:13.168226'
+last_seen_at: '2025-12-31T12:18:44.934998'
+status: resolved
+line_number: 16
+fix_hint: Split large classes using composition or inheritance
+resolution:
+  resolved_at: '2025-12-31T14:51:44.683849'
+  resolved_by: system
+  reason: No longer detected in full verification run

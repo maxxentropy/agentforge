@@ -1,0 +1,13 @@
+schema_version: '1.0'
+violation_id: V-6f33d04b8f84
+contract_id: agentforge
+check_id: no-god-classes
+severity: major
+file_path: tools/harness/session_manager.py
+message: 'Class ''SessionManager'' has 17 methods (max: 15)'
+detected_at: '2025-12-31T03:24:07.521765'
+last_seen_at: '2026-01-01T01:39:13.878478'
+status: open
+line_number: 32
+fix_hint: Split large classes using composition or inheritance
+test_path: tests/unit/tools/

@@ -1,0 +1,43 @@
+schema_version: '1.0'
+generated_at: '2025-12-30T21:37:56.696853'
+generator_version: 1.0.0
+source:
+  profile_path: .agentforge/codebase_profile.yaml
+  profile_hash: sha256:6d82ecc0c43c0883
+  profile_generated: '2025-12-30T21:37:28.202864'
+configuration:
+  confidence_threshold: 0.6
+  output_directory: contracts
+  dry_run: false
+summary:
+  zones_processed: 1
+  contracts_generated: 1
+  total_checks_generated: 1
+  checks_enabled: 1
+  checks_disabled: 0
+  conflicts_detected: 1
+  conflicts_resolved: 0
+contracts:
+- path: /Users/sean/source/tools/agentforge/contracts/generated.contract.yaml
+  zone: null
+  language: python
+  checks:
+    total: 1
+    enabled: 1
+    disabled: 0
+  patterns_mapped:
+    result_type:
+      confidence: 1.0
+      checks_generated: 1
+      review_required: false
+conflicts:
+- type: overlapping_scope
+  generated_check: default-pytest-markers
+  resolution: skip
+  existing_contract: contracts/generated.contract.yaml
+  existing_check: default-pytest-markers-v1
+  reason: Overlaps with existing check 'default-pytest-markers-v1'
+review_required: {}
+next_steps:
+- 'Run: agentforge conformance check'
+- 'Re-run: agentforge bridge refresh after profile updates'

@@ -1,5 +1,5 @@
-# @spec_file: specs/minimal-context-architecture/05-llm-integration.yaml
-# @spec_id: llm-integration-v1
+# @spec_file: .agentforge/specs/core-harness-minimal-context-v1.yaml
+# @spec_id: core-harness-minimal-context-v1
 # @component_id: minimal-context-executor
 # @test_path: tests/unit/harness/test_minimal_context.py
 
@@ -38,10 +38,11 @@ import inspect
 import os
 import re
 import time
-import yaml
-from datetime import datetime
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
+
+import yaml
 
 from agentforge.core.generate.provider import LLMProvider, get_provider
 
@@ -57,26 +58,23 @@ from ...llm import (
     LLMClientFactory,
     LLMResponse,
     ThinkingConfig,
-    ToolCall,
     get_tools_for_task,
 )
-from .state_store import TaskStateStore, TaskState, TaskPhase
-from .template_context_builder import TemplateContextBuilder
-from .working_memory import WorkingMemoryManager
-from .understanding import UnderstandingExtractor
-from .context_models import ActionResult, ActionRecord, AgentResponse, Fact, FactCategory, ActionDef
-from .loop_detector import LoopDetection
-from .phase_machine import PhaseMachine, Phase, PhaseContext
+from .adaptive_budget import AdaptiveBudget
+from .context_models import ActionResult, AgentResponse, Fact, FactCategory
 from .native_tool_executor import NativeToolExecutor
-from .tool_handlers import create_standard_handlers
+from .phase_machine import PhaseContext, PhaseMachine
+from .state_store import Phase, TaskState, TaskStateStore
 
 # Import decomposed modules
 from .step_outcome import StepOutcome
-from .adaptive_budget import AdaptiveBudget
-
+from .template_context_builder import TemplateContextBuilder
+from .tool_handlers import create_standard_handlers
+from .understanding import UnderstandingExtractor
+from .working_memory import WorkingMemoryManager
 
 # Type alias for action executors
-ActionExecutor = Callable[[str, Dict[str, Any], TaskState], Dict[str, Any]]
+ActionExecutor = Callable[[str, dict[str, Any], TaskState], dict[str, Any]]
 
 
 class MinimalContextExecutor:
@@ -106,13 +104,13 @@ class MinimalContextExecutor:
         self,
         project_path: Path,
         task_type: str = "fix_violation",
-        provider: Optional[LLMProvider] = None,
-        state_store: Optional[TaskStateStore] = None,
-        action_executors: Optional[Dict[str, ActionExecutor]] = None,
+        provider: LLMProvider | None = None,
+        state_store: TaskStateStore | None = None,
+        action_executors: dict[str, ActionExecutor] | None = None,
         model: str = "claude-sonnet-4-20250514",
         max_tokens: int = 4096,
-        config_loader: Optional[AgentConfigLoader] = None,
-        fingerprint_generator: Optional[FingerprintGenerator] = None,
+        config_loader: AgentConfigLoader | None = None,
+        fingerprint_generator: FingerprintGenerator | None = None,
         compaction_enabled: bool = True,
         audit_enabled: bool = True,
     ):
@@ -177,7 +175,7 @@ class MinimalContextExecutor:
         self.audit_enabled = audit_enabled and os.environ.get(
             "AGENTFORGE_AUDIT_ENABLED", "true"
         ).lower() != "false"
-        self.current_audit_logger: Optional[ContextAuditLogger] = None
+        self.current_audit_logger: ContextAuditLogger | None = None
 
         # Compaction tracking
         self._compaction_events = 0
@@ -201,15 +199,15 @@ class MinimalContextExecutor:
         # Also register with native tool executor using compatible wrapper
         self.native_tool_executor.register_action(name, executor)
 
-    def register_actions(self, executors: Dict[str, ActionExecutor]) -> None:
+    def register_actions(self, executors: dict[str, ActionExecutor]) -> None:
         """Register multiple action executors."""
         self.action_executors.update(executors)
         self.native_tool_executor.register_actions(executors)
 
     def get_fingerprint(
         self,
-        constraints: Optional[Dict[str, Any]] = None,
-        success_criteria: Optional[List[str]] = None,
+        constraints: dict[str, Any] | None = None,
+        success_criteria: list[str] | None = None,
     ):
         """Get project fingerprint with task context."""
         return self.fingerprint_generator.with_task_context(
@@ -222,8 +220,8 @@ class MinimalContextExecutor:
         self,
         machine: PhaseMachine,
         state: TaskState,
-        last_action: Optional[str] = None,
-        last_action_result: Optional[str] = None,
+        last_action: str | None = None,
+        last_action_result: str | None = None,
     ) -> PhaseContext:
         """Build PhaseContext for guard evaluation."""
         task_dir = self.state_store._task_dir(state.task_id)
@@ -258,22 +256,22 @@ class MinimalContextExecutor:
         self,
         task_id: str,
         action_name: str,
-        action_result: Dict[str, Any],
+        action_result: dict[str, Any],
         state: TaskState,
     ) -> None:
         """Handle phase transitions using PhaseMachine."""
         if not self.use_phase_machine:
             # Legacy behavior
             if action_name == "complete" and action_result.get("status") == "success":
-                self.state_store.update_phase(task_id, TaskPhase.COMPLETE)
+                self.state_store.update_phase(task_id, Phase.COMPLETE)
             elif action_name == "escalate":
-                self.state_store.update_phase(task_id, TaskPhase.ESCALATED)
+                self.state_store.update_phase(task_id, Phase.ESCALATED)
             elif action_name == "cannot_fix":
-                self.state_store.update_phase(task_id, TaskPhase.ESCALATED)
+                self.state_store.update_phase(task_id, Phase.ESCALATED)
                 reason = action_result.get("cannot_fix_reason", "Unknown reason")
                 self.state_store.update_context_data(task_id, "cannot_fix_reason", reason)
             elif action_result.get("status") == "failure" and action_result.get("fatal"):
-                self.state_store.update_phase(task_id, TaskPhase.FAILED)
+                self.state_store.update_phase(task_id, Phase.FAILED)
                 self.state_store.set_error(task_id, action_result.get("error", "Unknown error"))
             return
 
@@ -305,14 +303,12 @@ class MinimalContextExecutor:
         if target_phase:
             if machine.can_transition(target_phase, context):
                 machine.transition(target_phase, context)
-                legacy_phase = TaskPhase(target_phase.value)
-                self.state_store.update_phase(task_id, legacy_phase)
+                self.state_store.update_phase(task_id, target_phase)
                 self.state_store.update_phase_machine(task_id, machine)
             elif target_phase in (Phase.COMPLETE, Phase.ESCALATED, Phase.FAILED):
                 machine._current_phase = target_phase
                 machine._steps_in_phase = 0
-                legacy_phase = TaskPhase(target_phase.value)
-                self.state_store.update_phase(task_id, legacy_phase)
+                self.state_store.update_phase(task_id, target_phase)
                 self.state_store.update_phase_machine(task_id, machine)
         else:
             self.state_store.update_phase_machine(task_id, machine)
@@ -378,7 +374,7 @@ class MinimalContextExecutor:
                 )
 
             # Check if task is already complete
-            if state.phase in [TaskPhase.COMPLETE, TaskPhase.FAILED, TaskPhase.ESCALATED]:
+            if state.phase in [Phase.COMPLETE, Phase.FAILED, Phase.ESCALATED]:
                 return StepOutcome(
                     success=True,
                     action_name="already_complete",
@@ -392,7 +388,7 @@ class MinimalContextExecutor:
 
             # 2. Build minimal context (always fresh, bounded)
             messages = self.context_builder.build_messages(task_id)
-            token_breakdown = self.context_builder.get_token_breakdown(task_id)
+            self.context_builder.get_token_breakdown(task_id)
 
             # 3. Call LLM with fresh 2-message conversation
             response_text, tokens_used = self._call_llm(messages)
@@ -468,7 +464,7 @@ class MinimalContextExecutor:
                 error=str(e),
             )
 
-    def _call_llm(self, messages: List[Dict[str, str]]) -> tuple:
+    def _call_llm(self, messages: list[dict[str, str]]) -> tuple:
         """Call the LLM provider."""
         prompt = self._messages_to_prompt(messages)
 
@@ -502,7 +498,7 @@ class MinimalContextExecutor:
 
         return response_text, tokens_used
 
-    def _messages_to_prompt(self, messages: List[Dict[str, str]]) -> str:
+    def _messages_to_prompt(self, messages: list[dict[str, str]]) -> str:
         """Convert messages to single prompt string."""
         parts = []
         for msg in messages:
@@ -560,7 +556,7 @@ class MinimalContextExecutor:
         self,
         yaml_content: str,
         block_type: str,
-    ) -> Optional[tuple]:
+    ) -> tuple | None:
         """Parse YAML content and validate against AgentResponse schema."""
         try:
             action_data = yaml.safe_load(yaml_content)
@@ -599,9 +595,9 @@ class MinimalContextExecutor:
     def _execute_action(
         self,
         action_name: str,
-        action_params: Dict[str, Any],
+        action_params: dict[str, Any],
         state: TaskState,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Execute an action."""
         executor = self.action_executors.get(action_name)
 
@@ -658,7 +654,7 @@ class MinimalContextExecutor:
     def _should_continue(
         self,
         action_name: str,
-        action_result: Dict[str, Any],
+        action_result: dict[str, Any],
         state: TaskState,
     ) -> bool:
         """Determine if execution should continue."""
@@ -668,15 +664,12 @@ class MinimalContextExecutor:
         if action_result.get("fatal"):
             return False
 
-        if state.phase in [TaskPhase.COMPLETE, TaskPhase.FAILED, TaskPhase.ESCALATED]:
-            return False
-
-        return True
+        return state.phase not in [Phase.COMPLETE, Phase.FAILED, Phase.ESCALATED]
 
     def _extract_and_store_facts(
         self,
         action_name: str,
-        action_result: Dict[str, Any],
+        action_result: dict[str, Any],
         step: int,
         memory_manager: WorkingMemoryManager,
     ) -> None:
@@ -712,9 +705,9 @@ class MinimalContextExecutor:
         self,
         task_id: str,
         max_iterations: int = 50,
-        on_step: Optional[Callable[[StepOutcome], None]] = None,
-        adaptive_budget: Optional[AdaptiveBudget] = None,
-    ) -> List[StepOutcome]:
+        on_step: Callable[[StepOutcome], None] | None = None,
+        adaptive_budget: AdaptiveBudget | None = None,
+    ) -> list[StepOutcome]:
         """
         Run task until completion or budget exhausted.
 
@@ -864,11 +857,11 @@ class MinimalContextExecutor:
     def run_task_native(
         self,
         task_id: str,
-        domain_context: Optional[Dict[str, Any]] = None,
-        llm_client: Optional[LLMClient] = None,
-        max_steps: Optional[int] = None,
-        on_step: Optional[Callable[[StepOutcome], None]] = None,
-    ) -> Dict[str, Any]:
+        domain_context: dict[str, Any] | None = None,
+        llm_client: LLMClient | None = None,
+        max_steps: int | None = None,
+        on_step: Callable[[StepOutcome], None] | None = None,
+    ) -> dict[str, Any]:
         """
         Run a complete task using native Anthropic tool calls.
 
@@ -923,7 +916,7 @@ class MinimalContextExecutor:
                 budget_tokens=self.config.defaults.thinking_budget,
             )
 
-        outcomes: List[StepOutcome] = []
+        outcomes: list[StepOutcome] = []
         step_num = 0
 
         while step_num < effective_max_steps:
@@ -1054,13 +1047,13 @@ class MinimalContextExecutor:
             return
 
         phase_map = {
-            "read_file": TaskPhase.ANALYZE,
-            "analyze_dependencies": TaskPhase.ANALYZE,
-            "detect_patterns": TaskPhase.ANALYZE,
-            "write_file": TaskPhase.IMPLEMENT,
-            "edit_file": TaskPhase.IMPLEMENT,
-            "run_check": TaskPhase.VERIFY,
-            "run_single_test": TaskPhase.VERIFY,
+            "read_file": Phase.ANALYZE,
+            "analyze_dependencies": Phase.ANALYZE,
+            "detect_patterns": Phase.ANALYZE,
+            "write_file": Phase.IMPLEMENT,
+            "edit_file": Phase.IMPLEMENT,
+            "run_check": Phase.VERIFY,
+            "run_single_test": Phase.VERIFY,
         }
 
         new_phase = phase_map.get(action_name)
@@ -1075,7 +1068,7 @@ class MinimalContextExecutor:
 def create_executor(
     project_path: Path,
     task_type: str = "fix_violation",
-    action_executors: Optional[Dict[str, ActionExecutor]] = None,
+    action_executors: dict[str, ActionExecutor] | None = None,
     **kwargs,
 ) -> MinimalContextExecutor:
     """

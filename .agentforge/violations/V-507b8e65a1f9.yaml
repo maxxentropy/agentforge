@@ -1,0 +1,13 @@
+schema_version: '1.0'
+violation_id: V-507b8e65a1f9
+contract_id: agentforge
+check_id: single-responsibility-modules
+severity: minor
+file_path: tools/harness/llm_executor_domain.py
+message: 'Class ''AgentAction'' has 7 methods (max: 3)'
+detected_at: '2026-01-01T01:39:13.933621'
+last_seen_at: '2026-01-01T01:39:13.933621'
+status: open
+line_number: 171
+fix_hint: Split modules with too many classes into focused single-class modules
+test_path: tests/unit/tools/

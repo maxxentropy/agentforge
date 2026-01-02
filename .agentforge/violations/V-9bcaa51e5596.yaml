@@ -1,0 +1,13 @@
+schema_version: '1.0'
+violation_id: V-9bcaa51e5596
+contract_id: agentforge
+check_id: no-god-classes
+severity: major
+file_path: tools/harness/agent_orchestrator.py
+message: 'Class ''AgentOrchestrator'' has 17 methods (max: 15)'
+detected_at: '2025-12-31T12:15:09.972905'
+last_seen_at: '2026-01-01T01:39:13.879200'
+status: open
+line_number: 30
+fix_hint: Split large classes using composition or inheritance
+test_path: tests/unit/tools/

@@ -3,18 +3,33 @@
 Verification Check Implementations - command, regex, file_exists, import, custom, contracts, lsp, ast.
 Extracted from verification_runner.py for modularity.
 """
-import os, re, glob, shlex, subprocess, fnmatch, importlib.util
+import fnmatch
+import glob
+import importlib.util
+import os
+import re
+import shlex
+import subprocess
+from collections.abc import Callable
 from pathlib import Path
-from typing import Dict, Any, List, Callable
+from typing import Any
 
 try:
-    from .verification_types import CheckResult, CheckStatus, Severity
     from .verification_contracts_check import (
-        get_contract_results, build_contract_errors, aggregate_contract_stats, build_contract_message)
+        aggregate_contract_stats,
+        build_contract_errors,
+        build_contract_message,
+        get_contract_results,
+    )
+    from .verification_types import CheckResult, CheckStatus, Severity
 except ImportError:
-    from verification_types import CheckResult, CheckStatus, Severity
     from verification_contracts_check import (
-        get_contract_results, build_contract_errors, aggregate_contract_stats, build_contract_message)
+        aggregate_contract_stats,
+        build_contract_errors,
+        build_contract_message,
+        get_contract_results,
+    )
+    from verification_types import CheckResult, CheckStatus, Severity
 
 
 class CheckRunner:
@@ -22,7 +37,7 @@ class CheckRunner:
 
     # These attributes are expected to exist on the class using this mixin
     project_root: Path
-    context: Dict[str, Any]
+    context: dict[str, Any]
 
     def _substitute_variables(self, text: str) -> str:
         """Replace {variable} placeholders with context values."""
@@ -30,7 +45,7 @@ class CheckRunner:
 
     # --- Command Check ---
 
-    def _run_command_check(self, check: Dict, settings: Dict) -> CheckResult:
+    def _run_command_check(self, check: dict, settings: dict) -> CheckResult:
         """Run a shell command check."""
         check_id, severity = check["id"], Severity(check.get("severity", "required"))
         check_name, timeout = check.get("name", check_id), check.get("timeout", settings.get("default_timeout", 300))
@@ -82,7 +97,7 @@ class CheckRunner:
         """Search for patterns in a single file, returning matches."""
         matches = []
         try:
-            with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+            with open(file_path, encoding="utf-8", errors="ignore") as f:
                 content = f.read()
 
             for pat_def in patterns:
@@ -99,7 +114,7 @@ class CheckRunner:
             pass
         return matches
 
-    def _run_regex_check(self, check: Dict, settings: Dict) -> CheckResult:
+    def _run_regex_check(self, check: dict, settings: dict) -> CheckResult:
         """Run a regex pattern check on source files."""
         check_id, severity = check["id"], Severity(check.get("severity", "required"))
         check_name = check.get("name", check_id)
@@ -122,7 +137,7 @@ class CheckRunner:
 
     # --- File Exists Check ---
 
-    def _run_file_exists_check(self, check: Dict, settings: Dict) -> CheckResult:
+    def _run_file_exists_check(self, check: dict, settings: dict) -> CheckResult:
         """Check if required files exist."""
         check_id = check["id"]
         check_name = check.get("name", check_id)
@@ -166,7 +181,7 @@ class CheckRunner:
         """Check a single file for forbidden import violations."""
         violations = []
         try:
-            with open(source_file, "r", encoding="utf-8", errors="ignore") as f:
+            with open(source_file, encoding="utf-8", errors="ignore") as f:
                 content = f.read()
 
             lines = content.split("\n")
@@ -187,7 +202,7 @@ class CheckRunner:
             pass
         return violations
 
-    def _run_import_check(self, check: Dict, settings: Dict) -> CheckResult:
+    def _run_import_check(self, check: dict, settings: dict) -> CheckResult:
         """Check import/dependency rules (layer isolation)."""
         check_id = check["id"]
         check_name = check.get("name", check_id)
@@ -259,7 +274,7 @@ class CheckRunner:
             severity=severity, message=f"Custom check returned unexpected type: {type(result)}",
         )
 
-    def _run_custom_check(self, check: Dict, settings: Dict) -> CheckResult:
+    def _run_custom_check(self, check: dict, settings: dict) -> CheckResult:
         """Run a custom Python function check."""
         check_id = check["id"]
         check_name = check.get("name", check_id)
@@ -281,7 +296,7 @@ class CheckRunner:
 
     # --- Contracts Check ---
 
-    def _run_contracts_check(self, check: Dict, settings: Dict) -> CheckResult:
+    def _run_contracts_check(self, check: dict, settings: dict) -> CheckResult:
         """Run contract-based checks using the contracts module."""
         check_id = check["id"]
         check_name = check.get("name", check_id)
@@ -313,7 +328,7 @@ class CheckRunner:
 
     # --- LSP Query Check (Pyright) ---
 
-    def _run_lsp_query_check(self, check: Dict, settings: Dict) -> CheckResult:
+    def _run_lsp_query_check(self, check: dict, settings: dict) -> CheckResult:
         """Run semantic Python analysis using pyright CLI."""
         check_id, severity = check["id"], Severity(check.get("severity", "required"))
         check_name = check.get("name", check_id)
@@ -344,9 +359,8 @@ class CheckRunner:
 
     # --- AST Check ---
 
-    def _run_ast_check(self, check: Dict, settings: Dict) -> CheckResult:
+    def _run_ast_check(self, check: dict, settings: dict) -> CheckResult:
         """Run AST-based code quality checks using Python's ast module."""
-        import ast
 
         check_id = check["id"]
         check_name = check.get("name", check_id)
@@ -384,7 +398,7 @@ class CheckRunner:
             return CheckResult(check_id=check_id, check_name=check_name, status=CheckStatus.ERROR,
                                severity=severity, message=f"AST check failed: {str(e)}", details=str(e))
 
-    def _collect_ast_violations(self, files: List[Path], metric: str, max_value: int) -> list:
+    def _collect_ast_violations(self, files: list[Path], metric: str, max_value: int) -> list:
         """Collect AST violations across files."""
         import ast
 

@@ -21,23 +21,23 @@ CLI:
     agentforge bridge refresh
 """
 
-from .orchestrator import BridgeOrchestrator
+from .conflict_resolver import ConflictResolver
+from .contract_builder import ContractBuilder
 from .domain import (
-    ConfidenceTier,
-    ConflictType,
-    ResolutionStrategy,
     CheckTemplate,
+    ConfidenceTier,
+    Conflict,
+    ConflictType,
     GeneratedCheck,
     GeneratedContract,
     GenerationMetadata,
-    Conflict,
     GenerationReport,
     MappingContext,
+    ResolutionStrategy,
 )
-from .mappings import PatternMapping, MappingRegistry
+from .mappings import MappingRegistry, PatternMapping
+from .orchestrator import BridgeOrchestrator
 from .profile_loader import ProfileLoader
-from .conflict_resolver import ConflictResolver
-from .contract_builder import ContractBuilder
 
 __all__ = [
     # Main orchestrator

@@ -9,7 +9,6 @@ Extracted from lsp_adapter.py for modularity.
 """
 
 import os
-from typing import Optional, List
 from pathlib import Path
 
 from .lsp_adapter import LSPAdapter
@@ -34,7 +33,7 @@ class CSharpLSPAdapter(LSPAdapter):
         """csharp-ls specific options."""
         return {}
 
-    def find_solution_or_project(self) -> Optional[str]:
+    def find_solution_or_project(self) -> str | None:
         """Find .sln or .csproj file in project root."""
         sln_files = list(self.project_path.glob("*.sln"))
         if sln_files:
@@ -61,7 +60,7 @@ class OmniSharpAdapter(LSPAdapter):
     FILE_EXTENSIONS = [".cs", ".csx"]
 
     @property
-    def SERVER_COMMAND(self) -> List[str]:
+    def SERVER_COMMAND(self) -> list[str]:
         """OmniSharp command with LSP mode enabled."""
         solution = self.find_solution_or_project()
         cmd = [self.OMNISHARP_PATH, "-lsp"]
@@ -81,7 +80,7 @@ class OmniSharpAdapter(LSPAdapter):
             },
         }
 
-    def find_solution_or_project(self) -> Optional[str]:
+    def find_solution_or_project(self) -> str | None:
         """Find .sln or .csproj file in project root."""
         sln_files = list(self.project_path.glob("*.sln"))
         if sln_files:

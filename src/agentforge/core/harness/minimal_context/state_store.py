@@ -1,7 +1,7 @@
 # @spec_file: .agentforge/specs/core-harness-minimal-context-v1.yaml
 # @spec_id: core-harness-minimal-context-v1
-# @component_id: harness-minimal_context-state_store
-# @test_path: tests/unit/harness/test_enhanced_context.py
+# @component_id: state-store
+# @test_path: tests/unit/harness/test_minimal_context.py
 
 """
 Task State Store
@@ -32,14 +32,14 @@ Version History:
 """
 
 import uuid
-import yaml
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from enum import Enum
-
-
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
+
+import yaml
+
+from .phase_machine import Phase
 
 if TYPE_CHECKING:
     from .phase_machine import PhaseMachine
@@ -51,20 +51,7 @@ SCHEMA_VERSION = "2.0"
 
 def _utc_now() -> datetime:
     """Get current UTC time (Python 3.12+ compatible)."""
-    return datetime.now(timezone.utc)
-
-
-class TaskPhase(str, Enum):
-    """Task execution phases."""
-    INIT = "init"
-    ANALYZE = "analyze"
-    PLAN = "plan"
-    IMPLEMENT = "implement"
-    VERIFY = "verify"
-    COMMIT = "commit"
-    COMPLETE = "complete"
-    FAILED = "failed"
-    ESCALATED = "escalated"
+    return datetime.now(UTC)
 
 
 @dataclass
@@ -72,15 +59,15 @@ class ActionRecord:
     """Record of an action taken during execution."""
     step: int
     action: str
-    target: Optional[str]
-    parameters: Dict[str, Any]
+    target: str | None
+    parameters: dict[str, Any]
     result: str  # "success", "failure", "partial"
     summary: str
     timestamp: datetime = field(default_factory=_utc_now)
-    duration_ms: Optional[int] = None
-    error: Optional[str] = None
+    duration_ms: int | None = None
+    error: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "step": self.step,
             "action": self.action,
@@ -94,7 +81,7 @@ class ActionRecord:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "ActionRecord":
+    def from_dict(cls, data: dict[str, Any]) -> "ActionRecord":
         return cls(
             step=data["step"],
             action=data["action"],
@@ -115,10 +102,10 @@ class VerificationStatus:
     checks_failing: int = 0
     tests_passing: bool = False
     ready_for_completion: bool = False
-    last_check_time: Optional[datetime] = None
-    details: Dict[str, Any] = field(default_factory=dict)
+    last_check_time: datetime | None = None
+    details: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "checks_passing": self.checks_passing,
             "checks_failing": self.checks_failing,
@@ -129,7 +116,7 @@ class VerificationStatus:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "VerificationStatus":
+    def from_dict(cls, data: dict[str, Any]) -> "VerificationStatus":
         return cls(
             checks_passing=data.get("checks_passing", 0),
             checks_failing=data.get("checks_failing", 0),
@@ -147,24 +134,24 @@ class TaskState:
     task_id: str
     task_type: str  # "fix_violation", "implement_feature", etc.
     goal: str
-    success_criteria: List[str]
-    constraints: List[str] = field(default_factory=list)
+    success_criteria: list[str]
+    constraints: list[str] = field(default_factory=list)
     created_at: datetime = field(default_factory=_utc_now)
 
     # Mutable (from state.yaml)
-    phase: TaskPhase = TaskPhase.INIT
+    phase: Phase = Phase.INIT
     current_step: int = 0
     verification: VerificationStatus = field(default_factory=VerificationStatus)
     last_updated: datetime = field(default_factory=_utc_now)
-    error: Optional[str] = None
+    error: str | None = None
 
     # Task-type specific data
-    context_data: Dict[str, Any] = field(default_factory=dict)
+    context_data: dict[str, Any] = field(default_factory=dict)
 
     # Enhanced Context Engineering (Phase 4): Phase machine state
-    phase_machine_state: Dict[str, Any] = field(default_factory=dict)
+    phase_machine_state: dict[str, Any] = field(default_factory=dict)
 
-    def to_task_dict(self) -> Dict[str, Any]:
+    def to_task_dict(self) -> dict[str, Any]:
         """Serialize immutable task data."""
         return {
             "task_id": self.task_id,
@@ -175,7 +162,7 @@ class TaskState:
             "created_at": self.created_at.isoformat(),
         }
 
-    def to_state_dict(self) -> Dict[str, Any]:
+    def to_state_dict(self) -> dict[str, Any]:
         """Serialize mutable state data."""
         return {
             "schema_version": SCHEMA_VERSION,
@@ -190,8 +177,8 @@ class TaskState:
 
     def get_phase_machine(self) -> "PhaseMachine":
         """Get PhaseMachine instance from persisted state."""
-        from .phase_machine import PhaseMachine
         from .context_models import PhaseState
+        from .phase_machine import PhaseMachine
 
         if self.phase_machine_state:
             # Restore from persisted state
@@ -225,10 +212,10 @@ class TaskStateStore:
         self,
         task_type: str,
         goal: str,
-        success_criteria: List[str],
-        constraints: Optional[List[str]] = None,
-        context_data: Optional[Dict[str, Any]] = None,
-        task_id: Optional[str] = None,
+        success_criteria: list[str],
+        constraints: list[str] | None = None,
+        context_data: dict[str, Any] | None = None,
+        task_id: str | None = None,
     ) -> TaskState:
         """
         Create a new task and persist it.
@@ -279,7 +266,7 @@ class TaskStateStore:
 
         return state
 
-    def load(self, task_id: str) -> Optional[TaskState]:
+    def load(self, task_id: str) -> TaskState | None:
         """
         Load task state from disk.
 
@@ -313,7 +300,7 @@ class TaskStateStore:
             success_criteria=task_data["success_criteria"],
             constraints=task_data.get("constraints", []),
             created_at=datetime.fromisoformat(task_data["created_at"]),
-            phase=TaskPhase(state_data["phase"]),
+            phase=Phase(state_data["phase"]),
             current_step=state_data["current_step"],
             verification=VerificationStatus.from_dict(state_data.get("verification", {})),
             last_updated=datetime.fromisoformat(state_data["last_updated"]),
@@ -328,7 +315,7 @@ class TaskStateStore:
 
         return state
 
-    def _migrate_state(self, state_data: Dict[str, Any]) -> Tuple[Dict[str, Any], bool]:
+    def _migrate_state(self, state_data: dict[str, Any]) -> tuple[dict[str, Any], bool]:
         """
         Migrate state data from older schema versions to current.
 
@@ -372,7 +359,7 @@ class TaskStateStore:
         with open(task_dir / "state.yaml", "w") as f:
             yaml.dump(state.to_state_dict(), f, default_flow_style=False)
 
-    def update_phase(self, task_id: str, phase: TaskPhase) -> None:
+    def update_phase(self, task_id: str, phase: Phase) -> None:
         """Update task phase."""
         state = self.load(task_id)
         if state:
@@ -399,12 +386,12 @@ class TaskStateStore:
         self,
         task_id: str,
         action: str,
-        target: Optional[str],
-        parameters: Dict[str, Any],
+        target: str | None,
+        parameters: dict[str, Any],
         result: str,
         summary: str,
-        duration_ms: Optional[int] = None,
-        error: Optional[str] = None,
+        duration_ms: int | None = None,
+        error: str | None = None,
     ) -> ActionRecord:
         """
         Record an action to the append-only actions log.
@@ -449,7 +436,7 @@ class TaskStateStore:
 
         return record
 
-    def get_recent_actions(self, task_id: str, limit: int = 3) -> List[ActionRecord]:
+    def get_recent_actions(self, task_id: str, limit: int = 3) -> list[ActionRecord]:
         """Get the most recent actions."""
         task_dir = self._task_dir(task_id)
         actions_file = task_dir / "actions.yaml"
@@ -469,7 +456,7 @@ class TaskStateStore:
         checks_passing: int,
         checks_failing: int,
         tests_passing: bool,
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ) -> None:
         """Update verification status."""
         state = self.load(task_id)
@@ -496,7 +483,7 @@ class TaskStateStore:
         state = self.load(task_id)
         if state:
             state.error = error
-            state.phase = TaskPhase.FAILED
+            state.phase = Phase.FAILED
             self._save_state(state)
 
     def save_artifact(
@@ -522,14 +509,14 @@ class TaskStateStore:
         task_id: str,
         artifact_type: str,
         name: str,
-    ) -> Optional[str]:
+    ) -> str | None:
         """Load an artifact file."""
         artifact_path = self._task_dir(task_id) / "artifacts" / artifact_type / name
         if artifact_path.exists():
             return artifact_path.read_text()
         return None
 
-    def list_tasks(self, status: Optional[str] = None) -> List[str]:
+    def list_tasks(self, status: str | None = None) -> list[str]:
         """List all task IDs, optionally filtered by status."""
         if not self.tasks_dir.exists():
             return []

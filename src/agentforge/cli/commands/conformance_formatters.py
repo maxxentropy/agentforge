@@ -5,19 +5,20 @@ Separated from main conformance module to keep file sizes manageable.
 """
 
 import json
+
 import click
 
 
 def print_report_summary(report):
     """Print brief report summary."""
     s = report.summary
-    click.echo(f"\n  Summary:")
+    click.echo("\n  Summary:")
     click.echo(f"    Failed:   {s.failed}")
     click.echo(f"    Exempted: {s.exempted}")
     click.echo(f"    Stale:    {s.stale}")
 
     if report.by_severity:
-        click.echo(f"\n  By Severity:")
+        click.echo("\n  By Severity:")
         for severity, count in report.by_severity.items():
             click.echo(f"    {severity}: {count}")
 
@@ -38,7 +39,7 @@ def print_report_text(report):
     print_report_summary(report)
 
     if report.by_contract:
-        click.echo(f"\n  By Contract:")
+        click.echo("\n  By Contract:")
         for contract, count in report.by_contract.items():
             click.echo(f"    {contract}: {count}")
 
@@ -140,7 +141,7 @@ def print_history_text(snapshots):
         delta = snapshots[-1].delta_from(snapshots[0])
         click.echo()
         click.echo("-" * 60)
-        click.echo(f"Change over period:")
+        click.echo("Change over period:")
         click.echo(f"  Failed:   {delta['failed_delta']:+d}")
         click.echo(f"  Exempted: {delta['exempted_delta']:+d}")
 

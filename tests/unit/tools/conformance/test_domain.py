@@ -5,25 +5,21 @@
 
 """Tests for conformance domain entities."""
 
-import pytest
 from datetime import date, datetime, timedelta
-from pathlib import Path
-import sys
 
-# Add tools to path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent.parent / 'tools'))
+import pytest
 
-from conformance.domain import (
-    Severity,
-    ViolationStatus,
-    ExemptionStatus,
-    ExemptionScopeType,
-    ExemptionScope,
-    Violation,
-    Exemption,
-    ConformanceSummary,
+from agentforge.core.conformance.domain import (
     ConformanceReport,
+    ConformanceSummary,
+    Exemption,
+    ExemptionScope,
+    ExemptionScopeType,
+    ExemptionStatus,
     HistorySnapshot,
+    Severity,
+    Violation,
+    ViolationStatus,
 )
 
 

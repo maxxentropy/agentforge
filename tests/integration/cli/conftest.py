@@ -1,14 +1,10 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-5-cli-commands.yaml
-# @spec_id: pipeline-controller-phase5-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
 
 """Shared fixtures for CLI integration tests."""
 
-from pathlib import Path
-from typing import Any, Dict
+from datetime import UTC, datetime
 from unittest.mock import MagicMock
-from datetime import datetime, timezone
-import tempfile
-import shutil
 
 import pytest
 from click.testing import CliRunner
@@ -153,7 +149,6 @@ test_cases:
 @pytest.fixture
 def mock_pipeline_controller():
     """Create a mock PipelineController for integration tests."""
-    from unittest.mock import MagicMock
 
     controller = MagicMock()
 
@@ -181,8 +176,8 @@ def mock_pipeline_controller():
     state.completed_stages = ["intake", "clarify", "analyze", "spec", "red", "green", "refactor", "deliver"]
     state.error = None
     state.user_request = "Add integration test feature"
-    state.created_at = datetime(2026, 1, 2, 10, 0, 0, tzinfo=timezone.utc)
-    state.updated_at = datetime(2026, 1, 2, 10, 5, 0, tzinfo=timezone.utc)
+    state.created_at = datetime(2026, 1, 2, 10, 0, 0, tzinfo=UTC)
+    state.updated_at = datetime(2026, 1, 2, 10, 5, 0, tzinfo=UTC)
     state.total_tokens_used = 15000
     state.total_cost_usd = 0.075
     controller.get_status.return_value = state

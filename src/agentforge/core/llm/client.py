@@ -1,5 +1,5 @@
-# @spec_file: specs/minimal-context-architecture/05-llm-integration.yaml
-# @spec_id: llm-integration-v1
+# @spec_file: .agentforge/specs/core-llm-v1.yaml
+# @spec_id: core-llm-v1
 # @component_id: llm-client
 # @test_path: tests/unit/llm/test_client.py
 
@@ -29,7 +29,7 @@ Usage:
     ```
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import anthropic
 
@@ -95,9 +95,9 @@ class AnthropicLLMClient(LLMClient):
     def complete(
         self,
         system: str,
-        messages: List[Dict[str, Any]],
-        tools: Optional[List[ToolDefinition]] = None,
-        thinking: Optional[ThinkingConfig] = None,
+        messages: list[dict[str, Any]],
+        tools: list[ToolDefinition] | None = None,
+        thinking: ThinkingConfig | None = None,
         tool_choice: str = "auto",
         max_tokens: int = 4096,
     ) -> LLMResponse:
@@ -136,14 +136,14 @@ class AnthropicLLMClient(LLMClient):
     def _build_request_params(
         self,
         system: str,
-        messages: List[Dict[str, Any]],
-        tools: Optional[List[ToolDefinition]],
-        thinking: Optional[ThinkingConfig],
+        messages: list[dict[str, Any]],
+        tools: list[ToolDefinition] | None,
+        thinking: ThinkingConfig | None,
         tool_choice: str,
         max_tokens: int,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Build parameters for the API request."""
-        params: Dict[str, Any] = {
+        params: dict[str, Any] = {
             "model": self.model,
             "max_tokens": max_tokens,
             "system": system,
@@ -168,9 +168,8 @@ class AnthropicLLMClient(LLMClient):
                 params["tool_choice"] = {"type": "tool", "name": tool_name}
 
         # Add thinking if enabled and model supports it
-        if thinking and thinking.enabled:
-            if self.model in self.THINKING_MODELS:
-                params["thinking"] = thinking.to_api_format()
+        if thinking and thinking.enabled and self.model in self.THINKING_MODELS:
+            params["thinking"] = thinking.to_api_format()
             # Silently skip thinking for non-supporting models
 
         return params
@@ -178,8 +177,8 @@ class AnthropicLLMClient(LLMClient):
     def _parse_response(self, response: anthropic.types.Message) -> LLMResponse:
         """Parse API response into LLMResponse format."""
         content = ""
-        tool_calls: List[ToolCall] = []
-        thinking_content: Optional[str] = None
+        tool_calls: list[ToolCall] = []
+        thinking_content: str | None = None
 
         # Process content blocks
         for block in response.content:
@@ -230,7 +229,7 @@ class AnthropicLLMClient(LLMClient):
         }
         return mapping.get(api_stop_reason, StopReason.END_TURN)
 
-    def get_usage_stats(self) -> Dict[str, int]:
+    def get_usage_stats(self) -> dict[str, int]:
         """Get cumulative usage statistics."""
         return {
             "total_input_tokens": self._total_input_tokens,

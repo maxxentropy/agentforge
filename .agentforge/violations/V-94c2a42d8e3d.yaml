@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-94c2a42d8e3d
+contract_id: agentforge
+check_id: max-cyclomatic-complexity
+severity: major
+file_path: tools/harness/minimal_context/executor.py
+message: 'Function ''execute_step'' has complexity 11 (max: 10)'
+detected_at: '2025-12-31T12:15:09.902624'
+last_seen_at: '2025-12-31T14:51:44.115382'
+status: stale
+line_number: 111
+fix_hint: Break complex functions into smaller, focused helper functions

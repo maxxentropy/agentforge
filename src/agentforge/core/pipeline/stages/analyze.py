@@ -1,5 +1,5 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-2-design-pipeline.yaml
-# @spec_id: pipeline-controller-phase2-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
 # @component_id: analyze-executor
 # @test_path: tests/unit/pipeline/stages/test_analyze.py
 
@@ -18,10 +18,10 @@ Uses tool calls (search_code, read_file, find_related) to gather information.
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from ..llm_stage_executor import OutputValidation, ToolBasedStageExecutor
-from ..stage_executor import StageContext, StageResult, StageStatus
+from ..stage_executor import StageContext
 
 logger = logging.getLogger(__name__)
 
@@ -256,9 +256,9 @@ Begin your analysis.
 
     def parse_response(
         self,
-        llm_result: Dict[str, Any],
+        llm_result: dict[str, Any],
         context: StageContext,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """Parse analysis from tool call result."""
         # Look for submit_analysis tool call
         tool_results = llm_result.get("tool_results", [])
@@ -295,9 +295,9 @@ Begin your analysis.
 
     def _parse_text_response(
         self,
-        llm_result: Dict[str, Any],
+        llm_result: dict[str, Any],
         context: StageContext,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """Fallback: parse analysis from text response."""
         response_text = llm_result.get("response", "") or llm_result.get("content", "")
 
@@ -331,7 +331,7 @@ Begin your analysis.
             ),
         }
 
-    def validate_output(self, artifact: Optional[Dict[str, Any]]) -> OutputValidation:
+    def validate_output(self, artifact: dict[str, Any] | None) -> OutputValidation:
         """Validate analysis artifact."""
         if artifact is None:
             return OutputValidation(valid=False, errors=["No artifact"])
@@ -359,6 +359,6 @@ Begin your analysis.
         return self.required_input_fields
 
 
-def create_analyze_executor(config: Optional[Dict] = None) -> AnalyzeExecutor:
+def create_analyze_executor(config: dict | None = None) -> AnalyzeExecutor:
     """Create AnalyzeExecutor instance."""
     return AnalyzeExecutor(config)

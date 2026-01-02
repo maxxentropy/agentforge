@@ -1,5 +1,5 @@
-# @spec_file: specs/minimal-context-architecture/05-llm-integration.yaml
-# @spec_id: llm-integration-v1
+# @spec_file: .agentforge/specs/core-harness-minimal-context-v1.yaml
+# @spec_id: core-harness-minimal-context-v1
 # @component_id: fix-workflow
 # @test_path: tests/unit/harness/test_enhanced_context.py
 
@@ -24,28 +24,27 @@ at violation detection time from:
 """
 
 import subprocess
-import yaml
-from datetime import datetime
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
-from .state_store import TaskStateStore, TaskState, TaskPhase
-from .executor import MinimalContextExecutor, StepOutcome, AdaptiveBudget
-from .working_memory import WorkingMemoryManager
-from .phase_machine import PhaseMachine
-
-from ..violation_tools import ViolationTools, VIOLATION_TOOL_DEFINITIONS
-from ..conformance_tools import ConformanceTools, CONFORMANCE_TOOL_DEFINITIONS
-from ..git_tools import GitTools, GIT_TOOL_DEFINITIONS
-from ..test_runner_tools import TestRunnerTools, TEST_TOOL_DEFINITIONS
-from ..python_tools import PythonTools, PYTHON_TOOL_DEFINITIONS
-from ..refactoring_tools import RefactoringTools, REFACTORING_TOOL_DEFINITIONS
+import yaml
 
 # Use the discovery provider as single source of truth for Python AST analysis
 from ...discovery.providers.python_provider import PythonProvider
 
 # Refactoring provider for validating extractions
 from ...refactoring.registry import get_refactoring_provider
+from ..conformance_tools import ConformanceTools
+from ..git_tools import GitTools
+from ..python_tools import PythonTools
+from ..refactoring_tools import RefactoringTools
+from ..test_runner_tools import TestRunnerTools
+from ..violation_tools import ViolationTools
+from .executor import AdaptiveBudget, MinimalContextExecutor, StepOutcome
+from .phase_machine import PhaseMachine
+from .state_store import Phase, TaskState, TaskStateStore
+from .working_memory import WorkingMemoryManager
 
 
 class MinimalContextFixWorkflow:
@@ -122,13 +121,13 @@ class MinimalContextFixWorkflow:
         self.executor.state_store = self.state_store
         self.executor.context_builder.state_store = self.state_store
 
-    def _build_action_executors(self) -> Dict[str, Callable]:
+    def _build_action_executors(self) -> dict[str, Callable]:
         """Build action executors for all tools."""
         executors = {}
 
         # Wrap tool executors to match action executor signature
         def wrap_tool_executor(tool_executor):
-            def wrapper(action_name: str, params: Dict[str, Any], state: TaskState):
+            def wrapper(action_name: str, params: dict[str, Any], state: TaskState):
                 result = tool_executor(action_name, params)
                 return {
                     "status": "success" if result.success else "failure",
@@ -193,7 +192,7 @@ class MinimalContextFixWorkflow:
         Test paths come from the violation's test_path field, which was computed at
         detection time from lineage metadata or convention-based fallback.
         """
-        def wrapper(action_name: str, params: Dict[str, Any], state: TaskState) -> Dict[str, Any]:
+        def wrapper(action_name: str, params: dict[str, Any], state: TaskState) -> dict[str, Any]:
             # Extract file path from params
             file_path = (
                 params.get("path") or
@@ -287,7 +286,7 @@ class MinimalContextFixWorkflow:
 
         return wrapper
 
-    def _validate_python_file(self, file_path: Path) -> Optional[str]:
+    def _validate_python_file(self, file_path: Path) -> str | None:
         """
         Validate a Python file for syntax and import errors.
 
@@ -301,7 +300,7 @@ class MinimalContextFixWorkflow:
         import ast
         import sys
 
-        if not file_path.suffix == '.py':
+        if file_path.suffix != '.py':
             return None  # Only validate Python files
 
         if not file_path.exists():
@@ -358,7 +357,7 @@ except Exception as e:
 
         except subprocess.TimeoutExpired:
             return "Import validation timed out"
-        except Exception as e:
+        except Exception:
             # If subprocess fails, fall back to just syntax check (already passed)
             pass
 
@@ -367,9 +366,9 @@ except Exception as e:
     def _action_read_file(
         self,
         action_name: str,
-        params: Dict[str, Any],
+        params: dict[str, Any],
         state: TaskState,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Read a file, focusing on the violation area if known."""
         path = params.get("path") or params.get("file_path")
         if not path:
@@ -432,9 +431,9 @@ except Exception as e:
     def _action_edit_file(
         self,
         action_name: str,
-        params: Dict[str, Any],
+        params: dict[str, Any],
         state: TaskState,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Edit a file with fuzzy whitespace matching."""
         path = params.get("path") or params.get("file_path") or state.context_data.get("file_path")
         old_text = params.get("old_text")
@@ -485,7 +484,7 @@ except Exception as e:
 
     def _fuzzy_find_and_replace(
         self, content: str, old_text: str, new_text: str
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Find old_text in content with fuzzy whitespace matching.
 
@@ -494,7 +493,6 @@ except Exception as e:
         2. Find the actual text span in the original
         3. Replace with properly indented new_text
         """
-        import re
 
         # Normalize whitespace for matching
         def normalize(s: str) -> str:
@@ -563,9 +561,9 @@ except Exception as e:
     def _action_replace_lines(
         self,
         action_name: str,
-        params: Dict[str, Any],
+        params: dict[str, Any],
         state: TaskState,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Replace lines in a file by line number.
 
@@ -667,9 +665,9 @@ except Exception as e:
     def _action_insert_lines(
         self,
         action_name: str,
-        params: Dict[str, Any],
+        params: dict[str, Any],
         state: TaskState,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Insert lines into a file at a specific line number.
 
@@ -761,9 +759,9 @@ except Exception as e:
     def _action_write_file(
         self,
         action_name: str,
-        params: Dict[str, Any],
+        params: dict[str, Any],
         state: TaskState,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Write/create a file with the given content.
 
@@ -815,7 +813,7 @@ except Exception as e:
         5. Only then run conformance check
         6. Refresh context with new line numbers
         """
-        def wrapper(action_name: str, params: Dict[str, Any], state: TaskState):
+        def wrapper(action_name: str, params: dict[str, Any], state: TaskState):
             file_path = params.get("file_path") or state.context_data.get("file_path")
 
             # CORRECTNESS FIRST: Run tests BEFORE to establish baseline
@@ -943,9 +941,9 @@ except Exception as e:
     def _action_run_check(
         self,
         action_name: str,
-        params: Dict[str, Any],
+        params: dict[str, Any],
         state: TaskState,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Run conformance check - uses targeted check when check_id available."""
         import re
 
@@ -1016,7 +1014,7 @@ except Exception as e:
         file_path: str,
         function_name: str,
         state: TaskState,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """Refresh pre-computed context for a new function after extraction.
 
         Uses PythonProvider with violation-type-specific context.
@@ -1065,9 +1063,9 @@ except Exception as e:
     def _action_run_tests(
         self,
         action_name: str,
-        params: Dict[str, Any],
+        params: dict[str, Any],
         state: TaskState,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Run tests."""
         path = params.get("path")
         if path:
@@ -1099,9 +1097,9 @@ except Exception as e:
     def _action_load_context(
         self,
         action_name: str,
-        params: Dict[str, Any],
+        params: dict[str, Any],
         state: TaskState,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Load additional context into working memory."""
         # Support multiple parameter formats
         item = params.get("item", "")
@@ -1117,7 +1115,7 @@ except Exception as e:
             query = params.get("query", "")
             if query:
                 # Try to extract a file path from query
-                return {"status": "failure", "error": f"Use 'read_file' action to read files, not 'load_context'. Try: read_file with path parameter."}
+                return {"status": "failure", "error": "Use 'read_file' action to read files, not 'load_context'. Try: read_file with path parameter."}
 
         task_dir = self.state_store._task_dir(state.task_id)
         memory = WorkingMemoryManager(task_dir)
@@ -1132,21 +1130,21 @@ except Exception as e:
             else:
                 return {"status": "failure", "error": f"File not found: {path}"}
 
-        return {"status": "failure", "error": f"Unknown context item format. Use 'read_file' to read files or 'load_context' with item='full_file:path/to/file.py'"}
+        return {"status": "failure", "error": "Unknown context item format. Use 'read_file' to read files or 'load_context' with item='full_file:path/to/file.py'"}
 
     def _action_plan_fix(
         self,
         action_name: str,
-        params: Dict[str, Any],
+        params: dict[str, Any],
         state: TaskState,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Record fix plan and advance to implement phase."""
         diagnosis = params.get("diagnosis", "")
         approach = params.get("approach", "")
 
         self.state_store.update_context_data(state.task_id, "diagnosis", diagnosis)
         self.state_store.update_context_data(state.task_id, "approach", approach)
-        self.state_store.update_phase(state.task_id, TaskPhase.IMPLEMENT)
+        self.state_store.update_phase(state.task_id, Phase.IMPLEMENT)
 
         return {
             "status": "success",
@@ -1155,8 +1153,8 @@ except Exception as e:
 
     def _precompute_violation_context(
         self,
-        violation_data: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        violation_data: dict[str, Any],
+    ) -> dict[str, Any]:
         """
         Pre-compute rich context for a violation fix using deterministic tools.
 
@@ -1304,8 +1302,8 @@ except Exception as e:
     def _validate_extraction_suggestions(
         self,
         file_path: Path,
-        suggestions: List[Dict[str, Any]],
-    ) -> List[Dict[str, Any]]:
+        suggestions: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
         """
         Validate extraction suggestions with the refactoring provider.
 
@@ -1355,8 +1353,8 @@ except Exception as e:
     def fix_violation(
         self,
         violation_id: str,
-        on_step: Optional[Callable[[StepOutcome], None]] = None,
-    ) -> Dict[str, Any]:
+        on_step: Callable[[StepOutcome], None] | None = None,
+    ) -> dict[str, Any]:
         """
         Attempt to fix a violation using minimal context architecture.
 
@@ -1367,7 +1365,6 @@ except Exception as e:
         Returns:
             Dict with fix results
         """
-        import yaml
 
         # Normalize violation ID
         if not violation_id.startswith("V-"):
@@ -1480,7 +1477,7 @@ except Exception as e:
         final_state = self.state_store.load(task_state.task_id)
 
         return {
-            "success": final_state.phase == TaskPhase.COMPLETE,
+            "success": final_state.phase == Phase.COMPLETE,
             "violation_id": violation_id,
             "task_id": task_state.task_id,
             "phase": final_state.phase.value,
@@ -1495,8 +1492,8 @@ except Exception as e:
     def resume_task(
         self,
         task_id: str,
-        on_step: Optional[Callable[[StepOutcome], None]] = None,
-    ) -> Dict[str, Any]:
+        on_step: Callable[[StepOutcome], None] | None = None,
+    ) -> dict[str, Any]:
         """
         Resume an existing task.
 
@@ -1514,9 +1511,9 @@ except Exception as e:
                 "error": f"Task not found: {task_id}",
             }
 
-        if state.phase in [TaskPhase.COMPLETE, TaskPhase.FAILED, TaskPhase.ESCALATED]:
+        if state.phase in [Phase.COMPLETE, Phase.FAILED, Phase.ESCALATED]:
             return {
-                "success": state.phase == TaskPhase.COMPLETE,
+                "success": state.phase == Phase.COMPLETE,
                 "task_id": task_id,
                 "phase": state.phase.value,
                 "error": "Task already complete",
@@ -1539,7 +1536,7 @@ except Exception as e:
         final_state = self.state_store.load(task_id)
 
         return {
-            "success": final_state.phase == TaskPhase.COMPLETE,
+            "success": final_state.phase == Phase.COMPLETE,
             "task_id": task_id,
             "phase": final_state.phase.value,
             "steps_taken": len(outcomes),

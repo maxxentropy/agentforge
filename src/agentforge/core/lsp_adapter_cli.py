@@ -8,8 +8,8 @@ Command-line interface for testing LSP adapter functionality.
 Extracted from lsp_adapter.py for modularity.
 """
 
-import sys
 import argparse
+import sys
 
 
 def build_parser():
@@ -45,11 +45,17 @@ def get_adapter(args):
     """Get appropriate LSP adapter based on args."""
     try:
         from .lsp_adapters import (
-            CSharpLSPAdapter, PyrightAdapter, TypeScriptAdapter, get_adapter_for_project
+            CSharpLSPAdapter,
+            PyrightAdapter,
+            TypeScriptAdapter,
+            get_adapter_for_project,
         )
     except ImportError:
         from lsp_adapters import (
-            CSharpLSPAdapter, PyrightAdapter, TypeScriptAdapter, get_adapter_for_project
+            CSharpLSPAdapter,
+            PyrightAdapter,
+            TypeScriptAdapter,
+            get_adapter_for_project,
         )
 
     if args.language:
@@ -116,9 +122,9 @@ def run_command(adapter, args):
 def main():
     """Main entry point for CLI."""
     try:
-        from .lsp_client import LSPServerNotFound, LSPInitializationError
+        from .lsp_client import LSPInitializationError, LSPServerNotFound
     except ImportError:
-        from lsp_client import LSPServerNotFound, LSPInitializationError
+        from lsp_client import LSPInitializationError, LSPServerNotFound
 
     parser = build_parser()
     args = parser.parse_args()

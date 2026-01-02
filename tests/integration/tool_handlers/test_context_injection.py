@@ -1,5 +1,5 @@
-# @spec_file: specs/tools/01-tool-handlers.yaml
-# @spec_id: tool-handlers-v1
+# @spec_file: .agentforge/specs/core-harness-minimal-context-v1.yaml
+# @spec_id: core-harness-minimal-context-v1
 # @component_id: tool-handlers-integration
 
 """
@@ -11,17 +11,15 @@ These tests verify that:
 3. The complete tool execution flow works with context
 """
 
+
 import pytest
-from pathlib import Path
 
 from agentforge.core.harness.minimal_context.native_tool_executor import (
     NativeToolExecutor,
 )
 from agentforge.core.harness.minimal_context.tool_handlers import (
-    create_standard_handlers,
-    create_complete_handler,
-    create_escalate_handler,
     create_cannot_fix_handler,
+    create_standard_handlers,
 )
 from agentforge.core.llm.interface import ToolCall
 

@@ -1,5 +1,5 @@
-# @spec_file: specs/tools/01-tool-handlers.yaml
-# @spec_id: tool-handlers-v1
+# @spec_file: .agentforge/specs/core-harness-minimal-context-v1.yaml
+# @spec_id: core-harness-minimal-context-v1
 # @component_id: verify-handlers
 # @test_path: tests/unit/harness/tool_handlers/test_verify_handlers.py
 
@@ -17,7 +17,7 @@ import logging
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 from .constants import (
     CHECK_FAILED_OUTPUT_MAX_CHARS,
@@ -32,7 +32,7 @@ from .types import ActionHandler
 logger = logging.getLogger(__name__)
 
 
-def create_run_check_handler(project_path: Optional[Path] = None) -> ActionHandler:
+def create_run_check_handler(project_path: Path | None = None) -> ActionHandler:
     """
     Create a run_check action handler.
 
@@ -47,7 +47,7 @@ def create_run_check_handler(project_path: Optional[Path] = None) -> ActionHandl
     """
     base_path = Path(project_path) if project_path else Path.cwd()
 
-    def handler(params: Dict[str, Any]) -> str:
+    def handler(params: dict[str, Any]) -> str:
         path = params.get("path") or params.get("file_path")
         check_type = params.get("check_type")
         check_id = params.get("check_id")
@@ -55,7 +55,7 @@ def create_run_check_handler(project_path: Optional[Path] = None) -> ActionHandl
 
         # Get context for violation-specific checking
         context = params.get("_context", {})
-        target_violation = context.get("violation_id")
+        context.get("violation_id")
         context_check_id = context.get("check_id")
 
         # Use context check_id if not provided directly
@@ -111,7 +111,7 @@ def create_run_check_handler(project_path: Optional[Path] = None) -> ActionHandl
             return f"ERROR: Check failed: {e}"
 
     def _run_check_fallback(
-        base_path: Path, path: Optional[str], check_type: Optional[str]
+        base_path: Path, path: str | None, check_type: str | None
     ) -> str:
         """Fallback implementation using subprocess."""
         cmd = [sys.executable, "-m", "agentforge", "verify"]
@@ -143,7 +143,7 @@ def create_run_check_handler(project_path: Optional[Path] = None) -> ActionHandl
     return handler
 
 
-def create_run_check_handler_v2(project_path: Optional[Path] = None) -> ActionHandler:
+def create_run_check_handler_v2(project_path: Path | None = None) -> ActionHandler:
     """
     Enhanced run_check handler with violation-specific checking.
 
@@ -157,7 +157,7 @@ def create_run_check_handler_v2(project_path: Optional[Path] = None) -> ActionHa
     """
     base_path = Path(project_path) if project_path else Path.cwd()
 
-    def handler(params: Dict[str, Any]) -> str:
+    def handler(params: dict[str, Any]) -> str:
         path = params.get("path") or params.get("file_path")
         check_type = params.get("check_type")
         violation_id = params.get("violation_id")
@@ -179,7 +179,7 @@ def create_run_check_handler_v2(project_path: Optional[Path] = None) -> ActionHa
             return f"ERROR: Check failed: {e}"
 
     def _check_violation_resolved(
-        base_path: Path, violation_id: str, file_path: Optional[str]
+        base_path: Path, violation_id: str, file_path: str | None
     ) -> str:
         """Check if a specific violation was resolved."""
         import yaml
@@ -241,7 +241,7 @@ def create_run_check_handler_v2(project_path: Optional[Path] = None) -> ActionHa
             )
 
     def _run_general_check(
-        base_path: Path, file_path: Optional[str], check_type: Optional[str]
+        base_path: Path, file_path: str | None, check_type: str | None
     ) -> str:
         """Run general conformance check."""
         try:
@@ -265,7 +265,7 @@ def create_run_check_handler_v2(project_path: Optional[Path] = None) -> ActionHa
     return handler
 
 
-def create_run_tests_handler(project_path: Optional[Path] = None) -> ActionHandler:
+def create_run_tests_handler(project_path: Path | None = None) -> ActionHandler:
     """
     Create a run_tests action handler.
 
@@ -279,7 +279,7 @@ def create_run_tests_handler(project_path: Optional[Path] = None) -> ActionHandl
     """
     base_path = Path(project_path) if project_path else Path.cwd()
 
-    def handler(params: Dict[str, Any]) -> str:
+    def handler(params: dict[str, Any]) -> str:
         test_path = params.get("path") or params.get("test_path")
         verbose = params.get("verbose", False)
         logger.debug("run_tests: test_path=%s, verbose=%s", test_path, verbose)
@@ -328,7 +328,7 @@ def create_run_tests_handler(project_path: Optional[Path] = None) -> ActionHandl
             return f"ERROR: Tests failed: {e}"
 
     def _run_pytest_fallback(
-        base_path: Path, test_path: Optional[str], verbose: bool
+        base_path: Path, test_path: str | None, verbose: bool
     ) -> str:
         """Fallback implementation using pytest directly."""
         cmd = [sys.executable, "-m", "pytest"]
@@ -367,7 +367,7 @@ def create_run_tests_handler(project_path: Optional[Path] = None) -> ActionHandl
     return handler
 
 
-def create_validate_python_handler(project_path: Optional[Path] = None) -> ActionHandler:
+def create_validate_python_handler(project_path: Path | None = None) -> ActionHandler:
     """
     Create a validate_python action handler.
 
@@ -382,7 +382,7 @@ def create_validate_python_handler(project_path: Optional[Path] = None) -> Actio
     """
     base_path = Path(project_path) if project_path else Path.cwd()
 
-    def handler(params: Dict[str, Any]) -> str:
+    def handler(params: dict[str, Any]) -> str:
         path = params.get("path") or params.get("file_path")
         logger.debug("validate_python: path=%s", path)
 
@@ -396,7 +396,7 @@ def create_validate_python_handler(project_path: Optional[Path] = None) -> Actio
         if not full_path.exists():
             return f"ERROR: File not found: {path}"
 
-        if not full_path.suffix == ".py":
+        if full_path.suffix != ".py":
             return f"ERROR: Not a Python file: {path}"
 
         try:

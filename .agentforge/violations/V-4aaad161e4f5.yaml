@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-4aaad161e4f5
+contract_id: agentforge
+check_id: max-function-length
+severity: major
+file_path: src/agentforge/core/conformance/domain.py
+message: 'Function ''compute_test_path'' has 62 lines (max: 50)'
+detected_at: '2026-01-01T01:39:13.645715'
+last_seen_at: '2026-01-01T01:39:13.645715'
+status: open
+line_number: 165
+fix_hint: Extract logic into helper functions or use composition

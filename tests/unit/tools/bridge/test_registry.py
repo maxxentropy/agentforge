@@ -1,20 +1,15 @@
-# @spec_file: .agentforge/specs/refactoring-v1.yaml
-# @spec_id: refactoring-v1
+# @spec_file: .agentforge/specs/core-refactoring-v1.yaml
+# @spec_id: core-refactoring-v1
 # @component_id: tools-refactoring-registry
 # @impl_path: tools/refactoring/registry.py
 
 """Unit tests for mapping registry."""
 
-import pytest
 
-import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent.parent / "tools"))
 
-from bridge.mappings.registry import MappingRegistry
-from bridge.mappings.base import PatternMapping
-from bridge.domain import CheckTemplate, MappingContext, GeneratedCheck
-from typing import List
+from agentforge.core.bridge.domain import CheckTemplate, MappingContext
+from agentforge.core.bridge.mappings.base import PatternMapping
+from agentforge.core.bridge.mappings.registry import MappingRegistry
 
 
 class TestMappingRegistry:
@@ -23,14 +18,14 @@ class TestMappingRegistry:
     def test_has_registered_mappings(self):
         """Registry should have mappings registered via decorators."""
         # Import mapping modules to ensure decorators run
-        from bridge.mappings import cqrs, architecture, conventions  # noqa: F401
+        from agentforge.core.bridge.mappings import architecture, conventions, cqrs  # noqa: F401
 
         mappings = MappingRegistry._mappings
         assert len(mappings) > 0
 
     def test_get_mapping_info(self):
         """Can get info about registered mappings."""
-        from bridge.mappings import cqrs, architecture, conventions  # noqa: F401
+        from agentforge.core.bridge.mappings import architecture, conventions, cqrs  # noqa: F401
 
         info = MappingRegistry.get_mapping_info()
 
@@ -46,7 +41,7 @@ class TestMappingRegistry:
 
     def test_get_mappings_for_language(self):
         """Mappings are filtered by language."""
-        from bridge.mappings import cqrs, architecture, conventions  # noqa: F401
+        from agentforge.core.bridge.mappings import architecture, conventions, cqrs  # noqa: F401
 
         csharp_mappings = MappingRegistry.get_mappings_for_language("csharp")
         python_mappings = MappingRegistry.get_mappings_for_language("python")
@@ -62,7 +57,7 @@ class TestMappingRegistry:
 
     def test_generate_checks_from_context(self):
         """Can generate checks from a context."""
-        from bridge.mappings import cqrs, architecture, conventions  # noqa: F401
+        from agentforge.core.bridge.mappings import architecture, conventions, cqrs  # noqa: F401
 
         context = MappingContext(
             zone_name="core",
@@ -82,7 +77,7 @@ class TestMappingRegistry:
 
     def test_generate_checks_with_pattern_filter(self):
         """Can filter by pattern."""
-        from bridge.mappings import cqrs, architecture, conventions  # noqa: F401
+        from agentforge.core.bridge.mappings import architecture, conventions, cqrs  # noqa: F401
 
         context = MappingContext(
             zone_name="core",
@@ -122,7 +117,7 @@ class TestCustomMapping:
                 def matches(self, context: MappingContext) -> bool:
                     return context.is_pattern_detected("test_pattern")
 
-                def get_templates(self, context: MappingContext) -> List[CheckTemplate]:
+                def get_templates(self, context: MappingContext) -> list[CheckTemplate]:
                     return [
                         CheckTemplate(
                             id_template="{zone}-test-check",
@@ -134,7 +129,7 @@ class TestCustomMapping:
                     ]
 
             # Mapping should be registered
-            assert any("test_pattern" in k for k in MappingRegistry._mappings.keys())
+            assert any("test_pattern" in k for k in MappingRegistry._mappings)
 
         finally:
             # Restore original mappings

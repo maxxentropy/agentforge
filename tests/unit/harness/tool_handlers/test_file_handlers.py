@@ -1,20 +1,20 @@
-# @spec_file: specs/tools/01-tool-handlers.yaml
-# @spec_id: tool-handlers-v1
+# @spec_file: .agentforge/specs/core-harness-minimal-context-v1.yaml
+# @spec_id: core-harness-minimal-context-v1
 # @component_id: file-handlers
 
 """
 Tests for file_handlers module.
 """
 
+
 import pytest
-from pathlib import Path
 
 from agentforge.core.harness.minimal_context.tool_handlers.file_handlers import (
-    create_read_file_handler,
-    create_write_file_handler,
     create_edit_file_handler,
-    create_replace_lines_handler,
     create_insert_lines_handler,
+    create_read_file_handler,
+    create_replace_lines_handler,
+    create_write_file_handler,
 )
 
 

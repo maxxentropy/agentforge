@@ -1,4 +1,4 @@
-# @spec_file: specs/minimal-context-architecture/05-llm-integration.yaml
+# @spec_file: .agentforge/specs/core-llm-v1.yaml
 # @spec_id: llm-integration-v1
 # @component_id: llm-tools
 # @impl_path: src/agentforge/core/llm/tools.py
@@ -14,32 +14,32 @@ Tests verify:
 - Error handling for invalid inputs
 """
 
-import pytest
-from typing import List
 
+import pytest
+
+from agentforge.core.llm.interface import ToolDefinition
 from agentforge.core.llm.tools import (
-    # Functions
-    get_tools_for_task,
-    get_tool_by_name,
-    get_tools_by_category,
-    list_task_types,
-    list_all_tools,
     # Collections
     BASE_TOOLS,
-    REFACTORING_TOOLS,
-    DISCOVERY_TOOLS,
-    TESTING_TOOLS,
-    REVIEW_TOOLS,
-    # Individual tools
-    READ_FILE,
-    WRITE_FILE,
-    EDIT_FILE,
     COMPLETE,
+    DISCOVERY_TOOLS,
+    EDIT_FILE,
     ESCALATE,
     EXTRACT_FUNCTION,
+    # Individual tools
+    READ_FILE,
+    REFACTORING_TOOLS,
+    REVIEW_TOOLS,
     RUN_CHECK,
+    TESTING_TOOLS,
+    WRITE_FILE,
+    get_tool_by_name,
+    get_tools_by_category,
+    # Functions
+    get_tools_for_task,
+    list_all_tools,
+    list_task_types,
 )
-from agentforge.core.llm.interface import ToolDefinition
 
 
 class TestToolDefinitions:

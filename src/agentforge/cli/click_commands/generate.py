@@ -11,9 +11,9 @@ Commands for LLM-powered code generation.
 """
 
 import asyncio
-import click
 from pathlib import Path
 
+import click
 import yaml
 
 
@@ -70,7 +70,7 @@ def code(spec: str, phase: str, component: str, model: str, dry_run: bool, max_t
     """
     from agentforge.core.generate.domain import GenerationContext, GenerationPhase
     from agentforge.core.generate.engine import GenerationEngine
-    from agentforge.core.generate.provider import ClaudeProvider, ManualProvider, get_provider
+    from agentforge.core.generate.provider import ManualProvider, get_provider
 
     # Load specification
     spec_path = Path(spec)
@@ -192,9 +192,9 @@ def parse_response(response_file: str, output_dir: str, dry_run: bool, no_valida
         agentforge generate parse-response response.txt --output-dir src/
         agentforge generate parse-response response.txt --dry-run
     """
+    from agentforge.core.generate.domain import ParseError
     from agentforge.core.generate.parser import ResponseParser
     from agentforge.core.generate.writer import CodeWriter
-    from agentforge.core.generate.domain import ParseError
 
     # Read response file
     response_path = Path(response_file)

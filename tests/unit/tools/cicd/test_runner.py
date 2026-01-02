@@ -1,20 +1,19 @@
 """Unit tests for CI runner."""
 
 import json
-import pytest
 from datetime import datetime, timedelta
-from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
-from tools.cicd.runner import CIRunner, CheckCache
-from tools.cicd.domain import (
-    CIMode,
-    ExitCode,
-    CIConfig,
-    CIViolation,
-    CIResult,
+import pytest
+
+from agentforge.core.cicd.domain import (
     Baseline,
+    CIConfig,
+    CIMode,
+    CIViolation,
+    ExitCode,
 )
+from agentforge.core.cicd.runner import CheckCache, CIRunner
 
 
 class TestCheckCache:
@@ -153,7 +152,7 @@ class TestCIRunner:
         assert runner.repo_root == repo_root
         assert runner.config.mode == CIMode.FULL
 
-    @patch("tools.cicd.runner.CIRunner._execute_checks")
+    @patch("agentforge.core.cicd.runner.CIRunner._execute_checks")
     def test_run_full_mode(self, mock_execute, runner, sample_contracts):
         """Test running in full mode."""
         mock_execute.return_value = []
@@ -163,7 +162,7 @@ class TestCIRunner:
         assert result.mode == CIMode.FULL
         assert result.exit_code == ExitCode.SUCCESS
 
-    @patch("tools.cicd.runner.CIRunner._execute_checks")
+    @patch("agentforge.core.cicd.runner.CIRunner._execute_checks")
     def test_run_with_violations(self, mock_execute, runner, sample_contracts):
         """Test running with violations returns failure."""
         mock_execute.return_value = [
@@ -197,8 +196,8 @@ class TestCIRunner:
         assert runner.config.fail_on_new_errors is True
         assert runner.config.fail_on_new_warnings is True
 
-    @patch("tools.cicd.runner.CIRunner._execute_checks")
-    @patch("tools.cicd.runner.GitHelper.get_changed_files")
+    @patch("agentforge.core.cicd.runner.CIRunner._execute_checks")
+    @patch("agentforge.core.cicd.runner.GitHelper.get_changed_files")
     def test_incremental_mode_filters_files(self, mock_git, mock_execute, repo_root, sample_contracts):
         """Test incremental mode filters to changed files."""
         mock_git.return_value = ["changed.py"]
@@ -212,7 +211,7 @@ class TestCIRunner:
         assert result.mode == CIMode.INCREMENTAL
         mock_git.assert_called_once()
 
-    @patch("tools.cicd.runner.CIRunner._execute_checks")
+    @patch("agentforge.core.cicd.runner.CIRunner._execute_checks")
     def test_pr_mode_uses_baseline(self, mock_execute, repo_root, sample_contracts):
         """Test PR mode compares against baseline."""
         # Create a real baseline file
@@ -231,7 +230,7 @@ class TestCIRunner:
         assert result.mode == CIMode.PR
         assert result.comparison is not None
 
-    @patch("tools.cicd.runner.CIRunner._execute_checks")
+    @patch("agentforge.core.cicd.runner.CIRunner._execute_checks")
     def test_result_includes_timing(self, mock_execute, runner, sample_contracts):
         """Test result includes timing information."""
         mock_execute.return_value = []
@@ -243,8 +242,8 @@ class TestCIRunner:
         assert result.completed_at is not None
         assert result.completed_at >= result.started_at
 
-    @patch("tools.cicd.runner.CIRunner._execute_checks")
-    @patch("tools.cicd.runner.GitHelper.get_current_sha")
+    @patch("agentforge.core.cicd.runner.CIRunner._execute_checks")
+    @patch("agentforge.core.cicd.runner.GitHelper.get_current_sha")
     def test_result_includes_commit_sha(self, mock_sha, mock_execute, runner, sample_contracts):
         """Test result includes commit SHA when available."""
         mock_sha.return_value = "abc123"
@@ -286,7 +285,7 @@ class TestCIRunner:
         assert runner._contract_applies_to_files(contract, {"src/main.py"})
         assert not runner._contract_applies_to_files(contract, {"tests/test_main.py"})
 
-    @patch("tools.cicd.runner.CIRunner._execute_checks")
+    @patch("agentforge.core.cicd.runner.CIRunner._execute_checks")
     def test_exit_code_success_no_violations(self, mock_execute, runner, sample_contracts):
         """Test SUCCESS exit code when no violations."""
         mock_execute.return_value = []
@@ -295,7 +294,7 @@ class TestCIRunner:
 
         assert result.exit_code == ExitCode.SUCCESS
 
-    @patch("tools.cicd.runner.CIRunner._execute_checks")
+    @patch("agentforge.core.cicd.runner.CIRunner._execute_checks")
     def test_exit_code_violations_found(self, mock_execute, runner, sample_contracts):
         """Test VIOLATIONS_FOUND exit code with errors."""
         mock_execute.return_value = [
@@ -306,7 +305,7 @@ class TestCIRunner:
 
         assert result.exit_code == ExitCode.VIOLATIONS_FOUND
 
-    @patch("tools.cicd.runner.CIRunner._execute_checks")
+    @patch("agentforge.core.cicd.runner.CIRunner._execute_checks")
     def test_warnings_dont_fail_by_default(self, mock_execute, runner, sample_contracts):
         """Test warnings don't cause failure by default."""
         mock_execute.return_value = [
@@ -317,7 +316,7 @@ class TestCIRunner:
 
         assert result.exit_code == ExitCode.SUCCESS
 
-    @patch("tools.cicd.runner.CIRunner._execute_checks")
+    @patch("agentforge.core.cicd.runner.CIRunner._execute_checks")
     def test_warnings_fail_when_configured(self, mock_execute, repo_root, sample_contracts):
         """Test warnings cause failure when configured."""
         config = CIConfig(fail_on_new_warnings=True, cache_enabled=False)
@@ -337,7 +336,7 @@ class TestCIRunner:
         runner = CIRunner(repo_root, config)
 
         # No baseline file exists
-        with patch("tools.cicd.runner.CIRunner._execute_checks", return_value=[]):
+        with patch("agentforge.core.cicd.runner.CIRunner._execute_checks", return_value=[]):
             result = runner.run(sample_contracts)
 
         assert result.exit_code == ExitCode.BASELINE_NOT_FOUND

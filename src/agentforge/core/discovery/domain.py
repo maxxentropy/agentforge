@@ -15,7 +15,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import List, Optional, Dict, Any
+from typing import Any
 
 
 class DetectionSource(Enum):
@@ -92,14 +92,14 @@ class Detection:
     value: Any
     confidence: float
     source: DetectionSource = DetectionSource.AUTO_DETECTED
-    signals: List[str] = field(default_factory=list)
-    metadata: Optional[Dict[str, Any]] = None
+    signals: list[str] = field(default_factory=list)
+    metadata: dict[str, Any] | None = None
 
     @property
     def confidence_level(self) -> ConfidenceLevel:
         return ConfidenceLevel.from_score(self.confidence)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for YAML serialization."""
         result = {
             "value": self.value,
@@ -117,14 +117,14 @@ class Detection:
 class LanguageInfo:
     """Detected programming language."""
     name: str
-    version: Optional[str]
+    version: str | None
     detection: Detection
     file_count: int = 0
     line_count: int = 0
-    frameworks: List[str] = field(default_factory=list)
+    frameworks: list[str] = field(default_factory=list)
     primary: bool = False
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "name": self.name,
             "version": self.version,
@@ -143,16 +143,16 @@ class ProjectInfo:
     name: str
     language: str
     project_type: str  # "library", "executable", "web", "test"
-    framework: Optional[str] = None
-    references: List[str] = field(default_factory=list)
-    packages: List[Dict[str, str]] = field(default_factory=list)
+    framework: str | None = None
+    references: list[str] = field(default_factory=list)
+    packages: list[dict[str, str]] = field(default_factory=list)
 
 
 @dataclass
 class LayerInfo:
     """Detected architectural layer."""
     name: str
-    paths: List[str] = field(default_factory=list)
+    paths: list[str] = field(default_factory=list)
     file_count: int = 0
     line_count: int = 0
     detection: Detection = field(default_factory=lambda: Detection(
@@ -164,7 +164,7 @@ class LayerInfo:
         """Check if layer has dependency violations."""
         return False  # Violations tracked separately
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "name": self.name,
             "paths": self.paths,
@@ -179,11 +179,11 @@ class ArchitectureViolation:
     """A detected architecture layer violation."""
     from_layer: str
     to_layer: str
-    from_project: Optional[str] = None
-    to_project: Optional[str] = None
-    file_path: Optional[str] = None
-    line_number: Optional[int] = None
-    import_statement: Optional[str] = None
+    from_project: str | None = None
+    to_project: str | None = None
+    file_path: str | None = None
+    line_number: int | None = None
+    import_statement: str | None = None
     severity: str = "major"
 
 
@@ -193,11 +193,11 @@ class PatternDetection:
     pattern_name: str
     description: str
     detection: Detection
-    locations: List[str] = field(default_factory=list)
+    locations: list[str] = field(default_factory=list)
     file_count: int = 0
     usage_percentage: float = 0.0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "pattern_name": self.pattern_name,
             "description": self.description,
@@ -215,9 +215,9 @@ class ConventionDetection:
     pattern: str
     detection: Detection
     consistency: float = 0.0
-    exceptions: List[str] = field(default_factory=list)
+    exceptions: list[str] = field(default_factory=list)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "pattern": self.pattern,
             "consistency": round(self.consistency, 2),
@@ -231,8 +231,8 @@ class TestInventory:
     """Inventory of tests in the codebase."""
     total_test_files: int = 0
     total_test_methods: int = 0
-    frameworks: List[str] = field(default_factory=list)
-    categories: Dict[str, int] = field(default_factory=dict)
+    frameworks: list[str] = field(default_factory=list)
+    categories: dict[str, int] = field(default_factory=dict)
 
 
 @dataclass
@@ -240,7 +240,7 @@ class TestGap:
     """An identified gap in test coverage."""
     gap_type: str  # "untested_project", "untested_class", "untested_method"
     location: str
-    note: Optional[str] = None
+    note: str | None = None
 
 
 @dataclass
@@ -253,11 +253,11 @@ class TestLinkage:
     discovery through import analysis and naming conventions.
     """
     source_path: str  # Relative path to source file
-    test_paths: List[str] = field(default_factory=list)  # Test files that cover this source
+    test_paths: list[str] = field(default_factory=list)  # Test files that cover this source
     confidence: float = 0.0  # How confident we are in the linkage
     detection_method: str = "unknown"  # "import", "naming", "ast", "explicit"
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "source_path": self.source_path,
             "test_paths": self.test_paths,
@@ -271,21 +271,21 @@ class TestAnalysis:
     """Results of test gap analysis."""
     inventory: TestInventory = field(default_factory=TestInventory)
     estimated_coverage: float = 0.0
-    gaps: List[TestGap] = field(default_factory=list)
+    gaps: list[TestGap] = field(default_factory=list)
     # NEW: Source-to-test mapping for fix verification
-    linkages: List[TestLinkage] = field(default_factory=list)
+    linkages: list[TestLinkage] = field(default_factory=list)
     detection: Detection = field(default_factory=lambda: Detection(
         value="test_analysis", confidence=0.0, source=DetectionSource.AUTO_DETECTED
     ))
 
-    def get_test_path(self, source_path: str) -> Optional[str]:
+    def get_test_path(self, source_path: str) -> str | None:
         """Get the primary test path for a source file."""
         for linkage in self.linkages:
             if linkage.source_path == source_path and linkage.test_paths:
                 return linkage.test_paths[0]
         return None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "inventory": {
                 "total_test_files": self.inventory.total_test_files,
@@ -310,12 +310,12 @@ class Zone:
     name: str
     path: Path
     language: str
-    marker: Optional[Path] = None  # The file that triggered detection (e.g., pyproject.toml)
+    marker: Path | None = None  # The file that triggered detection (e.g., pyproject.toml)
     detection: ZoneDetectionMode = ZoneDetectionMode.AUTO
-    purpose: Optional[str] = None
-    contracts: List[str] = field(default_factory=list)
+    purpose: str | None = None
+    contracts: list[str] = field(default_factory=list)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "name": self.name,
             "path": str(self.path),
@@ -346,14 +346,14 @@ class Interaction:
     id: str
     interaction_type: InteractionType
     # For directional interactions (from_zone -> to_zone)
-    from_zone: Optional[str] = None
-    to_zone: Optional[str] = None
+    from_zone: str | None = None
+    to_zone: str | None = None
     # For multi-zone interactions (e.g., shared schema used by multiple zones)
-    zones: List[str] = field(default_factory=list)
-    details: Dict[str, Any] = field(default_factory=dict)
+    zones: list[str] = field(default_factory=list)
+    details: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
-        result: Dict[str, Any] = {
+    def to_dict(self) -> dict[str, Any]:
+        result: dict[str, Any] = {
             "id": self.id,
             "type": self.interaction_type.value,
         }
@@ -377,16 +377,16 @@ class ZoneProfile:
     strategies per zone.
     """
     zone: Zone
-    languages: List[LanguageInfo] = field(default_factory=list)
-    structure: Dict[str, Any] = field(default_factory=dict)
-    patterns: Dict[str, Any] = field(default_factory=dict)
-    conventions: Optional[Dict[str, Any]] = None
-    frameworks: List[str] = field(default_factory=list)
-    dependencies: List["DependencyInfo"] = field(default_factory=list)
+    languages: list[LanguageInfo] = field(default_factory=list)
+    structure: dict[str, Any] = field(default_factory=dict)
+    patterns: dict[str, Any] = field(default_factory=dict)
+    conventions: dict[str, Any] | None = None
+    frameworks: list[str] = field(default_factory=list)
+    dependencies: list["DependencyInfo"] = field(default_factory=list)
     file_count: int = 0
     line_count: int = 0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         result = {
             "language": self.zone.language,
             "path": str(self.zone.path),
@@ -407,11 +407,11 @@ class ZoneProfile:
 class DependencyInfo:
     """Information about an external dependency."""
     name: str
-    version: Optional[str] = None
+    version: str | None = None
     source: str = "unknown"  # "nuget", "pypi", "npm"
     is_dev: bool = False
-    category: Optional[str] = None
-    license: Optional[str] = None
+    category: str | None = None
+    license: str | None = None
 
 
 @dataclass
@@ -420,7 +420,7 @@ class DiscoveryMetadata:
     discovery_version: str
     run_date: datetime
     root_path: str
-    phases_completed: List[str]
+    phases_completed: list[str]
     total_files_analyzed: int = 0
     duration_seconds: float = 0.0
 
@@ -429,7 +429,7 @@ class DiscoveryMetadata:
 class OnboardingProgress:
     """Tracks incremental onboarding progress."""
     status: OnboardingStatus
-    modules: Dict[str, OnboardingStatus] = field(default_factory=dict)
+    modules: dict[str, OnboardingStatus] = field(default_factory=dict)
 
     def is_complete(self) -> bool:
         return self.status == OnboardingStatus.ANALYZED
@@ -447,30 +447,30 @@ class CodebaseProfile:
     discovery_metadata: DiscoveryMetadata
 
     # Language & Framework
-    languages: List[LanguageInfo]
+    languages: list[LanguageInfo]
 
     # Structure
-    structure: Dict[str, Any]
+    structure: dict[str, Any]
 
     # Patterns
-    patterns: Dict[str, Any]
+    patterns: dict[str, Any]
 
     # Architecture
-    architecture: Optional[Dict[str, Any]] = None
+    architecture: dict[str, Any] | None = None
 
     # Conventions
-    conventions: Optional[Dict[str, Any]] = None
+    conventions: dict[str, Any] | None = None
 
     # Tests
-    test_analysis: Optional[TestAnalysis] = None
+    test_analysis: TestAnalysis | None = None
 
     # Dependencies
-    dependencies: List[DependencyInfo] = field(default_factory=list)
+    dependencies: list[DependencyInfo] = field(default_factory=list)
 
     # Onboarding
-    onboarding_progress: Optional[OnboardingProgress] = None
+    onboarding_progress: OnboardingProgress | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for YAML serialization."""
         result = {
             "schema_version": self.schema_version,

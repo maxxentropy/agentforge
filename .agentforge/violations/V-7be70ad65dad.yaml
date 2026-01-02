@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-7be70ad65dad
+contract_id: agentforge
+check_id: max-function-length
+severity: major
+file_path: src/agentforge/core/bridge/mappings/architecture.py
+message: 'Function ''get_templates'' has 55 lines (max: 50)'
+detected_at: '2026-01-01T01:39:13.606174'
+last_seen_at: '2026-01-01T01:39:13.606174'
+status: open
+line_number: 45
+fix_hint: Extract logic into helper functions or use composition

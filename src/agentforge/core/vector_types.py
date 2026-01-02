@@ -9,7 +9,6 @@ Extracted from vector_search.py for modularity.
 """
 
 from dataclasses import dataclass, field
-from typing import List
 
 
 @dataclass
@@ -86,4 +85,4 @@ class IndexStats:
     chunk_count: int = 0
     total_tokens: int = 0
     duration_ms: int = 0
-    errors: List[str] = field(default_factory=list)
+    errors: list[str] = field(default_factory=list)

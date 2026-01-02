@@ -44,14 +44,21 @@ def __getattr__(name: str):
     if name in ("GeneratedFile", "GenerationResult", "GenerationContext",
                 "GenerationError", "APIError", "ParseError"):
         from agentforge.core.generate.domain import (
-            GeneratedFile, GenerationResult, GenerationContext,
-            GenerationError, APIError, ParseError
+            APIError,
+            GeneratedFile,
+            GenerationContext,
+            GenerationError,
+            GenerationResult,
+            ParseError,
         )
         return locals()[name]
 
     if name in ("LLMProvider", "ClaudeProvider", "ManualProvider", "get_provider"):
         from agentforge.core.generate.provider import (
-            LLMProvider, ClaudeProvider, ManualProvider, get_provider
+            ClaudeProvider,
+            LLMProvider,
+            ManualProvider,
+            get_provider,
         )
         return locals()[name]
 

@@ -1,0 +1,424 @@
+# Phase 6.1: Controller API Integration Fixes
+# @spec_id: pipeline-controller-phase6-api-v1
+# @spec_file: specs/pipeline-controller/stage-01-core-architecture.md
+# @spec_file: specs/pipeline-controller/stage-08-cli-commands.md
+
+version: "1.0"
+spec_id: pipeline-controller-phase6-api-v1
+title: "Controller API Integration Fixes"
+status: implementing
+created: "2026-01-02"
+
+overview:
+  description: |
+    Fixes critical API mismatches between CLI commands and PipelineController.
+
+    The CLI was designed expecting one interface, but the controller was
+    implemented with a different interface. This spec documents the fixes
+    needed to make them work together.
+
+    Critical Issues Fixed:
+    1. CLI calls execute(user_request=...) but controller expects execute(pipeline_id)
+    2. Missing list_pipelines() and provide_feedback() methods
+    3. approve()/abort() return types don't match CLI expectations
+    4. config_override parameter not supported
+
+  goals:
+    - Unified execute() that handles create-and-run and resume flows
+    - PipelineResult dataclass for consistent return values
+    - list_pipelines() for querying pipeline history
+    - provide_feedback() for human-in-the-loop workflows
+    - Simplified approve()/abort() signatures
+
+  dependencies:
+    - PipelineController (phase-1)
+    - CLI Commands (phase-5)
+    - PipelineState, PipelineStateStore (phase-1)
+
+components:
+  # ==========================================================================
+  # PIPELINE RESULT
+  # ==========================================================================
+
+  - id: pipeline-result
+    name: "PipelineResult"
+    type: dataclass
+    description: |
+      Result object returned by execute().
+
+      Provides consistent interface for CLI to consume:
+      - success: True if pipeline completed without errors
+      - pipeline_id: ID of the executed pipeline
+      - stages_completed: List of completed stage names
+      - current_stage: Current/failed stage (if not complete)
+      - deliverable: Final deliverable artifact (if successful)
+      - error: Error message (if failed)
+      - total_duration_seconds: Execution time
+
+    file_path: src/agentforge/core/pipeline/controller.py
+    test_path: tests/unit/pipeline/test_controller_api.py
+
+    attributes:
+      - name: success
+        type: bool
+        description: Whether pipeline completed successfully
+      - name: pipeline_id
+        type: str
+        description: Pipeline identifier
+      - name: stages_completed
+        type: List[str]
+        description: List of completed stage names
+      - name: current_stage
+        type: Optional[str]
+        description: Current stage (if running/paused) or failed stage
+      - name: deliverable
+        type: Optional[Dict[str, Any]]
+        description: Final deliverable from DELIVER stage
+      - name: error
+        type: Optional[str]
+        description: Error message if failed
+      - name: total_duration_seconds
+        type: float
+        description: Total execution time
+
+  # ==========================================================================
+  # EXECUTE METHOD OVERHAUL
+  # ==========================================================================
+
+  - id: controller-execute-unified
+    name: "PipelineController.execute() - Unified"
+    type: method
+    description: |
+      Unified execute method supporting multiple call patterns:
+
+      1. Create and run: execute(user_request="...", pipeline_type="implement")
+      2. Resume: execute(resume_pipeline_id="PL-...")
+      3. By ID (legacy): execute(pipeline_id="PL-...")
+
+      Returns PipelineResult instead of PipelineState.
+
+    file_path: src/agentforge/core/pipeline/controller.py
+    test_path: tests/unit/pipeline/test_controller_api.py
+
+    interfaces:
+      - name: execute
+        type: method
+        parameters:
+          - name: pipeline_id
+            type: Optional[str]
+            default: None
+            description: Existing pipeline ID to execute
+          - name: user_request
+            type: Optional[str]
+            default: None
+            description: New request to create pipeline for
+          - name: pipeline_type
+            type: str
+            default: "implement"
+            description: Pipeline template type
+          - name: resume_pipeline_id
+            type: Optional[str]
+            default: None
+            description: Pipeline ID to resume
+          - name: context
+            type: Optional[Dict]
+            default: None
+            description: Additional context (e.g., existing spec)
+        returns: PipelineResult
+        description: Execute or resume a pipeline
+
+  # ==========================================================================
+  # LIST PIPELINES
+  # ==========================================================================
+
+  - id: controller-list-pipelines
+    name: "PipelineController.list_pipelines()"
+    type: method
+    description: |
+      List pipelines with optional filtering.
+
+      Used by CLI commands:
+      - agentforge status (without ID shows most recent)
+      - agentforge pipelines --status running
+
+    file_path: src/agentforge/core/pipeline/controller.py
+    test_path: tests/unit/pipeline/test_controller_api.py
+
+    interfaces:
+      - name: list_pipelines
+        type: method
+        parameters:
+          - name: status
+            type: Optional[PipelineStatus]
+            default: None
+            description: Filter by status (None = all)
+          - name: limit
+            type: int
+            default: 10
+            description: Maximum number to return
+        returns: List[PipelineState]
+        description: List pipelines matching criteria
+
+  # ==========================================================================
+  # PROVIDE FEEDBACK
+  # ==========================================================================
+
+  - id: controller-provide-feedback
+    name: "PipelineController.provide_feedback()"
+    type: method
+    description: |
+      Store feedback for pipeline's current stage.
+
+      Feedback is stored in pipeline state and used when:
+      - Resuming after escalation
+      - Re-running a stage after rejection
+
+      The LLM stage executor receives this as context.
+
+    file_path: src/agentforge/core/pipeline/controller.py
+    test_path: tests/unit/pipeline/test_controller_api.py
+
+    interfaces:
+      - name: provide_feedback
+        type: method
+        parameters:
+          - name: pipeline_id
+            type: str
+            description: Pipeline to provide feedback for
+          - name: feedback
+            type: str
+            description: Human feedback text
+        returns: None
+        description: Store feedback for current stage
+
+  # ==========================================================================
+  # SIMPLIFIED APPROVE/ABORT
+  # ==========================================================================
+
+  - id: controller-approve-simple
+    name: "PipelineController.approve() - Simplified"
+    type: method
+    description: |
+      Simplified approve that auto-looks up pending escalation.
+
+      Changes:
+      - Only requires pipeline_id (not escalation_id)
+      - Returns bool instead of PipelineState
+      - Auto-finds pending escalation for pipeline
+
+    file_path: src/agentforge/core/pipeline/controller.py
+    test_path: tests/unit/pipeline/test_controller_api.py
+
+    interfaces:
+      - name: approve
+        type: method
+        parameters:
+          - name: pipeline_id
+            type: str
+            description: Pipeline to approve
+        returns: bool
+        description: True if approval succeeded
+
+  - id: controller-abort-simple
+    name: "PipelineController.abort() - Simplified"
+    type: method
+    description: |
+      Simplified abort returning bool.
+
+      Changes from original:
+      - Returns bool instead of PipelineState
+      - Handles already-terminal pipelines gracefully
+
+    file_path: src/agentforge/core/pipeline/controller.py
+    test_path: tests/unit/pipeline/test_controller_api.py
+
+    interfaces:
+      - name: abort
+        type: method
+        parameters:
+          - name: pipeline_id
+            type: str
+            description: Pipeline to abort
+          - name: reason
+            type: str
+            default: "User requested"
+            description: Abort reason
+        returns: bool
+        description: True if abort succeeded
+
+  # ==========================================================================
+  # CONFIG OVERRIDE
+  # ==========================================================================
+
+  - id: controller-config-override
+    name: "PipelineController config_override support"
+    type: enhancement
+    description: |
+      Add config_override parameter to __init__.
+
+      This allows CLI to pass runtime configuration:
+      - supervised: bool
+      - exit_after: str
+      - delivery_mode: str
+      - timeout_seconds: int
+
+    file_path: src/agentforge/core/pipeline/controller.py
+    test_path: tests/unit/pipeline/test_controller_api.py
+
+  # ==========================================================================
+  # STATE STORE ENHANCEMENTS
+  # ==========================================================================
+
+  - id: state-store-list
+    name: "PipelineStateStore.list()"
+    type: method
+    description: |
+      List pipelines from state store with filtering.
+
+      Required by list_pipelines().
+
+    file_path: src/agentforge/core/pipeline/state_store.py
+    test_path: tests/unit/pipeline/test_state_store.py
+
+    interfaces:
+      - name: list
+        type: method
+        parameters:
+          - name: status
+            type: Optional[PipelineStatus]
+            description: Filter by status
+          - name: limit
+            type: int
+            default: 10
+            description: Maximum results
+        returns: List[PipelineState]
+
+test_cases:
+  # PipelineResult tests
+  - id: test-result-success-attributes
+    description: PipelineResult has all success attributes
+    component_id: pipeline-result
+
+  - id: test-result-failure-attributes
+    description: PipelineResult has error on failure
+    component_id: pipeline-result
+
+  - id: test-result-from-state
+    description: PipelineResult can be created from PipelineState
+    component_id: pipeline-result
+
+  # Unified execute tests
+  - id: test-execute-with-request
+    description: execute(user_request=...) creates and runs pipeline
+    component_id: controller-execute-unified
+
+  - id: test-execute-with-pipeline-id
+    description: execute(pipeline_id=...) runs existing pipeline
+    component_id: controller-execute-unified
+
+  - id: test-execute-resume
+    description: execute(resume_pipeline_id=...) resumes paused pipeline
+    component_id: controller-execute-unified
+
+  - id: test-execute-with-context
+    description: execute() passes context to stages
+    component_id: controller-execute-unified
+
+  - id: test-execute-returns-result
+    description: execute() returns PipelineResult not PipelineState
+    component_id: controller-execute-unified
+
+  # list_pipelines tests
+  - id: test-list-all-pipelines
+    description: list_pipelines() returns all pipelines
+    component_id: controller-list-pipelines
+
+  - id: test-list-filtered-by-status
+    description: list_pipelines(status=...) filters correctly
+    component_id: controller-list-pipelines
+
+  - id: test-list-respects-limit
+    description: list_pipelines(limit=N) returns at most N
+    component_id: controller-list-pipelines
+
+  - id: test-list-ordered-by-date
+    description: list_pipelines() returns newest first
+    component_id: controller-list-pipelines
+
+  # provide_feedback tests
+  - id: test-provide-feedback-stores
+    description: provide_feedback() stores in pipeline state
+    component_id: controller-provide-feedback
+
+  - id: test-provide-feedback-available-to-stages
+    description: Stored feedback available in stage context
+    component_id: controller-provide-feedback
+
+  # approve/abort tests
+  - id: test-approve-simple-signature
+    description: approve(pipeline_id) works without escalation_id
+    component_id: controller-approve-simple
+
+  - id: test-approve-returns-bool
+    description: approve() returns True on success
+    component_id: controller-approve-simple
+
+  - id: test-approve-auto-finds-escalation
+    description: approve() finds pending escalation automatically
+    component_id: controller-approve-simple
+
+  - id: test-abort-returns-bool
+    description: abort() returns True on success
+    component_id: controller-abort-simple
+
+  - id: test-abort-handles-terminal
+    description: abort() returns False for terminal pipelines
+    component_id: controller-abort-simple
+
+  # config_override tests
+  - id: test-config-override-accepted
+    description: PipelineController accepts config_override
+    component_id: controller-config-override
+
+  - id: test-config-override-applied
+    description: config_override values used in execution
+    component_id: controller-config-override
+
+  # state_store.list tests
+  - id: test-state-store-list-all
+    description: StateStore.list() returns all states
+    component_id: state-store-list
+
+  - id: test-state-store-list-filtered
+    description: StateStore.list(status=...) filters correctly
+    component_id: state-store-list
+
+acceptance_criteria:
+  - CLI commands work without TypeError
+  - execute() supports both new request and resume patterns
+  - list_pipelines() returns filtered results
+  - provide_feedback() stores feedback for stages
+  - approve()/abort() return bool and work with simple signatures
+  - config_override passed through to pipeline execution
+  - All existing tests continue to pass
+
+implementation_order:
+  - step: 1
+    components: [pipeline-result, state-store-list]
+    description: Add PipelineResult dataclass and StateStore.list()
+
+  - step: 2
+    components: [controller-execute-unified]
+    description: Refactor execute() to support multiple patterns
+
+  - step: 3
+    components: [controller-list-pipelines, controller-provide-feedback]
+    description: Add list_pipelines() and provide_feedback()
+
+  - step: 4
+    components: [controller-approve-simple, controller-abort-simple]
+    description: Simplify approve() and abort()
+
+  - step: 5
+    component: controller-config-override
+    description: Add config_override support

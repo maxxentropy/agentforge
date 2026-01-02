@@ -1,6 +1,6 @@
 # @spec_file: .agentforge/specs/core-harness-minimal-context-v1.yaml
 # @spec_id: core-harness-minimal-context-v1
-# @component_id: harness-minimal_context-loop_detector
+# @component_id: loop-detector
 # @test_path: tests/unit/harness/test_enhanced_context.py
 
 """
@@ -20,7 +20,7 @@ Types of loops detected:
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional, Set
+from typing import Any
 
 from .context_models import ActionRecord, ActionResult, Fact, FactCategory
 
@@ -40,11 +40,11 @@ class LoopDetection:
     """Result of loop detection."""
 
     detected: bool
-    loop_type: Optional[LoopType] = None
+    loop_type: LoopType | None = None
     confidence: float = 0.0
     description: str = ""
-    suggestions: List[str] = field(default_factory=list)
-    evidence: List[str] = field(default_factory=list)
+    suggestions: list[str] = field(default_factory=list)
+    evidence: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -57,10 +57,10 @@ class ActionSignature:
     """
 
     action_type: str  # e.g., "edit", "extract", "check"
-    target_file: Optional[str]  # Normalized file path
-    target_entity: Optional[str]  # Function/class name
+    target_file: str | None  # Normalized file path
+    target_entity: str | None  # Function/class name
     outcome: ActionResult
-    error_category: Optional[str] = None  # Normalized error type
+    error_category: str | None = None  # Normalized error type
 
     def matches(self, other: "ActionSignature", strict: bool = False) -> bool:
         """Check if signatures match."""
@@ -109,14 +109,14 @@ class LoopDetector:
         self.no_progress_threshold = no_progress_threshold
 
         # State tracking
-        self._action_history: List[ActionSignature] = []
-        self._outcome_history: List[str] = []  # Normalized outcomes
-        self._progress_markers: Set[str] = set()  # Things that indicate progress
+        self._action_history: list[ActionSignature] = []
+        self._outcome_history: list[str] = []  # Normalized outcomes
+        self._progress_markers: set[str] = set()  # Things that indicate progress
 
     def check(
         self,
-        actions: List[ActionRecord],
-        facts: Optional[List[Fact]] = None,
+        actions: list[ActionRecord],
+        facts: list[Fact] | None = None,
     ) -> LoopDetection:
         """
         Check for loops in recent actions.
@@ -209,7 +209,7 @@ class LoopDetector:
             return "test_regression"
         return "other"
 
-    def _check_identical(self, actions: List[ActionRecord]) -> LoopDetection:
+    def _check_identical(self, actions: list[ActionRecord]) -> LoopDetection:
         """Check for identical repeated actions."""
         if len(actions) < self.identical_threshold:
             return LoopDetection(detected=False)
@@ -217,7 +217,7 @@ class LoopDetector:
         recent = actions[-self.identical_threshold :]
 
         # All same action name
-        if len(set(a.action for a in recent)) != 1:
+        if len({a.action for a in recent}) != 1:
             return LoopDetection(detected=False)
 
         # All failures
@@ -246,7 +246,7 @@ class LoopDetector:
         )
 
     def _check_error_cycle(
-        self, signatures: List[ActionSignature]
+        self, signatures: list[ActionSignature]
     ) -> LoopDetection:
         """Check for A->B->A error cycling patterns."""
         if len(signatures) < 3:
@@ -287,8 +287,8 @@ class LoopDetector:
 
     def _check_semantic_loop(
         self,
-        signatures: List[ActionSignature],
-        facts: Optional[List[Fact]],
+        signatures: list[ActionSignature],
+        facts: list[Fact] | None,
     ) -> LoopDetection:
         """Check for different actions with same semantic outcome."""
         if len(signatures) < self.semantic_threshold:
@@ -297,13 +297,13 @@ class LoopDetector:
         recent = signatures[-self.semantic_threshold :]
 
         # Different actions but all same outcome
-        action_types = set(s.action_type for s in recent)
+        action_types = {s.action_type for s in recent}
         if len(action_types) < 2:
             return LoopDetection(detected=False)  # Handled by identical check
 
         # All failures with same error category
         if all(s.outcome == ActionResult.FAILURE for s in recent):
-            error_cats = set(s.error_category for s in recent if s.error_category)
+            error_cats = {s.error_category for s in recent if s.error_category}
             if len(error_cats) == 1:
                 return LoopDetection(
                     detected=True,
@@ -337,8 +337,8 @@ class LoopDetector:
 
     def _check_no_progress(
         self,
-        actions: List[ActionRecord],
-        facts: Optional[List[Fact]],
+        actions: list[ActionRecord],
+        facts: list[Fact] | None,
     ) -> LoopDetection:
         """Check for successful actions that don't advance the goal."""
         if len(actions) < self.no_progress_threshold:
@@ -385,7 +385,7 @@ class LoopDetector:
 
         return LoopDetection(detected=False)
 
-    def _suggest_for_identical(self, actions: List[ActionRecord]) -> List[str]:
+    def _suggest_for_identical(self, actions: list[ActionRecord]) -> list[str]:
         """Generate suggestions for breaking identical action loops."""
         action = actions[0].action
         error = actions[0].error or ""
@@ -439,13 +439,13 @@ class LoopDetector:
 
         return suggestions
 
-    def get_summary(self, actions: List[ActionRecord]) -> Dict[str, Any]:
+    def get_summary(self, actions: list[ActionRecord]) -> dict[str, Any]:
         """Get summary statistics about action patterns."""
         if not actions:
             return {"total": 0}
 
-        by_type: Dict[str, int] = defaultdict(int)
-        by_result: Dict[str, int] = defaultdict(int)
+        by_type: dict[str, int] = defaultdict(int)
+        by_result: dict[str, int] = defaultdict(int)
 
         for a in actions:
             by_type[a.action] += 1

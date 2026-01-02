@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-86a3cd33e862
+contract_id: agentforge
+check_id: max-parameter-count
+severity: major
+file_path: tools/harness/minimal_context/executor.py
+message: 'Function ''__init__'' has 6 parameters (max: 5)'
+detected_at: '2025-12-31T12:15:09.955987'
+last_seen_at: '2025-12-31T14:51:44.182673'
+status: stale
+line_number: 75
+fix_hint: Group related parameters into a dataclass or use **kwargs

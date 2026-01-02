@@ -1,18 +1,17 @@
-# @spec_file: .agentforge/specs/cicd-v1.yaml
-# @spec_id: cicd-v1
+# @spec_file: .agentforge/specs/core-cicd-v1.yaml
+# @spec_id: core-cicd-v1
 # @component_id: tools-cicd-baseline
 # @impl_path: tools/cicd/baseline.py
 
 """Unit tests for baseline management."""
 
-import json
-import pytest
-from datetime import datetime
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
-from tools.cicd.baseline import BaselineManager, GitHelper, BaselineError, GitError
-from tools.cicd.domain import CIViolation, Baseline, BaselineComparison
+import pytest
+
+from agentforge.core.cicd.baseline import BaselineError, BaselineManager, GitError, GitHelper
+from agentforge.core.cicd.domain import CIViolation
 
 
 class TestBaselineManager:

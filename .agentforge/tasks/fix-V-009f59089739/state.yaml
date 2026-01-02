@@ -1,0 +1,45 @@
+context_data:
+  check_id: fixtures-in-conftest
+  contract_id: agentforge
+  file_path: tests/unit/tools/conformance/test_domain.py
+  files_modified:
+  - tests/unit/tools/conformance/test_domain.py
+  fix_hint: Move shared fixtures to conftest.py
+  line_number: 363
+  message: 'Forbidden pattern found: ''@pytest.fixture'''
+  precomputed:
+    check_definition: "Check Definition for 'fixtures-in-conftest':\nid: fixtures-in-conftest\n\
+      name: Shared Fixtures in conftest.py\ntype: regex\nseverity: info\nenabled:\
+      \ true\ndescription: Reusable fixtures should be in conftest.py\nconfig:\n \
+      \ pattern: '@pytest\\.fixture'\n  mode: forbid\nfix_hint: Move shared fixtures\
+      \ to conftest.py\napplies_to:\n  paths:\n  - tests/**/test_*.py\n  - tests/**/*_test.py\n"
+    file_context: "     354:     def test_open_issues(self):\n     355:         \"\
+      \"\"Test open issues count.\"\"\"\n     356:         summary = ConformanceSummary(failed=10,\
+      \ stale=5)\n     357:         assert summary.open_issues == 15\n     358: \n\
+      \     359: \n     360: class TestConformanceReport:\n     361:     \"\"\"Tests\
+      \ for ConformanceReport.\"\"\"\n     362: \n>>>  363:     @pytest.fixture\n\
+      \     364:     def report(self):\n     365:         \"\"\"Create a test report.\"\
+      \"\"\n     366:         return ConformanceReport(\n     367:             schema_version=\"\
+      1.0\",\n     368:             generated_at=datetime.utcnow(),\n     369:   \
+      \          run_id=\"run-123\",\n     370:             run_type=\"full\",\n \
+      \    371:             summary=ConformanceSummary(total=50, passed=40, failed=8,\
+      \ exempted=2),\n     372:             by_severity={\"blocker\": 2, \"major\"\
+      : 4, \"minor\": 2},\n     373:             by_contract={\"contract-a\": 5, \"\
+      contract-b\": 3},"
+  severity: minor
+  violation_id: V-009f59089739
+current_step: 33
+error: null
+last_updated: '2025-12-31T17:54:58.470127'
+phase: init
+verification:
+  checks_failing: 1
+  checks_passing: 0
+  details:
+    last_check: "\u2717 Check 'fixtures-in-conftest' FAILED for tests/unit/tools/conformance/test_domain.py\n\
+      Violations (2):\n- Line 192: Forbidden pattern found: '@pytest.fixture'\n  Hint:\
+      \ Move shared fixtures to conftest.py\n- Line 387: Forbidden pattern found:\
+      \ '@pytest.fixture'\n  Hint: Move shared fixtures to conftest.py"
+  last_check_time: '2025-12-31T17:52:46.679496'
+  ready_for_completion: false
+  tests_passing: false

@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-19e890032668
+contract_id: agentforge
+check_id: single-responsibility-modules
+severity: minor
+file_path: src/agentforge/core/generate/engine.py
+message: 'Class ''GenerationSession'' has 9 methods (max: 3)'
+detected_at: '2026-01-01T01:39:14.200398'
+last_seen_at: '2026-01-01T01:39:14.200398'
+status: open
+line_number: 217
+fix_hint: Split modules with too many classes into focused single-class modules

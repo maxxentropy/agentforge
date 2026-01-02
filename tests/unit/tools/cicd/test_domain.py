@@ -1,17 +1,17 @@
 """Unit tests for CI/CD domain entities."""
 
-import pytest
 from datetime import datetime, timedelta
 
-from tools.cicd.domain import (
-    CIMode,
-    ExitCode,
-    CIViolation,
-    BaselineEntry,
+import pytest
+
+from agentforge.core.cicd.domain import (
     Baseline,
     BaselineComparison,
-    CIResult,
     CIConfig,
+    CIMode,
+    CIResult,
+    CIViolation,
+    ExitCode,
 )
 
 

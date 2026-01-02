@@ -14,10 +14,9 @@ import re
 import subprocess
 import xml.etree.ElementTree as ET
 from pathlib import Path
-from typing import List, Optional
 
-from agentforge.core.tdflow.runners.base import TestRunner
 from agentforge.core.tdflow.domain import TestResult
+from agentforge.core.tdflow.runners.base import TestRunner
 
 
 class DotNetTestRunner(TestRunner):
@@ -27,7 +26,7 @@ class DotNetTestRunner(TestRunner):
     Supports xUnit, NUnit, and MSTest frameworks.
     """
 
-    def run_tests(self, filter_pattern: Optional[str] = None) -> TestResult:
+    def run_tests(self, filter_pattern: str | None = None) -> TestResult:
         """
         Run dotnet test and parse results.
 
@@ -191,7 +190,7 @@ class DotNetTestRunner(TestRunner):
         except Exception:
             return 0.0
 
-    def discover_tests(self) -> List[str]:
+    def discover_tests(self) -> list[str]:
         """
         Discover tests via dotnet test --list-tests.
 

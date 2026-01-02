@@ -6,7 +6,6 @@
 Tests for LLM interface data classes and abstractions.
 """
 
-import pytest
 
 from agentforge.core.llm.interface import (
     LLMResponse,

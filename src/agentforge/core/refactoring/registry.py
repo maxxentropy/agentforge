@@ -11,11 +11,9 @@ Returns the appropriate refactoring provider for a given file type.
 """
 
 from pathlib import Path
-from typing import Optional
 
 from .base import RefactoringProvider
 from .rope_provider import RopeRefactoringProvider
-
 
 # Registry of providers by file extension
 _EXTENSION_TO_PROVIDER = {
@@ -30,7 +28,7 @@ _EXTENSION_TO_PROVIDER = {
 def get_refactoring_provider(
     file_path: Path,
     project_path: Path,
-) -> Optional[RefactoringProvider]:
+) -> RefactoringProvider | None:
     """
     Get the appropriate refactoring provider for a file.
 

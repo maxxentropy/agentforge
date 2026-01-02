@@ -1,0 +1,13 @@
+schema_version: '1.0'
+violation_id: V-c662a8c777b0
+contract_id: agentforge
+check_id: single-responsibility-modules
+severity: minor
+file_path: tests/unit/tools/tdflow/runners/test_dotnet.py
+message: 'Class ''TestDotNetTestRunner'' has 6 methods (max: 3)'
+detected_at: '2025-12-31T02:40:13.241703'
+last_seen_at: '2026-01-01T01:39:14.004119'
+status: open
+line_number: 11
+fix_hint: Split modules with too many classes into focused single-class modules
+test_path: tests/unit/tools/tdflow/runners/test_dotnet.py

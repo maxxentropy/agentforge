@@ -11,15 +11,14 @@ Builds prompts for the agent LLM to decide on actions.
 Uses XML-structured prompts for clear parsing.
 """
 
-from typing import List, Optional
+
 import yaml
 
 from agentforge.core.harness.llm_executor_domain import (
-    ExecutionContext,
     ConversationMessage,
+    ExecutionContext,
     ToolResult,
 )
-
 
 SYSTEM_PROMPT = """You are an autonomous software engineering agent. Your role is to complete tasks by using available tools.
 
@@ -85,7 +84,7 @@ Escalate to human when stuck:
 class AgentPromptBuilder:
     """Builds prompts for agent execution."""
 
-    def __init__(self, system_prompt: Optional[str] = None):
+    def __init__(self, system_prompt: str | None = None):
         """Initialize prompt builder.
 
         Args:
@@ -133,7 +132,7 @@ class AgentPromptBuilder:
 
         return "\n\n".join(sections)
 
-    def build_messages(self, context: ExecutionContext) -> List[dict]:
+    def build_messages(self, context: ExecutionContext) -> list[dict]:
         """Build complete message list for LLM API.
 
         Args:
@@ -165,7 +164,7 @@ class AgentPromptBuilder:
 
         return messages
 
-    def _build_tools_section(self, tools: List[str]) -> str:
+    def _build_tools_section(self, tools: list[str]) -> str:
         """Build the available tools section."""
         if not tools:
             return "## Available Tools\n\nNo tools available."
@@ -202,7 +201,7 @@ class AgentPromptBuilder:
 {memory_yaml}
 </memory_context>"""
 
-    def _build_history_section(self, messages: List[ConversationMessage]) -> str:
+    def _build_history_section(self, messages: list[ConversationMessage]) -> str:
         """Build the conversation history section."""
         if not messages:
             return ""
@@ -230,7 +229,7 @@ class AgentPromptBuilder:
 
 Now decide on your next action. Remember to include your thinking process."""
 
-    def format_tool_results(self, results: List[ToolResult]) -> str:
+    def format_tool_results(self, results: list[ToolResult]) -> str:
         """Format tool results for conversation history.
 
         Args:

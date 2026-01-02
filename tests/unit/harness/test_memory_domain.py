@@ -1,5 +1,5 @@
-# @spec_file: .agentforge/specs/harness-v1.yaml
-# @spec_id: harness-v1
+# @spec_file: .agentforge/specs/core-harness-v1.yaml
+# @spec_id: core-harness-v1
 # @component_id: tools-harness-memory_domain
 # @impl_path: tools/harness/memory_domain.py
 
@@ -10,32 +10,31 @@
 
 """Tests for memory domain entities."""
 
-import pytest
 from datetime import datetime, timedelta
 from unittest.mock import patch
 
-from tools.harness.memory_domain import MemoryTier, MemoryEntry
+from agentforge.core.harness.memory_domain import MemoryEntry, MemoryTier
 
 
 class TestMemoryTier:
     """Test cases for MemoryTier enum."""
-    
+
     def test_memory_tier_has_session_value(self):
         """Test that MemoryTier enum has SESSION value."""
         assert MemoryTier.SESSION is not None
-        
+
     def test_memory_tier_has_task_value(self):
         """Test that MemoryTier enum has TASK value."""
         assert MemoryTier.TASK is not None
-        
+
     def test_memory_tier_has_project_value(self):
         """Test that MemoryTier enum has PROJECT value."""
         assert MemoryTier.PROJECT is not None
-        
+
     def test_memory_tier_has_organization_value(self):
         """Test that MemoryTier enum has ORGANIZATION value."""
         assert MemoryTier.ORGANIZATION is not None
-        
+
     def test_memory_tier_values_are_distinct(self):
         """Test that all MemoryTier values are distinct."""
         values = [MemoryTier.SESSION, MemoryTier.TASK, MemoryTier.PROJECT, MemoryTier.ORGANIZATION]
@@ -44,152 +43,152 @@ class TestMemoryTier:
 
 class TestMemoryEntryCreate:
     """Test cases for MemoryEntry.create factory method."""
-    
+
     def test_create_with_minimal_parameters_returns_entry(self):
         """Test that create method returns MemoryEntry with minimal parameters."""
         entry = MemoryEntry.create(key="test_key", value="test_value")
-        
+
         assert entry is not None
         assert entry.key == "test_key"
         assert entry.value == "test_value"
-        
+
     def test_create_with_ttl_sets_expiration(self):
         """Test that create method sets expiration when TTL provided."""
         ttl_seconds = 3600
         entry = MemoryEntry.create(key="test_key", value="test_value", ttl=ttl_seconds)
-        
+
         assert entry.ttl == ttl_seconds
         assert entry.expires_at is not None
-        
+
     def test_create_with_metadata_stores_metadata(self):
         """Test that create method stores provided metadata."""
         metadata = {"source": "test", "priority": "high"}
         entry = MemoryEntry.create(key="test_key", value="test_value", metadata=metadata)
-        
+
         assert entry.metadata == metadata
-        
+
     def test_create_sets_timestamp(self):
         """Test that create method sets creation timestamp."""
-        with patch('tools.harness.memory_domain.datetime') as mock_datetime:
+        with patch('agentforge.core.harness.memory_domain.datetime') as mock_datetime:
             mock_now = datetime(2023, 1, 1, 12, 0, 0)
             mock_datetime.now.return_value = mock_now
-            
+
             entry = MemoryEntry.create(key="test_key", value="test_value")
-            
+
             assert entry.created_at == mock_now
-            
+
     def test_create_without_ttl_has_no_expiration(self):
         """Test that create method without TTL has no expiration."""
         entry = MemoryEntry.create(key="test_key", value="test_value")
-        
+
         assert entry.ttl is None
         assert entry.expires_at is None
 
 
 class TestMemoryEntryIsExpired:
     """Test cases for MemoryEntry.is_expired method."""
-    
+
     def test_is_expired_with_no_ttl_returns_false(self):
         """Test that is_expired returns False when entry has no TTL."""
         entry = MemoryEntry.create(key="test_key", value="test_value")
-        
+
         assert entry.is_expired() is False
-        
+
     def test_is_expired_with_future_expiration_returns_false(self):
         """Test that is_expired returns False when expiration is in future."""
         entry = MemoryEntry.create(key="test_key", value="test_value", ttl=3600)
-        
+
         assert entry.is_expired() is False
-        
+
     def test_is_expired_with_past_expiration_returns_true(self):
         """Test that is_expired returns True when expiration is in past."""
-        with patch('tools.harness.memory_domain.datetime') as mock_datetime:
+        with patch('agentforge.core.harness.memory_domain.datetime') as mock_datetime:
             # Create entry in the past
             past_time = datetime(2023, 1, 1, 12, 0, 0)
             mock_datetime.now.return_value = past_time
-            
+
             entry = MemoryEntry.create(key="test_key", value="test_value", ttl=3600)
-            
+
             # Check expiration in the future
             future_time = datetime(2023, 1, 1, 14, 0, 0)  # 2 hours later
             mock_datetime.now.return_value = future_time
-            
+
             assert entry.is_expired() is True
-            
+
     def test_is_expired_at_exact_expiration_returns_true(self):
         """Test that is_expired returns True at exact expiration time."""
-        with patch('tools.harness.memory_domain.datetime') as mock_datetime:
+        with patch('agentforge.core.harness.memory_domain.datetime') as mock_datetime:
             creation_time = datetime(2023, 1, 1, 12, 0, 0)
             mock_datetime.now.return_value = creation_time
-            
+
             entry = MemoryEntry.create(key="test_key", value="test_value", ttl=3600)
-            
+
             # Check at exact expiration time
             expiration_time = creation_time + timedelta(seconds=3600)
             mock_datetime.now.return_value = expiration_time
-            
+
             assert entry.is_expired() is True
 
 
 class TestMemoryEntryToDict:
     """Test cases for MemoryEntry.to_dict method."""
-    
+
     def test_to_dict_returns_dictionary(self):
         """Test that to_dict returns a dictionary representation."""
         entry = MemoryEntry.create(key="test_key", value="test_value")
-        
+
         result = entry.to_dict()
-        
+
         assert isinstance(result, dict)
-        
+
     def test_to_dict_includes_key_and_value(self):
         """Test that to_dict includes key and value."""
         entry = MemoryEntry.create(key="test_key", value="test_value")
-        
+
         result = entry.to_dict()
-        
+
         assert result["key"] == "test_key"
         assert result["value"] == "test_value"
-        
+
     def test_to_dict_includes_timestamp(self):
         """Test that to_dict includes creation timestamp."""
         entry = MemoryEntry.create(key="test_key", value="test_value")
-        
+
         result = entry.to_dict()
-        
+
         assert "created_at" in result
         assert result["created_at"] == entry.created_at
-        
+
     def test_to_dict_includes_ttl_when_present(self):
         """Test that to_dict includes TTL when present."""
         entry = MemoryEntry.create(key="test_key", value="test_value", ttl=3600)
-        
+
         result = entry.to_dict()
-        
+
         assert result["ttl"] == 3600
-        
+
     def test_to_dict_includes_metadata_when_present(self):
         """Test that to_dict includes metadata when present."""
         metadata = {"source": "test", "priority": "high"}
         entry = MemoryEntry.create(key="test_key", value="test_value", metadata=metadata)
-        
+
         result = entry.to_dict()
-        
+
         assert result["metadata"] == metadata
-        
+
     def test_to_dict_excludes_none_values(self):
         """Test that to_dict excludes None values."""
         entry = MemoryEntry.create(key="test_key", value="test_value")
-        
+
         result = entry.to_dict()
-        
+
         assert "ttl" not in result or result["ttl"] is not None
         assert "metadata" not in result or result["metadata"] is not None
 
 
 class TestMemoryEntryFromDict:
     """Test cases for MemoryEntry.from_dict method."""
-    
+
     def test_from_dict_creates_entry_from_minimal_dict(self):
         """Test that from_dict creates MemoryEntry from minimal dictionary."""
         data = {
@@ -197,13 +196,13 @@ class TestMemoryEntryFromDict:
             "value": "test_value",
             "created_at": datetime(2023, 1, 1, 12, 0, 0)
         }
-        
+
         entry = MemoryEntry.from_dict(data)
-        
+
         assert entry.key == "test_key"
         assert entry.value == "test_value"
         assert entry.created_at == datetime(2023, 1, 1, 12, 0, 0)
-        
+
     def test_from_dict_creates_entry_with_ttl(self):
         """Test that from_dict creates MemoryEntry with TTL."""
         data = {
@@ -212,12 +211,12 @@ class TestMemoryEntryFromDict:
             "created_at": datetime(2023, 1, 1, 12, 0, 0),
             "ttl": 3600
         }
-        
+
         entry = MemoryEntry.from_dict(data)
-        
+
         assert entry.ttl == 3600
         assert entry.expires_at is not None
-        
+
     def test_from_dict_creates_entry_with_metadata(self):
         """Test that from_dict creates MemoryEntry with metadata."""
         metadata = {"source": "test", "priority": "high"}
@@ -227,11 +226,11 @@ class TestMemoryEntryFromDict:
             "created_at": datetime(2023, 1, 1, 12, 0, 0),
             "metadata": metadata
         }
-        
+
         entry = MemoryEntry.from_dict(data)
-        
+
         assert entry.metadata == metadata
-        
+
     def test_from_dict_handles_missing_optional_fields(self):
         """Test that from_dict handles missing optional fields gracefully."""
         data = {
@@ -239,13 +238,13 @@ class TestMemoryEntryFromDict:
             "value": "test_value",
             "created_at": datetime(2023, 1, 1, 12, 0, 0)
         }
-        
+
         entry = MemoryEntry.from_dict(data)
-        
+
         assert entry.ttl is None
         assert entry.metadata is None
         assert entry.expires_at is None
-        
+
     def test_from_dict_roundtrip_preserves_data(self):
         """Test that from_dict and to_dict roundtrip preserves data."""
         original_entry = MemoryEntry.create(
@@ -254,10 +253,10 @@ class TestMemoryEntryFromDict:
             ttl=3600,
             metadata={"source": "test"}
         )
-        
+
         data = original_entry.to_dict()
         restored_entry = MemoryEntry.from_dict(data)
-        
+
         assert restored_entry.key == original_entry.key
         assert restored_entry.value == original_entry.value
         assert restored_entry.ttl == original_entry.ttl

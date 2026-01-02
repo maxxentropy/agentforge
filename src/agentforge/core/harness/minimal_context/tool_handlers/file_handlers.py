@@ -1,5 +1,5 @@
-# @spec_file: specs/tools/01-tool-handlers.yaml
-# @spec_id: tool-handlers-v1
+# @spec_file: .agentforge/specs/core-harness-minimal-context-v1.yaml
+# @spec_id: core-harness-minimal-context-v1
 # @component_id: file-handlers
 # @test_path: tests/unit/harness/tool_handlers/test_file_handlers.py
 
@@ -20,7 +20,7 @@ Design principles:
 
 import logging
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 from .constants import FILE_PREVIEW_MAX_LINES
 from .types import ActionHandler, validate_path_security
@@ -28,7 +28,7 @@ from .types import ActionHandler, validate_path_security
 logger = logging.getLogger(__name__)
 
 
-def create_read_file_handler(project_path: Optional[Path] = None) -> ActionHandler:
+def create_read_file_handler(project_path: Path | None = None) -> ActionHandler:
     """
     Create a read_file action handler.
 
@@ -40,7 +40,7 @@ def create_read_file_handler(project_path: Optional[Path] = None) -> ActionHandl
     """
     base_path = Path(project_path) if project_path else Path.cwd()
 
-    def handler(params: Dict[str, Any]) -> str:
+    def handler(params: dict[str, Any]) -> str:
         path = params.get("path", "")
         logger.debug("read_file: path=%s", path)
         if not path:
@@ -82,7 +82,7 @@ def create_read_file_handler(project_path: Optional[Path] = None) -> ActionHandl
     return handler
 
 
-def create_write_file_handler(project_path: Optional[Path] = None) -> ActionHandler:
+def create_write_file_handler(project_path: Path | None = None) -> ActionHandler:
     """
     Create a write_file action handler.
 
@@ -94,7 +94,7 @@ def create_write_file_handler(project_path: Optional[Path] = None) -> ActionHand
     """
     base_path = Path(project_path) if project_path else Path.cwd()
 
-    def handler(params: Dict[str, Any]) -> str:
+    def handler(params: dict[str, Any]) -> str:
         path = params.get("path", "")
         content = params.get("content", "")
         logger.debug("write_file: path=%s, content_len=%d", path, len(content))
@@ -131,7 +131,7 @@ def create_write_file_handler(project_path: Optional[Path] = None) -> ActionHand
     return handler
 
 
-def create_edit_file_handler(project_path: Optional[Path] = None) -> ActionHandler:
+def create_edit_file_handler(project_path: Path | None = None) -> ActionHandler:
     """
     Create an edit_file action handler.
 
@@ -146,7 +146,7 @@ def create_edit_file_handler(project_path: Optional[Path] = None) -> ActionHandl
     """
     base_path = Path(project_path) if project_path else Path.cwd()
 
-    def handler(params: Dict[str, Any]) -> str:
+    def handler(params: dict[str, Any]) -> str:
         path = params.get("path", "")
         start_line = params.get("start_line", 0)
         end_line = params.get("end_line", 0)
@@ -219,7 +219,7 @@ def create_edit_file_handler(project_path: Optional[Path] = None) -> ActionHandl
     return handler
 
 
-def create_replace_lines_handler(project_path: Optional[Path] = None) -> ActionHandler:
+def create_replace_lines_handler(project_path: Path | None = None) -> ActionHandler:
     """
     Create a replace_lines action handler.
 
@@ -233,7 +233,7 @@ def create_replace_lines_handler(project_path: Optional[Path] = None) -> ActionH
     """
     base_path = Path(project_path) if project_path else Path.cwd()
 
-    def handler(params: Dict[str, Any]) -> str:
+    def handler(params: dict[str, Any]) -> str:
         path = params.get("path") or params.get("file_path")
         start_line = params.get("start_line")
         end_line = params.get("end_line")
@@ -305,7 +305,7 @@ def create_replace_lines_handler(project_path: Optional[Path] = None) -> ActionH
     return handler
 
 
-def create_insert_lines_handler(project_path: Optional[Path] = None) -> ActionHandler:
+def create_insert_lines_handler(project_path: Path | None = None) -> ActionHandler:
     """
     Create an insert_lines action handler.
 
@@ -319,7 +319,7 @@ def create_insert_lines_handler(project_path: Optional[Path] = None) -> ActionHa
     """
     base_path = Path(project_path) if project_path else Path.cwd()
 
-    def handler(params: Dict[str, Any]) -> str:
+    def handler(params: dict[str, Any]) -> str:
         path = params.get("path") or params.get("file_path")
         line_number = params.get("line_number") or params.get("before_line")
         new_content = params.get("new_content") or params.get("content")

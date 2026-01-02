@@ -1,21 +1,16 @@
 """Unit tests for bridge domain entities."""
 
-import pytest
 from datetime import datetime
 
-import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent.parent / "tools"))
-
-from bridge.domain import (
-    ConfidenceTier,
+from agentforge.core.bridge.domain import (
     CheckTemplate,
+    ConfidenceTier,
+    Conflict,
+    ConflictType,
     GeneratedCheck,
     GeneratedContract,
     GenerationMetadata,
     MappingContext,
-    Conflict,
-    ConflictType,
     ResolutionStrategy,
 )
 

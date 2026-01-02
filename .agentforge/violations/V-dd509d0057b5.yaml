@@ -1,0 +1,16 @@
+schema_version: '1.0'
+violation_id: V-dd509d0057b5
+contract_id: agentforge
+check_id: contract-schema-version
+severity: blocker
+file_path: tools/builtin_checks.py
+message: 'Required pattern not found: ''^schema_version:\s*[''"]?1\.0[''"]?'''
+detected_at: '2025-12-31T18:52:08.854502'
+last_seen_at: '2025-12-31T18:52:08.854502'
+status: resolved
+fix_hint: 'Add ''schema_version: "1.0"'' at the top of the contract file'
+resolution:
+  resolved_at: '2025-12-31T19:17:48.608139'
+  resolved_by: system
+  reason: No longer detected in full verification run
+test_path: tests/unit/tools/

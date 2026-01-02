@@ -14,10 +14,11 @@ All generated test files include lineage metadata for audit trail.
 import asyncio
 import time
 from pathlib import Path
-from typing import Any, Dict, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Optional
 
 import yaml
 
+from agentforge.core.lineage import generate_lineage_header
 from agentforge.core.tdflow.domain import (
     ComponentProgress,
     ComponentStatus,
@@ -27,7 +28,6 @@ from agentforge.core.tdflow.domain import (
     TestFile,
 )
 from agentforge.core.tdflow.runners.base import TestRunner
-from agentforge.core.lineage import generate_lineage_header
 
 if TYPE_CHECKING:
     from agentforge.core.generate.engine import GenerationEngine
@@ -62,7 +62,7 @@ class RedPhaseExecutor:
         self.session = session
         self.runner = runner
         self.generator = generator
-        self._spec_data: Optional[Dict[str, Any]] = None
+        self._spec_data: dict[str, Any] | None = None
 
     def execute(self, component: ComponentProgress) -> PhaseResult:
         """
@@ -162,7 +162,7 @@ class RedPhaseExecutor:
             duration_seconds=time.time() - start_time,
         )
 
-    def _load_component_spec(self, name: str) -> Optional[Dict[str, Any]]:
+    def _load_component_spec(self, name: str) -> dict[str, Any] | None:
         """
         Load specification for a specific component.
 
@@ -189,8 +189,8 @@ class RedPhaseExecutor:
     def _generate_tests(
         self,
         component: ComponentProgress,
-        spec: Dict[str, Any],
-    ) -> Optional[str]:
+        spec: dict[str, Any],
+    ) -> str | None:
         """
         Generate test content via LLM or templates.
 
@@ -219,8 +219,8 @@ class RedPhaseExecutor:
     def _generate_tests_with_llm(
         self,
         component: ComponentProgress,
-        spec: Dict[str, Any],
-    ) -> Optional[str]:
+        spec: dict[str, Any],
+    ) -> str | None:
         """
         Generate tests using LLM via GenerationEngine.
 
@@ -235,7 +235,7 @@ class RedPhaseExecutor:
             return None
 
         try:
-            from agentforge.core.generate.domain import GenerationContext, GenerationPhase
+            from agentforge.core.generate.domain import GenerationContext
 
             # Build generation context
             context = GenerationContext.for_red(
@@ -259,7 +259,7 @@ class RedPhaseExecutor:
     def _generate_csharp_tests(
         self,
         component: ComponentProgress,
-        spec: Dict[str, Any],
+        spec: dict[str, Any],
     ) -> str:
         """
         Generate C# test file from specification.
@@ -375,7 +375,7 @@ public class {class_name}Tests
     def _generate_python_tests(
         self,
         component: ComponentProgress,
-        spec: Dict[str, Any],
+        spec: dict[str, Any],
     ) -> str:
         """
         Generate Python test file from specification.
@@ -513,19 +513,13 @@ class Test{class_name}:
         if self.session.test_framework in ("xunit", "nunit", "mstest"):
             # Look for existing test project
             test_dirs = list(project_root.glob("**/tests/**"))
-            if test_dirs:
-                test_root = test_dirs[0].parent
-            else:
-                test_root = project_root / "tests" / "Unit"
+            test_root = test_dirs[0].parent if test_dirs else project_root / "tests" / "Unit"
 
             return test_root / f"{component.name}Tests.cs"
         else:
             # Python tests
             test_dirs = list(project_root.glob("**/tests"))
-            if test_dirs:
-                test_root = test_dirs[0]
-            else:
-                test_root = project_root / "tests"
+            test_root = test_dirs[0] if test_dirs else project_root / "tests"
 
             return test_root / f"test_{self._to_snake_case(component.name)}.py"
 

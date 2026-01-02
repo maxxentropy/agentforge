@@ -1,4 +1,4 @@
-# @spec_file: specs/minimal-context-architecture/04-context-templates.yaml
+# @spec_file: .agentforge/specs/core-context-v1.yaml
 # @spec_id: context-templates-v1
 # @component_id: context-template-bridge
 # @test_path: tests/unit/context/test_templates.py
@@ -20,7 +20,6 @@ Token budget prioritizes:
 - validate phase: 800 tokens (coverage + results)
 """
 
-from typing import Dict, List, Optional
 
 from .base import BaseContextTemplate
 from .models import CompactionLevel, ContextSection, TierDefinition
@@ -34,10 +33,10 @@ class BridgeTemplate(BaseContextTemplate):
         return "bridge"
 
     @property
-    def phases(self) -> List[str]:
+    def phases(self) -> list[str]:
         return ["analyze", "map", "validate"]
 
-    def get_phase_mapping(self) -> Dict[str, str]:
+    def get_phase_mapping(self) -> dict[str, str]:
         """Map standard phases to bridge phases."""
         return {
             "init": "analyze",
@@ -132,7 +131,7 @@ class BridgeTemplate(BaseContextTemplate):
 
         return definitions.get(phase, definitions["analyze"])
 
-    def get_system_prompt(self, phase: Optional[str] = None) -> str:
+    def get_system_prompt(self, phase: str | None = None) -> str:
         """System prompt for bridge tasks."""
         return """You are an expert contract mapping agent.
 

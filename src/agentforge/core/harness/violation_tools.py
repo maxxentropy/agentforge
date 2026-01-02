@@ -12,10 +12,11 @@ These tools enable the agent to understand and fix violations.
 """
 
 import fnmatch
-import yaml
-from pathlib import Path
-from typing import Any, Dict, List, Optional
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
+import yaml
 
 from .llm_executor_domain import ToolResult
 
@@ -30,7 +31,7 @@ class ViolationInfo:
     severity: str
     file_path: str
     message: str
-    fix_hint: Optional[str]
+    fix_hint: str | None
     status: str
     detected_at: str
 
@@ -43,7 +44,7 @@ Check: {self.check_id}
 Message: {self.message}
 Hint: {self.fix_hint or 'No hint available'}"""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dict."""
         return {
             "violation_id": self.violation_id,
@@ -58,7 +59,7 @@ Hint: {self.fix_hint or 'No hint available'}"""
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "ViolationInfo":
+    def from_dict(cls, data: dict[str, Any]) -> "ViolationInfo":
         """Deserialize from dict."""
         return cls(
             violation_id=data.get("violation_id", "unknown"),
@@ -90,7 +91,7 @@ class ViolationTools:
         self.project_path = Path(project_path)
         self.violations_dir = self.project_path / ".agentforge" / "violations"
 
-    def read_violation(self, name: str, params: Dict[str, Any]) -> ToolResult:
+    def read_violation(self, name: str, params: dict[str, Any]) -> ToolResult:
         """
         Read a specific violation by ID.
 
@@ -131,7 +132,7 @@ class ViolationTools:
                 "read_violation", f"Error reading violation: {e}"
             )
 
-    def list_violations(self, name: str, params: Dict[str, Any]) -> ToolResult:
+    def list_violations(self, name: str, params: dict[str, Any]) -> ToolResult:
         """
         List violations with optional filtering.
 
@@ -155,7 +156,7 @@ class ViolationTools:
             )
 
         try:
-            violations: List[Dict[str, Any]] = []
+            violations: list[dict[str, Any]] = []
 
             for vfile in sorted(self.violations_dir.glob("V-*.yaml")):
                 if len(violations) >= limit:
@@ -209,7 +210,7 @@ class ViolationTools:
                 "list_violations", f"Error listing violations: {e}"
             )
 
-    def get_violation_context(self, name: str, params: Dict[str, Any]) -> ToolResult:
+    def get_violation_context(self, name: str, params: dict[str, Any]) -> ToolResult:
         """
         Get full context for fixing a violation: violation details + file content.
 
@@ -268,7 +269,7 @@ The fix_hint provides guidance on what change is needed.
 
         return ToolResult.success_result("get_violation_context", context)
 
-    def get_tool_executors(self) -> Dict[str, Any]:
+    def get_tool_executors(self) -> dict[str, Any]:
         """Get dict of tool executors for registration."""
         return {
             "read_violation": self.read_violation,

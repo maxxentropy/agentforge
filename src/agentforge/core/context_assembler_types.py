@@ -15,8 +15,8 @@ Extracted from context_assembler.py for modularity.
 """
 
 from dataclasses import dataclass, field
-from typing import List, Dict, Any, Optional
 from enum import Enum
+from typing import Any
 
 
 class ArchitectureLayer(Enum):
@@ -35,9 +35,9 @@ class SymbolInfo:
     kind: str
     file_path: str
     line: int
-    signature: Optional[str] = None
-    docstring: Optional[str] = None
-    parent: Optional[str] = None
+    signature: str | None = None
+    docstring: str | None = None
+    parent: str | None = None
 
     def to_dict(self) -> dict:
         return {
@@ -55,8 +55,8 @@ class FileContext:
     content: str
     layer: str = "Unknown"
     relevance_score: float = 0.0
-    symbols: List[SymbolInfo] = field(default_factory=list)
-    imports: List[str] = field(default_factory=list)
+    symbols: list[SymbolInfo] = field(default_factory=list)
+    imports: list[str] = field(default_factory=list)
     token_count: int = 0
 
     def to_dict(self) -> dict:
@@ -74,7 +74,7 @@ class PatternMatch:
     """Detected architectural pattern."""
     name: str
     description: str
-    examples: List[str] = field(default_factory=list)
+    examples: list[str] = field(default_factory=list)
     confidence: float = 0.0
 
     def to_dict(self) -> dict:
@@ -88,11 +88,11 @@ class PatternMatch:
 @dataclass
 class CodeContext:
     """Complete assembled context for LLM consumption."""
-    files: List[FileContext] = field(default_factory=list)
-    symbols: List[SymbolInfo] = field(default_factory=list)
-    patterns: List[PatternMatch] = field(default_factory=list)
+    files: list[FileContext] = field(default_factory=list)
+    symbols: list[SymbolInfo] = field(default_factory=list)
+    patterns: list[PatternMatch] = field(default_factory=list)
     total_tokens: int = 0
-    retrieval_metadata: Dict[str, Any] = field(default_factory=dict)
+    retrieval_metadata: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         return {
@@ -109,9 +109,9 @@ class CodeContext:
         import yaml
         return yaml.dump(self.to_dict(), default_flow_style=False, sort_keys=False)
 
-    def _group_files_by_layer(self) -> Dict[str, List["FileContext"]]:
+    def _group_files_by_layer(self) -> dict[str, list["FileContext"]]:
         """Group files by architecture layer."""
-        by_layer: Dict[str, List[FileContext]] = {}
+        by_layer: dict[str, list[FileContext]] = {}
         for f in self.files:
             layer = f.layer or "Unknown"
             if layer not in by_layer:
@@ -119,7 +119,7 @@ class CodeContext:
             by_layer[layer].append(f)
         return by_layer
 
-    def _format_file_section(self, f: "FileContext") -> List[str]:
+    def _format_file_section(self, f: "FileContext") -> list[str]:
         """Format a single file for prompt output."""
         lines = [f"### {f.path}", ""]
         if f.symbols:
@@ -127,7 +127,7 @@ class CodeContext:
         lines.extend(["", "```" + f.language, f.content, "```", ""])
         return lines
 
-    def _format_patterns_section(self) -> List[str]:
+    def _format_patterns_section(self) -> list[str]:
         """Format patterns section for prompt output."""
         if not self.patterns:
             return []

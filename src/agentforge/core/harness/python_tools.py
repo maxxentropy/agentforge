@@ -16,18 +16,17 @@ for all AST analysis, ensuring a single source of truth.
 """
 
 from pathlib import Path
-from typing import Any, Dict
-
-from .llm_executor_domain import ToolResult
+from typing import Any
 
 # Use the discovery provider as single source of truth for Python AST analysis
 from ..discovery.providers.python_provider import PythonProvider
+from .llm_executor_domain import ToolResult
 
 # Try to import LSP adapters and pyright runner
 try:
     from ..lsp_adapters import PyrightAdapter
     from ..lsp_client import LSPServerNotFound
-    from ..pyright_runner import PyrightRunner, PyrightResult
+    from ..pyright_runner import PyrightResult, PyrightRunner
 except ImportError:
     PyrightAdapter = None
     LSPServerNotFound = Exception
@@ -68,7 +67,7 @@ class PythonTools:
             except Exception:
                 pass  # Pyright not available
 
-    def analyze_function(self, name: str, params: Dict[str, Any]) -> ToolResult:
+    def analyze_function(self, name: str, params: dict[str, Any]) -> ToolResult:
         """
         Analyze a Python function's structure and complexity.
 
@@ -153,7 +152,7 @@ METRICS:
                 "analyze_function", f"Error analyzing function: {e}"
             )
 
-    def get_symbols(self, name: str, params: Dict[str, Any]) -> ToolResult:
+    def get_symbols(self, name: str, params: dict[str, Any]) -> ToolResult:
         """
         Get all symbols (functions, classes) in a Python file.
 
@@ -203,7 +202,7 @@ METRICS:
                 "get_symbols", f"Error parsing file: {e}"
             )
 
-    def check_types(self, name: str, params: Dict[str, Any]) -> ToolResult:
+    def check_types(self, name: str, params: dict[str, Any]) -> ToolResult:
         """
         Run pyright type checking on a file.
 
@@ -264,7 +263,7 @@ METRICS:
                 "check_types", f"Error running pyright: {e}"
             )
 
-    def get_tool_executors(self) -> Dict[str, Any]:
+    def get_tool_executors(self) -> dict[str, Any]:
         """Get dict of tool executors for registration."""
         return {
             "analyze_function": self.analyze_function,

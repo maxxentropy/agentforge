@@ -1,0 +1,103 @@
+context_data:
+  check_id: no-hardcoded-api-keys
+  contract_id: agentforge
+  file_path: tests/unit/tools/generate/test_provider.py
+  files_modified:
+  - tests/unit/tools/generate/test_provider.py
+  fix_hint: 'Use environment variables: os.environ.get(''API_KEY'')'
+  line_number: 61
+  message: 'Forbidden pattern found: ''api_key="test-key"'''
+  precomputed:
+    analysis:
+      branch_count: 0
+      cognitive_complexity: 0
+      cyclomatic_complexity: 1
+      line_count: 17
+      loop_count: 0
+      nesting_depth: 1
+    check_definition: "Check Definition for 'no-hardcoded-api-keys':\nid: no-hardcoded-api-keys\n\
+      name: No Hardcoded API Keys\ntype: regex\nseverity: error\nenabled: true\ndescription:\
+      \ API keys should not be hardcoded\nconfig:\n  pattern: (api_key|apikey|api-key|secret_key)\\\
+      s*[=:]\\s*['\"][^'\"]{8,}['\"]\n  mode: forbid\n  case_insensitive: true\nfix_hint:\
+      \ 'Use environment variables: os.environ.get(''API_KEY'')'\napplies_to:\n  paths:\n\
+      \  - '**/*.py'\n  exclude_paths:\n  - '**/tests/**'\n"
+    class_methods:
+    - end_line: 34
+      line: 32
+      name: test_default_model
+    - end_line: 38
+      line: 36
+      name: test_custom_model
+    - end_line: 42
+      line: 40
+      name: test_is_available_with_key
+    - end_line: 46
+      line: 44
+      name: test_is_available_without_key
+    - end_line: 51
+      line: 48
+      name: test_reads_api_key_from_env
+    - end_line: 57
+      line: 53
+      name: test_count_tokens_approximation
+    - end_line: 76
+      line: 60
+      name: test_generate_success
+    - end_line: 90
+      line: 79
+      name: test_generate_no_api_key_raises
+    - end_line: 120
+      line: 93
+      name: test_generate_retries_on_rate_limit
+    - end_line: 144
+      line: 123
+      name: test_generate_fails_on_auth_error
+    - end_line: 168
+      line: 147
+      name: test_generate_retries_on_server_error
+    file_context: "      52: \n      53:     def test_count_tokens_approximation(self):\n\
+      \      54:         provider = ClaudeProvider(api_key=\"test-key\")\n      55:\
+      \         # ~4 chars per token\n      56:         text = \"a\" * 400\n     \
+      \ 57:         assert provider.count_tokens(text) == 100\n      58: \n      59:\
+      \     @pytest.mark.asyncio\n      60:     async def test_generate_success(self):\n\
+      >>>   61:         provider = ClaudeProvider(api_key=\"test-key\")\n      62:\
+      \ \n      63:         # Mock the Anthropic client\n      64:         mock_response\
+      \ = MagicMock()\n      65:         mock_response.content = [MagicMock(text=\"\
+      Generated code here\")]\n      66:         mock_response.usage = MagicMock(input_tokens=100,\
+      \ output_tokens=50)\n      67: \n      68:         mock_client = AsyncMock()\n\
+      \      69:         mock_client.messages.create = AsyncMock(return_value=mock_response)\n\
+      \      70: \n      71:         with patch(\"anthropic.AsyncAnthropic\", return_value=mock_client):"
+    fix_strategy: Extract code blocks into helper functions
+    function_lines: 60-76
+    function_source: "    async def test_generate_success(self):\n        provider\
+      \ = ClaudeProvider(api_key=\"test-key\")\n\n        # Mock the Anthropic client\n\
+      \        mock_response = MagicMock()\n        mock_response.content = [MagicMock(text=\"\
+      Generated code here\")]\n        mock_response.usage = MagicMock(input_tokens=100,\
+      \ output_tokens=50)\n\n        mock_client = AsyncMock()\n        mock_client.messages.create\
+      \ = AsyncMock(return_value=mock_response)\n\n        with patch(\"anthropic.AsyncAnthropic\"\
+      , return_value=mock_client):\n            text, usage = await provider.generate(\"\
+      Test prompt\")\n\n        assert text == \"Generated code here\"\n        assert\
+      \ usage.prompt_tokens == 100\n        assert usage.completion_tokens == 50"
+    parent_class: TestClaudeProvider
+    violating_function: test_generate_success
+  severity: blocker
+  test_path: tests/unit/tools/generate/test_provider.py
+  violation_id: V-014e2cc14bc1
+current_step: 50
+error: null
+last_updated: '2026-01-01T07:23:38.648028+00:00'
+phase: init
+phase_machine_state: {}
+schema_version: '2.0'
+verification:
+  checks_failing: 1
+  checks_passing: 0
+  details:
+    last_check: "\u2717 Check 'no-hardcoded-api-keys' FAILED for tests/unit/tools/generate/test_provider.py\n\
+      Violations (2):\n- Line 150: Forbidden pattern found: 'api_key=\"test-key\"\
+      '\n  Hint: Use environment variables: os.environ.get('API_KEY')\n- Line 284:\
+      \ Forbidden pattern found: 'api_key=\"explicit-key\"'\n  Hint: Use environment\
+      \ variables: os.environ.get('API_KEY')"
+  last_check_time: '2026-01-01T01:43:46.253368'
+  ready_for_completion: false
+  tests_passing: false

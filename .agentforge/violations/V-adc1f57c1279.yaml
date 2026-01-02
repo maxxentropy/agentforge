@@ -1,0 +1,13 @@
+schema_version: '1.0'
+violation_id: V-adc1f57c1279
+contract_id: agentforge
+check_id: single-responsibility-modules
+severity: minor
+file_path: tests/unit/harness/test_tool_executor_bridge.py
+message: 'Class ''TestListFiles'' has 5 methods (max: 3)'
+detected_at: '2025-12-31T12:15:10.118505'
+last_seen_at: '2026-01-01T01:39:14.061000'
+status: open
+line_number: 273
+fix_hint: Split modules with too many classes into focused single-class modules
+test_path: tests/unit/harness/test_tool_executor_bridge.py

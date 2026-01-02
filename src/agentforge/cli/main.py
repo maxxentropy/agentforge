@@ -13,6 +13,7 @@ Commands are organized into groups imported from agentforge.cli.click_commands/.
 """
 
 import sys
+
 import click
 
 from agentforge import __version__
@@ -58,6 +59,7 @@ def init(name, force, path):
         agentforge init -n myproject       # Initialize with custom name
     """
     from pathlib import Path as PathLib
+
     from agentforge.core.init import initialize_project, is_initialized
 
     project_path = PathLib(path) if path else PathLib.cwd()
@@ -91,22 +93,38 @@ def init(name, force, path):
 
 
 # Import and register commands from submodules
-from agentforge.cli.click_commands.spec import intake, clarify, analyze, draft, validate_spec, revise
-from agentforge.cli.click_commands.utility import context, verify, render_spec
-from agentforge.cli.click_commands.workspace import workspace
-from agentforge.cli.click_commands.config import config
-from agentforge.cli.click_commands.contracts import contracts, exemptions
-from agentforge.cli.click_commands.conformance import conformance
-from agentforge.cli.click_commands.discover import discover
-from agentforge.cli.click_commands.bridge import bridge
-from agentforge.cli.click_commands.tdflow import tdflow
-from agentforge.cli.click_commands.ci import ci
-from agentforge.cli.click_commands.generate import generate
 from agentforge.cli.click_commands.agent import agent
+from agentforge.cli.click_commands.bridge import bridge
+from agentforge.cli.click_commands.ci import ci
+from agentforge.cli.click_commands.config import config
+from agentforge.cli.click_commands.conformance import conformance
+from agentforge.cli.click_commands.contracts import contracts, exemptions
+from agentforge.cli.click_commands.discover import discover
+from agentforge.cli.click_commands.generate import generate
 from agentforge.cli.click_commands.pipeline import (
-    start, design, implement, status, resume, approve, reject, abort,
-    pipelines, artifacts
+    abort,
+    approve,
+    artifacts,
+    design,
+    implement,
+    pipelines,
+    reject,
+    resume,
+    start,
+    status,
 )
+from agentforge.cli.click_commands.spec import (
+    adapt,
+    analyze,
+    clarify,
+    draft,
+    intake,
+    revise,
+    validate_spec,
+)
+from agentforge.cli.click_commands.tdflow import tdflow
+from agentforge.cli.click_commands.utility import context, render_spec, verify
+from agentforge.cli.click_commands.workspace import workspace
 
 # Register spec workflow commands
 cli.add_command(intake)
@@ -115,6 +133,7 @@ cli.add_command(analyze)
 cli.add_command(draft)
 cli.add_command(validate_spec, name='validate')
 cli.add_command(revise)
+cli.add_command(adapt)
 
 # Register utility commands
 cli.add_command(context)

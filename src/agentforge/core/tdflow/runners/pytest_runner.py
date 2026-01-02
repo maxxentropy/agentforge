@@ -9,10 +9,9 @@ import json
 import re
 import subprocess
 from pathlib import Path
-from typing import List, Optional
 
-from agentforge.core.tdflow.runners.base import TestRunner
 from agentforge.core.tdflow.domain import TestResult
+from agentforge.core.tdflow.runners.base import TestRunner
 
 
 class PytestRunner(TestRunner):
@@ -20,7 +19,7 @@ class PytestRunner(TestRunner):
     Test runner for Python projects using pytest.
     """
 
-    def run_tests(self, filter_pattern: Optional[str] = None) -> TestResult:
+    def run_tests(self, filter_pattern: str | None = None) -> TestResult:
         """
         Run pytest and parse results.
 
@@ -184,7 +183,7 @@ class PytestRunner(TestRunner):
 
         return 0.0
 
-    def discover_tests(self) -> List[str]:
+    def discover_tests(self) -> list[str]:
         """
         Discover tests via pytest --collect-only.
 

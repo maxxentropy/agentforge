@@ -1,0 +1,13 @@
+schema_version: '1.0'
+violation_id: V-592ecc2456c2
+contract_id: agentforge
+check_id: max-function-length
+severity: major
+file_path: tools/contracts_execution.py
+message: 'Function ''_execute_return_type_check'' has 57 lines (max: 50)'
+detected_at: '2025-12-31T14:51:44.125865'
+last_seen_at: '2025-12-31T18:41:20.510312'
+status: stale
+line_number: 699
+fix_hint: Extract logic into helper functions or use composition
+test_path: tests/unit/tools/

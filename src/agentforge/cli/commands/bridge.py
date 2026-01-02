@@ -5,25 +5,20 @@
 
 """Bridge command implementation."""
 
-import sys
 import json
-import click
+import sys
 from pathlib import Path
-from typing import Optional
 
+import click
 
-def _ensure_tools_path():
-    """Add tools directory to path for imports."""
-    tools_path = str(Path(__file__).parent.parent.parent / 'tools')
-    if tools_path not in sys.path:
-        sys.path.insert(0, tools_path)
+from agentforge.core.bridge import BridgeOrchestrator
 
 
 def run_bridge_generate(
     root_path: Path,
-    profile_path: Optional[Path] = None,
+    profile_path: Path | None = None,
     output_dir: str = "contracts",
-    zone_filter: Optional[str] = None,
+    zone_filter: str | None = None,
     confidence_threshold: float = 0.6,
     dry_run: bool = False,
     force: bool = False,
@@ -36,14 +31,6 @@ def run_bridge_generate(
     click.echo("=" * 60)
     click.echo("PROFILE-TO-CONFORMANCE BRIDGE")
     click.echo("=" * 60)
-
-    _ensure_tools_path()
-
-    try:
-        from bridge import BridgeOrchestrator
-    except ImportError as e:
-        click.echo(f"\nError: Could not import bridge module: {e}")
-        sys.exit(1)
 
     click.echo(f"\nRoot path: {root_path}")
     if zone_filter:
@@ -141,8 +128,8 @@ def _output_generate_results(contracts, report, dry_run: bool, verbose: bool):
 
 def run_bridge_preview(
     root_path: Path,
-    profile_path: Optional[Path] = None,
-    zone_filter: Optional[str] = None,
+    profile_path: Path | None = None,
+    zone_filter: str | None = None,
     verbose: bool = False,
 ):
     """Preview what contracts would be generated."""
@@ -156,7 +143,7 @@ def run_bridge_preview(
 
 
 def run_bridge_mappings(
-    pattern_filter: Optional[str] = None,
+    pattern_filter: str | None = None,
     output_format: str = "table",
 ):
     """List available pattern mappings."""
@@ -165,12 +152,15 @@ def run_bridge_mappings(
     click.echo("PATTERN MAPPINGS")
     click.echo("=" * 60)
 
-    _ensure_tools_path()
-
     try:
-        from bridge import MappingRegistry
         # Import mapping modules to trigger registration via decorators
-        from bridge.mappings import cqrs, architecture, repository, conventions  # noqa: F401
+        from agentforge.core.bridge.mappings import (  # noqa: F401
+            architecture,
+            conventions,
+            cqrs,
+            repository,
+        )
+        from agentforge.core.bridge.mappings.registry import MappingRegistry
     except ImportError as e:
         click.echo(f"\nError: Could not import bridge module: {e}")
         sys.exit(1)
@@ -206,8 +196,8 @@ def run_bridge_mappings(
 
 def run_bridge_refresh(
     root_path: Path,
-    profile_path: Optional[Path] = None,
-    zone_filter: Optional[str] = None,
+    profile_path: Path | None = None,
+    zone_filter: str | None = None,
     verbose: bool = False,
 ):
     """Regenerate contracts from updated profile."""
@@ -222,21 +212,13 @@ def run_bridge_refresh(
 
 def run_bridge_diff(
     root_path: Path,
-    zone_filter: Optional[str] = None,
+    zone_filter: str | None = None,
 ):
     """Show diff between generated and existing contracts."""
     click.echo()
     click.echo("=" * 60)
     click.echo("CONTRACT DIFF")
     click.echo("=" * 60)
-
-    _ensure_tools_path()
-
-    try:
-        from bridge import BridgeOrchestrator
-    except ImportError as e:
-        click.echo(f"\nError: Could not import bridge module: {e}")
-        sys.exit(1)
 
     try:
         orchestrator = BridgeOrchestrator(root_path=root_path)

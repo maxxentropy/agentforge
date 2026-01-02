@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any
 
 
 class GenerationPhase(Enum):
@@ -49,7 +49,7 @@ class FileAction(Enum):
 class GenerationError(Exception):
     """Base exception for generation errors."""
 
-    def __init__(self, message: str, details: Optional[Dict[str, Any]] = None):
+    def __init__(self, message: str, details: dict[str, Any] | None = None):
         super().__init__(message)
         self.message = message
         self.details = details or {}
@@ -61,8 +61,8 @@ class APIError(GenerationError):
     def __init__(
         self,
         message: str,
-        status_code: Optional[int] = None,
-        response: Optional[str] = None,
+        status_code: int | None = None,
+        response: str | None = None,
         retryable: bool = True,
     ):
         super().__init__(message, {"status_code": status_code, "response": response})
@@ -77,8 +77,8 @@ class ParseError(GenerationError):
     def __init__(
         self,
         message: str,
-        raw_response: Optional[str] = None,
-        position: Optional[int] = None,
+        raw_response: str | None = None,
+        position: int | None = None,
     ):
         super().__init__(message, {"raw_response": raw_response, "position": position})
         self.raw_response = raw_response
@@ -91,8 +91,8 @@ class WriteError(GenerationError):
     def __init__(
         self,
         message: str,
-        path: Optional[Path] = None,
-        original_error: Optional[Exception] = None,
+        path: Path | None = None,
+        original_error: Exception | None = None,
     ):
         super().__init__(message, {"path": str(path) if path else None})
         self.path = path
@@ -137,7 +137,7 @@ class GeneratedFile:
     path: Path
     content: str
     action: FileAction = FileAction.CREATE
-    original_content: Optional[str] = None
+    original_content: str | None = None
 
     def __post_init__(self):
         """Ensure path is a Path object."""
@@ -175,23 +175,23 @@ class GeneratedFile:
 class GenerationContext:
     """Context for code generation request."""
 
-    spec: Dict[str, Any]
+    spec: dict[str, Any]
     phase: GenerationPhase
     mode: GenerationMode = GenerationMode.FULL
-    component_name: Optional[str] = None
-    patterns: Dict[str, Any] = field(default_factory=dict)
-    examples: List[Dict[str, Any]] = field(default_factory=list)
-    error_context: Optional[Dict[str, Any]] = None
-    existing_tests: Optional[str] = None
-    existing_impl: Optional[str] = None
+    component_name: str | None = None
+    patterns: dict[str, Any] = field(default_factory=dict)
+    examples: list[dict[str, Any]] = field(default_factory=list)
+    error_context: dict[str, Any] | None = None
+    existing_tests: str | None = None
+    existing_impl: str | None = None
 
     @classmethod
     def for_red(
         cls,
-        spec: Dict[str, Any],
-        component_name: Optional[str] = None,
-        patterns: Optional[Dict[str, Any]] = None,
-        examples: Optional[List[Dict[str, Any]]] = None,
+        spec: dict[str, Any],
+        component_name: str | None = None,
+        patterns: dict[str, Any] | None = None,
+        examples: list[dict[str, Any]] | None = None,
     ) -> "GenerationContext":
         """Create context for RED phase (test generation)."""
         return cls(
@@ -206,11 +206,11 @@ class GenerationContext:
     @classmethod
     def for_green(
         cls,
-        spec: Dict[str, Any],
+        spec: dict[str, Any],
         existing_tests: str,
-        component_name: Optional[str] = None,
-        patterns: Optional[Dict[str, Any]] = None,
-        examples: Optional[List[Dict[str, Any]]] = None,
+        component_name: str | None = None,
+        patterns: dict[str, Any] | None = None,
+        examples: list[dict[str, Any]] | None = None,
     ) -> "GenerationContext":
         """Create context for GREEN phase (implementation)."""
         return cls(
@@ -226,10 +226,10 @@ class GenerationContext:
     @classmethod
     def for_fix(
         cls,
-        spec: Dict[str, Any],
-        error_context: Dict[str, Any],
-        existing_tests: Optional[str] = None,
-        existing_impl: Optional[str] = None,
+        spec: dict[str, Any],
+        error_context: dict[str, Any],
+        existing_tests: str | None = None,
+        existing_impl: str | None = None,
     ) -> "GenerationContext":
         """Create context for FIX mode (error recovery)."""
         return cls(
@@ -244,10 +244,10 @@ class GenerationContext:
     @classmethod
     def for_refactor(
         cls,
-        spec: Dict[str, Any],
+        spec: dict[str, Any],
         existing_impl: str,
-        existing_tests: Optional[str] = None,
-        patterns: Optional[Dict[str, Any]] = None,
+        existing_tests: str | None = None,
+        patterns: dict[str, Any] | None = None,
     ) -> "GenerationContext":
         """Create context for REFACTOR phase (code improvement)."""
         return cls(
@@ -265,12 +265,12 @@ class GenerationResult:
     """Result of a code generation request."""
 
     success: bool
-    files: List[GeneratedFile] = field(default_factory=list)
+    files: list[GeneratedFile] = field(default_factory=list)
     explanation: str = ""
     model: str = ""
-    token_usage: Optional[TokenUsage] = None
-    error: Optional[str] = None
-    raw_response: Optional[str] = None
+    token_usage: TokenUsage | None = None
+    error: str | None = None
+    raw_response: str | None = None
     duration_seconds: float = 0.0
     timestamp: datetime = field(default_factory=datetime.utcnow)
 
@@ -303,7 +303,7 @@ class GenerationResult:
     def failure(
         cls,
         error: str,
-        raw_response: Optional[str] = None,
+        raw_response: str | None = None,
         duration_seconds: float = 0.0,
     ) -> "GenerationResult":
         """Create a failure result."""
@@ -317,12 +317,12 @@ class GenerationResult:
     @classmethod
     def success_result(
         cls,
-        files: List[GeneratedFile],
+        files: list[GeneratedFile],
         explanation: str,
         model: str,
         token_usage: TokenUsage,
         duration_seconds: float,
-        raw_response: Optional[str] = None,
+        raw_response: str | None = None,
     ) -> "GenerationResult":
         """Create a success result."""
         return cls(

@@ -1,0 +1,95 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Specification: core-spec
+# ═══════════════════════════════════════════════════════════════════════════════
+# Generated: 2026-01-02T10:30:00
+# Generator: manual (new module)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+spec_id: core-spec-v1
+name: core_spec
+version: '1.0'
+status: as-built
+schema_version: '2.0'
+generated_at: '2026-01-02T10:30:00'
+generated_by: manual
+description: |
+  Spec management utilities for preventing spec fragmentation.
+
+  Features are COMPONENTS within specs, not standalone specs.
+  This module provides tools to analyze the spec space and determine
+  where new features belong - extending existing specs vs creating new ones.
+
+components:
+- name: __init__
+  component_id: core-spec-init
+  location: src/agentforge/core/spec/__init__.py
+  test_location: tests/unit/core/spec/test_init.py
+  description: |
+    Package initialization and exports for spec management utilities.
+  entities:
+  - name: module_exports
+    type: module
+    description: Exports SpecPlacementAnalyzer, PlacementDecision, PlacementAction
+    methods: []
+    test_methods:
+    - test_spec_module_import
+    - test_exports_available
+
+- name: placement
+  component_id: core-spec-placement
+  location: src/agentforge/core/spec/placement.py
+  test_location: tests/unit/core/spec/test_placement.py
+  description: |
+    Spec Placement Analyzer.
+
+    Determines where new features belong in the spec space to prevent fragmentation.
+    Analyzes existing specs by location coverage and recommends:
+    - EXTEND: Add as component to existing spec
+    - CREATE: Create new spec (location not covered)
+    - ESCALATE: Multiple valid options, ask user
+  entities:
+  - name: PlacementAction
+    type: enum
+    description: Action to take for spec placement (EXTEND, CREATE, ESCALATE)
+    methods: []
+    test_methods:
+    - test_placement_action_values
+  - name: SpecInfo
+    type: dataclass
+    description: Information about an existing spec including covered locations
+    methods:
+    - from_yaml
+    test_methods:
+    - test_spec_info_from_yaml
+    - test_spec_info_covered_locations
+  - name: PlacementDecision
+    type: dataclass
+    description: Result of placement analysis with action, reason, and details
+    methods: []
+    test_methods:
+    - test_placement_decision_extend
+    - test_placement_decision_create
+    - test_placement_decision_escalate
+  - name: SpecPlacementAnalyzer
+    type: class
+    description: |
+      Analyzes the spec space to determine where new features belong.
+      Prevents spec fragmentation by matching locations to covering specs.
+    methods:
+    - load_specs
+    - get_spec_ids
+    - get_spec
+    - find_covering_specs
+    - analyze
+    - suggest_component_id
+    - validate_unique_component_id
+    test_methods:
+    - test_analyzer_load_specs
+    - test_analyzer_empty_specs_dir
+    - test_analyzer_find_covering_specs
+    - test_analyzer_analyze_extend
+    - test_analyzer_analyze_create
+    - test_analyzer_analyze_escalate
+    - test_analyzer_explicit_spec_id
+    - test_suggest_component_id
+    - test_validate_unique_component_id

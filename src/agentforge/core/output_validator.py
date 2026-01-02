@@ -9,17 +9,14 @@ Extracted from contract_validator.py for modularity.
 """
 
 import re
-import jsonschema
 from typing import Any
 
+import jsonschema
+
 try:
-    from .contract_validator_types import (
-        Severity, ValidationResult, ContractValidationReport
-    )
+    from .contract_validator_types import ContractValidationReport, Severity, ValidationResult
 except ImportError:
-    from contract_validator_types import (
-        Severity, ValidationResult, ContractValidationReport
-    )
+    from contract_validator_types import ContractValidationReport, Severity, ValidationResult
 
 
 class OutputValidator:

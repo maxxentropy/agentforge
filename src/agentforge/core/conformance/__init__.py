@@ -11,16 +11,16 @@ Exports:
 """
 
 from .domain import (
-    Severity,
-    ViolationStatus,
-    ExemptionStatus,
-    ExemptionScopeType,
-    ExemptionScope,
-    Violation,
-    Exemption,
-    ConformanceSummary,
     ConformanceReport,
+    ConformanceSummary,
+    Exemption,
+    ExemptionScope,
+    ExemptionScopeType,
+    ExemptionStatus,
     HistorySnapshot,
+    Severity,
+    Violation,
+    ViolationStatus,
 )
 
 __all__ = [

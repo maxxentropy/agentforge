@@ -9,16 +9,14 @@ These tests verify the structure and behavior of orchestrator domain objects
 including enums, data classes, and configuration objects.
 """
 
-import pytest
 from datetime import datetime
-from typing import Optional
 
-from tools.harness.orchestrator_domain import (
-    OrchestratorState,
-    ExecutionMode,
+from agentforge.core.harness.orchestrator_domain import (
     AgentTask,
+    ExecutionMode,
     ExecutionResult,
-    OrchestratorConfig
+    OrchestratorConfig,
+    OrchestratorState,
 )
 
 

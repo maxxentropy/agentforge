@@ -15,14 +15,13 @@ Metrics supported:
 """
 
 import ast
-from pathlib import Path
-from typing import Dict, List, Optional, Any, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .contracts_execution import CheckContext
 
 
-def execute_ast_check(ctx: "CheckContext") -> List:
+def execute_ast_check(ctx: "CheckContext") -> list:
     """Execute an AST-based structural/metrics check."""
     from agentforge.core.contracts import CheckResult
 
@@ -61,7 +60,7 @@ def execute_ast_check(ctx: "CheckContext") -> List:
 
 
 def _get_violations(metric: str, tree: ast.AST, content: str,
-                    threshold: int, file_path: str) -> List[Dict]:
+                    threshold: int, file_path: str) -> list[dict]:
     """Get violations for the specified metric."""
     metric_funcs = {
         "cyclomatic_complexity": check_cyclomatic_complexity,
@@ -75,7 +74,7 @@ def _get_violations(metric: str, tree: ast.AST, content: str,
     return func(tree, content, threshold) if func else []
 
 
-def check_cyclomatic_complexity(tree: ast.AST, content: str, threshold: int) -> List[Dict]:
+def check_cyclomatic_complexity(tree: ast.AST, content: str, threshold: int) -> list[dict]:
     """Check cyclomatic complexity of functions."""
     violations = []
 
@@ -113,7 +112,7 @@ def _calculate_complexity(node: ast.AST) -> int:
     return 1 + sum(_get_node_complexity(child) for child in ast.walk(node))
 
 
-def check_function_length(tree: ast.AST, content: str, threshold: int) -> List[Dict]:
+def check_function_length(tree: ast.AST, content: str, threshold: int) -> list[dict]:
     """Check function line counts."""
     violations = []
     lines = content.split("\n")
@@ -138,7 +137,7 @@ def check_function_length(tree: ast.AST, content: str, threshold: int) -> List[D
     return violations
 
 
-def check_nesting_depth(tree: ast.AST, content: str, threshold: int) -> List[Dict]:
+def check_nesting_depth(tree: ast.AST, content: str, threshold: int) -> list[dict]:
     """Check maximum nesting depth in functions."""
     violations = []
 
@@ -172,7 +171,7 @@ def _calculate_max_nesting(node: ast.AST, current_depth: int = 0) -> int:
     return max_depth
 
 
-def check_parameter_count(tree: ast.AST, content: str, threshold: int) -> List[Dict]:
+def check_parameter_count(tree: ast.AST, content: str, threshold: int) -> list[dict]:
     """Check function parameter counts."""
     violations = []
 
@@ -199,7 +198,7 @@ def check_parameter_count(tree: ast.AST, content: str, threshold: int) -> List[D
     return violations
 
 
-def check_class_size(tree: ast.AST, content: str, threshold: int) -> List[Dict]:
+def check_class_size(tree: ast.AST, content: str, threshold: int) -> list[dict]:
     """Check class method/property counts."""
     violations = []
 
@@ -220,14 +219,12 @@ def check_class_size(tree: ast.AST, content: str, threshold: int) -> List[Dict]:
 
 
 def check_import_count(tree: ast.AST, content: str, threshold: int,
-                       file_path: str) -> List[Dict]:
+                       file_path: str) -> list[dict]:
     """Check import count per file."""
     import_count = 0
 
     for node in ast.walk(tree):
-        if isinstance(node, ast.Import):
-            import_count += len(node.names)
-        elif isinstance(node, ast.ImportFrom):
+        if isinstance(node, (ast.Import, ast.ImportFrom)):
             import_count += len(node.names)
 
     if import_count > threshold:

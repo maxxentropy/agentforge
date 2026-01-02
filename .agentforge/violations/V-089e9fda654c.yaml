@@ -1,0 +1,13 @@
+schema_version: '1.0'
+violation_id: V-089e9fda654c
+contract_id: agentforge
+check_id: max-function-length
+severity: major
+file_path: tools/tdflow/phases/red.py
+message: 'Function ''_generate_python_tests'' has 69 lines (max: 50)'
+detected_at: '2025-12-31T18:34:20.655427'
+last_seen_at: '2025-12-31T19:17:47.943055'
+status: stale
+line_number: 346
+fix_hint: Extract logic into helper functions or use composition
+test_path: tests/unit/tools/tdflow/

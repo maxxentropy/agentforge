@@ -10,10 +10,9 @@
 
 """Domain entities for agent orchestration."""
 
+from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Optional
-from dataclasses import dataclass, field
 
 
 class OrchestratorState(Enum):
@@ -42,8 +41,8 @@ class AgentTask:
     context: dict
     created_at: datetime
     priority: int = 0
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
     status: str = "pending"
 
 
@@ -52,8 +51,8 @@ class ExecutionResult:
     """Result of an agent execution step."""
     task_id: str
     success: bool
-    output: Optional[str]
-    error: Optional[str]
+    output: str | None
+    error: str | None
     duration_seconds: float
     tools_used: list[str]
     tokens_consumed: int = 0

@@ -1,4 +1,4 @@
-# @spec_file: specs/minimal-context-architecture/05-llm-integration.yaml
+# @spec_file: .agentforge/specs/core-harness-minimal-context-v1.yaml
 # @spec_id: llm-integration-v1
 # @component_id: executor-tests
 # @impl_path: src/agentforge/core/harness/minimal_context/executor.py

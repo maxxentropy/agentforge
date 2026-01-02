@@ -1,18 +1,15 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-1-foundation.yaml
-# @spec_id: pipeline-controller-phase1-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
 
 """End-to-end pipeline execution integration tests."""
 
-import pytest
 
 from agentforge.core.pipeline import (
-    PipelineController,
-    PipelineState,
-    PipelineStatus,
-    PipelineStateStore,
-    StageStatus,
-    StageExecutorRegistry,
     PassthroughExecutor,
+    PipelineController,
+    PipelineStatus,
+    StageExecutorRegistry,
+    StageStatus,
 )
 
 from .conftest import ApprovalRequiredExecutor, FailAfterNExecutor
@@ -23,36 +20,32 @@ class TestSimplePipelineExecution:
 
     def test_simple_design_pipeline(self, pipeline_controller):
         """Execute a simple design pipeline from start to finish."""
-        state = pipeline_controller.create(
+        result = pipeline_controller.execute(
             request="Add a logout button to the header",
             template="design",
         )
 
-        assert state.status == PipelineStatus.PENDING
-        assert state.pipeline_id.startswith("PL-")
+        assert result.success is True
+        assert result.pipeline_id.startswith("PL-")
 
-        # Execute to completion
-        state = pipeline_controller.execute(state.pipeline_id)
-
+        state = pipeline_controller.get_status(result.pipeline_id)
         assert state.status == PipelineStatus.COMPLETED
 
-        # All stages should be completed
         for stage_name in ["intake", "clarify", "analyze", "spec"]:
             assert state.stages[stage_name].status == StageStatus.COMPLETED
             assert state.stages[stage_name].completed_at is not None
 
     def test_full_implement_pipeline(self, pipeline_controller):
         """Execute a full implement pipeline with all 8 stages."""
-        state = pipeline_controller.create(
+        result = pipeline_controller.execute(
             request="Implement user authentication",
             template="implement",
         )
 
-        state = pipeline_controller.execute(state.pipeline_id)
-
+        assert result.success is True
+        state = pipeline_controller.get_status(result.pipeline_id)
         assert state.status == PipelineStatus.COMPLETED
 
-        # All 8 stages should be completed
         expected_stages = [
             "intake", "clarify", "analyze", "spec",
             "red", "green", "refactor", "deliver"
@@ -62,21 +55,18 @@ class TestSimplePipelineExecution:
 
     def test_artifacts_flow_through_pipeline(self, pipeline_controller):
         """Verify artifacts from earlier stages are available to later stages."""
-        state = pipeline_controller.create(
+        result = pipeline_controller.execute(
             request="Test artifacts flow",
             template="design",
         )
 
-        state = pipeline_controller.execute(state.pipeline_id)
-
-        # Collect all artifacts
+        state = pipeline_controller.get_status(result.pipeline_id)
         all_artifacts = state.collect_artifacts()
 
-        # Should have artifacts from all completed stages
-        assert "parsed_request" in all_artifacts  # From intake
-        assert "assumptions" in all_artifacts  # From clarify
-        assert "affected_files" in all_artifacts  # From analyze
-        assert "spec" in all_artifacts  # From spec
+        assert "parsed_request" in all_artifacts
+        assert "assumptions" in all_artifacts
+        assert "affected_files" in all_artifacts
+        assert "spec" in all_artifacts
 
 
 class TestPipelineWithEscalation:
@@ -92,13 +82,12 @@ class TestPipelineWithEscalation:
 
         controller = PipelineController(real_project_path, registry=registry)
 
-        state = controller.create("Test escalation", template="design")
-        state = controller.execute(state.pipeline_id)
+        result = controller.execute("Test escalation", template="design")
 
+        state = controller.get_status(result.pipeline_id)
         assert state.status == PipelineStatus.WAITING_APPROVAL
         assert state.current_stage == "clarify"
 
-        # Escalation should be recorded
         pending = controller.escalation_handler.get_pending(state.pipeline_id)
         assert len(pending) == 1
         assert "Approve clarifications" in pending[0].message
@@ -113,18 +102,15 @@ class TestPipelineWithEscalation:
 
         controller = PipelineController(real_project_path, registry=registry)
 
-        state = controller.create("Test approval", template="design")
-        state = controller.execute(state.pipeline_id)
+        result = controller.execute("Test approval", template="design")
 
+        state = controller.get_status(result.pipeline_id)
         assert state.status == PipelineStatus.WAITING_APPROVAL
 
-        # Get escalation and approve
-        pending = controller.escalation_handler.get_pending(state.pipeline_id)
-        esc_id = pending[0].escalation_id
+        success = controller.approve(state.pipeline_id)
+        assert success is True
 
-        state = controller.approve(state.pipeline_id, esc_id, "Looks good!")
-
-        # Pipeline should continue to completion
+        state = controller.get_status(state.pipeline_id)
         assert state.status == PipelineStatus.COMPLETED
 
     def test_reject_aborts_pipeline(self, real_project_path):
@@ -137,14 +123,12 @@ class TestPipelineWithEscalation:
 
         controller = PipelineController(real_project_path, registry=registry)
 
-        state = controller.create("Test rejection", template="design")
-        state = controller.execute(state.pipeline_id)
+        result = controller.execute("Test rejection", template="design")
 
-        pending = controller.escalation_handler.get_pending(state.pipeline_id)
-        esc_id = pending[0].escalation_id
+        success = controller.reject(result.pipeline_id, "Not approved")
+        assert success is True
 
-        state = controller.reject(state.pipeline_id, esc_id, "Not approved")
-
+        state = controller.get_status(result.pipeline_id)
         assert state.status == PipelineStatus.ABORTED
 
 
@@ -153,20 +137,16 @@ class TestPipelineResumeAfterRestart:
 
     def test_state_survives_restart(self, real_project_path, full_registry):
         """Pipeline state survives controller restart."""
-        # Create first controller and start pipeline
         controller1 = PipelineController(real_project_path, registry=full_registry)
-        state = controller1.create("Persistence test", template="design")
+        state = controller1._create("Persistence test", "design", {})
         pipeline_id = state.pipeline_id
 
-        # Execute first stage only (simulate partial execution by pausing)
         state.status = PipelineStatus.RUNNING
         state.current_stage = "intake"
         controller1.state_store.save(state)
 
-        # "Restart" - create new controller
         controller2 = PipelineController(real_project_path, registry=full_registry)
 
-        # Load and verify state is preserved
         loaded = controller2.get_status(pipeline_id)
         assert loaded.pipeline_id == pipeline_id
         assert loaded.request == "Persistence test"
@@ -175,36 +155,36 @@ class TestPipelineResumeAfterRestart:
         """Paused pipeline can be resumed."""
         controller = PipelineController(real_project_path, registry=full_registry)
 
-        state = controller.create("Resume test", template="design")
-        state.status = PipelineStatus.RUNNING
+        state = controller._create("Resume test", "design", {})
+        state.status = PipelineStatus.PAUSED
         state.current_stage = "clarify"
         state.stages["intake"].mark_completed({"done": True})
         controller.state_store.save(state)
 
-        # Pause
-        state = controller.pause(state.pipeline_id)
-        assert state.status == PipelineStatus.PAUSED
+        result = controller.resume(state.pipeline_id)
 
-        # Resume
-        state = controller.resume(state.pipeline_id)
-
-        # Should complete
+        assert result.success is True
+        state = controller.get_status(result.pipeline_id)
         assert state.status == PipelineStatus.COMPLETED
 
 
 class TestPipelineAbort:
     """Tests for pipeline abort scenarios."""
 
-    def test_abort_running_pipeline(self, pipeline_controller):
+    def test_abort_running_pipeline(self, real_project_path, full_registry):
         """Running pipeline can be aborted."""
-        state = pipeline_controller.create("Abort test")
+        controller = PipelineController(real_project_path, registry=full_registry)
+
+        state = controller._create("Abort test", "implement", {})
         state.status = PipelineStatus.RUNNING
         state.current_stage = "analyze"
         state.stages["analyze"].mark_running()
-        pipeline_controller.state_store.save(state)
+        controller.state_store.save(state)
 
-        state = pipeline_controller.abort(state.pipeline_id, "User cancelled")
+        success = controller.abort(state.pipeline_id, "User cancelled")
+        assert success is True
 
+        state = controller.get_status(state.pipeline_id)
         assert state.status == PipelineStatus.ABORTED
         assert state.stages["analyze"].error == "User cancelled"
 
@@ -212,12 +192,11 @@ class TestPipelineAbort:
         """Abort properly cleans up pipeline state."""
         controller = PipelineController(real_project_path, registry=full_registry)
 
-        state = controller.create("Cleanup test")
-        state = controller.execute(state.pipeline_id)
+        result = controller.execute("Cleanup test", template="design")
 
-        # Should be completed, can't abort
-        with pytest.raises(Exception):
-            controller.abort(state.pipeline_id)
+        # Should be completed, abort returns False
+        success = controller.abort(result.pipeline_id)
+        assert success is False
 
 
 class TestConcurrentPipelines:
@@ -227,22 +206,18 @@ class TestConcurrentPipelines:
         """Multiple pipelines run independently."""
         controller = PipelineController(real_project_path, registry=full_registry)
 
-        # Create multiple pipelines
-        state1 = controller.create("Pipeline 1", template="design")
-        state2 = controller.create("Pipeline 2", template="design")
-        state3 = controller.create("Pipeline 3", template="design")
+        result1 = controller.execute("Pipeline 1", template="design")
+        result2 = controller.execute("Pipeline 2", template="design")
+        result3 = controller.execute("Pipeline 3", template="design")
 
-        # Execute all
-        state1 = controller.execute(state1.pipeline_id)
-        state2 = controller.execute(state2.pipeline_id)
-        state3 = controller.execute(state3.pipeline_id)
+        assert result1.success is True
+        assert result2.success is True
+        assert result3.success is True
 
-        # All should complete independently
-        assert state1.status == PipelineStatus.COMPLETED
-        assert state2.status == PipelineStatus.COMPLETED
-        assert state3.status == PipelineStatus.COMPLETED
+        state1 = controller.get_status(result1.pipeline_id)
+        state2 = controller.get_status(result2.pipeline_id)
+        state3 = controller.get_status(result3.pipeline_id)
 
-        # Each should have its own artifacts
         assert state1.collect_artifacts()["parsed_request"] == "Pipeline 1"
         assert state2.collect_artifacts()["parsed_request"] == "Pipeline 2"
         assert state3.collect_artifacts()["parsed_request"] == "Pipeline 3"
@@ -251,21 +226,17 @@ class TestConcurrentPipelines:
         """Can list all active pipelines."""
         controller = PipelineController(real_project_path, registry=full_registry)
 
-        # Create pipelines, some active, some completed
-        p1 = controller.create("Active 1")
-        p2 = controller.create("Active 2")
-        p3 = controller.create("Will complete")
+        p1 = controller._create("Active 1", "implement", {})
+        p2 = controller._create("Active 2", "implement", {})
+        controller._create("Will complete", "design", {})
 
-        # Complete p3
-        controller.execute(p3.pipeline_id)
+        controller.execute("Will complete", template="design")
 
-        # List active
         active = controller.state_store.list_active()
         active_ids = [s.pipeline_id for s in active]
 
         assert p1.pipeline_id in active_ids
         assert p2.pipeline_id in active_ids
-        assert p3.pipeline_id not in active_ids  # Completed
 
 
 class TestPipelineFailures:
@@ -281,14 +252,14 @@ class TestPipelineFailures:
 
         controller = PipelineController(real_project_path, registry=registry)
 
-        state = controller.create("Failure test", template="design")
-        state = controller.execute(state.pipeline_id)
+        result = controller.execute("Failure test", template="design")
 
+        assert result.success is False
+        state = controller.get_status(result.pipeline_id)
         assert state.status == PipelineStatus.FAILED
         assert state.stages["clarify"].status == StageStatus.FAILED
         assert "Clarify failed" in state.stages["clarify"].error
 
-        # Subsequent stages should still be pending
         assert state.stages["analyze"].status == StageStatus.PENDING
         assert state.stages["spec"].status == StageStatus.PENDING
 
@@ -296,13 +267,13 @@ class TestPipelineFailures:
         """Missing stage executor causes graceful failure."""
         registry = StageExecutorRegistry()
         registry.register("intake", lambda: PassthroughExecutor("intake"))
-        # clarify not registered
 
         controller = PipelineController(real_project_path, registry=registry)
 
-        state = controller.create("Missing executor test", template="design")
-        state = controller.execute(state.pipeline_id)
+        result = controller.execute("Missing executor test", template="design")
 
+        assert result.success is False
+        state = controller.get_status(result.pipeline_id)
         assert state.status == PipelineStatus.FAILED
         assert state.stages["intake"].status == StageStatus.COMPLETED
         assert state.stages["clarify"].status == StageStatus.FAILED

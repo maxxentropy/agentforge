@@ -27,7 +27,6 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import pytest
-import yaml
 
 from agentforge.core.context import (
     AgentConfigLoader,

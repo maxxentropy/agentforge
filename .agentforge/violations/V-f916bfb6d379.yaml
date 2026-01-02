@@ -1,0 +1,15 @@
+schema_version: '1.0'
+violation_id: V-f916bfb6d379
+contract_id: agentforge
+check_id: no-shell-true
+severity: blocker
+file_path: tools/harness/tool_executor_bridge.py
+message: "Forbidden pattern found: 'subprocess.run(\n                command,\n  \
+  \              shell=True'"
+detected_at: '2025-12-31T12:15:10.181323'
+last_seen_at: '2026-01-01T01:39:14.234119'
+status: open
+line_number: 203
+fix_hint: 'Pass command as list without shell=True: subprocess.run([''cmd'', ''arg1'',
+  ''arg2''])'
+test_path: tests/unit/tools/

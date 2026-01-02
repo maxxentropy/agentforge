@@ -1,5 +1,5 @@
-# @spec_file: .agentforge/specs/generate-v1.yaml
-# @spec_id: generate-v1
+# @spec_file: .agentforge/specs/core-generate-v1.yaml
+# @spec_id: core-generate-v1
 # @component_id: tools-generate-writer
 # @impl_path: tools/generate/writer.py
 
@@ -8,30 +8,23 @@ Tests for Generation Engine
 ============================
 """
 
-import pytest
-from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from tools.generate.engine import (
+import pytest
+
+from agentforge.core.generate.domain import (
+    APIError,
+    GenerationContext,
+    GenerationPhase,
+    TokenUsage,
+)
+from agentforge.core.generate.engine import (
     GenerationEngine,
     GenerationSession,
     generate_code,
 )
-from tools.generate.domain import (
-    GenerationContext,
-    GenerationPhase,
-    GenerationMode,
-    GeneratedFile,
-    FileAction,
-    TokenUsage,
-    APIError,
-    ParseError,
-)
-from tools.generate.provider import LLMProvider
-from tools.generate.prompt_builder import PromptBuilder
-from tools.generate.parser import ResponseParser
-from tools.generate.writer import CodeWriter
-
+from agentforge.core.generate.prompt_builder import PromptBuilder
+from agentforge.core.generate.provider import LLMProvider
 
 # =============================================================================
 # Test Fixtures
@@ -331,7 +324,7 @@ class TestConvenienceFunctions:
 
     @pytest.mark.asyncio
     async def test_generate_code(self, mock_provider, sample_context, tmp_path):
-        with patch("tools.generate.engine.get_provider", return_value=mock_provider):
+        with patch("agentforge.core.generate.engine.get_provider", return_value=mock_provider):
             result = await generate_code(
                 sample_context,
                 dry_run=True,

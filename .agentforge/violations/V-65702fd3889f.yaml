@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-65702fd3889f
+contract_id: agentforge
+check_id: single-responsibility-modules
+severity: minor
+file_path: src/agentforge/core/discovery/manager.py
+message: 'Class ''MultiZoneDiscoveryManager'' has 11 methods (max: 3)'
+detected_at: '2026-01-01T01:39:14.139743'
+last_seen_at: '2026-01-01T01:39:14.139743'
+status: open
+line_number: 473
+fix_hint: Split modules with too many classes into focused single-class modules

@@ -1,0 +1,13 @@
+schema_version: '1.0'
+violation_id: V-121ece4c3ed6
+contract_id: agentforge
+check_id: single-responsibility-modules
+severity: minor
+file_path: tests/unit/harness/test_enhanced_context.py
+message: 'Class ''TestPhaseMachineIntegration'' has 6 methods (max: 3)'
+detected_at: '2026-01-01T01:39:14.046387'
+last_seen_at: '2026-01-01T01:39:14.046387'
+status: open
+line_number: 1120
+fix_hint: Split modules with too many classes into focused single-class modules
+test_path: tests/unit/harness/test_enhanced_context.py

@@ -1,0 +1,321 @@
+# SPEC.ADAPT Prompt Contract
+# Version: 1.0.0
+# Schema: prompt-contract.schema.yaml
+# Output: Structured YAML specification (specification.schema.yaml)
+#
+# This is the ON-RAMP for external specifications.
+# It transforms rich external specs into canonical AgentForge format.
+
+contract:
+  id: "spec.adapt.v1"
+  version: "1.0.0"
+  workflow: spec
+  state: adapt
+  description: |
+    Adapt an external specification to AgentForge codebase conventions.
+    The external spec is the SOURCE OF TRUTH - this contract transforms,
+    it doesn't second-guess or redesign. Output feeds VALIDATE → REVISE → TDFLOW.
+
+role:
+  name: "Specification Adapter"
+  persona: |
+    You are a Specification Adapter who transforms external specifications into
+    AgentForge's canonical format. You treat the external spec as authoritative
+    and focus on MAPPING concepts to concrete codebase locations, not redesigning.
+    Your output integrates seamlessly with the existing spec workflow.
+  goal: "Transform external spec to canonical format with concrete codebase mappings"
+  anti_goals:
+    - "Questioning or redesigning external spec decisions"
+    - "Inventing requirements not in the external spec"
+    - "Abstract locations (should use concrete file paths)"
+    - "Duplicate spec IDs"
+    - "Missing component mappings"
+
+inputs:
+  required:
+    - name: external_spec_content
+      type: string
+      description: "The external specification content (markdown, YAML, or text)"
+
+    - name: codebase_profile
+      type: string
+      description: "Codebase profile YAML for context on patterns and conventions"
+
+    - name: existing_spec_ids
+      type: string
+      description: "Comma-separated list of existing spec IDs to avoid duplicates"
+
+    - name: original_file_path
+      type: string
+      description: "Path to the original external spec file (for provenance)"
+
+  optional:
+    - name: override_spec_id
+      type: string
+      description: "Override the auto-generated spec_id"
+
+    - name: skip_review
+      type: boolean
+      description: "Skip SA review phase (for trusted specs)"
+
+output:
+  format: yaml
+  schema: specification.schema.yaml
+
+template:
+  system:
+    sections:
+      - name: role
+        content: |
+          # Role
+
+          You are adapting an external specification to AgentForge codebase conventions.
+          The external spec is the **SOURCE OF TRUTH** for requirements and design decisions.
+          Your job is to **MAP** concepts to codebase reality, not to redesign.
+
+          # Key Principle
+
+          **ADAPT transforms, it doesn't second-guess.**
+
+          - DO NOT invent requirements not in the external spec
+          - DO NOT question design decisions already made
+          - DO preserve the original intent exactly
+          - DO map abstract concepts to concrete codebase locations
+          - DO add structure where the external spec is informal
+
+      - name: output_format
+        content: |
+          # Output Format
+
+          Output a YAML document matching this structure:
+
+          ```yaml
+          metadata:
+            version: "1.0"
+            status: draft
+            feature_name: "Feature Name"
+            created_date: "YYYY-MM-DD"
+            source: external-spec-adaptation
+            original_source: "{original_file_path}"
+
+          overview:
+            purpose: |
+              Clear statement from external spec (preserve original wording).
+            scope:
+              includes:
+                - What is covered (derived from external spec)
+              excludes:
+                - What is explicitly out of scope
+            assumptions:
+              - Assumptions from external spec
+            constraints:
+              - Technical or business constraints
+
+          # CRITICAL: Map external components to codebase locations
+          components:
+            - name: ComponentName
+              location: src/agentforge/core/{module}/{file}.py  # CONCRETE PATH
+              test_location: tests/unit/{module}/test_{file}.py  # CONCRETE PATH
+              component_id: {module}-{feature}-{component}      # GENERATED ID
+              description: |
+                Description from external spec (preserve wording).
+              methods:
+                - method_name
+              dependencies:
+                - OtherComponent
+              integration_points:
+                - module: existing.module.path
+                  reason: Why integration needed
+
+          requirements:
+            functional:
+              - id: FR-001
+                title: "Requirement Title"
+                priority: must  # must | should | could | wont
+                description: |
+                  The system SHALL [behavior from external spec].
+                acceptance_criteria:
+                  - id: AC-001
+                    given: "Precondition"
+                    when: "Action"
+                    then: "Expected outcome"
+            non_functional:
+              - id: NFR-001
+                title: "Performance/Security/etc"
+                priority: must
+                description: |
+                  Non-functional requirement from external spec.
+
+          entities:
+            - name: EntityName
+              layer: Domain
+              type: entity
+              description: |
+                From external spec.
+              properties:
+                - name: PropertyName
+                  type: string
+                  description: "From external spec"
+
+          workflows:
+            - name: "Workflow Name"
+              trigger: "What starts this workflow"
+              steps:
+                - step: 1
+                  actor: User | System
+                  action: "Action description"
+              success_outcome: "Expected result"
+
+          error_handling:
+            - error_code: ErrorName
+              condition: "When this error occurs"
+              response: "How system responds"
+
+          testing_notes:
+            unit_test_focus:
+              - "Key areas to test"
+            integration_test_scenarios:
+              - "Scenarios needing integration tests"
+
+          open_questions:
+            - question: "Question from external spec"
+              status: open
+
+          spec_id: {module}-{feature}-v1
+          schema_version: "2.0"
+          ```
+
+      - name: location_mapping
+        content: |
+          # Location Mapping Rules
+
+          Map each component to a CONCRETE file path following codebase conventions:
+
+          | Pattern | Location |
+          |---------|----------|
+          | Core module | `src/agentforge/core/{module}/{file}.py` |
+          | CLI command | `src/agentforge/cli/commands/{name}.py` |
+          | Click command | `src/agentforge/cli/click_commands/{name}.py` |
+          | Test file | `tests/unit/{module}/test_{file}.py` |
+          | Integration test | `tests/integration/{module}/test_{file}.py` |
+
+          Use the codebase profile to determine which module fits best.
+
+          # ID Generation Rules
+
+          Generate stable, unique identifiers:
+
+          - `spec_id`: `{module}-{feature}-v1` (e.g., `core-rate-limiting-v1`)
+          - `component_id`: `{module}-{feature}-{component}` (e.g., `core-rate-limiting-limiter`)
+
+          CRITICAL: Check existing_spec_ids to ensure uniqueness!
+
+      - name: requirement_formalization
+        content: |
+          # Requirement Formalization
+
+          Transform informal requirements into formal FR-XXX format:
+
+          | External Spec | Adapted Spec |
+          |--------------|--------------|
+          | "should limit to 100/min" | FR-001: "The system SHALL limit requests to 100 per minute" |
+          | "return 429 when exceeded" | FR-002: "The system SHALL return HTTP 429 when rate limit exceeded" |
+
+          Add Given/When/Then acceptance criteria if not present in external spec.
+          Preserve original intent exactly - do not embellish or change meaning.
+
+  user:
+    sections:
+      - name: external_spec
+        content: |
+          # External Specification (PRIMARY INPUT - THIS IS AUTHORITATIVE)
+
+          {external_spec_content}
+
+      - name: codebase_context
+        content: |
+          # Codebase Profile
+
+          {codebase_profile}
+
+      - name: uniqueness_check
+        content: |
+          # Existing Spec IDs (ensure uniqueness)
+
+          {existing_spec_ids}
+
+      - name: instructions
+        content: |
+          # Task
+
+          Adapt the external specification to AgentForge format:
+
+          1. **Preserve original intent** - The external spec is authoritative
+          2. **Map to concrete paths** - Every component needs a real file location
+          3. **Generate stable IDs** - spec_id, component_id following conventions
+          4. **Formalize requirements** - FR-XXX with acceptance criteria
+          5. **Identify integrations** - Flag existing code that will be touched
+          6. **Output ONLY valid YAML** - No prose before or after
+          7. **Start output with "metadata:"** - No preamble
+
+          The output spec will feed directly into VALIDATE → REVISE → TDFLOW.
+
+verification:
+  schema_validation: true
+  schema: specification.schema.yaml
+
+  checks:
+    - id: "A1"
+      name: "has_components"
+      type: regex
+      pattern: "components:"
+      severity: blocking
+      message: "Missing components section"
+
+    - id: "A2"
+      name: "has_concrete_locations"
+      type: regex
+      pattern: "location: src/"
+      severity: blocking
+      message: "Components must have concrete file locations"
+
+    - id: "A3"
+      name: "has_test_locations"
+      type: regex
+      pattern: "test_location: tests/"
+      severity: blocking
+      message: "Components must have test locations"
+
+    - id: "A4"
+      name: "has_spec_id"
+      type: regex
+      pattern: "spec_id:"
+      severity: blocking
+      message: "Missing spec_id"
+
+    - id: "A5"
+      name: "has_component_ids"
+      type: regex
+      pattern: "component_id:"
+      severity: blocking
+      message: "Components must have component_id"
+
+    - id: "A6"
+      name: "no_placeholders"
+      type: regex_negative
+      pattern: "\\b(TBD|TODO|FIXME|\\?\\?\\?)\\b"
+      severity: blocking
+      message: "Contains placeholder text"
+
+    - id: "A7"
+      name: "preserves_source"
+      type: regex
+      pattern: "source: external-spec-adaptation"
+      severity: warning
+      message: "Should indicate external spec adaptation source"
+
+execution:
+  temperature: 0.0
+  max_tokens: 8000
+  estimated_cost_usd: 0.05
+  timeout_seconds: 180

@@ -8,12 +8,11 @@ Extracted from verification_checks.py for modularity.
 """
 
 from pathlib import Path
-from typing import Dict, Any, Tuple, List, Optional
 
 
-def get_contract_results(check: Dict, project_root: Path) -> Tuple[Optional[List], Optional[str]]:
+def get_contract_results(check: dict, project_root: Path) -> tuple[list | None, str | None]:
     """Get contract results based on check config. Returns (results, error_msg)."""
-    from contracts import ContractRegistry, run_contract, run_all_contracts
+    from contracts import ContractRegistry, run_all_contracts, run_contract
 
     contract_name = check.get("contract")
     if contract_name:

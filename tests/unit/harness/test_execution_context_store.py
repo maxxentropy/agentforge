@@ -1,24 +1,27 @@
-# @spec_file: .agentforge/specs/harness-v1.yaml
-# @spec_id: harness-v1
+# @spec_file: .agentforge/specs/core-harness-v1.yaml
+# @spec_id: core-harness-v1
 # @component_id: tools-harness-execution_context_store
 # @impl_path: tools/harness/execution_context_store.py
 
 """Tests for Execution Context Store."""
 
-import pytest
 import tempfile
 from pathlib import Path
-from datetime import datetime
 
-from tools.harness.execution_context_store import ExecutionContextStore, create_execution_store
-from tools.harness.llm_executor_domain import (
+import pytest
+
+from agentforge.core.harness.execution_context_store import (
+    ExecutionContextStore,
+    create_execution_store,
+)
+from agentforge.core.harness.llm_executor_domain import (
+    ActionType,
+    AgentAction,
+    ConversationMessage,
     ExecutionContext,
     StepResult,
-    AgentAction,
-    ActionType,
     ToolCall,
     ToolResult,
-    ConversationMessage,
 )
 
 

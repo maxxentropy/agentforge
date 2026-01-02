@@ -12,11 +12,11 @@ Uses XML structure for clear separation of concerns.
 """
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import yaml
 
-from agentforge.core.generate.domain import GenerationContext, GenerationPhase, GenerationMode
+from agentforge.core.generate.domain import GenerationContext, GenerationMode, GenerationPhase
 
 
 class PromptBuilder:
@@ -93,7 +93,7 @@ Additional: This is a fix for failing tests or errors.
 - Explain what was wrong and how you fixed it""",
     }
 
-    def __init__(self, project_path: Optional[Path] = None):
+    def __init__(self, project_path: Path | None = None):
         """
         Initialize prompt builder.
 
@@ -182,7 +182,7 @@ You output code using markdown code blocks with file paths.
         parts.append("</context>")
         return "\n".join(parts)
 
-    def _format_specification(self, spec: Dict[str, Any]) -> str:
+    def _format_specification(self, spec: dict[str, Any]) -> str:
         """Format specification as YAML in XML wrapper."""
         spec_yaml = yaml.dump(spec, default_flow_style=False, sort_keys=False)
         return f"""
@@ -204,7 +204,7 @@ You output code using markdown code blocks with file paths.
 ```
 </{tag}>"""
 
-    def _format_patterns(self, patterns: Dict[str, Any]) -> str:
+    def _format_patterns(self, patterns: dict[str, Any]) -> str:
         """Format detected patterns."""
         if not patterns:
             return ""
@@ -222,7 +222,7 @@ You output code using markdown code blocks with file paths.
 {chr(10).join(pattern_lines)}
 </patterns>"""
 
-    def _format_examples(self, examples: List[Dict[str, Any]]) -> str:
+    def _format_examples(self, examples: list[dict[str, Any]]) -> str:
         """Format code examples."""
         if not examples:
             return ""
@@ -244,7 +244,7 @@ You output code using markdown code blocks with file paths.
         example_parts.append("</examples>")
         return "\n".join(example_parts)
 
-    def _format_error_context(self, error_context: Dict[str, Any]) -> str:
+    def _format_error_context(self, error_context: dict[str, Any]) -> str:
         """Format error context for FIX mode."""
         parts = ["<error_context description=\"Error to fix\">"]
 
@@ -313,7 +313,7 @@ Important:
     def _get_component_from_spec(
         self,
         context: GenerationContext
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """Extract component info from spec."""
         if not context.component_name:
             return None
@@ -344,7 +344,7 @@ class PromptTemplates:
     @staticmethod
     def simple_test_prompt(
         class_name: str,
-        methods: List[Dict[str, str]],
+        methods: list[dict[str, str]],
         test_file: str,
     ) -> str:
         """Generate a simple test generation prompt."""

@@ -13,18 +13,18 @@ Create, load, save, and manage TDFLOW sessions.
 import hashlib
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import yaml
 
 from agentforge.core.tdflow.domain import (
     ComponentProgress,
     ComponentStatus,
+    ImplementationFile,
     SessionHistory,
     TDFlowPhase,
     TDFlowSession,
     TestFile,
-    ImplementationFile,
 )
 
 
@@ -38,7 +38,7 @@ class SessionManager:
 
     SESSIONS_DIR = Path(".agentforge/tdflow")
 
-    def __init__(self, root_path: Optional[Path] = None):
+    def __init__(self, root_path: Path | None = None):
         """
         Initialize session manager.
 
@@ -92,7 +92,7 @@ class SessionManager:
 
         return session
 
-    def _extract_components(self, spec_data: Dict[str, Any]) -> List[ComponentProgress]:
+    def _extract_components(self, spec_data: dict[str, Any]) -> list[ComponentProgress]:
         """
         Extract components from specification.
 
@@ -114,7 +114,7 @@ class SessionManager:
 
         return components
 
-    def load(self, session_id: str) -> Optional[TDFlowSession]:
+    def load(self, session_id: str) -> TDFlowSession | None:
         """
         Load a session from disk.
 
@@ -151,7 +151,7 @@ class SessionManager:
 
         return session_file
 
-    def get_latest(self) -> Optional[TDFlowSession]:
+    def get_latest(self) -> TDFlowSession | None:
         """
         Get the most recent session.
 
@@ -163,7 +163,7 @@ class SessionManager:
             return self.load(sessions[0].stem)
         return None
 
-    def list_sessions(self) -> List[Dict[str, Any]]:
+    def list_sessions(self) -> list[dict[str, Any]]:
         """
         List all sessions with summary info.
 
@@ -185,7 +185,7 @@ class SessionManager:
             )
         return summaries
 
-    def _serialize(self, session: TDFlowSession) -> Dict[str, Any]:
+    def _serialize(self, session: TDFlowSession) -> dict[str, Any]:
         """
         Serialize session to dict for YAML.
 
@@ -210,7 +210,7 @@ class SessionManager:
             "history": [self._serialize_history(h) for h in session.history],
         }
 
-    def _serialize_component(self, comp: ComponentProgress) -> Dict[str, Any]:
+    def _serialize_component(self, comp: ComponentProgress) -> dict[str, Any]:
         """Serialize a component to dict."""
         return {
             "name": comp.name,
@@ -223,7 +223,7 @@ class SessionManager:
             "errors": comp.errors,
         }
 
-    def _serialize_history(self, hist: SessionHistory) -> Dict[str, Any]:
+    def _serialize_history(self, hist: SessionHistory) -> dict[str, Any]:
         """Serialize a history entry to dict."""
         return {
             "timestamp": hist.timestamp.isoformat(),
@@ -233,7 +233,7 @@ class SessionManager:
             "details": hist.details,
         }
 
-    def _deserialize(self, data: Dict[str, Any]) -> TDFlowSession:
+    def _deserialize(self, data: dict[str, Any]) -> TDFlowSession:
         """
         Deserialize dict to session.
 
@@ -263,7 +263,7 @@ class SessionManager:
             history=history,
         )
 
-    def _deserialize_component(self, data: Dict[str, Any]) -> ComponentProgress:
+    def _deserialize_component(self, data: dict[str, Any]) -> ComponentProgress:
         """Deserialize a component from dict."""
         tests = None
         if data.get("tests_file"):
@@ -290,7 +290,7 @@ class SessionManager:
             errors=data.get("errors", []),
         )
 
-    def _deserialize_history(self, data: Dict[str, Any]) -> SessionHistory:
+    def _deserialize_history(self, data: dict[str, Any]) -> SessionHistory:
         """Deserialize a history entry from dict."""
         return SessionHistory(
             timestamp=datetime.fromisoformat(data["timestamp"]),

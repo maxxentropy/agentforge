@@ -1,5 +1,5 @@
-# @spec_file: .agentforge/specs/harness-v1.yaml
-# @spec_id: harness-v1
+# @spec_file: .agentforge/specs/core-harness-v1.yaml
+# @spec_id: core-harness-v1
 # @component_id: tools-harness-escalation_domain
 # @impl_path: tools/harness/escalation_domain.py
 
@@ -14,18 +14,16 @@ These tests verify the structure and behavior of escalation domain objects
 including enums, data classes, and their validation logic.
 """
 
-import pytest
 from datetime import datetime
-from typing import Optional
 
-from tools.harness.escalation_domain import (
-    EscalationPriority,
-    EscalationStatus,
-    EscalationChannel,
-    ResolutionType,
+from agentforge.core.harness.escalation_domain import (
     Escalation,
+    EscalationChannel,
+    EscalationPriority,
     EscalationResolution,
-    EscalationRule
+    EscalationRule,
+    EscalationStatus,
+    ResolutionType,
 )
 
 

@@ -15,8 +15,8 @@ Extracted from verification_runner.py for modularity.
 """
 
 from dataclasses import dataclass, field
-from typing import List, Dict, Any, Optional
 from enum import Enum
+from typing import Any
 
 
 class Severity(Enum):
@@ -42,11 +42,11 @@ class CheckResult:
     severity: Severity
     message: str
     duration_ms: int = 0
-    details: Optional[str] = None
-    errors: List[Dict[str, Any]] = field(default_factory=list)
-    warnings: List[str] = field(default_factory=list)
-    output: Optional[str] = None
-    fix_suggestion: Optional[str] = None
+    details: str | None = None
+    errors: list[dict[str, Any]] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
+    output: str | None = None
+    fix_suggestion: str | None = None
 
     @property
     def passed(self) -> bool:
@@ -61,8 +61,8 @@ class CheckResult:
 class VerificationReport:
     """Complete verification report with all check results."""
     timestamp: str
-    profile: Optional[str]
-    project_path: Optional[str]
+    profile: str | None
+    project_path: str | None
     working_dir: str
     total_checks: int
     passed: int
@@ -73,7 +73,7 @@ class VerificationReport:
     required_failures: int
     advisory_warnings: int
     duration_ms: int
-    results: List[CheckResult] = field(default_factory=list)
+    results: list[CheckResult] = field(default_factory=list)
     is_valid: bool = True
 
     def _update_failure_counts(self, result: CheckResult):

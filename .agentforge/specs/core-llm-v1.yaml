@@ -1,0 +1,185 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Specification: core_llm
+# ═══════════════════════════════════════════════════════════════════════════════
+# Generated: 2026-01-02T12:00:00.000000
+# Generator: brownfield-discovery
+# ═══════════════════════════════════════════════════════════════════════════════
+
+spec_id: core-llm-v1
+name: core_llm
+version: '1.0'
+status: as-built
+schema_version: '2.0'
+generated_at: '2026-01-02T12:00:00.000000'
+generated_by: brownfield-discovery
+description: Specification for src/agentforge/core/llm
+components:
+- name: interface
+  component_id: core-llm-interface
+  location: src/agentforge/core/llm/interface.py
+  test_location: tests/unit/llm/test_interface.py
+  description: |
+    LLM Client Interface
+    ====================
+
+    Abstract interface for LLM clients supporting:
+    - Native tool calls (Anthropic tools parameter)
+    - Extended thinking (thinking parameter)
+    - Usage statistics tracking
+    - Multiple implementations (real, simulated, record, playback)
+  entities:
+  - name: StopReason
+    type: enum
+    line_number: 26
+    description: Reason why the LLM stopped generating.
+    methods: []
+    test_methods: []
+  - name: ToolCall
+    type: dataclass
+    line_number: 35
+    description: A tool call requested by the LLM.
+    methods: []
+    test_methods: []
+  - name: ToolResult
+    type: dataclass
+    line_number: 52
+    description: Result of executing a tool call.
+    methods: []
+    test_methods: []
+  - name: LLMClient
+    type: class
+    line_number: 100
+    description: Abstract base class for LLM clients.
+    methods:
+    - complete
+    - complete_with_tools
+    test_methods: []
+
+- name: factory
+  component_id: core-llm-factory
+  location: src/agentforge/core/llm/factory.py
+  test_location: tests/unit/llm/test_factory.py
+  description: |
+    LLM Client Factory
+    ==================
+
+    Factory for creating LLM clients based on configuration and environment.
+    Supports four modes: real, simulated, record, playback.
+  entities:
+  - name: LLMClientMode
+    type: enum
+    line_number: 51
+    description: LLM client operating modes.
+    methods: []
+    test_methods: []
+  - name: LLMClientFactory
+    type: class
+    line_number: 59
+    description: Factory for creating LLM clients.
+    methods:
+    - create
+    - create_for_testing
+    test_methods:
+    - test_mode_values
+    - test_create_simulated_mode
+
+- name: simulated
+  component_id: core-llm-simulated
+  location: src/agentforge/core/llm/simulated.py
+  test_location: tests/unit/llm/test_simulated.py
+  description: |
+    Simulated LLM Client
+    ====================
+
+    Mock LLM client for testing without API calls.
+    Supports scripted responses and pattern matching.
+  entities:
+  - name: SimulatedResponse
+    type: dataclass
+    line_number: 20
+    description: A simulated LLM response.
+    methods: []
+    test_methods: []
+  - name: ResponseStrategy
+    type: class
+    line_number: 40
+    description: Abstract strategy for generating simulated responses.
+    methods:
+    - get_response
+    test_methods: []
+  - name: SimulatedLLMClient
+    type: class
+    line_number: 100
+    description: LLM client that returns simulated responses.
+    methods:
+    - complete
+    - complete_with_tools
+    test_methods:
+    - test_basic_completion
+
+- name: client
+  component_id: core-llm-client
+  location: src/agentforge/core/llm/client.py
+  test_location: tests/unit/llm/test_client.py
+  description: |
+    Anthropic LLM Client
+    ====================
+
+    Real LLM client that calls the Anthropic API with native support for:
+    - Tool calls via the tools parameter
+    - Extended thinking via the thinking parameter
+    - Prompt caching for token efficiency
+  entities:
+  - name: AnthropicLLMClient
+    type: class
+    line_number: 40
+    description: LLM client using Anthropic API.
+    methods:
+    - complete
+    - complete_with_tools
+    test_methods: []
+
+- name: recording
+  component_id: core-llm-recording
+  location: src/agentforge/core/llm/recording.py
+  test_location: tests/unit/llm/test_recording.py
+  description: |
+    LLM Recording Client
+    ====================
+
+    Client wrapper that records LLM interactions for replay.
+    Enables test fixture generation from real API calls.
+  entities:
+  - name: RecordingLLMClient
+    type: class
+    line_number: 20
+    description: LLM client that records interactions.
+    methods:
+    - complete
+    - save_recording
+    test_methods: []
+
+- name: tools
+  component_id: core-llm-tools
+  location: src/agentforge/core/llm/tools.py
+  test_location: tests/unit/llm/test_tools.py
+  description: |
+    LLM Tool Definitions
+    ====================
+
+    Standard tool definitions for different task types.
+    Organized by category: base, refactoring, discovery, testing, review.
+  entities:
+  - name: BASE_TOOLS
+    type: constant
+    line_number: 20
+    description: Base tools available for all tasks.
+    methods: []
+    test_methods: []
+  - name: get_tools_for_task
+    type: function
+    line_number: 100
+    description: Get tools appropriate for a specific task type.
+    methods: []
+    test_methods:
+    - test_get_tools_for_task

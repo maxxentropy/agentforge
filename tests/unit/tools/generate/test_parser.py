@@ -1,5 +1,5 @@
-# @spec_file: .agentforge/specs/generate-v1.yaml
-# @spec_id: generate-v1
+# @spec_file: .agentforge/specs/core-generate-v1.yaml
+# @spec_id: core-generate-v1
 # @component_id: tools-generate-parser
 # @impl_path: tools/generate/parser.py
 
@@ -8,16 +8,16 @@ Tests for Response Parser
 =========================
 """
 
-import pytest
 from pathlib import Path
 
-from tools.generate.parser import (
-    ResponseParser,
+import pytest
+
+from agentforge.core.generate.domain import FileAction, ParseError
+from agentforge.core.generate.parser import (
     MultiLanguageParser,
+    ResponseParser,
     parse_response,
 )
-from tools.generate.domain import ParseError, FileAction
-
 
 # =============================================================================
 # ResponseParser Tests

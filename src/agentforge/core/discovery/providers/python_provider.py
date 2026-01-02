@@ -11,9 +11,9 @@ import ast
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional, Dict, Any, Set, Tuple
+from typing import Any
 
-from .base import LanguageProvider, Symbol, Import, Dependency
+from .base import Dependency, Import, LanguageProvider, Symbol
 
 
 @dataclass
@@ -35,7 +35,7 @@ class ExtractionSuggestion:
     description: str
     estimated_reduction: int
     extractable: bool
-    reason: Optional[str] = None
+    reason: str | None = None
 
 
 class ComplexityVisitor(ast.NodeVisitor):
@@ -116,14 +116,14 @@ class PythonProvider(LanguageProvider):
         return "python"
 
     @property
-    def file_extensions(self) -> Set[str]:
+    def file_extensions(self) -> set[str]:
         return {".py", ".pyi"}
 
     @property
-    def project_markers(self) -> Set[str]:
+    def project_markers(self) -> set[str]:
         return {"pyproject.toml", "setup.py", "setup.cfg", "requirements.txt"}
 
-    def detect_project(self, path: Path) -> Optional[Dict[str, Any]]:
+    def detect_project(self, path: Path) -> dict[str, Any] | None:
         """Detect Python project and extract metadata."""
         if not path.is_dir():
             path = path.parent
@@ -153,7 +153,7 @@ class PythonProvider(LanguageProvider):
 
         return None
 
-    def _parse_project_file(self, path: Path) -> Dict[str, Any]:
+    def _parse_project_file(self, path: Path) -> dict[str, Any]:
         """Parse project configuration file."""
         result = {
             "name": path.parent.name,
@@ -173,7 +173,7 @@ class PythonProvider(LanguageProvider):
 
         return result
 
-    def _parse_pyproject_toml(self, path: Path) -> Dict[str, Any]:
+    def _parse_pyproject_toml(self, path: Path) -> dict[str, Any]:
         """Parse pyproject.toml for project metadata."""
         try:
             import tomllib
@@ -203,7 +203,7 @@ class PythonProvider(LanguageProvider):
         except Exception:
             return {}
 
-    def _parse_setup_py(self, path: Path) -> Dict[str, Any]:
+    def _parse_setup_py(self, path: Path) -> dict[str, Any]:
         """Parse setup.py for project metadata."""
         try:
             content = path.read_text()
@@ -221,7 +221,7 @@ class PythonProvider(LanguageProvider):
         except Exception:
             return {}
 
-    def _detect_frameworks_from_requirements(self, path: Path) -> List[str]:
+    def _detect_frameworks_from_requirements(self, path: Path) -> list[str]:
         """Detect frameworks from requirements.txt."""
         try:
             content = path.read_text()
@@ -231,7 +231,7 @@ class PythonProvider(LanguageProvider):
         except Exception:
             return []
 
-    def _detect_frameworks_from_deps(self, deps: List[str]) -> List[str]:
+    def _detect_frameworks_from_deps(self, deps: list[str]) -> list[str]:
         """Detect frameworks from dependency list."""
         frameworks = []
         deps_lower = [d.lower() if isinstance(d, str) else "" for d in deps]
@@ -254,7 +254,7 @@ class PythonProvider(LanguageProvider):
 
         return frameworks
 
-    def parse_file(self, path: Path) -> Optional[ast.AST]:
+    def parse_file(self, path: Path) -> ast.AST | None:
         """Parse Python file to AST."""
         try:
             content = path.read_text(encoding='utf-8')
@@ -262,7 +262,7 @@ class PythonProvider(LanguageProvider):
         except (SyntaxError, UnicodeDecodeError):
             return None
 
-    def extract_symbols(self, path: Path) -> List[Symbol]:
+    def extract_symbols(self, path: Path) -> list[Symbol]:
         """Extract symbols from Python file."""
         tree = self.parse_file(path)
         if tree is None:
@@ -341,7 +341,7 @@ class PythonProvider(LanguageProvider):
             parameters=params,
         )
 
-    def _find_parent_class(self, node, tree: ast.AST) -> Optional[str]:
+    def _find_parent_class(self, node, tree: ast.AST) -> str | None:
         """Find the parent class name for a method node."""
         for potential_parent in ast.walk(tree):
             if isinstance(potential_parent, ast.ClassDef):
@@ -395,7 +395,7 @@ class PythonProvider(LanguageProvider):
     # Complexity Analysis Methods
     # ========================================================================
 
-    def get_function_node(self, path: Path, function_name: str) -> Optional[ast.AST]:
+    def get_function_node(self, path: Path, function_name: str) -> ast.AST | None:
         """Get the AST node for a specific function/method."""
         tree = self.parse_file(path)
         if tree is None:
@@ -407,7 +407,7 @@ class PythonProvider(LanguageProvider):
                     return node
         return None
 
-    def get_function_source(self, path: Path, function_name: str) -> Optional[str]:
+    def get_function_source(self, path: Path, function_name: str) -> str | None:
         """Get the source code of a specific function."""
         node = self.get_function_node(path, function_name)
         if node is None:
@@ -421,14 +421,14 @@ class PythonProvider(LanguageProvider):
         except Exception:
             return None
 
-    def get_function_location(self, path: Path, function_name: str) -> Optional[Tuple[int, int]]:
+    def get_function_location(self, path: Path, function_name: str) -> tuple[int, int] | None:
         """Get the start and end line numbers of a function."""
         node = self.get_function_node(path, function_name)
         if node is None:
             return None
         return (node.lineno, getattr(node, 'end_lineno', node.lineno))
 
-    def analyze_complexity(self, path: Path, function_name: str) -> Optional[ComplexityMetrics]:
+    def analyze_complexity(self, path: Path, function_name: str) -> ComplexityMetrics | None:
         """Analyze complexity metrics for a specific function."""
         node = self.get_function_node(path, function_name)
         if node is None:
@@ -448,7 +448,7 @@ class PythonProvider(LanguageProvider):
             loop_count=visitor.loops,
         )
 
-    def analyze_file_complexity(self, path: Path) -> Dict[str, ComplexityMetrics]:
+    def analyze_file_complexity(self, path: Path) -> dict[str, ComplexityMetrics]:
         """Analyze complexity for all functions in a file."""
         tree = self.parse_file(path)
         if tree is None:
@@ -474,7 +474,7 @@ class PythonProvider(LanguageProvider):
     # Extraction Suggestions
     # ========================================================================
 
-    def suggest_extractions(self, path: Path, function_name: str) -> List[ExtractionSuggestion]:
+    def suggest_extractions(self, path: Path, function_name: str) -> list[ExtractionSuggestion]:
         """Suggest code blocks that could be extracted to reduce complexity."""
         node = self.get_function_node(path, function_name)
         if node is None:
@@ -508,7 +508,7 @@ class PythonProvider(LanguageProvider):
         suggestions.sort(key=lambda s: s.estimated_reduction, reverse=True)
         return suggestions
 
-    def _analyze_loop_extraction(self, node: ast.AST, loop_type: str) -> Optional[ExtractionSuggestion]:
+    def _analyze_loop_extraction(self, node: ast.AST, loop_type: str) -> ExtractionSuggestion | None:
         """Analyze if a loop is a good extraction candidate."""
         start = node.lineno
         end = getattr(node, 'end_lineno', start)
@@ -529,7 +529,7 @@ class PythonProvider(LanguageProvider):
             extractable=True,
         )
 
-    def _analyze_if_extraction(self, node: ast.If) -> Optional[ExtractionSuggestion]:
+    def _analyze_if_extraction(self, node: ast.If) -> ExtractionSuggestion | None:
         """Analyze if an if-block is a good extraction candidate."""
         start = node.lineno
         end = getattr(node, 'end_lineno', start)
@@ -559,7 +559,7 @@ class PythonProvider(LanguageProvider):
             extractable=True,
         )
 
-    def _analyze_try_extraction(self, node: ast.Try) -> Optional[ExtractionSuggestion]:
+    def _analyze_try_extraction(self, node: ast.Try) -> ExtractionSuggestion | None:
         """Analyze if a try block is a good extraction candidate."""
         start = node.lineno
         end = getattr(node, 'end_lineno', start)
@@ -579,7 +579,7 @@ class PythonProvider(LanguageProvider):
             extractable=True,
         )
 
-    def get_extractable_ranges(self, path: Path, function_name: str) -> List[Dict[str, Any]]:
+    def get_extractable_ranges(self, path: Path, function_name: str) -> list[dict[str, Any]]:
         """Get ranges that can be safely extracted from a function.
 
         Returns a list of dicts with:
@@ -608,7 +608,7 @@ class PythonProvider(LanguageProvider):
 
     def get_violation_context(
         self, path: Path, function_name: str, violation_type: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Get context tailored to a specific violation type.
 
         Args:
@@ -663,7 +663,7 @@ class PythonProvider(LanguageProvider):
 
         return context
 
-    def _get_complexity_suggestions(self, node: ast.AST) -> List[Dict[str, Any]]:
+    def _get_complexity_suggestions(self, node: ast.AST) -> list[dict[str, Any]]:
         """Get extraction suggestions focused on reducing complexity."""
         suggestions = []
 
@@ -715,7 +715,7 @@ class PythonProvider(LanguageProvider):
         suggestions.sort(key=lambda s: s["end_line"] - s["start_line"], reverse=True)
         return suggestions[:5]  # Top 5 suggestions
 
-    def _get_length_suggestions(self, node: ast.AST) -> List[Dict[str, Any]]:
+    def _get_length_suggestions(self, node: ast.AST) -> list[dict[str, Any]]:
         """Get extraction suggestions focused on reducing line count."""
         suggestions = []
 
@@ -747,7 +747,7 @@ class PythonProvider(LanguageProvider):
         suggestions.sort(key=lambda s: s["end_line"] - s["start_line"], reverse=True)
         return suggestions[:5]
 
-    def _get_nesting_suggestions(self, node: ast.AST) -> List[Dict[str, Any]]:
+    def _get_nesting_suggestions(self, node: ast.AST) -> list[dict[str, Any]]:
         """Get suggestions for reducing nesting depth."""
         suggestions = []
 
@@ -783,7 +783,7 @@ class PythonProvider(LanguageProvider):
         suggestions.sort(key=lambda s: len(s.get("nesting_path", "")), reverse=True)
         return suggestions[:5]
 
-    def _get_parameter_suggestions(self, node: ast.AST) -> List[Dict[str, Any]]:
+    def _get_parameter_suggestions(self, node: ast.AST) -> list[dict[str, Any]]:
         """Get suggestions for reducing parameter count."""
         if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
             return []
@@ -812,7 +812,7 @@ class PythonProvider(LanguageProvider):
 
         # Group by type similarity
         typed_params = [p for p in all_params if p["type"]]
-        untyped_params = [p for p in all_params if not p["type"]]
+        [p for p in all_params if not p["type"]]
 
         # Suggest grouping by common type
         type_groups = {}
@@ -854,7 +854,7 @@ class PythonProvider(LanguageProvider):
     # Import Analysis
     # ========================================================================
 
-    def get_imports(self, path: Path) -> List[Import]:
+    def get_imports(self, path: Path) -> list[Import]:
         """Extract imports from Python file."""
         tree = self.parse_file(path)
         if tree is None:
@@ -872,15 +872,14 @@ class PythonProvider(LanguageProvider):
                         file_path=path,
                         line_number=node.lineno,
                     ))
-            elif isinstance(node, ast.ImportFrom):
-                if node.module:
-                    imports.append(Import(
-                        module=node.module,
-                        names=[alias.name for alias in node.names],
-                        file_path=path,
-                        line_number=node.lineno,
-                        is_relative=node.level > 0,
-                    ))
+            elif isinstance(node, ast.ImportFrom) and node.module:
+                imports.append(Import(
+                    module=node.module,
+                    names=[alias.name for alias in node.names],
+                    file_path=path,
+                    line_number=node.lineno,
+                    is_relative=node.level > 0,
+                ))
 
         return imports
 
@@ -888,7 +887,7 @@ class PythonProvider(LanguageProvider):
     # Dependency Analysis
     # ========================================================================
 
-    def get_dependencies(self, project_path: Path) -> List[Dependency]:
+    def get_dependencies(self, project_path: Path) -> list[Dependency]:
         """Extract dependencies from Python project."""
         dependencies = []
 
@@ -911,7 +910,7 @@ class PythonProvider(LanguageProvider):
 
         return dependencies
 
-    def _parse_pyproject_deps(self, path: Path) -> List[Dependency]:
+    def _parse_pyproject_deps(self, path: Path) -> list[Dependency]:
         """Parse dependencies from pyproject.toml."""
         try:
             import tomllib
@@ -942,7 +941,7 @@ class PythonProvider(LanguageProvider):
         except Exception:
             return []
 
-    def _parse_requirements_txt(self, path: Path) -> List[Dependency]:
+    def _parse_requirements_txt(self, path: Path) -> list[Dependency]:
         """Parse requirements.txt file."""
         deps = []
         try:
@@ -956,7 +955,7 @@ class PythonProvider(LanguageProvider):
             pass
         return deps
 
-    def _parse_dep_string(self, dep: str) -> Optional[Dependency]:
+    def _parse_dep_string(self, dep: str) -> Dependency | None:
         """Parse a dependency specification string."""
         match = re.match(r'^([a-zA-Z0-9_-]+)(?:\[.*\])?(?:([<>=!]+)(.+))?$', dep.strip())
         if match:

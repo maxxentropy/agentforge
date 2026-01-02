@@ -14,9 +14,10 @@ Handles:
 Extracted from contracts.py for modularity.
 """
 
+import contextlib
 from datetime import date
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import yaml
 
@@ -40,17 +41,17 @@ class ContractRegistry:
     - Exemption matching
     """
 
-    def __init__(self, repo_root: Path, workspace_root: Optional[Path] = None,
-                 global_root: Optional[Path] = None):
+    def __init__(self, repo_root: Path, workspace_root: Path | None = None,
+                 global_root: Path | None = None):
         self.repo_root = Path(repo_root)
         self.workspace_root = Path(workspace_root) if workspace_root else None
         self.global_root = Path(global_root) if global_root else None
 
-        self._contracts: Dict[str, Contract] = {}
-        self._exemptions: List[Exemption] = []
+        self._contracts: dict[str, Contract] = {}
+        self._exemptions: list[Exemption] = []
         self._loaded = False
 
-    def discover_contracts(self) -> Dict[str, Contract]:
+    def discover_contracts(self) -> dict[str, Contract]:
         """Discover and load all contracts from all tiers."""
         if self._loaded:
             return self._contracts
@@ -87,9 +88,9 @@ class ContractRegistry:
             except Exception as e:
                 print(f"Warning: Failed to load contract {yaml_file}: {e}")
 
-    def _load_contract_file(self, path: Path, tier: str) -> Optional[Contract]:
+    def _load_contract_file(self, path: Path, tier: str) -> Contract | None:
         """Load a single contract file."""
-        with open(path, "r") as f:
+        with open(path) as f:
             data = yaml.safe_load(f)
 
         if not data or "contract" not in data:
@@ -141,7 +142,7 @@ class ContractRegistry:
         contract._resolved = True
         return contract
 
-    def _resolve_contract_reference(self, reference: str) -> Optional[Contract]:
+    def _resolve_contract_reference(self, reference: str) -> Contract | None:
         """Resolve a contract reference to a Contract object."""
         if reference.startswith("_"):
             return self._contracts.get(reference)
@@ -156,7 +157,7 @@ class ContractRegistry:
     # Exemption Management
     # =========================================================================
 
-    def load_exemptions(self) -> List[Exemption]:
+    def load_exemptions(self) -> list[Exemption]:
         """Load all exemption files from repo."""
         if self._exemptions:
             return self._exemptions
@@ -177,7 +178,7 @@ class ContractRegistry:
         """Load all exemption files from a directory."""
         for yaml_file in directory.glob("**/*.exemptions.yaml"):
             try:
-                with open(yaml_file, "r") as f:
+                with open(yaml_file) as f:
                     data = yaml.safe_load(f)
 
                 if not data or "exemptions" not in data:
@@ -190,7 +191,7 @@ class ContractRegistry:
             except Exception as e:
                 print(f"Warning: Failed to load exemptions from {yaml_file}: {e}")
 
-    def _parse_exemption(self, data: Dict) -> Optional[Exemption]:
+    def _parse_exemption(self, data: dict) -> Exemption | None:
         """Parse exemption data into Exemption object."""
         checks = data.get("check", [])
         if isinstance(checks, str):
@@ -204,10 +205,8 @@ class ContractRegistry:
 
         expires = None
         if "expires" in data:
-            try:
+            with contextlib.suppress(ValueError):
                 expires = date.fromisoformat(data["expires"])
-            except ValueError:
-                pass
 
         return Exemption(
             id=data["id"],
@@ -225,8 +224,8 @@ class ContractRegistry:
         )
 
     def find_exemption(self, contract_name: str, check_id: str,
-                       file_path: Optional[str] = None,
-                       line_number: Optional[int] = None) -> Optional[Exemption]:
+                       file_path: str | None = None,
+                       line_number: int | None = None) -> Exemption | None:
         """Find an active exemption that covers a specific violation."""
         self.load_exemptions()
 
@@ -253,8 +252,8 @@ class ContractRegistry:
     # Contract Retrieval
     # =========================================================================
 
-    def _contract_matches_filters(self, contract: Contract, language: Optional[str],
-                                   repo_type: Optional[str], include_abstract: bool) -> bool:
+    def _contract_matches_filters(self, contract: Contract, language: str | None,
+                                   repo_type: str | None, include_abstract: bool) -> bool:
         """Check if a contract matches the specified filters."""
         if not contract.enabled:
             return False
@@ -263,13 +262,11 @@ class ContractRegistry:
         applies_to = contract.applies_to
         if language and "languages" in applies_to and language not in applies_to["languages"]:
             return False
-        if repo_type and "repo_types" in applies_to and repo_type not in applies_to["repo_types"]:
-            return False
-        return True
+        return not (repo_type and "repo_types" in applies_to and repo_type not in applies_to["repo_types"])
 
-    def get_enabled_contracts(self, language: Optional[str] = None,
-                              repo_type: Optional[str] = None,
-                              include_abstract: bool = True) -> List[Contract]:
+    def get_enabled_contracts(self, language: str | None = None,
+                              repo_type: str | None = None,
+                              include_abstract: bool = True) -> list[Contract]:
         """Get all enabled contracts, optionally filtered."""
         self.discover_contracts()
 
@@ -282,8 +279,8 @@ class ContractRegistry:
 
         return result
 
-    def get_applicable_contracts(self, language: Optional[str] = None,
-                                  repo_type: Optional[str] = None) -> List[Contract]:
+    def get_applicable_contracts(self, language: str | None = None,
+                                  repo_type: str | None = None) -> list[Contract]:
         """Get concrete contracts that apply to this project."""
         return self.get_enabled_contracts(
             language=language,
@@ -291,7 +288,7 @@ class ContractRegistry:
             include_abstract=False
         )
 
-    def get_contract(self, name: str) -> Optional[Contract]:
+    def get_contract(self, name: str) -> Contract | None:
         """Get a specific contract by name."""
         self.discover_contracts()
         contract = self._contracts.get(name)
@@ -299,8 +296,8 @@ class ContractRegistry:
             self.resolve_inheritance(contract)
         return contract
 
-    def get_all_contracts_data(self, language: Optional[str] = None,
-                                repo_type: Optional[str] = None) -> List[Dict[str, Any]]:
+    def get_all_contracts_data(self, language: str | None = None,
+                                repo_type: str | None = None) -> list[dict[str, Any]]:
         """
         Get all applicable contracts as dictionaries for CI runner consumption.
 

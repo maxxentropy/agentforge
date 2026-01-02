@@ -1,0 +1,57 @@
+items:
+- added_at: '2025-12-31T16:27:35.830322'
+  content:
+    action: extract_function
+    result: failure
+    summary: ''
+    target: tools/tdflow/phases/refactor.py
+  expires_after_steps: null
+  key: action_step_10
+  pinned: false
+  step: 10
+  type: action_result
+- added_at: '2025-12-31T16:27:22.452995'
+  content:
+    action: extract_function
+    result: failure
+    summary: ''
+    target: tools/tdflow/phases/refactor.py
+  expires_after_steps: null
+  key: action_step_9
+  pinned: false
+  step: 9
+  type: action_result
+- added_at: '2025-12-31T16:27:07.854585'
+  content:
+    action: extract_function
+    result: failure
+    summary: ''
+    target: tools/tdflow/phases/refactor.py
+  expires_after_steps: null
+  key: action_step_8
+  pinned: false
+  step: 8
+  type: action_result
+- added_at: '2025-12-31T16:26:53.066252'
+  content:
+    action: extract_function
+    result: failure
+    summary: ''
+    target: tools/tdflow/phases/refactor.py
+  expires_after_steps: null
+  key: action_step_7
+  pinned: false
+  step: 7
+  type: action_result
+- added_at: '2025-12-31T16:26:39.487890'
+  content:
+    action: extract_function
+    result: failure
+    summary: ''
+    target: tools/tdflow/phases/refactor.py
+  expires_after_steps: null
+  key: action_step_6
+  pinned: false
+  step: 6
+  type: action_result
+max_items: 5

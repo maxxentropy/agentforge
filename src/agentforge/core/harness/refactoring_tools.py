@@ -15,7 +15,7 @@ not silently applied to produce broken code.
 
 import ast
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .llm_executor_domain import ToolResult
 
@@ -47,7 +47,7 @@ class RefactoringTools:
             self._providers[suffix] = get_refactoring_provider(file_path, self.project_path)
         return self._providers[suffix]
 
-    def extract_function(self, name: str, params: Dict[str, Any]) -> ToolResult:
+    def extract_function(self, name: str, params: dict[str, Any]) -> ToolResult:
         """
         Extract a code block into a helper function.
 
@@ -127,7 +127,7 @@ class RefactoringTools:
             f"  Refactoring validated by rope - semantics preserved"
         )
 
-    def simplify_conditional(self, name: str, params: Dict[str, Any]) -> ToolResult:
+    def simplify_conditional(self, name: str, params: dict[str, Any]) -> ToolResult:
         """
         Simplify a complex conditional using guard clause pattern.
 
@@ -197,10 +197,7 @@ class RefactoringTools:
 
             # Get the return value
             return_node = target_if.orelse[0]
-            if return_node.value is None:
-                return_value = "None"
-            else:
-                return_value = ast.unparse(return_node.value)
+            return_value = "None" if return_node.value is None else ast.unparse(return_node.value)
 
             # Negate the condition
             negated_test = ast.UnaryOp(op=ast.Not(), operand=target_if.test)
@@ -266,7 +263,7 @@ class RefactoringTools:
                 "simplify_conditional", f"Error: {e}"
             )
 
-    def get_tool_executors(self) -> Dict[str, Any]:
+    def get_tool_executors(self) -> dict[str, Any]:
         """Get dict of tool executors for registration."""
         return {
             "extract_function": self.extract_function,

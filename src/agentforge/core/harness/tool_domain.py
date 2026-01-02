@@ -10,22 +10,22 @@
 
 """Domain entities for tool definitions and profiles."""
 
-from dataclasses import dataclass, field
-from typing import Optional, Dict, List, Any
+from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass
 class ToolDefinition:
     """Definition of a single tool available to agents."""
-    
+
     name: str
     description: str
-    parameters: Dict[str, Any]
+    parameters: dict[str, Any]
     category: str
-    handler: Optional[str] = None
+    handler: str | None = None
     requires_approval: bool = False
-    
-    def to_dict(self) -> Dict[str, Any]:
+
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary for API response."""
         return {
             'name': self.name,
@@ -35,9 +35,9 @@ class ToolDefinition:
             'handler': self.handler,
             'requires_approval': self.requires_approval
         }
-    
+
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'ToolDefinition':
+    def from_dict(cls, data: dict[str, Any]) -> 'ToolDefinition':
         """Deserialize from dictionary."""
         return cls(
             name=data['name'],
@@ -52,13 +52,13 @@ class ToolDefinition:
 @dataclass
 class ToolProfile:
     """Collection of tools for a specific workflow phase."""
-    
+
     workflow: str
     phase: str
-    tools: List[str]
-    description: Optional[str] = None
-    
-    def to_dict(self) -> Dict[str, Any]:
+    tools: list[str]
+    description: str | None = None
+
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary."""
         result = {
             'workflow': self.workflow,
@@ -68,9 +68,9 @@ class ToolProfile:
         if self.description is not None:
             result['description'] = self.description
         return result
-    
+
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'ToolProfile':
+    def from_dict(cls, data: dict[str, Any]) -> 'ToolProfile':
         """Deserialize from dictionary."""
         return cls(
             workflow=data['workflow'],
@@ -83,21 +83,21 @@ class ToolProfile:
 @dataclass
 class DomainTools:
     """Domain-specific tool set (Python, .NET, TypeScript)."""
-    
+
     domain: str
-    tools: List[str]
-    detection_patterns: List[str]
-    
-    def to_dict(self) -> Dict[str, Any]:
+    tools: list[str]
+    detection_patterns: list[str]
+
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary."""
         return {
             'domain': self.domain,
             'tools': self.tools,
             'detection_patterns': self.detection_patterns
         }
-    
+
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'DomainTools':
+    def from_dict(cls, data: dict[str, Any]) -> 'DomainTools':
         """Deserialize from dictionary."""
         return cls(
             domain=data['domain'],

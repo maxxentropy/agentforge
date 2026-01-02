@@ -1,0 +1,16 @@
+schema_version: '1.0'
+violation_id: V-e6fd902ab048
+contract_id: agentforge
+check_id: single-responsibility-modules
+severity: minor
+file_path: tools/harness/conformance_tools.py
+message: 'Class ''ConformanceTools'' has 5 methods (max: 3)'
+detected_at: '2025-12-31T12:15:10.020722'
+last_seen_at: '2025-12-31T12:18:44.993319'
+status: resolved
+line_number: 16
+fix_hint: Split modules with too many classes into focused single-class modules
+resolution:
+  resolved_at: '2025-12-31T14:51:44.673798'
+  resolved_by: system
+  reason: No longer detected in full verification run

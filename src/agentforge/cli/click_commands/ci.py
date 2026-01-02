@@ -9,8 +9,9 @@ CI/CD Integration Click commands.
 Commands: ci run, ci baseline save/compare/stats, ci init
 """
 
-import click
 import sys
+
+import click
 
 
 class Args:

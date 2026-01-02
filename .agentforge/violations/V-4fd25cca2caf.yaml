@@ -1,0 +1,13 @@
+schema_version: '1.0'
+violation_id: V-4fd25cca2caf
+contract_id: agentforge
+check_id: single-responsibility-modules
+severity: minor
+file_path: tests/unit/tools/generate/test_domain.py
+message: 'Class ''TestGeneratedFile'' has 10 methods (max: 3)'
+detected_at: '2025-12-31T04:36:43.229151'
+last_seen_at: '2026-01-01T01:39:14.017878'
+status: open
+line_number: 165
+fix_hint: Split modules with too many classes into focused single-class modules
+test_path: tests/unit/tools/generate/test_domain.py

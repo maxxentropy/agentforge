@@ -1,5 +1,5 @@
-# @spec_file: specs/minimal-context-architecture/README.md
-# @spec_id: minimal-context-architecture-v2
+# @spec_file: .agentforge/specs/core-context-v1.yaml
+# @spec_id: core-context-v1
 # @component_id: context-package
 # @test_path: tests/unit/context/
 
@@ -54,6 +54,17 @@ from .agent_config import (
     TaskDefaults,
 )
 
+# Audit
+from .audit import ContextAuditLogger
+
+# Compaction
+from .compaction import (
+    CompactionAudit,
+    CompactionManager,
+    CompactionRule,
+    CompactionStrategy,
+)
+
 # Project fingerprint
 from .fingerprint import (
     DetectedPatterns,
@@ -78,17 +89,6 @@ from .templates import (
     list_task_types,
     register_template,
 )
-
-# Compaction
-from .compaction import (
-    CompactionAudit,
-    CompactionManager,
-    CompactionRule,
-    CompactionStrategy,
-)
-
-# Audit
-from .audit import ContextAuditLogger
 
 __all__ = [
     # Agent config

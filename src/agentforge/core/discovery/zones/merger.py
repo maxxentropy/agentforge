@@ -11,7 +11,7 @@ Manual configuration can:
 """
 
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import Any
 
 from agentforge.core.discovery.domain import Zone, ZoneDetectionMode
 
@@ -26,7 +26,7 @@ class ZoneMerger:
     - hybrid: Merge auto-detected with manual overrides (default)
     """
 
-    def __init__(self, repo_root: Path, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, repo_root: Path, config: dict[str, Any] | None = None):
         self.repo_root = repo_root
         self.config = config or {}
         self.discovery_config = self.config.get("discovery", {})
@@ -37,7 +37,7 @@ class ZoneMerger:
         """Get the discovery mode from config (default: hybrid)."""
         return self.discovery_config.get("mode", "hybrid")
 
-    def merge_zones(self, auto_zones: List[Zone]) -> List[Zone]:
+    def merge_zones(self, auto_zones: list[Zone]) -> list[Zone]:
         """
         Merge auto-detected zones with manual configuration.
 
@@ -56,9 +56,9 @@ class ZoneMerger:
         else:  # hybrid
             return self._merge_hybrid(auto_zones)
 
-    def _merge_hybrid(self, auto_zones: List[Zone]) -> List[Zone]:
+    def _merge_hybrid(self, auto_zones: list[Zone]) -> list[Zone]:
         """Merge auto-detected zones with manual overrides."""
-        result: List[Zone] = []
+        result: list[Zone] = []
 
         # Process auto-detected zones with potential overrides
         for auto_zone in auto_zones:
@@ -108,9 +108,9 @@ class ZoneMerger:
 
         return result
 
-    def _get_manual_zones(self) -> List[Zone]:
+    def _get_manual_zones(self) -> list[Zone]:
         """Get zones from manual configuration only."""
-        result: List[Zone] = []
+        result: list[Zone] = []
 
         for name, zone_config in self.zones_config.items():
             if zone_config.get("exclude"):
@@ -135,10 +135,10 @@ class ZoneMerger:
 
 
 def merge_zones(
-    auto_zones: List[Zone],
+    auto_zones: list[Zone],
     repo_root: Path,
-    config: Optional[Dict[str, Any]] = None
-) -> List[Zone]:
+    config: dict[str, Any] | None = None
+) -> list[Zone]:
     """
     Convenience function for zone merging.
 

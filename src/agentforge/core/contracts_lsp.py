@@ -14,13 +14,13 @@ Query types supported:
 
 import re
 from pathlib import Path
-from typing import Dict, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .contracts_execution import CheckContext
 
 
-def execute_lsp_query_check(ctx: "CheckContext") -> List:
+def execute_lsp_query_check(ctx: "CheckContext") -> list:
     """Execute an LSP-based semantic code analysis check."""
     from agentforge.core.contracts import CheckResult
 
@@ -73,7 +73,7 @@ def execute_lsp_query_check(ctx: "CheckContext") -> List:
 
 
 def _run_lsp_query(adapter, file_path: Path, query_type: str,
-                   filter_config: Dict, exclude_config: Dict) -> list:
+                   filter_config: dict, exclude_config: dict) -> list:
     """Run LSP query based on query type."""
     query_funcs = {
         "symbols": _lsp_query_symbols,
@@ -89,7 +89,7 @@ def _run_lsp_query(adapter, file_path: Path, query_type: str,
 # Symbol Filtering Helpers
 # =============================================================================
 
-def _symbol_matches_kind(symbol: Dict, kind_filter) -> bool:
+def _symbol_matches_kind(symbol: dict, kind_filter) -> bool:
     """Check if symbol matches kind filter."""
     if not kind_filter:
         return True
@@ -97,21 +97,21 @@ def _symbol_matches_kind(symbol: Dict, kind_filter) -> bool:
     return symbol.get("kind", "").lower() in [k.lower() for k in kinds]
 
 
-def _symbol_matches_visibility(symbol: Dict, visibility_filter) -> bool:
+def _symbol_matches_visibility(symbol: dict, visibility_filter) -> bool:
     """Check if symbol matches visibility filter."""
     if not visibility_filter:
         return True
     return symbol.get("visibility", "").lower() == visibility_filter.lower()
 
 
-def _symbol_matches_name(symbol: Dict, name_pattern) -> bool:
+def _symbol_matches_name(symbol: dict, name_pattern) -> bool:
     """Check if symbol matches name pattern filter."""
     if not name_pattern:
         return True
     return bool(re.match(name_pattern, symbol.get("name", "")))
 
 
-def _symbol_has_modifiers(symbol: Dict, required_modifiers: list) -> bool:
+def _symbol_has_modifiers(symbol: dict, required_modifiers: list) -> bool:
     """Check if symbol has all required modifiers."""
     if not required_modifiers:
         return True
@@ -119,7 +119,7 @@ def _symbol_has_modifiers(symbol: Dict, required_modifiers: list) -> bool:
     return all(m.lower() in symbol_modifiers for m in required_modifiers)
 
 
-def _symbol_excluded_by_modifiers(symbol: Dict, exclude_modifiers: list) -> bool:
+def _symbol_excluded_by_modifiers(symbol: dict, exclude_modifiers: list) -> bool:
     """Check if symbol is excluded by modifier rules."""
     if not exclude_modifiers:
         return False
@@ -131,14 +131,14 @@ def _symbol_excluded_by_modifiers(symbol: Dict, exclude_modifiers: list) -> bool
     return False
 
 
-def _symbol_excluded_by_name(symbol: Dict, exclude_pattern) -> bool:
+def _symbol_excluded_by_name(symbol: dict, exclude_pattern) -> bool:
     """Check if symbol is excluded by name pattern."""
     if not exclude_pattern:
         return False
     return bool(re.match(exclude_pattern, symbol.get("name", "")))
 
 
-def _symbol_excluded_by_container(symbol: Dict, exclude_containers: list) -> bool:
+def _symbol_excluded_by_container(symbol: dict, exclude_containers: list) -> bool:
     """Check if symbol is excluded by container."""
     if not exclude_containers:
         return False
@@ -150,8 +150,8 @@ def _symbol_excluded_by_container(symbol: Dict, exclude_containers: list) -> boo
 # LSP Query Implementations
 # =============================================================================
 
-def _lsp_query_symbols(adapter, file_path: Path, filter_config: Dict,
-                       exclude_config: Dict) -> List[Dict]:
+def _lsp_query_symbols(adapter, file_path: Path, filter_config: dict,
+                       exclude_config: dict) -> list[dict]:
     """Query document symbols and filter by criteria."""
     try:
         symbols = adapter.document_symbols(str(file_path))
@@ -181,14 +181,14 @@ def _lsp_query_symbols(adapter, file_path: Path, filter_config: Dict,
     return matches
 
 
-def _lsp_query_references(adapter, file_path: Path, filter_config: Dict,
-                          exclude_config: Dict) -> List[Dict]:
+def _lsp_query_references(adapter, file_path: Path, filter_config: dict,
+                          exclude_config: dict) -> list[dict]:
     """Query references - placeholder for future implementation."""
     return []
 
 
-def _lsp_query_diagnostics(adapter, file_path: Path, filter_config: Dict,
-                           exclude_config: Dict) -> List[Dict]:
+def _lsp_query_diagnostics(adapter, file_path: Path, filter_config: dict,
+                           exclude_config: dict) -> list[dict]:
     """Query compiler diagnostics."""
     try:
         diagnostics = adapter.diagnostics(str(file_path))
@@ -211,7 +211,7 @@ def _lsp_query_diagnostics(adapter, file_path: Path, filter_config: Dict,
     return matches
 
 
-def _lsp_query_call_hierarchy(adapter, file_path: Path, filter_config: Dict,
-                              exclude_config: Dict) -> List[Dict]:
+def _lsp_query_call_hierarchy(adapter, file_path: Path, filter_config: dict,
+                              exclude_config: dict) -> list[dict]:
     """Query call hierarchy - placeholder for future implementation."""
     return []

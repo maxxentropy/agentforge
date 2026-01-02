@@ -1,5 +1,5 @@
-# @spec_file: specs/minimal-context-architecture/05-llm-integration.yaml
-# @spec_id: llm-integration-v1
+# @spec_file: .agentforge/specs/core-harness-minimal-context-v1.yaml
+# @spec_id: core-harness-minimal-context-v1
 # @component_id: harness-minimal_context-__init__
 # @test_path: tests/unit/harness/test_enhanced_context.py
 
@@ -40,73 +40,72 @@ Usage
     result = workflow.fix_violation("V-abc123")
 """
 
-from .state_store import TaskStateStore, TaskState, TaskPhase, SCHEMA_VERSION
-from .working_memory import WorkingMemoryManager, WorkingMemoryItem
-from .executor import (
-    MinimalContextExecutor,
-    StepOutcome,
-    AdaptiveBudget,
-    create_executor,
-    should_use_native_tools,
-)
-from .fix_workflow import MinimalContextFixWorkflow, create_minimal_fix_workflow
-
 # Context Models
 from .context_models import (
-    # Enums
-    FactCategory,
-    ActionResult,
-    # Core models
-    Fact,
     ActionDef,
     ActionRecord,
-    # Specs (immutable)
-    TaskSpec,
-    ViolationSpec,
-    # State (mutable)
-    VerificationState,
-    Understanding,
-    PhaseState,
-    StateSpec,
+    ActionResult,
     # Actions
     ActionsSpec,
     # Top-level
     AgentContext,
     AgentResponse,
+    # Core models
+    Fact,
+    # Enums
+    FactCategory,
+    PhaseState,
+    StateSpec,
+    # Specs (immutable)
+    TaskSpec,
+    Understanding,
+    # State (mutable)
+    VerificationState,
+    ViolationSpec,
 )
-from .understanding import (
-    ExtractionRule,
-    ExtractionRuleSet,
-    UnderstandingExtractor,
-    FactStore,
+from .executor import (
+    AdaptiveBudget,
+    MinimalContextExecutor,
+    StepOutcome,
+    create_executor,
+    should_use_native_tools,
 )
+from .fix_workflow import MinimalContextFixWorkflow, create_minimal_fix_workflow
 from .loop_detector import (
-    LoopType,
-    LoopDetection,
     ActionSignature,
+    LoopDetection,
     LoopDetector,
+    LoopType,
 )
+from .native_tool_executor import NativeToolExecutor
 from .phase_machine import (
     Phase,
-    PhaseContext,
-    Transition,
     PhaseConfig,
+    PhaseContext,
     PhaseMachine,
+    Transition,
 )
+from .state_store import SCHEMA_VERSION, Phase, TaskState, TaskStateStore
 
 # Template-based context building
 from .template_context_builder import (
     TemplateContextBuilder,
     TemplateStepContext,
 )
-from .native_tool_executor import NativeToolExecutor
 from .tool_handlers import create_standard_handlers
+from .understanding import (
+    ExtractionRule,
+    ExtractionRuleSet,
+    FactStore,
+    UnderstandingExtractor,
+)
+from .working_memory import WorkingMemoryItem, WorkingMemoryManager
 
 __all__ = [
     # State
     "TaskStateStore",
     "TaskState",
-    "TaskPhase",
+    "Phase",
     "SCHEMA_VERSION",
     # Working Memory
     "WorkingMemoryManager",

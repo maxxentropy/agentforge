@@ -1,35 +1,32 @@
-# @spec_file: .agentforge/specs/conformance-v1.yaml
-# @spec_id: conformance-v1
+# @spec_file: .agentforge/specs/core-conformance-v1.yaml
+# @spec_id: core-conformance-v1
 # @component_id: tools-conformance-stores
 # @impl_path: tools/conformance/stores.py
 
 """Tests for conformance storage layer."""
 
-import pytest
 from datetime import date, datetime, timedelta
 from pathlib import Path
-import sys
+
+import pytest
 import yaml
 
-# Add tools to path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent.parent / 'tools'))
-
-from conformance.domain import (
-    Severity,
-    ViolationStatus,
-    ExemptionStatus,
-    ExemptionScopeType,
-    ExemptionScope,
-    Violation,
-    Exemption,
+from agentforge.core.conformance.domain import (
     ConformanceSummary,
+    Exemption,
+    ExemptionScope,
+    ExemptionScopeType,
+    ExemptionStatus,
     HistorySnapshot,
+    Severity,
+    Violation,
+    ViolationStatus,
 )
-from conformance.stores import (
+from agentforge.core.conformance.history_store import HistoryStore
+from agentforge.core.conformance.stores import (
     AtomicFileWriter,
-    ViolationStore,
     ExemptionRegistry,
-    HistoryStore,
+    ViolationStore,
 )
 
 
@@ -50,10 +47,9 @@ class TestAtomicFileWriter:
         """Test failed write doesn't leave partial file."""
         target = tmp_path / "test.txt"
 
-        with pytest.raises(ValueError):
-            with AtomicFileWriter(target) as f:
-                f.write("Partial content")
-                raise ValueError("Simulated failure")
+        with pytest.raises(ValueError), AtomicFileWriter(target) as f:
+            f.write("Partial content")
+            raise ValueError("Simulated failure")
 
         assert not target.exists()
 

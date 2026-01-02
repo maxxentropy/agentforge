@@ -103,6 +103,7 @@ checks:
         - "**/*.spec.*"
         - "**/test*/**"
         - "**/__tests__/**"
+        - ".agentforge/**"  # Internal tracking files (violations, logs, etc.)
     fix_hint: "Use environment variables or a secrets manager"
 
   - id: no-private-keys

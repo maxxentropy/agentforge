@@ -1,5 +1,5 @@
-# @spec_file: specs/minimal-context-architecture/05-llm-integration.yaml
-# @spec_id: llm-integration-v1
+# @spec_file: .agentforge/specs/core-llm-v1.yaml
+# @spec_id: core-llm-v1
 # @component_id: llm-package
 # @test_path: tests/unit/llm/
 
@@ -38,6 +38,11 @@ Environment Variables:
 """
 
 # Core interfaces
+# Factory (main entry point)
+from .factory import (
+    LLMClientFactory,
+    LLMClientMode,
+)
 from .interface import (
     LLMClient,
     LLMResponse,
@@ -47,12 +52,6 @@ from .interface import (
     ToolDefinition,
     ToolExecutor,
     ToolResult,
-)
-
-# Factory (main entry point)
-from .factory import (
-    LLMClientFactory,
-    LLMClientMode,
 )
 
 # Simulation components
@@ -68,27 +67,25 @@ from .simulated import (
 
 # Real client (lazy import to avoid anthropic dependency when not needed)
 # Use LLMClientFactory.create(mode="real") instead of direct import
-
 # Tool definitions
 from .tools import (
-    get_tools_for_task,
-    get_tool_by_name,
-    get_tools_by_category,
-    list_task_types,
-    list_all_tools,
     # Tool collections
     BASE_TOOLS,
-    REFACTORING_TOOLS,
+    COMPLETE,
     DISCOVERY_TOOLS,
-    TESTING_TOOLS,
-    REVIEW_TOOLS,
+    ESCALATE,
     # Individual tools (commonly used)
     READ_FILE,
+    REFACTORING_TOOLS,
+    REVIEW_TOOLS,
+    TESTING_TOOLS,
     WRITE_FILE,
-    COMPLETE,
-    ESCALATE,
+    get_tool_by_name,
+    get_tools_by_category,
+    get_tools_for_task,
+    list_all_tools,
+    list_task_types,
 )
-
 
 __all__ = [
     # Core interfaces

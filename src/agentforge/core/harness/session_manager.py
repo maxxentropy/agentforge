@@ -13,7 +13,6 @@ Single session per instance.
 
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import List, Optional
 
 from agentforge.core.harness.session_domain import SessionContext, SessionState
 from agentforge.core.harness.session_store import SessionStore
@@ -49,7 +48,7 @@ class SessionManager:
         SessionState.ABORTED: set(),    # Terminal state
     }
 
-    def __init__(self, store: Optional[SessionStore] = None):
+    def __init__(self, store: SessionStore | None = None):
         """
         Initialize session manager.
 
@@ -57,17 +56,17 @@ class SessionManager:
             store: SessionStore for persistence. Creates default if not provided.
         """
         self.store = store or SessionStore()
-        self._current_session: Optional[SessionContext] = None
+        self._current_session: SessionContext | None = None
 
     @property
-    def current_session(self) -> Optional[SessionContext]:
+    def current_session(self) -> SessionContext | None:
         """Get the current session."""
         return self._current_session
 
     def create(
         self,
-        workflow_type: Optional[str] = None,
-        initial_phase: Optional[str] = None,
+        workflow_type: str | None = None,
+        initial_phase: str | None = None,
         token_budget: int = 100000,
     ) -> SessionContext:
         """
@@ -101,7 +100,7 @@ class SessionManager:
 
         return session
 
-    def load(self, session_id: str) -> Optional[SessionContext]:
+    def load(self, session_id: str) -> SessionContext | None:
         """
         Load existing session from storage.
 
@@ -181,7 +180,7 @@ class SessionManager:
         self.store.save(self._current_session)
         return self._current_session
 
-    def abort(self, reason: Optional[str] = None) -> SessionContext:
+    def abort(self, reason: str | None = None) -> SessionContext:
         """
         Transition current session to ABORTED state.
 
@@ -297,7 +296,7 @@ class SessionManager:
         self,
         days: int,
         dry_run: bool = False,
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Remove old COMPLETED/ABORTED sessions.
 

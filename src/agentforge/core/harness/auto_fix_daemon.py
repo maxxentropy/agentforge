@@ -7,16 +7,16 @@ Continuously monitors and fixes violations with configurable policies.
 
 import logging
 import time
-import yaml
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, List, Optional
 
-from .fix_violation_workflow import FixViolationWorkflow, FixPhase, FixAttempt
-from .violation_tools import ViolationTools
+import yaml
+
+from .fix_violation_workflow import FixAttempt, FixPhase, FixViolationWorkflow
 from .llm_executor import LLMExecutor
 from .tool_executor_bridge import ToolExecutorBridge
+from .violation_tools import ViolationTools
 
 
 @dataclass
@@ -26,13 +26,13 @@ class AutoFixConfig:
     max_concurrent: int = 1
     max_attempts_per_violation: int = 3
     cooldown_after_failure: timedelta = field(default_factory=lambda: timedelta(hours=1))
-    severity_order: List[str] = field(default_factory=lambda: ["blocker", "critical", "major", "minor"])
+    severity_order: list[str] = field(default_factory=lambda: ["blocker", "critical", "major", "minor"])
     require_approval: bool = True
     pause_on_test_failure: bool = True
     max_fixes_per_run: int = 10
     poll_interval: int = 60  # seconds between checks
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """Serialize to dict."""
         return {
             "max_concurrent": self.max_concurrent,
@@ -46,7 +46,7 @@ class AutoFixConfig:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict) -> "AutoFixConfig":
+    def from_dict(cls, data: dict) -> "AutoFixConfig":
         """Deserialize from dict."""
         return cls(
             max_concurrent=data.get("max_concurrent", 1),
@@ -69,14 +69,14 @@ class DaemonStatus:
     """Current status of the daemon."""
 
     state: str  # "idle", "running", "paused", "stopped"
-    current_violation: Optional[str] = None
+    current_violation: str | None = None
     fixes_completed: int = 0
     fixes_failed: int = 0
-    last_run: Optional[datetime] = None
-    next_run: Optional[datetime] = None
-    error: Optional[str] = None
+    last_run: datetime | None = None
+    next_run: datetime | None = None
+    error: str | None = None
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """Serialize to dict."""
         return {
             "state": self.state,
@@ -97,7 +97,7 @@ class AutoFixDaemon:
     def __init__(
         self,
         project_path: Path,
-        config: Optional[AutoFixConfig] = None,
+        config: AutoFixConfig | None = None,
     ):
         """
         Initialize the daemon.
@@ -112,7 +112,7 @@ class AutoFixDaemon:
 
         # State
         self._status = DaemonStatus(state="idle")
-        self._attempts: Dict[str, List[FixAttempt]] = {}
+        self._attempts: dict[str, list[FixAttempt]] = {}
         self._running = False
 
         # Load previous attempt history
@@ -160,7 +160,7 @@ class AutoFixDaemon:
 
         return True, "OK"
 
-    def get_next_violation(self) -> Optional[str]:
+    def get_next_violation(self) -> str | None:
         """Get next violation to fix based on priority."""
         tools = ViolationTools(self.project_path)
 
@@ -187,7 +187,7 @@ class AutoFixDaemon:
         """Get current daemon status."""
         return self._status
 
-    def run_once(self) -> Optional[FixAttempt]:
+    def run_once(self) -> FixAttempt | None:
         """
         Run one fix cycle.
 
@@ -260,7 +260,7 @@ class AutoFixDaemon:
         with open(log_file, "w") as f:
             yaml.dump(attempt.to_dict(), f, default_flow_style=False)
 
-    def run_batch(self, max_fixes: Optional[int] = None) -> List[FixAttempt]:
+    def run_batch(self, max_fixes: int | None = None) -> list[FixAttempt]:
         """
         Run multiple fix cycles.
 
@@ -273,7 +273,7 @@ class AutoFixDaemon:
         max_fixes = max_fixes or self.config.max_fixes_per_run
         attempts = []
 
-        for i in range(max_fixes):
+        for _i in range(max_fixes):
             attempt = self.run_once()
             if attempt is None:
                 break
@@ -293,7 +293,7 @@ class AutoFixDaemon:
         self._status.state = "idle"
         return attempts
 
-    def run_continuous(self, duration: Optional[int] = None):
+    def run_continuous(self, duration: int | None = None):
         """
         Run continuously until stopped.
 
@@ -334,7 +334,7 @@ class AutoFixDaemon:
 
 def create_auto_fix_daemon(
     project_path: Path,
-    config_file: Optional[Path] = None,
+    config_file: Path | None = None,
 ) -> AutoFixDaemon:
     """
     Factory function to create an AutoFixDaemon.

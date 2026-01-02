@@ -1,7 +1,7 @@
 """
 Spec workflow Click commands.
 
-Commands: intake, clarify, analyze, draft, validate, revise
+Commands: intake, clarify, analyze, draft, validate, revise, adapt
 """
 
 import click
@@ -73,15 +73,29 @@ def analyze(ctx, intake_file, clarification_file, code_context, project_path):
               type=click.Path(), help='Path to clarification log')
 @click.option('--analysis-file', default='outputs/analysis_report.yaml',
               type=click.Path(exists=True), help='Path to analysis report')
+@click.option('--extend-spec', '-e', help='Extend existing spec instead of creating new (prevents fragmentation)')
+@click.option('--new-spec', is_flag=True, help='Force creation of new spec (skip placement analysis)')
 @click.pass_context
-def draft(ctx, intake_file, clarification_file, analysis_file):
-    """Run DRAFT phase - generate specification."""
+def draft(ctx, intake_file, clarification_file, analysis_file, extend_spec, new_spec):
+    """
+    Run DRAFT phase - generate specification.
+
+    \b
+    Spec Placement:
+        By default, DRAFT analyzes the existing spec space and recommends
+        whether to extend an existing spec or create a new one. Use flags
+        to override:
+        --extend-spec cli-v1    Explicitly extend cli-v1 spec
+        --new-spec              Force new spec creation
+    """
     from agentforge.cli.commands.spec import run_draft
 
     args = Args()
     args.intake_file = intake_file
     args.clarification_file = clarification_file
     args.analysis_file = analysis_file
+    args.extend_spec = extend_spec
+    args.new_spec = new_spec
     args.use_api = ctx.obj.get('use_api', False)
     run_draft(args)
 
@@ -128,3 +142,58 @@ def revise(ctx, spec_file, validation_file, auto, resume, apply, status, force):
     args.force = force
     args.use_api = ctx.obj.get('use_api', False)
     run_revise(args)
+
+
+@click.command(help='Adapt external specification to AgentForge format')
+@click.option('--input', '-i', 'input_file', required=True,
+              type=click.Path(exists=True), help='External spec file (markdown, YAML, or text)')
+@click.option('--spec-id', '-s', help='Override spec ID (auto-generated if not provided)')
+@click.option('--output', '-o', default='outputs/specification.yaml',
+              type=click.Path(), help='Output path for adapted spec')
+@click.option('--profile', default='.agentforge/codebase_profile.yaml',
+              type=click.Path(), help='Codebase profile for context')
+@click.option('--skip-review', is_flag=True, help='Skip SA review (for trusted specs)')
+@click.option('--extend-spec', '-e', help='Explicitly extend an existing spec (prevents fragmentation)')
+@click.option('--new-spec', is_flag=True, help='Force creation of new spec (skip placement analysis)')
+@click.pass_context
+def adapt(ctx, input_file, spec_id, output, profile, skip_review, extend_spec, new_spec):
+    """
+    Adapt external specification to AgentForge codebase conventions.
+
+    This is the ON-RAMP for external specs. It:
+    - Takes a rich external spec as PRIMARY INPUT
+    - Analyzes spec space to prevent fragmentation
+    - Uses SA agent to map concepts to codebase reality
+    - Produces a canonical draft compatible with VALIDATE/REVISE/TDFLOW
+
+    The external spec is treated as the SOURCE OF TRUTH.
+    ADAPT transforms, it doesn't second-guess.
+
+    \b
+    Spec Placement:
+        By default, ADAPT analyzes the existing spec space and recommends
+        whether to extend an existing spec or create a new one. Use flags
+        to override:
+        --extend-spec cli-v1    Explicitly extend cli-v1 spec
+        --new-spec              Force new spec creation
+
+    \b
+    Example:
+        agentforge adapt --input external_spec.md
+        agentforge adapt --input feature.md --extend-spec core-api-v1
+        agentforge validate  # Continue with existing workflow
+        agentforge revise
+        agentforge tdflow start --spec outputs/specification.yaml
+    """
+    from agentforge.cli.commands.spec_adapt import run_adapt
+
+    args = Args()
+    args.input_file = input_file
+    args.spec_id = spec_id
+    args.output = output
+    args.profile = profile
+    args.skip_review = skip_review
+    args.extend_spec = extend_spec
+    args.new_spec = new_spec
+    args.use_api = ctx.obj.get('use_api', False) if ctx.obj else False
+    run_adapt(args)

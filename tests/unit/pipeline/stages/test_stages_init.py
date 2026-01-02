@@ -1,11 +1,10 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-2-design-pipeline.yaml
-# @spec_id: pipeline-controller-phase2-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
 # @component_id: stages-init
 # @test_path: tests/unit/pipeline/stages/test_stages_init.py
 
 """Tests for stages package exports and registration."""
 
-import pytest
 
 
 class TestStagesPackageExports:
@@ -14,9 +13,9 @@ class TestStagesPackageExports:
     def test_exports_all_executors(self):
         """Package exports all executor classes."""
         from agentforge.core.pipeline.stages import (
-            IntakeExecutor,
-            ClarifyExecutor,
             AnalyzeExecutor,
+            ClarifyExecutor,
+            IntakeExecutor,
             SpecExecutor,
         )
 
@@ -28,9 +27,9 @@ class TestStagesPackageExports:
     def test_exports_factory_functions(self):
         """Package exports factory functions."""
         from agentforge.core.pipeline.stages import (
-            create_intake_executor,
-            create_clarify_executor,
             create_analyze_executor,
+            create_clarify_executor,
+            create_intake_executor,
             create_spec_executor,
         )
 
@@ -42,13 +41,13 @@ class TestStagesPackageExports:
     def test_factory_functions_return_correct_types(self):
         """Factory functions return correct executor types."""
         from agentforge.core.pipeline.stages import (
-            IntakeExecutor,
-            ClarifyExecutor,
             AnalyzeExecutor,
+            ClarifyExecutor,
+            IntakeExecutor,
             SpecExecutor,
-            create_intake_executor,
-            create_clarify_executor,
             create_analyze_executor,
+            create_clarify_executor,
+            create_intake_executor,
             create_spec_executor,
         )
 
@@ -78,9 +77,9 @@ class TestDesignStagesRegistration:
         """Registered stages create correct executor instances."""
         from agentforge.core.pipeline import StageExecutorRegistry
         from agentforge.core.pipeline.stages import (
-            IntakeExecutor,
-            ClarifyExecutor,
             AnalyzeExecutor,
+            ClarifyExecutor,
+            IntakeExecutor,
             SpecExecutor,
             register_design_stages,
         )

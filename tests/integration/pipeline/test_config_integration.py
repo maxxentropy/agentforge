@@ -1,14 +1,12 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-6-configuration.yaml
-# @spec_id: pipeline-controller-phase6-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
 # @component_id: config-loader, config-validator, config-template-loader
 
 """Integration tests for Configuration System."""
 
 import os
-from pathlib import Path
 from unittest.mock import patch
 
-import pytest
 import yaml
 
 
@@ -233,9 +231,8 @@ class TestConfigWithPipelineController:
     def test_controller_uses_config_stages(self, tmp_path):
         """PipelineController respects config stages."""
         from agentforge.core.pipeline import (
-            PipelineController,
-            StageExecutorRegistry,
             PassthroughExecutor,
+            StageExecutorRegistry,
         )
         from agentforge.core.pipeline.config import PipelineTemplateLoader
 

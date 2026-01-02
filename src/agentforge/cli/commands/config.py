@@ -6,14 +6,13 @@ across the three-tier config system (global, workspace, repo).
 """
 
 import sys
-import click
-import yaml
 from pathlib import Path
 
+import click
+import yaml
 
-def _ensure_workspace_tools():
-    """Add tools directory to path for workspace imports."""
-    sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'tools'))
+from agentforge.core.workspace import init_global_config
+from agentforge.core.workspace_config import discover_config, find_upward, format_config_status
 
 
 def run_config(args):
@@ -28,15 +27,7 @@ def run_config_init_global(args):
     click.echo("CONFIG INIT-GLOBAL")
     click.echo("=" * 60)
 
-    _ensure_workspace_tools()
-
-    try:
-        from workspace import init_global_config
-    except ImportError as e:
-        click.echo(f"\nError: Could not import workspace module: {e}")
-        sys.exit(1)
-
-    click.echo(f"\n  Location: ~/.agentforge/")
+    click.echo("\n  Location: ~/.agentforge/")
 
     try:
         result = init_global_config(force=getattr(args, 'force', False))
@@ -58,14 +49,6 @@ def run_config_show(args):
     click.echo("=" * 60)
     click.echo("CONFIG SHOW")
     click.echo("=" * 60)
-
-    _ensure_workspace_tools()
-
-    try:
-        from workspace import discover_config, format_config_status
-    except ImportError as e:
-        click.echo(f"\nError: Could not import workspace module: {e}")
-        sys.exit(1)
 
     ctx = discover_config()
     tier = getattr(args, 'tier', None)
@@ -125,18 +108,10 @@ def run_config_set(args):
     click.echo("CONFIG SET")
     click.echo("=" * 60)
 
-    _ensure_workspace_tools()
-
-    try:
-        from workspace import find_upward
-    except ImportError as e:
-        click.echo(f"\nError: Could not import workspace module: {e}")
-        sys.exit(1)
-
     key = args.key
     value = args.value
 
-    config_path, tier = _determine_config_file(args, find_upward)
+    config_path, tier = _determine_config_file(args)
     if config_path is None:
         return
 
@@ -158,10 +133,10 @@ def run_config_set(args):
     with open(config_path, 'w') as f:
         yaml.dump(config, f, default_flow_style=False, sort_keys=False)
 
-    click.echo(f"\nConfiguration updated")
+    click.echo("\nConfiguration updated")
 
 
-def _determine_config_file(args, find_upward):
+def _determine_config_file(args):
     """Determine which config file to update based on flags."""
     if getattr(args, 'set_global', False):
         return Path.home() / '.agentforge' / 'config.yaml', 'global'

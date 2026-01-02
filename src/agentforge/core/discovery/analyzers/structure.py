@@ -8,14 +8,10 @@ Identifies Clean Architecture layers, module boundaries, and project layout.
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple, Any
-import re
+from typing import Any
 
-from ..domain import (
-    Detection, DetectionSource, ConfidenceLevel, LayerInfo
-)
+from ..domain import Detection, DetectionSource, LayerInfo
 from ..providers.base import LanguageProvider
-
 
 # Clean Architecture layer patterns
 LAYER_PATTERNS = {
@@ -72,9 +68,9 @@ class DirectoryInfo:
     relative_path: str
     file_count: int = 0
     total_lines: int = 0
-    detected_layer: Optional[str] = None
+    detected_layer: str | None = None
     confidence: float = 0.0
-    signals: List[str] = field(default_factory=list)
+    signals: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -82,12 +78,12 @@ class StructureAnalysisResult:
     """Result of structure analysis."""
     architecture_style: str
     confidence: float
-    layers: Dict[str, LayerInfo]
-    directories: List[DirectoryInfo]
-    entry_points: List[Path]
-    test_directories: List[Path]
-    source_root: Optional[Path] = None
-    signals: List[str] = field(default_factory=list)
+    layers: dict[str, LayerInfo]
+    directories: list[DirectoryInfo]
+    entry_points: list[Path]
+    test_directories: list[Path]
+    source_root: Path | None = None
+    signals: list[str] = field(default_factory=list)
 
 
 class StructureAnalyzer:
@@ -103,8 +99,8 @@ class StructureAnalyzer:
 
     def __init__(self, provider: LanguageProvider):
         self.provider = provider
-        self._dir_cache: Dict[Path, DirectoryInfo] = {}
-        self._dotnet_projects: Dict[str, Dict[str, Any]] = {}
+        self._dir_cache: dict[Path, DirectoryInfo] = {}
+        self._dotnet_projects: dict[str, dict[str, Any]] = {}
 
     def analyze(self, root: Path) -> StructureAnalysisResult:
         """
@@ -151,13 +147,13 @@ class StructureAnalyzer:
             signals=signals,
         )
 
-    def _scan_directories(self, root: Path) -> List[DirectoryInfo]:
+    def _scan_directories(self, root: Path) -> list[DirectoryInfo]:
         """Scan and catalog all directories containing source files."""
         directories = []
         source_files = self.provider.get_source_files(root)
 
         # Group files by directory
-        dir_files: Dict[Path, List[Path]] = {}
+        dir_files: dict[Path, list[Path]] = {}
         for f in source_files:
             parent = f.parent
             if parent not in dir_files:
@@ -187,7 +183,7 @@ class StructureAnalyzer:
     def _detect_layer(self, dir_info: DirectoryInfo, root: Path) -> None:
         """Detect which architectural layer a directory belongs to."""
         path_parts = Path(dir_info.relative_path).parts
-        path_lower = dir_info.relative_path.lower()
+        dir_info.relative_path.lower()
 
         best_match = None
         best_score = 0.0
@@ -227,9 +223,9 @@ class StructureAnalyzer:
             dir_info.confidence = min(best_score, 1.0)
             dir_info.signals = signals
 
-    def _aggregate_layers(self, directories: List[DirectoryInfo]) -> Dict[str, LayerInfo]:
+    def _aggregate_layers(self, directories: list[DirectoryInfo]) -> dict[str, LayerInfo]:
         """Aggregate directory detections into layer information."""
-        layers: Dict[str, LayerInfo] = {}
+        layers: dict[str, LayerInfo] = {}
 
         for dir_info in directories:
             if not dir_info.detected_layer:
@@ -270,8 +266,8 @@ class StructureAnalyzer:
         return layers
 
     def _detect_architecture_style(
-        self, layers: Dict[str, LayerInfo]
-    ) -> Tuple[str, float, List[str]]:
+        self, layers: dict[str, LayerInfo]
+    ) -> tuple[str, float, list[str]]:
         """Detect the overall architecture style from detected layers."""
         detected_layer_names = set(layers.keys())
         signals = []
@@ -331,7 +327,7 @@ class StructureAnalyzer:
 
         return best_style, final_confidence, signals
 
-    def _find_entry_points(self, root: Path) -> List[Path]:
+    def _find_entry_points(self, root: Path) -> list[Path]:
         """Find application entry points."""
         entry_points = []
 
@@ -352,7 +348,7 @@ class StructureAnalyzer:
 
         return list(set(entry_points))
 
-    def _find_pyproject_scripts(self, pyproject: Path) -> List[Path]:
+    def _find_pyproject_scripts(self, pyproject: Path) -> list[Path]:
         """Extract script entry points from pyproject.toml."""
         try:
             import tomllib
@@ -369,7 +365,7 @@ class StructureAnalyzer:
             scripts = data.get("project", {}).get("scripts", {})
             entry_points = []
 
-            for name, entry in scripts.items():
+            for _name, entry in scripts.items():
                 # Entry format: "module:function"
                 if ":" in entry:
                     module = entry.split(":")[0]
@@ -382,7 +378,7 @@ class StructureAnalyzer:
         except Exception:
             return []
 
-    def _find_test_directories(self, root: Path) -> List[Path]:
+    def _find_test_directories(self, root: Path) -> list[Path]:
         """Find test directories in the project."""
         test_dirs = []
 
@@ -402,8 +398,8 @@ class StructureAnalyzer:
         return test_dirs
 
     def _detect_source_root(
-        self, root: Path, directories: List[DirectoryInfo]
-    ) -> Optional[Path]:
+        self, root: Path, directories: list[DirectoryInfo]
+    ) -> Path | None:
         """Detect the main source root directory."""
         # Common source root patterns
         patterns = ["src", "lib", "app", "source"]
@@ -429,7 +425,7 @@ class StructureAnalyzer:
 
         return None
 
-    def get_layer_for_path(self, path: Path) -> Optional[str]:
+    def get_layer_for_path(self, path: Path) -> str | None:
         """Get the detected layer for a given path."""
         if path in self._dir_cache:
             return self._dir_cache[path].detected_layer
@@ -500,7 +496,7 @@ class StructureAnalyzer:
                     signals=signals,
                 )
 
-    def _find_dotnet_entry_points(self, root: Path) -> List[Path]:
+    def _find_dotnet_entry_points(self, root: Path) -> list[Path]:
         """Find .NET application entry points."""
         entry_points = []
 
@@ -528,7 +524,7 @@ class StructureAnalyzer:
 
         return entry_points
 
-    def _find_dotnet_test_directories(self, root: Path) -> List[Path]:
+    def _find_dotnet_test_directories(self, root: Path) -> list[Path]:
         """Find .NET test project directories."""
         test_dirs = []
 

@@ -12,7 +12,7 @@
 
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 class MemoryTier(Enum):
@@ -25,17 +25,17 @@ class MemoryTier(Enum):
 
 class MemoryEntry:
     """A memory entry with key, value, timestamp, and optional metadata."""
-    
+
     def __init__(
         self,
         key: str,
         value: Any,
         created_at: datetime,
-        ttl: Optional[int] = None,
-        metadata: Optional[Dict[str, Any]] = None
+        ttl: int | None = None,
+        metadata: dict[str, Any] | None = None
     ):
         """Initialize a memory entry.
-        
+
         Args:
             key: The entry key
             value: The entry value
@@ -54,23 +54,23 @@ class MemoryEntry:
             self.expires_at = created_at + timedelta(seconds=ttl)
         else:
             self.expires_at = None
-    
+
     @classmethod
     def create(
         cls,
         key: str,
         value: Any,
-        ttl: Optional[int] = None,
-        metadata: Optional[Dict[str, Any]] = None
+        ttl: int | None = None,
+        metadata: dict[str, Any] | None = None
     ) -> "MemoryEntry":
         """Factory method to create a memory entry with current timestamp.
-        
+
         Args:
             key: The entry key
             value: The entry value
             ttl: Time to live in seconds
             metadata: Optional metadata dictionary
-            
+
         Returns:
             A new MemoryEntry instance
         """
@@ -81,7 +81,7 @@ class MemoryEntry:
             ttl=ttl,
             metadata=metadata
         )
-    
+
     def is_expired(self) -> bool:
         """Check if the entry has expired.
 
@@ -98,9 +98,9 @@ class MemoryEntry:
         """Alias for created_at for convenience."""
         return self.created_at
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize entry to dictionary for YAML storage.
-        
+
         Returns:
             Dictionary representation of the entry
         """
@@ -109,22 +109,22 @@ class MemoryEntry:
             "value": self.value,
             "created_at": self.created_at
         }
-        
+
         if self.ttl is not None:
             result["ttl"] = self.ttl
-            
+
         if self.metadata is not None:
             result["metadata"] = self.metadata
-            
+
         return result
-    
+
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "MemoryEntry":
+    def from_dict(cls, data: dict[str, Any]) -> "MemoryEntry":
         """Deserialize entry from dictionary.
-        
+
         Args:
             data: Dictionary containing entry data
-            
+
         Returns:
             A new MemoryEntry instance
         """

@@ -12,7 +12,7 @@ Tools for Git operations with safety guardrails.
 
 import subprocess
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 from .llm_executor_domain import ToolResult
 
@@ -52,9 +52,9 @@ class GitTools:
         """
         self.project_path = Path(project_path)
         self.require_approval = require_approval
-        self._pending_commit: Dict[str, Any] = {}
+        self._pending_commit: dict[str, Any] = {}
 
-    def git_status(self, name: str, params: Dict[str, Any]) -> ToolResult:
+    def git_status(self, name: str, params: dict[str, Any]) -> ToolResult:
         """
         Show git status.
 
@@ -81,7 +81,7 @@ class GitTools:
         except Exception as e:
             return ToolResult.failure_result("git_status", f"Error: {e}")
 
-    def git_diff(self, name: str, params: Dict[str, Any]) -> ToolResult:
+    def git_diff(self, name: str, params: dict[str, Any]) -> ToolResult:
         """
         Show git diff for a file or all changes.
 
@@ -117,7 +117,7 @@ class GitTools:
         except Exception as e:
             return ToolResult.failure_result("git_diff", f"Error: {e}")
 
-    def git_log(self, name: str, params: Dict[str, Any]) -> ToolResult:
+    def git_log(self, name: str, params: dict[str, Any]) -> ToolResult:
         """
         Show recent git commit history.
 
@@ -145,7 +145,7 @@ class GitTools:
         except Exception as e:
             return ToolResult.failure_result("git_log", f"Error: {e}")
 
-    def git_add(self, name: str, params: Dict[str, Any]) -> ToolResult:
+    def git_add(self, name: str, params: dict[str, Any]) -> ToolResult:
         """
         Stage files for commit.
 
@@ -177,7 +177,7 @@ class GitTools:
         except Exception as e:
             return ToolResult.failure_result("git_add", f"Error: {e}")
 
-    def git_commit(self, name: str, params: Dict[str, Any]) -> ToolResult:
+    def git_commit(self, name: str, params: dict[str, Any]) -> ToolResult:
         """
         Create a commit with the staged changes.
 
@@ -235,7 +235,7 @@ class GitTools:
         except Exception as e:
             return ToolResult.failure_result("git_commit", f"Error: {e}")
 
-    def get_pending_commit(self) -> Dict[str, Any]:
+    def get_pending_commit(self) -> dict[str, Any]:
         """Get pending commit awaiting approval."""
         return self._pending_commit
 
@@ -270,7 +270,7 @@ class GitTools:
         except Exception as e:
             return ToolResult.failure_result("apply_pending_commit", f"Error: {e}")
 
-    def get_tool_executors(self) -> Dict[str, Any]:
+    def get_tool_executors(self) -> dict[str, Any]:
         """Get dict of tool executors for registration."""
         return {
             "git_status": self.git_status,

@@ -14,21 +14,19 @@ Combines provider, prompt builder, parser, and writer.
 import asyncio
 import time
 from pathlib import Path
-from typing import Optional
 
 from agentforge.core.generate.domain import (
+    APIError,
+    GeneratedFile,
     GenerationContext,
     GenerationResult,
-    GeneratedFile,
-    TokenUsage,
-    GenerationError,
-    APIError,
     ParseError,
+    TokenUsage,
     WriteError,
 )
-from agentforge.core.generate.provider import LLMProvider, get_provider
-from agentforge.core.generate.prompt_builder import PromptBuilder
 from agentforge.core.generate.parser import ResponseParser
+from agentforge.core.generate.prompt_builder import PromptBuilder
+from agentforge.core.generate.provider import LLMProvider, get_provider
 from agentforge.core.generate.writer import CodeWriter
 
 
@@ -49,11 +47,11 @@ class GenerationEngine:
 
     def __init__(
         self,
-        provider: Optional[LLMProvider] = None,
-        prompt_builder: Optional[PromptBuilder] = None,
-        parser: Optional[ResponseParser] = None,
-        writer: Optional[CodeWriter] = None,
-        project_root: Optional[Path] = None,
+        provider: LLMProvider | None = None,
+        prompt_builder: PromptBuilder | None = None,
+        parser: ResponseParser | None = None,
+        writer: CodeWriter | None = None,
+        project_root: Path | None = None,
     ):
         """
         Initialize generation engine.
@@ -229,8 +227,8 @@ class GenerationSession:
 
     def __init__(
         self,
-        engine: Optional[GenerationEngine] = None,
-        project_root: Optional[Path] = None,
+        engine: GenerationEngine | None = None,
+        project_root: Path | None = None,
     ):
         """
         Initialize generation session.
@@ -338,7 +336,7 @@ class GenerationSession:
 async def generate_code(
     context: GenerationContext,
     dry_run: bool = False,
-    project_root: Optional[Path] = None,
+    project_root: Path | None = None,
 ) -> GenerationResult:
     """
     Convenience function for one-shot code generation.
@@ -358,7 +356,7 @@ async def generate_code(
 def generate_code_sync(
     context: GenerationContext,
     dry_run: bool = False,
-    project_root: Optional[Path] = None,
+    project_root: Path | None = None,
 ) -> GenerationResult:
     """
     Synchronous convenience function for one-shot code generation.

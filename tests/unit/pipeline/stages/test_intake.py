@@ -1,13 +1,11 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-2-design-pipeline.yaml
-# @spec_id: pipeline-controller-phase2-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
 # @component_id: intake-executor
 # @test_path: tests/unit/pipeline/stages/test_intake.py
 
 """Tests for IntakeExecutor."""
 
-from unittest.mock import patch, MagicMock
-
-import pytest
+from unittest.mock import patch
 
 from agentforge.core.pipeline import StageContext, StageStatus
 
@@ -334,7 +332,7 @@ priority: "medium"
 
         with patch.object(executor, "_run_with_llm") as mock_llm:
             mock_llm.return_value = mock_llm_response(yaml_response)
-            result = executor.execute(context)
+            executor.execute(context)
 
         # Check that get_user_message includes project context
         user_msg = executor.get_user_message(context)

@@ -1,5 +1,5 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-1-foundation.yaml
-# @spec_id: pipeline-controller-phase1-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
 # @component_id: pipeline-validator
 # @test_path: tests/unit/pipeline/test_validator.py
 
@@ -16,7 +16,7 @@ Provides validation for:
 """
 
 import logging
-from typing import Any, Dict, List, Type, Union
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 class ValidationError(Exception):
     """Raised when artifact validation fails."""
 
-    def __init__(self, errors: List[str]):
+    def __init__(self, errors: list[str]):
         self.errors = errors
         super().__init__(f"Validation failed: {'; '.join(errors)}")
 
@@ -38,9 +38,9 @@ class ArtifactValidator:
 
     def validate(
         self,
-        artifacts: Dict[str, Any],
-        schema: Dict[str, Any],
-    ) -> List[str]:
+        artifacts: dict[str, Any],
+        schema: dict[str, Any],
+    ) -> list[str]:
         """
         Validate artifacts against a JSON schema.
 
@@ -74,8 +74,8 @@ class ArtifactValidator:
         self,
         field: str,
         value: Any,
-        prop_schema: Dict[str, Any],
-    ) -> List[str]:
+        prop_schema: dict[str, Any],
+    ) -> list[str]:
         """Validate a single field against its type schema."""
         errors = []
         expected_type = prop_schema.get("type")
@@ -114,9 +114,9 @@ class ArtifactValidator:
 
     def validate_required(
         self,
-        artifacts: Dict[str, Any],
-        required: List[str],
-    ) -> List[str]:
+        artifacts: dict[str, Any],
+        required: list[str],
+    ) -> list[str]:
         """
         Check that required keys are present.
 
@@ -137,9 +137,9 @@ class ArtifactValidator:
 
     def validate_types(
         self,
-        artifacts: Dict[str, Any],
-        types: Dict[str, Union[Type, tuple]],
-    ) -> List[str]:
+        artifacts: dict[str, Any],
+        types: dict[str, type | tuple],
+    ) -> list[str]:
         """
         Validate artifact value types.
 
@@ -167,10 +167,10 @@ class ArtifactValidator:
 
     def validate_and_raise(
         self,
-        artifacts: Dict[str, Any],
-        schema: Dict[str, Any] = None,
-        required: List[str] = None,
-        types: Dict[str, Type] = None,
+        artifacts: dict[str, Any],
+        schema: dict[str, Any] = None,
+        required: list[str] = None,
+        types: dict[str, type] = None,
     ) -> None:
         """
         Validate artifacts and raise ValidationError if invalid.
@@ -204,11 +204,11 @@ _validator = ArtifactValidator()
 
 
 def validate_artifacts(
-    artifacts: Dict[str, Any],
-    schema: Dict[str, Any] = None,
-    required: List[str] = None,
-    types: Dict[str, Type] = None,
-) -> List[str]:
+    artifacts: dict[str, Any],
+    schema: dict[str, Any] = None,
+    required: list[str] = None,
+    types: dict[str, type] = None,
+) -> list[str]:
     """
     Convenience function to validate artifacts.
 

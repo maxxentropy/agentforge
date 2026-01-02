@@ -8,17 +8,15 @@ Low-level JSON-RPC 2.0 communication with language servers.
 Extracted from lsp_adapter.py for modularity.
 """
 
-import subprocess
 import json
-import threading
-import queue
 import os
+import queue
+import subprocess
 import sys
-from typing import Optional, List, Dict
+import threading
 from pathlib import Path
 
 from .lsp_types import Diagnostic
-
 
 # =============================================================================
 # Exceptions
@@ -73,7 +71,7 @@ class LSPClient:
     Manages the language server subprocess and message passing.
     """
 
-    def __init__(self, command: List[str], project_root: str, timeout: float = 30.0):
+    def __init__(self, command: list[str], project_root: str, timeout: float = 30.0):
         """
         Start language server process.
 
@@ -84,17 +82,17 @@ class LSPClient:
         """
         self.project_root = Path(project_root).resolve()
         self.timeout = timeout
-        self.process: Optional[subprocess.Popen] = None
+        self.process: subprocess.Popen | None = None
         self.request_id = 0
         self._lock = threading.Lock()
-        self._pending_requests: Dict[int, queue.Queue] = {}
-        self._reader_thread: Optional[threading.Thread] = None
+        self._pending_requests: dict[int, queue.Queue] = {}
+        self._reader_thread: threading.Thread | None = None
         self._running = False
-        self._diagnostics: Dict[str, List[Diagnostic]] = {}
+        self._diagnostics: dict[str, list[Diagnostic]] = {}
 
         self._start_server(command)
 
-    def _start_server(self, command: List[str]):
+    def _start_server(self, command: list[str]):
         """Start the LSP server subprocess."""
         try:
             self.process = subprocess.Popen(
@@ -237,7 +235,7 @@ class LSPClient:
         }
         self._send_message(message)
 
-    def get_diagnostics(self, file_path: str) -> List[Diagnostic]:
+    def get_diagnostics(self, file_path: str) -> list[Diagnostic]:
         """Get cached diagnostics for a file."""
         return self._diagnostics.get(file_path, [])
 

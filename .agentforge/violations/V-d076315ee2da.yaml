@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-d076315ee2da
+contract_id: agentforge
+check_id: single-responsibility-modules
+severity: minor
+file_path: tests/unit/harness/test_agent_orchestrator.py
+message: 'Class ''TestRunUntilComplete'' has 4 methods (max: 3)'
+detected_at: '2025-12-31T07:19:19.364053'
+last_seen_at: '2025-12-31T07:19:19.364053'
+status: stale
+line_number: 289
+fix_hint: Split modules with too many classes into focused single-class modules

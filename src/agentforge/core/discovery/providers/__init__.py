@@ -5,9 +5,9 @@ Language Providers for Brownfield Discovery
 Provides language-specific analysis capabilities.
 """
 
-from .base import LanguageProvider, Symbol, Import, Dependency
-from .python_provider import PythonProvider
+from .base import Dependency, Import, LanguageProvider, Symbol
 from .dotnet_provider import DotNetProvider
+from .python_provider import PythonProvider
 
 __all__ = [
     "LanguageProvider", "Symbol", "Import", "Dependency",
@@ -18,8 +18,9 @@ __all__ = [
 def _get_lsp_adapter():
     """Get LSP adapter for .NET projects (used by DotNetProvider)."""
     try:
-        from agentforge.core.lsp_adapters import get_adapter_for_project
         import os
+
+        from agentforge.core.lsp_adapters import get_adapter_for_project
         return get_adapter_for_project(os.getcwd())
     except Exception:
         return None

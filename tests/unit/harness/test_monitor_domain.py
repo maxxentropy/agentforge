@@ -1,5 +1,5 @@
-# @spec_file: .agentforge/specs/harness-v1.yaml
-# @spec_id: harness-v1
+# @spec_file: .agentforge/specs/core-harness-v1.yaml
+# @spec_id: core-harness-v1
 # @component_id: tools-harness-monitor_domain
 # @impl_path: tools/harness/monitor_domain.py
 
@@ -10,22 +10,22 @@
 
 """Tests for monitor domain entities."""
 
-import pytest
 from datetime import datetime
-from tools.harness.monitor_domain import (
-    ObservationType,
-    Observation,
+
+from agentforge.core.harness.monitor_domain import (
+    AgentHealth,
     HealthStatus,
-    Recommendation,
     LoopDetection,
+    Observation,
+    ObservationType,
+    Recommendation,
     ThrashingDetection,
-    AgentHealth
 )
 
 
 class TestObservationType:
     """Test ObservationType enum."""
-    
+
     def test_observation_type_has_all_required_values(self):
         """Test that ObservationType enum has all required values."""
         assert ObservationType.ACTION
@@ -37,23 +37,23 @@ class TestObservationType:
 
 class TestObservation:
     """Test Observation entity."""
-    
+
     def test_observation_creation_with_required_fields(self):
         """Test creating observation with required fields."""
         timestamp = datetime.now()
         data = {"action": "test_action"}
-        
+
         obs = Observation(
             type=ObservationType.ACTION,
             timestamp=timestamp,
             data=data
         )
-        
+
         assert obs.type == ObservationType.ACTION
         assert obs.timestamp == timestamp
         assert obs.data == data
         assert obs.context is None
-    
+
     def test_observation_creation_with_context(self):
         """Test creating observation with optional context."""
         obs = Observation(
@@ -62,13 +62,13 @@ class TestObservation:
             data={"error": "test error"},
             context="During file processing"
         )
-        
+
         assert obs.context == "During file processing"
 
 
 class TestHealthStatus:
     """Test HealthStatus enum."""
-    
+
     def test_health_status_has_all_required_values(self):
         """Test that HealthStatus enum has all required values."""
         assert HealthStatus.HEALTHY
@@ -78,7 +78,7 @@ class TestHealthStatus:
 
 class TestRecommendation:
     """Test Recommendation enum."""
-    
+
     def test_recommendation_has_all_required_values(self):
         """Test that Recommendation enum has all required values."""
         assert Recommendation.CONTINUE
@@ -89,7 +89,7 @@ class TestRecommendation:
 
 class TestLoopDetection:
     """Test LoopDetection entity."""
-    
+
     def test_loop_detection_creation_not_detected(self):
         """Test creating LoopDetection when no loop detected."""
         detection = LoopDetection(
@@ -98,12 +98,12 @@ class TestLoopDetection:
             count=0,
             observations=[]
         )
-        
+
         assert detection.detected is False
         assert detection.pattern is None
         assert detection.count == 0
         assert detection.observations == []
-    
+
     def test_loop_detection_creation_detected(self):
         """Test creating LoopDetection when loop detected."""
         obs = Observation(
@@ -111,14 +111,14 @@ class TestLoopDetection:
             timestamp=datetime.now(),
             data={"action": "repeat"}
         )
-        
+
         detection = LoopDetection(
             detected=True,
             pattern="Repeated action: repeat",
             count=3,
             observations=[obs, obs, obs]
         )
-        
+
         assert detection.detected is True
         assert detection.pattern == "Repeated action: repeat"
         assert detection.count == 3
@@ -127,7 +127,7 @@ class TestLoopDetection:
 
 class TestThrashingDetection:
     """Test ThrashingDetection entity."""
-    
+
     def test_thrashing_detection_creation_not_detected(self):
         """Test creating ThrashingDetection when no thrashing detected."""
         detection = ThrashingDetection(
@@ -136,12 +136,12 @@ class TestThrashingDetection:
             affected_files=[],
             alternation_count=0
         )
-        
+
         assert detection.detected is False
         assert detection.pattern is None
         assert detection.affected_files == []
         assert detection.alternation_count == 0
-    
+
     def test_thrashing_detection_creation_detected(self):
         """Test creating ThrashingDetection when thrashing detected."""
         detection = ThrashingDetection(
@@ -150,7 +150,7 @@ class TestThrashingDetection:
             affected_files=["test.py", "config.json"],
             alternation_count=4
         )
-        
+
         assert detection.detected is True
         assert detection.pattern == "File modification thrashing"
         assert detection.affected_files == ["test.py", "config.json"]
@@ -159,7 +159,7 @@ class TestThrashingDetection:
 
 class TestAgentHealth:
     """Test AgentHealth entity."""
-    
+
     def test_agent_health_creation_healthy(self):
         """Test creating AgentHealth for healthy agent."""
         health = AgentHealth(
@@ -172,7 +172,7 @@ class TestAgentHealth:
             context_pressure=0.3,
             progress_score=0.8
         )
-        
+
         assert health.status == HealthStatus.HEALTHY
         assert health.issues == []
         assert health.recommendation == Recommendation.CONTINUE
@@ -181,7 +181,7 @@ class TestAgentHealth:
         assert health.drift_score == 0.1
         assert health.context_pressure == 0.3
         assert health.progress_score == 0.8
-    
+
     def test_agent_health_creation_critical_with_detections(self):
         """Test creating AgentHealth for critical agent with detections."""
         loop_detection = LoopDetection(
@@ -190,14 +190,14 @@ class TestAgentHealth:
             count=5,
             observations=[]
         )
-        
+
         thrashing_detection = ThrashingDetection(
             detected=True,
             pattern="File thrashing",
             affected_files=["main.py"],
             alternation_count=6
         )
-        
+
         health = AgentHealth(
             status=HealthStatus.CRITICAL,
             issues=["Loop detected", "Thrashing detected", "High drift"],
@@ -208,7 +208,7 @@ class TestAgentHealth:
             context_pressure=0.95,
             progress_score=0.05
         )
-        
+
         assert health.status == HealthStatus.CRITICAL
         assert len(health.issues) == 3
         assert health.recommendation == Recommendation.ABORT

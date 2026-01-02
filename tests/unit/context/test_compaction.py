@@ -1,5 +1,5 @@
-# @spec_file: specs/minimal-context-architecture/06-compaction.yaml
-# @spec_id: compaction-v1
+# @spec_file: .agentforge/specs/core-context-v1.yaml
+# @spec_id: core-context-v1
 # @component_id: compaction-tests
 
 """
@@ -9,12 +9,12 @@ Tests for CompactionManager.
 import pytest
 
 from agentforge.core.context.compaction import (
+    DEFAULT_RULES,
+    PRESERVED_SECTIONS,
     CompactionAudit,
     CompactionManager,
     CompactionRule,
     CompactionStrategy,
-    DEFAULT_RULES,
-    PRESERVED_SECTIONS,
 )
 
 
@@ -522,7 +522,7 @@ class TestSummarizeRules:
 
     def test_summarize_rules_includes_defaults(self):
         """SUMMARIZE_RULES includes all default rules."""
-        from agentforge.core.context.compaction import SUMMARIZE_RULES, DEFAULT_RULES
+        from agentforge.core.context.compaction import DEFAULT_RULES, SUMMARIZE_RULES
 
         default_sections = {r.section for r in DEFAULT_RULES}
         summarize_sections = {r.section for r in SUMMARIZE_RULES}

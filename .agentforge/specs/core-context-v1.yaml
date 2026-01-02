@@ -1,0 +1,154 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Specification: core_context
+# ═══════════════════════════════════════════════════════════════════════════════
+# Generated: 2026-01-02T12:00:00.000000
+# Generator: brownfield-discovery
+# ═══════════════════════════════════════════════════════════════════════════════
+
+spec_id: core-context-v1
+name: core_context
+version: '1.0'
+status: as-built
+schema_version: '2.0'
+generated_at: '2026-01-02T12:00:00.000000'
+generated_by: brownfield-discovery
+description: Specification for src/agentforge/core/context
+components:
+- name: agent_config
+  component_id: core-context-agent_config
+  location: src/agentforge/core/context/agent_config.py
+  test_location: tests/unit/context/test_agent_config.py
+  description: |
+    Agent Configuration Loader
+    ==========================
+
+    Loads and merges AGENT.md configuration from the project hierarchy.
+    Supports inheritance and task-type specific overrides.
+  entities:
+  - name: AgentConfig
+    type: dataclass
+    line_number: 20
+    description: Merged agent configuration from all levels.
+    methods: []
+    test_methods: []
+  - name: AgentConfigLoader
+    type: class
+    line_number: 50
+    description: Loads and merges AGENT.md configuration.
+    methods:
+    - load
+    - load_raw
+    - merge_configs
+    test_methods:
+    - test_load_default_config
+
+- name: fingerprint
+  component_id: core-context-fingerprint
+  location: src/agentforge/core/context/fingerprint.py
+  test_location: tests/unit/context/test_fingerprint.py
+  description: |
+    Fingerprint Generator
+    =====================
+
+    Generates compact project fingerprints (~500 tokens) for LLM context.
+    Includes project structure, key files, and task-specific context.
+  entities:
+  - name: FingerprintGenerator
+    type: class
+    line_number: 20
+    description: Generates compact project fingerprints.
+    methods:
+    - generate
+    - with_task_context
+    test_methods:
+    - test_generate_fingerprint
+
+- name: audit
+  component_id: core-context-audit
+  location: src/agentforge/core/context/audit.py
+  test_location: tests/unit/context/test_audit.py
+  description: |
+    Context Audit Trail
+    ===================
+
+    Tracks context usage and token consumption for monitoring and optimization.
+  entities:
+  - name: ContextAuditEntry
+    type: dataclass
+    line_number: 15
+    description: Single audit trail entry for context usage.
+    methods: []
+    test_methods: []
+  - name: ContextAuditor
+    type: class
+    line_number: 40
+    description: Records and queries context audit trail.
+    methods:
+    - record
+    - get_recent
+    - get_stats
+    test_methods:
+    - test_record_entry
+
+- name: compaction
+  component_id: core-context-compaction
+  location: src/agentforge/core/context/compaction.py
+  test_location: tests/unit/context/test_compaction.py
+  description: |
+    Context Compaction
+    ==================
+
+    Compacts context to fit within token budgets while preserving essential information.
+  entities:
+  - name: ContextCompactor
+    type: class
+    line_number: 20
+    description: Compacts context to fit token budgets.
+    methods:
+    - compact
+    - estimate_tokens
+    test_methods:
+    - test_compact_context
+
+- name: templates
+  component_id: core-context-templates
+  location: src/agentforge/core/context/templates/
+  test_location: tests/unit/context/test_templates.py
+  description: |
+    Context Templates
+    =================
+
+    Task-type specific context templates.
+    Each template defines what context is needed for a specific task type.
+  entities:
+  - name: ContextTemplate
+    type: class
+    line_number: 10
+    description: Base class for context templates.
+    methods:
+    - build_context_dict
+    - get_required_sections
+    test_methods: []
+  - name: FixViolationTemplate
+    type: class
+    line_number: 50
+    description: Template for fix_violation task type.
+    methods:
+    - build_context_dict
+    test_methods:
+    - test_fix_violation_template
+  - name: RefactorTemplate
+    type: class
+    line_number: 100
+    description: Template for refactoring task type.
+    methods:
+    - build_context_dict
+    test_methods:
+    - test_refactor_template
+  - name: get_template_for_task
+    type: function
+    line_number: 150
+    description: Get the appropriate template for a task type.
+    methods: []
+    test_methods:
+    - test_get_template_for_task

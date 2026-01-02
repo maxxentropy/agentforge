@@ -6,16 +6,12 @@ verification. They define relationships between repos that form a logical
 product or system.
 """
 
-import sys
 import json
-import click
-import yaml
+import sys
 from pathlib import Path
 
-
-def _ensure_workspace_tools():
-    """Add tools directory to path for workspace imports."""
-    sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'tools'))
+import click
+import yaml
 
 
 def run_workspace(args):
@@ -33,10 +29,9 @@ def run_workspace_init(args):
         click.echo("WORKSPACE INIT")
     click.echo("=" * 60)
 
-    _ensure_workspace_tools()
 
     try:
-        from workspace import init_workspace, init_single_repo
+        from agentforge.core.workspace import init_single_repo, init_workspace
     except ImportError as e:
         click.echo(f"\nError: Could not import workspace module: {e}")
         sys.exit(1)
@@ -87,7 +82,7 @@ def _init_workspace_mode(args, init_workspace):
         click.echo(f"\nWorkspace initialized: {result}")
         click.echo("\nNext steps:")
         click.echo("  1. Add repositories:")
-        click.echo(f"     python execute.py workspace add-repo --name api --path ../my-api --type service --lang csharp")
+        click.echo("     python execute.py workspace add-repo --name api --path ../my-api --type service --lang csharp")
         click.echo("  2. Validate workspace:")
         click.echo("     python execute.py workspace validate")
     except Exception as e:
@@ -102,10 +97,9 @@ def run_workspace_status(args):
     click.echo("WORKSPACE STATUS")
     click.echo("=" * 60)
 
-    _ensure_workspace_tools()
 
     try:
-        from workspace import discover_workspace
+        from agentforge.core.workspace import discover_workspace
     except ImportError as e:
         click.echo(f"\nError: Could not import workspace module: {e}")
         sys.exit(1)
@@ -221,10 +215,9 @@ def run_workspace_add_repo(args):
     click.echo("WORKSPACE ADD-REPO")
     click.echo("=" * 60)
 
-    _ensure_workspace_tools()
 
     try:
-        from workspace import discover_workspace, add_repo_to_workspace
+        from agentforge.core.workspace import add_repo_to_workspace, discover_workspace
     except ImportError as e:
         click.echo(f"\nError: Could not import workspace module: {e}")
         sys.exit(1)
@@ -265,10 +258,9 @@ def run_workspace_remove_repo(args):
     click.echo("WORKSPACE REMOVE-REPO")
     click.echo("=" * 60)
 
-    _ensure_workspace_tools()
 
     try:
-        from workspace import discover_workspace, remove_repo_from_workspace
+        from agentforge.core.workspace import discover_workspace, remove_repo_from_workspace
     except ImportError as e:
         click.echo(f"\nError: Could not import workspace module: {e}")
         sys.exit(1)
@@ -302,10 +294,9 @@ def run_workspace_link(args):
     click.echo("WORKSPACE LINK")
     click.echo("=" * 60)
 
-    _ensure_workspace_tools()
 
     try:
-        from workspace import create_repo_link
+        from agentforge.core.workspace import create_repo_link
     except ImportError as e:
         click.echo(f"\nError: Could not import workspace module: {e}")
         sys.exit(1)
@@ -323,7 +314,7 @@ def run_workspace_link(args):
     try:
         repo_name = repo_dir.name.lower().replace('_', '-').replace(' ', '-')
         repo_yaml_path = create_repo_link(repo_dir, workspace_path, repo_name)
-        click.echo(f"\nLinked repository to workspace")
+        click.echo("\nLinked repository to workspace")
         click.echo(f"   Created: {repo_yaml_path}")
     except Exception as e:
         click.echo(f"\nFailed to link repository: {e}")
@@ -337,10 +328,9 @@ def run_workspace_validate(args):
     click.echo("WORKSPACE VALIDATE")
     click.echo("=" * 60)
 
-    _ensure_workspace_tools()
 
     try:
-        from workspace import discover_workspace, validate_workspace
+        from agentforge.core.workspace import discover_workspace, validate_workspace
     except ImportError as e:
         click.echo(f"\nError: Could not import workspace module: {e}")
         sys.exit(1)
@@ -395,10 +385,9 @@ def run_workspace_list_repos(args):
     click.echo("WORKSPACE LIST-REPOS")
     click.echo("=" * 60)
 
-    _ensure_workspace_tools()
 
     try:
-        from workspace import discover_workspace
+        from agentforge.core.workspace import discover_workspace
     except ImportError as e:
         click.echo(f"\nError: Could not import workspace module: {e}")
         sys.exit(1)
@@ -439,10 +428,9 @@ def run_workspace_unlink(args):
     click.echo("WORKSPACE UNLINK")
     click.echo("=" * 60)
 
-    _ensure_workspace_tools()
 
     try:
-        from workspace import unlink_repo
+        from agentforge.core.workspace import unlink_repo
     except ImportError as e:
         click.echo(f"\nError: Could not import workspace module: {e}")
         sys.exit(1)

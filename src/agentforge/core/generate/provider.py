@@ -12,11 +12,8 @@ Abstract base class and implementations for LLM providers.
 
 import asyncio
 import os
-import sys
-import time
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Optional, Tuple
 
 from agentforge.core.generate.domain import APIError, TokenUsage
 
@@ -35,7 +32,7 @@ class LLMProvider(ABC):
         prompt: str,
         max_tokens: int = 8192,
         temperature: float = 0.0,
-    ) -> Tuple[str, TokenUsage]:
+    ) -> tuple[str, TokenUsage]:
         """
         Generate completion from prompt.
 
@@ -98,8 +95,8 @@ class ClaudeProvider(LLMProvider):
 
     def __init__(
         self,
-        api_key: Optional[str] = None,
-        model: Optional[str] = None,
+        api_key: str | None = None,
+        model: str | None = None,
         max_retries: int = MAX_RETRIES,
     ):
         """
@@ -143,7 +140,7 @@ class ClaudeProvider(LLMProvider):
         prompt: str,
         max_tokens: int = 8192,
         temperature: float = 0.0,
-    ) -> Tuple[str, TokenUsage]:
+    ) -> tuple[str, TokenUsage]:
         """
         Generate completion using Claude API.
 
@@ -236,8 +233,8 @@ class ManualProvider(LLMProvider):
 
     def __init__(
         self,
-        prompt_file: Optional[Path] = None,
-        response_file: Optional[Path] = None,
+        prompt_file: Path | None = None,
+        response_file: Path | None = None,
     ):
         """
         Initialize manual provider.
@@ -266,7 +263,7 @@ class ManualProvider(LLMProvider):
         prompt: str,
         max_tokens: int = 8192,
         temperature: float = 0.0,
-    ) -> Tuple[str, TokenUsage]:
+    ) -> tuple[str, TokenUsage]:
         """
         Generate completion via manual intervention.
 
@@ -335,8 +332,8 @@ def _load_dotenv_if_needed() -> None:
 
 
 def get_provider(
-    model: Optional[str] = None,
-    api_key: Optional[str] = None,
+    model: str | None = None,
+    api_key: str | None = None,
 ) -> LLMProvider:
     """
     Get the appropriate LLM provider.
@@ -363,8 +360,8 @@ def get_provider(
 
 
 def get_provider_sync(
-    model: Optional[str] = None,
-    api_key: Optional[str] = None,
+    model: str | None = None,
+    api_key: str | None = None,
 ) -> LLMProvider:
     """
     Synchronous version of get_provider.

@@ -1,5 +1,5 @@
-# @spec_file: specs/minimal-context-architecture/05-llm-integration.yaml
-# @spec_id: llm-integration-v1
+# @spec_file: .agentforge/specs/core-harness-minimal-context-v1.yaml
+# @spec_id: core-harness-minimal-context-v1
 # @component_id: adaptive-budget
 # @test_path: tests/unit/harness/test_executor.py
 
@@ -21,10 +21,10 @@ Key behaviors:
 """
 
 import re
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
-from .loop_detector import LoopDetector, LoopDetection
-from .context_models import ActionResult, ActionRecord, Fact, FactCategory
+from .context_models import ActionRecord, ActionResult
+from .loop_detector import LoopDetection, LoopDetector
 
 
 class AdaptiveBudget:
@@ -59,7 +59,7 @@ class AdaptiveBudget:
         self.no_progress_threshold = no_progress_threshold
         self._progress_count = 0
         self._no_progress_streak = 0
-        self._last_violation_count: Optional[int] = None
+        self._last_violation_count: int | None = None
 
         # Enhanced loop detection
         self.use_enhanced_loop_detection = use_enhanced_loop_detection
@@ -70,14 +70,14 @@ class AdaptiveBudget:
             no_progress_threshold=no_progress_threshold,
         ) if use_enhanced_loop_detection else None
 
-        self._last_loop_detection: Optional[LoopDetection] = None
+        self._last_loop_detection: LoopDetection | None = None
 
     def check_continue(
         self,
         step_number: int,
-        recent_actions: List[Dict[str, Any]],
-        facts: Optional[List[Any]] = None,
-    ) -> Tuple[bool, str, Optional[LoopDetection]]:
+        recent_actions: list[dict[str, Any]],
+        facts: list[Any] | None = None,
+    ) -> tuple[bool, str, LoopDetection | None]:
         """
         Determine if execution should continue.
 
@@ -127,9 +127,9 @@ class AdaptiveBudget:
 
     def _check_enhanced_loops(
         self,
-        recent_actions: List[Dict[str, Any]],
-        facts: Optional[List[Any]] = None,
-    ) -> Optional[LoopDetection]:
+        recent_actions: list[dict[str, Any]],
+        facts: list[Any] | None = None,
+    ) -> LoopDetection | None:
         """Use enhanced LoopDetector for semantic loop detection."""
         if not self.loop_detector or not recent_actions:
             return None
@@ -156,7 +156,7 @@ class AdaptiveBudget:
 
         return self.loop_detector.check(action_records, facts)
 
-    def _detect_runaway_legacy(self, recent_actions: List[Dict[str, Any]]) -> bool:
+    def _detect_runaway_legacy(self, recent_actions: list[dict[str, Any]]) -> bool:
         """Legacy runaway detection: repeated identical failures."""
         if len(recent_actions) < self.runaway_threshold:
             return False
@@ -178,17 +178,17 @@ class AdaptiveBudget:
 
         return True
 
-    def get_last_loop_detection(self) -> Optional[LoopDetection]:
+    def get_last_loop_detection(self) -> LoopDetection | None:
         """Get the last loop detection result."""
         return self._last_loop_detection
 
-    def get_loop_suggestions(self) -> List[str]:
+    def get_loop_suggestions(self) -> list[str]:
         """Get suggestions from the last loop detection."""
         if self._last_loop_detection and self._last_loop_detection.detected:
             return self._last_loop_detection.suggestions
         return []
 
-    def _update_progress(self, recent_actions: List[Dict[str, Any]]) -> bool:
+    def _update_progress(self, recent_actions: list[dict[str, Any]]) -> bool:
         """Check if the most recent action made progress."""
         if not recent_actions:
             return False
@@ -227,7 +227,7 @@ class AdaptiveBudget:
 
         return False
 
-    def _parse_violation_count(self, summary: str) -> Optional[int]:
+    def _parse_violation_count(self, summary: str) -> int | None:
         """Parse violation count from run_check summary."""
         match = re.search(r'Violations?\s*\((\d+)\)', summary)
         if match:

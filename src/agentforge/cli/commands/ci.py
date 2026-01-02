@@ -15,15 +15,15 @@ from pathlib import Path
 from typing import Any
 
 from agentforge.core.cicd import (
-    CIMode,
-    ExitCode,
-    CIConfig,
-    CIRunner,
-    BaselineManager,
     BaselineError,
+    BaselineManager,
+    CIConfig,
+    CIMode,
+    CIRunner,
+    ExitCode,
     GitHelper,
 )
-from agentforge.core.cicd.outputs import write_sarif, write_junit, write_markdown
+from agentforge.core.cicd.outputs import write_junit, write_markdown, write_sarif
 from agentforge.core.contracts_registry import ContractRegistry
 
 

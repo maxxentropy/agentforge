@@ -9,22 +9,22 @@
 # Date: 2025-12-31 05:26:33 UTC
 
 from pathlib import Path
-from typing import Optional, List
-from .tool_registry import ToolRegistry
+
 from .tool_domain import ToolDefinition
+from .tool_registry import ToolRegistry
 
 
 class ToolSelector:
     """Main selector that composes tools for a given context."""
-    
-    def __init__(self, registry: ToolRegistry, project_domain: Optional[str] = None):
+
+    def __init__(self, registry: ToolRegistry, project_domain: str | None = None):
         """Initialize selector with registry."""
         self.registry = registry
         self.project_domain = project_domain
-    
-    def get_tools(self, workflow: str, phase: str, domain: Optional[str] = None) -> List[ToolDefinition]:
+
+    def get_tools(self, workflow: str, phase: str, domain: str | None = None) -> list[ToolDefinition]:
         """Get tools for a workflow/phase/domain combination.
-        
+
         1. Get base tools (always available)
         2. Get phase tools from profile
         3. Get domain tools if domain specified
@@ -34,13 +34,13 @@ class ToolSelector:
         """
         tool_names = set()
         tools = []
-        
+
         # 1. Get base tools (always available)
         base_tools = self.registry.get_base_tools()
         for tool in base_tools:
             tool_names.add(tool.name)
             tools.append(tool)
-        
+
         # 2. Get phase tools from profile
         profile = self.registry.get_profile(workflow, phase)
         if profile:
@@ -52,7 +52,7 @@ class ToolSelector:
                         tools = [t for t in tools if t.name != tool_name]
                     tool_names.add(tool_name)
                     tools.append(tool)
-        
+
         # 3. Get domain tools if domain specified
         if domain:
             domain_tools = self.registry.get_domain_tools(domain)
@@ -63,12 +63,12 @@ class ToolSelector:
                         if tool:
                             tool_names.add(tool_name)
                             tools.append(tool)
-        
+
         return tools
-    
-    def detect_domain(self, project_path: Path) -> Optional[str]:
+
+    def detect_domain(self, project_path: Path) -> str | None:
         """Auto-detect project domain from codebase.
-        
+
         Check for domain indicators:
         - Python: pyproject.toml, requirements.txt, setup.py
         - .NET: *.csproj, *.sln
@@ -76,24 +76,24 @@ class ToolSelector:
         """
         if not project_path.exists() or not project_path.is_dir():
             return None
-        
+
         # Check for Python indicators
         python_files = [
             project_path / "pyproject.toml",
-            project_path / "requirements.txt", 
+            project_path / "requirements.txt",
             project_path / "setup.py"
         ]
         if any(f.exists() for f in python_files):
             return "python"
-        
+
         # Check for .py files
         if any(project_path.glob("**/*.py")):
             return "python"
-        
+
         # Check for .NET indicators
         if any(project_path.glob("**/*.csproj")) or any(project_path.glob("**/*.sln")):
             return "dotnet"
-        
+
         # Check for TypeScript indicators
         package_json = project_path / "package.json"
         if package_json.exists():
@@ -105,23 +105,23 @@ class ToolSelector:
                     dev_deps = data.get("devDependencies", {})
                     if "typescript" in deps or "typescript" in dev_deps:
                         return "typescript"
-            except (json.JSONDecodeError, IOError):
+            except (OSError, json.JSONDecodeError):
                 pass
-        
+
         # Check for TypeScript files
         if (project_path / "tsconfig.json").exists():
             return "typescript"
-        
+
         if any(project_path.glob("**/*.ts")) or any(project_path.glob("**/*.tsx")):
             return "typescript"
-        
+
         return None
-    
-    def get_tool_names(self, workflow: str, phase: str, domain: Optional[str] = None) -> List[str]:
+
+    def get_tool_names(self, workflow: str, phase: str, domain: str | None = None) -> list[str]:
         """Get just tool names for a context (for lighter payloads)."""
         tools = self.get_tools(workflow, phase, domain)
         return [tool.name for tool in tools]
-    
+
     def validate_tool_access(self, tool_name: str, workflow: str, phase: str) -> bool:
         """Check if a tool is allowed in current context."""
         available_tools = self.get_tool_names(workflow, phase, self.project_domain)

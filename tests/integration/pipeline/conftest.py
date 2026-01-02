@@ -1,22 +1,19 @@
-# @spec_file: specs/pipeline-controller/implementation/phase-1-foundation.yaml
-# @spec_id: pipeline-controller-phase1-v1
+# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
+# @spec_id: core-pipeline-v1
 
 """Integration test fixtures for pipeline tests."""
 
 import tempfile
 from pathlib import Path
-from typing import Dict, Any, List
 
 import pytest
 
 from agentforge.core.pipeline import (
     PipelineController,
-    PipelineStateStore,
-    StageExecutor,
     StageContext,
-    StageResult,
+    StageExecutor,
     StageExecutorRegistry,
-    PassthroughExecutor,
+    StageResult,
 )
 
 

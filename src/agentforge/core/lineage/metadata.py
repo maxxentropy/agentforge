@@ -10,7 +10,6 @@ import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional
 
 
 @dataclass
@@ -35,14 +34,14 @@ class LineageMetadata:
     component_id: str  # Component within spec
 
     # Method-level traceability (optional, for partial generation)
-    method_ids: List[str] = field(default_factory=list)
+    method_ids: list[str] = field(default_factory=list)
 
     # Cross-file linkage
-    test_path: Optional[str] = None  # Path to test file (for impl files)
-    impl_path: Optional[str] = None  # Path to impl file (for test files)
+    test_path: str | None = None  # Path to test file (for impl files)
+    impl_path: str | None = None  # Path to impl file (for test files)
 
     # Additional context
-    session_id: Optional[str] = None  # TDFLOW session that generated this
+    session_id: str | None = None  # TDFLOW session that generated this
 
     def to_header_comments(self, comment_prefix: str = "#") -> str:
         """
@@ -97,7 +96,7 @@ _LINEAGE_PATTERNS = {
 }
 
 
-def parse_lineage_from_file(file_path: Path) -> Optional[LineageMetadata]:
+def parse_lineage_from_file(file_path: Path) -> LineageMetadata | None:
     """
     Extract lineage metadata from a source file's header comments.
 
@@ -167,10 +166,10 @@ def generate_lineage_header(
     spec_file: str,
     spec_id: str,
     component_id: str,
-    method_ids: Optional[List[str]] = None,
-    test_path: Optional[str] = None,
-    impl_path: Optional[str] = None,
-    session_id: Optional[str] = None,
+    method_ids: list[str] | None = None,
+    test_path: str | None = None,
+    impl_path: str | None = None,
+    session_id: str | None = None,
     comment_prefix: str = "#",
 ) -> str:
     """
@@ -204,7 +203,7 @@ def generate_lineage_header(
     return metadata.to_header_comments(comment_prefix)
 
 
-def get_test_path_from_lineage(file_path: Path) -> Optional[str]:
+def get_test_path_from_lineage(file_path: Path) -> str | None:
     """
     Get the test path for a file from its lineage metadata.
 

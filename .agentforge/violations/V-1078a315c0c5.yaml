@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-1078a315c0c5
+contract_id: agentforge
+check_id: max-nesting-depth
+severity: major
+file_path: tools/harness/refactoring_tools.py
+message: 'Function ''_extract_function_impl'' has nesting depth 6 (max: 4)'
+detected_at: '2025-12-31T14:51:44.171619'
+last_seen_at: '2025-12-31T14:51:44.171619'
+status: stale
+line_number: 169
+fix_hint: Use early returns, guard clauses, or extract nested logic

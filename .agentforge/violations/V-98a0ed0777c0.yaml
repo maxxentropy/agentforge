@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-98a0ed0777c0
+contract_id: agentforge
+check_id: max-parameter-count
+severity: major
+file_path: src/agentforge/cli/click_commands/workspace.py
+message: 'Function ''workspace_add_repo'' has 9 parameters (max: 5)'
+detected_at: '2026-01-01T01:39:13.710057'
+last_seen_at: '2026-01-01T01:39:13.710057'
+status: open
+line_number: 81
+fix_hint: Group related parameters into a dataclass or use **kwargs

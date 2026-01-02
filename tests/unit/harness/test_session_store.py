@@ -5,11 +5,11 @@ Tests for: save, load, exists, list_sessions, delete
 Based on specification acceptance criteria AC-007 through AC-012.
 """
 
-import pytest
-from pathlib import Path
-from datetime import datetime
-import tempfile
 import shutil
+import tempfile
+from pathlib import Path
+
+import pytest
 
 
 class TestSessionStore:
@@ -25,13 +25,13 @@ class TestSessionStore:
     @pytest.fixture
     def store(self, temp_dir):
         """Create SessionStore with temp directory."""
-        from tools.harness.session_store import SessionStore
+        from agentforge.core.harness.session_store import SessionStore
         return SessionStore(base_path=temp_dir / "sessions")
 
     @pytest.fixture
     def sample_session(self):
         """Create a sample session for testing."""
-        from tools.harness.session_domain import SessionContext
+        from agentforge.core.harness.session_domain import SessionContext
         return SessionContext.create(workflow_type="spec")
 
     def test_save_creates_session_file(self, store, sample_session):
@@ -77,7 +77,7 @@ class TestSessionStore:
         session_file.write_text("invalid: yaml: content: [[[")
 
         # Load should handle gracefully
-        result = store.load(sample_session.session_id)
+        store.load(sample_session.session_id)
         # Either returns None or raises appropriate error
         # Implementation can choose approach
 
@@ -92,7 +92,7 @@ class TestSessionStore:
 
     def test_list_sessions_returns_all_session_ids(self, store):
         """list_sessions() returns all session IDs."""
-        from tools.harness.session_domain import SessionContext
+        from agentforge.core.harness.session_domain import SessionContext
 
         # Create multiple sessions
         session1 = SessionContext.create()
@@ -166,7 +166,7 @@ class TestSessionStore:
 
     def test_round_trip_preserves_all_fields(self, store):
         """All fields should be preserved through save/load cycle."""
-        from tools.harness.session_domain import SessionContext, SessionState
+        from agentforge.core.harness.session_domain import SessionContext
 
         # Create session with all fields populated
         session = SessionContext.create(

@@ -13,14 +13,12 @@ Baselines track known violations to distinguish new issues from tech debt.
 
 import json
 import subprocess
-from pathlib import Path
-from typing import List, Optional, Tuple
 from datetime import datetime
+from pathlib import Path
 
 from agentforge.core.cicd.domain import (
     Baseline,
     BaselineComparison,
-    BaselineEntry,
     CIViolation,
 )
 
@@ -43,7 +41,7 @@ class BaselineManager:
         """
         self.baseline_path = Path(baseline_path)
 
-    def load(self) -> Optional[Baseline]:
+    def load(self) -> Baseline | None:
         """
         Load baseline from file.
 
@@ -54,7 +52,7 @@ class BaselineManager:
             return None
 
         try:
-            with open(self.baseline_path, "r") as f:
+            with open(self.baseline_path) as f:
                 data = json.load(f)
             return Baseline.from_dict(data)
         except (json.JSONDecodeError, KeyError, ValueError) as e:
@@ -75,8 +73,8 @@ class BaselineManager:
 
     def create_from_violations(
         self,
-        violations: List[CIViolation],
-        commit_sha: Optional[str] = None
+        violations: list[CIViolation],
+        commit_sha: str | None = None
     ) -> Baseline:
         """
         Create a new baseline from current violations.
@@ -95,9 +93,9 @@ class BaselineManager:
 
     def update(
         self,
-        violations: List[CIViolation],
-        commit_sha: Optional[str] = None
-    ) -> Tuple[Baseline, int, int]:
+        violations: list[CIViolation],
+        commit_sha: str | None = None
+    ) -> tuple[Baseline, int, int]:
         """
         Update existing baseline with new violations.
 
@@ -140,7 +138,7 @@ class BaselineManager:
 
         return existing, added, removed
 
-    def compare(self, violations: List[CIViolation]) -> BaselineComparison:
+    def compare(self, violations: list[CIViolation]) -> BaselineComparison:
         """
         Compare violations against baseline.
 
@@ -163,7 +161,7 @@ class BaselineManager:
         """Check if baseline file exists."""
         return self.baseline_path.exists()
 
-    def get_stats(self) -> Optional[dict]:
+    def get_stats(self) -> dict | None:
         """
         Get statistics about the baseline.
 
@@ -203,7 +201,7 @@ class GitHelper:
     """
 
     @staticmethod
-    def get_changed_files(base_ref: str, head_ref: str = "HEAD") -> List[str]:
+    def get_changed_files(base_ref: str, head_ref: str = "HEAD") -> list[str]:
         """
         Get list of files changed between two refs.
 

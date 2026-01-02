@@ -1,0 +1,46 @@
+auto_refactor: false
+components:
+- conformance_clean: true
+  coverage: 0.0
+  errors: []
+  impl_file: null
+  name: escalation_domain
+  status: pending
+  tests_file: null
+  tests_framework: null
+- conformance_clean: true
+  coverage: 0.0
+  errors: []
+  impl_file: null
+  name: escalation_manager
+  status: pending
+  tests_file: null
+  tests_framework: null
+- conformance_clean: true
+  coverage: 0.0
+  errors: []
+  impl_file: null
+  name: escalation_notifier
+  status: pending
+  tests_file: null
+  tests_framework: null
+coverage_threshold: 80.0
+current_component: escalation_domain
+current_phase: red
+history:
+- action: session_created
+  component: null
+  details: null
+  phase: null
+  timestamp: '2025-12-31T06:58:53.447203'
+- action: red_phase
+  component: escalation_domain
+  details: 'failed: [''No tests were discovered - test file may have issues'']'
+  phase: red
+  timestamp: '2025-12-31T06:58:58.778886'
+schema_version: '1.0'
+session_id: tdflow_20251231_065853_433688
+spec_file: specs/agent-harness/human_escalation_spec.yaml
+spec_hash: 0a1b58f061bd021c
+started_at: '2025-12-31T06:58:53.447193'
+test_framework: pytest

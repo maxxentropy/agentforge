@@ -1,0 +1,12 @@
+schema_version: '1.0'
+violation_id: V-33642a91ae07
+contract_id: agentforge
+check_id: max-file-lines
+severity: major
+file_path: tools/cicd/domain.py
+message: File exceeds line limit (592 lines > 500)
+detected_at: '2025-12-31T02:40:13.163932'
+last_seen_at: '2026-01-01T01:39:13.719111'
+status: open
+fix_hint: Consider splitting into smaller files
+test_path: tests/unit/tools/cicd/

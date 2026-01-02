@@ -1,5 +1,5 @@
-# @spec_file: specs/minimal-context-architecture/05-llm-integration.yaml
-# @spec_id: llm-integration-v1
+# @spec_file: .agentforge/specs/core-llm-v1.yaml
+# @spec_id: core-llm-v1
 # @component_id: llm-interface
 # @test_path: tests/unit/llm/test_interface.py
 
@@ -20,7 +20,7 @@ full API compatibility for production.
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class StopReason(str, Enum):
@@ -43,7 +43,7 @@ class ToolCall:
     """
     id: str
     name: str
-    input: Dict[str, Any]
+    input: dict[str, Any]
 
     def __repr__(self) -> str:
         return f"ToolCall(id={self.id!r}, name={self.name!r}, input={self.input!r})"
@@ -63,7 +63,7 @@ class ToolResult:
     content: Any
     is_error: bool = False
 
-    def to_message_content(self) -> Dict[str, Any]:
+    def to_message_content(self) -> dict[str, Any]:
         """Convert to Anthropic API tool_result format."""
         return {
             "type": "tool_result",
@@ -86,10 +86,10 @@ class LLMResponse:
         usage: Token usage statistics
     """
     content: str
-    tool_calls: List[ToolCall] = field(default_factory=list)
-    thinking: Optional[str] = None
+    tool_calls: list[ToolCall] = field(default_factory=list)
+    thinking: str | None = None
     stop_reason: StopReason = StopReason.END_TURN
-    usage: Dict[str, int] = field(default_factory=lambda: {
+    usage: dict[str, int] = field(default_factory=lambda: {
         "input_tokens": 0,
         "output_tokens": 0,
         "cache_read_tokens": 0,
@@ -106,7 +106,7 @@ class LLMResponse:
         """Get total tokens used."""
         return self.usage.get("input_tokens", 0) + self.usage.get("output_tokens", 0)
 
-    def get_first_tool_call(self) -> Optional[ToolCall]:
+    def get_first_tool_call(self) -> ToolCall | None:
         """Get the first tool call, if any."""
         return self.tool_calls[0] if self.tool_calls else None
 
@@ -123,9 +123,9 @@ class ToolDefinition:
     """
     name: str
     description: str
-    input_schema: Dict[str, Any]
+    input_schema: dict[str, Any]
 
-    def to_api_format(self) -> Dict[str, Any]:
+    def to_api_format(self) -> dict[str, Any]:
         """Convert to Anthropic API tool format."""
         return {
             "name": self.name,
@@ -149,7 +149,7 @@ class ThinkingConfig:
     enabled: bool = False
     budget_tokens: int = 8000
 
-    def to_api_format(self) -> Optional[Dict[str, Any]]:
+    def to_api_format(self) -> dict[str, Any] | None:
         """Convert to Anthropic API thinking format."""
         if not self.enabled:
             return None
@@ -188,9 +188,9 @@ class LLMClient(ABC):
     def complete(
         self,
         system: str,
-        messages: List[Dict[str, Any]],
-        tools: Optional[List[ToolDefinition]] = None,
-        thinking: Optional[ThinkingConfig] = None,
+        messages: list[dict[str, Any]],
+        tools: list[ToolDefinition] | None = None,
+        thinking: ThinkingConfig | None = None,
         tool_choice: str = "auto",
         max_tokens: int = 4096,
     ) -> LLMResponse:
@@ -211,7 +211,7 @@ class LLMClient(ABC):
         pass
 
     @abstractmethod
-    def get_usage_stats(self) -> Dict[str, int]:
+    def get_usage_stats(self) -> dict[str, int]:
         """
         Get cumulative usage statistics.
 
@@ -229,10 +229,10 @@ class LLMClient(ABC):
     def complete_with_tools(
         self,
         system: str,
-        messages: List[Dict[str, Any]],
-        tools: List[ToolDefinition],
+        messages: list[dict[str, Any]],
+        tools: list[ToolDefinition],
         tool_executor: "ToolExecutor",
-        thinking: Optional[ThinkingConfig] = None,
+        thinking: ThinkingConfig | None = None,
         max_iterations: int = 10,
     ) -> LLMResponse:
         """

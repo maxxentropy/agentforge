@@ -1,5 +1,5 @@
-# @spec_file: specs/minimal-context-architecture/05-llm-integration.yaml
-# @spec_id: llm-integration-v1
+# @spec_file: .agentforge/specs/core-llm-v1.yaml
+# @spec_id: core-llm-v1
 # @component_id: llm-factory
 # @test_path: tests/unit/llm/test_factory.py
 
@@ -37,14 +37,14 @@ Usage:
 import os
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .interface import LLMClient
 from .simulated import (
     ScriptedResponseStrategy,
+    SequentialStrategy,
     SimulatedLLMClient,
     SimulatedResponse,
-    SequentialStrategy,
 )
 
 
@@ -80,9 +80,9 @@ class LLMClientFactory:
     @classmethod
     def create(
         cls,
-        mode: Optional[str] = None,
-        script_path: Optional[Path] = None,
-        recording_path: Optional[Path] = None,
+        mode: str | None = None,
+        script_path: Path | None = None,
+        recording_path: Path | None = None,
         model: str = "claude-sonnet-4-20250514",
         **kwargs,
     ) -> LLMClient:
@@ -147,7 +147,7 @@ class LLMClientFactory:
     @classmethod
     def _create_simulated_client(
         cls,
-        script_path: Optional[Path] = None,
+        script_path: Path | None = None,
     ) -> SimulatedLLMClient:
         """Create simulated client with optional script."""
         script_path = script_path or os.environ.get(cls.ENV_SCRIPT)
@@ -165,7 +165,7 @@ class LLMClientFactory:
     @classmethod
     def _create_playback_client(
         cls,
-        recording_path: Optional[Path] = None,
+        recording_path: Path | None = None,
     ) -> SimulatedLLMClient:
         """Create client that plays back recorded responses."""
         recording_path = recording_path or os.environ.get(cls.ENV_RECORDING)
@@ -185,7 +185,7 @@ class LLMClientFactory:
     @classmethod
     def _create_recording_client(
         cls,
-        recording_path: Optional[Path] = None,
+        recording_path: Path | None = None,
         model: str = "claude-sonnet-4-20250514",
         **kwargs,
     ) -> LLMClient:
@@ -215,8 +215,8 @@ class LLMClientFactory:
     @classmethod
     def create_for_testing(
         cls,
-        responses: Optional[List[Dict[str, Any]]] = None,
-        script_data: Optional[Dict[str, Any]] = None,
+        responses: list[dict[str, Any]] | None = None,
+        script_data: dict[str, Any] | None = None,
     ) -> SimulatedLLMClient:
         """
         Create a simulated client specifically for testing.

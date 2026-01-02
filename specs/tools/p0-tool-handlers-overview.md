@@ -141,8 +141,9 @@ All tool executions logged with:
 - [x] Add path traversal security protection
 - [x] Integration tests for context injection
 
-### Phase 4: Validation - PENDING
-- [ ] End-to-end test with real violation
+### Phase 4: Validation - IN PROGRESS
+- [x] Integration tests for fix_violation workflow (17 tests)
+- [ ] End-to-end test with real LLM
 - [ ] Documentation
 
 ## Test Locations
@@ -158,6 +159,10 @@ tests/unit/harness/tool_handlers/
 
 tests/integration/tool_handlers/
 └── test_context_injection.py  # Context injection integration tests
+
+tests/integration/workflows/
+├── conftest.py                      # Fixtures: project_with_violation, simulated LLM
+└── test_fix_violation_workflow.py   # Full workflow integration tests (17 tests)
 ```
 
 ## Related Documents

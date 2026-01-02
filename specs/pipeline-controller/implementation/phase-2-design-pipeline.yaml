@@ -1,0 +1,798 @@
+# Pipeline Controller - Phase 2: Design Pipeline
+# ===============================================
+#
+# This specification defines the LLM-based stage executors and the first four
+# pipeline stages (INTAKE, CLARIFY, ANALYZE, SPEC) that enable the design pipeline.
+#
+# Version: 1.0
+# Status: In Development
+# Date: January 2026
+
+spec_id: pipeline-controller-phase2-v1
+version: "1.0"
+status: implemented
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# OVERVIEW
+# ═══════════════════════════════════════════════════════════════════════════════
+
+overview:
+  title: Pipeline Controller Design Pipeline
+  purpose: |
+    Implements the LLM-based stage executors and design pipeline stages:
+    - LLMStageExecutor: Base class for LLM-driven stages
+    - ToolBasedStageExecutor: For stages using tool calls for output
+    - Artifact dataclasses: Typed artifacts for stage outputs
+    - INTAKE: Parse and categorize user requests
+    - CLARIFY: Resolve ambiguities through Q&A
+    - ANALYZE: Deep codebase analysis with tools
+    - SPEC: Generate detailed technical specifications
+
+  design_principles:
+    - LLM stages follow prompt→parse→validate pattern
+    - Tool-based stages extract artifacts from tool calls
+    - Artifacts are typed dataclasses for validation
+    - Stages escalate when human input is required
+    - Passthrough when clarification not needed
+
+  related_specs:
+    - path: ../stage-02-stage-executor-interface.md
+      description: Stage executor interface specification
+    - path: ../stage-03-intake-clarify-stages.md
+      description: Intake and Clarify stage specification
+    - path: ../stage-04-analyze-spec-stages.md
+      description: Analyze and Spec stage specification
+    - path: ./phase-1-foundation.yaml
+      description: Phase 1 foundation specification
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# MODULE STRUCTURE
+# ═══════════════════════════════════════════════════════════════════════════════
+
+module_structure:
+  root: src/agentforge/core/pipeline/
+
+  files:
+    # ─────────────────────────────────────────────────────────────────────────
+    # LLM Stage Executor
+    # ─────────────────────────────────────────────────────────────────────────
+    - path: llm_stage_executor.py
+      component_id: llm-stage-executor
+      purpose: Base class for LLM-driven pipeline stages
+      test_path: tests/unit/pipeline/test_llm_stage_executor.py
+      classes:
+        - name: LLMStageExecutor
+          type: abstract_class
+          extends: StageExecutor
+          description: |
+            Base class for stages that use LLM for execution.
+            Provides common patterns for prompt templating, response parsing,
+            and retry with feedback.
+          class_attributes:
+            - name: model
+              type: str
+              default: "claude-sonnet-4-20250514"
+            - name: max_tokens
+              type: int
+              default: 8000
+            - name: temperature
+              type: float
+              default: 0.7
+            - name: tools
+              type: List[Dict[str, Any]]
+              default: "[]"
+          methods:
+            - name: _execute
+              signature: "(context: StageContext) -> StageResult"
+              description: "Execute stage using LLM, calls get_system_prompt, get_user_message, parse_response"
+            - name: get_system_prompt
+              signature: "(context: StageContext) -> str"
+              abstract: true
+              description: "Get system prompt for this stage"
+            - name: get_user_message
+              signature: "(context: StageContext) -> str"
+              abstract: true
+              description: "Get user message constructed from context"
+            - name: parse_response
+              signature: "(llm_result: Dict[str, Any], context: StageContext) -> Optional[Dict[str, Any]]"
+              abstract: true
+              description: "Parse LLM response into stage artifact"
+            - name: extract_yaml_from_response
+              signature: "(response_text: str) -> Optional[Dict]"
+              description: "Extract YAML block from LLM response"
+            - name: extract_json_from_response
+              signature: "(response_text: str) -> Optional[Dict]"
+              description: "Extract JSON from LLM response"
+
+        - name: ToolBasedStageExecutor
+          type: abstract_class
+          extends: LLMStageExecutor
+          description: |
+            Stage executor that relies on tool use for output.
+            Expects LLM to call a specific tool to produce the artifact.
+          class_attributes:
+            - name: artifact_tool_name
+              type: str
+              default: "complete"
+          methods:
+            - name: parse_response
+              signature: "(llm_result: Dict[str, Any], context: StageContext) -> Optional[Dict[str, Any]]"
+              description: "Extract artifact from tool use result"
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Artifact Dataclasses
+    # ─────────────────────────────────────────────────────────────────────────
+    - path: artifacts.py
+      component_id: pipeline-artifacts
+      purpose: Typed artifact dataclasses for stage outputs
+      test_path: tests/unit/pipeline/test_artifacts.py
+      classes:
+        - name: IntakeArtifact
+          type: dataclass
+          fields:
+            - name: request_id
+              type: str
+            - name: original_request
+              type: str
+            - name: detected_scope
+              type: str
+              description: "bug_fix, feature_addition, refactoring, documentation, testing, unclear"
+            - name: priority
+              type: str
+              description: "low, medium, high, critical"
+            - name: initial_questions
+              type: List[Dict[str, Any]]
+              default: "field(default_factory=list)"
+            - name: detected_components
+              type: List[str]
+              default: "field(default_factory=list)"
+            - name: keywords
+              type: List[str]
+              default: "field(default_factory=list)"
+            - name: confidence
+              type: float
+              default: 0.5
+            - name: estimated_complexity
+              type: str
+              default: "medium"
+
+        - name: ClarifyArtifact
+          type: dataclass
+          fields:
+            - name: request_id
+              type: str
+            - name: clarified_requirements
+              type: str
+            - name: scope_confirmed
+              type: bool
+              default: false
+            - name: answered_questions
+              type: List[Dict[str, Any]]
+              default: "field(default_factory=list)"
+            - name: remaining_questions
+              type: List[Dict[str, Any]]
+              default: "field(default_factory=list)"
+            - name: refined_scope
+              type: Optional[str]
+              default: null
+            - name: ready_for_analysis
+              type: bool
+              default: false
+
+        - name: AnalyzeArtifact
+          type: dataclass
+          fields:
+            - name: request_id
+              type: str
+            - name: analysis
+              type: Dict[str, Any]
+              default: "field(default_factory=dict)"
+            - name: affected_files
+              type: List[Dict[str, Any]]
+              default: "field(default_factory=list)"
+            - name: components
+              type: List[Dict[str, Any]]
+              default: "field(default_factory=list)"
+            - name: dependencies
+              type: List[str]
+              default: "field(default_factory=list)"
+            - name: risks
+              type: List[Dict[str, Any]]
+              default: "field(default_factory=list)"
+
+        - name: SpecArtifact
+          type: dataclass
+          fields:
+            - name: spec_id
+              type: str
+            - name: request_id
+              type: str
+            - name: title
+              type: str
+              default: ""
+            - name: version
+              type: str
+              default: "1.0"
+            - name: overview
+              type: Dict[str, Any]
+              default: "field(default_factory=dict)"
+            - name: components
+              type: List[Dict[str, Any]]
+              default: "field(default_factory=list)"
+            - name: test_cases
+              type: List[Dict[str, Any]]
+              default: "field(default_factory=list)"
+            - name: interfaces
+              type: List[Dict[str, Any]]
+              default: "field(default_factory=list)"
+            - name: data_models
+              type: List[Dict[str, Any]]
+              default: "field(default_factory=list)"
+            - name: implementation_order
+              type: List[Dict[str, Any]]
+              default: "field(default_factory=list)"
+            - name: acceptance_criteria
+              type: List[str]
+              default: "field(default_factory=list)"
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Stages Package
+    # ─────────────────────────────────────────────────────────────────────────
+    - path: stages/__init__.py
+      component_id: stages-init
+      purpose: Stages package exports and registration
+      test_path: tests/unit/pipeline/stages/test_stages_init.py
+      exports:
+        - IntakeExecutor
+        - ClarifyExecutor
+        - AnalyzeExecutor
+        - SpecExecutor
+        - create_intake_executor
+        - create_clarify_executor
+        - create_analyze_executor
+        - create_spec_executor
+        - register_design_stages
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # INTAKE Stage
+    # ─────────────────────────────────────────────────────────────────────────
+    - path: stages/intake.py
+      component_id: intake-executor
+      purpose: INTAKE stage - parse and categorize user requests
+      test_path: tests/unit/pipeline/stages/test_intake.py
+      classes:
+        - name: IntakeExecutor
+          type: class
+          extends: LLMStageExecutor
+          class_attributes:
+            - name: stage_name
+              value: "intake"
+            - name: artifact_type
+              value: "intake_record"
+            - name: required_input_fields
+              value: "[]"
+            - name: output_fields
+              value: '["request_id", "detected_scope", "priority"]'
+          methods:
+            - name: get_system_prompt
+              signature: "(context: StageContext) -> str"
+              description: "Returns intake analysis system prompt"
+            - name: get_user_message
+              signature: "(context: StageContext) -> str"
+              description: "Builds user message with request and context"
+            - name: parse_response
+              signature: "(llm_result: Dict[str, Any], context: StageContext) -> Optional[Dict[str, Any]]"
+              description: "Parse YAML intake record from response"
+            - name: validate_output
+              signature: "(artifact: Optional[Dict[str, Any]]) -> OutputValidation"
+              description: "Validate scope, priority, and required fields"
+
+        - name: create_intake_executor
+          type: function
+          signature: "(config: Optional[Dict] = None) -> IntakeExecutor"
+          description: "Factory function for registry registration"
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # CLARIFY Stage
+    # ─────────────────────────────────────────────────────────────────────────
+    - path: stages/clarify.py
+      component_id: clarify-executor
+      purpose: CLARIFY stage - resolve ambiguities through Q&A
+      test_path: tests/unit/pipeline/stages/test_clarify.py
+      classes:
+        - name: ClarifyExecutor
+          type: class
+          extends: LLMStageExecutor
+          class_attributes:
+            - name: stage_name
+              value: "clarify"
+            - name: artifact_type
+              value: "clarified_requirements"
+            - name: required_input_fields
+              value: '["request_id", "detected_scope"]'
+            - name: output_fields
+              value: '["request_id", "clarified_requirements", "scope_confirmed"]'
+          methods:
+            - name: _execute
+              signature: "(context: StageContext) -> StageResult"
+              description: "Execute with potential escalation for unanswered questions"
+            - name: get_system_prompt
+              signature: "(context: StageContext) -> str"
+              description: "Returns clarification system prompt"
+            - name: get_user_message
+              signature: "(context: StageContext) -> str"
+              description: "Builds message with intake data and answers"
+            - name: parse_response
+              signature: "(llm_result: Dict[str, Any], context: StageContext) -> Optional[Dict[str, Any]]"
+              description: "Parse clarification response"
+            - name: _create_passthrough_artifact
+              signature: "(context: StageContext) -> Dict[str, Any]"
+              description: "Create artifact when no clarification needed"
+            - name: _escalate_for_answers
+              signature: "(context: StageContext, blocking_questions: List[Dict]) -> StageResult"
+              description: "Escalate to get answers to blocking questions"
+
+        - name: create_clarify_executor
+          type: function
+          signature: "(config: Optional[Dict] = None) -> ClarifyExecutor"
+          description: "Factory function for registry registration"
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # ANALYZE Stage
+    # ─────────────────────────────────────────────────────────────────────────
+    - path: stages/analyze.py
+      component_id: analyze-executor
+      purpose: ANALYZE stage - deep codebase analysis with tools
+      test_path: tests/unit/pipeline/stages/test_analyze.py
+      classes:
+        - name: AnalyzeExecutor
+          type: class
+          extends: ToolBasedStageExecutor
+          class_attributes:
+            - name: stage_name
+              value: "analyze"
+            - name: artifact_type
+              value: "analysis_result"
+            - name: required_input_fields
+              value: '["request_id", "clarified_requirements"]'
+            - name: output_fields
+              value: '["request_id", "analysis", "affected_files", "components"]'
+            - name: artifact_tool_name
+              value: "submit_analysis"
+          methods:
+            - name: get_system_prompt
+              signature: "(context: StageContext) -> str"
+              description: "Returns codebase analysis system prompt"
+            - name: get_user_message
+              signature: "(context: StageContext) -> str"
+              description: "Builds message with requirements and context"
+            - name: parse_response
+              signature: "(llm_result: Dict[str, Any], context: StageContext) -> Optional[Dict[str, Any]]"
+              description: "Extract analysis from submit_analysis tool call"
+            - name: _parse_text_response
+              signature: "(llm_result: Dict[str, Any], context: StageContext) -> Optional[Dict[str, Any]]"
+              description: "Fallback: parse analysis from text response"
+
+          tools:
+            - name: search_code
+              description: "Search codebase for patterns, symbols, or concepts"
+            - name: read_file
+              description: "Read contents of a source file"
+            - name: find_related
+              description: "Find files related to a given file"
+            - name: submit_analysis
+              description: "Submit the final analysis result (artifact tool)"
+
+        - name: create_analyze_executor
+          type: function
+          signature: "(config: Optional[Dict] = None) -> AnalyzeExecutor"
+          description: "Factory function for registry registration"
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # SPEC Stage
+    # ─────────────────────────────────────────────────────────────────────────
+    - path: stages/spec.py
+      component_id: spec-executor
+      purpose: SPEC stage - generate detailed technical specifications
+      test_path: tests/unit/pipeline/stages/test_spec.py
+      classes:
+        - name: SpecExecutor
+          type: class
+          extends: LLMStageExecutor
+          class_attributes:
+            - name: stage_name
+              value: "spec"
+            - name: artifact_type
+              value: "specification"
+            - name: required_input_fields
+              value: '["request_id", "analysis", "components"]'
+            - name: output_fields
+              value: '["spec_id", "request_id", "components", "test_cases"]'
+          methods:
+            - name: get_system_prompt
+              signature: "(context: StageContext) -> str"
+              description: "Returns spec generation system prompt"
+            - name: get_user_message
+              signature: "(context: StageContext) -> str"
+              description: "Builds message with analysis and requirements"
+            - name: parse_response
+              signature: "(llm_result: Dict[str, Any], context: StageContext) -> Optional[Dict[str, Any]]"
+              description: "Parse specification YAML from response"
+            - name: finalize
+              signature: "(context: StageContext, result: StageResult) -> None"
+              description: "Save spec to .agentforge/specs/ directory"
+
+        - name: create_spec_executor
+          type: function
+          signature: "(config: Optional[Dict] = None) -> SpecExecutor"
+          description: "Factory function for registry registration"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ARTIFACT SCHEMAS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+artifacts:
+  intake_record:
+    description: "Output of INTAKE stage"
+    fields:
+      - name: request_id
+        type: str
+        required: true
+        format: "REQ-{YYYYMMDDHHMMSS}-{counter:04d}"
+      - name: original_request
+        type: str
+        required: true
+      - name: detected_scope
+        type: enum
+        values: [bug_fix, feature_addition, refactoring, documentation, testing, unclear]
+        required: true
+      - name: priority
+        type: enum
+        values: [low, medium, high, critical]
+        required: true
+      - name: confidence
+        type: float
+        range: [0.0, 1.0]
+      - name: initial_questions
+        type: list
+        item_schema:
+          question: str
+          priority: enum [blocking, optional]
+          context: str
+      - name: detected_components
+        type: list
+        item_schema:
+          name: str
+          confidence: float
+      - name: keywords
+        type: list[str]
+      - name: estimated_complexity
+        type: enum
+        values: [low, medium, high]
+
+  clarified_requirements:
+    description: "Output of CLARIFY stage"
+    fields:
+      - name: request_id
+        type: str
+        required: true
+      - name: clarified_requirements
+        type: str
+        required: true
+      - name: scope_confirmed
+        type: bool
+        required: true
+      - name: answered_questions
+        type: list
+      - name: remaining_questions
+        type: list
+      - name: refined_scope
+        type: str
+      - name: ready_for_analysis
+        type: bool
+
+  analysis_result:
+    description: "Output of ANALYZE stage"
+    fields:
+      - name: request_id
+        type: str
+        required: true
+      - name: analysis
+        type: dict
+        required: true
+        schema:
+          summary: str
+          complexity: enum [low, medium, high]
+          estimated_effort: str
+      - name: affected_files
+        type: list
+        item_schema:
+          path: str
+          change_type: enum [modify, create, delete]
+          reason: str
+      - name: components
+        type: list
+        required: true
+      - name: dependencies
+        type: list[str]
+      - name: risks
+        type: list
+
+  specification:
+    description: "Output of SPEC stage"
+    fields:
+      - name: spec_id
+        type: str
+        required: true
+        format: "SPEC-{YYYYMMDDHHMMSS}-{counter:04d}"
+      - name: request_id
+        type: str
+        required: true
+      - name: title
+        type: str
+      - name: version
+        type: str
+        default: "1.0"
+      - name: overview
+        type: dict
+      - name: components
+        type: list
+        required: true
+        min_items: 1
+      - name: test_cases
+        type: list
+      - name: interfaces
+        type: list
+      - name: data_models
+        type: list
+      - name: implementation_order
+        type: list
+      - name: acceptance_criteria
+        type: list
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# TEST STRUCTURE
+# ═══════════════════════════════════════════════════════════════════════════════
+
+test_structure:
+  unit_tests:
+    root: tests/unit/pipeline/
+
+    files:
+      - path: test_llm_stage_executor.py
+        tests_for: llm-stage-executor
+        test_cases:
+          - test_execute_calls_lifecycle_methods
+          - test_execute_calls_get_prompts_and_parse
+          - test_failed_parse_returns_failed_result
+          - test_extract_yaml_from_code_block
+          - test_extract_yaml_from_raw_text
+          - test_extract_yaml_handles_invalid
+          - test_extract_json_from_code_block
+          - test_extract_json_from_raw_text
+          - test_tool_based_executor_extracts_from_tool_call
+          - test_tool_based_executor_uses_artifact_tool_name
+
+      - path: test_artifacts.py
+        tests_for: pipeline-artifacts
+        test_cases:
+          - test_intake_artifact_creation
+          - test_intake_artifact_defaults
+          - test_clarify_artifact_creation
+          - test_analyze_artifact_creation
+          - test_spec_artifact_creation
+          - test_artifact_to_dict_conversion
+          - test_artifact_from_dict_conversion
+
+      - path: stages/__init__.py
+        purpose: Test package marker
+
+      - path: stages/conftest.py
+        purpose: Shared fixtures for stage tests
+        fixtures:
+          - mock_llm_response
+          - mock_llm_with_tools
+          - sample_intake_artifact
+          - sample_clarify_artifact
+          - sample_analyze_artifact
+          - sample_stage_context
+
+      - path: stages/test_intake.py
+        tests_for: intake-executor
+        test_cases:
+          - test_parses_simple_request
+          - test_detects_bug_fix_scope
+          - test_detects_feature_addition_scope
+          - test_detects_refactoring_scope
+          - test_generates_blocking_questions_for_unclear
+          - test_generates_unique_request_ids
+          - test_validates_output_required_fields
+          - test_validates_output_scope_values
+          - test_validates_output_priority_values
+          - test_handles_empty_request
+          - test_carries_forward_project_context
+
+      - path: stages/test_clarify.py
+        tests_for: clarify-executor
+        test_cases:
+          - test_skips_when_no_blocking_questions
+          - test_escalates_when_blocking_unanswered
+          - test_incorporates_answers_into_requirements
+          - test_handles_feedback_as_answers
+          - test_marks_ready_when_complete
+          - test_creates_passthrough_artifact
+          - test_validates_output_requirements
+          - test_carries_forward_request_id
+          - test_warns_ready_with_blocking_remaining
+
+      - path: stages/test_analyze.py
+        tests_for: analyze-executor
+        test_cases:
+          - test_uses_submit_analysis_tool
+          - test_defines_required_tools
+          - test_produces_affected_files_list
+          - test_produces_components_list
+          - test_identifies_risks
+          - test_handles_missing_tool_call
+          - test_fallback_to_text_parsing
+          - test_validates_output_analysis_section
+          - test_carries_forward_requirements
+
+      - path: stages/test_spec.py
+        tests_for: spec-executor
+        test_cases:
+          - test_generates_spec_id
+          - test_generates_component_specs
+          - test_generates_test_cases
+          - test_includes_acceptance_criteria
+          - test_saves_to_specs_directory
+          - test_validates_component_has_name
+          - test_validates_at_least_one_component
+          - test_warns_missing_test_cases
+          - test_warns_missing_acceptance_criteria
+
+      - path: stages/test_stages_init.py
+        tests_for: stages-init
+        test_cases:
+          - test_exports_all_executors
+          - test_exports_factory_functions
+          - test_register_design_stages
+
+  integration_tests:
+    root: tests/integration/pipeline/
+
+    files:
+      - path: stages/__init__.py
+        purpose: Test package marker
+
+      - path: stages/conftest.py
+        purpose: Integration test fixtures
+        fixtures:
+          - mock_llm_client
+          - temp_project_with_code
+          - pipeline_controller_with_stages
+
+      - path: stages/test_intake_clarify.py
+        purpose: Integration tests for intake->clarify flow
+        test_cases:
+          - test_intake_to_clarify_artifact_flow
+          - test_clarify_escalation_and_resume
+          - test_full_intake_clarify_with_answers
+          - test_passthrough_when_no_blocking
+
+      - path: stages/test_analyze_spec.py
+        purpose: Integration tests for analyze->spec flow
+        test_cases:
+          - test_analysis_flows_to_spec
+          - test_spec_reflects_analysis_components
+          - test_spec_saved_to_correct_location
+
+      - path: stages/test_design_pipeline.py
+        purpose: End-to-end design pipeline tests
+        test_cases:
+          - test_design_pipeline_intake_to_spec
+          - test_design_pipeline_with_clarification
+          - test_design_pipeline_exits_at_spec
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DEPENDENCIES
+# ═══════════════════════════════════════════════════════════════════════════════
+
+dependencies:
+  internal:
+    - module: agentforge.core.pipeline.stage_executor
+      used_by: [llm-stage-executor]
+      purpose: Base StageExecutor class
+
+    - module: agentforge.core.pipeline.controller
+      used_by: [intake-executor, clarify-executor, analyze-executor, spec-executor]
+      purpose: PipelineController for stage orchestration
+
+    - module: agentforge.core.harness.minimal_context.executor
+      used_by: [llm-stage-executor]
+      purpose: LLM execution for stages
+
+    - module: agentforge.core.harness.minimal_context.tool_handlers
+      used_by: [analyze-executor]
+      purpose: Tool execution (search_code, read_file, find_related)
+
+  external:
+    - package: pyyaml
+      version: ">=6.0"
+      purpose: YAML parsing for artifacts
+
+    - package: dataclasses
+      version: stdlib
+      purpose: Artifact dataclasses
+
+    - package: re
+      version: stdlib
+      purpose: Response parsing (YAML/JSON extraction)
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ACCEPTANCE CRITERIA
+# ═══════════════════════════════════════════════════════════════════════════════
+
+acceptance_criteria:
+  llm_stage_executor:
+    - LLMStageExecutor calls get_system_prompt, get_user_message, parse_response
+    - Failed parse returns StageResult with FAILED status
+    - extract_yaml_from_response handles code blocks and raw YAML
+    - extract_json_from_response handles code blocks and JSON objects
+    - ToolBasedStageExecutor extracts artifact from tool call
+
+  artifacts:
+    - All artifact dataclasses have correct fields and defaults
+    - Artifacts can convert to/from dict
+    - Artifact validation catches missing required fields
+
+  intake_executor:
+    - Parses user requests into structured IntakeRecord
+    - Detects scope correctly (bug_fix, feature_addition, etc.)
+    - Generates unique request IDs
+    - Creates blocking questions for ambiguous requests
+    - Validates output schema
+
+  clarify_executor:
+    - Skips clarification when no blocking questions
+    - Escalates when blocking questions have no answers
+    - Incorporates answers into clarified requirements
+    - Creates passthrough artifact when appropriate
+    - Validates ready_for_analysis state
+
+  analyze_executor:
+    - Uses submit_analysis tool for artifact
+    - Searches codebase with search_code tool
+    - Reads files with read_file tool
+    - Produces affected files and components list
+    - Falls back to text parsing if tool not called
+
+  spec_executor:
+    - Generates unique spec IDs
+    - Produces component specifications
+    - Produces test case specifications
+    - Includes acceptance criteria
+    - Saves spec to .agentforge/specs/ directory
+    - Validates at least one component exists
+
+  design_pipeline:
+    - Pipeline executes INTAKE → CLARIFY → ANALYZE → SPEC
+    - Artifacts flow correctly between stages
+    - Pipeline exits at SPEC stage for design pipeline
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CHANGELOG
+# ═══════════════════════════════════════════════════════════════════════════════
+
+changelog:
+  - version: "1.0"
+    date: "2026-01-02"
+    changes:
+      - Initial Phase 2 specification
+      - LLM stage executor base classes defined
+      - Artifact dataclasses defined
+      - INTAKE, CLARIFY, ANALYZE, SPEC stages defined
+      - Test structure outlined
+      - Implementation completed with 220 tests passing
+        - Unit tests: 200 tests
+        - Integration tests: 20 tests

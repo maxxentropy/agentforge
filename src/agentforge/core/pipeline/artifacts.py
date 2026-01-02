@@ -1,0 +1,154 @@
+# @spec_file: specs/pipeline-controller/implementation/phase-2-design-pipeline.yaml
+# @spec_id: pipeline-controller-phase2-v1
+# @component_id: pipeline-artifacts
+# @test_path: tests/unit/pipeline/test_artifacts.py
+
+"""
+Pipeline Artifacts
+==================
+
+Typed dataclasses for pipeline stage outputs.
+
+Each stage produces a structured artifact that flows to the next stage.
+These dataclasses provide:
+- Type safety for artifact fields
+- Default values for optional fields
+- Serialization to/from dict for YAML persistence
+"""
+
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional
+
+
+@dataclass
+class IntakeArtifact:
+    """
+    Artifact produced by INTAKE stage.
+
+    Contains the parsed user request with scope detection,
+    priority assessment, and clarifying questions.
+    """
+
+    request_id: str
+    original_request: str
+    detected_scope: str  # bug_fix, feature_addition, refactoring, documentation, testing, unclear
+    priority: str  # low, medium, high, critical
+    initial_questions: List[Dict[str, Any]] = field(default_factory=list)
+    detected_components: List[str] = field(default_factory=list)
+    keywords: List[str] = field(default_factory=list)
+    confidence: float = 0.5
+    estimated_complexity: str = "medium"
+
+
+@dataclass
+class ClarifyArtifact:
+    """
+    Artifact produced by CLARIFY stage.
+
+    Contains clarified requirements after Q&A resolution.
+    """
+
+    request_id: str
+    clarified_requirements: str
+    scope_confirmed: bool = False
+    answered_questions: List[Dict[str, Any]] = field(default_factory=list)
+    remaining_questions: List[Dict[str, Any]] = field(default_factory=list)
+    refined_scope: Optional[str] = None
+    ready_for_analysis: bool = False
+
+
+@dataclass
+class AnalyzeArtifact:
+    """
+    Artifact produced by ANALYZE stage.
+
+    Contains codebase analysis results including affected files,
+    components, dependencies, and risks.
+    """
+
+    request_id: str
+    analysis: Dict[str, Any] = field(default_factory=dict)
+    affected_files: List[Dict[str, Any]] = field(default_factory=list)
+    components: List[Dict[str, Any]] = field(default_factory=list)
+    dependencies: List[str] = field(default_factory=list)
+    risks: List[Dict[str, Any]] = field(default_factory=list)
+
+
+@dataclass
+class SpecArtifact:
+    """
+    Artifact produced by SPEC stage.
+
+    Contains the detailed technical specification with components,
+    test cases, interfaces, and acceptance criteria.
+    """
+
+    spec_id: str
+    request_id: str
+    title: str = ""
+    version: str = "1.0"
+    overview: Dict[str, Any] = field(default_factory=dict)
+    components: List[Dict[str, Any]] = field(default_factory=list)
+    test_cases: List[Dict[str, Any]] = field(default_factory=list)
+    interfaces: List[Dict[str, Any]] = field(default_factory=list)
+    data_models: List[Dict[str, Any]] = field(default_factory=list)
+    implementation_order: List[Dict[str, Any]] = field(default_factory=list)
+    acceptance_criteria: List[str] = field(default_factory=list)
+
+
+@dataclass
+class RedArtifact:
+    """
+    Artifact produced by RED (test-first) stage.
+
+    Contains generated test files and initial test results.
+    """
+
+    spec_id: str
+    test_files: List[str] = field(default_factory=list)
+    test_results: Dict[str, Any] = field(default_factory=dict)
+    failing_tests: List[str] = field(default_factory=list)
+
+
+@dataclass
+class GreenArtifact:
+    """
+    Artifact produced by GREEN (implementation) stage.
+
+    Contains implementation files and test results showing all pass.
+    """
+
+    spec_id: str
+    implementation_files: List[str] = field(default_factory=list)
+    test_results: Dict[str, Any] = field(default_factory=dict)
+    passing_tests: List[str] = field(default_factory=list)
+
+
+@dataclass
+class RefactorArtifact:
+    """
+    Artifact produced by REFACTOR stage.
+
+    Contains refactored files and improvement details.
+    """
+
+    spec_id: str
+    refactored_files: List[str] = field(default_factory=list)
+    improvements: List[Dict[str, Any]] = field(default_factory=list)
+    final_files: List[str] = field(default_factory=list)
+
+
+@dataclass
+class DeliverArtifact:
+    """
+    Artifact produced by DELIVER stage.
+
+    Contains delivery details (commit, PR, files).
+    """
+
+    spec_id: str
+    deliverable_type: str  # commit, pr, files
+    commit_sha: Optional[str] = None
+    pr_url: Optional[str] = None
+    files_modified: List[str] = field(default_factory=list)
+    summary: str = ""

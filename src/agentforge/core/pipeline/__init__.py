@@ -15,6 +15,8 @@ This module provides:
 - Pipeline controller for orchestrating stage execution
 - Artifact validation and flow between stages
 - Escalation handling for human intervention
+- LLM-driven stage executors (Phase 2)
+- Design pipeline stages: INTAKE, CLARIFY, ANALYZE, SPEC (Phase 2)
 
 Example usage:
     from agentforge.core.pipeline import PipelineController, PipelineState
@@ -28,6 +30,10 @@ Example usage:
 
     # Check status
     print(f"Pipeline status: {state.status.value}")
+
+    # Register design stages
+    from agentforge.core.pipeline.stages import register_design_stages
+    register_design_stages(get_registry())
 """
 
 # State management
@@ -85,6 +91,25 @@ from .controller import (
     PipelineStateError,
 )
 
+# Phase 2: LLM Stage Executors
+from .llm_stage_executor import (
+    LLMStageExecutor,
+    ToolBasedStageExecutor,
+    OutputValidation,
+)
+
+# Phase 2: Artifact dataclasses
+from .artifacts import (
+    IntakeArtifact,
+    ClarifyArtifact,
+    AnalyzeArtifact,
+    SpecArtifact,
+    RedArtifact,
+    GreenArtifact,
+    RefactorArtifact,
+    DeliverArtifact,
+)
+
 __all__ = [
     # State
     "PipelineState",
@@ -122,4 +147,17 @@ __all__ = [
     "PipelineError",
     "PipelineNotFoundError",
     "PipelineStateError",
+    # Phase 2: LLM Stage Executors
+    "LLMStageExecutor",
+    "ToolBasedStageExecutor",
+    "OutputValidation",
+    # Phase 2: Artifacts
+    "IntakeArtifact",
+    "ClarifyArtifact",
+    "AnalyzeArtifact",
+    "SpecArtifact",
+    "RedArtifact",
+    "GreenArtifact",
+    "RefactorArtifact",
+    "DeliverArtifact",
 ]

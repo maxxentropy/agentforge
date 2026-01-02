@@ -1,12 +1,4 @@
 # @spec_file: .agentforge/specs/core-pipeline-v1.yaml
-# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
-# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
-# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
-# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
-# @spec_id: core-pipeline-v1
-# @spec_id: core-pipeline-v1
-# @spec_id: core-pipeline-v1
-# @spec_id: core-pipeline-v1
 # @spec_id: core-pipeline-v1
 # @component_id: pipeline-init
 # @test_path: tests/unit/pipeline/test_module_exports.py

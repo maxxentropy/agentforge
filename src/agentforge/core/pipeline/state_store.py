@@ -1,9 +1,6 @@
 # @spec_file: .agentforge/specs/core-pipeline-v1.yaml
-# @spec_file: .agentforge/specs/core-pipeline-v1.yaml
-# @spec_id: core-pipeline-v1
 # @spec_id: core-pipeline-v1
 # @component_id: pipeline-state-store
-# @component_id: state-store-list
 # @test_path: tests/unit/pipeline/test_state_store.py
 
 """
@@ -20,9 +17,10 @@ Manages storage of pipeline states with:
 
 import fcntl
 import logging
+from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Generator
 
 import yaml
 
@@ -72,6 +70,44 @@ class PipelineStateStore:
     def _get_completed_path(self, pipeline_id: str) -> Path:
         """Get path to completed pipeline state file."""
         return self.completed_dir / f"{pipeline_id}.yaml"
+
+    def _get_lock_path(self, pipeline_id: str) -> Path:
+        """Get path to lock file for a pipeline."""
+        return self.root / "locks" / f"{pipeline_id}.lock"
+
+    @contextmanager
+    def transaction(self, pipeline_id: str) -> Generator[None, None, None]:
+        """
+        Context manager for atomic pipeline operations.
+
+        Acquires an exclusive lock on the pipeline for the duration of the
+        context. Use this when you need to load, modify, and save a pipeline
+        atomically to prevent race conditions.
+
+        Usage:
+            with state_store.transaction(pipeline_id):
+                state = state_store.load(pipeline_id)
+                state.status = PipelineStatus.RUNNING
+                state_store.save(state)
+
+        Args:
+            pipeline_id: Pipeline ID to lock
+
+        Yields:
+            None (lock is held for duration of context)
+        """
+        lock_dir = self.root / "locks"
+        lock_dir.mkdir(parents=True, exist_ok=True)
+
+        lock_path = self._get_lock_path(pipeline_id)
+        lock_path.touch(exist_ok=True)
+
+        with open(lock_path, "w") as lock_file:
+            fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
+            try:
+                yield
+            finally:
+                fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
 
     def save(self, state: PipelineState) -> None:
         """

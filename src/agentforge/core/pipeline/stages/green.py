@@ -26,6 +26,7 @@ from typing import Any
 
 from ..llm_stage_executor import OutputValidation
 from ..stage_executor import StageContext, StageExecutor, StageResult, StageStatus
+from ..types import ArtifactDict, StageConfigDict, TestResultsDict, ToolParamsDict
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +47,10 @@ class GreenPhaseExecutor(StageExecutor):
 
     stage_name = "green"
     artifact_type = "implementation"
+
+    # Configuration defaults
+    DEFAULT_MAX_ITERATIONS = 20
+    DEFAULT_TEST_TIMEOUT_SECONDS = 120
 
     required_input_fields = ["spec_id", "test_files", "failing_tests"]
 
@@ -182,10 +187,42 @@ Instructions:
 Start by reading the test files.
 """
 
-    def __init__(self, config: dict[str, Any] | None = None):
-        self._config = config or {}
-        self.max_iterations = self._config.get("max_iterations", 20)
-        self.test_timeout = self._config.get("test_timeout", 120)
+    def __init__(self, config: StageConfigDict | None = None):
+        self._config: StageConfigDict = config or {}
+        self.max_iterations = self._config.get(
+            "max_iterations", self.DEFAULT_MAX_ITERATIONS
+        )
+        self.test_timeout = self._config.get(
+            "test_timeout", self.DEFAULT_TEST_TIMEOUT_SECONDS
+        )
+
+    @staticmethod
+    def _validate_path(path: str, project_path: "Path") -> "Path":
+        """
+        Validate that a path is within the project directory.
+
+        Prevents path traversal attacks where user input like "../../etc/passwd"
+        could escape the project directory.
+
+        Args:
+            path: Relative path from user input
+            project_path: Base project directory
+
+        Returns:
+            Resolved absolute path within project
+
+        Raises:
+            ValueError: If path escapes project directory
+        """
+        from pathlib import Path as PathClass
+        # Resolve to absolute path and check containment
+        resolved = (project_path / path).resolve()
+        project_resolved = project_path.resolve()
+
+        if not resolved.is_relative_to(project_resolved):
+            raise ValueError(f"Path escapes project directory: {path}")
+
+        return resolved
 
     def execute(self, context: StageContext) -> StageResult:
         """Execute GREEN phase with iterative implementation."""
@@ -339,7 +376,7 @@ Start by reading the test files.
 
     def _build_iteration_message(
         self,
-        test_results: dict[str, Any],
+        test_results: TestResultsDict,
         iteration: int,
     ) -> str:
         """Build message for subsequent iterations."""
@@ -376,30 +413,42 @@ TEST RESULTS:
     ) -> None:
         """Register tool handlers for implementation."""
         project_path = context.project_path
+        validate_path = self._validate_path
 
         # Read file handler
-        def read_file_handler(params: dict[str, Any]) -> str:
+        def read_file_handler(params: ToolParamsDict) -> str:
             path = params.get("path", "")
-            file_path = project_path / path
+            try:
+                file_path = validate_path(path, project_path)
+            except ValueError as e:
+                return f"Error: {e}"
+
             if file_path.exists():
                 return file_path.read_text()
             return f"File not found: {path}"
 
         # Write file handler
-        def write_file_handler(params: dict[str, Any]) -> str:
+        def write_file_handler(params: ToolParamsDict) -> str:
             path = params.get("path", "")
             content = params.get("content", "")
-            file_path = project_path / path
+            try:
+                file_path = validate_path(path, project_path)
+            except ValueError as e:
+                return f"Error: {e}"
+
             file_path.parent.mkdir(parents=True, exist_ok=True)
             file_path.write_text(content)
             return f"Wrote {len(content)} bytes to {path}"
 
         # Edit file handler
-        def edit_file_handler(params: dict[str, Any]) -> str:
+        def edit_file_handler(params: ToolParamsDict) -> str:
             path = params.get("path", "")
             old_content = params.get("old_content", "")
             new_content = params.get("new_content", "")
-            file_path = project_path / path
+            try:
+                file_path = validate_path(path, project_path)
+            except ValueError as e:
+                return f"Error: {e}"
 
             if not file_path.exists():
                 return f"File not found: {path}"
@@ -413,7 +462,7 @@ TEST RESULTS:
             return f"Updated {path}"
 
         # Run tests handler
-        def run_tests_handler(params: dict[str, Any]) -> str:
+        def run_tests_handler(params: ToolParamsDict) -> str:
             test_files = params.get("test_files", [])
             test_name = params.get("test_name")
 
@@ -432,7 +481,7 @@ TEST RESULTS:
             return f"Tests: {results['passed']} passed, {results['failed']} failed"
 
         # Complete implementation handler
-        def complete_handler(params: dict[str, Any]) -> str:
+        def complete_handler(params: ToolParamsDict) -> str:
             return f"IMPLEMENTATION_COMPLETE:{params}"
 
         # Register handlers
@@ -448,9 +497,9 @@ TEST RESULTS:
         context: StageContext,
         test_files: list[str],
         specific_test: str | None = None,
-    ) -> dict[str, Any]:
+    ) -> TestResultsDict:
         """Run tests and return results."""
-        results = {
+        results: TestResultsDict = {
             "passed": 0,
             "failed": 0,
             "errors": 0,
@@ -483,7 +532,7 @@ TEST RESULTS:
 
         return results
 
-    def _parse_pytest_output(self, output: str, results: dict[str, Any]) -> None:
+    def _parse_pytest_output(self, output: str, results: TestResultsDict) -> None:
         """Parse pytest output."""
         # Extract test results
         passed = re.findall(r"(\S+::\S+)\s+PASSED", output)
@@ -541,13 +590,13 @@ TEST RESULTS:
 
         return files
 
-    def validate_output(self, artifact: dict[str, Any] | None) -> OutputValidation:
+    def validate_output(self, artifact: ArtifactDict | None) -> OutputValidation:
         """Validate GREEN phase artifact."""
         if artifact is None:
             return OutputValidation(valid=False, errors=["No artifact"])
 
-        errors = []
-        warnings = []
+        errors: list[str] = []
+        warnings: list[str] = []
 
         if not artifact.get("implementation_files"):
             errors.append("No implementation files produced")
@@ -565,6 +614,6 @@ TEST RESULTS:
         )
 
 
-def create_green_executor(config: dict | None = None) -> GreenPhaseExecutor:
+def create_green_executor(config: StageConfigDict | None = None) -> GreenPhaseExecutor:
     """Create GreenPhaseExecutor instance."""
     return GreenPhaseExecutor(config)

@@ -231,32 +231,34 @@ class PipelineController:
         Returns:
             True if approval succeeded, False otherwise
         """
-        state = self.state_store.load(pipeline_id)
-        if not state:
-            logger.warning(f"Pipeline not found for approval: {pipeline_id}")
-            return False
+        # Use transaction for atomic load-modify-save
+        with self.state_store.transaction(pipeline_id):
+            state = self.state_store.load(pipeline_id)
+            if not state:
+                logger.warning(f"Pipeline not found for approval: {pipeline_id}")
+                return False
 
-        if state.status != PipelineStatus.WAITING_APPROVAL:
-            logger.warning(f"Pipeline {pipeline_id} is not waiting for approval")
-            return False
+            if state.status != PipelineStatus.WAITING_APPROVAL:
+                logger.warning(f"Pipeline {pipeline_id} is not waiting for approval")
+                return False
 
-        pending = self.escalation_handler.get_pending(pipeline_id)
-        if not pending:
-            logger.warning(f"No pending escalations for pipeline {pipeline_id}")
-            return False
+            pending = self.escalation_handler.get_pending(pipeline_id)
+            if not pending:
+                logger.warning(f"No pending escalations for pipeline {pipeline_id}")
+                return False
 
-        escalation_id = pending[0].escalation_id
-        self.escalation_handler.resolve(escalation_id, "approved")
+            escalation_id = pending[0].escalation_id
+            self.escalation_handler.resolve(escalation_id, "approved")
 
-        state.status = PipelineStatus.RUNNING
-        next_stage = state.get_next_stage()
-        if next_stage:
-            state.current_stage = next_stage
-        else:
-            state.status = PipelineStatus.COMPLETED
+            state.status = PipelineStatus.RUNNING
+            next_stage = state.get_next_stage()
+            if next_stage:
+                state.current_stage = next_stage
+            else:
+                state.status = PipelineStatus.COMPLETED
 
-        self.state_store.save(state)
-        logger.info(f"Approved escalation {escalation_id} for pipeline {pipeline_id}")
+            self.state_store.save(state)
+            logger.info(f"Approved escalation {escalation_id} for pipeline {pipeline_id}")
 
         if state.status == PipelineStatus.RUNNING:
             self._run(state)
@@ -274,26 +276,28 @@ class PipelineController:
         Returns:
             True if rejection succeeded, False otherwise
         """
-        state = self.state_store.load(pipeline_id)
-        if not state:
-            logger.warning(f"Pipeline not found for rejection: {pipeline_id}")
-            return False
+        # Use transaction for atomic load-modify-save
+        with self.state_store.transaction(pipeline_id):
+            state = self.state_store.load(pipeline_id)
+            if not state:
+                logger.warning(f"Pipeline not found for rejection: {pipeline_id}")
+                return False
 
-        if state.status != PipelineStatus.WAITING_APPROVAL:
-            logger.warning(f"Pipeline {pipeline_id} is not waiting for approval")
-            return False
+            if state.status != PipelineStatus.WAITING_APPROVAL:
+                logger.warning(f"Pipeline {pipeline_id} is not waiting for approval")
+                return False
 
-        pending = self.escalation_handler.get_pending(pipeline_id)
-        if not pending:
-            logger.warning(f"No pending escalations for pipeline {pipeline_id}")
-            return False
+            pending = self.escalation_handler.get_pending(pipeline_id)
+            if not pending:
+                logger.warning(f"No pending escalations for pipeline {pipeline_id}")
+                return False
 
-        escalation_id = pending[0].escalation_id
-        self.escalation_handler.reject(escalation_id, reason)
+            escalation_id = pending[0].escalation_id
+            self.escalation_handler.reject(escalation_id, reason)
 
-        state.status = PipelineStatus.ABORTED
-        self.state_store.save(state)
-        logger.info(f"Rejected escalation {escalation_id}, aborted pipeline {pipeline_id}")
+            state.status = PipelineStatus.ABORTED
+            self.state_store.save(state)
+            logger.info(f"Rejected escalation {escalation_id}, aborted pipeline {pipeline_id}")
 
         return True
 
@@ -308,27 +312,29 @@ class PipelineController:
         Returns:
             True if abort succeeded, False if not found or already terminal
         """
-        state = self.state_store.load(pipeline_id)
-        if not state:
-            logger.warning(f"Pipeline not found for abort: {pipeline_id}")
-            return False
+        # Use transaction for atomic load-modify-save
+        with self.state_store.transaction(pipeline_id):
+            state = self.state_store.load(pipeline_id)
+            if not state:
+                logger.warning(f"Pipeline not found for abort: {pipeline_id}")
+                return False
 
-        if state.is_terminal():
-            logger.warning(
-                f"Pipeline {pipeline_id} is already in terminal state: "
-                f"{state.status.value}"
-            )
-            return False
+            if state.is_terminal():
+                logger.warning(
+                    f"Pipeline {pipeline_id} is already in terminal state: "
+                    f"{state.status.value}"
+                )
+                return False
 
-        state.status = PipelineStatus.ABORTED
+            state.status = PipelineStatus.ABORTED
 
-        if state.current_stage:
-            stage_state = state.get_stage(state.current_stage)
-            if stage_state.status == StageStatus.RUNNING:
-                stage_state.mark_failed(reason)
+            if state.current_stage:
+                stage_state = state.get_stage(state.current_stage)
+                if stage_state.status == StageStatus.RUNNING:
+                    stage_state.mark_failed(reason)
 
-        self.state_store.save(state)
-        logger.info(f"Aborted pipeline {pipeline_id}: {reason}")
+            self.state_store.save(state)
+            logger.info(f"Aborted pipeline {pipeline_id}: {reason}")
 
         return True
 
@@ -342,18 +348,20 @@ class PipelineController:
         Returns:
             True if paused, False if not found or not running
         """
-        state = self.state_store.load(pipeline_id)
-        if not state:
-            logger.warning(f"Pipeline not found for pause: {pipeline_id}")
-            return False
+        # Use transaction for atomic load-modify-save
+        with self.state_store.transaction(pipeline_id):
+            state = self.state_store.load(pipeline_id)
+            if not state:
+                logger.warning(f"Pipeline not found for pause: {pipeline_id}")
+                return False
 
-        if state.status != PipelineStatus.RUNNING:
-            logger.warning(f"Pipeline {pipeline_id} is not running, cannot pause")
-            return False
+            if state.status != PipelineStatus.RUNNING:
+                logger.warning(f"Pipeline {pipeline_id} is not running, cannot pause")
+                return False
 
-        state.status = PipelineStatus.PAUSED
-        self.state_store.save(state)
-        logger.info(f"Paused pipeline {pipeline_id}")
+            state.status = PipelineStatus.PAUSED
+            self.state_store.save(state)
+            logger.info(f"Paused pipeline {pipeline_id}")
 
         return True
 

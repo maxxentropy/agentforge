@@ -7,30 +7,30 @@
 | Mode | full |
 | Files Checked | 0 |
 | Checks Run | 158 |
-| Total Violations | 4688 |
+| Total Violations | 4686 |
 | Errors | 0 |
-| Warnings | 437 |
-| Duration | 15.11s |
+| Warnings | 435 |
+| Duration | 1.24s |
 
 ### All Violations
 
 <details>
-<summary>View all 4688 violations in 414 files</summary>
+<summary>View all 4686 violations in 414 files</summary>
 
 **`<unknown>`** (4 violations)
 
-- 🟡 **require-package-json** at `file`
-  - Required file not found: 'package.json'
-  - 💡 *Run 'npm init' to create package.json*
-- 🟡 **require-csproj** at `file`
-  - Required file not found: '**/*.csproj'
-  - 💡 *Create a .csproj file for the project*
 - 🟡 **require-csproj** at `file`
   - Required file not found: '**/*.csproj'
   - 💡 *Create a .csproj file for the project*
 - 🟡 **require-package-json** at `file`
   - Required file not found: 'package.json'
   - 💡 *Run 'npm init' to create package.json*
+- 🟡 **require-package-json** at `file`
+  - Required file not found: 'package.json'
+  - 💡 *Run 'npm init' to create package.json*
+- 🟡 **require-csproj** at `file`
+  - Required file not found: '**/*.csproj'
+  - 💡 *Create a .csproj file for the project*
 
 **`docs/design/specs/agent-harness/agent_monitor_spec.yaml`** (2 violations)
 
@@ -374,9 +374,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/cli/click_commands/generate.py`** (7 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L63`
-  - Function 'code' has complexity 15 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L63`
   - Function 'code' has 73 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -404,12 +401,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L63`
+  - Function 'code' has complexity 15 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/cli/click_commands/pipeline.py`** (13 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L331`
-  - Function 'status' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L331`
   - Function 'status' has 59 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -451,6 +448,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L331`
+  - Function 'status' has complexity 12 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/cli/click_commands/spec.py`** (6 violations)
 
@@ -572,12 +572,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/cli/commands/agent.py`** (24 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L116`
-  - Function 'run_status' has complexity 14 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L374`
-  - Function 'run_fix_violation' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L374`
   - Function 'run_fix_violation' has 87 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -637,15 +631,15 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L116`
+  - Function 'run_status' has complexity 14 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L374`
+  - Function 'run_fix_violation' has complexity 12 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/cli/commands/bridge.py`** (6 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L17`
-  - Function 'run_bridge_generate' has complexity 13 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L145`
-  - Function 'run_bridge_mappings' has complexity 11 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L17`
   - Function 'run_bridge_generate' has 65 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -668,12 +662,15 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L17`
+  - Function 'run_bridge_generate' has complexity 13 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L145`
+  - Function 'run_bridge_mappings' has complexity 11 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/cli/commands/ci.py`** (208 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L187`
-  - Function 'run_baseline_compare' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L30`
   - Function 'run_ci_check' has 53 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -1296,6 +1293,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L187`
+  - Function 'run_baseline_compare' has complexity 12 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/cli/commands/config.py`** (4 violations)
 
@@ -1392,9 +1392,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/cli/commands/contracts.py`** (4 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L58`
-  - Function 'run_contracts_fix' has complexity 18 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L58`
   - Function 'run_contracts_fix' has 58 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -1414,9 +1411,28 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L58`
+  - Function 'run_contracts_fix' has complexity 18 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/cli/commands/discover.py`** (6 violations)
 
+- 🔵 **require-lineage-metadata-python** at `L1`
+  - File missing lineage metadata (no audit trail)
+  - 💡 *Add lineage header to file:
+# @spec_file: .agentforge/specs/your-spec-v1.yaml
+# @spec_id: your-spec-v1
+# @component_id: component-name
+# @test_path: tests/path/to/test.py
+Or regenerate file through TDFLOW to get proper lineage.*
+- 🔵 **require-lineage-metadata-python** at `L1`
+  - File missing lineage metadata (no audit trail)
+  - 💡 *Add lineage header to file:
+# @spec_file: .agentforge/specs/your-spec-v1.yaml
+# @spec_id: your-spec-v1
+# @component_id: component-name
+# @test_path: tests/path/to/test.py
+Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-cyclomatic-complexity** at `L40`
   - Function '_run_single_zone_discovery' has complexity 12 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
@@ -1429,22 +1445,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-cyclomatic-complexity** at `L282`
   - Function '_output_summary' has complexity 16 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
-- 🔵 **require-lineage-metadata-python** at `L1`
-  - File missing lineage metadata (no audit trail)
-  - 💡 *Add lineage header to file:
-# @spec_file: .agentforge/specs/your-spec-v1.yaml
-# @spec_id: your-spec-v1
-# @component_id: component-name
-# @test_path: tests/path/to/test.py
-Or regenerate file through TDFLOW to get proper lineage.*
-- 🔵 **require-lineage-metadata-python** at `L1`
-  - File missing lineage metadata (no audit trail)
-  - 💡 *Add lineage header to file:
-# @spec_file: .agentforge/specs/your-spec-v1.yaml
-# @spec_id: your-spec-v1
-# @component_id: component-name
-# @test_path: tests/path/to/test.py
-Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/cli/commands/revision.py`** (10 violations)
 
@@ -1520,9 +1520,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/cli/commands/spec.py`** (12 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L251`
-  - Function '_extract_locations_from_analysis' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L334`
   - Function 'run_draft' has 62 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -1559,12 +1556,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L251`
+  - Function '_extract_locations_from_analysis' has complexity 12 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/cli/commands/spec_adapt.py`** (12 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L234`
-  - Function 'run_adapt' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L234`
   - Function 'run_adapt' has 99 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -1600,6 +1597,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L234`
+  - Function 'run_adapt' has complexity 12 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/cli/commands/tdflow.py`** (13 violations)
 
@@ -1990,9 +1990,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/audit/context_frame.py`** (27 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L313`
-  - Function 'to_dict' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-parameter-count** at `L438`
   - Function 'with_llm_interaction' has 10 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
@@ -2060,12 +2057,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L313`
+  - Function 'to_dict' has complexity 12 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/core/audit/conversation_archive.py`** (19 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L134`
-  - Function 'to_markdown' has complexity 11 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L134`
   - Function 'to_markdown' has 54 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -2118,6 +2115,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L134`
+  - Function 'to_markdown' has complexity 11 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/core/audit/frame_logger.py`** (26 violations)
 
@@ -2239,9 +2239,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/audit/thread_correlator.py`** (29 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L136`
-  - Function 'to_dict' has complexity 11 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L210`
   - Function 'create_thread' has 61 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -2316,12 +2313,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L136`
+  - Function 'to_dict' has complexity 11 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/core/audit/transaction_logger.py`** (19 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L114`
-  - Function 'to_dict' has complexity 16 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L114`
   - Function 'to_dict' has 62 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -2375,6 +2372,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L114`
+  - Function 'to_dict' has complexity 16 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/core/bridge/conflict_resolver.py`** (12 violations)
 
@@ -2745,9 +2745,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/bridge/orchestrator.py`** (17 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L200`
-  - Function '_generate_report' has complexity 14 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L200`
   - Function '_generate_report' has 65 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -2794,6 +2791,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L200`
+  - Function '_generate_report' has complexity 14 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/core/bridge/profile_loader.py`** (18 violations)
 
@@ -3301,9 +3301,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/cicd/runner.py`** (19 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L379`
-  - Function '_determine_exit_code' has complexity 19 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-file-lines** at `file`
   - File exceeds line limit (580 lines > 500)
   - 💡 *Consider splitting into smaller files*
@@ -3355,6 +3352,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L379`
+  - Function '_determine_exit_code' has complexity 19 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/core/code_chunker.py`** (7 violations)
 
@@ -3410,9 +3410,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/conformance/domain.py`** (28 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L170`
-  - Function 'compute_test_path' has complexity 23 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L170`
   - Function 'compute_test_path' has 62 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -3482,6 +3479,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L170`
+  - Function 'compute_test_path' has complexity 23 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/core/conformance/history_store.py`** (11 violations)
 
@@ -3905,9 +3905,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/context/templates/base.py`** (18 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L287`
-  - Function '_get_section_value' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L213`
   - Function 'build_context_dict' has 63 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -3957,6 +3954,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L287`
+  - Function '_get_section_value' has complexity 12 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/core/context/templates/bridge.py`** (9 violations)
 
@@ -4521,21 +4521,18 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/contracts/cli.py`** (9 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L132`
-  - Function 'review_command' has complexity 21 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L132`
   - Function 'review_command' has 95 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
 - 🟡 **max-nesting-depth** at `L132`
   - Function 'review_command' has nesting depth 5 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
-- 🟡 **main-guard-pattern** at `file`
-  - Required pattern not found: 'if\s+__name__\s*==\s*['"]__main__['"]'
-  - 💡 *Add: if __name__ == '__main__': main()*
 - 🔵 **cli-has-version** at `file`
   - Required pattern not found: '@click\.version_option|--version|version_callback'
   - 💡 *Add @click.version_option() to main command*
+- 🟡 **main-guard-pattern** at `file`
+  - Required pattern not found: 'if\s+__name__\s*==\s*['"]__main__['"]'
+  - 💡 *Add: if __name__ == '__main__': main()*
 - 🔵 **cli-config-from-env** at `file`
   - Required pattern not found: '(envvar\s*=|os\.environ|getenv)'
   - 💡 *Add envvar parameter: @click.option('--api-key', envvar='API_KEY')*
@@ -4557,6 +4554,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L132`
+  - Function 'review_command' has complexity 21 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/core/contracts/draft.py`** (31 violations)
 
@@ -4640,9 +4640,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/contracts/drafter.py`** (16 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L135`
-  - Function '_load_system_prompt' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🔵 **single-responsibility-modules** at `L110`
   - Class 'ContractDrafter' has 12 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -4686,6 +4683,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L135`
+  - Function '_load_system_prompt' has complexity 12 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/core/contracts/enforcer.py`** (24 violations)
 
@@ -4950,9 +4950,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/contracts/registry.py`** (19 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L192`
-  - Function 'evolve' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L192`
   - Function 'evolve' has 53 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -5004,6 +5001,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L192`
+  - Function 'evolve' has complexity 12 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/core/contracts/reviewer.py`** (19 violations)
 
@@ -5152,14 +5152,8 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 
-**`src/agentforge/core/contracts_fixers.py`** (22 violations)
+**`src/agentforge/core/contracts_fixers.py`** (20 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L251`
-  - Function '_find_expression_end' has complexity 15 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L291`
-  - Function '_has_message_already' has complexity 15 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-nesting-depth** at `L251`
   - Function '_find_expression_end' has nesting depth 6 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
@@ -5352,9 +5346,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/discovery/analyzers/interactions.py`** (18 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L52`
-  - Function '_detect_docker_compose' has complexity 13 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-nesting-depth** at `L52`
   - Function '_detect_docker_compose' has nesting depth 5 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
@@ -5403,15 +5394,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L52`
+  - Function '_detect_docker_compose' has complexity 13 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/core/discovery/analyzers/patterns.py`** (17 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L484`
-  - Function '_check_signal' has complexity 43 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L654`
-  - Function '_detect_frameworks' has complexity 15 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L484`
   - Function '_check_signal' has 88 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -5461,12 +5449,15 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L484`
+  - Function '_check_signal' has complexity 43 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L654`
+  - Function '_detect_frameworks' has complexity 15 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/core/discovery/analyzers/structure.py`** (19 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L183`
-  - Function '_detect_layer' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-nesting-depth** at `L183`
   - Function '_detect_layer' has nesting depth 5 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
@@ -5518,6 +5509,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L183`
+  - Function '_detect_layer' has complexity 12 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/core/discovery/analyzers/test_linkage.py`** (16 violations)
 
@@ -5538,6 +5532,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @impl_path: path/to/implementation.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **file-structure** at `file`
+  - Test file outside tests/ directory
+  - 💡 *Move test files to tests/ directory*
+- 🟡 **file-structure** at `file`
+  - Test file outside tests/ directory
+  - 💡 *Move test files to tests/ directory*
 - 🔵 **default-result-return-types** at `L36`
   - Method 'analyze' returns 'CoverageGapAnalysis', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **default-result-return-types** at `L111`
@@ -5556,9 +5556,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
   - Method '_detect_frameworks' returns 'list[str]', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **default-result-return-types** at `L246`
   - Method '_categorize_tests' returns 'dict[str, int]', expected pattern 'Result|Either|Success|Failure'
-- 🟡 **file-structure** at `file`
-  - Test file outside tests/ directory
-  - 💡 *Move test files to tests/ directory*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
   - 💡 *Add lineage header to file:
@@ -5567,9 +5564,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @impl_path: path/to/implementation.py
 Or regenerate file through TDFLOW to get proper lineage.*
-- 🟡 **file-structure** at `file`
-  - Test file outside tests/ directory
-  - 💡 *Move test files to tests/ directory*
 
 **`src/agentforge/core/discovery/domain.py`** (20 violations)
 
@@ -5629,9 +5623,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/discovery/generators/as_built_spec.py`** (17 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L296`
-  - Function '_classify_class' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-nesting-depth** at `L323`
   - Function '_match_test_methods' has nesting depth 5 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
@@ -5678,12 +5669,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L296`
+  - Function '_classify_class' has complexity 12 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/core/discovery/generators/lineage_embedder.py`** (13 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L300`
-  - Function '_insert_lineage_block' has complexity 18 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L122`
   - Function 'embed_file' has 68 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -5723,6 +5714,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L300`
+  - Function '_insert_lineage_block' has complexity 18 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/core/discovery/generators/profile.py`** (13 violations)
 
@@ -5769,18 +5763,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/discovery/manager.py`** (34 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L246`
-  - Function '_detect_languages' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L600`
-  - Function 'discover' has complexity 13 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L719`
-  - Function '_analyze_zone' has complexity 14 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L844`
-  - Function '_generate_multi_zone_profile' has complexity 16 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L600`
   - Function 'discover' has 80 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -5864,6 +5846,18 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L246`
+  - Function '_detect_languages' has complexity 12 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L600`
+  - Function 'discover' has complexity 13 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L719`
+  - Function '_analyze_zone' has complexity 14 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L844`
+  - Function '_generate_multi_zone_profile' has complexity 16 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/core/discovery/providers/base.py`** (13 violations)
 
@@ -5909,18 +5903,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/discovery/providers/dotnet_provider.py`** (33 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L104`
-  - Function '_parse_csproj' has complexity 19 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L304`
-  - Function '_extract_symbols_regex' has complexity 15 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L493`
-  - Function 'detect_layer_from_project_name' has complexity 11 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L549`
-  - Function 'count_lines' has complexity 11 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L104`
   - Function '_parse_csproj' has 57 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -5998,18 +5980,21 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L104`
+  - Function '_parse_csproj' has complexity 19 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L304`
+  - Function '_extract_symbols_regex' has complexity 15 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L493`
+  - Function 'detect_layer_from_project_name' has complexity 11 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L549`
+  - Function 'count_lines' has complexity 11 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/core/discovery/providers/python_provider.py`** (52 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L477`
-  - Function 'suggest_extractions' has complexity 11 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L609`
-  - Function 'get_violation_context' has complexity 14 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L786`
-  - Function '_get_parameter_suggestions' has complexity 19 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L786`
   - Function '_get_parameter_suggestions' has 51 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -6129,6 +6114,15 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L477`
+  - Function 'suggest_extractions' has complexity 11 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L609`
+  - Function 'get_violation_context' has complexity 14 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L786`
+  - Function '_get_parameter_suggestions' has complexity 19 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/core/discovery/zones/detector.py`** (10 violations)
 
@@ -6452,9 +6446,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/generate/provider.py`** (22 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L138`
-  - Function 'generate' has complexity 11 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L138`
   - Function 'generate' has 61 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -6513,6 +6504,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L138`
+  - Function 'generate' has complexity 11 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/core/generate/writer.py`** (18 violations)
 
@@ -6584,9 +6578,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/harness/action_parser.py`** (14 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L45`
-  - Function 'parse' has complexity 13 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-nesting-depth** at `L45`
   - Function 'parse' has nesting depth 6 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
@@ -6628,18 +6619,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L45`
+  - Function 'parse' has complexity 13 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/core/harness/agent_monitor.py`** (18 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L114`
-  - Function 'detect_loop' has complexity 20 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L218`
-  - Function 'detect_thrashing' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L296`
-  - Function 'get_health' has complexity 23 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L114`
   - Function 'detect_loop' has 53 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -6686,6 +6671,15 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L114`
+  - Function 'detect_loop' has complexity 20 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L218`
+  - Function 'detect_thrashing' has complexity 12 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L296`
+  - Function 'get_health' has complexity 23 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/core/harness/agent_orchestrator.py`** (22 violations)
 
@@ -6878,12 +6872,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/harness/conformance_tools.py`** (9 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L243`
-  - Function 'run_conformance_check' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L330`
-  - Function 'get_check_definition' has complexity 11 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L243`
   - Function 'run_conformance_check' has 69 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -6912,6 +6900,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L243`
+  - Function 'run_conformance_check' has complexity 12 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L330`
+  - Function 'get_check_definition' has complexity 11 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/core/harness/escalation_domain.py`** (2 violations)
 
@@ -7060,12 +7054,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/harness/fix_violation_workflow.py`** (15 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L227`
-  - Function 'fix_violation' has complexity 19 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L339`
-  - Function '_determine_phase' has complexity 16 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L227`
   - Function 'fix_violation' has 83 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -7108,6 +7096,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L227`
+  - Function 'fix_violation' has complexity 19 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L339`
+  - Function '_determine_phase' has complexity 16 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/core/harness/git_tools.py`** (5 violations)
 
@@ -7172,9 +7166,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/harness/llm_executor_domain.py`** (36 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L56`
-  - Function '_infer_category' has complexity 15 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🔵 **single-responsibility-modules** at `L44`
   - Class 'ToolCall' has 4 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -7263,6 +7254,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L56`
+  - Function '_infer_category' has complexity 15 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/core/harness/memory_domain.py`** (8 violations)
 
@@ -7371,9 +7365,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/harness/minimal_context/adaptive_budget.py`** (13 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L191`
-  - Function '_update_progress' has complexity 13 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🔵 **single-responsibility-modules** at `L30`
   - Class 'AdaptiveBudget' has 10 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -7411,6 +7402,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L191`
+  - Function '_update_progress' has complexity 13 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/core/harness/minimal_context/context_models.py`** (15 violations)
 
@@ -7461,18 +7455,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/harness/minimal_context/executor.py`** (44 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L255`
-  - Function '_handle_phase_transition' has complexity 17 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L595`
-  - Function '_validate_response_parameters' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L741`
-  - Function 'run_until_complete' has complexity 30 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L894`
-  - Function 'run_task_native' has complexity 20 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L103`
   - Function '__init__' has 71 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -7582,42 +7564,21 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L255`
+  - Function '_handle_phase_transition' has complexity 17 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L595`
+  - Function '_validate_response_parameters' has complexity 12 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L741`
+  - Function 'run_until_complete' has complexity 30 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L894`
+  - Function 'run_task_native' has complexity 20 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/core/harness/minimal_context/fix_workflow.py`** (51 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L124`
-  - Function '_build_action_executors' has complexity 11 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L177`
-  - Function '_with_test_verification' has complexity 20 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L366`
-  - Function '_action_read_file' has complexity 11 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L431`
-  - Function '_action_edit_file' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L561`
-  - Function '_action_replace_lines' has complexity 19 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L665`
-  - Function '_action_insert_lines' has complexity 22 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L806`
-  - Function '_wrap_extract_function' has complexity 27 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L941`
-  - Function '_action_run_check' has complexity 17 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L1154`
-  - Function '_precompute_violation_context' has complexity 36 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L195`
-  - Function 'wrapper' has complexity 20 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L816`
-  - Function 'wrapper' has complexity 27 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L177`
   - Function '_with_test_verification' has 80 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -7725,18 +7686,42 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L124`
+  - Function '_build_action_executors' has complexity 11 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L177`
+  - Function '_with_test_verification' has complexity 20 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L366`
+  - Function '_action_read_file' has complexity 11 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L431`
+  - Function '_action_edit_file' has complexity 12 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L561`
+  - Function '_action_replace_lines' has complexity 19 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L665`
+  - Function '_action_insert_lines' has complexity 22 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L806`
+  - Function '_wrap_extract_function' has complexity 27 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L941`
+  - Function '_action_run_check' has complexity 17 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L1154`
+  - Function '_precompute_violation_context' has complexity 36 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L195`
+  - Function 'wrapper' has complexity 20 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L816`
+  - Function 'wrapper' has complexity 27 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/core/harness/minimal_context/loop_detector.py`** (18 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L212`
-  - Function '_check_identical' has complexity 11 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L288`
-  - Function '_check_semantic_loop' has complexity 14 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L338`
-  - Function '_check_no_progress' has complexity 11 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🔵 **single-responsibility-modules** at `L79`
   - Class 'LoopDetector' has 12 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -7780,6 +7765,15 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L212`
+  - Function '_check_identical' has complexity 11 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L288`
+  - Function '_check_semantic_loop' has complexity 14 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L338`
+  - Function '_check_no_progress' has complexity 11 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/core/harness/minimal_context/native_tool_executor.py`** (13 violations)
 
@@ -8011,15 +8005,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/harness/minimal_context/template_context_builder.py`** (22 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L325`
-  - Function '_get_precomputed' has complexity 11 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L362`
-  - Function '_get_domain_context' has complexity 11 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L404`
-  - Function '_format_user_message' has complexity 11 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-nesting-depth** at `L325`
   - Function '_get_precomputed' has nesting depth 5 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
@@ -8073,6 +8058,15 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L325`
+  - Function '_get_precomputed' has complexity 11 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L362`
+  - Function '_get_domain_context' has complexity 11 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L404`
+  - Function '_format_user_message' has complexity 11 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/core/harness/minimal_context/tool_handlers/__init__.py`** (13 violations)
 
@@ -8124,24 +8118,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/harness/minimal_context/tool_handlers/file_handlers.py`** (22 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L134`
-  - Function 'create_edit_file_handler' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L222`
-  - Function 'create_replace_lines_handler' has complexity 16 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L308`
-  - Function 'create_insert_lines_handler' has complexity 20 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L149`
-  - Function 'handler' has complexity 11 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L236`
-  - Function 'handler' has complexity 15 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L322`
-  - Function 'handler' has complexity 19 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L134`
   - Function 'create_edit_file_handler' has 57 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -8190,27 +8166,27 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L134`
+  - Function 'create_edit_file_handler' has complexity 12 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L222`
+  - Function 'create_replace_lines_handler' has complexity 16 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L308`
+  - Function 'create_insert_lines_handler' has complexity 20 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L149`
+  - Function 'handler' has complexity 11 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L236`
+  - Function 'handler' has complexity 15 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L322`
+  - Function 'handler' has complexity 19 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/core/harness/minimal_context/tool_handlers/search_handlers.py`** (28 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L50`
-  - Function 'create_search_code_handler' has complexity 26 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L188`
-  - Function 'create_load_context_handler' has complexity 14 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L281`
-  - Function 'create_find_related_handler' has complexity 27 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L84`
-  - Function '_regex_search' has complexity 17 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L202`
-  - Function 'handler' has complexity 13 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L296`
-  - Function 'handler' has complexity 26 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L50`
   - Function 'create_search_code_handler' has 104 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -8278,15 +8254,27 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L50`
+  - Function 'create_search_code_handler' has complexity 26 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L188`
+  - Function 'create_load_context_handler' has complexity 14 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L281`
+  - Function 'create_find_related_handler' has complexity 27 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L84`
+  - Function '_regex_search' has complexity 17 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L202`
+  - Function 'handler' has complexity 13 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L296`
+  - Function 'handler' has complexity 26 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/core/harness/minimal_context/tool_handlers/terminal_handlers.py`** (17 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L88`
-  - Function 'create_cannot_fix_handler' has complexity 16 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L103`
-  - Function 'handler' has complexity 11 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L88`
   - Function 'create_cannot_fix_handler' has 85 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -8331,6 +8319,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L88`
+  - Function 'create_cannot_fix_handler' has complexity 16 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L103`
+  - Function 'handler' has complexity 11 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/core/harness/minimal_context/tool_handlers/types.py`** (11 violations)
 
@@ -8387,24 +8381,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/harness/minimal_context/tool_handlers/verify_handlers.py`** (25 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L35`
-  - Function 'create_run_check_handler' has complexity 25 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L146`
-  - Function 'create_run_check_handler_v2' has complexity 17 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L268`
-  - Function 'create_run_tests_handler' has complexity 17 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L370`
-  - Function 'create_validate_python_handler' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L50`
-  - Function 'handler' has complexity 19 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L385`
-  - Function 'handler' has complexity 11 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L35`
   - Function 'create_run_check_handler' has 82 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -8460,6 +8436,24 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L35`
+  - Function 'create_run_check_handler' has complexity 25 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L146`
+  - Function 'create_run_check_handler_v2' has complexity 17 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L268`
+  - Function 'create_run_tests_handler' has complexity 17 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L370`
+  - Function 'create_validate_python_handler' has complexity 12 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L50`
+  - Function 'handler' has complexity 19 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L385`
+  - Function 'handler' has complexity 11 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/core/harness/minimal_context/understanding.py`** (25 violations)
 
@@ -8654,9 +8648,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/harness/python_tools.py`** (6 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L70`
-  - Function 'analyze_function' has complexity 17 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L70`
   - Function 'analyze_function' has 65 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -8681,6 +8672,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L70`
+  - Function 'analyze_function' has complexity 17 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/core/harness/recovery_domain.py`** (2 violations)
 
@@ -8753,9 +8747,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/harness/refactoring_tools.py`** (7 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L130`
-  - Function 'simplify_conditional' has complexity 16 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L50`
   - Function 'extract_function' has 63 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -8783,6 +8774,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L130`
+  - Function 'simplify_conditional' has complexity 16 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/core/harness/rollback_manager.py`** (10 violations)
 
@@ -8976,11 +8970,14 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @impl_path: path/to/implementation.py
 Or regenerate file through TDFLOW to get proper lineage.*
-- 🔵 **default-result-return-types** at `L181`
-  - Method 'get_tool_executors' returns 'dict[str, Any]', expected pattern 'Result|Either|Success|Failure'
 - 🟡 **file-structure** at `file`
   - Test file outside tests/ directory
   - 💡 *Move test files to tests/ directory*
+- 🟡 **file-structure** at `file`
+  - Test file outside tests/ directory
+  - 💡 *Move test files to tests/ directory*
+- 🔵 **default-result-return-types** at `L181`
+  - Method 'get_tool_executors' returns 'dict[str, Any]', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
   - 💡 *Add lineage header to file:
@@ -8989,9 +8986,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @impl_path: path/to/implementation.py
 Or regenerate file through TDFLOW to get proper lineage.*
-- 🟡 **file-structure** at `file`
-  - Test file outside tests/ directory
-  - 💡 *Move test files to tests/ directory*
 
 **`src/agentforge/core/harness/tool_domain.py`** (8 violations)
 
@@ -9100,12 +9094,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/harness/tool_selector.py`** (10 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L25`
-  - Function 'get_tools' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L69`
-  - Function 'detect_domain' has complexity 16 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-nesting-depth** at `L25`
   - Function 'get_tools' has nesting depth 5 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
@@ -9136,12 +9124,15 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L25`
+  - Function 'get_tools' has complexity 12 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L69`
+  - Function 'detect_domain' has complexity 16 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/core/harness/violation_tools.py`** (9 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L135`
-  - Function 'list_violations' has complexity 14 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L135`
   - Function 'list_violations' has 60 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -9172,6 +9163,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L135`
+  - Function 'list_violations' has complexity 14 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/core/init.py`** (8 violations)
 
@@ -9206,9 +9200,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/lineage/metadata.py`** (8 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L99`
-  - Function 'parse_lineage_from_file' has complexity 11 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-parameter-count** at `L164`
   - Function 'generate_lineage_header' has 9 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
@@ -9236,6 +9227,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L99`
+  - Function 'parse_lineage_from_file' has complexity 11 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/core/llm/__init__.py`** (4 violations)
 
@@ -9830,12 +9824,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/pipeline/controller.py`** (25 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L569`
-  - Function '_run' has complexity 13 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L681`
-  - Function '_execute_stage' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L681`
   - Function '_execute_stage' has 59 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -9900,6 +9888,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L569`
+  - Function '_run' has complexity 13 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L681`
+  - Function '_execute_stage' has complexity 12 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/core/pipeline/discovery_integration.py`** (19 violations)
 
@@ -10284,12 +10278,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/pipeline/stages/green.py`** (25 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L227`
-  - Function 'execute' has complexity 13 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L409`
-  - Function '_register_implementation_tools' has complexity 11 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L227`
   - Function 'execute' has 69 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -10352,6 +10340,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L227`
+  - Function 'execute' has complexity 13 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L409`
+  - Function '_register_implementation_tools' has complexity 11 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/core/pipeline/stages/intake.py`** (9 violations)
 
@@ -10473,9 +10467,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/pipeline/stages/spec.py`** (13 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L298`
-  - Function 'validate_output' has complexity 13 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🔵 **single-responsibility-modules** at `L32`
   - Class 'SpecExecutor' has 7 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -10516,6 +10507,9 @@ data_models', expected pattern 'Result|Either|Success|Failure'
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L298`
+  - Function 'validate_output' has complexity 13 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/core/pipeline/state.py`** (20 violations)
 
@@ -10806,9 +10800,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/refactoring/rope_provider.py`** (11 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L156`
-  - Function 'extract_function' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L89`
   - Function 'can_extract_function' has 53 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -10846,12 +10837,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L156`
+  - Function 'extract_function' has complexity 12 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/core/spec/placement.py`** (16 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L242`
-  - Function 'analyze' has complexity 13 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L242`
   - Function 'analyze' has 94 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -10896,6 +10887,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L242`
+  - Function 'analyze' has complexity 13 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/core/tdflow/domain.py`** (12 violations)
 
@@ -10939,9 +10933,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/tdflow/orchestrator.py`** (14 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L257`
-  - Function 'verify' has complexity 14 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L257`
   - Function 'verify' has 69 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -10982,6 +10973,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L257`
+  - Function 'verify' has complexity 14 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/core/tdflow/phases/green.py`** (13 violations)
 
@@ -11418,9 +11412,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/verification_checks.py`** (10 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L48`
-  - Function '_run_command_check' has complexity 14 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🔵 **single-responsibility-modules** at `L35`
   - Class 'CheckRunner' has 15 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -11452,6 +11443,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L48`
+  - Function '_run_command_check' has complexity 14 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/core/verification_contracts_check.py`** (6 violations)
 
@@ -11779,9 +11773,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`tests/integration/cli/test_pipeline_cli_integration.py`** (10 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L27`
-  - Function 'test_cli_has_all_pipeline_commands' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🔵 **single-responsibility-modules** at `L24`
   - Class 'TestCLICommandIntegration' has 7 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -11819,12 +11810,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @impl_path: path/to/implementation.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L27`
+  - Function 'test_cli_has_all_pipeline_commands' has complexity 12 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`tests/integration/context/test_context_v2_integration.py`** (11 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L197`
-  - Function 'test_audit_captures_full_workflow' has complexity 14 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L44`
   - Function 'realistic_project' has 67 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -11834,6 +11825,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **single-responsibility-modules** at `L307`
   - Class 'TestContextReproducibility' has 4 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
+- 🟡 **no-assert-true-false** at `L73`
+  - Forbidden pattern found: 'assert True'
+  - 💡 *Use specific assertions: assert result == expected*
+- 🟡 **no-assert-true-false** at `L73`
+  - Forbidden pattern found: 'assert True'
+  - 💡 *Use specific assertions: assert result == expected*
 - 🔵 **fixtures-in-conftest** at `L43`
   - Forbidden pattern found: '@pytest.fixture'
   - 💡 *Move shared fixtures to conftest.py*
@@ -11843,12 +11840,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **fixtures-in-conftest** at `L363`
   - Forbidden pattern found: '@pytest.fixture'
   - 💡 *Move shared fixtures to conftest.py*
-- 🟡 **no-assert-true-false** at `L73`
-  - Forbidden pattern found: 'assert True'
-  - 💡 *Use specific assertions: assert result == expected*
-- 🟡 **no-assert-true-false** at `L73`
-  - Forbidden pattern found: 'assert True'
-  - 💡 *Use specific assertions: assert result == expected*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
   - 💡 *Add lineage header to file:
@@ -11865,6 +11856,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @impl_path: path/to/implementation.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L197`
+  - Function 'test_audit_captures_full_workflow' has complexity 14 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`tests/integration/harness/test_harness_workflow.py`** (27 violations)
 
@@ -11978,9 +11972,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`tests/integration/pipeline/stages/test_design_pipeline.py`** (6 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L280`
-  - Function 'test_full_design_pipeline_with_mocked_llm' has complexity 14 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L214`
   - Function 'test_spec_generates_test_cases' has 57 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -12006,6 +11997,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @impl_path: path/to/implementation.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L280`
+  - Function 'test_full_design_pipeline_with_mocked_llm' has complexity 14 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`tests/integration/pipeline/stages/test_refactor_deliver_pipeline.py`** (3 violations)
 
@@ -12057,9 +12051,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`tests/integration/pipeline/test_config_integration.py`** (4 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L16`
-  - Function 'test_full_config_hierarchy' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🔵 **prefer-pytest-raises** at `L361`
   - Forbidden pattern found: 'try:
             settings = loader.load_settings()
@@ -12101,6 +12092,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @impl_path: path/to/implementation.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L16`
+  - Function 'test_full_config_hierarchy' has complexity 12 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`tests/integration/pipeline/test_pipeline_execution.py`** (2 violations)
 
@@ -12189,9 +12183,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`tests/integration/workflows/test_fix_violation_workflow.py`** (8 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L262`
-  - Function 'test_read_search_edit_sequence' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🔵 **single-responsibility-modules** at `L32`
   - Class 'TestToolHandlerIntegration' has 7 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -12220,6 +12211,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @impl_path: path/to/implementation.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L262`
+  - Function 'test_read_search_edit_sequence' has complexity 12 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`tests/test_python_checks.py`** (5 violations)
 
@@ -12901,15 +12895,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`tests/unit/contracts/test_operations.py`** (14 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L357`
-  - Function 'test_load_builtin_contracts' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L511`
-  - Function 'test_code_generation_contract' has complexity 11 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L608`
-  - Function 'test_design_patterns_contract' has complexity 32 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🔵 **single-responsibility-modules** at `L146`
   - Class 'TestOperationContract' has 7 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -12953,6 +12938,15 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @impl_path: path/to/implementation.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L357`
+  - Function 'test_load_builtin_contracts' has complexity 12 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L511`
+  - Function 'test_code_generation_contract' has complexity 11 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L608`
+  - Function 'test_design_patterns_contract' has complexity 32 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`tests/unit/contracts/test_registry.py`** (5 violations)
 
@@ -13527,9 +13521,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`tests/unit/harness/test_enhanced_context.py`** (19 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L1760`
-  - Function 'test_migrate_v1_to_v2' has complexity 11 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🔵 **single-responsibility-modules** at `L49`
   - Class 'TestFact' has 4 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -13594,12 +13585,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @impl_path: path/to/implementation.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L1760`
+  - Function 'test_migrate_v1_to_v2' has complexity 11 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`tests/unit/harness/test_escalation_domain.py`** (5 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L109`
-  - Function 'test_escalation_creation_with_required_fields' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🔵 **single-responsibility-modules** at `L106`
   - Class 'TestEscalation' has 5 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -13622,6 +13613,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @impl_path: path/to/implementation.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L109`
+  - Function 'test_escalation_creation_with_required_fields' has complexity 12 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`tests/unit/harness/test_escalation_manager.py`** (15 violations)
 
@@ -14166,6 +14160,18 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **single-responsibility-modules** at `L464`
   - Class 'TestConformanceTools' has 13 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
+- 🟡 **no-assert-true-false** at `L389`
+  - Forbidden pattern found: 'assert True'
+  - 💡 *Use specific assertions: assert result == expected*
+- 🟡 **no-assert-true-false** at `L400`
+  - Forbidden pattern found: 'assert False'
+  - 💡 *Use specific assertions: assert result == expected*
+- 🟡 **no-assert-true-false** at `L389`
+  - Forbidden pattern found: 'assert True'
+  - 💡 *Use specific assertions: assert result == expected*
+- 🟡 **no-assert-true-false** at `L400`
+  - Forbidden pattern found: 'assert False'
+  - 💡 *Use specific assertions: assert result == expected*
 - 🔵 **fixtures-in-conftest** at `L74`
   - Forbidden pattern found: '@pytest.fixture'
   - 💡 *Move shared fixtures to conftest.py*
@@ -14178,18 +14184,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **fixtures-in-conftest** at `L467`
   - Forbidden pattern found: '@pytest.fixture'
   - 💡 *Move shared fixtures to conftest.py*
-- 🟡 **no-assert-true-false** at `L389`
-  - Forbidden pattern found: 'assert True'
-  - 💡 *Use specific assertions: assert result == expected*
-- 🟡 **no-assert-true-false** at `L400`
-  - Forbidden pattern found: 'assert False'
-  - 💡 *Use specific assertions: assert result == expected*
-- 🟡 **no-assert-true-false** at `L389`
-  - Forbidden pattern found: 'assert True'
-  - 💡 *Use specific assertions: assert result == expected*
-- 🟡 **no-assert-true-false** at `L400`
-  - Forbidden pattern found: 'assert False'
-  - 💡 *Use specific assertions: assert result == expected*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
   - 💡 *Add lineage header to file:
@@ -15564,9 +15558,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`tests/unit/pipeline/test_state_machine_properties.py`** (4 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L302`
-  - Function 'test_to_dict_from_dict_roundtrip' has complexity 11 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🔵 **single-responsibility-modules** at `L167`
   - Class 'TestTimestampInvariant' has 5 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -15586,6 +15577,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @impl_path: path/to/implementation.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **max-cyclomatic-complexity** at `L302`
+  - Function 'test_to_dict_from_dict_roundtrip' has complexity 11 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`tests/unit/pipeline/test_state_store.py`** (7 violations)
 
@@ -16393,6 +16387,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **single-responsibility-modules** at `L261`
   - Class 'TestPromptBuilderErrorContext' has 5 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
+- 🟡 **no-assert-true-false** at `L293`
+  - Forbidden pattern found: 'assert False'
+  - 💡 *Use specific assertions: assert result == expected*
+- 🟡 **no-assert-true-false** at `L293`
+  - Forbidden pattern found: 'assert False'
+  - 💡 *Use specific assertions: assert result == expected*
 - 🔵 **fixtures-in-conftest** at `L24`
   - Forbidden pattern found: '@pytest.fixture'
   - 💡 *Move shared fixtures to conftest.py*
@@ -16429,12 +16429,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **fixtures-in-conftest** at `L361`
   - Forbidden pattern found: '@pytest.fixture'
   - 💡 *Move shared fixtures to conftest.py*
-- 🟡 **no-assert-true-false** at `L293`
-  - Forbidden pattern found: 'assert False'
-  - 💡 *Use specific assertions: assert result == expected*
-- 🟡 **no-assert-true-false** at `L293`
-  - Forbidden pattern found: 'assert False'
-  - 💡 *Use specific assertions: assert result == expected*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
   - 💡 *Add lineage header to file:
@@ -17041,5 +17035,5 @@ Or regenerate file through TDFLOW to get proper lineage.*
 </details>
 
 ---
-*Generated at 2026-01-03 18:27:21 UTC*
-*Commit: `91db55aa`*
+*Generated at 2026-01-03 18:33:40 UTC*
+*Commit: `c32164ca`*

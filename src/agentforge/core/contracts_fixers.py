@@ -248,81 +248,89 @@ def _add_message_to_assert(line: str, message: str) -> str:
     return f'{indent}{assert_kw}{test_expr}, "{safe_message}"{trailing}'
 
 
-def _find_expression_end(text: str) -> int:
-    """Find where the expression ends (accounting for strings and parens)."""
+def _is_escaped_quote(text: str, i: int) -> bool:
+    """Check if char at position is an escaped quote."""
+    return i > 0 and text[i - 1] == "\\"
+
+
+def _handle_string_start(text: str, i: int, char: str) -> tuple[str, int]:
+    """Handle start of a string literal, return (string_marker, new_index)."""
+    if text[i:i+3] in ('"""', "'''"):
+        return text[i:i+3], i + 3
+    return char, i + 1
+
+
+def _handle_quote(text: str, i: int, char: str, in_string: str | None) -> tuple[str | None, int]:
+    """Handle quote character, returning (new_in_string, new_index)."""
+    if in_string is None:
+        return _handle_string_start(text, i, char)
+    if in_string == char:
+        return None, i + 1
+    if len(in_string) == 3 and text[i:i+3] == in_string:
+        return None, i + 3
+    return in_string, i + 1
+
+
+def _update_paren_depth(char: str, depth: int) -> int:
+    """Update parenthesis depth based on character."""
+    if char in "([{":
+        return depth + 1
+    if char in ")]}":
+        return depth - 1
+    return depth
+
+
+def _find_char_at_depth_zero(text: str, target_chars: str) -> int | None:
+    """Find first occurrence of any target char at depth 0 outside strings.
+
+    Handles:
+    - Single and double quotes (including triple quotes)
+    - Escaped quotes
+    - Nested parentheses, brackets, braces
+
+    Args:
+        text: The text to search
+        target_chars: Characters to find (e.g., "#" or ",")
+
+    Returns:
+        Index of first target char at depth 0, or None if not found.
+    """
     i = 0
     paren_depth = 0
-    in_string = None  # None, "'", or '"'
+    in_string: str | None = None
 
     while i < len(text):
         char = text[i]
 
-        # Handle string literals
-        if char in ('"', "'") and not (i > 0 and text[i - 1] == "\\"):
-            if in_string is None:
-                # Check for triple quotes
-                if text[i:i+3] in ('"""', "'''"):
-                    in_string = text[i:i+3]
-                    i += 3
-                    continue
-                in_string = char
-            elif in_string == char:
-                in_string = None
-            elif len(in_string) == 3 and text[i:i+3] == in_string:
-                in_string = None
-                i += 3
-                continue
+        # Handle quotes (unescaped only)
+        if char in ('"', "'") and not _is_escaped_quote(text, i):
+            in_string, i = _handle_quote(text, i, char, in_string)
+            continue
 
-        elif in_string is None:
-            # Only process these when not in a string
-            if char in "([{":
-                paren_depth += 1
-            elif char in ")]}":
-                paren_depth -= 1
-            elif char == "#" and paren_depth == 0:
-                # Start of comment outside strings
-                return i
+        # Skip non-string content processing when inside a string
+        if in_string is not None:
+            i += 1
+            continue
+
+        # Update bracket depth and check for target
+        paren_depth = _update_paren_depth(char, paren_depth)
+        if char in target_chars and paren_depth == 0:
+            return i
 
         i += 1
 
-    return len(text)
+    return None
+
+
+def _find_expression_end(text: str) -> int:
+    """Find where the expression ends (accounting for strings and parens)."""
+    pos = _find_char_at_depth_zero(text, "#")
+    return pos if pos is not None else len(text)
 
 
 def _has_message_already(test_expr: str) -> bool:
     """Check if assert already has a message (comma at depth 0 outside strings)."""
-    paren_depth = 0
-    in_string = None
-
-    i = 0
-    while i < len(test_expr):
-        char = test_expr[i]
-
-        # Handle string literals
-        if char in ('"', "'") and not (i > 0 and test_expr[i - 1] == "\\"):
-            if in_string is None:
-                if test_expr[i:i+3] in ('"""', "'''"):
-                    in_string = test_expr[i:i+3]
-                    i += 3
-                    continue
-                in_string = char
-            elif in_string == char:
-                in_string = None
-            elif len(in_string) == 3 and test_expr[i:i+3] == in_string:
-                in_string = None
-                i += 3
-                continue
-
-        elif in_string is None:
-            if char in "([{":
-                paren_depth += 1
-            elif char in ")]}":
-                paren_depth -= 1
-            elif char == "," and paren_depth == 0:
-                return True
-
-        i += 1
-
-    return False
+    return _find_char_at_depth_zero(test_expr, ",") is not None
 
 
 def _check_logging_setup(lines: list[str]) -> tuple[bool, bool]:

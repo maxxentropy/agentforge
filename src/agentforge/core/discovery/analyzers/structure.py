@@ -180,48 +180,68 @@ class StructureAnalyzer:
 
         return directories
 
+    def _score_directory_patterns(
+        self, path_parts: tuple[str, ...], patterns: list[str], weight: float
+    ) -> tuple[float, list[str]]:
+        """Score directory patterns against path parts."""
+        score = 0.0
+        signals = []
+        for pattern in patterns:
+            for part in path_parts:
+                if part.lower() == pattern:
+                    score += 0.8 * weight
+                    signals.append(f"directory_exact:{pattern}")
+                    break
+                elif pattern in part.lower():
+                    score += 0.4 * weight
+                    signals.append(f"directory_partial:{pattern}")
+        return score, signals
+
+    def _score_file_patterns(
+        self, dir_path: Path, file_patterns: list[str], weight: float
+    ) -> tuple[float, list[str]]:
+        """Score file patterns in directory."""
+        score = 0.0
+        signals = []
+        ext = list(self.provider.file_extensions)[0]
+        files_in_dir = list(dir_path.glob(f"*{ext}"))
+
+        for file_pattern in file_patterns:
+            matching_files = [f for f in files_in_dir if file_pattern in f.stem.lower()]
+            if matching_files:
+                score += 0.3 * weight * min(len(matching_files) / 3, 1.0)
+                signals.append(f"file_pattern:{file_pattern}({len(matching_files)})")
+
+        return score, signals
+
     def _detect_layer(self, dir_info: DirectoryInfo, root: Path) -> None:
         """Detect which architectural layer a directory belongs to."""
         path_parts = Path(dir_info.relative_path).parts
-        dir_info.relative_path.lower()
 
         best_match = None
         best_score = 0.0
-        signals = []
+        best_signals: list[str] = []
 
         for layer_name, layer_config in LAYER_PATTERNS.items():
-            score = 0.0
-            layer_signals = []
+            weight = layer_config["weight"]
 
-            # Check directory name matches
-            for pattern in layer_config["directories"]:
-                # Exact match on any path component
-                for part in path_parts:
-                    if part.lower() == pattern:
-                        score += 0.8 * layer_config["weight"]
-                        layer_signals.append(f"directory_exact:{pattern}")
-                        break
-                    elif pattern in part.lower():
-                        score += 0.4 * layer_config["weight"]
-                        layer_signals.append(f"directory_partial:{pattern}")
+            dir_score, dir_signals = self._score_directory_patterns(
+                path_parts, layer_config["directories"], weight
+            )
+            file_score, file_signals = self._score_file_patterns(
+                dir_info.path, layer_config["file_patterns"], weight
+            )
 
-            # Check file pattern matches in directory
-            files_in_dir = list(dir_info.path.glob(f"*{list(self.provider.file_extensions)[0]}"))
-            for file_pattern in layer_config["file_patterns"]:
-                matching_files = [f for f in files_in_dir if file_pattern in f.stem.lower()]
-                if matching_files:
-                    score += 0.3 * layer_config["weight"] * min(len(matching_files) / 3, 1.0)
-                    layer_signals.append(f"file_pattern:{file_pattern}({len(matching_files)})")
-
-            if score > best_score:
-                best_score = score
+            total_score = dir_score + file_score
+            if total_score > best_score:
+                best_score = total_score
                 best_match = layer_name
-                signals = layer_signals
+                best_signals = dir_signals + file_signals
 
         if best_match and best_score >= 0.3:
             dir_info.detected_layer = best_match
             dir_info.confidence = min(best_score, 1.0)
-            dir_info.signals = signals
+            dir_info.signals = best_signals
 
     def _aggregate_layers(self, directories: list[DirectoryInfo]) -> dict[str, LayerInfo]:
         """Aggregate directory detections into layer information."""

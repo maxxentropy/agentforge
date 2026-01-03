@@ -49,67 +49,69 @@ class InteractionDetector:
 
         return interactions
 
+    def _find_compose_files(self) -> set[Path]:
+        """Find all docker-compose files in repo."""
+        patterns = [
+            "docker-compose.yaml", "docker-compose.yml",
+            "docker-compose*.yaml", "docker-compose*.yml",
+            "**/docker-compose.yaml", "**/docker-compose.yml",
+        ]
+        compose_files: set[Path] = set()
+        for pattern in patterns:
+            compose_files.update(self.repo_root.glob(pattern))
+        return compose_files
+
+    def _extract_service_dependencies(self, svc_config: dict) -> list[str]:
+        """Extract depends_on list from service config."""
+        depends = svc_config.get("depends_on", [])
+        if isinstance(depends, dict):
+            return list(depends.keys())
+        return list(depends) if depends else []
+
+    def _parse_compose_file(self, compose_file: Path) -> list[Interaction]:
+        """Parse a single compose file and extract cross-zone interactions."""
+        interactions: list[Interaction] = []
+
+        compose_data = yaml.safe_load(compose_file.read_text())
+        if not compose_data:
+            return []
+
+        services = compose_data.get("services", {})
+        if not services:
+            return []
+
+        service_zones = self._map_services_to_zones(services)
+
+        for svc_name, svc_config in services.items():
+            for dep in self._extract_service_dependencies(svc_config or {}):
+                from_zone = service_zones.get(svc_name)
+                to_zone = service_zones.get(dep)
+
+                if from_zone and to_zone and from_zone != to_zone:
+                    interactions.append(Interaction(
+                        id=f"{svc_name}-to-{dep}",
+                        interaction_type=InteractionType.DOCKER_COMPOSE,
+                        from_zone=from_zone,
+                        to_zone=to_zone,
+                        details={
+                            "from_service": svc_name,
+                            "to_service": dep,
+                            "compose_file": str(compose_file.relative_to(self.repo_root)),
+                        },
+                    ))
+
+        return interactions
+
     def _detect_docker_compose(self) -> list[Interaction]:
         """Detect interactions from docker-compose.yaml files."""
         if yaml is None:
             return []
 
         interactions: list[Interaction] = []
-
-        # Find all docker-compose files
-        compose_patterns = [
-            "docker-compose.yaml",
-            "docker-compose.yml",
-            "docker-compose*.yaml",
-            "docker-compose*.yml",
-            "**/docker-compose.yaml",
-            "**/docker-compose.yml",
-        ]
-
-        compose_files: set[Path] = set()
-        for pattern in compose_patterns:
-            compose_files.update(self.repo_root.glob(pattern))
-
-        for compose_file in compose_files:
+        for compose_file in self._find_compose_files():
             try:
-                compose_data = yaml.safe_load(compose_file.read_text())
-                if not compose_data:
-                    continue
-
-                services = compose_data.get("services", {})
-                if not services:
-                    continue
-
-                # Map services to zones based on build context
-                service_zones = self._map_services_to_zones(services)
-
-                # Detect depends_on relationships
-                for svc_name, svc_config in services.items():
-                    depends = svc_config.get("depends_on", [])
-                    if isinstance(depends, dict):
-                        depends = list(depends.keys())
-
-                    for dep in depends:
-                        from_zone = service_zones.get(svc_name)
-                        to_zone = service_zones.get(dep)
-
-                        # Only record cross-zone dependencies
-                        if from_zone and to_zone and from_zone != to_zone:
-                            interaction = Interaction(
-                                id=f"{svc_name}-to-{dep}",
-                                interaction_type=InteractionType.DOCKER_COMPOSE,
-                                from_zone=from_zone,
-                                to_zone=to_zone,
-                                details={
-                                    "from_service": svc_name,
-                                    "to_service": dep,
-                                    "compose_file": str(compose_file.relative_to(self.repo_root)),
-                                },
-                            )
-                            interactions.append(interaction)
-
+                interactions.extend(self._parse_compose_file(compose_file))
             except Exception:
-                # Skip malformed compose files
                 continue
 
         return interactions

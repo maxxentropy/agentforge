@@ -191,8 +191,9 @@ checks:
       paths:
         - "**/*.py"
       exclude_paths:
-        - "cli/click_commands/**"
-        - "cli/main.py"
+        - "**/cli/click_commands/**"
+        - "**/cli/commands/**"
+        - "**/cli/main.py"
         - "**/tests/**"
 
   - id: max-class-size

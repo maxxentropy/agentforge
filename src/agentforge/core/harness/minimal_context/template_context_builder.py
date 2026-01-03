@@ -322,127 +322,106 @@ class TemplateContextBuilder:
             recent_actions=recent_actions,
         )
 
+    # Keys to copy from state.context_data to precomputed
+    _PRECOMPUTED_KEYS = frozenset([
+        "extraction_suggestions", "similar_fixes", "action_hints",
+        "related_patterns", "check_definition", "file_structure",
+        "dependency_graph", "pattern_candidates"
+    ])
+
+    def _categorize_context_item(
+        self, item: dict[str, Any], precomputed: dict[str, Any]
+    ) -> None:
+        """Categorize a loaded context item into appropriate section."""
+        path = item.get("path", "")
+        content = item.get("content", "")
+
+        if "target" in path.lower() or item.get("is_target"):
+            precomputed["target_source"] = content
+        elif "test" in path.lower():
+            precomputed["existing_tests"] = content
+        else:
+            summary = content[:200] + "..." if len(content) > 200 else content
+            precomputed.setdefault("file_overview", []).append({"path": path, "summary": summary})
+
     def _get_precomputed(
         self, state: TaskState, memory_manager: WorkingMemoryManager
     ) -> dict[str, Any]:
         """Get precomputed data from state and working memory."""
         precomputed = {}
 
-        # Get loaded context files
+        # Get and categorize loaded context files
         loaded_context = memory_manager.get_loaded_context(current_step=state.current_step)
-        if loaded_context:
-            # Map loaded files to appropriate sections
-            for item in loaded_context:
-                if isinstance(item, dict):
-                    path = item.get("path", "")
-                    content = item.get("content", "")
-                    if "target" in path.lower() or item.get("is_target"):
-                        precomputed["target_source"] = content
-                    elif "test" in path.lower():
-                        precomputed["existing_tests"] = content
-                    else:
-                        precomputed.setdefault("file_overview", []).append({
-                            "path": path,
-                            "summary": content[:200] + "..." if len(content) > 200 else content
-                        })
+        for item in loaded_context or []:
+            if isinstance(item, dict):
+                self._categorize_context_item(item, precomputed)
 
-        # Get check results from state (stored in details dict)
+        # Get check results from state
         if state.verification.details.get("last_output"):
             precomputed["check_results"] = state.verification.details["last_output"]
 
-        # Get any precomputed data stored in context_data
-        for key in ["extraction_suggestions", "similar_fixes", "action_hints",
-                    "related_patterns", "check_definition", "file_structure",
-                    "dependency_graph", "pattern_candidates"]:
-            if key in state.context_data:
-                precomputed[key] = state.context_data[key]
+        # Copy precomputed keys from context_data
+        for key in self._PRECOMPUTED_KEYS & state.context_data.keys():
+            precomputed[key] = state.context_data[key]
 
         return precomputed
+
+    # Domain context key mappings: (source_key, target_key)
+    _DOMAIN_CONTEXT_KEYS = [
+        ("violation", "violation"),
+        ("spec", "spec"),
+        ("spec_requirements", "spec_requirements"),
+        ("check_command", "verification_command"),  # renamed
+        ("failing_tests", "failing_tests"),
+        ("acceptance_criteria", "acceptance_criteria"),
+        ("refactor_goal", "refactor_goal"),
+        ("target_contracts", "target_contracts"),
+        ("diff_summary", "diff_summary"),
+        ("full_diff", "full_diff"),
+    ]
 
     def _get_domain_context(self, state: TaskState) -> dict[str, Any]:
         """Get domain-specific context from state."""
         domain_context = {}
-
-        # Get violation info if present
-        if "violation" in state.context_data:
-            domain_context["violation"] = state.context_data["violation"]
-
-        # Get spec/requirements if present
-        if "spec" in state.context_data:
-            domain_context["spec"] = state.context_data["spec"]
-        if "spec_requirements" in state.context_data:
-            domain_context["spec_requirements"] = state.context_data["spec_requirements"]
-
-        # Get verification command
-        if "check_command" in state.context_data:
-            domain_context["verification_command"] = state.context_data["check_command"]
-
-        # Get failing tests for implement_feature
-        if "failing_tests" in state.context_data:
-            domain_context["failing_tests"] = state.context_data["failing_tests"]
-
-        # Get acceptance criteria
-        if "acceptance_criteria" in state.context_data:
-            domain_context["acceptance_criteria"] = state.context_data["acceptance_criteria"]
-
-        # Get refactor goal for refactor tasks
-        if "refactor_goal" in state.context_data:
-            domain_context["refactor_goal"] = state.context_data["refactor_goal"]
-
-        # Get target contracts for bridge tasks
-        if "target_contracts" in state.context_data:
-            domain_context["target_contracts"] = state.context_data["target_contracts"]
-
-        # Get diff for code review
-        if "diff_summary" in state.context_data:
-            domain_context["diff_summary"] = state.context_data["diff_summary"]
-        if "full_diff" in state.context_data:
-            domain_context["full_diff"] = state.context_data["full_diff"]
-
+        for source_key, target_key in self._DOMAIN_CONTEXT_KEYS:
+            if source_key in state.context_data:
+                domain_context[target_key] = state.context_data[source_key]
         return domain_context
+
+    # Keys to exclude from tier 2 sections
+    _TIER1_AND_TIER3_KEYS = frozenset(["fingerprint", "task", "phase", "understanding", "recent", "additional"])
+    _TIER3_KEYS = ["understanding", "recent", "additional"]
+
+    def _format_section(self, key: str, value: Any) -> str:
+        """Format a single section with header."""
+        header = key.replace('_', ' ').title()
+        content = value if isinstance(value, str) else yaml.dump(value, default_flow_style=False)
+        return f"# {header}\n{content}"
 
     def _format_user_message(self, context_dict: dict[str, Any], state: TaskState) -> str:
         """Format the user message from context dict."""
-        # Format as YAML with clear sections
         sections = []
 
-        # Always include fingerprint, task, phase (Tier 1)
+        # Tier 1: fingerprint, task, phase
         if "fingerprint" in context_dict:
             sections.append(f"# Project Fingerprint\n{context_dict['fingerprint']}")
-
         if "task" in context_dict:
-            task_yaml = yaml.dump(context_dict["task"], default_flow_style=False)
-            sections.append(f"# Task\n{task_yaml}")
-
+            sections.append(self._format_section("task", context_dict["task"]))
         if "phase" in context_dict:
-            phase_yaml = yaml.dump(context_dict["phase"], default_flow_style=False)
-            sections.append(f"# Phase\n{phase_yaml}")
+            sections.append(self._format_section("phase", context_dict["phase"]))
 
-        # Add tier 2 sections (phase-specific)
-        tier2_keys = [k for k in context_dict
-                      if k not in ["fingerprint", "task", "phase", "understanding", "recent", "additional"]]
-        for key in tier2_keys:
-            value = context_dict[key]
-            if isinstance(value, str):
-                sections.append(f"# {key.replace('_', ' ').title()}\n{value}")
-            else:
-                value_yaml = yaml.dump(value, default_flow_style=False)
-                sections.append(f"# {key.replace('_', ' ').title()}\n{value_yaml}")
+        # Tier 2: phase-specific sections
+        for key, value in context_dict.items():
+            if key not in self._TIER1_AND_TIER3_KEYS:
+                sections.append(self._format_section(key, value))
 
-        # Add tier 3 sections (on-demand)
-        for key in ["understanding", "recent", "additional"]:
-            if key in context_dict and context_dict[key]:
-                value = context_dict[key]
-                if isinstance(value, str):
-                    sections.append(f"# {key.replace('_', ' ').title()}\n{value}")
-                else:
-                    value_yaml = yaml.dump(value, default_flow_style=False)
-                    sections.append(f"# {key.replace('_', ' ').title()}\n{value_yaml}")
+        # Tier 3: on-demand sections
+        for key in self._TIER3_KEYS:
+            if context_dict.get(key):
+                sections.append(self._format_section(key, context_dict[key]))
 
-        # Add available actions
+        # Add available actions and directive
         sections.append(self._format_available_actions(state))
-
-        # Add directive
         sections.append(self._format_directive())
 
         return "\n\n".join(sections)

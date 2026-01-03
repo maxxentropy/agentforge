@@ -167,6 +167,76 @@ class Violation:
         return f"V-{hash_digest}"
 
     @staticmethod
+    def _test_path_from_lineage(file_path: str, project_root: "Path") -> str | None:
+        """Strategy 1: Get test path from lineage metadata in the file."""
+        try:
+            from agentforge.core.lineage import parse_lineage_from_file
+            full_path = project_root / file_path
+            if not full_path.exists():
+                return None
+            lineage = parse_lineage_from_file(full_path)
+            return lineage.test_path if lineage and lineage.test_path else None
+        except ImportError:
+            return None
+
+    @staticmethod
+    def _test_path_from_profile(file_path: str, project_root: "Path") -> str | None:
+        """Strategy 2: Get test path from codebase_profile.yaml linkages."""
+        try:
+            import yaml
+            profile_path = project_root / ".agentforge" / "codebase_profile.yaml"
+            if not profile_path.exists():
+                return None
+            profile_data = yaml.safe_load(profile_path.read_text())
+            test_analysis = profile_data.get("test_analysis", {})
+            linkages = test_analysis.get("linkages", {})
+            paths = linkages.get(file_path, [])
+            return paths[0] if paths else None
+        except Exception:
+            return None
+
+    @staticmethod
+    def _test_path_for_test_file(file_path: str, project_root: "Path") -> str | None:
+        """Convention: Test files run themselves."""
+        if file_path.startswith("tests/") and "/test_" in file_path:
+            return file_path if (project_root / file_path).exists() else None
+        return None
+
+    @staticmethod
+    def _test_path_for_conftest(file_path: str, project_root: "Path") -> str | None:
+        """Convention: conftest.py runs the containing directory."""
+        if not file_path.endswith("conftest.py"):
+            return None
+        parent = str(Path(file_path).parent)
+        return parent if (project_root / parent).exists() else None
+
+    @staticmethod
+    def _test_path_for_tools(file_path: str, project_root: "Path") -> str | None:
+        """Convention: tools/X/... -> tests/unit/tools/X/."""
+        if not file_path.startswith("tools/"):
+            return None
+        parts = file_path.split("/")
+        if len(parts) >= 2:
+            test_dir = f"tests/unit/tools/{parts[1]}/"
+            if (project_root / test_dir).exists():
+                return test_dir
+            fallback = "tests/unit/tools/"
+            if (project_root / fallback).exists():
+                return fallback
+        return None
+
+    @staticmethod
+    def _test_path_for_cli(file_path: str, project_root: "Path") -> str | None:
+        """Convention: CLI files -> integration tests."""
+        if not file_path.startswith("cli/"):
+            return None
+        test_dir = "tests/integration/cli/"
+        if (project_root / test_dir).exists():
+            return test_dir
+        fallback = "tests/integration/"
+        return fallback if (project_root / fallback).exists() else None
+
+    @staticmethod
     def compute_test_path(file_path: str, project_root: "Path") -> str | None:
         """
         Compute the test path for verifying changes to a file.
@@ -187,75 +257,21 @@ class Violation:
         Returns:
             Test path to run, or None for no specific tests
         """
-        from pathlib import Path as P
+        # Chain strategies in order of preference
+        strategies = [
+            Violation._test_path_from_lineage,
+            Violation._test_path_from_profile,
+            Violation._test_path_for_test_file,
+            Violation._test_path_for_conftest,
+            Violation._test_path_for_tools,
+            Violation._test_path_for_cli,
+        ]
 
-        # STRATEGY 1: Try to read lineage metadata from the file
-        # This is the preferred path - explicit linkage from the spec/generation chain
-        try:
-            from agentforge.core.lineage import parse_lineage_from_file
-            full_path = project_root / file_path
-            if full_path.exists():
-                lineage = parse_lineage_from_file(full_path)
-                if lineage and lineage.test_path:
-                    # Lineage provides explicit test path - use it
-                    return lineage.test_path
-        except ImportError:
-            pass  # Lineage module not available, use fallback
+        for strategy in strategies:
+            result = strategy(file_path, project_root)
+            if result:
+                return result
 
-        # STRATEGY 2: Read from codebase_profile.yaml test linkage
-        # This is populated by brownfield discovery and gives explicit mappings
-        try:
-            import yaml
-            profile_path = project_root / ".agentforge" / "codebase_profile.yaml"
-            if profile_path.exists():
-                profile_data = yaml.safe_load(profile_path.read_text())
-                test_analysis = profile_data.get("test_analysis")
-                if test_analysis and "linkages" in test_analysis:
-                    linkages = test_analysis["linkages"]
-                    # linkages is a dict: {source_path: [test_paths]}
-                    if file_path in linkages and linkages[file_path]:
-                        # Return the first (primary) test path
-                        return linkages[file_path][0]
-        except Exception:
-            pass  # Profile not available or malformed, use fallback
-
-        # STRATEGY 3: Convention-based detection (fallback for legacy files)
-
-        # Test files run themselves
-        if file_path.startswith("tests/") and "/test_" in file_path:
-            if (project_root / file_path).exists():
-                return file_path
-
-        # conftest.py runs the containing directory
-        if file_path.endswith("conftest.py"):
-            parent = str(P(file_path).parent)
-            if (project_root / parent).exists():
-                return parent
-
-        # Source files - find corresponding test directory
-        # Convention: tools/X/... -> tests/unit/tools/X/
-        if file_path.startswith("tools/"):
-            parts = file_path.split("/")
-            if len(parts) >= 2:
-                # tools/conformance/... -> tests/unit/tools/conformance/
-                test_dir = f"tests/unit/tools/{parts[1]}/"
-                if (project_root / test_dir).exists():
-                    return test_dir
-                # Fallback to tools test directory
-                fallback = "tests/unit/tools/"
-                if (project_root / fallback).exists():
-                    return fallback
-
-        # CLI files -> integration tests
-        if file_path.startswith("cli/"):
-            test_dir = "tests/integration/cli/"
-            if (project_root / test_dir).exists():
-                return test_dir
-            fallback = "tests/integration/"
-            if (project_root / fallback).exists():
-                return fallback
-
-        # No specific test path - will run all tests (or skip verification)
         return None
 
     def mark_resolved(self, reason: str, resolved_by: str = "system") -> None:

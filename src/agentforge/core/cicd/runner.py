@@ -423,23 +423,22 @@ class CIRunner:
             return ExitCode.VIOLATIONS_FOUND
         return ExitCode.SUCCESS
 
+    def _should_fail_for_severity(self, severity: str) -> bool:
+        """Check if config indicates we should fail for a given severity."""
+        if severity == "error":
+            return self.config.fail_on_new_errors
+        if severity == "warning":
+            return self.config.fail_on_new_warnings or self.config.min_severity in ("warning", "info")
+        if severity == "info":
+            return self.config.min_severity == "info"
+        return False
+
     def _check_violations_by_severity(self, violations: list[CIViolation]) -> ExitCode | None:
         """Check violations based on severity configuration for non-PR mode."""
-        # Check errors
-        if self.config.fail_on_new_errors:
-            if any(v.severity == "error" for v in violations):
-                return ExitCode.VIOLATIONS_FOUND
-
-        # Check warnings
-        if self.config.fail_on_new_warnings or self.config.min_severity in ("warning", "info"):
-            if any(v.severity == "warning" for v in violations):
-                return ExitCode.VIOLATIONS_FOUND
-
-        # Check info
-        if self.config.min_severity == "info":
-            if any(v.severity == "info" for v in violations):
-                return ExitCode.VIOLATIONS_FOUND
-
+        for severity in ("error", "warning", "info"):
+            if self._should_fail_for_severity(severity):
+                if any(v.severity == severity for v in violations):
+                    return ExitCode.VIOLATIONS_FOUND
         return None
 
     def _determine_exit_code(

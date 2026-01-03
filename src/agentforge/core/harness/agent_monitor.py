@@ -10,6 +10,7 @@
 
 import re
 from collections import defaultdict, deque
+from collections.abc import Callable
 from datetime import datetime
 
 from .monitor_domain import (
@@ -176,6 +177,15 @@ class AgentMonitor:
             )
         return None
 
+    # Loop detection chain: (observation_type, detector_method)
+    def _get_loop_detectors(self) -> list[tuple[ObservationType, Callable]]:
+        """Get ordered list of loop detectors."""
+        return [
+            (ObservationType.ACTION, self._detect_consecutive_actions),
+            (ObservationType.ERROR, self._detect_repeated_errors),
+            (ObservationType.STATE_CHANGE, self._detect_state_cycles),
+        ]
+
     def detect_loop(self) -> LoopDetection | None:
         """Check for repetitive action patterns."""
         if len(self.observations) < self.config.loop_threshold:
@@ -183,23 +193,11 @@ class AgentMonitor:
 
         recent_obs = list(self.observations)[-10:]
 
-        # Check consecutive actions
-        recent_actions = [obs for obs in recent_obs if obs.type == ObservationType.ACTION]
-        result = self._detect_consecutive_actions(recent_actions)
-        if result:
-            return result
-
-        # Check repeated errors
-        recent_errors = [obs for obs in recent_obs if obs.type == ObservationType.ERROR]
-        result = self._detect_repeated_errors(recent_errors)
-        if result:
-            return result
-
-        # Check state cycles
-        recent_states = [obs for obs in recent_obs if obs.type == ObservationType.STATE_CHANGE]
-        result = self._detect_state_cycles(recent_states)
-        if result:
-            return result
+        for obs_type, detector in self._get_loop_detectors():
+            filtered = [obs for obs in recent_obs if obs.type == obs_type]
+            result = detector(filtered)
+            if result:
+                return result
 
         return LoopDetection(detected=False)
 
@@ -312,32 +310,29 @@ class AgentMonitor:
             return 1.0
         return min(1.0, max(0.0, tokens_used / token_budget))
 
+    def _calculate_trend_bonus(self, verifications: list[Observation]) -> float:
+        """Calculate bonus for recent success trend. Returns 0.1 if last 3 passed, else 0."""
+        if len(verifications) < 3:
+            return 0.0
+        recent_three = verifications[-3:]
+        all_passed = all(obs.data.get("passed", False) for obs in recent_three)
+        return 0.1 if all_passed else 0.0
+
     def get_progress_score(self) -> float:
         """Calculate progress based on verifications"""
-        recent_verifications = [obs for obs in list(self.observations)[-20:]
-                              if obs.type == ObservationType.VERIFICATION]
+        recent_verifications = [
+            obs for obs in list(self.observations)[-20:]
+            if obs.type == ObservationType.VERIFICATION
+        ]
 
         if not recent_verifications:
-            return 0.5  # Neutral - no verifications yet to measure
+            return 0.5  # Neutral - no verifications yet
 
-        successes = sum(1 for obs in recent_verifications
-                       if obs.data.get("passed", False))
-        total = len(recent_verifications)
+        successes = sum(1 for obs in recent_verifications if obs.data.get("passed", False))
+        base_score = successes / len(recent_verifications)
+        bonus = self._calculate_trend_bonus(recent_verifications)
 
-        if total == 0:
-            return 0.5
-
-        base_score = successes / total
-
-        # Bonus for recent success trend
-        if len(recent_verifications) >= 3:
-            recent_three = recent_verifications[-3:]
-            recent_successes = sum(1 for obs in recent_three
-                                 if obs.data.get("passed", False))
-            if recent_successes == 3:
-                base_score = min(1.0, base_score + 0.1)
-
-        return base_score
+        return min(1.0, base_score + bonus)
 
     def _build_critical_checks(
         self,

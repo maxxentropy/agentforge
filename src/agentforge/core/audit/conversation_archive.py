@@ -131,67 +131,71 @@ class ConversationTurn:
 
         return data
 
+    def _format_tool_call_md(self, tc: "ToolCallRecord") -> str:
+        """Format a single tool call as markdown."""
+        import json
+        parts = [
+            f"\n### {tc.tool_name}\n",
+            f"**Success:** {tc.success}\n",
+            f"**Duration:** {tc.duration_ms}ms\n",
+            "\n**Input:**\n```json\n",
+            json.dumps(tc.input_params, indent=2),
+            "\n```\n",
+        ]
+        if tc.output:
+            output_str = str(tc.output)
+            truncated = output_str[:2000] if len(output_str) > 2000 else output_str
+            parts.extend(["\n**Output:**\n```\n", truncated, "\n```\n"])
+        if tc.error:
+            parts.append(f"\n**Error:** {tc.error}\n")
+        return "".join(parts)
+
+    def _format_token_usage_md(self) -> str:
+        """Format token usage section as markdown."""
+        parts = [
+            "\n## Token Usage\n",
+            f"- Input: {self.tokens_input}\n",
+            f"- Output: {self.tokens_output}\n",
+        ]
+        if self.tokens_thinking:
+            parts.append(f"- Thinking: {self.tokens_thinking}\n")
+        if self.tokens_cached:
+            parts.append(f"- Cached: {self.tokens_cached}\n")
+        total = self.tokens_input + self.tokens_output + self.tokens_thinking
+        parts.append(f"- **Total:** {total}\n")
+        parts.append(f"\n**Duration:** {self.duration_ms}ms\n")
+        return "".join(parts)
+
     def to_markdown(self) -> str:
         """Format turn as markdown for archival."""
-        parts = [f"# Conversation Turn {self.turn_id}\n"]
-        parts.append(f"**Thread:** {self.thread_id}\n")
-        parts.append(f"**Sequence:** {self.sequence}\n")
-        parts.append(f"**Model:** {self.model}\n")
-        parts.append(f"**Timestamp:** {self.timestamp}\n")
+        parts = [
+            f"# Conversation Turn {self.turn_id}\n",
+            f"**Thread:** {self.thread_id}\n",
+            f"**Sequence:** {self.sequence}\n",
+            f"**Model:** {self.model}\n",
+            f"**Timestamp:** {self.timestamp}\n",
+        ]
 
         if self.stage_name:
             parts.append(f"**Stage:** {self.stage_name}\n")
         if self.pipeline_id:
             parts.append(f"**Pipeline:** {self.pipeline_id}\n")
 
-        parts.append("\n## System Prompt\n")
-        parts.append("```\n")
-        parts.append(self.system_prompt)
-        parts.append("\n```\n")
-
-        parts.append("\n## User Message\n")
-        parts.append("```\n")
-        parts.append(self.user_message)
-        parts.append("\n```\n")
+        parts.extend([
+            "\n## System Prompt\n```\n", self.system_prompt, "\n```\n",
+            "\n## User Message\n```\n", self.user_message, "\n```\n",
+        ])
 
         if self.tool_calls:
             parts.append("\n## Tool Calls\n")
-            for tc in self.tool_calls:
-                parts.append(f"\n### {tc.tool_name}\n")
-                parts.append(f"**Success:** {tc.success}\n")
-                parts.append(f"**Duration:** {tc.duration_ms}ms\n")
-                parts.append("\n**Input:**\n```json\n")
-                import json
+            parts.extend(self._format_tool_call_md(tc) for tc in self.tool_calls)
 
-                parts.append(json.dumps(tc.input_params, indent=2))
-                parts.append("\n```\n")
-                if tc.output:
-                    parts.append("\n**Output:**\n```\n")
-                    output_str = str(tc.output)
-                    parts.append(output_str[:2000] if len(output_str) > 2000 else output_str)
-                    parts.append("\n```\n")
-                if tc.error:
-                    parts.append(f"\n**Error:** {tc.error}\n")
-
-        parts.append("\n## Response\n")
-        parts.append("```\n")
-        parts.append(self.response)
-        parts.append("\n```\n")
+        parts.extend(["\n## Response\n```\n", self.response, "\n```\n"])
 
         if self.thinking:
-            parts.append("\n## Extended Thinking\n")
-            parts.append(self.thinking)
-            parts.append("\n")
+            parts.extend(["\n## Extended Thinking\n", self.thinking, "\n"])
 
-        parts.append("\n## Token Usage\n")
-        parts.append(f"- Input: {self.tokens_input}\n")
-        parts.append(f"- Output: {self.tokens_output}\n")
-        if self.tokens_thinking:
-            parts.append(f"- Thinking: {self.tokens_thinking}\n")
-        if self.tokens_cached:
-            parts.append(f"- Cached: {self.tokens_cached}\n")
-        parts.append(f"- **Total:** {self.tokens_input + self.tokens_output + self.tokens_thinking}\n")
-        parts.append(f"\n**Duration:** {self.duration_ms}ms\n")
+        parts.append(self._format_token_usage_md())
 
         return "".join(parts)
 

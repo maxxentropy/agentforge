@@ -242,6 +242,91 @@ class CompactionManager:
         # Check if section starts with any preserved section
         return any(section.startswith(p + ".") for p in preserve_set)
 
+    def _navigate_to_section(
+        self, context: dict[str, Any], parts: list[str]
+    ) -> tuple[dict | None, str | None]:
+        """Navigate to section parent and return (parent, key) or (None, None) if not found."""
+        parent = context
+        for part in parts[:-1]:
+            if part not in parent or not isinstance(parent[part], dict):
+                return None, None
+            parent = parent[part]
+        key = parts[-1]
+        return (parent, key) if key in parent else (None, None)
+
+    def _create_result_parent(
+        self, result: dict[str, Any], parts: list[str]
+    ) -> dict[str, Any]:
+        """Navigate/create result path and return the parent dict."""
+        result_parent = result
+        for part in parts[:-1]:
+            if part not in result_parent:
+                result_parent[part] = {}
+            result_parent = result_parent[part]
+        return result_parent
+
+    def _apply_truncate(self, value: Any, param: int | None) -> tuple[Any, bool]:
+        """Apply truncate strategy."""
+        if isinstance(value, str):
+            return self._truncate(value, param or 500), True
+        return value, False
+
+    def _apply_truncate_middle(self, value: Any, param: int | None) -> tuple[Any, bool]:
+        """Apply truncate_middle strategy."""
+        if isinstance(value, str):
+            return self._truncate_middle(value, param or 500), True
+        return value, False
+
+    def _apply_keep_first(self, value: Any, param: int | None) -> tuple[Any, bool]:
+        """Apply keep_first strategy."""
+        if isinstance(value, list):
+            n = param or 5
+            if len(value) > n:
+                return value[:n], True
+        return value, False
+
+    def _apply_keep_last(self, value: Any, param: int | None) -> tuple[Any, bool]:
+        """Apply keep_last strategy."""
+        if isinstance(value, list):
+            n = param or 3
+            if len(value) > n:
+                return value[-n:], True
+        return value, False
+
+    def _apply_summarize(self, value: Any, param: int | None) -> tuple[Any, bool]:
+        """Apply summarize strategy."""
+        if self.summarizer is None:
+            return value, False
+        target_tokens = param or 200
+        if isinstance(value, str) and len(value) > target_tokens * 4:
+            return self._summarize_string(value, target_tokens)
+        if isinstance(value, list) and len(value) > 3:
+            return self._summarize_list(value, target_tokens)
+        return value, False
+
+    def _summarize_string(self, value: str, target_tokens: int) -> tuple[str, bool]:
+        """Summarize a string value."""
+        try:
+            summarized = self.summarizer.summarize(value, target_tokens)
+            self._summarization_calls += 1
+            return f"[Summarized]\n{summarized}", True
+        except Exception:
+            return self._truncate(value, target_tokens), True
+
+    def _summarize_list(self, value: list, target_tokens: int) -> tuple[Any, bool]:
+        """Summarize a list value."""
+        list_text = "\n".join(
+            f"- {item}" if isinstance(item, str)
+            else f"- {yaml.dump(item, default_flow_style=True).strip()}"
+            for item in value
+        )
+        try:
+            summarized = self.summarizer.summarize(list_text, target_tokens)
+            self._summarization_calls += 1
+            return f"[Summarized from {len(value)} items]\n{summarized}", True
+        except Exception:
+            return value[:3], True
+
     def _apply_rule(
         self, context: dict[str, Any], rule: CompactionRule
     ) -> tuple[dict[str, Any], bool]:
@@ -250,91 +335,34 @@ class CompactionManager:
 
         Returns (new_context, was_applied).
         """
-        # Navigate to section (support dot notation)
         parts = rule.section.split(".")
-        parent = context
-        for part in parts[:-1]:
-            if part not in parent or not isinstance(parent[part], dict):
-                return context, False
-            parent = parent[part]
-
-        key = parts[-1]
-        if key not in parent:
+        parent, key = self._navigate_to_section(context, parts)
+        if parent is None:
             return context, False
 
         value = parent[key]
         result = dict(context)
+        result_parent = self._create_result_parent(result, parts)
 
-        # Navigate to parent in result
-        result_parent = result
-        for part in parts[:-1]:
-            if part not in result_parent:
-                result_parent[part] = {}
-            result_parent = result_parent[part]
+        # Strategy dispatch
+        strategy_handlers = {
+            CompactionStrategy.TRUNCATE: self._apply_truncate,
+            CompactionStrategy.TRUNCATE_MIDDLE: self._apply_truncate_middle,
+            CompactionStrategy.KEEP_FIRST: self._apply_keep_first,
+            CompactionStrategy.KEEP_LAST: self._apply_keep_last,
+            CompactionStrategy.SUMMARIZE: self._apply_summarize,
+        }
 
-        # Apply strategy
-        if rule.strategy == CompactionStrategy.TRUNCATE:
-            if isinstance(value, str):
-                result_parent[key] = self._truncate(value, rule.param or 500)
-                return result, True
-
-        elif rule.strategy == CompactionStrategy.TRUNCATE_MIDDLE:
-            if isinstance(value, str):
-                result_parent[key] = self._truncate_middle(value, rule.param or 500)
-                return result, True
-
-        elif rule.strategy == CompactionStrategy.KEEP_FIRST:
-            if isinstance(value, list):
-                n = rule.param or 5
-                if len(value) > n:
-                    result_parent[key] = value[:n]
-                    return result, True
-
-        elif rule.strategy == CompactionStrategy.KEEP_LAST:
-            if isinstance(value, list):
-                n = rule.param or 3
-                if len(value) > n:
-                    result_parent[key] = value[-n:]
-                    return result, True
-
-        elif rule.strategy == CompactionStrategy.REMOVE:
+        if rule.strategy == CompactionStrategy.REMOVE:
             del result_parent[key]
             return result, True
 
-        elif rule.strategy == CompactionStrategy.SUMMARIZE:
-            # SUMMARIZE requires an LLM summarizer
-            if self.summarizer is None:
-                return context, False
-
-            if isinstance(value, str) and len(value) > (rule.param or 200) * 4:
-                target_tokens = rule.param or 200
-                try:
-                    summarized = self.summarizer.summarize(value, target_tokens)
-                    result_parent[key] = f"[Summarized]\n{summarized}"
-                    self._summarization_calls += 1
-                    return result, True
-                except Exception:
-                    # Fall back to truncation if summarization fails
-                    result_parent[key] = self._truncate(value, target_tokens)
-                    return result, True
-
-            elif isinstance(value, list) and len(value) > 3:
-                # Summarize list of items (e.g., action history)
-                target_tokens = rule.param or 200
-                list_text = "\n".join(
-                    f"- {item}" if isinstance(item, str)
-                    else f"- {yaml.dump(item, default_flow_style=True).strip()}"
-                    for item in value
-                )
-                try:
-                    summarized = self.summarizer.summarize(list_text, target_tokens)
-                    result_parent[key] = f"[Summarized from {len(value)} items]\n{summarized}"
-                    self._summarization_calls += 1
-                    return result, True
-                except Exception:
-                    # Fall back to keeping first few items
-                    result_parent[key] = value[:3]
-                    return result, True
+        handler = strategy_handlers.get(rule.strategy)
+        if handler:
+            new_value, applied = handler(value, rule.param)
+            if applied:
+                result_parent[key] = new_value
+                return result, True
 
         return context, False
 

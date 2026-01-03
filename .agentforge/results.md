@@ -7,15 +7,15 @@
 | Mode | full |
 | Files Checked | 0 |
 | Checks Run | 158 |
-| Total Violations | 4670 |
+| Total Violations | 4678 |
 | Errors | 0 |
-| Warnings | 451 |
-| Duration | 15.16s |
+| Warnings | 450 |
+| Duration | 15.30s |
 
 ### All Violations
 
 <details>
-<summary>View all 4670 violations in 414 files</summary>
+<summary>View all 4678 violations in 414 files</summary>
 
 **`<unknown>`** (4 violations)
 
@@ -3740,19 +3740,16 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 
-**`src/agentforge/core/context/compaction.py`** (21 violations)
+**`src/agentforge/core/context/compaction.py`** (29 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L245`
-  - Function '_apply_rule' has complexity 35 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-function-length** at `L245`
-  - Function '_apply_rule' has 75 lines (max: 50)
-  - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-nesting-depth** at `L245`
-  - Function '_apply_rule' has nesting depth 10 (max: 4)
-  - 💡 *Use early returns, guard clauses, or extract nested logic*
+- 🟡 **max-class-size** at `L133`
+  - Class 'CompactionManager' has 21 methods (max: 20)
+  - 💡 *Consider splitting into multiple classes with single responsibilities*
+- 🟡 **no-god-classes** at `L133`
+  - Class 'CompactionManager' has 21 methods (max: 15)
+  - 💡 *Split large classes using composition or inheritance*
 - 🔵 **single-responsibility-modules** at `L133`
-  - Class 'CompactionManager' has 12 methods (max: 3)
+  - Class 'CompactionManager' has 21 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -3777,20 +3774,38 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **default-result-return-types** at `L237`
   - Method '_should_preserve' returns 'bool', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **default-result-return-types** at `L245`
+  - Method '_navigate_to_section' returns 'tuple[dict | None, str | None]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L257`
+  - Method '_create_result_parent' returns 'dict[str, Any]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L268`
+  - Method '_apply_truncate' returns 'tuple[Any, bool]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L274`
+  - Method '_apply_truncate_middle' returns 'tuple[Any, bool]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L280`
+  - Method '_apply_keep_first' returns 'tuple[Any, bool]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L288`
+  - Method '_apply_keep_last' returns 'tuple[Any, bool]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L296`
+  - Method '_apply_summarize' returns 'tuple[Any, bool]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L307`
+  - Method '_summarize_string' returns 'tuple[str, bool]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L316`
+  - Method '_summarize_list' returns 'tuple[Any, bool]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L330`
   - Method '_apply_rule' returns 'tuple[dict[str, Any], bool]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L341`
+- 🔵 **default-result-return-types** at `L369`
   - Method '_truncate' returns 'str', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L348`
+- 🔵 **default-result-return-types** at `L376`
   - Method '_truncate_middle' returns 'str', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L356`
+- 🔵 **default-result-return-types** at `L384`
   - Method 'get_section_tokens' returns 'dict[str, int]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L364`
+- 🔵 **default-result-return-types** at `L392`
   - Method 'set_summarizer' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L373`
+- 🔵 **default-result-return-types** at `L401`
   - Method 'get_summarization_stats' returns 'dict[str, int]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L379`
+- 🔵 **default-result-return-types** at `L407`
   - Method 'reset_stats' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L424`
+- 🔵 **default-result-return-types** at `L452`
   - Method 'summarize' returns 'str', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -16710,12 +16725,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **single-responsibility-modules** at `L769`
   - Class 'TestEdgeCases' has 5 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
-- 🟡 **no-real-network-calls** at `L475`
-  - Forbidden pattern found: 'requests.get('
-  - 💡 *Use responses, httpretty, or pytest-mock to mock network calls*
-- 🟡 **no-real-network-calls** at `L896`
-  - Forbidden pattern found: 'requests.get('
-  - 💡 *Use responses, httpretty, or pytest-mock to mock network calls*
 - 🟡 **unit-tests-isolated** at `L487`
   - Forbidden pattern found: 'sqlite3'
   - 💡 *Mock database connections in unit tests*
@@ -16725,6 +16734,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **unit-tests-isolated** at `L504`
   - Forbidden pattern found: 'sqlite3'
   - 💡 *Mock database connections in unit tests*
+- 🟡 **no-real-network-calls** at `L475`
+  - Forbidden pattern found: 'requests.get('
+  - 💡 *Use responses, httpretty, or pytest-mock to mock network calls*
+- 🟡 **no-real-network-calls** at `L896`
+  - Forbidden pattern found: 'requests.get('
+  - 💡 *Use responses, httpretty, or pytest-mock to mock network calls*
 - 🔵 **no-hardcoded-test-data-paths** at `L897`
   - Forbidden pattern found: 'open("'
   - 💡 *Use tmp_path fixture or Path(__file__).parent for test data*
@@ -17019,5 +17034,5 @@ Or regenerate file through TDFLOW to get proper lineage.*
 </details>
 
 ---
-*Generated at 2026-01-03 18:13:56 UTC*
-*Commit: `6e84a1eb`*
+*Generated at 2026-01-03 18:16:56 UTC*
+*Commit: `7c37d914`*

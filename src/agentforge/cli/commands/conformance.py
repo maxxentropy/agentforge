@@ -73,7 +73,7 @@ def run_conformance_init(args):
 
 def _run_contract_checks(registry, repo_root, contract_filter, file_list):
     """Run contract checks and return results."""
-    from agentforge.core.contracts import run_all_contracts, run_contract
+    from agentforge.core.contracts_runner import run_all_contracts, run_contract
 
     if contract_filter:
         contract = registry.get_contract(contract_filter)

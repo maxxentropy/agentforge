@@ -1,25 +1,30 @@
 schema_version: '1.0'
-generated_at: '2026-01-03T02:23:49.505174'
-run_id: 9eee412f-c762-4fa3-96c0-fdaa2363d743
+generated_at: '2026-01-03T23:36:55.713554'
+run_id: cf3f99b9-8ada-4a43-ba9d-e7f673fbf1dc
 run_type: incremental
 summary:
-  total: 3228
+  total: 6889
   passed: 0
-  failed: 1680
+  failed: 4679
   exempted: 0
-  stale: 1548
+  stale: 2210
 by_severity:
-  minor: 1279
-  major: 394
-  blocker: 7
+  minor: 4384
+  major: 295
 by_contract:
-  agentforge: 1679
-  generated: 1
+  agentforge: 1715
+  generated: 2567
+  agentforge-lineage: 381
+  agentforge-structure: 16
 contracts_checked:
 - agentforge
-files_checked: 373
+- generated
+- agentforge-structure
+- agentforge-lineage
+- agentforge-specs
+files_checked: 413
 trend:
   passed_delta: 0
-  failed_delta: -1
+  failed_delta: 2999
   exempted_delta: 0
-  previous_run_id: 75d6176f-d5cd-450a-95e1-d13a09f3e2a9
+  previous_run_id: 9eee412f-c762-4fa3-96c0-fdaa2363d743

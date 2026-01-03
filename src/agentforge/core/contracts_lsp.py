@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 def execute_lsp_query_check(ctx: "CheckContext") -> list:
     """Execute an LSP-based semantic code analysis check."""
-    from agentforge.core.contracts import CheckResult
+    from agentforge.core.contracts_runner import CheckResult
 
     try:
         from agentforge.core.lsp_adapter import get_lsp_adapter

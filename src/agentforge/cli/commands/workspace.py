@@ -367,15 +367,21 @@ def run_workspace_validate(args):
         sys.exit(1)
 
 
+def _repo_matches_filters(repo, args) -> bool:
+    """Check if repo matches all filter criteria."""
+    if args.type and repo.type != args.type:
+        return False
+    if args.language and repo.language != args.language:
+        return False
+    tags = repo.tags or []
+    if args.tag and args.tag not in tags:
+        return False
+    return True
+
+
 def _filter_repos(repos: list, args) -> list:
     """Filter repos by type, language, and tag."""
-    if args.type:
-        repos = [r for r in repos if r.type == args.type]
-    if args.language:
-        repos = [r for r in repos if r.language == args.language]
-    if args.tag:
-        repos = [r for r in repos if args.tag in (r.tags or [])]
-    return repos
+    return [r for r in repos if _repo_matches_filters(r, args)]
 
 
 def run_workspace_list_repos(args):

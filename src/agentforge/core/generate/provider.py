@@ -135,6 +135,28 @@ class ClaudeProvider(LLMProvider):
         """Check if API key is available."""
         return bool(self._api_key)
 
+    def _handle_api_exception(self, e: Exception) -> APIError:
+        """Convert API exception to APIError. Raises immediately for non-retryable errors."""
+        import anthropic
+
+        if isinstance(e, anthropic.RateLimitError):
+            return APIError(f"Rate limited: {e}", status_code=429, retryable=True)
+        if isinstance(e, anthropic.APIConnectionError):
+            return APIError(f"Connection error: {e}", retryable=True)
+        if isinstance(e, anthropic.APIStatusError):
+            retryable = e.status_code >= 500 or e.status_code == 429
+            error = APIError(f"API error: {e}", status_code=e.status_code, retryable=retryable)
+            if not retryable:
+                raise error from e
+            return error
+        # Unexpected error - not retryable
+        error = APIError(f"Unexpected error: {e}", retryable=False)
+        raise error from e
+
+    def _extract_response_text(self, response) -> str:
+        """Extract text from response content blocks."""
+        return "".join(block.text for block in response.content if hasattr(block, "text"))
+
     async def generate(
         self,
         prompt: str,
@@ -146,8 +168,6 @@ class ClaudeProvider(LLMProvider):
 
         Implements retry with exponential backoff for transient errors.
         """
-        import anthropic
-
         client = self._get_client()
         last_error = None
         delay = self.INITIAL_DELAY
@@ -161,47 +181,15 @@ class ClaudeProvider(LLMProvider):
                     messages=[{"role": "user", "content": prompt}],
                 )
 
-                # Extract response text
-                text = ""
-                for block in response.content:
-                    if hasattr(block, "text"):
-                        text += block.text
-
-                # Build token usage
+                text = self._extract_response_text(response)
                 usage = TokenUsage(
                     prompt_tokens=response.usage.input_tokens,
                     completion_tokens=response.usage.output_tokens,
                 )
-
                 return text, usage
 
-            except anthropic.RateLimitError as e:
-                last_error = APIError(
-                    f"Rate limited: {e}",
-                    status_code=429,
-                    retryable=True,
-                )
-            except anthropic.APIStatusError as e:
-                # 5xx errors are retryable, 4xx (except 429) are not
-                retryable = e.status_code >= 500 or e.status_code == 429
-                last_error = APIError(
-                    f"API error: {e}",
-                    status_code=e.status_code,
-                    retryable=retryable,
-                )
-                if not retryable:
-                    raise last_error from e
-            except anthropic.APIConnectionError as e:
-                last_error = APIError(
-                    f"Connection error: {e}",
-                    retryable=True,
-                )
             except Exception as e:
-                last_error = APIError(
-                    f"Unexpected error: {e}",
-                    retryable=False,
-                )
-                raise last_error from e
+                last_error = self._handle_api_exception(e)
 
             # If we get here, error was retryable
             if attempt < self._max_retries:

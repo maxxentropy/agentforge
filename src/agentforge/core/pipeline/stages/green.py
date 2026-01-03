@@ -331,35 +331,35 @@ Start by reading the test files.
             project_path=context.project_path,
         )
 
-    def _build_user_message(self, context: StageContext) -> str:
-        """Build initial user message."""
-        artifact = context.input_artifacts
-        spec = artifact  # Use input_artifacts as spec source
-
-        # Format failing tests
-        failing = artifact.get("failing_tests", [])
-        failing_str = "\n".join([f"  - {t}" for t in failing]) or "  (none recorded)"
-
-        # Format test files
-        test_files = artifact.get("test_files", [])
+    def _format_test_files(self, test_files: list) -> str:
+        """Format test files list for display."""
         files_list = []
         for tf in test_files:
             if isinstance(tf, dict):
                 files_list.append(tf.get("path", "unknown"))
             else:
                 files_list.append(str(tf))
-        files_str = "\n".join([f"  - {f}" for f in files_list]) or "  (none)"
+        return "\n".join([f"  - {f}" for f in files_list]) or "  (none)"
 
-        # Format components
-        components = spec.get("components", [])
-        components_str = ""
+    def _format_components(self, components: list) -> str:
+        """Format components list for display."""
+        if not components:
+            return "  (none specified)"
+        result = ""
         for comp in components:
-            components_str += f"\n  {comp.get('name', 'Unknown')}:\n"
-            components_str += f"    File: {comp.get('file_path', 'TBD')}\n"
-            components_str += f"    Type: {comp.get('type', 'unknown')}\n"
+            result += f"\n  {comp.get('name', 'Unknown')}:\n"
+            result += f"    File: {comp.get('file_path', 'TBD')}\n"
+            result += f"    Type: {comp.get('type', 'unknown')}\n"
+        return result
 
-        # Format implementation order
-        impl_order = spec.get("implementation_order", [])
+    def _build_user_message(self, context: StageContext) -> str:
+        """Build initial user message."""
+        artifact = context.input_artifacts
+
+        failing = artifact.get("failing_tests", [])
+        failing_str = "\n".join([f"  - {t}" for t in failing]) or "  (none recorded)"
+
+        impl_order = artifact.get("implementation_order", [])
         order_str = "\n".join([
             f"  {o.get('step', '?')}. {o.get('description', 'N/A')}"
             for o in impl_order
@@ -369,8 +369,8 @@ Start by reading the test files.
             spec_id=artifact.get("spec_id", "SPEC-UNKNOWN"),
             num_failing=len(failing),
             failing_tests=failing_str,
-            test_files=files_str,
-            components=components_str or "  (none specified)",
+            test_files=self._format_test_files(artifact.get("test_files", [])),
+            components=self._format_components(artifact.get("components", [])),
             implementation_order=order_str,
         )
 

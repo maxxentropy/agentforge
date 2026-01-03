@@ -663,6 +663,32 @@ _METHOD_PATTERNS = {
 }
 
 
+def _get_method_visibility(match: re.Match) -> str:
+    """Get visibility from regex match, defaulting to public."""
+    try:
+        return match.group("visibility") or "public"
+    except IndexError:
+        return "public"
+
+
+# Names that should be skipped (constructors, accessors, keywords)
+_SKIP_METHOD_NAMES = frozenset({
+    "get", "set", "init", "if", "while", "for", "foreach",
+    "switch", "catch", "using", "lock", "fixed"
+})
+
+
+def _should_include_method(name: str, visibility: str, scope: str) -> bool:
+    """Check if method should be included based on name and scope."""
+    if name in _SKIP_METHOD_NAMES:
+        return False
+    if scope == "public" and visibility != "public":
+        return False
+    if scope == "private" and visibility not in ("private", "protected"):
+        return False
+    return True
+
+
 def _extract_methods_with_return_types(
     content: str, file_suffix: str, scope: str = "public"
 ) -> list[tuple]:
@@ -682,25 +708,10 @@ def _extract_methods_with_return_types(
             line_num = content[:match.start()].count("\n") + 1
             name = match.group("name")
             return_type = match.group("return_type").strip()
+            visibility = _get_method_visibility(match)
 
-            # Get visibility (default to public for Python)
-            try:
-                visibility = match.group("visibility") or "public"
-            except IndexError:
-                visibility = "public"
-
-            # Filter by scope
-            if scope == "public" and visibility != "public":
-                continue
-            if scope == "private" and visibility not in ("private", "protected"):
-                continue
-
-            # Skip constructors, property accessors, and common non-methods
-            if name in ("get", "set", "init", "if", "while", "for", "foreach",
-                       "switch", "catch", "using", "lock", "fixed"):
-                continue
-
-            methods.append((name, return_type, line_num, visibility))
+            if _should_include_method(name, visibility, scope):
+                methods.append((name, return_type, line_num, visibility))
     except re.error:
         pass
 

@@ -333,72 +333,86 @@ class ContractEnforcer:
             return True  # Unknown type, allow
         return isinstance(value, expected)
 
+    def _get_severity(self, rule: ValidationRule) -> ViolationSeverity:
+        """Get violation severity from rule."""
+        return ViolationSeverity.ERROR if rule.severity == "error" else ViolationSeverity.WARNING
+
+    def _validate_required_field(
+        self, rule: ValidationRule, value: Any, severity: ViolationSeverity
+    ) -> Violation | None:
+        """Check required field constraint."""
+        if value is None:
+            return Violation(
+                violation_id=self._next_violation_id(),
+                violation_type=ViolationType.MISSING_REQUIRED,
+                severity=severity,
+                message=rule.description,
+                field_path=rule.field_path,
+                rule_id=rule.rule_id,
+                rationale=rule.rationale,
+            )
+        return None
+
+    def _validate_type_check(
+        self, rule: ValidationRule, value: Any, severity: ViolationSeverity
+    ) -> Violation | None:
+        """Check type constraint."""
+        expected_type = rule.constraint.get("type")
+        if value is not None and expected_type and not self._check_type(value, expected_type):
+            return Violation(
+                violation_id=self._next_violation_id(),
+                violation_type=ViolationType.TYPE_MISMATCH,
+                severity=severity,
+                message=rule.description,
+                field_path=rule.field_path,
+                expected=expected_type,
+                actual=type(value).__name__,
+                rule_id=rule.rule_id,
+                rationale=rule.rationale,
+            )
+        return None
+
+    def _validate_enum_constraint(
+        self, rule: ValidationRule, value: Any, severity: ViolationSeverity
+    ) -> Violation | None:
+        """Check enum constraint."""
+        enum_values = rule.constraint.get("enum", [])
+        if value is not None and value not in enum_values:
+            return Violation(
+                violation_id=self._next_violation_id(),
+                violation_type=ViolationType.ENUM_VIOLATION,
+                severity=severity,
+                message=rule.description,
+                field_path=rule.field_path,
+                expected=enum_values,
+                actual=value,
+                rule_id=rule.rule_id,
+                rationale=rule.rationale,
+            )
+        return None
+
     def _apply_validation_rule(
         self,
         rule: ValidationRule,
         artifacts: dict[str, Any],
     ) -> ValidationResult:
-        """Apply a validation rule to artifacts.
-
-        Args:
-            rule: The validation rule to apply
-            artifacts: Artifacts to validate
-
-        Returns:
-            ValidationResult
-        """
+        """Apply a validation rule to artifacts."""
         result = ValidationResult(valid=True)
-        severity = (
-            ViolationSeverity.ERROR
-            if rule.severity == "error"
-            else ViolationSeverity.WARNING
-        )
-
-        # Parse field path to get value
+        severity = self._get_severity(rule)
         value = self._get_field_value(artifacts, rule.field_path)
 
-        if rule.check_type == "required_field":
-            if value is None:
-                result.add_violation(Violation(
-                    violation_id=self._next_violation_id(),
-                    violation_type=ViolationType.MISSING_REQUIRED,
-                    severity=severity,
-                    message=rule.description,
-                    field_path=rule.field_path,
-                    rule_id=rule.rule_id,
-                    rationale=rule.rationale,
-                ))
+        # Dispatch to appropriate validator
+        validators = {
+            "required_field": self._validate_required_field,
+            "type_check": self._validate_type_check,
+            "enum_constraint": self._validate_enum_constraint,
+        }
 
-        elif rule.check_type == "type_check":
-            expected_type = rule.constraint.get("type")
-            if value is not None and expected_type:
-                if not self._check_type(value, expected_type):
-                    result.add_violation(Violation(
-                        violation_id=self._next_violation_id(),
-                        violation_type=ViolationType.TYPE_MISMATCH,
-                        severity=severity,
-                        message=rule.description,
-                        field_path=rule.field_path,
-                        expected=expected_type,
-                        actual=type(value).__name__,
-                        rule_id=rule.rule_id,
-                        rationale=rule.rationale,
-                    ))
-
-        elif rule.check_type == "enum_constraint":
-            enum_values = rule.constraint.get("enum", [])
-            if value is not None and value not in enum_values:
-                result.add_violation(Violation(
-                    violation_id=self._next_violation_id(),
-                    violation_type=ViolationType.ENUM_VIOLATION,
-                    severity=severity,
-                    message=rule.description,
-                    field_path=rule.field_path,
-                    expected=enum_values,
-                    actual=value,
-                    rule_id=rule.rule_id,
-                    rationale=rule.rationale,
-                ))
+        validator = validators.get(rule.check_type)
+        if validator:
+            violation = validator(rule, value, severity)
+            if violation:
+                result.add_violation(violation)
 
         return result
 

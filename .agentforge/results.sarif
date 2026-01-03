@@ -205,19 +205,6 @@
               }
             },
             {
-              "id": "fixtures-in-conftest",
-              "name": "fixtures-in-conftest",
-              "shortDescription": {
-                "text": "Check: fixtures-in-conftest"
-              },
-              "defaultConfiguration": {
-                "level": "note"
-              },
-              "help": {
-                "text": "Move shared fixtures to conftest.py"
-              }
-            },
-            {
               "id": "no-hardcoded-test-data-paths",
               "name": "no-hardcoded-test-data-paths",
               "shortDescription": {
@@ -228,6 +215,19 @@
               },
               "help": {
                 "text": "Use tmp_path fixture or Path(__file__).parent for test data"
+              }
+            },
+            {
+              "id": "fixtures-in-conftest",
+              "name": "fixtures-in-conftest",
+              "shortDescription": {
+                "text": "Check: fixtures-in-conftest"
+              },
+              "defaultConfiguration": {
+                "level": "note"
+              },
+              "help": {
+                "text": "Move shared fixtures to conftest.py"
               }
             },
             {
@@ -335,19 +335,6 @@
               }
             },
             {
-              "id": "require-package-json",
-              "name": "require-package-json",
-              "shortDescription": {
-                "text": "Check: require-package-json"
-              },
-              "defaultConfiguration": {
-                "level": "warning"
-              },
-              "help": {
-                "text": "Run 'npm init' to create package.json"
-              }
-            },
-            {
               "id": "require-csproj",
               "name": "require-csproj",
               "shortDescription": {
@@ -358,6 +345,19 @@
               },
               "help": {
                 "text": "Create a .csproj file for the project"
+              }
+            },
+            {
+              "id": "require-package-json",
+              "name": "require-package-json",
+              "shortDescription": {
+                "text": "Check: require-package-json"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "help": {
+                "text": "Run 'npm init' to create package.json"
               }
             },
             {
@@ -721,36 +721,6 @@
           "ruleId": "max-cyclomatic-complexity",
           "level": "warning",
           "message": {
-            "text": "Function 'evolve' has complexity 12 (max: 10)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/contracts/registry.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 192
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Break complex functions into smaller, focused helper functions"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "4636bc36ccc27f57"
-          }
-        },
-        {
-          "ruleId": "max-cyclomatic-complexity",
-          "level": "warning",
-          "message": {
             "text": "Function '_load_system_prompt' has complexity 12 (max: 10)"
           },
           "locations": [
@@ -895,36 +865,6 @@
           ],
           "partialFingerprints": {
             "primaryLocationLineHash": "6dca857e7a8a454f"
-          }
-        },
-        {
-          "ruleId": "max-cyclomatic-complexity",
-          "level": "warning",
-          "message": {
-            "text": "Function '_classify_class' has complexity 12 (max: 10)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/discovery/generators/as_built_spec.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 296
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Break complex functions into smaller, focused helper functions"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "0e8be6216f8e5042"
           }
         },
         {
@@ -2845,36 +2785,6 @@
           ],
           "partialFingerprints": {
             "primaryLocationLineHash": "4209a62136ba4a39"
-          }
-        },
-        {
-          "ruleId": "max-function-length",
-          "level": "warning",
-          "message": {
-            "text": "Function 'evolve' has 53 lines (max: 50)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/contracts/registry.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 192
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Extract logic into helper functions or use composition"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "c0eb95d1818b47b9"
           }
         },
         {
@@ -4921,7 +4831,7 @@
           "ruleId": "max-nesting-depth",
           "level": "warning",
           "message": {
-            "text": "Function 'evolve' has nesting depth 5 (max: 4)"
+            "text": "Function '_apply_stage_updates' has nesting depth 5 (max: 4)"
           },
           "locations": [
             {
@@ -4931,7 +4841,7 @@
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 192
+                  "startLine": 245
                 }
               }
             }
@@ -4944,7 +4854,7 @@
             }
           ],
           "partialFingerprints": {
-            "primaryLocationLineHash": "1979725b3bebdd70"
+            "primaryLocationLineHash": "1af5d7c348f61785"
           }
         },
         {
@@ -5231,7 +5141,7 @@
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 323
+                  "startLine": 332
                 }
               }
             }
@@ -5244,7 +5154,7 @@
             }
           ],
           "partialFingerprints": {
-            "primaryLocationLineHash": "80dc2098eb601867"
+            "primaryLocationLineHash": "0fa0eeb030bcf310"
           }
         },
         {
@@ -9163,6 +9073,36 @@
           ],
           "partialFingerprints": {
             "primaryLocationLineHash": "aea2fce0fa46ddf5"
+          }
+        },
+        {
+          "ruleId": "no-god-classes",
+          "level": "warning",
+          "message": {
+            "text": "Class 'ContractRegistry' has 16 methods (max: 15)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/contracts/registry.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 28
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Split large classes using composition or inheritance"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "d673514dc53fa572"
           }
         },
         {
@@ -23689,7 +23629,7 @@
           "ruleId": "single-responsibility-modules",
           "level": "note",
           "message": {
-            "text": "Class 'ContractRegistry' has 13 methods (max: 3)"
+            "text": "Class 'ContractRegistry' has 16 methods (max: 3)"
           },
           "locations": [
             {
@@ -23712,7 +23652,7 @@
             }
           ],
           "partialFingerprints": {
-            "primaryLocationLineHash": "0e645ef17afc7c2d"
+            "primaryLocationLineHash": "236e05d882957b8f"
           }
         },
         {
@@ -24469,7 +24409,7 @@
           "ruleId": "single-responsibility-modules",
           "level": "note",
           "message": {
-            "text": "Class 'AsBuiltSpecGenerator' has 11 methods (max: 3)"
+            "text": "Class 'AsBuiltSpecGenerator' has 13 methods (max: 3)"
           },
           "locations": [
             {
@@ -24492,7 +24432,7 @@
             }
           ],
           "partialFingerprints": {
-            "primaryLocationLineHash": "2edd2ff7f8349807"
+            "primaryLocationLineHash": "f269fb135ef186c7"
           }
         },
         {
@@ -29113,6 +29053,36 @@
           ],
           "partialFingerprints": {
             "primaryLocationLineHash": "27e929cf5548ee5e"
+          }
+        },
+        {
+          "ruleId": "no-hardcoded-test-data-paths",
+          "level": "note",
+          "message": {
+            "text": "Forbidden pattern found: 'open(\"'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "tests/unit/tools/test_builtin_checks_architecture.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 897
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use tmp_path fixture or Path(__file__).parent for test data"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "4529926e487c286d"
           }
         },
         {
@@ -37633,36 +37603,6 @@
           ],
           "partialFingerprints": {
             "primaryLocationLineHash": "517f1d9c4bf2e507"
-          }
-        },
-        {
-          "ruleId": "no-hardcoded-test-data-paths",
-          "level": "note",
-          "message": {
-            "text": "Forbidden pattern found: 'open(\"'"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "tests/unit/tools/test_builtin_checks_architecture.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 897
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use tmp_path fixture or Path(__file__).parent for test data"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "4529926e487c286d"
           }
         },
         {
@@ -57259,33 +57199,6 @@
           }
         },
         {
-          "ruleId": "require-package-json",
-          "level": "warning",
-          "message": {
-            "text": "Required file not found: 'package.json'"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "<unknown>",
-                  "uriBaseId": "%SRCROOT%"
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Run 'npm init' to create package.json"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "d6b8da53f924bda9"
-          }
-        },
-        {
           "ruleId": "require-csproj",
           "level": "warning",
           "message": {
@@ -57310,6 +57223,33 @@
           ],
           "partialFingerprints": {
             "primaryLocationLineHash": "acf00a01feadc84f"
+          }
+        },
+        {
+          "ruleId": "require-package-json",
+          "level": "warning",
+          "message": {
+            "text": "Required file not found: 'package.json'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "<unknown>",
+                  "uriBaseId": "%SRCROOT%"
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Run 'npm init' to create package.json"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "d6b8da53f924bda9"
           }
         },
         {
@@ -80339,6 +80279,75 @@
           "ruleId": "default-result-return-types",
           "level": "note",
           "message": {
+            "text": "Method '_create_evolved_contracts' returns 'tuple[ApprovedContracts, str]', expected pattern 'Result|Either|Success|Failure'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/contracts/registry.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 224
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "2c52ffdf084bc03a"
+          }
+        },
+        {
+          "ruleId": "default-result-return-types",
+          "level": "note",
+          "message": {
+            "text": "Method '_apply_stage_updates' returns 'None', expected pattern 'Result|Either|Success|Failure'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/contracts/registry.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 245
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "32d2316eee8eefd8"
+          }
+        },
+        {
+          "ruleId": "default-result-return-types",
+          "level": "note",
+          "message": {
+            "text": "Method '_add_new_triggers' returns 'None', expected pattern 'Result|Either|Success|Failure'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/contracts/registry.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 259
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "9db5e02bf80356b9"
+          }
+        },
+        {
+          "ruleId": "default-result-return-types",
+          "level": "note",
+          "message": {
             "text": "Method '_load_index' returns 'dict[str, Any]', expected pattern 'Result|Either|Success|Failure'"
           },
           "locations": [
@@ -80349,13 +80358,13 @@
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 262
+                  "startLine": 267
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "primaryLocationLineHash": "13415808f1f3d796"
+            "primaryLocationLineHash": "10a933d87609f42a"
           }
         },
         {
@@ -80372,13 +80381,13 @@
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 269
+                  "startLine": 274
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "primaryLocationLineHash": "6bbfac0f208206e2"
+            "primaryLocationLineHash": "400e1d1c7fce0cc0"
           }
         },
         {
@@ -80395,13 +80404,13 @@
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 277
+                  "startLine": 282
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "primaryLocationLineHash": "71477bc167d76224"
+            "primaryLocationLineHash": "47b3806cd5d9ef04"
           }
         },
         {
@@ -80418,13 +80427,13 @@
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 287
+                  "startLine": 292
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "primaryLocationLineHash": "1fa5596ec2e76bd9"
+            "primaryLocationLineHash": "77d85b5b657ab8df"
           }
         },
         {
@@ -80441,13 +80450,13 @@
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 293
+                  "startLine": 298
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "primaryLocationLineHash": "29e015339592a67d"
+            "primaryLocationLineHash": "1f42b74ce905d157"
           }
         },
         {
@@ -88527,6 +88536,52 @@
           "ruleId": "default-result-return-types",
           "level": "note",
           "message": {
+            "text": "Method '_is_enum_class' returns 'bool', expected pattern 'Result|Either|Success|Failure'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/discovery/generators/as_built_spec.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 304
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "38e461d96f05ca44"
+          }
+        },
+        {
+          "ruleId": "default-result-return-types",
+          "level": "note",
+          "message": {
+            "text": "Method '_is_dataclass' returns 'bool', expected pattern 'Result|Either|Success|Failure'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/discovery/generators/as_built_spec.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 314
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "ee1527a1d49a6c68"
+          }
+        },
+        {
+          "ruleId": "default-result-return-types",
+          "level": "note",
+          "message": {
             "text": "Method '_extract_module_docstring' returns 'str', expected pattern 'Result|Either|Success|Failure'"
           },
           "locations": [
@@ -88537,13 +88592,13 @@
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 315
+                  "startLine": 324
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "primaryLocationLineHash": "7be6870082268642"
+            "primaryLocationLineHash": "d81d1013cebb48cc"
           }
         },
         {
@@ -88560,13 +88615,13 @@
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 323
+                  "startLine": 332
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "primaryLocationLineHash": "4a189799d5e3efd0"
+            "primaryLocationLineHash": "0e9a091f128f788b"
           }
         },
         {
@@ -88583,13 +88638,13 @@
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 351
+                  "startLine": 360
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "primaryLocationLineHash": "71a7c6e68e9908dc"
+            "primaryLocationLineHash": "af22fc49567bcccb"
           }
         },
         {
@@ -88606,13 +88661,13 @@
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 382
+                  "startLine": 391
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "primaryLocationLineHash": "a6dd426ef1b70d31"
+            "primaryLocationLineHash": "1db475017df4b5f3"
           }
         },
         {
@@ -126527,14 +126582,14 @@
       "invocations": [
         {
           "executionSuccessful": true,
-          "startTimeUtc": "2026-01-03T22:29:43.048752Z",
-          "endTimeUtc": "2026-01-03T22:30:01.976541Z"
+          "startTimeUtc": "2026-01-03T22:31:34.694883Z",
+          "endTimeUtc": "2026-01-03T22:31:53.747640Z"
         }
       ],
       "versionControlProvenance": [
         {
           "repositoryUri": "",
-          "revisionId": "fdfdb4e1e89f1ab47a277400b10febf1a794a969"
+          "revisionId": "0d61b7ab27269e72113b1d6d8334e2c58c25e64f"
         }
       ]
     }

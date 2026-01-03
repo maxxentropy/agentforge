@@ -295,22 +295,31 @@ class AsBuiltSpecGenerator:
 
     def _classify_class(self, node: ast.ClassDef) -> str:
         """Classify a class as enum, dataclass, or regular class."""
-        # Check for Enum base
-        for base in node.bases:
-            if isinstance(base, ast.Name) and base.id in ("Enum", "IntEnum", "StrEnum"):
-                return "enum"
-            if isinstance(base, ast.Attribute) and base.attr in ("Enum", "IntEnum", "StrEnum"):
-                return "enum"
+        if self._is_enum_class(node):
+            return "enum"
+        if self._is_dataclass(node):
+            return "dataclass"
+        return "class"
 
-        # Check for dataclass decorator
+    def _is_enum_class(self, node: ast.ClassDef) -> bool:
+        """Check if class inherits from an Enum type."""
+        enum_types = {"Enum", "IntEnum", "StrEnum"}
+        for base in node.bases:
+            if isinstance(base, ast.Name) and base.id in enum_types:
+                return True
+            if isinstance(base, ast.Attribute) and base.attr in enum_types:
+                return True
+        return False
+
+    def _is_dataclass(self, node: ast.ClassDef) -> bool:
+        """Check if class has dataclass decorator."""
         for decorator in node.decorator_list:
             if isinstance(decorator, ast.Name) and decorator.id == "dataclass":
-                return "dataclass"
+                return True
             if isinstance(decorator, ast.Call):
                 if isinstance(decorator.func, ast.Name) and decorator.func.id == "dataclass":
-                    return "dataclass"
-
-        return "class"
+                    return True
+        return False
 
     def _extract_module_docstring(self, content: str) -> str:
         """Extract the module-level docstring."""

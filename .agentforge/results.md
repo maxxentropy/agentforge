@@ -7,24 +7,24 @@
 | Mode | full |
 | Files Checked | 0 |
 | Checks Run | 158 |
-| Total Violations | 4793 |
+| Total Violations | 4796 |
 | Errors | 0 |
-| Warnings | 345 |
-| Duration | 18.93s |
+| Warnings | 343 |
+| Duration | 19.05s |
 
 ### All Violations
 
 <details>
-<summary>View all 4793 violations in 414 files</summary>
+<summary>View all 4796 violations in 414 files</summary>
 
 **`<unknown>`** (4 violations)
 
-- 🟡 **require-package-json** at `file`
-  - Required file not found: 'package.json'
-  - 💡 *Run 'npm init' to create package.json*
 - 🟡 **require-csproj** at `file`
   - Required file not found: '**/*.csproj'
   - 💡 *Create a .csproj file for the project*
+- 🟡 **require-package-json** at `file`
+  - Required file not found: 'package.json'
+  - 💡 *Run 'npm init' to create package.json*
 - 🟡 **require-csproj** at `file`
   - Required file not found: '**/*.csproj'
   - 💡 *Create a .csproj file for the project*
@@ -5024,19 +5024,16 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 
-**`src/agentforge/core/contracts/registry.py`** (19 violations)
+**`src/agentforge/core/contracts/registry.py`** (21 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L192`
-  - Function 'evolve' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-function-length** at `L192`
-  - Function 'evolve' has 53 lines (max: 50)
-  - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-nesting-depth** at `L192`
-  - Function 'evolve' has nesting depth 5 (max: 4)
+- 🟡 **max-nesting-depth** at `L245`
+  - Function '_apply_stage_updates' has nesting depth 5 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
+- 🟡 **no-god-classes** at `L28`
+  - Class 'ContractRegistry' has 16 methods (max: 15)
+  - 💡 *Split large classes using composition or inheritance*
 - 🔵 **single-responsibility-modules** at `L28`
-  - Class 'ContractRegistry' has 13 methods (max: 3)
+  - Class 'ContractRegistry' has 16 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -5062,15 +5059,21 @@ Or regenerate file through TDFLOW to get proper lineage.*
   - Method 'delete_draft' returns 'bool', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **default-result-return-types** at `L192`
   - Method 'evolve' returns 'str', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L262`
+- 🔵 **default-result-return-types** at `L224`
+  - Method '_create_evolved_contracts' returns 'tuple[ApprovedContracts, str]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L245`
+  - Method '_apply_stage_updates' returns 'None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L259`
+  - Method '_add_new_triggers' returns 'None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L267`
   - Method '_load_index' returns 'dict[str, Any]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L269`
+- 🔵 **default-result-return-types** at `L274`
   - Method '_save_index' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L277`
+- 🔵 **default-result-return-types** at `L282`
   - Method '_update_index' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L287`
+- 🔵 **default-result-return-types** at `L292`
   - Method 'generate_contract_set_id' returns 'str', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L293`
+- 🔵 **default-result-return-types** at `L298`
   - Method 'generate_draft_id' returns 'str', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -5739,16 +5742,13 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 
-**`src/agentforge/core/discovery/generators/as_built_spec.py`** (17 violations)
+**`src/agentforge/core/discovery/generators/as_built_spec.py`** (18 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L296`
-  - Function '_classify_class' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-nesting-depth** at `L323`
+- 🟡 **max-nesting-depth** at `L332`
   - Function '_match_test_methods' has nesting depth 5 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🔵 **single-responsibility-modules** at `L107`
-  - Class 'AsBuiltSpecGenerator' has 11 methods (max: 3)
+  - Class 'AsBuiltSpecGenerator' has 13 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -5774,13 +5774,17 @@ Or regenerate file through TDFLOW to get proper lineage.*
   - Method '_extract_entities' returns 'list[DiscoveredEntity]', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **default-result-return-types** at `L296`
   - Method '_classify_class' returns 'str', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L315`
+- 🔵 **default-result-return-types** at `L304`
+  - Method '_is_enum_class' returns 'bool', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L314`
+  - Method '_is_dataclass' returns 'bool', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L324`
   - Method '_extract_module_docstring' returns 'str', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L323`
+- 🔵 **default-result-return-types** at `L332`
   - Method '_match_test_methods' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L351`
+- 🔵 **default-result-return-types** at `L360`
   - Method 'save_specs' returns 'list[Path]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L382`
+- 🔵 **default-result-return-types** at `L391`
   - Method 'generate_lineage_updates' returns 'dict[str, dict[str, str]]', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -16882,6 +16886,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **unit-tests-isolated** at `L504`
   - Forbidden pattern found: 'sqlite3'
   - 💡 *Mock database connections in unit tests*
+- 🔵 **no-hardcoded-test-data-paths** at `L897`
+  - Forbidden pattern found: 'open("'
+  - 💡 *Use tmp_path fixture or Path(__file__).parent for test data*
 - 🔵 **fixtures-in-conftest** at `L37`
   - Forbidden pattern found: '@pytest.fixture'
   - 💡 *Move shared fixtures to conftest.py*
@@ -16894,9 +16901,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **fixtures-in-conftest** at `L298`
   - Forbidden pattern found: '@pytest.fixture'
   - 💡 *Move shared fixtures to conftest.py*
-- 🔵 **no-hardcoded-test-data-paths** at `L897`
-  - Forbidden pattern found: 'open("'
-  - 💡 *Use tmp_path fixture or Path(__file__).parent for test data*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
   - 💡 *Add lineage header to file:
@@ -17176,5 +17180,5 @@ Or regenerate file through TDFLOW to get proper lineage.*
 </details>
 
 ---
-*Generated at 2026-01-03 22:30:01 UTC*
-*Commit: `fdfdb4e1`*
+*Generated at 2026-01-03 22:31:53 UTC*
+*Commit: `0d61b7ab`*

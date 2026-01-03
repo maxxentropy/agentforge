@@ -211,15 +211,26 @@ class ContractRegistry:
         if not original:
             raise ValueError(f"Contract set not found: {contract_set_id}")
 
-        # Parse version
+        evolved, new_id = self._create_evolved_contracts(original)
+
+        if stage_updates:
+            self._apply_stage_updates(evolved, stage_updates)
+        if new_triggers:
+            self._add_new_triggers(evolved, new_triggers)
+
+        self.register(evolved)
+        return new_id
+
+    def _create_evolved_contracts(
+        self, original: ApprovedContracts
+    ) -> tuple[ApprovedContracts, str]:
+        """Create evolved contracts with incremented version."""
         major, minor = map(int, original.version.split("."))
         new_version = f"{major}.{minor + 1}"
 
-        # Generate new ID
         timestamp = datetime.now(UTC).strftime("%Y%m%d-%H%M%S")
         new_id = f"CONTRACT-{timestamp}"
 
-        # Create evolved contracts
         evolved = ApprovedContracts(
             contract_set_id=new_id,
             draft_id=original.draft_id,
@@ -229,35 +240,29 @@ class ContractRegistry:
             quality_gates=original.quality_gates.copy(),
             version=new_version,
         )
+        return evolved, new_id
 
-        # Apply stage updates
-        if stage_updates:
-            for stage_name, updates in stage_updates.items():
-                for i, sc in enumerate(evolved.stage_contracts):
-                    if sc.stage_name == stage_name:
-                        # Update fields
-                        if "output_schema" in updates:
-                            sc.output_schema = updates["output_schema"]
-                        if "input_schema" in updates:
-                            sc.input_schema = updates["input_schema"]
-                        if "output_requirements" in updates:
-                            sc.output_requirements = updates["output_requirements"]
-                        if "input_requirements" in updates:
-                            sc.input_requirements = updates["input_requirements"]
-                        break
+    def _apply_stage_updates(
+        self, evolved: ApprovedContracts, stage_updates: dict[str, dict[str, Any]]
+    ) -> None:
+        """Apply updates to stage contracts."""
+        updatable_fields = ["output_schema", "input_schema", "output_requirements", "input_requirements"]
 
-        # Add new triggers
-        if new_triggers:
-            from .draft import EscalationTrigger
-            for trigger_data in new_triggers:
-                evolved.escalation_triggers.append(
-                    EscalationTrigger.from_dict(trigger_data)
-                )
+        for stage_name, updates in stage_updates.items():
+            for sc in evolved.stage_contracts:
+                if sc.stage_name == stage_name:
+                    for field in updatable_fields:
+                        if field in updates:
+                            setattr(sc, field, updates[field])
+                    break
 
-        # Register evolved contracts
-        self.register(evolved)
-
-        return new_id
+    def _add_new_triggers(
+        self, evolved: ApprovedContracts, new_triggers: list[dict[str, Any]]
+    ) -> None:
+        """Add new escalation triggers to evolved contracts."""
+        from .draft import EscalationTrigger
+        for trigger_data in new_triggers:
+            evolved.escalation_triggers.append(EscalationTrigger.from_dict(trigger_data))
 
     def _load_index(self) -> dict[str, Any]:
         """Load the contract index."""

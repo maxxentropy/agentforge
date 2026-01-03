@@ -94,9 +94,8 @@ class TestToolRegistry:
 
         registry.register_domain_tools("python", ["pytest", "ruff"])
 
-        # This should be accessible through some method (implementation detail)
-        # For now, we'll test that it doesn't raise an error
-        assert True, "Assertion failed"# Will be updated when implementation exists
+        # Verify domain tools were registered (no exception means success)
+        # Domain tool retrieval will be tested when that API is implemented
 
     def test_get_tool_returns_tool_when_exists(self):
         """Test that get_tool returns tool definition when it exists."""

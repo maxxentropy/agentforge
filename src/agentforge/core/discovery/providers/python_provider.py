@@ -474,6 +474,18 @@ class PythonProvider(LanguageProvider):
     # Extraction Suggestions
     # ========================================================================
 
+    def _analyze_node_for_extraction(self, node: ast.AST) -> ExtractionSuggestion | None:
+        """Check if a node can be extracted and return suggestion if so."""
+        if isinstance(node, ast.For):
+            return self._analyze_loop_extraction(node, "for loop")
+        if isinstance(node, ast.While):
+            return self._analyze_loop_extraction(node, "while loop")
+        if isinstance(node, ast.If):
+            return self._analyze_if_extraction(node)
+        if isinstance(node, ast.Try):
+            return self._analyze_try_extraction(node)
+        return None
+
     def suggest_extractions(self, path: Path, function_name: str) -> list[ExtractionSuggestion]:
         """Suggest code blocks that could be extracted to reduce complexity."""
         node = self.get_function_node(path, function_name)
@@ -481,30 +493,11 @@ class PythonProvider(LanguageProvider):
             return []
 
         suggestions = []
-
-        # Look for extractable blocks: loops, large if blocks, try/except
         for child in ast.walk(node):
-            if isinstance(child, ast.For):
-                suggestion = self._analyze_loop_extraction(child, "for loop")
-                if suggestion:
-                    suggestions.append(suggestion)
+            suggestion = self._analyze_node_for_extraction(child)
+            if suggestion:
+                suggestions.append(suggestion)
 
-            elif isinstance(child, ast.While):
-                suggestion = self._analyze_loop_extraction(child, "while loop")
-                if suggestion:
-                    suggestions.append(suggestion)
-
-            elif isinstance(child, ast.If):
-                suggestion = self._analyze_if_extraction(child)
-                if suggestion:
-                    suggestions.append(suggestion)
-
-            elif isinstance(child, ast.Try):
-                suggestion = self._analyze_try_extraction(child)
-                if suggestion:
-                    suggestions.append(suggestion)
-
-        # Sort by estimated reduction (highest first)
         suggestions.sort(key=lambda s: s.estimated_reduction, reverse=True)
         return suggestions
 

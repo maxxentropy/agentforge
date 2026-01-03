@@ -492,6 +492,17 @@ class DiscoveryManager:
 
         return profile, profile_path
 
+    def _embed_lineage_metadata(self, generator, specs) -> int:
+        """Embed lineage metadata in source files and return count."""
+        lineage_updates = generator.generate_lineage_updates(specs)
+        embedder = LineageEmbedder(self.root_path)
+        results = embedder.embed_all(lineage_updates)
+        files_embedded = sum(1 for r in results if r.success and r.action in ("added", "updated"))
+        if self.verbose:
+            summary = embedder.summary()
+            print(f"  Lineage embedded: {summary['added']} added, {summary['updated']} updated")
+        return files_embedded
+
     def _generate_as_built_specs(
         self,
         embed_lineage: bool = False,
@@ -512,36 +523,18 @@ class DiscoveryManager:
             return [], 0
 
         generator = AsBuiltSpecGenerator(self.root_path)
-        specs = generator.generate_from_test_analysis(
-            self._test_analysis,
-            zone_name="main",
-        )
+        specs = generator.generate_from_test_analysis(self._test_analysis, zone_name="main")
 
         if not specs:
             return [], 0
 
-        # Save specs to disk
         spec_paths = generator.save_specs(specs)
-
         if self.verbose:
             print(f"  Generated {len(specs)} as-built spec(s)")
             for path in spec_paths:
                 print(f"    - {path.name}")
 
-        # Optionally embed lineage metadata
-        files_embedded = 0
-        if embed_lineage:
-            lineage_updates = generator.generate_lineage_updates(specs)
-
-            embedder = LineageEmbedder(self.root_path)
-            results = embedder.embed_all(lineage_updates)
-
-            files_embedded = sum(1 for r in results if r.success and r.action in ("added", "updated"))
-
-            if self.verbose:
-                summary = embedder.summary()
-                print(f"  Lineage embedded: {summary['added']} added, {summary['updated']} updated")
-
+        files_embedded = self._embed_lineage_metadata(generator, specs) if embed_lineage else 0
         return spec_paths, files_embedded
 
     def _report_progress(self, message: str, percentage: float) -> None:
@@ -753,65 +746,12 @@ class MultiZoneDiscoveryManager:
         merger = ZoneMerger(self.root_path, self.config)
         self._zones = merger.merge_zones(auto_zones)
 
-    def _analyze_zone(self, zone: Zone) -> ZoneProfile:
-        """Analyze a single zone."""
-        # Get provider for zone's language
-        provider_class = self.PROVIDERS.get(zone.language)
-        if not provider_class:
-            raise ValueError(f"No provider for language: {zone.language}")
-
-        provider = provider_class()
-        zone_path = zone.path if zone.path.is_absolute() else (self.root_path / zone.path)
-
-        # Count files and lines
-        source_files = provider.get_source_files(zone_path)
-        file_count = len(source_files)
-        line_count = sum(provider.count_lines(f) for f in source_files)
-
-        # Get dependencies
-        deps = provider.get_dependencies(zone_path)
-        dependencies = [
-            DependencyInfo(
-                name=dep.name,
-                version=dep.version,
-                source=dep.source,
-                is_dev=dep.is_dev,
-            )
-            for dep in deps
-        ]
-
-        # Get project info for frameworks
-        project_info = provider.detect_project(zone_path) or {}
-        frameworks = _get_frameworks_list(project_info)
-
-        # Create language info
-        lang_info = LanguageInfo(
-            name=zone.language,
-            version=project_info.get("version"),
-            detection=Detection(
-                value=zone.language,
-                confidence=0.9,
-                source=DetectionSource.EXPLICIT,
-            ),
-            file_count=file_count,
-            line_count=line_count,
-            frameworks=frameworks,
-            primary=True,
-        )
-
-        # Analyze structure
-        structure_analyzer = StructureAnalyzer(provider)
-        structure_result = structure_analyzer.analyze(zone_path)
-
-        # Analyze patterns
-        pattern_analyzer = PatternAnalyzer(provider)
-        pattern_result = pattern_analyzer.analyze(zone_path)
-
-        # Build structure dict
-        structure = {
-            "style": structure_result.architecture_style,
-            "confidence": structure_result.confidence,
-            "source_root": str(structure_result.source_root) if structure_result.source_root else None,
+    def _build_structure_dict(self, result) -> dict:
+        """Build structure dictionary from analysis result."""
+        return {
+            "style": result.architecture_style,
+            "confidence": result.confidence,
+            "source_root": str(result.source_root) if result.source_root else None,
             "layers": {
                 name: {
                     "paths": info.paths,
@@ -820,13 +760,14 @@ class MultiZoneDiscoveryManager:
                     "confidence": info.detection.confidence,
                     "signals": info.detection.signals,
                 }
-                for name, info in structure_result.layers.items()
+                for name, info in result.layers.items()
             },
-            "entry_points": [str(ep) for ep in structure_result.entry_points],
-            "test_directories": [str(td) for td in structure_result.test_directories],
+            "entry_points": [str(ep) for ep in result.entry_points],
+            "test_directories": [str(td) for td in result.test_directories],
         }
 
-        # Build patterns dict
+    def _build_patterns_dict(self, pattern_result) -> dict:
+        """Build patterns dictionary from analysis result."""
         patterns = {
             name: {
                 "description": pattern.description,
@@ -838,8 +779,6 @@ class MultiZoneDiscoveryManager:
             }
             for name, pattern in pattern_result.patterns.items()
         }
-
-        # Add frameworks to patterns (frameworks are Detection objects, not PatternDetection)
         for name, fw in pattern_result.frameworks.items():
             patterns[f"framework_{name}"] = {
                 "description": f"{name} framework detected",
@@ -848,12 +787,48 @@ class MultiZoneDiscoveryManager:
                 "signals": fw.signals,
                 "metadata": fw.metadata,
             }
+        return patterns
+
+    def _analyze_zone(self, zone: Zone) -> ZoneProfile:
+        """Analyze a single zone."""
+        provider_class = self.PROVIDERS.get(zone.language)
+        if not provider_class:
+            raise ValueError(f"No provider for language: {zone.language}")
+
+        provider = provider_class()
+        zone_path = zone.path if zone.path.is_absolute() else (self.root_path / zone.path)
+
+        source_files = provider.get_source_files(zone_path)
+        file_count = len(source_files)
+        line_count = sum(provider.count_lines(f) for f in source_files)
+
+        deps = provider.get_dependencies(zone_path)
+        dependencies = [
+            DependencyInfo(name=dep.name, version=dep.version, source=dep.source, is_dev=dep.is_dev)
+            for dep in deps
+        ]
+
+        project_info = provider.detect_project(zone_path) or {}
+        frameworks = _get_frameworks_list(project_info)
+
+        lang_info = LanguageInfo(
+            name=zone.language,
+            version=project_info.get("version"),
+            detection=Detection(value=zone.language, confidence=0.9, source=DetectionSource.EXPLICIT),
+            file_count=file_count,
+            line_count=line_count,
+            frameworks=frameworks,
+            primary=True,
+        )
+
+        structure_result = StructureAnalyzer(provider).analyze(zone_path)
+        pattern_result = PatternAnalyzer(provider).analyze(zone_path)
 
         return ZoneProfile(
             zone=zone,
             languages=[lang_info],
-            structure=structure,
-            patterns=patterns,
+            structure=self._build_structure_dict(structure_result),
+            patterns=self._build_patterns_dict(pattern_result),
             frameworks=list(pattern_result.frameworks.keys()) + frameworks,
             dependencies=dependencies,
             file_count=file_count,

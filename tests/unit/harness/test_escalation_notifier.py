@@ -38,8 +38,8 @@ class TestEscalationNotifierInit:
         channels = [EscalationChannel.CLI, EscalationChannel.FILE]
         notifier = EscalationNotifier(channels=channels)
 
-        assert notifier is not None
-        assert notifier.channels == channels
+        assert notifier is not None, "Expected notifier is not None"
+        assert notifier.channels == channels, "Expected notifier.channels to equal channels"
 
     def test_init_with_config_sets_configuration(self):
         """Test that EscalationNotifier accepts configuration."""
@@ -49,13 +49,13 @@ class TestEscalationNotifierInit:
             config=config
         )
 
-        assert notifier.config == config
+        assert notifier.config == config, "Expected notifier.config to equal config"
 
     def test_init_with_empty_channels_allowed(self):
         """Test that notifier can be created with no channels."""
         notifier = EscalationNotifier(channels=[])
 
-        assert notifier.channels == []
+        assert notifier.channels == [], "Expected notifier.channels to equal []"
 
 
 class TestNotify:
@@ -82,8 +82,8 @@ class TestNotify:
         with patch.object(notifier, 'notify_cli', return_value=True):
             results = notifier.notify(sample_escalation)
 
-        assert isinstance(results, dict)
-        assert EscalationChannel.CLI in results
+        assert isinstance(results, dict), "Expected isinstance() to be truthy"
+        assert EscalationChannel.CLI in results, "Expected EscalationChannel.CLI in results"
 
     def test_notify_attempts_all_channels(self, sample_escalation):
         """Test that notify attempts all configured channels."""
@@ -94,7 +94,7 @@ class TestNotify:
              patch.object(notifier, 'notify_file', return_value=True):
             results = notifier.notify(sample_escalation)
 
-        assert len(results) == 2
+        assert len(results) == 2, "Expected len(results) to equal 2"
 
     def test_notify_handles_channel_failure(self, sample_escalation):
         """Test that notify continues after channel failure."""
@@ -105,8 +105,8 @@ class TestNotify:
              patch.object(notifier, 'notify_file', return_value=True):
             results = notifier.notify(sample_escalation)
 
-        assert results[EscalationChannel.CLI] is False
-        assert results[EscalationChannel.FILE] is True
+        assert results[EscalationChannel.CLI] is False, "Expected results[EscalationChannel.CLI] is False"
+        assert results[EscalationChannel.FILE] is True, "Expected results[EscalationChannel.F... is True"
 
 
 class TestNotifyCli:
@@ -133,7 +133,7 @@ class TestNotifyCli:
         with patch('builtins.print'):
             result = notifier.notify_cli(sample_escalation)
 
-        assert result is True
+        assert result is True, "Expected result is True"
 
     def test_notify_cli_prints_escalation_info(self, sample_escalation):
         """Test that CLI notification prints escalation details."""
@@ -145,7 +145,7 @@ class TestNotifyCli:
         # Check that print was called with some escalation content
         mock_print.assert_called()
         call_args_str = str(mock_print.call_args_list)
-        assert "esc-cli-001" in call_args_str or "Critical" in call_args_str or "CRITICAL" in call_args_str
+        assert "esc-cli-001" in call_args_str or "Critical" in call_args_str or "CRITICAL" in call_args_str, "Assertion failed"
 
     def test_notify_cli_includes_priority(self, sample_escalation):
         """Test that CLI notification includes priority level."""
@@ -156,7 +156,7 @@ class TestNotifyCli:
 
         # Should mention priority somewhere
         all_output = " ".join(str(c) for c in mock_print.call_args_list)
-        assert "CRITICAL" in all_output.upper()
+        assert "CRITICAL" in all_output.upper(), "Expected 'CRITICAL' in all_output.upper()"
 
 
 class TestNotifyFile:
@@ -184,7 +184,7 @@ class TestNotifyFile:
 
             result = notifier.notify_file(sample_escalation, file_path=file_path)
 
-            assert result is True
+            assert result is True, "Expected result is True"
 
     def test_notify_file_creates_file(self, sample_escalation):
         """Test that file notification creates file."""
@@ -194,7 +194,7 @@ class TestNotifyFile:
 
             notifier.notify_file(sample_escalation, file_path=file_path)
 
-            assert file_path.exists()
+            assert file_path.exists(), "Expected file_path.exists() to be truthy"
 
     def test_notify_file_writes_valid_json(self, sample_escalation):
         """Test that file contains valid JSON."""
@@ -207,8 +207,8 @@ class TestNotifyFile:
             with open(file_path) as f:
                 data = json.load(f)
 
-            assert data["id"] == "esc-file-001"
-            assert data["reason"] == "File test"
+            assert data["id"] == "esc-file-001", "Expected data['id'] to equal 'esc-file-001'"
+            assert data["reason"] == "File test", "Expected data['reason'] to equal 'File test'"
 
     def test_notify_file_uses_default_path_when_none(self, sample_escalation):
         """Test that file uses default path when not specified."""
@@ -221,7 +221,7 @@ class TestNotifyFile:
             result = notifier.notify_file(sample_escalation)
 
             # Should succeed even without explicit path
-            assert result is True
+            assert result is True, "Expected result is True"
 
 
 class TestNotifyWebhook:
@@ -255,7 +255,7 @@ class TestNotifyWebhook:
                 webhook_url="https://example.com/hook"
             )
 
-        assert result is True
+        assert result is True, "Expected result is True"
 
     def test_notify_webhook_posts_to_url(self, sample_escalation):
         """Test that webhook POSTs to the correct URL."""
@@ -268,7 +268,7 @@ class TestNotifyWebhook:
 
         mock_post.assert_called_once()
         call_args = mock_post.call_args
-        assert call_args[0][0] == url
+        assert call_args[0][0] == url, "Expected call_args[0][0] to equal url"
 
     def test_notify_webhook_returns_false_on_failure(self, sample_escalation):
         """Test that webhook returns False on HTTP error."""
@@ -281,7 +281,7 @@ class TestNotifyWebhook:
                 webhook_url="https://example.com/hook"
             )
 
-        assert result is False
+        assert result is False, "Expected result is False"
 
     def test_notify_webhook_uses_config_url(self, sample_escalation):
         """Test that webhook uses configured URL when not specified."""
@@ -296,7 +296,7 @@ class TestNotifyWebhook:
             notifier.notify_webhook(sample_escalation)
 
         call_args = mock_post.call_args
-        assert call_args[0][0] == config_url
+        assert call_args[0][0] == config_url, "Expected call_args[0][0] to equal config_url"
 
 
 class TestFormatEscalation:
@@ -322,9 +322,9 @@ class TestFormatEscalation:
 
         result = notifier.format_escalation(sample_escalation, format="text")
 
-        assert isinstance(result, str)
-        assert "esc-format-001" in result
-        assert "Format test" in result
+        assert isinstance(result, str), "Expected isinstance() to be truthy"
+        assert "esc-format-001" in result, "Expected 'esc-format-001' in result"
+        assert "Format test" in result, "Expected 'Format test' in result"
 
     def test_format_escalation_json_format(self, sample_escalation):
         """Test formatting escalation as JSON."""
@@ -333,8 +333,8 @@ class TestFormatEscalation:
         result = notifier.format_escalation(sample_escalation, format="json")
 
         data = json.loads(result)
-        assert data["id"] == "esc-format-001"
-        assert data["reason"] == "Format test"
+        assert data["id"] == "esc-format-001", "Expected data['id'] to equal 'esc-format-001'"
+        assert data["reason"] == "Format test", "Expected data['reason'] to equal 'Format test'"
 
     def test_format_escalation_markdown_format(self, sample_escalation):
         """Test formatting escalation as markdown."""
@@ -342,9 +342,9 @@ class TestFormatEscalation:
 
         result = notifier.format_escalation(sample_escalation, format="markdown")
 
-        assert isinstance(result, str)
-        assert "#" in result or "**" in result  # Markdown formatting
-        assert "esc-format-001" in result
+        assert isinstance(result, str), "Expected isinstance() to be truthy"
+        assert "#" in result or "**" in result, "Assertion failed"# Markdown formatting
+        assert "esc-format-001" in result, "Expected 'esc-format-001' in result"
 
     def test_format_escalation_default_is_text(self, sample_escalation):
         """Test that default format is text."""
@@ -353,7 +353,7 @@ class TestFormatEscalation:
         result1 = notifier.format_escalation(sample_escalation)
         result2 = notifier.format_escalation(sample_escalation, format="text")
 
-        assert result1 == result2
+        assert result1 == result2, "Expected result1 to equal result2"
 
 
 class TestGetPriorityColor:
@@ -365,7 +365,7 @@ class TestGetPriorityColor:
 
         for priority in EscalationPriority:
             color = notifier.get_priority_color(priority)
-            assert isinstance(color, str)
+            assert isinstance(color, str), "Expected isinstance() to be truthy"
 
     def test_get_priority_color_critical_is_red(self):
         """Test that CRITICAL priority uses red."""
@@ -386,7 +386,7 @@ class TestGetPriorityColor:
         }
 
         # At least CRITICAL and LOW should differ
-        assert colors[EscalationPriority.CRITICAL] != colors[EscalationPriority.LOW]
+        assert colors[EscalationPriority.CRITICAL] != colors[EscalationPriority.LOW], "Expected colors[EscalationPriority.C... to not equal colors[EscalationPriority.LOW]"
 
 
 class TestEscalationNotifierIntegration:
@@ -416,9 +416,9 @@ class TestEscalationNotifierIntegration:
                 results = notifier.notify(escalation)
 
             # CLI should succeed (mocked print)
-            assert results.get(EscalationChannel.CLI) is True
+            assert results.get(EscalationChannel.CLI) is True, "Expected results.get(EscalationChann... is True"
             # FILE should succeed
-            assert results.get(EscalationChannel.FILE) is True
+            assert results.get(EscalationChannel.FILE) is True, "Expected results.get(EscalationChann... is True"
 
     def test_format_all_priorities(self):
         """Test that all priorities format correctly."""
@@ -437,4 +437,4 @@ class TestEscalationNotifierIntegration:
             )
 
             text = notifier.format_escalation(escalation, format="text")
-            assert priority.name in text.upper()
+            assert priority.name in text.upper(), "Expected priority.name in text.upper()"

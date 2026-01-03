@@ -35,20 +35,20 @@ class TestTransactionLogger:
             stage_name="clarify",
         )
 
-        assert record.transaction_id == "TX-0001"
-        assert record.thread_id == "test-thread"
-        assert record.transaction_type == TransactionType.LLM_CALL
-        assert record.tokens_input == 100
-        assert record.stage_name == "clarify"
+        assert record.transaction_id == "TX-0001", "Expected record.transaction_id to equal 'TX-0001'"
+        assert record.thread_id == "test-thread", "Expected record.thread_id to equal 'test-thread'"
+        assert record.transaction_type == TransactionType.LLM_CALL, "Expected record.transaction_type to equal TransactionType.LLM_CALL"
+        assert record.tokens_input == 100, "Expected record.tokens_input to equal 100"
+        assert record.stage_name == "clarify", "Expected record.stage_name to equal 'clarify'"
 
         # Verify file was created
         tx_path = tmp_path / ".agentforge" / "audit" / "threads" / "test-thread" / "transactions" / "TX-0001.yaml"
-        assert tx_path.exists()
+        assert tx_path.exists(), "Expected tx_path.exists() to be truthy"
 
         # Verify content
         data = yaml.safe_load(tx_path.read_text())
-        assert data["transaction_type"] == "llm_call"
-        assert data["stage_name"] == "clarify"
+        assert data["transaction_type"] == "llm_call", "Expected data['transaction_type'] to equal 'llm_call'"
+        assert data["stage_name"] == "clarify", "Expected data['stage_name'] to equal 'clarify'"
 
     def test_log_llm_call_creates_llm_file(self, tmp_path):
         """Full LLM content should be saved to separate file."""
@@ -60,12 +60,12 @@ class TestTransactionLogger:
         )
 
         llm_path = tmp_path / ".agentforge" / "audit" / "threads" / "test-thread" / "transactions" / "TX-0001-llm.md"
-        assert llm_path.exists()
+        assert llm_path.exists(), "Expected llm_path.exists() to be truthy"
 
         content = llm_path.read_text()
-        assert "You are an expert" in content
-        assert "Analyze this code" in content
-        assert "I'll analyze the code structure" in content
+        assert "You are an expert" in content, "Expected 'You are an expert' in content"
+        assert "Analyze this code" in content, "Expected 'Analyze this code' in content"
+        assert "I'll analyze the code structure" in content, "Expected \"I'll analyze the code stru... in content"
 
     def test_sequential_transaction_ids(self, tmp_path):
         """Transactions should have sequential IDs."""
@@ -75,9 +75,9 @@ class TestTransactionLogger:
         r2 = logger.log_llm_call(request={}, response="Second")
         r3 = logger.log_llm_call(request={}, response="Third")
 
-        assert r1.transaction_id == "TX-0001"
-        assert r2.transaction_id == "TX-0002"
-        assert r3.transaction_id == "TX-0003"
+        assert r1.transaction_id == "TX-0001", "Expected r1.transaction_id to equal 'TX-0001'"
+        assert r2.transaction_id == "TX-0002", "Expected r2.transaction_id to equal 'TX-0002'"
+        assert r3.transaction_id == "TX-0003", "Expected r3.transaction_id to equal 'TX-0003'"
 
     def test_hash_chain_linking(self, tmp_path):
         """Each transaction should link to previous hash."""
@@ -86,8 +86,8 @@ class TestTransactionLogger:
         r1 = logger.log_llm_call(request={}, response="First")
         r2 = logger.log_llm_call(request={}, response="Second")
 
-        assert r1.previous_hash is None  # First in chain
-        assert r2.previous_hash == r1.content_hash
+        assert r1.previous_hash is None, "Expected r1.previous_hash is None"# First in chain
+        assert r2.previous_hash == r1.content_hash, "Expected r2.previous_hash to equal r1.content_hash"
 
     def test_log_spawn(self, tmp_path):
         """Log a spawn/delegation event."""
@@ -99,9 +99,9 @@ class TestTransactionLogger:
             context={"task": "security review", "priority": "high"},
         )
 
-        assert record.transaction_type == TransactionType.SPAWN
-        assert record.spawned_thread_id == "child-thread"
-        assert record.spawn_reason == "Delegating security analysis"
+        assert record.transaction_type == TransactionType.SPAWN, "Expected record.transaction_type to equal TransactionType.SPAWN"
+        assert record.spawned_thread_id == "child-thread", "Expected record.spawned_thread_id to equal 'child-thread'"
+        assert record.spawn_reason == "Delegating security analysis", "Expected record.spawn_reason to equal 'Delegating security analysis'"
 
     def test_log_human_interaction(self, tmp_path):
         """Log a human-in-the-loop interaction."""
@@ -114,10 +114,10 @@ class TestTransactionLogger:
             duration_ms=45000,
         )
 
-        assert record.transaction_type == TransactionType.HUMAN_INTERACTION
-        assert record.human_prompt == "Should we proceed with OAuth or JWT?"
-        assert record.human_response == "Use JWT for this application"
-        assert record.duration_ms == 45000
+        assert record.transaction_type == TransactionType.HUMAN_INTERACTION, "Expected record.transaction_type to equal TransactionType.HUMAN_INTER..."
+        assert record.human_prompt == "Should we proceed with OAuth or JWT?", "Expected record.human_prompt to equal 'Should we proceed with OAu..."
+        assert record.human_response == "Use JWT for this application", "Expected record.human_response to equal 'Use JWT for this application'"
+        assert record.duration_ms == 45000, "Expected record.duration_ms to equal 45000"
 
     def test_tool_calls_in_transaction(self, tmp_path):
         """Log tool calls within an LLM interaction."""
@@ -146,9 +146,9 @@ class TestTransactionLogger:
             tool_calls=tool_calls,
         )
 
-        assert len(record.tool_calls) == 2
-        assert record.tool_calls[0].tool_name == "read_file"
-        assert record.tool_calls[1].tool_name == "write_file"
+        assert len(record.tool_calls) == 2, "Expected len(record.tool_calls) to equal 2"
+        assert record.tool_calls[0].tool_name == "read_file", "Expected record.tool_calls[0].tool_name to equal 'read_file'"
+        assert record.tool_calls[1].tool_name == "write_file", "Expected record.tool_calls[1].tool_name to equal 'write_file'"
 
     def test_list_transactions(self, tmp_path):
         """List all transactions in order."""
@@ -160,7 +160,7 @@ class TestTransactionLogger:
 
         tx_list = logger.list_transactions()
 
-        assert tx_list == ["TX-0001", "TX-0002", "TX-0003"]
+        assert tx_list == ["TX-0001", "TX-0002", "TX-0003"], "Expected tx_list to equal ['TX-0001', 'TX-0002', 'TX-..."
 
     def test_get_transaction(self, tmp_path):
         """Retrieve a specific transaction."""
@@ -174,8 +174,8 @@ class TestTransactionLogger:
 
         record = logger.get_transaction("TX-0001")
 
-        assert record is not None
-        assert record.transaction_id == "TX-0001"
+        assert record is not None, "Expected record is not None"
+        assert record.transaction_id == "TX-0001", "Expected record.transaction_id to equal 'TX-0001'"
 
     def test_get_full_llm_content(self, tmp_path):
         """Retrieve full LLM content for a transaction."""
@@ -188,9 +188,9 @@ class TestTransactionLogger:
 
         content = logger.get_full_llm_content("TX-0001")
 
-        assert content is not None
-        assert "Test system prompt" in content
-        assert "Test response content" in content
+        assert content is not None, "Expected content is not None"
+        assert "Test system prompt" in content, "Expected 'Test system prompt' in content"
+        assert "Test response content" in content, "Expected 'Test response content' in content"
 
     def test_chain_file_updated(self, tmp_path):
         """Chain YAML file should be updated."""
@@ -202,12 +202,12 @@ class TestTransactionLogger:
         logger.log_llm_call(request={}, response="Second")
 
         chain_path = tmp_path / ".agentforge" / "audit" / "threads" / "test-thread" / "chain.yaml"
-        assert chain_path.exists()
+        assert chain_path.exists(), "Expected chain_path.exists() to be truthy"
 
         data = yaml.safe_load(chain_path.read_text())
-        assert len(data["blocks"]) == 2
-        assert data["blocks"][0]["block_id"] == "TX-0001"
-        assert data["blocks"][1]["block_id"] == "TX-0002"
+        assert len(data["blocks"]) == 2, "Expected len(data['blocks']) to equal 2"
+        assert data["blocks"][0]["block_id"] == "TX-0001", "Expected data['blocks'][0]['block_id'] to equal 'TX-0001'"
+        assert data["blocks"][1]["block_id"] == "TX-0002", "Expected data['blocks'][1]['block_id'] to equal 'TX-0002'"
 
     def test_persistence_across_instances(self, tmp_path):
         """Logger should resume sequence across instances."""
@@ -220,8 +220,8 @@ class TestTransactionLogger:
         logger2 = TransactionLogger(tmp_path, "test-thread")
         r3 = logger2.log_llm_call(request={}, response="Third")
 
-        assert r3.transaction_id == "TX-0003"
-        assert r3.previous_hash is not None  # Should link to TX-0002
+        assert r3.transaction_id == "TX-0003", "Expected r3.transaction_id to equal 'TX-0003'"
+        assert r3.previous_hash is not None, "Expected r3.previous_hash is not None"# Should link to TX-0002
 
 
 class TestTransactionRecord:
@@ -243,11 +243,11 @@ class TestTransactionRecord:
 
         data = record.to_dict()
 
-        assert data["transaction_id"] == "TX-0001"
-        assert data["transaction_type"] == "llm_call"
-        assert data["stage_name"] == "analyze"
-        assert data["tokens"]["input"] == 100
-        assert data["action"]["name"] == "analyze_code"
+        assert data["transaction_id"] == "TX-0001", "Expected data['transaction_id'] to equal 'TX-0001'"
+        assert data["transaction_type"] == "llm_call", "Expected data['transaction_type'] to equal 'llm_call'"
+        assert data["stage_name"] == "analyze", "Expected data['stage_name'] to equal 'analyze'"
+        assert data["tokens"]["input"] == 100, "Expected data['tokens']['input'] to equal 100"
+        assert data["action"]["name"] == "analyze_code", "Expected data['action']['name'] to equal 'analyze_code'"
 
 
 class TestToolCallRecord:
@@ -263,9 +263,9 @@ class TestToolCallRecord:
             success=True,
         )
 
-        assert tc.tool_name == "read_file"
-        assert tc.success is True
-        assert tc.error is None
+        assert tc.tool_name == "read_file", "Expected tc.tool_name to equal 'read_file'"
+        assert tc.success is True, "Expected tc.success is True"
+        assert tc.error is None, "Expected tc.error is None"
 
     def test_tool_call_failure(self):
         """Record failed tool call."""
@@ -278,5 +278,5 @@ class TestToolCallRecord:
             error="Permission denied",
         )
 
-        assert tc.success is False
-        assert tc.error == "Permission denied"
+        assert tc.success is False, "Expected tc.success is False"
+        assert tc.error == "Permission denied", "Expected tc.error to equal 'Permission denied'"

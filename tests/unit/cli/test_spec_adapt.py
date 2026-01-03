@@ -20,12 +20,12 @@ class TestSpecAdaptImports:
     def test_run_adapt_import(self):
         """Verify run_adapt can be imported."""
         from agentforge.cli.commands.spec_adapt import run_adapt
-        assert run_adapt is not None
+        assert run_adapt is not None, "Expected run_adapt is not None"
 
     def test_adapt_click_command_import(self):
         """Verify adapt click command can be imported."""
         from agentforge.cli.click_commands.spec import adapt
-        assert adapt is not None
+        assert adapt is not None, "Expected adapt is not None"
 
 
 class TestLoadExternalSpec:
@@ -39,8 +39,8 @@ class TestLoadExternalSpec:
         spec_file.write_text("# Test Spec\n\nSome content")
 
         content = _load_external_spec(str(spec_file))
-        assert "# Test Spec" in content
-        assert "Some content" in content
+        assert "# Test Spec" in content, "Expected '# Test Spec' in content"
+        assert "Some content" in content, "Expected 'Some content' in content"
 
     def test_load_external_spec_not_found(self):
         """Should raise FileNotFoundError for missing file."""
@@ -62,15 +62,15 @@ class TestLoadCodebaseProfile:
         profile_file.write_text(yaml.dump(profile_data))
 
         profile = _load_codebase_profile(str(profile_file))
-        assert profile["language"] == "python"
-        assert "mvc" in profile["patterns"]
+        assert profile["language"] == "python", "Expected profile['language'] to equal 'python'"
+        assert "mvc" in profile["patterns"], "Expected 'mvc' in profile['patterns']"
 
     def test_load_profile_not_found(self, tmp_path):
         """Should return empty dict when profile doesn't exist."""
         from agentforge.cli.commands.spec_adapt import _load_codebase_profile
 
         profile = _load_codebase_profile(str(tmp_path / "nonexistent.yaml"))
-        assert profile == {}
+        assert profile == {}, "Expected profile to equal {}"
 
 
 class TestGetExistingSpecIds:
@@ -82,7 +82,7 @@ class TestGetExistingSpecIds:
 
         monkeypatch.chdir(tmp_path)
         spec_ids = _get_existing_spec_ids()
-        assert spec_ids == []
+        assert spec_ids == [], "Expected spec_ids to equal []"
 
     def test_get_existing_spec_ids_with_specs(self, tmp_path, monkeypatch):
         """Should return spec IDs from existing specs."""
@@ -100,8 +100,8 @@ class TestGetExistingSpecIds:
         (specs_dir / "spec2.yaml").write_text(yaml.dump(spec2))
 
         spec_ids = _get_existing_spec_ids()
-        assert "core-feature-v1" in spec_ids
-        assert "cli-v1" in spec_ids
+        assert "core-feature-v1" in spec_ids, "Expected 'core-feature-v1' in spec_ids"
+        assert "cli-v1" in spec_ids, "Expected 'cli-v1' in spec_ids"
 
 
 class TestBuildAdaptInputs:
@@ -118,10 +118,10 @@ class TestBuildAdaptInputs:
             original_file="test.md",
         )
 
-        assert inputs["external_spec_content"] == "# Test Spec"
-        assert "python" in inputs["codebase_profile"]
-        assert "spec-1" in inputs["existing_spec_ids"]
-        assert inputs["original_file_path"] == "test.md"
+        assert inputs["external_spec_content"] == "# Test Spec", "Expected inputs['external_spec_conte... to equal '# Test Spec'"
+        assert "python" in inputs["codebase_profile"], "Expected 'python' in inputs['codebase_profile']"
+        assert "spec-1" in inputs["existing_spec_ids"], "Expected 'spec-1' in inputs['existing_spec_ids']"
+        assert inputs["original_file_path"] == "test.md", "Expected inputs['original_file_path'] to equal 'test.md'"
 
     def test_build_adapt_inputs_empty_profile(self):
         """Should handle empty profile gracefully."""
@@ -134,8 +134,8 @@ class TestBuildAdaptInputs:
             original_file="test.md",
         )
 
-        assert "No codebase profile" in inputs["codebase_profile"]
-        assert "No existing specs" in inputs["existing_spec_ids"]
+        assert "No codebase profile" in inputs["codebase_profile"], "Expected 'No codebase profile' in inputs['codebase_profile']"
+        assert "No existing specs" in inputs["existing_spec_ids"], "Expected 'No existing specs' in inputs['existing_spec_ids']"
 
 
 class TestSaveAdaptedSpec:
@@ -150,10 +150,10 @@ class TestSaveAdaptedSpec:
 
         success = _save_adapted_spec(result, output_path)
 
-        assert success is True
-        assert output_path.exists()
+        assert success is True, "Expected success is True"
+        assert output_path.exists(), "Expected output_path.exists() to be truthy"
         saved = yaml.safe_load(output_path.read_text())
-        assert saved["spec_id"] == "test-v1"
+        assert saved["spec_id"] == "test-v1", "Expected saved['spec_id'] to equal 'test-v1'"
 
     def test_save_adapted_spec_with_raw(self, tmp_path):
         """Should save raw output and return False when parsing failed."""
@@ -164,6 +164,6 @@ class TestSaveAdaptedSpec:
 
         success = _save_adapted_spec(result, output_path)
 
-        assert success is False
+        assert success is False, "Expected success is False"
         raw_path = output_path.with_suffix(".raw.txt")
-        assert raw_path.exists()
+        assert raw_path.exists(), "Expected raw_path.exists() to be truthy"

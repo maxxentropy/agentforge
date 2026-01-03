@@ -63,12 +63,12 @@ components:
             coverage_threshold=75.0,
         )
 
-        assert session is not None
-        assert session.session_id.startswith("tdflow_")
-        assert session.test_framework == "pytest"
-        assert session.coverage_threshold == 75.0
-        assert len(session.components) == 1
-        assert session.components[0].name == "TestService"
+        assert session is not None, "Expected session is not None"
+        assert session.session_id.startswith("tdflow_"), "Expected session.session_id.startswith() to be truthy"
+        assert session.test_framework == "pytest", "Expected session.test_framework to equal 'pytest'"
+        assert session.coverage_threshold == 75.0, "Expected session.coverage_threshold to equal 75.0"
+        assert len(session.components) == 1, "Expected len(session.components) to equal 1"
+        assert session.components[0].name == "TestService", "Expected session.components[0].name to equal 'TestService'"
 
     def test_get_status_no_session(self, temp_dir: Path):
         """Get status returns inactive when no session."""
@@ -76,7 +76,7 @@ components:
 
         status = orchestrator.get_status()
 
-        assert status["active"] is False
+        assert status["active"] is False, "Expected status['active'] is False"
 
     def test_get_status_with_session(
         self, orchestrator: TDFlowOrchestrator, spec_file: Path
@@ -86,10 +86,10 @@ components:
 
         status = orchestrator.get_status()
 
-        assert status["active"] is True
-        assert "session_id" in status
-        assert status["current_phase"] == "init"
-        assert len(status["components"]) == 1
+        assert status["active"] is True, "Expected status['active'] is True"
+        assert "session_id" in status, "Expected 'session_id' in status"
+        assert status["current_phase"] == "init", "Expected status['current_phase'] to equal 'init'"
+        assert len(status["components"]) == 1, "Expected len(status['components']) to equal 1"
 
     def test_run_red_no_session(self, temp_dir: Path):
         """Run red fails without session."""
@@ -97,8 +97,8 @@ components:
 
         result = orchestrator.run_red()
 
-        assert result.success is False
-        assert "No active session" in result.errors[0]
+        assert result.success is False, "Expected result.success is False"
+        assert "No active session" in result.errors[0], "Expected 'No active session' in result.errors[0]"
 
     @patch("agentforge.core.tdflow.phases.red.RedPhaseExecutor.execute")
     @patch("agentforge.core.tdflow.runners.base.TestRunner.for_framework")
@@ -132,8 +132,8 @@ components:
         orchestrator.start(spec_file)
         result = orchestrator.run_red()
 
-        assert result.success is True
-        assert result.component == "TestService"
+        assert result.success is True, "Expected result.success is True"
+        assert result.component == "TestService", "Expected result.component to equal 'TestService'"
         mock_execute.assert_called_once()
 
     def test_run_green_no_session(self, temp_dir: Path):
@@ -142,8 +142,8 @@ components:
 
         result = orchestrator.run_green()
 
-        assert result.success is False
-        assert "No active session" in result.errors[0]
+        assert result.success is False, "Expected result.success is False"
+        assert "No active session" in result.errors[0], "Expected 'No active session' in result.errors[0]"
 
     def test_run_green_no_red_component(
         self, orchestrator: TDFlowOrchestrator, spec_file: Path
@@ -153,8 +153,8 @@ components:
 
         result = orchestrator.run_green()
 
-        assert result.success is False
-        assert "RED state" in result.errors[0]
+        assert result.success is False, "Expected result.success is False"
+        assert "RED state" in result.errors[0], "Expected 'RED state' in result.errors[0]"
 
     def test_resume_loads_session(
         self, orchestrator: TDFlowOrchestrator, spec_file: Path
@@ -170,8 +170,8 @@ components:
         )
         new_orchestrator.resume()
 
-        assert new_orchestrator.session is not None
-        assert new_orchestrator.session.session_id == session_id
+        assert new_orchestrator.session is not None, "Expected new_orchestrator.session is not None"
+        assert new_orchestrator.session.session_id == session_id, "Expected new_orchestrator.session.se... to equal session_id"
 
 
 class TestOrchestratorComponentSelection:
@@ -197,16 +197,16 @@ class TestOrchestratorComponentSelection:
         """Get component by specific name."""
         comp = session_with_components.get_component("Red1")
 
-        assert comp is not None
-        assert comp.name == "Red1"
-        assert comp.status == ComponentStatus.RED
+        assert comp is not None, "Expected comp is not None"
+        assert comp.name == "Red1", "Expected comp.name to equal 'Red1'"
+        assert comp.status == ComponentStatus.RED, "Expected comp.status to equal ComponentStatus.RED"
 
     def test_get_next_pending(self, session_with_components: TDFlowSession):
         """Get next pending returns first pending."""
         comp = session_with_components.get_next_pending()
 
-        assert comp is not None
-        assert comp.name == "Pending1"
+        assert comp is not None, "Expected comp is not None"
+        assert comp.name == "Pending1", "Expected comp.name to equal 'Pending1'"
 
     def test_get_current_component(self, session_with_components: TDFlowSession):
         """Get current component respects current_component field."""
@@ -214,5 +214,5 @@ class TestOrchestratorComponentSelection:
 
         comp = session_with_components.get_current_component()
 
-        assert comp is not None
-        assert comp.name == "Green1"
+        assert comp is not None, "Expected comp is not None"
+        assert comp.name == "Green1", "Expected comp.name to equal 'Green1'"

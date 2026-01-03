@@ -102,50 +102,50 @@ class TestSarifOutput:
         """Test SARIF output has correct structure."""
         sarif = generate_sarif(sample_result)
 
-        assert sarif["$schema"].endswith("sarif-schema-2.1.0.json")
-        assert sarif["version"] == "2.1.0"
-        assert "runs" in sarif
-        assert len(sarif["runs"]) == 1
+        assert sarif["$schema"].endswith("sarif-schema-2.1.0.json"), "Expected sarif['$schema'].endswith() to be truthy"
+        assert sarif["version"] == "2.1.0", "Expected sarif['version'] to equal '2.1.0'"
+        assert "runs" in sarif, "Expected 'runs' in sarif"
+        assert len(sarif["runs"]) == 1, "Expected len(sarif['runs']) to equal 1"
 
     def test_generate_sarif_tool_info(self, sample_result):
         """Test SARIF includes tool information."""
         sarif = generate_sarif(sample_result, tool_name="test-tool")
 
         tool = sarif["runs"][0]["tool"]["driver"]
-        assert tool["name"] == "test-tool"
-        assert "version" in tool
-        assert "rules" in tool
+        assert tool["name"] == "test-tool", "Expected tool['name'] to equal 'test-tool'"
+        assert "version" in tool, "Expected 'version' in tool"
+        assert "rules" in tool, "Expected 'rules' in tool"
 
     def test_generate_sarif_results(self, sample_result):
         """Test SARIF results match violations."""
         sarif = generate_sarif(sample_result)
 
         results = sarif["runs"][0]["results"]
-        assert len(results) == 2
+        assert len(results) == 2, "Expected len(results) to equal 2"
 
         # Check first result
-        assert results[0]["ruleId"] == "PY001"
-        assert results[0]["level"] == "error"
-        assert "Variable name" in results[0]["message"]["text"]
+        assert results[0]["ruleId"] == "PY001", "Expected results[0]['ruleId'] to equal 'PY001'"
+        assert results[0]["level"] == "error", "Expected results[0]['level'] to equal 'error'"
+        assert "Variable name" in results[0]["message"]["text"], "Expected 'Variable name' in results[0]['message']['text']"
 
     def test_generate_sarif_invocations(self, sample_result):
         """Test SARIF includes invocation info."""
         sarif = generate_sarif(sample_result)
 
         invocations = sarif["runs"][0]["invocations"]
-        assert len(invocations) == 1
-        assert invocations[0]["executionSuccessful"] is False  # Has violations
+        assert len(invocations) == 1, "Expected len(invocations) to equal 1"
+        assert invocations[0]["executionSuccessful"] is False, "Expected invocations[0]['executionSu... is False"# Has violations
 
     def test_generate_sarif_rules(self, sample_result):
         """Test SARIF includes rule definitions."""
         sarif = generate_sarif(sample_result)
 
         rules = sarif["runs"][0]["tool"]["driver"]["rules"]
-        assert len(rules) == 2
+        assert len(rules) == 2, "Expected len(rules) to equal 2"
 
         rule_ids = [r["id"] for r in rules]
-        assert "PY001" in rule_ids
-        assert "doc-check" in rule_ids  # Falls back to check_id when no rule_id
+        assert "PY001" in rule_ids, "Expected 'PY001' in rule_ids"
+        assert "doc-check" in rule_ids, "Expected 'doc-check' in rule_ids"# Falls back to check_id when no rule_id
 
     def test_generate_sarif_for_github(self, sample_result):
         """Test GitHub-specific SARIF generation."""
@@ -157,9 +157,9 @@ class TestSarifOutput:
         )
 
         vcs = sarif["runs"][0]["versionControlProvenance"][0]
-        assert vcs["repositoryUri"] == "https://github.com/owner/repo"
-        assert vcs["revisionId"] == "abc123"
-        assert vcs["branch"] == "main"
+        assert vcs["repositoryUri"] == "https://github.com/owner/repo", "Expected vcs['repositoryUri'] to equal 'https://github.com/owner/r..."
+        assert vcs["revisionId"] == "abc123", "Expected vcs['revisionId'] to equal 'abc123'"
+        assert vcs["branch"] == "main", "Expected vcs['branch'] to equal 'main'"
 
     def test_write_sarif(self, sample_result, tmp_path):
         """Test writing SARIF to file."""
@@ -167,9 +167,9 @@ class TestSarifOutput:
 
         write_sarif(sample_result, output_path)
 
-        assert output_path.exists()
+        assert output_path.exists(), "Expected output_path.exists() to be truthy"
         content = json.loads(output_path.read_text())
-        assert "runs" in content
+        assert "runs" in content, "Expected 'runs' in content"
 
 
 class TestJunitOutput:
@@ -179,9 +179,9 @@ class TestJunitOutput:
         """Test JUnit XML has correct structure."""
         root = generate_junit(sample_result)
 
-        assert root.tag == "testsuites"
-        assert root.get("tests") == "2"
-        assert root.get("failures") == "2"
+        assert root.tag == "testsuites", "Expected root.tag to equal 'testsuites'"
+        assert root.get("tests") == "2", "Expected root.get('tests') to equal '2'"
+        assert root.get("failures") == "2", "Expected root.get('failures') to equal '2'"
 
     def test_generate_junit_testsuite_grouping(self, sample_result):
         """Test testsuites are grouped by contract."""
@@ -189,31 +189,31 @@ class TestJunitOutput:
 
         testsuites = root.findall("testsuite")
         # Grouped by contract_id
-        assert len(testsuites) == 1  # Both violations have same contract_id
+        assert len(testsuites) == 1, "Expected len(testsuites) to equal 1"# Both violations have same contract_id
 
     def test_generate_junit_testcases(self, sample_result):
         """Test testcases have correct content."""
         root = generate_junit(sample_result)
 
         testcases = root.findall(".//testcase")
-        assert len(testcases) == 2
+        assert len(testcases) == 2, "Expected len(testcases) to equal 2"
 
         for testcase in testcases:
-            assert "name" in testcase.attrib
-            assert "classname" in testcase.attrib
+            assert "name" in testcase.attrib, "Expected 'name' in testcase.attrib"
+            assert "classname" in testcase.attrib, "Expected 'classname' in testcase.attrib"
             failure = testcase.find("failure")
-            assert failure is not None
-            assert "message" in failure.attrib
+            assert failure is not None, "Expected failure is not None"
+            assert "message" in failure.attrib, "Expected 'message' in failure.attrib"
 
     def test_generate_junit_failure_details(self, sample_result):
         """Test failure elements contain details."""
         root = generate_junit(sample_result)
 
         failure = root.find(".//failure")
-        assert failure is not None
-        assert "File:" in failure.text
-        assert "Line:" in failure.text
-        assert "Severity:" in failure.text
+        assert failure is not None, "Expected failure is not None"
+        assert "File:" in failure.text, "Expected 'File:' in failure.text"
+        assert "Line:" in failure.text, "Expected 'Line:' in failure.text"
+        assert "Severity:" in failure.text, "Expected 'Severity:' in failure.text"
 
     def test_write_junit(self, sample_result, tmp_path):
         """Test writing JUnit XML to file."""
@@ -221,18 +221,18 @@ class TestJunitOutput:
 
         write_junit(sample_result, output_path)
 
-        assert output_path.exists()
+        assert output_path.exists(), "Expected output_path.exists() to be truthy"
         tree = ET.parse(output_path)
         root = tree.getroot()
-        assert root.tag == "testsuites"
+        assert root.tag == "testsuites", "Expected root.tag to equal 'testsuites'"
 
     def test_generate_junit_string(self, sample_result):
         """Test generating JUnit as string."""
         xml_string = generate_junit_string(sample_result)
 
-        assert xml_string.startswith("<testsuites")
-        assert "testcase" in xml_string
-        assert "failure" in xml_string
+        assert xml_string.startswith("<testsuites"), "Expected xml_string.startswith() to be truthy"
+        assert "testcase" in xml_string, "Expected 'testcase' in xml_string"
+        assert "failure" in xml_string, "Expected 'failure' in xml_string"
 
 
 class TestMarkdownOutput:
@@ -242,19 +242,19 @@ class TestMarkdownOutput:
         """Test Markdown has expected sections."""
         md = generate_markdown(sample_result)
 
-        assert "## ❌ AgentForge Conformance Report" in md  # Failed
-        assert "### Summary" in md
-        assert "### All Violations" in md
+        assert "## ❌ AgentForge Conformance Report" in md, "Expected '## ❌ AgentForge Conformanc... in md"# Failed
+        assert "### Summary" in md, "Expected '### Summary' in md"
+        assert "### All Violations" in md, "Expected '### All Violations' in md"
 
     def test_generate_markdown_summary_table(self, sample_result):
         """Test summary table contains key metrics."""
         md = generate_markdown(sample_result)
 
-        assert "Mode | full" in md
-        assert "Files Checked | 10" in md
-        assert "Total Violations | 2" in md
-        assert "Errors | 1" in md
-        assert "Warnings | 1" in md
+        assert "Mode | full" in md, "Expected 'Mode | full' in md"
+        assert "Files Checked | 10" in md, "Expected 'Files Checked | 10' in md"
+        assert "Total Violations | 2" in md, "Expected 'Total Violations | 2' in md"
+        assert "Errors | 1" in md, "Expected 'Errors | 1' in md"
+        assert "Warnings | 1" in md, "Expected 'Warnings | 1' in md"
 
     def test_generate_markdown_success_status(self, sample_violations):
         """Test success status shows checkmark."""
@@ -273,7 +273,7 @@ class TestMarkdownOutput:
 
         md = generate_markdown(result)
 
-        assert "## ✅" in md
+        assert "## ✅" in md, "Expected '## ✅' in md"
 
     def test_generate_markdown_with_comparison(self, sample_result, sample_comparison):
         """Test Markdown includes baseline comparison."""
@@ -281,31 +281,31 @@ class TestMarkdownOutput:
 
         md = generate_markdown(sample_result)
 
-        assert "### Baseline Comparison" in md
-        assert "New Violations" in md
-        assert "Fixed Violations" in md
-        assert "Existing Violations" in md
+        assert "### Baseline Comparison" in md, "Expected '### Baseline Comparison' in md"
+        assert "New Violations" in md, "Expected 'New Violations' in md"
+        assert "Fixed Violations" in md, "Expected 'Fixed Violations' in md"
+        assert "Existing Violations" in md, "Expected 'Existing Violations' in md"
 
     def test_generate_markdown_violations_by_file(self, sample_result):
         """Test violations are grouped by file."""
         md = generate_markdown(sample_result)
 
-        assert "**`src/main.py`**" in md
-        assert "**`src/utils.py`**" in md
+        assert "**`src/main.py`**" in md, "Expected '**`src/main.py`**' in md"
+        assert "**`src/utils.py`**" in md, "Expected '**`src/utils.py`**' in md"
 
     def test_generate_markdown_severity_icons(self, sample_result):
         """Test severity icons are included."""
         md = generate_markdown(sample_result)
 
-        assert "🔴" in md  # Error
-        assert "🟡" in md  # Warning
+        assert "🔴" in md, "Expected '🔴' in md"# Error
+        assert "🟡" in md, "Expected '🟡' in md"# Warning
 
     def test_generate_markdown_footer(self, sample_result):
         """Test footer includes metadata."""
         md = generate_markdown(sample_result)
 
-        assert "Generated at" in md
-        assert "abc123" in md  # Commit SHA
+        assert "Generated at" in md, "Expected 'Generated at' in md"
+        assert "abc123" in md, "Expected 'abc123' in md"# Commit SHA
 
     def test_write_markdown(self, sample_result, tmp_path):
         """Test writing Markdown to file."""
@@ -313,9 +313,9 @@ class TestMarkdownOutput:
 
         write_markdown(sample_result, output_path)
 
-        assert output_path.exists()
+        assert output_path.exists(), "Expected output_path.exists() to be truthy"
         content = output_path.read_text()
-        assert "## " in content
+        assert "## " in content, "Expected '## ' in content"
 
     def test_generate_pr_comment_success(self):
         """Test PR comment format for success."""
@@ -334,8 +334,8 @@ class TestMarkdownOutput:
 
         comment = generate_pr_comment(result)
 
-        assert "✅ AgentForge Conformance: Passed" in comment
-        assert "0** violations" in comment
+        assert "✅ AgentForge Conformance: Passed" in comment, "Expected '✅ AgentForge Conformance: ... in comment"
+        assert "0** violations" in comment, "Expected '0** violations' in comment"
 
     def test_generate_pr_comment_with_new_violations(self, sample_violations, sample_comparison):
         """Test PR comment highlights new violations."""
@@ -354,8 +354,8 @@ class TestMarkdownOutput:
 
         comment = generate_pr_comment(result)
 
-        assert "❌ AgentForge Conformance: Failed" in comment
-        assert "1 new violation(s) introduced" in comment
+        assert "❌ AgentForge Conformance: Failed" in comment, "Expected '❌ AgentForge Conformance: ... in comment"
+        assert "1 new violation(s) introduced" in comment, "Expected '1 new violation(s) introdu... in comment"
 
     def test_generate_pr_comment_with_fixes(self, sample_violations, sample_comparison):
         """Test PR comment celebrates fixes."""
@@ -374,4 +374,4 @@ class TestMarkdownOutput:
 
         comment = generate_pr_comment(result)
 
-        assert "1 violation(s) fixed!" in comment
+        assert "1 violation(s) fixed!" in comment, "Expected '1 violation(s) fixed!' in comment"

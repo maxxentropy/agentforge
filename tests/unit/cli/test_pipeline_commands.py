@@ -45,9 +45,9 @@ class TestStartCommand:
 
             result = cli_runner.invoke(cli, ["start", "Add OAuth authentication"])
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
             mock_controller.execute.assert_called_once()
-            assert "Pipeline completed" in result.output or "Starting pipeline" in result.output
+            assert "Pipeline completed" in result.output or "Starting pipeline" in result.output, "Assertion failed"
 
     def test_start_with_supervised_flag(self, cli_runner, cli, mock_controller):
         """--supervised flag enables approval mode."""
@@ -56,7 +56,7 @@ class TestStartCommand:
 
             result = cli_runner.invoke(cli, ["start", "Add feature", "--supervised"])
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
             # Verify _get_controller was called (config_override is passed there)
             mock_get.assert_called()
 
@@ -67,7 +67,7 @@ class TestStartCommand:
 
             result = cli_runner.invoke(cli, ["start", "Add feature", "-s"])
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
 
     def test_start_with_exit_after(self, cli_runner, cli, mock_controller):
         """--exit-after stops at specified stage."""
@@ -76,7 +76,7 @@ class TestStartCommand:
 
             result = cli_runner.invoke(cli, ["start", "Add feature", "--exit-after", "spec"])
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
             mock_get.assert_called()
 
     def test_start_with_delivery_mode_commit(self, cli_runner, cli, mock_controller):
@@ -86,7 +86,7 @@ class TestStartCommand:
 
             result = cli_runner.invoke(cli, ["start", "Add feature", "--delivery-mode", "commit"])
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
 
     def test_start_with_delivery_mode_pr(self, cli_runner, cli, mock_controller):
         """--delivery-mode pr creates pull request."""
@@ -95,7 +95,7 @@ class TestStartCommand:
 
             result = cli_runner.invoke(cli, ["start", "Add feature", "--delivery-mode", "pr"])
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
 
     def test_start_with_delivery_mode_files(self, cli_runner, cli, mock_controller):
         """--delivery-mode files outputs files only."""
@@ -104,7 +104,7 @@ class TestStartCommand:
 
             result = cli_runner.invoke(cli, ["start", "Add feature", "--delivery-mode", "files"])
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
 
     def test_start_with_delivery_mode_patch(self, cli_runner, cli, mock_controller):
         """--delivery-mode patch generates patch file."""
@@ -113,7 +113,7 @@ class TestStartCommand:
 
             result = cli_runner.invoke(cli, ["start", "Add feature", "--delivery-mode", "patch"])
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
 
     def test_start_with_iterate_flag(self, cli_runner, cli, mock_controller):
         """--iterate enables spec review pause."""
@@ -122,7 +122,7 @@ class TestStartCommand:
 
             result = cli_runner.invoke(cli, ["start", "Add feature", "--iterate"])
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
 
     def test_start_with_timeout(self, cli_runner, cli, mock_controller):
         """--timeout sets pipeline timeout."""
@@ -131,14 +131,14 @@ class TestStartCommand:
 
             result = cli_runner.invoke(cli, ["start", "Add feature", "--timeout", "7200"])
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
 
     def test_start_requires_request(self, cli_runner, cli):
         """start command requires request argument."""
         result = cli_runner.invoke(cli, ["start"])
 
-        assert result.exit_code != 0
-        assert "Missing argument" in result.output or "Usage" in result.output
+        assert result.exit_code != 0, "Expected result.exit_code to not equal 0"
+        assert "Missing argument" in result.output or "Usage" in result.output, "Assertion failed"
 
     def test_start_displays_success(self, cli_runner, cli, mock_controller):
         """start displays success message on completion."""
@@ -147,9 +147,9 @@ class TestStartCommand:
 
             result = cli_runner.invoke(cli, ["start", "Add feature"])
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
             # Should show pipeline ID and success indicators
-            assert "PL-" in result.output or "pipeline" in result.output.lower()
+            assert "PL-" in result.output or "pipeline" in result.output.lower(), "Assertion failed"
 
     def test_start_displays_failure(self, cli_runner, cli, mock_controller_failed):
         """start displays error message on failure."""
@@ -159,7 +159,7 @@ class TestStartCommand:
             result = cli_runner.invoke(cli, ["start", "Add broken feature"])
 
             # Should complete (exit 0) but show failure in output
-            assert "failed" in result.output.lower() or "error" in result.output.lower()
+            assert "failed" in result.output.lower() or "error" in result.output.lower(), "Assertion failed"
 
 
 # =============================================================================
@@ -179,7 +179,7 @@ class TestDesignCommand:
 
             result = cli_runner.invoke(cli, ["design", "Add user authentication"])
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
             mock_controller.execute.assert_called_once()
 
     def test_design_exits_at_spec(self, cli_runner, cli, mock_controller, sample_pipeline_result_design):
@@ -191,7 +191,7 @@ class TestDesignCommand:
 
             result = cli_runner.invoke(cli, ["design", "Add feature"])
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
             mock_get.assert_called()
 
     def test_design_with_iterate(self, cli_runner, cli, mock_controller, sample_pipeline_result_design):
@@ -203,7 +203,7 @@ class TestDesignCommand:
 
             result = cli_runner.invoke(cli, ["design", "Add feature", "--iterate"])
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
 
     def test_design_shows_spec_id(self, cli_runner, cli, mock_controller, sample_pipeline_result_design):
         """design shows spec ID on completion."""
@@ -214,15 +214,15 @@ class TestDesignCommand:
 
             result = cli_runner.invoke(cli, ["design", "Add feature"])
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
             # Should show spec ID in output
-            assert "SPEC" in result.output or "spec" in result.output.lower()
+            assert "SPEC" in result.output or "spec" in result.output.lower(), "Assertion failed"
 
     def test_design_requires_request(self, cli_runner, cli):
         """design command requires request argument."""
         result = cli_runner.invoke(cli, ["design"])
 
-        assert result.exit_code != 0
+        assert result.exit_code != 0, "Expected result.exit_code to not equal 0"
 
 
 # =============================================================================
@@ -240,7 +240,7 @@ class TestImplementCommand:
 
             result = cli_runner.invoke(cli, ["implement", "Add caching layer"])
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
             mock_controller.execute.assert_called_once()
 
     def test_implement_from_spec(self, cli_runner, cli, mock_controller, temp_project_with_spec):
@@ -262,7 +262,7 @@ overview:
                 result = cli_runner.invoke(cli, ["implement", "--from-spec", "SPEC-20260102-0001"])
 
             # Should either succeed or fail gracefully
-            assert result.exit_code == 0 or "not found" in result.output.lower()
+            assert result.exit_code == 0 or "not found" in result.output.lower(), "Assertion failed"
 
     def test_implement_skip_to_red(self, cli_runner, cli, mock_controller, temp_project_with_spec):
         """--skip-to red jumps to RED stage."""
@@ -279,7 +279,7 @@ overview:
                 )
 
             # Should process the skip-to flag
-            assert result.exit_code == 0 or "not found" in result.output.lower()
+            assert result.exit_code == 0 or "not found" in result.output.lower(), "Assertion failed"
 
     def test_implement_skip_to_green(self, cli_runner, cli, mock_controller):
         """--skip-to green jumps to GREEN stage."""
@@ -295,14 +295,14 @@ overview:
                     cli, ["implement", "--from-spec", "SPEC-001", "--skip-to", "green"]
                 )
 
-            assert result.exit_code == 0 or "not found" in result.output.lower()
+            assert result.exit_code == 0 or "not found" in result.output.lower(), "Assertion failed"
 
     def test_implement_requires_request_or_spec(self, cli_runner, cli):
         """error when neither request nor --from-spec provided."""
         result = cli_runner.invoke(cli, ["implement"])
 
         # Should fail with usage error
-        assert result.exit_code != 0 or "required" in result.output.lower()
+        assert result.exit_code != 0 or "required" in result.output.lower(), "Assertion failed"
 
     def test_implement_with_delivery_mode(self, cli_runner, cli, mock_controller):
         """--delivery-mode configures output format."""
@@ -311,14 +311,14 @@ overview:
 
             result = cli_runner.invoke(cli, ["implement", "Add feature", "--delivery-mode", "pr"])
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
 
     def test_implement_spec_not_found(self, cli_runner, cli):
         """error when spec file not found."""
         result = cli_runner.invoke(cli, ["implement", "--from-spec", "NONEXISTENT-SPEC"])
 
         # Should fail with not found error
-        assert result.exit_code != 0 or "not found" in result.output.lower()
+        assert result.exit_code != 0 or "not found" in result.output.lower(), "Assertion failed"
 
 
 # =============================================================================
@@ -336,10 +336,10 @@ class TestStatusCommand:
 
             result = cli_runner.invoke(cli, ["status", "PL-20260102-abc123"])
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
             mock_controller.get_status.assert_called()
             # Should display pipeline info
-            assert "PL-" in result.output or "Pipeline" in result.output
+            assert "PL-" in result.output or "Pipeline" in result.output, "Assertion failed"
 
     def test_status_without_id_shows_recent(self, cli_runner, cli, mock_controller):
         """status without ID shows most recent pipeline."""
@@ -348,7 +348,7 @@ class TestStatusCommand:
 
             result = cli_runner.invoke(cli, ["status"])
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
             # Should call list_pipelines to get most recent
             mock_controller.list_pipelines.assert_called()
 
@@ -359,7 +359,7 @@ class TestStatusCommand:
 
             result = cli_runner.invoke(cli, ["status", "--verbose"])
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
             # Verbose should show more details like tokens/cost
             # (exact output depends on implementation)
 
@@ -370,7 +370,7 @@ class TestStatusCommand:
 
             result = cli_runner.invoke(cli, ["status", "-v"])
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
 
     def test_status_shows_error_for_failed(self, cli_runner, cli, mock_controller_failed):
         """status shows error for failed pipeline."""
@@ -379,7 +379,7 @@ class TestStatusCommand:
 
             result = cli_runner.invoke(cli, ["status", "PL-20260102-fail"])
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
             # Should show error info
 
     def test_status_shows_actions_paused(self, cli_runner, cli, mock_controller_paused):
@@ -389,7 +389,7 @@ class TestStatusCommand:
 
             result = cli_runner.invoke(cli, ["status", "PL-20260102-paused"])
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
             # Should suggest resume/abort actions
 
     def test_status_shows_actions_awaiting(self, cli_runner, cli, mock_controller_awaiting):
@@ -399,7 +399,7 @@ class TestStatusCommand:
 
             result = cli_runner.invoke(cli, ["status", "PL-20260102-await"])
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
             # Should suggest approve/reject actions
 
     def test_status_no_pipeline_found(self, cli_runner, cli, mock_controller):
@@ -412,8 +412,8 @@ class TestStatusCommand:
 
             result = cli_runner.invoke(cli, ["status"])
 
-            assert result.exit_code == 0
-            assert "No pipeline" in result.output or "not found" in result.output.lower()
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
+            assert "No pipeline" in result.output or "not found" in result.output.lower(), "Assertion failed"
 
 
 # =============================================================================
@@ -431,7 +431,7 @@ class TestResumeCommand:
 
             result = cli_runner.invoke(cli, ["resume", "PL-20260102-abc123"])
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
             mock_controller.execute.assert_called()
 
     def test_resume_with_feedback(self, cli_runner, cli, mock_controller):
@@ -443,7 +443,7 @@ class TestResumeCommand:
                 cli, ["resume", "PL-123", "--feedback", "Use Google OAuth instead"]
             )
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
             mock_controller.provide_feedback.assert_called()
 
     def test_resume_short_feedback_flag(self, cli_runner, cli, mock_controller):
@@ -453,13 +453,13 @@ class TestResumeCommand:
 
             result = cli_runner.invoke(cli, ["resume", "PL-123", "-f", "Use JWT instead"])
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
 
     def test_resume_requires_pipeline_id(self, cli_runner, cli):
         """resume command requires pipeline_id argument."""
         result = cli_runner.invoke(cli, ["resume"])
 
-        assert result.exit_code != 0
+        assert result.exit_code != 0, "Expected result.exit_code to not equal 0"
 
 
 # =============================================================================
@@ -477,7 +477,7 @@ class TestApproveCommand:
 
             result = cli_runner.invoke(cli, ["approve", "PL-20260102-abc123"])
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
             mock_controller.approve.assert_called_with("PL-20260102-abc123")
 
     def test_approve_shows_success(self, cli_runner, cli, mock_controller):
@@ -487,8 +487,8 @@ class TestApproveCommand:
 
             result = cli_runner.invoke(cli, ["approve", "PL-123"])
 
-            assert result.exit_code == 0
-            assert "Approved" in result.output or "approved" in result.output.lower()
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
+            assert "Approved" in result.output or "approved" in result.output.lower(), "Assertion failed"
 
     def test_approve_shows_failure(self, cli_runner, cli, mock_controller):
         """approve shows failure when controller returns False."""
@@ -500,13 +500,13 @@ class TestApproveCommand:
             result = cli_runner.invoke(cli, ["approve", "PL-123"])
 
             # Should still exit 0 but show failure message
-            assert "Could not" in result.output or "failed" in result.output.lower()
+            assert "Could not" in result.output or "failed" in result.output.lower(), "Assertion failed"
 
     def test_approve_requires_pipeline_id(self, cli_runner, cli):
         """approve command requires pipeline_id argument."""
         result = cli_runner.invoke(cli, ["approve"])
 
-        assert result.exit_code != 0
+        assert result.exit_code != 0, "Expected result.exit_code to not equal 0"
 
 
 # =============================================================================
@@ -526,7 +526,7 @@ class TestRejectCommand:
                 cli, ["reject", "PL-123", "--feedback", "Need more validation"]
             )
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
             mock_controller.provide_feedback.assert_called()
 
     def test_reject_with_abort(self, cli_runner, cli, mock_controller):
@@ -536,7 +536,7 @@ class TestRejectCommand:
 
             result = cli_runner.invoke(cli, ["reject", "PL-123", "--abort"])
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
             mock_controller.abort.assert_called()
 
     def test_reject_requires_feedback_or_abort(self, cli_runner, cli, mock_controller):
@@ -546,15 +546,15 @@ class TestRejectCommand:
 
             result = cli_runner.invoke(cli, ["reject", "PL-123"])
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
             # Should prompt for feedback or abort
-            assert "feedback" in result.output.lower() or "abort" in result.output.lower()
+            assert "feedback" in result.output.lower() or "abort" in result.output.lower(), "Assertion failed"
 
     def test_reject_requires_pipeline_id(self, cli_runner, cli):
         """reject command requires pipeline_id argument."""
         result = cli_runner.invoke(cli, ["reject"])
 
-        assert result.exit_code != 0
+        assert result.exit_code != 0, "Expected result.exit_code to not equal 0"
 
 
 # =============================================================================
@@ -572,7 +572,7 @@ class TestAbortCommand:
 
             result = cli_runner.invoke(cli, ["abort", "PL-20260102-abc123"])
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
             mock_controller.abort.assert_called()
 
     def test_abort_with_reason(self, cli_runner, cli, mock_controller):
@@ -584,7 +584,7 @@ class TestAbortCommand:
                 cli, ["abort", "PL-123", "--reason", "Requirements changed"]
             )
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
             mock_controller.abort.assert_called_with("PL-123", "Requirements changed")
 
     def test_abort_short_reason_flag(self, cli_runner, cli, mock_controller):
@@ -594,7 +594,7 @@ class TestAbortCommand:
 
             result = cli_runner.invoke(cli, ["abort", "PL-123", "-r", "No longer needed"])
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
 
     def test_abort_default_reason(self, cli_runner, cli, mock_controller):
         """abort uses default reason when not specified."""
@@ -603,7 +603,7 @@ class TestAbortCommand:
 
             result = cli_runner.invoke(cli, ["abort", "PL-123"])
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
             # Should use default "User requested" reason
 
     def test_abort_shows_success(self, cli_runner, cli, mock_controller):
@@ -613,8 +613,8 @@ class TestAbortCommand:
 
             result = cli_runner.invoke(cli, ["abort", "PL-123"])
 
-            assert result.exit_code == 0
-            assert "aborted" in result.output.lower()
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
+            assert "aborted" in result.output.lower(), "Expected 'aborted' in result.output.lower()"
 
     def test_abort_shows_failure(self, cli_runner, cli, mock_controller):
         """abort shows failure when controller returns False."""
@@ -626,13 +626,13 @@ class TestAbortCommand:
             result = cli_runner.invoke(cli, ["abort", "PL-123"])
 
             # Should show failure message
-            assert "Could not" in result.output or "not" in result.output.lower()
+            assert "Could not" in result.output or "not" in result.output.lower(), "Assertion failed"
 
     def test_abort_requires_pipeline_id(self, cli_runner, cli):
         """abort command requires pipeline_id argument."""
         result = cli_runner.invoke(cli, ["abort"])
 
-        assert result.exit_code != 0
+        assert result.exit_code != 0, "Expected result.exit_code to not equal 0"
 
 
 # =============================================================================
@@ -652,10 +652,10 @@ class TestPipelinesCommand:
 
             result = cli_runner.invoke(cli, ["pipelines"])
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
             mock_controller.list_pipelines.assert_called()
             # Should list multiple pipelines
-            assert "PL-" in result.output
+            assert "PL-" in result.output, "Expected 'PL-' in result.output"
 
     def test_pipelines_filter_running(self, cli_runner, cli, mock_controller, multiple_pipelines):
         """--status running filters by status."""
@@ -668,7 +668,7 @@ class TestPipelinesCommand:
 
             result = cli_runner.invoke(cli, ["pipelines", "--status", "running"])
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
 
     def test_pipelines_filter_completed(self, cli_runner, cli, mock_controller, multiple_pipelines):
         """--status completed filters by status."""
@@ -680,7 +680,7 @@ class TestPipelinesCommand:
 
             result = cli_runner.invoke(cli, ["pipelines", "--status", "completed"])
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
 
     def test_pipelines_filter_failed(self, cli_runner, cli, mock_controller, multiple_pipelines):
         """--status failed filters by status."""
@@ -692,7 +692,7 @@ class TestPipelinesCommand:
 
             result = cli_runner.invoke(cli, ["pipelines", "--status", "failed"])
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
 
     def test_pipelines_limit(self, cli_runner, cli, mock_controller, multiple_pipelines):
         """--limit controls number of results."""
@@ -703,7 +703,7 @@ class TestPipelinesCommand:
 
             result = cli_runner.invoke(cli, ["pipelines", "--limit", "2"])
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
 
     def test_pipelines_short_limit_flag(self, cli_runner, cli, mock_controller, multiple_pipelines):
         """-n short flag sets limit."""
@@ -714,7 +714,7 @@ class TestPipelinesCommand:
 
             result = cli_runner.invoke(cli, ["pipelines", "-n", "5"])
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
 
     def test_pipelines_no_results(self, cli_runner, cli, mock_controller):
         """pipelines handles no results."""
@@ -725,8 +725,8 @@ class TestPipelinesCommand:
 
             result = cli_runner.invoke(cli, ["pipelines"])
 
-            assert result.exit_code == 0
-            assert "No pipelines" in result.output or "found" in result.output.lower()
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
+            assert "No pipelines" in result.output or "found" in result.output.lower(), "Assertion failed"
 
     def test_pipelines_shows_table_header(self, cli_runner, cli, mock_controller, multiple_pipelines):
         """pipelines shows table header."""
@@ -737,9 +737,9 @@ class TestPipelinesCommand:
 
             result = cli_runner.invoke(cli, ["pipelines"])
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
             # Should have table-like output
-            assert "ID" in result.output or "-" in result.output
+            assert "ID" in result.output or "-" in result.output, "Assertion failed"
 
 
 # =============================================================================
@@ -761,9 +761,9 @@ class TestArtifactsCommand:
 
             result = cli_runner.invoke(cli, ["artifacts", "PL-123"])
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
             # Should list artifacts
-            assert "intake" in result.output.lower() or "yaml" in result.output.lower()
+            assert "intake" in result.output.lower() or "yaml" in result.output.lower(), "Assertion failed"
 
     def test_artifacts_specific_stage(self, cli_runner, cli):
         """--stage shows specific stage artifact."""
@@ -774,9 +774,9 @@ class TestArtifactsCommand:
 
             result = cli_runner.invoke(cli, ["artifacts", "PL-123", "--stage", "spec"])
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
             # Should show spec content
-            assert "spec" in result.output.lower() or "SPEC" in result.output
+            assert "spec" in result.output.lower() or "SPEC" in result.output, "Assertion failed"
 
     def test_artifacts_short_stage_flag(self, cli_runner, cli):
         """-s short flag selects stage."""
@@ -787,7 +787,7 @@ class TestArtifactsCommand:
 
             result = cli_runner.invoke(cli, ["artifacts", "PL-123", "-s", "intake"])
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
 
     def test_artifacts_output_file(self, cli_runner, cli):
         """--output saves artifact to file."""
@@ -800,9 +800,9 @@ class TestArtifactsCommand:
                 cli, ["artifacts", "PL-123", "--stage", "spec", "--output", "spec_out.yaml"]
             )
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
             # Check output file was created
-            assert Path("spec_out.yaml").exists()
+            assert Path("spec_out.yaml").exists(), "Expected Path('spec_out.yaml').exists() to be truthy"
 
     def test_artifacts_short_output_flag(self, cli_runner, cli):
         """-o short flag sets output file."""
@@ -815,14 +815,14 @@ class TestArtifactsCommand:
                 cli, ["artifacts", "PL-123", "-s", "intake", "-o", "intake.yaml"]
             )
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
 
     def test_artifacts_not_found(self, cli_runner, cli):
         """artifacts handles missing pipeline."""
         result = cli_runner.invoke(cli, ["artifacts", "NONEXISTENT"])
 
-        assert result.exit_code == 0
-        assert "No artifacts" in result.output or "not found" in result.output.lower()
+        assert result.exit_code == 0, "Expected result.exit_code to equal 0"
+        assert "No artifacts" in result.output or "not found" in result.output.lower(), "Assertion failed"
 
     def test_artifacts_stage_not_found(self, cli_runner, cli):
         """artifacts handles missing stage."""
@@ -833,14 +833,14 @@ class TestArtifactsCommand:
 
             result = cli_runner.invoke(cli, ["artifacts", "PL-123", "--stage", "nonexistent"])
 
-            assert result.exit_code == 0
-            assert "not found" in result.output.lower()
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
+            assert "not found" in result.output.lower(), "Expected 'not found' in result.output.lower()"
 
     def test_artifacts_requires_pipeline_id(self, cli_runner, cli):
         """artifacts command requires pipeline_id argument."""
         result = cli_runner.invoke(cli, ["artifacts"])
 
-        assert result.exit_code != 0
+        assert result.exit_code != 0, "Expected result.exit_code to not equal 0"
 
 
 # =============================================================================
@@ -859,7 +859,7 @@ class TestDisplayResult:
 
             result = cli_runner.invoke(cli, ["start", "Add feature", "--delivery-mode", "commit"])
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
             # Should show commit info
 
     def test_display_result_success_pr(self, cli_runner, cli, mock_controller):
@@ -871,7 +871,7 @@ class TestDisplayResult:
 
             result = cli_runner.invoke(cli, ["start", "Add feature", "--delivery-mode", "pr"])
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, "Expected result.exit_code to equal 0"
 
     def test_display_result_failure(self, cli_runner, cli, mock_controller_failed):
         """displays failure result correctly."""
@@ -881,7 +881,7 @@ class TestDisplayResult:
             result = cli_runner.invoke(cli, ["start", "Add broken feature"])
 
             # Should show error message
-            assert "failed" in result.output.lower() or "error" in result.output.lower()
+            assert "failed" in result.output.lower() or "error" in result.output.lower(), "Assertion failed"
 
 
 # =============================================================================
@@ -900,8 +900,8 @@ class TestPipelineProgressDisplay:
 
         expected_stages = ["intake", "clarify", "analyze", "spec", "red", "green", "refactor", "deliver"]
         for stage in expected_stages:
-            assert stage in display.STAGE_ICONS
-            assert len(display.STAGE_ICONS[stage]) > 0
+            assert stage in display.STAGE_ICONS, "Expected stage in display.STAGE_ICONS"
+            assert len(display.STAGE_ICONS[stage]) > 0, "Expected len(display.STAGE_ICONS[sta... > 0"
 
     def test_display_stage_start(self, capsys):
         """display_stage_start shows stage with icon."""
@@ -911,7 +911,7 @@ class TestPipelineProgressDisplay:
         display.display_stage_start("intake")
 
         captured = capsys.readouterr()
-        assert "INTAKE" in captured.out.upper() or "intake" in captured.out.lower()
+        assert "INTAKE" in captured.out.upper() or "intake" in captured.out.lower(), "Assertion failed"
 
     def test_display_stage_complete(self, capsys):
         """display_stage_complete shows completion."""
@@ -921,7 +921,7 @@ class TestPipelineProgressDisplay:
         display.display_stage_complete("intake", 5.5)
 
         captured = capsys.readouterr()
-        assert "complete" in captured.out.lower() or "5.5" in captured.out
+        assert "complete" in captured.out.lower() or "5.5" in captured.out, "Assertion failed"
 
     def test_display_stage_failed(self, capsys):
         """display_stage_failed shows error."""
@@ -931,7 +931,7 @@ class TestPipelineProgressDisplay:
         display.display_stage_failed("analyze", "Could not parse file")
 
         captured = capsys.readouterr()
-        assert "failed" in captured.out.lower() or "Could not" in captured.out
+        assert "failed" in captured.out.lower() or "Could not" in captured.out, "Assertion failed"
 
     def test_display_escalation(self, capsys):
         """display_escalation shows warning."""
@@ -941,4 +941,4 @@ class TestPipelineProgressDisplay:
         display.display_escalation("spec", "Ambiguous requirements")
 
         captured = capsys.readouterr()
-        assert "Escalation" in captured.out or "Ambiguous" in captured.out
+        assert "Escalation" in captured.out or "Ambiguous" in captured.out, "Assertion failed"

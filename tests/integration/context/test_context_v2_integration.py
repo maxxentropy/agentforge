@@ -147,15 +147,15 @@ Use semantic refactoring tools when available.
         template = get_template_for_task("fix_violation")
 
         # Verify integration
-        assert config.defaults.max_steps == 30  # Task-specific override
-        assert "Verify fix with check command" in config.constraints
-        assert fingerprint.technical.language == "python"
-        assert "pydantic" in fingerprint.technical.frameworks
-        assert template.task_type == "fix_violation"
+        assert config.defaults.max_steps == 30, "Expected config.defaults.max_steps to equal 30"# Task-specific override
+        assert "Verify fix with check command" in config.constraints, "Expected 'Verify fix with check comm... in config.constraints"
+        assert fingerprint.technical.language == "python", "Expected fingerprint.technical.language to equal 'python'"
+        assert "pydantic" in fingerprint.technical.frameworks, "Expected 'pydantic' in fingerprint.technical.frame..."
+        assert template.task_type == "fix_violation", "Expected template.task_type to equal 'fix_violation'"
 
         # Verify fingerprint YAML includes constraints
         yaml_output = fingerprint.to_context_yaml()
-        assert "correctness_first" in yaml_output
+        assert "correctness_first" in yaml_output, "Expected 'correctness_first' in yaml_output"
 
     def test_compaction_with_realistic_context(self, realistic_project):
         """Test compaction with realistic context sizes."""
@@ -180,19 +180,19 @@ Use semantic refactoring tools when available.
         manager = CompactionManager(threshold=0.80, max_budget=500)
 
         # Should need compaction
-        assert manager.needs_compaction(large_context)
+        assert manager.needs_compaction(large_context), "Expected manager.needs_compaction() to be truthy"
 
         # Compact
         result, audit = manager.compact(large_context)
 
         # Verify preserved sections
-        assert result["fingerprint"] == large_context["fingerprint"]
-        assert result["task"] == large_context["task"]
-        assert result["phase"] == large_context["phase"]
+        assert result["fingerprint"] == large_context["fingerprint"], "Expected result['fingerprint'] to equal large_context['fingerprint']"
+        assert result["task"] == large_context["task"], "Expected result['task'] to equal large_context['task']"
+        assert result["phase"] == large_context["phase"], "Expected result['phase'] to equal large_context['phase']"
 
         # Verify compaction occurred
-        assert audit.original_tokens > audit.final_tokens
-        assert len(audit.rules_applied) > 0
+        assert audit.original_tokens > audit.final_tokens, "Expected audit.original_tokens > audit.final_tokens"
+        assert len(audit.rules_applied) > 0, "Expected len(audit.rules_applied) > 0"
 
     def test_audit_captures_full_workflow(self, realistic_project):
         """Test that audit logger captures complete workflow."""
@@ -226,25 +226,25 @@ Use semantic refactoring tools when available.
 
         # Verify all steps captured
         steps = logger.list_steps()
-        assert steps == [1, 2, 3]
+        assert steps == [1, 2, 3], "Expected steps to equal [1, 2, 3]"
 
         # Verify thinking captured for step 2
         thinking = logger.get_thinking(2)
-        assert thinking is not None
-        assert "step 2" in thinking
+        assert thinking is not None, "Expected thinking is not None"
+        assert "step 2" in thinking, "Expected 'step 2' in thinking"
 
         # Verify summary
         summary = logger.get_summary()
-        assert summary["total_steps"] == 3
-        assert summary["final_status"] == "completed"
-        assert summary["effective_tokens"] == 3000 - int(1000 * 0.9)
+        assert summary["total_steps"] == 3, "Expected summary['total_steps'] to equal 3"
+        assert summary["final_status"] == "completed", "Expected summary['final_status'] to equal 'completed'"
+        assert summary["effective_tokens"] == 3000 - int(1000 * 0.9), "Expected summary['effective_tokens'] to equal 3000 - int(1000 * 0.9)"
 
         # Verify audit directory structure
         audit_dir = realistic_project / ".agentforge" / "context_audit" / task_id
-        assert (audit_dir / "summary.yaml").exists()
-        assert (audit_dir / "step_1.yaml").exists()
-        assert (audit_dir / "step_1_context.yaml").exists()
-        assert (audit_dir / "step_2_thinking.md").exists()
+        assert (audit_dir / "summary.yaml").exists(), "Expected (audit_dir / 'summary.yaml'...() to be truthy"
+        assert (audit_dir / "step_1.yaml").exists(), "Expected (audit_dir / 'step_1.yaml')...() to be truthy"
+        assert (audit_dir / "step_1_context.yaml").exists(), "Expected (audit_dir / 'step_1_contex...() to be truthy"
+        assert (audit_dir / "step_2_thinking.md").exists(), "Expected (audit_dir / 'step_2_thinki...() to be truthy"
 
     def test_template_token_budgets(self, realistic_project):
         """Test that template token budgets are reasonable."""
@@ -258,8 +258,8 @@ Use semantic refactoring tools when available.
             # Check each phase
             for phase in template.phases:
                 tier2 = template.get_tier2_for_phase(phase)
-                assert tier2.max_tokens > 0
-                assert tier2.max_tokens <= 2500
+                assert tier2.max_tokens > 0, "Expected tier2.max_tokens > 0"
+                assert tier2.max_tokens <= 2500, "Expected tier2.max_tokens <= 2500"
 
             # Check system prompt is cacheable
             prompt = template.get_system_prompt()
@@ -275,16 +275,16 @@ Use semantic refactoring tools when available.
 
         # Second call uses cache (same object)
         fp2 = gen.generate()
-        assert fp1 is fp2
+        assert fp1 is fp2, "Expected fp1 is fp2"
 
         # Force refresh creates new object
         fp3 = gen.generate(force_refresh=True)
-        assert fp3 is not fp1
+        assert fp3 is not fp1, "Expected fp3 is not fp1"
 
         # Clear cache
         FingerprintGenerator.clear_cache()
         fp4 = gen.generate()
-        assert fp4 is not fp3
+        assert fp4 is not fp3, "Expected fp4 is not fp3"
 
     def test_config_hierarchy_merging(self, realistic_project):
         """Test that config hierarchy merges correctly."""
@@ -292,16 +292,16 @@ Use semantic refactoring tools when available.
 
         # Load without task type
         base_config = loader.load()
-        assert base_config.defaults.max_steps == 25  # From project AGENT.md
+        assert base_config.defaults.max_steps == 25, "Expected base_config.defaults.max_steps to equal 25"# From project AGENT.md
 
         # Load with task type
         loader.invalidate_cache()
         task_config = loader.load(task_type="fix_violation")
-        assert task_config.defaults.max_steps == 30  # Overridden by task
+        assert task_config.defaults.max_steps == 30, "Expected task_config.defaults.max_steps to equal 30"# Overridden by task
 
         # Constraints accumulate
-        assert "Always run tests after changes" in task_config.constraints
-        assert "Verify fix with check command" in task_config.constraints
+        assert "Always run tests after changes" in task_config.constraints, "Expected 'Always run tests after cha... in task_config.constraints"
+        assert "Verify fix with check command" in task_config.constraints, "Expected 'Verify fix with check comm... in task_config.constraints"
 
 
 class TestContextReproducibility:
@@ -324,7 +324,7 @@ class TestContextReproducibility:
         hash1 = logger._hash_context(context)
         hash2 = logger._hash_context(context)
 
-        assert hash1 == hash2
+        assert hash1 == hash2, "Expected hash1 to equal hash2"
 
     def test_different_context_different_hash(self, temp_project):
         """Different context produces different hash."""
@@ -336,7 +336,7 @@ class TestContextReproducibility:
         hash1 = logger._hash_context(context1)
         hash2 = logger._hash_context(context2)
 
-        assert hash1 != hash2
+        assert hash1 != hash2, "Expected hash1 to not equal hash2"
 
     def test_hash_is_deterministic(self, temp_project):
         """Hash is deterministic across logger instances."""
@@ -348,7 +348,7 @@ class TestContextReproducibility:
         hash1 = logger1._hash_context(context)
         hash2 = logger2._hash_context(context)
 
-        assert hash1 == hash2
+        assert hash1 == hash2, "Expected hash1 to equal hash2"
 
 
 @pytest.mark.real_api
@@ -387,8 +387,8 @@ class TestRealAPIIntegration:
             messages=[{"role": "user", "content": "Say 'hello' and nothing else."}],
         )
 
-        assert response.content is not None
-        assert "hello" in response.content.lower()
+        assert response.content is not None, "Expected response.content is not None"
+        assert "hello" in response.content.lower(), "Expected 'hello' in response.content.lower()"
 
     def test_executor_v2_with_real_api(self, temp_project):
         """Test executor v2 with real API."""
@@ -404,10 +404,10 @@ class TestRealAPIIntegration:
         )
 
         # Verify components are initialized
-        assert executor.config is not None
-        assert executor.template is not None
-        assert executor.fingerprint_generator is not None
+        assert executor.config is not None, "Expected executor.config is not None"
+        assert executor.template is not None, "Expected executor.template is not None"
+        assert executor.fingerprint_generator is not None, "Expected executor.fingerprint_generator is not None"
 
         # Get fingerprint
         fp = executor.get_fingerprint()
-        assert fp.technical.language == "python"
+        assert fp.technical.language == "python", "Expected fp.technical.language to equal 'python'"

@@ -29,10 +29,10 @@ class TestSimulatedResponse:
         """SimulatedResponse should have sensible defaults."""
         response = SimulatedResponse()
 
-        assert response.content == ""
-        assert response.tool_calls == []
-        assert response.thinking is None
-        assert response.stop_reason == "end_turn"
+        assert response.content == "", "Expected response.content to equal ''"
+        assert response.tool_calls == [], "Expected response.tool_calls to equal []"
+        assert response.thinking is None, "Expected response.thinking is None"
+        assert response.stop_reason == "end_turn", "Expected response.stop_reason to equal 'end_turn'"
 
     def test_with_tool_calls(self):
         """SimulatedResponse should store tool calls."""
@@ -42,17 +42,17 @@ class TestSimulatedResponse:
             ],
         )
 
-        assert len(response.tool_calls) == 1
-        assert response.tool_calls[0]["name"] == "read_file"
+        assert len(response.tool_calls) == 1, "Expected len(response.tool_calls) to equal 1"
+        assert response.tool_calls[0]["name"] == "read_file", "Expected response.tool_calls[0]['name'] to equal 'read_file'"
 
     def test_to_llm_response_text_only(self):
         """to_llm_response should convert text response."""
         sim = SimulatedResponse(content="Hello", stop_reason="end_turn")
         response = sim.to_llm_response(call_index=0)
 
-        assert response.content == "Hello"
-        assert response.stop_reason == StopReason.END_TURN
-        assert response.tool_calls == []
+        assert response.content == "Hello", "Expected response.content to equal 'Hello'"
+        assert response.stop_reason == StopReason.END_TURN, "Expected response.stop_reason to equal StopReason.END_TURN"
+        assert response.tool_calls == [], "Expected response.tool_calls to equal []"
 
     def test_to_llm_response_with_tools(self):
         """to_llm_response should convert tool calls."""
@@ -64,11 +64,11 @@ class TestSimulatedResponse:
         )
         response = sim.to_llm_response(call_index=1)
 
-        assert response.stop_reason == StopReason.TOOL_USE
-        assert len(response.tool_calls) == 1
-        assert response.tool_calls[0].name == "write_file"
-        assert response.tool_calls[0].input["path"] == "x.py"
-        assert response.tool_calls[0].id == "sim_1_0"
+        assert response.stop_reason == StopReason.TOOL_USE, "Expected response.stop_reason to equal StopReason.TOOL_USE"
+        assert len(response.tool_calls) == 1, "Expected len(response.tool_calls) to equal 1"
+        assert response.tool_calls[0].name == "write_file", "Expected response.tool_calls[0].name to equal 'write_file'"
+        assert response.tool_calls[0].input["path"] == "x.py", "Expected response.tool_calls[0].inpu... to equal 'x.py'"
+        assert response.tool_calls[0].id == "sim_1_0", "Expected response.tool_calls[0].id to equal 'sim_1_0'"
 
     def test_to_llm_response_with_thinking(self):
         """to_llm_response should include thinking content."""
@@ -78,7 +78,7 @@ class TestSimulatedResponse:
         )
         response = sim.to_llm_response()
 
-        assert response.thinking == "Let me analyze this..."
+        assert response.thinking == "Let me analyze this...", "Expected response.thinking to equal 'Let me analyze this...'"
 
 
 class TestScriptedResponseStrategy:
@@ -97,8 +97,8 @@ class TestScriptedResponseStrategy:
         r1 = strategy.get_response("", [], [], {})
         r2 = strategy.get_response("", [], [], {})
 
-        assert r1.content == "First response"
-        assert r2.content == "Second response"
+        assert r1.content == "First response", "Expected r1.content to equal 'First response'"
+        assert r2.content == "Second response", "Expected r2.content to equal 'Second response'"
 
     def test_from_yaml_file(self):
         """Strategy should load from YAML file."""
@@ -116,8 +116,8 @@ class TestScriptedResponseStrategy:
             strategy = ScriptedResponseStrategy(script_path=Path(f.name))
             response = strategy.get_response("", [], [], {})
 
-            assert len(response.tool_calls) == 1
-            assert response.tool_calls[0]["name"] == "test"
+            assert len(response.tool_calls) == 1, "Expected len(response.tool_calls) to equal 1"
+            assert response.tool_calls[0]["name"] == "test", "Expected response.tool_calls[0]['name'] to equal 'test'"
 
     def test_exhausted_script(self):
         """Strategy should return completion when script exhausted."""
@@ -125,7 +125,7 @@ class TestScriptedResponseStrategy:
 
         response = strategy.get_response("", [], [], {})
 
-        assert "complete" in [tc["name"] for tc in response.tool_calls]
+        assert "complete" in [tc["name"] for tc in response.tool_calls], "Expected 'complete' in [tc['name'] for tc in respo..."
 
     def test_reset(self):
         """reset should replay script from beginning."""
@@ -143,7 +143,7 @@ class TestScriptedResponseStrategy:
         strategy.reset()
 
         response = strategy.get_response("", [], [], {})
-        assert response.content == "First"
+        assert response.content == "First", "Expected response.content to equal 'First'"
 
     def test_remaining_responses(self):
         """remaining_responses should track progress."""
@@ -157,9 +157,9 @@ class TestScriptedResponseStrategy:
             }
         )
 
-        assert strategy.remaining_responses == 3
+        assert strategy.remaining_responses == 3, "Expected strategy.remaining_responses to equal 3"
         strategy.get_response("", [], [], {})
-        assert strategy.remaining_responses == 2
+        assert strategy.remaining_responses == 2, "Expected strategy.remaining_responses to equal 2"
 
 
 class TestSequentialStrategy:
@@ -174,9 +174,9 @@ class TestSequentialStrategy:
         ]
         strategy = SequentialStrategy(responses)
 
-        assert strategy.get_response("", [], [], {}).content == "First"
-        assert strategy.get_response("", [], [], {}).content == "Second"
-        assert strategy.get_response("", [], [], {}).content == "Third"
+        assert strategy.get_response("", [], [], {}).content == "First", "Expected strategy.get_response('', [... to equal 'First'"
+        assert strategy.get_response("", [], [], {}).content == "Second", "Expected strategy.get_response('', [... to equal 'Second'"
+        assert strategy.get_response("", [], [], {}).content == "Third", "Expected strategy.get_response('', [... to equal 'Third'"
 
     def test_exhausted_sequence(self):
         """Strategy should complete when sequence exhausted."""
@@ -187,7 +187,7 @@ class TestSequentialStrategy:
         strategy.get_response("", [], [], {})  # Consume the one
         response = strategy.get_response("", [], [], {})
 
-        assert "complete" in [tc["name"] for tc in response.tool_calls]
+        assert "complete" in [tc["name"] for tc in response.tool_calls], "Expected 'complete' in [tc['name'] for tc in respo..."
 
     def test_reset(self):
         """reset should replay from beginning."""
@@ -198,7 +198,7 @@ class TestSequentialStrategy:
         strategy.get_response("", [], [], {})
         strategy.reset()
 
-        assert strategy.get_response("", [], [], {}).content == "First"
+        assert strategy.get_response("", [], [], {}).content == "First", "Expected strategy.get_response('', [... to equal 'First'"
 
 
 class TestPatternMatchingStrategy:
@@ -219,7 +219,7 @@ class TestPatternMatchingStrategy:
             context={},
         )
 
-        assert response.content == "Error detected!"
+        assert response.content == "Error detected!", "Expected response.content to equal 'Error detected!'"
 
     def test_default_when_no_match(self):
         """Strategy should use default when no patterns match."""
@@ -231,7 +231,7 @@ class TestPatternMatchingStrategy:
 
         response = strategy.get_response("", [], [], {})
 
-        assert "escalate" in [tc["name"] for tc in response.tool_calls]
+        assert "escalate" in [tc["name"] for tc in response.tool_calls], "Expected 'escalate' in [tc['name'] for tc in respo..."
 
     def test_custom_default(self):
         """set_default should override default response."""
@@ -240,7 +240,7 @@ class TestPatternMatchingStrategy:
 
         response = strategy.get_response("", [], [], {})
 
-        assert response.content == "Custom default"
+        assert response.content == "Custom default", "Expected response.content to equal 'Custom default'"
 
     def test_chaining(self):
         """Methods should support chaining."""
@@ -250,7 +250,7 @@ class TestPatternMatchingStrategy:
             .set_default(SimulatedResponse(content="Chained"))
         )
 
-        assert strategy.get_response("", [], [], {}).content == "Chained"
+        assert strategy.get_response("", [], [], {}).content == "Chained", "Expected strategy.get_response('', [... to equal 'Chained'"
 
 
 class TestSimulatedLLMClient:
@@ -267,7 +267,7 @@ class TestSimulatedLLMClient:
             messages=[{"role": "user", "content": "Hello"}],
         )
 
-        assert response.content == "Default response"
+        assert response.content == "Default response", "Expected response.content to equal 'Default response'"
 
     def test_with_strategy(self):
         """Client should use strategy for responses."""
@@ -278,7 +278,7 @@ class TestSimulatedLLMClient:
 
         response = client.complete(system="", messages=[])
 
-        assert response.content == "From strategy"
+        assert response.content == "From strategy", "Expected response.content to equal 'From strategy'"
 
     def test_usage_tracking(self):
         """Client should track usage statistics."""
@@ -288,8 +288,8 @@ class TestSimulatedLLMClient:
         client.complete(system="", messages=[])
 
         stats = client.get_usage_stats()
-        assert stats["call_count"] == 2
-        assert stats["total_input_tokens"] == 200  # 100 per call
+        assert stats["call_count"] == 2, "Expected stats['call_count'] to equal 2"
+        assert stats["total_input_tokens"] == 200, "Expected stats['total_input_tokens'] to equal 200"# 100 per call
 
     def test_call_history(self):
         """Client should record call history."""
@@ -302,9 +302,9 @@ class TestSimulatedLLMClient:
         )
 
         history = client.get_call_history()
-        assert len(history) == 1
-        assert history[0]["system"] == "Test prompt"
-        assert history[0]["tools"] == ["test"]
+        assert len(history) == 1, "Expected len(history) to equal 1"
+        assert history[0]["system"] == "Test prompt", "Expected history[0]['system'] to equal 'Test prompt'"
+        assert history[0]["tools"] == ["test"], "Expected history[0]['tools'] to equal ['test']"
 
     def test_reset(self):
         """reset should clear all state."""
@@ -317,9 +317,9 @@ class TestSimulatedLLMClient:
         client.complete(system="", messages=[])
         client.reset()
 
-        assert client.get_usage_stats()["call_count"] == 0
-        assert client.get_call_history() == []
-        assert client.complete(system="", messages=[]).content == "First"
+        assert client.get_usage_stats()["call_count"] == 0, "Expected client.get_usage_stats()['c... to equal 0"
+        assert client.get_call_history() == [], "Expected client.get_call_history() to equal []"
+        assert client.complete(system="", messages=[]).content == "First", "Expected client.complete(system='', ... to equal 'First'"
 
     def test_no_strategy_uses_default(self):
         """Client without strategy should use default response."""
@@ -327,7 +327,7 @@ class TestSimulatedLLMClient:
 
         response = client.complete(system="", messages=[])
 
-        assert "no strategy configured" in response.content.lower()
+        assert "no strategy configured" in response.content.lower(), "Expected 'no strategy configured' in response.content.lower()"
 
 
 class TestCreateSimpleClient:
@@ -343,8 +343,8 @@ class TestCreateSimpleClient:
         r1 = client.complete(system="", messages=[])
         r2 = client.complete(system="", messages=[])
 
-        assert r1.content == "Response 1"
-        assert r2.tool_calls[0].name == "test"
+        assert r1.content == "Response 1", "Expected r1.content to equal 'Response 1'"
+        assert r2.tool_calls[0].name == "test", "Expected r2.tool_calls[0].name to equal 'test'"
 
     def test_with_thinking(self):
         """Helper should support thinking field."""
@@ -354,4 +354,4 @@ class TestCreateSimpleClient:
 
         response = client.complete(system="", messages=[])
 
-        assert response.thinking == "Let me think..."
+        assert response.thinking == "Let me think...", "Expected response.thinking to equal 'Let me think...'"

@@ -19,12 +19,12 @@ class TestStageConfig:
         from agentforge.core.pipeline.config import StageConfig
 
         config = StageConfig(name="test")
-        assert config.name == "test"
-        assert config.enabled is True
-        assert config.timeout_seconds == 600
-        assert config.max_iterations == 3
-        assert config.tools == {}
-        assert config.custom == {}
+        assert config.name == "test", "Expected config.name to equal 'test'"
+        assert config.enabled is True, "Expected config.enabled is True"
+        assert config.timeout_seconds == 600, "Expected config.timeout_seconds to equal 600"
+        assert config.max_iterations == 3, "Expected config.max_iterations to equal 3"
+        assert config.tools == {}, "Expected config.tools to equal {}"
+        assert config.custom == {}, "Expected config.custom to equal {}"
 
     def test_stage_config_with_values(self):
         """StageConfig accepts custom values."""
@@ -38,12 +38,12 @@ class TestStageConfig:
             tools={"search": {"max_results": 10}},
             custom={"include_tests": True},
         )
-        assert config.name == "analyze"
-        assert config.enabled is False
-        assert config.timeout_seconds == 300
-        assert config.max_iterations == 5
-        assert config.tools == {"search": {"max_results": 10}}
-        assert config.custom == {"include_tests": True}
+        assert config.name == "analyze", "Expected config.name to equal 'analyze'"
+        assert config.enabled is False, "Expected config.enabled is False"
+        assert config.timeout_seconds == 300, "Expected config.timeout_seconds to equal 300"
+        assert config.max_iterations == 5, "Expected config.max_iterations to equal 5"
+        assert config.tools == {"search": {"max_results": 10}}, "Expected config.tools to equal {'search': {'max_results': ..."
+        assert config.custom == {"include_tests": True}, "Expected config.custom to equal {'include_tests': True}"
 
 
 class TestPipelineTemplate:
@@ -58,13 +58,13 @@ class TestPipelineTemplate:
             description="Test pipeline",
             stages=["intake", "spec"],
         )
-        assert template.name == "test"
-        assert template.description == "Test pipeline"
-        assert template.stages == ["intake", "spec"]
-        assert template.defaults == {}
-        assert template.stage_config == {}
-        assert template.exit_conditions == {}
-        assert template.required_context == []
+        assert template.name == "test", "Expected template.name to equal 'test'"
+        assert template.description == "Test pipeline", "Expected template.description to equal 'Test pipeline'"
+        assert template.stages == ["intake", "spec"], "Expected template.stages to equal ['intake', 'spec']"
+        assert template.defaults == {}, "Expected template.defaults to equal {}"
+        assert template.stage_config == {}, "Expected template.stage_config to equal {}"
+        assert template.exit_conditions == {}, "Expected template.exit_conditions to equal {}"
+        assert template.required_context == [], "Expected template.required_context to equal []"
 
     def test_pipeline_template_with_all_fields(self):
         """PipelineTemplate accepts all optional fields."""
@@ -80,11 +80,11 @@ class TestPipelineTemplate:
             exit_conditions={"on_timeout": "fail"},
             required_context=["violation"],
         )
-        assert template.defaults == {"supervised": True, "exit_after": "spec"}
-        assert "spec" in template.stage_config
-        assert template.stage_config["spec"].timeout_seconds == 900
-        assert template.exit_conditions == {"on_timeout": "fail"}
-        assert template.required_context == ["violation"]
+        assert template.defaults == {"supervised": True, "exit_after": "spec"}, "Expected template.defaults to equal {'supervised': True, 'exit_..."
+        assert "spec" in template.stage_config, "Expected 'spec' in template.stage_config"
+        assert template.stage_config["spec"].timeout_seconds == 900, "Expected template.stage_config['spec... to equal 900"
+        assert template.exit_conditions == {"on_timeout": "fail"}, "Expected template.exit_conditions to equal {'on_timeout': 'fail'}"
+        assert template.required_context == ["violation"], "Expected template.required_context to equal ['violation']"
 
 
 class TestGlobalSettings:
@@ -95,12 +95,12 @@ class TestGlobalSettings:
         from agentforge.core.pipeline.config import GlobalSettings
 
         settings = GlobalSettings()
-        assert settings.project_name == ""
-        assert settings.language == "python"
-        assert settings.llm_model == "claude-sonnet-4-20250514"
-        assert settings.max_cost_per_pipeline == 10.0
-        assert settings.supervised_by_default is False
-        assert settings.auto_commit is False
+        assert settings.project_name == "", "Expected settings.project_name to equal ''"
+        assert settings.language == "python", "Expected settings.language to equal 'python'"
+        assert settings.llm_model == "claude-sonnet-4-20250514", "Expected settings.llm_model to equal 'claude-sonnet-4-20250514'"
+        assert settings.max_cost_per_pipeline == 10.0, "Expected settings.max_cost_per_pipeline to equal 10.0"
+        assert settings.supervised_by_default is False, "Expected settings.supervised_by_default is False"
+        assert settings.auto_commit is False, "Expected settings.auto_commit is False"
 
     def test_global_settings_with_values(self):
         """GlobalSettings accepts custom values."""
@@ -114,12 +114,12 @@ class TestGlobalSettings:
             supervised_by_default=True,
             auto_commit=True,
         )
-        assert settings.project_name == "MyProject"
-        assert settings.language == "typescript"
-        assert settings.llm_model == "claude-opus-4-20250514"
-        assert settings.max_cost_per_pipeline == 5.0
-        assert settings.supervised_by_default is True
-        assert settings.auto_commit is True
+        assert settings.project_name == "MyProject", "Expected settings.project_name to equal 'MyProject'"
+        assert settings.language == "typescript", "Expected settings.language to equal 'typescript'"
+        assert settings.llm_model == "claude-opus-4-20250514", "Expected settings.llm_model to equal 'claude-opus-4-20250514'"
+        assert settings.max_cost_per_pipeline == 5.0, "Expected settings.max_cost_per_pipeline to equal 5.0"
+        assert settings.supervised_by_default is True, "Expected settings.supervised_by_default is True"
+        assert settings.auto_commit is True, "Expected settings.auto_commit is True"
 
 
 class TestConfigurationLoader:
@@ -132,9 +132,9 @@ class TestConfigurationLoader:
         loader = ConfigurationLoader(tmp_path)
         settings = loader.load_settings()
 
-        assert settings.project_name == ""
-        assert settings.language == "python"
-        assert settings.supervised_by_default is False
+        assert settings.project_name == "", "Expected settings.project_name to equal ''"
+        assert settings.language == "python", "Expected settings.language to equal 'python'"
+        assert settings.supervised_by_default is False, "Expected settings.supervised_by_default is False"
 
     def test_loads_settings_file(self, tmp_path):
         """Loads settings from YAML file."""
@@ -165,12 +165,12 @@ class TestConfigurationLoader:
         loader = ConfigurationLoader(tmp_path)
         settings = loader.load_settings()
 
-        assert settings.project_name == "TestProject"
-        assert settings.language == "go"
-        assert settings.llm_model == "claude-opus-4-20250514"
-        assert settings.supervised_by_default is True
-        assert settings.auto_commit is True
-        assert settings.max_cost_per_pipeline == 20.0
+        assert settings.project_name == "TestProject", "Expected settings.project_name to equal 'TestProject'"
+        assert settings.language == "go", "Expected settings.language to equal 'go'"
+        assert settings.llm_model == "claude-opus-4-20250514", "Expected settings.llm_model to equal 'claude-opus-4-20250514'"
+        assert settings.supervised_by_default is True, "Expected settings.supervised_by_default is True"
+        assert settings.auto_commit is True, "Expected settings.auto_commit is True"
+        assert settings.max_cost_per_pipeline == 20.0, "Expected settings.max_cost_per_pipeline to equal 20.0"
 
     def test_settings_cached(self, tmp_path):
         """Settings are cached after first load."""
@@ -180,7 +180,7 @@ class TestConfigurationLoader:
         settings1 = loader.load_settings()
         settings2 = loader.load_settings()
 
-        assert settings1 is settings2  # Same object
+        assert settings1 is settings2, "Expected settings1 is settings2"# Same object
 
     def test_loads_pipeline_template(self, tmp_path):
         """Loads pipeline template from file."""
@@ -210,13 +210,13 @@ class TestConfigurationLoader:
         loader = ConfigurationLoader(tmp_path)
         template = loader.load_pipeline_template("custom")
 
-        assert template.name == "custom"
-        assert template.description == "Custom pipeline template"
-        assert template.stages == ["intake", "analyze", "spec"]
-        assert template.defaults == {"supervised": True, "exit_after": "spec"}
-        assert "spec" in template.stage_config
-        assert template.stage_config["spec"].timeout_seconds == 1200
-        assert template.stage_config["spec"].max_iterations == 5
+        assert template.name == "custom", "Expected template.name to equal 'custom'"
+        assert template.description == "Custom pipeline template", "Expected template.description to equal 'Custom pipeline template'"
+        assert template.stages == ["intake", "analyze", "spec"], "Expected template.stages to equal ['intake', 'analyze', 'spec']"
+        assert template.defaults == {"supervised": True, "exit_after": "spec"}, "Expected template.defaults to equal {'supervised': True, 'exit_..."
+        assert "spec" in template.stage_config, "Expected 'spec' in template.stage_config"
+        assert template.stage_config["spec"].timeout_seconds == 1200, "Expected template.stage_config['spec... to equal 1200"
+        assert template.stage_config["spec"].max_iterations == 5, "Expected template.stage_config['spec... to equal 5"
 
     def test_falls_back_to_default_template(self, tmp_path):
         """Uses default template when file missing."""
@@ -225,10 +225,10 @@ class TestConfigurationLoader:
         loader = ConfigurationLoader(tmp_path)
         template = loader.load_pipeline_template("implement")
 
-        assert template.name == "implement"
-        assert "intake" in template.stages
-        assert "deliver" in template.stages
-        assert len(template.stages) == 8
+        assert template.name == "implement", "Expected template.name to equal 'implement'"
+        assert "intake" in template.stages, "Expected 'intake' in template.stages"
+        assert "deliver" in template.stages, "Expected 'deliver' in template.stages"
+        assert len(template.stages) == 8, "Expected len(template.stages) to equal 8"
 
     def test_template_cached(self, tmp_path):
         """Templates are cached after first load."""
@@ -238,7 +238,7 @@ class TestConfigurationLoader:
         template1 = loader.load_pipeline_template("implement")
         template2 = loader.load_pipeline_template("implement")
 
-        assert template1 is template2  # Same object
+        assert template1 is template2, "Expected template1 is template2"# Same object
 
     def test_unknown_template_raises_error(self, tmp_path):
         """Raises error for unknown template type."""
@@ -273,11 +273,11 @@ class TestConfigurationLoader:
         loader = ConfigurationLoader(tmp_path)
         config = loader.load_stage_config("analyze")
 
-        assert config.name == "analyze"
-        assert config.enabled is True
-        assert config.timeout_seconds == 900
-        assert config.max_iterations == 5
-        assert config.tools == {"search_code": {"max_results": 50}}
+        assert config.name == "analyze", "Expected config.name to equal 'analyze'"
+        assert config.enabled is True, "Expected config.enabled is True"
+        assert config.timeout_seconds == 900, "Expected config.timeout_seconds to equal 900"
+        assert config.max_iterations == 5, "Expected config.max_iterations to equal 5"
+        assert config.tools == {"search_code": {"max_results": 50}}, "Expected config.tools to equal {'search_code': {'max_resul..."
 
     def test_stage_config_defaults(self, tmp_path):
         """Uses defaults when no file exists."""
@@ -286,10 +286,10 @@ class TestConfigurationLoader:
         loader = ConfigurationLoader(tmp_path)
         config = loader.load_stage_config("intake")
 
-        assert config.name == "intake"
-        assert config.enabled is True
-        assert config.timeout_seconds == 600
-        assert config.max_iterations == 3
+        assert config.name == "intake", "Expected config.name to equal 'intake'"
+        assert config.enabled is True, "Expected config.enabled is True"
+        assert config.timeout_seconds == 600, "Expected config.timeout_seconds to equal 600"
+        assert config.max_iterations == 3, "Expected config.max_iterations to equal 3"
 
     def test_stage_config_cached(self, tmp_path):
         """Stage configs are cached after first load."""
@@ -299,7 +299,7 @@ class TestConfigurationLoader:
         config1 = loader.load_stage_config("intake")
         config2 = loader.load_stage_config("intake")
 
-        assert config1 is config2  # Same object
+        assert config1 is config2, "Expected config1 is config2"# Same object
 
     def test_list_available_pipelines(self, tmp_path):
         """Lists built-in and custom pipelines."""
@@ -316,14 +316,14 @@ class TestConfigurationLoader:
         pipelines = loader.list_available_pipelines()
 
         # Should have built-in pipelines
-        assert "implement" in pipelines
-        assert "design" in pipelines
-        assert "test" in pipelines
-        assert "fix" in pipelines
+        assert "implement" in pipelines, "Expected 'implement' in pipelines"
+        assert "design" in pipelines, "Expected 'design' in pipelines"
+        assert "test" in pipelines, "Expected 'test' in pipelines"
+        assert "fix" in pipelines, "Expected 'fix' in pipelines"
         # And custom pipeline
-        assert "review" in pipelines
+        assert "review" in pipelines, "Expected 'review' in pipelines"
         # Should be sorted
-        assert pipelines == sorted(pipelines)
+        assert pipelines == sorted(pipelines), "Expected pipelines to equal sorted(pipelines)"
 
     def test_create_default_config(self, tmp_path):
         """Creates default configuration files."""
@@ -333,16 +333,16 @@ class TestConfigurationLoader:
         loader.create_default_config()
 
         config_dir = tmp_path / ".agentforge" / "config"
-        assert config_dir.exists()
-        assert (config_dir / "settings.yaml").exists()
-        assert (config_dir / "stages").exists()
+        assert config_dir.exists(), "Expected config_dir.exists() to be truthy"
+        assert (config_dir / "settings.yaml").exists(), "Expected (config_dir / 'settings.yam...() to be truthy"
+        assert (config_dir / "stages").exists(), "Expected (config_dir / 'stages').exists() to be truthy"
 
         # Verify settings content
         settings = yaml.safe_load((config_dir / "settings.yaml").read_text())
-        assert "project" in settings
-        assert "llm" in settings
-        assert "pipeline" in settings
-        assert "cost" in settings
+        assert "project" in settings, "Expected 'project' in settings"
+        assert "llm" in settings, "Expected 'llm' in settings"
+        assert "pipeline" in settings, "Expected 'pipeline' in settings"
+        assert "cost" in settings, "Expected 'cost' in settings"
 
 
 class TestBuiltInTemplates:
@@ -359,8 +359,8 @@ class TestBuiltInTemplates:
             "intake", "clarify", "analyze", "spec",
             "red", "green", "refactor", "deliver"
         ]
-        assert template.stages == expected_stages
-        assert template.defaults.get("supervised") is False
+        assert template.stages == expected_stages, "Expected template.stages to equal expected_stages"
+        assert template.defaults.get("supervised") is False, "Expected template.defaults.get('supe... is False"
 
     def test_design_template(self, tmp_path):
         """Design template exits at spec."""
@@ -369,11 +369,11 @@ class TestBuiltInTemplates:
         loader = ConfigurationLoader(tmp_path)
         template = loader.load_pipeline_template("design")
 
-        assert "spec" in template.stages
-        assert "red" not in template.stages
-        assert "deliver" not in template.stages
-        assert template.defaults.get("supervised") is True
-        assert template.defaults.get("exit_after") == "spec"
+        assert "spec" in template.stages, "Expected 'spec' in template.stages"
+        assert "red" not in template.stages, "Expected 'red' not in template.stages"
+        assert "deliver" not in template.stages, "Expected 'deliver' not in template.stages"
+        assert template.defaults.get("supervised") is True, "Expected template.defaults.get('supe... is True"
+        assert template.defaults.get("exit_after") == "spec", "Expected template.defaults.get('exit... to equal 'spec'"
 
     def test_test_template(self, tmp_path):
         """Test template requires spec context."""
@@ -382,8 +382,8 @@ class TestBuiltInTemplates:
         loader = ConfigurationLoader(tmp_path)
         template = loader.load_pipeline_template("test")
 
-        assert template.stages == ["red"]
-        assert "spec" in template.required_context
+        assert template.stages == ["red"], "Expected template.stages to equal ['red']"
+        assert "spec" in template.required_context, "Expected 'spec' in template.required_context"
 
     def test_fix_template(self, tmp_path):
         """Fix template requires violation context."""
@@ -392,10 +392,10 @@ class TestBuiltInTemplates:
         loader = ConfigurationLoader(tmp_path)
         template = loader.load_pipeline_template("fix")
 
-        assert "analyze" in template.stages
-        assert "green" in template.stages
-        assert "refactor" in template.stages
-        assert "violation" in template.required_context
+        assert "analyze" in template.stages, "Expected 'analyze' in template.stages"
+        assert "green" in template.stages, "Expected 'green' in template.stages"
+        assert "refactor" in template.stages, "Expected 'refactor' in template.stages"
+        assert "violation" in template.required_context, "Expected 'violation' in template.required_context"
 
 
 class TestExpandEnvVars:
@@ -407,7 +407,7 @@ class TestExpandEnvVars:
 
         with patch.dict(os.environ, {"TEST_VAR": "test_value"}):
             result = expand_env_vars("prefix_${TEST_VAR}_suffix")
-            assert result == "prefix_test_value_suffix"
+            assert result == "prefix_test_value_suffix", "Expected result to equal 'prefix_test_value_suffix'"
 
     def test_expand_multiple_vars(self):
         """Expands multiple ${VAR} patterns."""
@@ -415,7 +415,7 @@ class TestExpandEnvVars:
 
         with patch.dict(os.environ, {"VAR1": "one", "VAR2": "two"}):
             result = expand_env_vars("${VAR1} and ${VAR2}")
-            assert result == "one and two"
+            assert result == "one and two", "Expected result to equal 'one and two'"
 
     def test_expand_missing_env_var(self):
         """Returns empty string for missing vars."""
@@ -425,14 +425,14 @@ class TestExpandEnvVars:
             # Ensure the var doesn't exist
             os.environ.pop("NONEXISTENT_VAR", None)
             result = expand_env_vars("value_${NONEXISTENT_VAR}_end")
-            assert result == "value__end"
+            assert result == "value__end", "Expected result to equal 'value__end'"
 
     def test_expand_no_vars(self):
         """Returns original string if no vars present."""
         from agentforge.core.pipeline.config import expand_env_vars
 
         result = expand_env_vars("no variables here")
-        assert result == "no variables here"
+        assert result == "no variables here", "Expected result to equal 'no variables here'"
 
 
 class TestPipelineTemplateLoader:
@@ -445,10 +445,10 @@ class TestPipelineTemplateLoader:
         loader = PipelineTemplateLoader(tmp_path)
         config = loader.load("implement")
 
-        assert isinstance(config, PipelineConfig)
-        assert config.pipeline_type == "implement"
-        assert "intake" in config.stages
-        assert "deliver" in config.stages
+        assert isinstance(config, PipelineConfig), "Expected isinstance() to be truthy"
+        assert config.pipeline_type == "implement", "Expected config.pipeline_type to equal 'implement'"
+        assert "intake" in config.stages, "Expected 'intake' in config.stages"
+        assert "deliver" in config.stages, "Expected 'deliver' in config.stages"
 
     def test_template_loader_merges_settings(self, tmp_path):
         """Merges template defaults with global settings."""
@@ -469,7 +469,7 @@ class TestPipelineTemplateLoader:
 
         # implement template has supervised: False, but global says True
         # Template takes precedence over global settings
-        assert config.supervised is False  # Template default
+        assert config.supervised is False, "Expected config.supervised is False"# Template default
 
     def test_template_loader_exit_after(self, tmp_path):
         """Loads exit_after from template."""
@@ -478,7 +478,7 @@ class TestPipelineTemplateLoader:
         loader = PipelineTemplateLoader(tmp_path)
         config = loader.load("design")
 
-        assert config.exit_after == "spec"
+        assert config.exit_after == "spec", "Expected config.exit_after to equal 'spec'"
 
     def test_template_loader_iteration_enabled(self, tmp_path):
         """Loads iteration_enabled from template."""
@@ -487,7 +487,7 @@ class TestPipelineTemplateLoader:
         loader = PipelineTemplateLoader(tmp_path)
         config = loader.load("implement")
 
-        assert config.iteration_enabled is True
+        assert config.iteration_enabled is True, "Expected config.iteration_enabled is True"
 
     def test_template_loader_custom_template(self, tmp_path):
         """Loads custom template."""
@@ -511,8 +511,8 @@ class TestPipelineTemplateLoader:
         loader = PipelineTemplateLoader(tmp_path)
         config = loader.load("review")
 
-        assert config.pipeline_type == "review"
-        assert config.stages == ["analyze", "spec"]
-        assert config.supervised is True
-        assert config.exit_after == "spec"
-        assert config.timeout_seconds == 1800
+        assert config.pipeline_type == "review", "Expected config.pipeline_type to equal 'review'"
+        assert config.stages == ["analyze", "spec"], "Expected config.stages to equal ['analyze', 'spec']"
+        assert config.supervised is True, "Expected config.supervised is True"
+        assert config.exit_after == "spec", "Expected config.exit_after to equal 'spec'"
+        assert config.timeout_seconds == 1800, "Expected config.timeout_seconds to equal 1800"

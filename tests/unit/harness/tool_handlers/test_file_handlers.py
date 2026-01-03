@@ -43,10 +43,10 @@ class TestReadFileHandler:
 
         result = handler({"path": temp_file.name})
 
-        assert "SUCCESS" in result
-        assert "line1" in result
-        assert "line2" in result
-        assert "line3" in result
+        assert "SUCCESS" in result, "Expected 'SUCCESS' in result"
+        assert "line1" in result, "Expected 'line1' in result"
+        assert "line2" in result, "Expected 'line2' in result"
+        assert "line3" in result, "Expected 'line3' in result"
 
     def test_read_file_not_found(self, tmp_path):
         """Error on missing file."""
@@ -54,8 +54,8 @@ class TestReadFileHandler:
 
         result = handler({"path": "nonexistent.py"})
 
-        assert "ERROR" in result
-        assert "not found" in result.lower()
+        assert "ERROR" in result, "Expected 'ERROR' in result"
+        assert "not found" in result.lower(), "Expected 'not found' in result.lower()"
 
     def test_read_file_no_path(self, tmp_path):
         """Error when no path provided."""
@@ -63,8 +63,8 @@ class TestReadFileHandler:
 
         result = handler({})
 
-        assert "ERROR" in result
-        assert "path" in result.lower()
+        assert "ERROR" in result, "Expected 'ERROR' in result"
+        assert "path" in result.lower(), "Expected 'path' in result.lower()"
 
     def test_read_file_with_line_numbers(self, temp_file):
         """File content includes line numbers."""
@@ -73,7 +73,7 @@ class TestReadFileHandler:
         result = handler({"path": temp_file.name})
 
         # Should have line numbers
-        assert "1:" in result or "   1:" in result
+        assert "1:" in result or "   1:" in result, "Assertion failed"
 
     def test_read_absolute_path(self, temp_file):
         """Read using absolute path."""
@@ -81,8 +81,8 @@ class TestReadFileHandler:
 
         result = handler({"path": str(temp_file)})
 
-        assert "SUCCESS" in result
-        assert "line1" in result
+        assert "SUCCESS" in result, "Expected 'SUCCESS' in result"
+        assert "line1" in result, "Expected 'line1' in result"
 
 
 class TestWriteFileHandler:
@@ -94,9 +94,9 @@ class TestWriteFileHandler:
 
         result = handler({"path": "new.py", "content": "hello world"})
 
-        assert "SUCCESS" in result
-        assert "Created" in result
-        assert (tmp_path / "new.py").read_text() == "hello world"
+        assert "SUCCESS" in result, "Expected 'SUCCESS' in result"
+        assert "Created" in result, "Expected 'Created' in result"
+        assert (tmp_path / "new.py").read_text() == "hello world", "Expected (tmp_path / 'new.py').read_... to equal 'hello world'"
 
     def test_write_overwrite_file(self, temp_file):
         """Overwrite existing file."""
@@ -104,9 +104,9 @@ class TestWriteFileHandler:
 
         result = handler({"path": temp_file.name, "content": "new content"})
 
-        assert "SUCCESS" in result
-        assert "Wrote" in result
-        assert temp_file.read_text() == "new content"
+        assert "SUCCESS" in result, "Expected 'SUCCESS' in result"
+        assert "Wrote" in result, "Expected 'Wrote' in result"
+        assert temp_file.read_text() == "new content", "Expected temp_file.read_text() to equal 'new content'"
 
     def test_write_creates_directories(self, tmp_path):
         """Creates parent directories as needed."""
@@ -114,8 +114,8 @@ class TestWriteFileHandler:
 
         result = handler({"path": "deep/nested/file.py", "content": "test"})
 
-        assert "SUCCESS" in result
-        assert (tmp_path / "deep" / "nested" / "file.py").exists()
+        assert "SUCCESS" in result, "Expected 'SUCCESS' in result"
+        assert (tmp_path / "deep" / "nested" / "file.py").exists(), "Expected (tmp_path / 'deep' / 'neste...() to be truthy"
 
     def test_write_no_path(self, tmp_path):
         """Error when no path provided."""
@@ -123,8 +123,8 @@ class TestWriteFileHandler:
 
         result = handler({"content": "test"})
 
-        assert "ERROR" in result
-        assert "path" in result.lower()
+        assert "ERROR" in result, "Expected 'ERROR' in result"
+        assert "path" in result.lower(), "Expected 'path' in result.lower()"
 
 
 class TestEditFileHandler:
@@ -142,8 +142,8 @@ class TestEditFileHandler:
             "new_content": "replaced",
         })
 
-        assert "SUCCESS" in result
-        assert temp_file.read_text() == "line1\nreplaced\nline3\n"
+        assert "SUCCESS" in result, "Expected 'SUCCESS' in result"
+        assert temp_file.read_text() == "line1\nreplaced\nline3\n", "Expected temp_file.read_text() to equal 'line1\nreplaced\nline3\n'"
 
     def test_replace_multiple_lines(self, temp_file):
         """Replace multiple lines with different count."""
@@ -157,8 +157,8 @@ class TestEditFileHandler:
             "new_content": "X\nY\nZ",
         })
 
-        assert "SUCCESS" in result
-        assert temp_file.read_text() == "a\nX\nY\nZ\nd\n"
+        assert "SUCCESS" in result, "Expected 'SUCCESS' in result"
+        assert temp_file.read_text() == "a\nX\nY\nZ\nd\n", "Expected temp_file.read_text() to equal 'a\nX\nY\nZ\nd\n'"
 
     def test_replace_first_line(self, temp_file):
         """Replace the first line."""
@@ -172,8 +172,8 @@ class TestEditFileHandler:
             "new_content": "new first",
         })
 
-        assert "SUCCESS" in result
-        assert temp_file.read_text() == "new first\nsecond\n"
+        assert "SUCCESS" in result, "Expected 'SUCCESS' in result"
+        assert temp_file.read_text() == "new first\nsecond\n", "Expected temp_file.read_text() to equal 'new first\nsecond\n'"
 
     def test_replace_last_line(self, temp_file):
         """Replace the last line."""
@@ -187,8 +187,8 @@ class TestEditFileHandler:
             "new_content": "new last",
         })
 
-        assert "SUCCESS" in result
-        assert temp_file.read_text() == "first\nnew last\n"
+        assert "SUCCESS" in result, "Expected 'SUCCESS' in result"
+        assert temp_file.read_text() == "first\nnew last\n", "Expected temp_file.read_text() to equal 'first\nnew last\n'"
 
     def test_edit_file_not_found(self, tmp_path):
         """Error on missing file."""
@@ -201,8 +201,8 @@ class TestEditFileHandler:
             "new_content": "x",
         })
 
-        assert "ERROR" in result
-        assert "not found" in result.lower()
+        assert "ERROR" in result, "Expected 'ERROR' in result"
+        assert "not found" in result.lower(), "Expected 'not found' in result.lower()"
 
     def test_edit_invalid_line_numbers(self, temp_file):
         """Error on invalid line numbers."""
@@ -216,7 +216,7 @@ class TestEditFileHandler:
             "new_content": "x",
         })
 
-        assert "ERROR" in result
+        assert "ERROR" in result, "Expected 'ERROR' in result"
 
     def test_edit_start_line_beyond_file(self, temp_file):
         """Error when start_line exceeds file length."""
@@ -230,8 +230,8 @@ class TestEditFileHandler:
             "new_content": "x",
         })
 
-        assert "ERROR" in result
-        assert "exceeds" in result.lower()
+        assert "ERROR" in result, "Expected 'ERROR' in result"
+        assert "exceeds" in result.lower(), "Expected 'exceeds' in result.lower()"
 
     def test_edit_no_path(self, tmp_path):
         """Error when no path provided."""
@@ -243,8 +243,8 @@ class TestEditFileHandler:
             "new_content": "x",
         })
 
-        assert "ERROR" in result
-        assert "path" in result.lower()
+        assert "ERROR" in result, "Expected 'ERROR' in result"
+        assert "path" in result.lower(), "Expected 'path' in result.lower()"
 
 
 class TestReplaceLinesHandler:
@@ -262,11 +262,11 @@ class TestReplaceLinesHandler:
             "new_content": "x = 1\nreturn x",
         })
 
-        assert "SUCCESS" in result
+        assert "SUCCESS" in result, "Expected 'SUCCESS' in result"
         content = temp_file.read_text()
         # Should have proper indentation
-        assert "    x = 1" in content
-        assert "    return x" in content
+        assert "    x = 1" in content, "Expected '    x = 1' in content"
+        assert "    return x" in content, "Expected '    return x' in content"
 
     def test_replace_invalid_range(self, temp_file):
         """Error on invalid line range."""
@@ -280,8 +280,8 @@ class TestReplaceLinesHandler:
             "new_content": "x",
         })
 
-        assert "ERROR" in result
-        assert "Invalid" in result
+        assert "ERROR" in result, "Expected 'ERROR' in result"
+        assert "Invalid" in result, "Expected 'Invalid' in result"
 
 
 class TestInsertLinesHandler:
@@ -298,10 +298,10 @@ class TestInsertLinesHandler:
             "new_content": "inserted",
         })
 
-        assert "SUCCESS" in result
+        assert "SUCCESS" in result, "Expected 'SUCCESS' in result"
         content = temp_file.read_text()
         lines = content.split("\n")
-        assert "inserted" in lines[1]
+        assert "inserted" in lines[1], "Expected 'inserted' in lines[1]"
 
     def test_insert_at_beginning(self, temp_file):
         """Insert at the beginning of file."""
@@ -314,9 +314,9 @@ class TestInsertLinesHandler:
             "new_content": "# comment",
         })
 
-        assert "SUCCESS" in result
+        assert "SUCCESS" in result, "Expected 'SUCCESS' in result"
         content = temp_file.read_text()
-        assert content.startswith("# comment")
+        assert content.startswith("# comment"), "Expected content.startswith() to be truthy"
 
     def test_insert_file_not_found(self, tmp_path):
         """Error on missing file."""
@@ -328,5 +328,5 @@ class TestInsertLinesHandler:
             "new_content": "x",
         })
 
-        assert "ERROR" in result
-        assert "not found" in result.lower()
+        assert "ERROR" in result, "Expected 'ERROR' in result"
+        assert "not found" in result.lower(), "Expected 'not found' in result.lower()"

@@ -35,8 +35,8 @@ class TestCommandCheck:
             )
             result = runner.run_check(check, {})
 
-        assert result.status == CheckStatus.PASSED
-        assert result.check_id == "test_cmd"
+        assert result.status == CheckStatus.PASSED, "Expected result.status to equal CheckStatus.PASSED"
+        assert result.check_id == "test_cmd", "Expected result.check_id to equal 'test_cmd'"
 
     def test_command_failure_returns_failed(self, tmp_path: Path):
         """Test failed command returns FAILED status."""
@@ -55,7 +55,7 @@ class TestCommandCheck:
             )
             result = runner.run_check(check, {})
 
-        assert result.status == CheckStatus.FAILED
+        assert result.status == CheckStatus.FAILED, "Expected result.status to equal CheckStatus.FAILED"
 
     def test_command_timeout_returns_failed(self, tmp_path: Path):
         """Test timed-out command returns ERROR status."""
@@ -73,8 +73,8 @@ class TestCommandCheck:
             mock_run.side_effect = subprocess.TimeoutExpired(cmd="sleep", timeout=1)
             result = runner.run_check(check, {})
 
-        assert result.status == CheckStatus.ERROR
-        assert "timed out" in result.message.lower()
+        assert result.status == CheckStatus.ERROR, "Expected result.status to equal CheckStatus.ERROR"
+        assert "timed out" in result.message.lower(), "Expected 'timed out' in result.message.lower()"
 
     def test_command_not_found_returns_error(self, tmp_path: Path):
         """Test missing command returns ERROR status."""
@@ -91,7 +91,7 @@ class TestCommandCheck:
             mock_run.side_effect = FileNotFoundError("Command not found")
             result = runner.run_check(check, {})
 
-        assert result.status == CheckStatus.ERROR
+        assert result.status == CheckStatus.ERROR, "Expected result.status to equal CheckStatus.ERROR"
 
     def test_command_with_variable_substitution(self, tmp_path: Path):
         """Test command with variable substitution."""
@@ -110,7 +110,7 @@ class TestCommandCheck:
 
         # Check that substitution happened
         call_args = mock_run.call_args[0][0]
-        assert "MyProject" in " ".join(call_args)
+        assert "MyProject" in " ".join(call_args), "Expected 'MyProject' in ' '.join(call_args)"
 
     def test_command_success_indicator_overrides(self, tmp_path: Path):
         """Test success_indicators can override exit code."""
@@ -131,7 +131,7 @@ class TestCommandCheck:
             )
             result = runner.run_check(check, {})
 
-        assert result.status == CheckStatus.PASSED
+        assert result.status == CheckStatus.PASSED, "Expected result.status to equal CheckStatus.PASSED"
 
     def test_command_failure_indicator_overrides(self, tmp_path: Path):
         """Test failure_indicators can override exit code."""
@@ -152,7 +152,7 @@ class TestCommandCheck:
             )
             result = runner.run_check(check, {})
 
-        assert result.status == CheckStatus.FAILED
+        assert result.status == CheckStatus.FAILED, "Expected result.status to equal CheckStatus.FAILED"
 
 
 class TestRegexCheck:
@@ -172,8 +172,8 @@ class TestRegexCheck:
 
         result = runner.run_check(check, {})
 
-        assert result.status == CheckStatus.PASSED
-        assert "match" in result.message.lower() or "found" in result.message.lower()
+        assert result.status == CheckStatus.PASSED, "Expected result.status to equal CheckStatus.PASSED"
+        assert "match" in result.message.lower() or "found" in result.message.lower(), "Assertion failed"
 
     def test_regex_no_match(self, tmp_path: Path, sample_python_file: Path):
         """Test regex with no matches returns FAILED."""
@@ -188,7 +188,7 @@ class TestRegexCheck:
 
         result = runner.run_check(check, {})
 
-        assert result.status == CheckStatus.FAILED
+        assert result.status == CheckStatus.FAILED, "Expected result.status to equal CheckStatus.FAILED"
 
     def test_regex_negative_match_not_found_passes(self, tmp_path: Path, sample_python_file: Path):
         """Test negative match passes when pattern not found."""
@@ -204,7 +204,7 @@ class TestRegexCheck:
 
         result = runner.run_check(check, {})
 
-        assert result.status == CheckStatus.PASSED
+        assert result.status == CheckStatus.PASSED, "Expected result.status to equal CheckStatus.PASSED"
 
     def test_regex_negative_match_found_fails(self, tmp_path: Path):
         """Test negative match fails when pattern is found."""
@@ -224,8 +224,8 @@ class TestRegexCheck:
 
         result = runner.run_check(check, {})
 
-        assert result.status == CheckStatus.FAILED
-        assert len(result.errors) > 0
+        assert result.status == CheckStatus.FAILED, "Expected result.status to equal CheckStatus.FAILED"
+        assert len(result.errors) > 0, "Expected len(result.errors) > 0"
 
     def test_regex_multiline_pattern(self, tmp_path: Path):
         """Test regex works with multiline patterns."""
@@ -243,7 +243,7 @@ class TestRegexCheck:
 
         result = runner.run_check(check, {})
 
-        assert result.status == CheckStatus.PASSED
+        assert result.status == CheckStatus.PASSED, "Expected result.status to equal CheckStatus.PASSED"
 
 
 class TestFileExistsCheck:
@@ -261,7 +261,7 @@ class TestFileExistsCheck:
 
         result = runner.run_check(check, {})
 
-        assert result.status == CheckStatus.PASSED
+        assert result.status == CheckStatus.PASSED, "Expected result.status to equal CheckStatus.PASSED"
 
     def test_file_missing_fails(self, tmp_path: Path):
         """Test file exists check fails for missing file."""
@@ -275,8 +275,8 @@ class TestFileExistsCheck:
 
         result = runner.run_check(check, {})
 
-        assert result.status == CheckStatus.FAILED
-        assert len(result.errors) > 0
+        assert result.status == CheckStatus.FAILED, "Expected result.status to equal CheckStatus.FAILED"
+        assert len(result.errors) > 0, "Expected len(result.errors) > 0"
 
     def test_directory_exists_passes(self, tmp_path: Path):
         """Test directory existence check passes."""
@@ -292,7 +292,7 @@ class TestFileExistsCheck:
 
         result = runner.run_check(check, {})
 
-        assert result.status == CheckStatus.PASSED
+        assert result.status == CheckStatus.PASSED, "Expected result.status to equal CheckStatus.PASSED"
 
     def test_multiple_files_all_exist(self, tmp_path: Path):
         """Test multiple files all existing passes."""
@@ -309,7 +309,7 @@ class TestFileExistsCheck:
 
         result = runner.run_check(check, {})
 
-        assert result.status == CheckStatus.PASSED
+        assert result.status == CheckStatus.PASSED, "Expected result.status to equal CheckStatus.PASSED"
 
     def test_multiple_files_some_missing(self, tmp_path: Path):
         """Test multiple files with some missing fails."""
@@ -325,8 +325,8 @@ class TestFileExistsCheck:
 
         result = runner.run_check(check, {})
 
-        assert result.status == CheckStatus.FAILED
-        assert len(result.errors) == 1
+        assert result.status == CheckStatus.FAILED, "Expected result.status to equal CheckStatus.FAILED"
+        assert len(result.errors) == 1, "Expected len(result.errors) to equal 1"
 
     def test_file_with_custom_message(self, tmp_path: Path):
         """Test file spec with custom error message."""
@@ -342,8 +342,8 @@ class TestFileExistsCheck:
 
         result = runner.run_check(check, {})
 
-        assert result.status == CheckStatus.FAILED
-        assert "Config file required" in str(result.errors)
+        assert result.status == CheckStatus.FAILED, "Expected result.status to equal CheckStatus.FAILED"
+        assert "Config file required" in str(result.errors), "Expected 'Config file required' in str(result.errors)"
 
 
 class TestImportCheck:
@@ -368,7 +368,7 @@ class TestImportCheck:
         result = runner.run_check(check, {})
 
         # Domain only has no imports, so should pass
-        assert result.status == CheckStatus.PASSED
+        assert result.status == CheckStatus.PASSED, "Expected result.status to equal CheckStatus.PASSED"
 
     def test_layer_violation_detected(self, sample_layer_violation: Path):
         """Test layer violation is detected."""
@@ -388,8 +388,8 @@ class TestImportCheck:
 
         result = runner.run_check(check, {})
 
-        assert result.status == CheckStatus.FAILED
-        assert len(result.errors) > 0
+        assert result.status == CheckStatus.FAILED, "Expected result.status to equal CheckStatus.FAILED"
+        assert len(result.errors) > 0, "Expected len(result.errors) > 0"
 
 
 class TestCustomCheck:
@@ -409,7 +409,7 @@ class TestCustomCheck:
         sys.path.insert(0, str(tmp_path))
         try:
             result = runner.run_check(check, {})
-            assert result.status == CheckStatus.PASSED
+            assert result.status == CheckStatus.PASSED, "Expected result.status to equal CheckStatus.PASSED"
         finally:
             sys.path.remove(str(tmp_path))
 
@@ -426,7 +426,7 @@ class TestCustomCheck:
         sys.path.insert(0, str(tmp_path))
         try:
             result = runner.run_check(check, {})
-            assert result.status == CheckStatus.FAILED
+            assert result.status == CheckStatus.FAILED, "Expected result.status to equal CheckStatus.FAILED"
         finally:
             sys.path.remove(str(tmp_path))
 
@@ -443,8 +443,8 @@ class TestCustomCheck:
         sys.path.insert(0, str(tmp_path))
         try:
             result = runner.run_check(check, {})
-            assert result.status == CheckStatus.ERROR
-            assert "exception" in result.message.lower()
+            assert result.status == CheckStatus.ERROR, "Expected result.status to equal CheckStatus.ERROR"
+            assert "exception" in result.message.lower(), "Expected 'exception' in result.message.lower()"
         finally:
             sys.path.remove(str(tmp_path))
 
@@ -461,7 +461,7 @@ class TestCustomCheck:
         sys.path.insert(0, str(tmp_path))
         try:
             result = runner.run_check(check, {})
-            assert result.status == CheckStatus.PASSED
+            assert result.status == CheckStatus.PASSED, "Expected result.status to equal CheckStatus.PASSED"
         finally:
             sys.path.remove(str(tmp_path))
 
@@ -477,7 +477,7 @@ class TestCustomCheck:
 
         result = runner.run_check(check, {})
 
-        assert result.status == CheckStatus.ERROR
+        assert result.status == CheckStatus.ERROR, "Expected result.status to equal CheckStatus.ERROR"
 
 
 class TestASTCheck:
@@ -496,7 +496,7 @@ class TestASTCheck:
 
         result = runner.run_check(check, {})
 
-        assert result.status == CheckStatus.PASSED
+        assert result.status == CheckStatus.PASSED, "Expected result.status to equal CheckStatus.PASSED"
 
     def test_ast_function_length_fails(self, tmp_path: Path, sample_long_function: Path):
         """Test function length check fails for long functions."""
@@ -511,8 +511,8 @@ class TestASTCheck:
 
         result = runner.run_check(check, {})
 
-        assert result.status == CheckStatus.FAILED
-        assert len(result.errors) > 0
+        assert result.status == CheckStatus.FAILED, "Expected result.status to equal CheckStatus.FAILED"
+        assert len(result.errors) > 0, "Expected len(result.errors) > 0"
 
     def test_ast_nesting_depth_passes(self, tmp_path: Path, sample_python_file: Path):
         """Test nesting depth check passes for shallow code."""
@@ -527,7 +527,7 @@ class TestASTCheck:
 
         result = runner.run_check(check, {})
 
-        assert result.status == CheckStatus.PASSED
+        assert result.status == CheckStatus.PASSED, "Expected result.status to equal CheckStatus.PASSED"
 
     def test_ast_nesting_depth_fails(self, tmp_path: Path, sample_deeply_nested: Path):
         """Test nesting depth check fails for deeply nested code."""
@@ -542,7 +542,7 @@ class TestASTCheck:
 
         result = runner.run_check(check, {})
 
-        assert result.status == CheckStatus.FAILED
+        assert result.status == CheckStatus.FAILED, "Expected result.status to equal CheckStatus.FAILED"
 
     def test_ast_cyclomatic_complexity(self, tmp_path: Path):
         """Test cyclomatic complexity check."""
@@ -572,7 +572,7 @@ def complex_func(x):
 
         result = runner.run_check(check, {})
 
-        assert result.status == CheckStatus.FAILED
+        assert result.status == CheckStatus.FAILED, "Expected result.status to equal CheckStatus.FAILED"
 
 
 class TestLSPQueryCheck:
@@ -600,7 +600,7 @@ class TestLSPQueryCheck:
             runner._pyright_runner = mock_pyright
             result = runner.run_check(check, {})
 
-        assert result.status == CheckStatus.PASSED
+        assert result.status == CheckStatus.PASSED, "Expected result.status to equal CheckStatus.PASSED"
 
     def test_lsp_check_type_errors(self, tmp_path: Path, sample_python_with_errors: Path):
         """Test LSP check detects type errors."""
@@ -632,8 +632,8 @@ class TestLSPQueryCheck:
             runner._pyright_runner = mock_pyright
             result = runner.run_check(check, {})
 
-        assert result.status == CheckStatus.FAILED
-        assert len(result.errors) > 0
+        assert result.status == CheckStatus.FAILED, "Expected result.status to equal CheckStatus.FAILED"
+        assert len(result.errors) > 0, "Expected len(result.errors) > 0"
 
 
 if __name__ == "__main__":

@@ -73,10 +73,10 @@ tests/test_calculator.py::TestCalculator::test_subtract_numbers FAILED
                 result = executor.execute(context)
 
         # Tests should be generated and fail
-        assert result.status == StageStatus.COMPLETED
-        assert result.artifacts is not None
-        assert len(result.artifacts.get("test_files", [])) > 0
-        assert len(result.artifacts.get("failing_tests", [])) > 0
+        assert result.status == StageStatus.COMPLETED, "Expected result.status to equal StageStatus.COMPLETED"
+        assert result.artifacts is not None, "Expected result.artifacts is not None"
+        assert len(result.artifacts.get("test_files", [])) > 0, "Expected len(result.artifacts.get('t... > 0"
+        assert len(result.artifacts.get("failing_tests", [])) > 0, "Expected len(result.artifacts.get('f... > 0"
 
     def test_tests_fail_without_implementation(
         self,
@@ -129,8 +129,8 @@ ModuleNotFoundError: No module named 'src.calculator'
                 result = executor.execute(context)
 
         # Verify tests fail (expected in RED phase)
-        assert result.artifacts["test_results"]["failed"] > 0
-        assert result.artifacts["test_results"]["passed"] == 0
+        assert result.artifacts["test_results"]["failed"] > 0, "Expected result.artifacts['test_resu... > 0"
+        assert result.artifacts["test_results"]["passed"] == 0, "Expected result.artifacts['test_resu... to equal 0"
 
     def test_generated_tests_are_written(
         self,
@@ -173,8 +173,8 @@ def test_add():
 
         # Verify file was written
         test_file = temp_project_for_tdd / "tests" / "test_calculator.py"
-        assert test_file.exists()
-        assert "def test_add" in test_file.read_text()
+        assert test_file.exists(), "Expected test_file.exists() to be truthy"
+        assert "def test_add" in test_file.read_text(), "Expected 'def test_add' in test_file.read_text()"
 
 
 class TestGreenPhaseIntegration:
@@ -201,9 +201,9 @@ class TestGreenPhaseIntegration:
         )
 
         # Verify context receives RED artifact correctly
-        assert context.input_artifacts["spec_id"] == "SPEC-20260102-0001"
-        assert len(context.input_artifacts["failing_tests"]) == 2
-        assert len(context.input_artifacts["test_files"]) == 1
+        assert context.input_artifacts["spec_id"] == "SPEC-20260102-0001", "Expected context.input_artifacts['sp... to equal 'SPEC-20260102-0001'"
+        assert len(context.input_artifacts["failing_tests"]) == 2, "Expected len(context.input_artifacts... to equal 2"
+        assert len(context.input_artifacts["test_files"]) == 1, "Expected len(context.input_artifacts... to equal 1"
 
     def test_green_produces_implementation(
         self,
@@ -283,8 +283,8 @@ tests/test_calculator.py::TestCalculator::test_subtract_numbers PASSED
                 result = executor.execute(context)
 
         # Verify implementation was tracked
-        assert result.artifacts is not None
-        assert "implementation_files" in result.artifacts
+        assert result.artifacts is not None, "Expected result.artifacts is not None"
+        assert "implementation_files" in result.artifacts, "Expected 'implementation_files' in result.artifacts"
 
 
 class TestTDDPipelineIntegration:
@@ -340,8 +340,8 @@ def test_subtract():
                 red_result = red_executor.execute(red_context)
 
         # Verify RED produced artifact
-        assert red_result.status == StageStatus.COMPLETED
-        assert len(red_result.artifacts.get("test_files", [])) > 0
+        assert red_result.status == StageStatus.COMPLETED, "Expected red_result.status to equal StageStatus.COMPLETED"
+        assert len(red_result.artifacts.get("test_files", [])) > 0, "Expected len(red_result.artifacts.ge... > 0"
 
         # GREEN Phase (using RED artifact)
         green_context = StageContext(
@@ -353,7 +353,7 @@ def test_subtract():
         )
 
         # Verify artifact passes from RED to GREEN
-        assert green_context.input_artifacts["spec_id"] == sample_spec_for_tdd["spec_id"]
+        assert green_context.input_artifacts["spec_id"] == sample_spec_for_tdd["spec_id"], "Expected green_context.input_artifac... to equal sample_spec_for_tdd['spec_id']"
 
     def test_tdd_pipeline_creates_test_then_implementation(
         self,
@@ -397,8 +397,8 @@ def test_add():
                 red_executor.execute(context)
 
         # Verify: test file exists, implementation does not
-        assert (temp_project_for_tdd / "tests" / "test_calculator.py").exists()
-        assert not (temp_project_for_tdd / "src" / "calculator.py").exists()
+        assert (temp_project_for_tdd / "tests" / "test_calculator.py").exists(), "Expected (temp_project_for_tdd / 'te...() to be truthy"
+        assert not (temp_project_for_tdd / "src" / "calculator.py").exists(), "Assertion failed"
 
 
 class TestTDDStageRegistration:
@@ -413,8 +413,8 @@ class TestTDDStageRegistration:
         registry.register("red", create_red_executor)
 
         executor = registry.get("red")
-        assert executor is not None
-        assert executor.stage_name == "red"
+        assert executor is not None, "Expected executor is not None"
+        assert executor.stage_name == "red", "Expected executor.stage_name to equal 'red'"
 
     def test_green_executor_registers(self):
         """GREEN executor can be registered in registry."""
@@ -425,5 +425,5 @@ class TestTDDStageRegistration:
         registry.register("green", create_green_executor)
 
         executor = registry.get("green")
-        assert executor is not None
-        assert executor.stage_name == "green"
+        assert executor is not None, "Expected executor is not None"
+        assert executor.stage_name == "green", "Expected executor.stage_name to equal 'green'"

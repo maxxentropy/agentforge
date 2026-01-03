@@ -40,8 +40,8 @@ class TestAtomicFileWriter:
         with AtomicFileWriter(target) as f:
             f.write("Hello, World!")
 
-        assert target.exists()
-        assert target.read_text() == "Hello, World!"
+        assert target.exists(), "Expected target.exists() to be truthy"
+        assert target.read_text() == "Hello, World!", "Expected target.read_text() to equal 'Hello, World!'"
 
     def test_failed_write_no_partial(self, tmp_path: Path):
         """Test failed write doesn't leave partial file."""
@@ -51,7 +51,7 @@ class TestAtomicFileWriter:
             f.write("Partial content")
             raise ValueError("Simulated failure")
 
-        assert not target.exists()
+        assert not target.exists(), "Assertion failed"
 
     def test_creates_parent_directories(self, tmp_path: Path):
         """Test parent directories are created."""
@@ -60,8 +60,8 @@ class TestAtomicFileWriter:
         with AtomicFileWriter(target) as f:
             f.write("content")
 
-        assert target.exists()
-        assert target.read_text() == "content"
+        assert target.exists(), "Expected target.exists() to be truthy"
+        assert target.read_text() == "content", "Expected target.read_text() to equal 'content'"
 
     def test_overwrites_existing(self, tmp_path: Path):
         """Test atomic write overwrites existing file."""
@@ -71,7 +71,7 @@ class TestAtomicFileWriter:
         with AtomicFileWriter(target) as f:
             f.write("new content")
 
-        assert target.read_text() == "new content"
+        assert target.read_text() == "new content", "Expected target.read_text() to equal 'new content'"
 
 
 class TestViolationStore:
@@ -101,7 +101,7 @@ class TestViolationStore:
     def test_ensure_directory(self, store, tmp_path: Path):
         """Test directory creation."""
         store.ensure_directory()
-        assert (tmp_path / "violations").is_dir()
+        assert (tmp_path / "violations").is_dir(), "Expected (tmp_path / 'violations').i...() to be truthy"
 
     def test_save_and_load(self, store, violation):
         """Test saving and loading a violation."""
@@ -109,10 +109,10 @@ class TestViolationStore:
         store.save(violation)
 
         loaded = store.load_all()
-        assert len(loaded) == 1
-        assert loaded[0].violation_id == violation.violation_id
-        assert loaded[0].contract_id == violation.contract_id
-        assert loaded[0].severity == violation.severity
+        assert len(loaded) == 1, "Expected len(loaded) to equal 1"
+        assert loaded[0].violation_id == violation.violation_id, "Expected loaded[0].violation_id to equal violation.violation_id"
+        assert loaded[0].contract_id == violation.contract_id, "Expected loaded[0].contract_id to equal violation.contract_id"
+        assert loaded[0].severity == violation.severity, "Expected loaded[0].severity to equal violation.severity"
 
     def test_get_by_id(self, store, violation):
         """Test getting violation by ID."""
@@ -121,8 +121,8 @@ class TestViolationStore:
         store.load_all()  # Populate cache
 
         found = store.get(violation.violation_id)
-        assert found is not None
-        assert found.violation_id == violation.violation_id
+        assert found is not None, "Expected found is not None"
+        assert found.violation_id == violation.violation_id, "Expected found.violation_id to equal violation.violation_id"
 
     def test_get_nonexistent(self, store, violation):
         """Test getting nonexistent violation."""
@@ -130,7 +130,7 @@ class TestViolationStore:
         store.save(violation)
         store.load_all()
 
-        assert store.get("V-nonexistent") is None
+        assert store.get("V-nonexistent") is None, "Expected store.get('V-nonexistent') is None"
 
     def test_delete(self, store, violation):
         """Test deleting a violation."""
@@ -140,7 +140,7 @@ class TestViolationStore:
         store.delete(violation.violation_id)
 
         violations = store.load_all()
-        assert len(violations) == 0
+        assert len(violations) == 0, "Expected len(violations) to equal 0"
 
     def test_find_by_contract(self, store):
         """Test finding violations by contract."""
@@ -173,8 +173,8 @@ class TestViolationStore:
         store.load_all()
 
         found = list(store.find_by_contract("contract-a"))
-        assert len(found) == 1
-        assert found[0].violation_id == "V-111"
+        assert len(found) == 1, "Expected len(found) to equal 1"
+        assert found[0].violation_id == "V-111", "Expected found[0].violation_id to equal 'V-111'"
 
     def test_find_by_status(self, store):
         """Test finding violations by status."""
@@ -207,8 +207,8 @@ class TestViolationStore:
         store.load_all()
 
         open_violations = list(store.find_by_status(ViolationStatus.OPEN))
-        assert len(open_violations) == 1
-        assert open_violations[0].violation_id == "V-111"
+        assert len(open_violations) == 1, "Expected len(open_violations) to equal 1"
+        assert open_violations[0].violation_id == "V-111", "Expected open_violations[0].violatio... to equal 'V-111'"
 
     def test_violation_yaml_format(self, store, violation, tmp_path: Path):
         """Test violation file is valid YAML."""
@@ -216,15 +216,15 @@ class TestViolationStore:
         store.save(violation)
 
         file_path = tmp_path / "violations" / f"{violation.violation_id}.yaml"
-        assert file_path.exists()
+        assert file_path.exists(), "Expected file_path.exists() to be truthy"
 
         with open(file_path) as f:
             data = yaml.safe_load(f)
 
-        assert data["violation_id"] == violation.violation_id
-        assert data["contract_id"] == violation.contract_id
-        assert data["severity"] == "major"
-        assert data["status"] == "open"
+        assert data["violation_id"] == violation.violation_id, "Expected data['violation_id'] to equal violation.violation_id"
+        assert data["contract_id"] == violation.contract_id, "Expected data['contract_id'] to equal violation.contract_id"
+        assert data["severity"] == "major", "Expected data['severity'] to equal 'major'"
+        assert data["status"] == "open", "Expected data['status'] to equal 'open'"
 
 
 class TestExemptionRegistry:
@@ -255,7 +255,7 @@ class TestExemptionRegistry:
     def test_ensure_directory(self, registry, tmp_path: Path):
         """Test directory creation."""
         registry.ensure_directory()
-        assert (tmp_path / "exemptions").is_dir()
+        assert (tmp_path / "exemptions").is_dir(), "Expected (tmp_path / 'exemptions').i...() to be truthy"
 
     def test_save_and_load(self, registry, exemption):
         """Test saving and loading an exemption."""
@@ -263,10 +263,10 @@ class TestExemptionRegistry:
         registry.save(exemption)
 
         loaded = registry.load_all()
-        assert len(loaded) == 1
-        assert loaded[0].id == exemption.id
-        assert loaded[0].contract_id == exemption.contract_id
-        assert loaded[0].scope.type == ExemptionScopeType.FILE_PATTERN
+        assert len(loaded) == 1, "Expected len(loaded) to equal 1"
+        assert loaded[0].id == exemption.id, "Expected loaded[0].id to equal exemption.id"
+        assert loaded[0].contract_id == exemption.contract_id, "Expected loaded[0].contract_id to equal exemption.contract_id"
+        assert loaded[0].scope.type == ExemptionScopeType.FILE_PATTERN, "Expected loaded[0].scope.type to equal ExemptionScopeType.FILE_PAT..."
 
     def test_get_active(self, registry, exemption):
         """Test getting active exemptions."""
@@ -287,8 +287,8 @@ class TestExemptionRegistry:
         registry.load_all()
 
         active = registry.get_active()
-        assert len(active) == 1
-        assert active[0].id == "legacy-logging"
+        assert len(active) == 1, "Expected len(active) to equal 1"
+        assert active[0].id == "legacy-logging", "Expected active[0].id to equal 'legacy-logging'"
 
     def test_get_expired(self, registry):
         """Test getting expired exemptions."""
@@ -309,7 +309,7 @@ class TestExemptionRegistry:
         registry.load_all()
 
         found_expired = registry.get_expired()
-        assert len(found_expired) == 1
+        assert len(found_expired) == 1, "Expected len(found_expired) to equal 1"
 
     def test_get_needs_review(self, registry):
         """Test getting exemptions needing review."""
@@ -330,8 +330,8 @@ class TestExemptionRegistry:
         registry.load_all()
 
         found = registry.get_needs_review()
-        assert len(found) == 1
-        assert found[0].id == "review-me"
+        assert len(found) == 1, "Expected len(found) to equal 1"
+        assert found[0].id == "review-me", "Expected found[0].id to equal 'review-me'"
 
     def test_find_for_violation(self, registry, exemption):
         """Test finding exemption for a violation."""
@@ -352,8 +352,8 @@ class TestExemptionRegistry:
         )
 
         found = registry.find_for_violation(violation)
-        assert found is not None
-        assert found.id == "legacy-logging"
+        assert found is not None, "Expected found is not None"
+        assert found.id == "legacy-logging", "Expected found.id to equal 'legacy-logging'"
 
     def test_find_for_violation_no_match(self, registry, exemption):
         """Test no exemption found for non-matching violation."""
@@ -374,7 +374,7 @@ class TestExemptionRegistry:
         )
 
         found = registry.find_for_violation(violation)
-        assert found is None
+        assert found is None, "Expected found is None"
 
     def test_update_status(self, registry, exemption):
         """Test updating exemption status."""
@@ -387,8 +387,8 @@ class TestExemptionRegistry:
         # Reload to verify persistence
         registry.load_all()
         found = registry.get("legacy-logging")
-        assert found is not None
-        assert found.status == ExemptionStatus.EXPIRED
+        assert found is not None, "Expected found is not None"
+        assert found.status == ExemptionStatus.EXPIRED, "Expected found.status to equal ExemptionStatus.EXPIRED"
 
 
 class TestHistoryStore:
@@ -416,7 +416,7 @@ class TestHistoryStore:
     def test_ensure_directory(self, store, tmp_path: Path):
         """Test directory creation."""
         store.ensure_directory()
-        assert (tmp_path / "history").is_dir()
+        assert (tmp_path / "history").is_dir(), "Expected (tmp_path / 'history').is_dir() to be truthy"
 
     def test_save_snapshot(self, store, snapshot):
         """Test saving a snapshot."""
@@ -425,7 +425,7 @@ class TestHistoryStore:
 
         # Check file exists with correct name
         expected_path = store.history_path / f"{snapshot.date.isoformat()}.yaml"
-        assert expected_path.exists()
+        assert expected_path.exists(), "Expected expected_path.exists() to be truthy"
 
     def test_get_snapshot(self, store, snapshot):
         """Test getting a snapshot by date."""
@@ -433,15 +433,15 @@ class TestHistoryStore:
         store.save_snapshot(snapshot)
 
         loaded = store.get_snapshot(snapshot.date)
-        assert loaded is not None
-        assert loaded.date == snapshot.date
-        assert loaded.summary.failed == snapshot.summary.failed
+        assert loaded is not None, "Expected loaded is not None"
+        assert loaded.date == snapshot.date, "Expected loaded.date to equal snapshot.date"
+        assert loaded.summary.failed == snapshot.summary.failed, "Expected loaded.summary.failed to equal snapshot.summary.failed"
 
     def test_get_snapshot_nonexistent(self, store):
         """Test getting nonexistent snapshot."""
         store.ensure_directory()
         loaded = store.get_snapshot(date.today() - timedelta(days=100))
-        assert loaded is None
+        assert loaded is None, "Expected loaded is None"
 
     def test_get_range(self, store):
         """Test getting snapshots in date range."""
@@ -464,9 +464,9 @@ class TestHistoryStore:
         end = date.today()
         snapshots = store.get_range(start, end)
 
-        assert len(snapshots) == 4  # days 0, 1, 2, 3
+        assert len(snapshots) == 4, "Expected len(snapshots) to equal 4"# days 0, 1, 2, 3
         # Should be sorted by date
-        assert snapshots[0].date < snapshots[-1].date
+        assert snapshots[0].date < snapshots[-1].date, "Expected snapshots[0].date < snapshots[-1].date"
 
     def test_prune_old_snapshots(self, tmp_path):
         """Test pruning old snapshots."""
@@ -492,7 +492,7 @@ class TestHistoryStore:
         store.prune_old_snapshots()
 
         remaining = list(store.history_path.glob("*.yaml"))
-        assert len(remaining) <= 31  # 30 days + possible .gitkeep
+        assert len(remaining) <= 31, "Expected len(remaining) <= 31"# 30 days + possible .gitkeep
 
     def test_snapshot_overwrites_same_day(self, store):
         """Test saving multiple snapshots on same day overwrites."""
@@ -523,4 +523,4 @@ class TestHistoryStore:
         store.save_snapshot(snapshot2)
 
         loaded = store.get_snapshot(date.today())
-        assert loaded.summary.failed == 20  # Second snapshot
+        assert loaded.summary.failed == 20, "Expected loaded.summary.failed to equal 20"# Second snapshot

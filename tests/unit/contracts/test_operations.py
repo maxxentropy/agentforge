@@ -32,9 +32,9 @@ class TestOperationRule:
             severity="error",
         )
 
-        assert rule.rule_id == "read-before-edit"
-        assert rule.check_type == "sequence_constraint"
-        assert rule.severity == "error"
+        assert rule.rule_id == "read-before-edit", "Expected rule.rule_id to equal 'read-before-edit'"
+        assert rule.check_type == "sequence_constraint", "Expected rule.check_type to equal 'sequence_constraint'"
+        assert rule.severity == "error", "Expected rule.severity to equal 'error'"
 
     def test_rule_to_dict(self):
         """Serialize rule to dictionary."""
@@ -46,8 +46,8 @@ class TestOperationRule:
 
         data = rule.to_dict()
 
-        assert data["id"] == "test-rule"
-        assert data["check_type"] == "tool_preference"
+        assert data["id"] == "test-rule", "Expected data['id'] to equal 'test-rule'"
+        assert data["check_type"] == "tool_preference", "Expected data['check_type'] to equal 'tool_preference'"
 
     def test_rule_from_dict(self):
         """Deserialize rule from dictionary."""
@@ -60,8 +60,8 @@ class TestOperationRule:
 
         rule = OperationRule.from_dict(data)
 
-        assert rule.rule_id == "test-rule"
-        assert rule.severity == "warning"
+        assert rule.rule_id == "test-rule", "Expected rule.rule_id to equal 'test-rule'"
+        assert rule.severity == "warning", "Expected rule.severity to equal 'warning'"
 
 
 class TestOperationTrigger:
@@ -76,8 +76,8 @@ class TestOperationTrigger:
             prompt="Please confirm force push",
         )
 
-        assert trigger.trigger_id == "force-push-requested"
-        assert trigger.severity == "blocking"
+        assert trigger.trigger_id == "force-push-requested", "Expected trigger.trigger_id to equal 'force-push-requested'"
+        assert trigger.severity == "blocking", "Expected trigger.severity to equal 'blocking'"
 
     def test_trigger_to_dict(self):
         """Serialize trigger to dictionary."""
@@ -88,7 +88,7 @@ class TestOperationTrigger:
 
         data = trigger.to_dict()
 
-        assert data["trigger_id"] == "test-trigger"
+        assert data["trigger_id"] == "test-trigger", "Expected data['trigger_id'] to equal 'test-trigger'"
 
     def test_trigger_from_dict(self):
         """Deserialize trigger from dictionary."""
@@ -100,8 +100,8 @@ class TestOperationTrigger:
 
         trigger = OperationTrigger.from_dict(data)
 
-        assert trigger.trigger_id == "test-trigger"
-        assert trigger.severity == "advisory"
+        assert trigger.trigger_id == "test-trigger", "Expected trigger.trigger_id to equal 'test-trigger'"
+        assert trigger.severity == "advisory", "Expected trigger.severity to equal 'advisory'"
 
 
 class TestOperationGate:
@@ -115,8 +115,8 @@ class TestOperationGate:
             failure_action="escalate",
         )
 
-        assert gate.gate_id == "pre-commit-check"
-        assert len(gate.checks) == 2
+        assert gate.gate_id == "pre-commit-check", "Expected gate.gate_id to equal 'pre-commit-check'"
+        assert len(gate.checks) == 2, "Expected len(gate.checks) to equal 2"
 
     def test_gate_to_dict(self):
         """Serialize gate to dictionary."""
@@ -127,7 +127,7 @@ class TestOperationGate:
 
         data = gate.to_dict()
 
-        assert data["gate_id"] == "test-gate"
+        assert data["gate_id"] == "test-gate", "Expected data['gate_id'] to equal 'test-gate'"
 
     def test_gate_from_dict(self):
         """Deserialize gate from dictionary."""
@@ -139,8 +139,8 @@ class TestOperationGate:
 
         gate = OperationGate.from_dict(data)
 
-        assert gate.gate_id == "test-gate"
-        assert gate.failure_action == "abort"
+        assert gate.gate_id == "test-gate", "Expected gate.gate_id to equal 'test-gate'"
+        assert gate.failure_action == "abort", "Expected gate.failure_action to equal 'abort'"
 
 
 class TestOperationContract:
@@ -161,8 +161,8 @@ class TestOperationContract:
             ],
         )
 
-        assert contract.contract_id == "operation.test.v1"
-        assert len(contract.rules) == 1
+        assert contract.contract_id == "operation.test.v1", "Expected contract.contract_id to equal 'operation.test.v1'"
+        assert len(contract.rules) == 1, "Expected len(contract.rules) to equal 1"
 
     def test_contract_to_dict(self):
         """Serialize contract to dictionary."""
@@ -174,8 +174,8 @@ class TestOperationContract:
 
         data = contract.to_dict()
 
-        assert data["id"] == "operation.test.v1"
-        assert data["version"] == "1.0"
+        assert data["id"] == "operation.test.v1", "Expected data['id'] to equal 'operation.test.v1'"
+        assert data["version"] == "1.0", "Expected data['version'] to equal '1.0'"
 
     def test_contract_from_dict(self):
         """Deserialize contract from dictionary."""
@@ -194,9 +194,9 @@ class TestOperationContract:
 
         contract = OperationContract.from_dict(data)
 
-        assert contract.contract_id == "operation.test.v1"
-        assert contract.version == "2.0"
-        assert len(contract.rules) == 1
+        assert contract.contract_id == "operation.test.v1", "Expected contract.contract_id to equal 'operation.test.v1'"
+        assert contract.version == "2.0", "Expected contract.version to equal '2.0'"
+        assert len(contract.rules) == 1, "Expected len(contract.rules) to equal 1"
 
     def test_get_rule(self):
         """Get a specific rule by ID."""
@@ -212,14 +212,14 @@ class TestOperationContract:
 
         rule = contract.get_rule("rule-2")
 
-        assert rule is not None
-        assert rule.rule_id == "rule-2"
+        assert rule is not None, "Expected rule is not None"
+        assert rule.rule_id == "rule-2", "Expected rule.rule_id to equal 'rule-2'"
 
     def test_get_rule_nonexistent(self):
         """Get rule returns None for nonexistent ID."""
         contract = OperationContract("test", "1.0", "Test")
 
-        assert contract.get_rule("nonexistent") is None
+        assert contract.get_rule("nonexistent") is None, "Expected contract.get_rule('nonexist... is None"
 
     def test_get_rules_by_type(self):
         """Get rules filtered by check type."""
@@ -236,8 +236,8 @@ class TestOperationContract:
 
         cmd_rules = contract.get_rules_by_type("command_constraint")
 
-        assert len(cmd_rules) == 2
-        assert all(r.check_type == "command_constraint" for r in cmd_rules)
+        assert len(cmd_rules) == 2, "Expected len(cmd_rules) to equal 2"
+        assert all(r.check_type == "command_constraint" for r in cmd_rules), "Expected all() to be truthy"
 
     def test_get_rules_by_severity(self):
         """Get rules filtered by severity."""
@@ -254,7 +254,7 @@ class TestOperationContract:
 
         errors = contract.get_rules_by_severity("error")
 
-        assert len(errors) == 2
+        assert len(errors) == 2, "Expected len(errors) to equal 2"
 
 
 class TestLoadOperationContract:
@@ -291,16 +291,16 @@ quality_gates:
         """Load a contract from a YAML file."""
         contract = load_operation_contract(temp_contract)
 
-        assert contract.contract_id == "operation.test.v1"
-        assert len(contract.rules) == 1
-        assert len(contract.escalation_triggers) == 1
-        assert len(contract.quality_gates) == 1
+        assert contract.contract_id == "operation.test.v1", "Expected contract.contract_id to equal 'operation.test.v1'"
+        assert len(contract.rules) == 1, "Expected len(contract.rules) to equal 1"
+        assert len(contract.escalation_triggers) == 1, "Expected len(contract.escalation_tri... to equal 1"
+        assert len(contract.quality_gates) == 1, "Expected len(contract.quality_gates) to equal 1"
 
     def test_load_contract_preserves_source(self, temp_contract):
         """Loading preserves source path."""
         contract = load_operation_contract(temp_contract)
 
-        assert contract.source_path == temp_contract
+        assert contract.source_path == temp_contract, "Expected contract.source_path to equal temp_contract"
 
     def test_load_contract_file_not_found(self, tmp_path):
         """Load raises for missing file."""
@@ -350,28 +350,28 @@ rules: []
         """Load all contracts from a directory."""
         contracts = load_all_operation_contracts(temp_contracts_dir)
 
-        assert len(contracts) == 2
-        assert "operation.one.v1" in contracts
-        assert "operation.two.v1" in contracts
+        assert len(contracts) == 2, "Expected len(contracts) to equal 2"
+        assert "operation.one.v1" in contracts, "Expected 'operation.one.v1' in contracts"
+        assert "operation.two.v1" in contracts, "Expected 'operation.two.v1' in contracts"
 
     def test_load_builtin_contracts(self):
         """Load built-in operation contracts."""
         contracts = load_all_operation_contracts()
 
         # We now have 10 operation contracts
-        assert len(contracts) >= 10
+        assert len(contracts) >= 10, "Expected len(contracts) >= 10"
         # Original 3
-        assert "operation.tool-usage.v1" in contracts
-        assert "operation.git.v1" in contracts
-        assert "operation.safety.v1" in contracts
+        assert "operation.tool-usage.v1" in contracts, "Expected 'operation.tool-usage.v1' in contracts"
+        assert "operation.git.v1" in contracts, "Expected 'operation.git.v1' in contracts"
+        assert "operation.safety.v1" in contracts, "Expected 'operation.safety.v1' in contracts"
         # New 7 design/architecture contracts
-        assert "operation.code-generation.v1" in contracts
-        assert "operation.testing-patterns.v1" in contracts
-        assert "operation.error-handling.v1" in contracts
-        assert "operation.api-design.v1" in contracts
-        assert "operation.async-patterns.v1" in contracts
-        assert "operation.observability.v1" in contracts
-        assert "operation.design-patterns.v1" in contracts
+        assert "operation.code-generation.v1" in contracts, "Expected 'operation.code-generation.v1' in contracts"
+        assert "operation.testing-patterns.v1" in contracts, "Expected 'operation.testing-patterns... in contracts"
+        assert "operation.error-handling.v1" in contracts, "Expected 'operation.error-handling.v1' in contracts"
+        assert "operation.api-design.v1" in contracts, "Expected 'operation.api-design.v1' in contracts"
+        assert "operation.async-patterns.v1" in contracts, "Expected 'operation.async-patterns.v1' in contracts"
+        assert "operation.observability.v1" in contracts, "Expected 'operation.observability.v1' in contracts"
+        assert "operation.design-patterns.v1" in contracts, "Expected 'operation.design-patterns.v1' in contracts"
 
     def test_load_skips_invalid_contracts(self, tmp_path):
         """Invalid contracts are skipped with warning."""
@@ -387,8 +387,8 @@ description: Valid
 
         contracts = load_all_operation_contracts(tmp_path)
 
-        assert len(contracts) == 1
-        assert "operation.valid.v1" in contracts
+        assert len(contracts) == 1, "Expected len(contracts) to equal 1"
+        assert "operation.valid.v1" in contracts, "Expected 'operation.valid.v1' in contracts"
 
 
 class TestOperationContractManager:
@@ -401,55 +401,55 @@ class TestOperationContractManager:
 
     def test_manager_loads_contracts(self, manager):
         """Manager loads contracts on init."""
-        assert len(manager.contracts) >= 3
+        assert len(manager.contracts) >= 3, "Expected len(manager.contracts) >= 3"
 
     def test_get_all_rules(self, manager):
         """Get all rules from all contracts."""
         rules = manager.get_all_rules()
 
-        assert len(rules) > 0
+        assert len(rules) > 0, "Expected len(rules) > 0"
         # Each contract has multiple rules
-        assert len(rules) > 3
+        assert len(rules) > 3, "Expected len(rules) > 3"
 
     def test_get_all_triggers(self, manager):
         """Get all triggers from all contracts."""
         triggers = manager.get_all_triggers()
 
-        assert len(triggers) > 0
+        assert len(triggers) > 0, "Expected len(triggers) > 0"
 
     def test_get_all_gates(self, manager):
         """Get all gates from all contracts."""
         gates = manager.get_all_gates()
 
-        assert len(gates) > 0
+        assert len(gates) > 0, "Expected len(gates) > 0"
 
     def test_get_rules_for_check_type(self, manager):
         """Filter rules by check type."""
         cmd_rules = manager.get_rules_for_check_type("command_constraint")
 
-        assert len(cmd_rules) > 0
-        assert all(r.check_type == "command_constraint" for r in cmd_rules)
+        assert len(cmd_rules) > 0, "Expected len(cmd_rules) > 0"
+        assert all(r.check_type == "command_constraint" for r in cmd_rules), "Expected all() to be truthy"
 
     def test_get_error_rules(self, manager):
         """Get all error-severity rules."""
         errors = manager.get_error_rules()
 
-        assert len(errors) > 0
-        assert all(r.severity == "error" for r in errors)
+        assert len(errors) > 0, "Expected len(errors) > 0"
+        assert all(r.severity == "error" for r in errors), "Expected all() to be truthy"
 
     def test_get_blocking_triggers(self, manager):
         """Get all blocking triggers."""
         blocking = manager.get_blocking_triggers()
 
-        assert len(blocking) > 0
-        assert all(t.severity == "blocking" for t in blocking)
+        assert len(blocking) > 0, "Expected len(blocking) > 0"
+        assert all(t.severity == "blocking" for t in blocking), "Expected all() to be truthy"
 
     def test_validate_contracts(self, manager):
         """Validate loaded contracts."""
         issues = manager.validate_contracts()
 
         # Built-in contracts should have no issues
-        assert len(issues) == 0
+        assert len(issues) == 0, "Expected len(issues) to equal 0"
 
     def test_validate_detects_duplicates(self, tmp_path):
         """Validation detects duplicate IDs."""
@@ -470,7 +470,7 @@ rules:
 
         issues = manager.validate_contracts()
 
-        assert any("Duplicate rule ID: same-id" in issue for issue in issues)
+        assert any("Duplicate rule ID: same-id" in issue for issue in issues), "Expected any() to be truthy"
 
 
 class TestBuiltinContracts:
@@ -485,166 +485,166 @@ class TestBuiltinContracts:
         """Tool usage contract is properly structured."""
         contract = manager.contracts.get("operation.tool-usage.v1")
 
-        assert contract is not None
-        assert contract.get_rule("read-before-edit") is not None
-        assert contract.get_rule("glob-for-discovery") is not None
-        assert contract.get_rule("read-not-cat") is not None
+        assert contract is not None, "Expected contract is not None"
+        assert contract.get_rule("read-before-edit") is not None, "Expected contract.get_rule('read-bef... is not None"
+        assert contract.get_rule("glob-for-discovery") is not None, "Expected contract.get_rule('glob-for... is not None"
+        assert contract.get_rule("read-not-cat") is not None, "Expected contract.get_rule('read-not... is not None"
 
     def test_git_operations_contract(self, manager):
         """Git operations contract is properly structured."""
         contract = manager.contracts.get("operation.git.v1")
 
-        assert contract is not None
-        assert contract.get_rule("no-force-push") is not None
-        assert contract.get_rule("no-main-direct") is not None
-        assert contract.get_rule("commit-message-format") is not None
+        assert contract is not None, "Expected contract is not None"
+        assert contract.get_rule("no-force-push") is not None, "Expected contract.get_rule('no-force... is not None"
+        assert contract.get_rule("no-main-direct") is not None, "Expected contract.get_rule('no-main-... is not None"
+        assert contract.get_rule("commit-message-format") is not None, "Expected contract.get_rule('commit-m... is not None"
 
     def test_safety_rules_contract(self, manager):
         """Safety rules contract is properly structured."""
         contract = manager.contracts.get("operation.safety.v1")
 
-        assert contract is not None
-        assert contract.get_rule("no-secrets-in-code") is not None
-        assert contract.get_rule("no-destructive-system") is not None
-        assert contract.get_rule("no-sudo-without-approval") is not None
+        assert contract is not None, "Expected contract is not None"
+        assert contract.get_rule("no-secrets-in-code") is not None, "Expected contract.get_rule('no-secre... is not None"
+        assert contract.get_rule("no-destructive-system") is not None, "Expected contract.get_rule('no-destr... is not None"
+        assert contract.get_rule("no-sudo-without-approval") is not None, "Expected contract.get_rule('no-sudo-... is not None"
 
     def test_code_generation_contract(self, manager):
         """Code generation contract covers SOLID and design patterns."""
         contract = manager.contracts.get("operation.code-generation.v1")
 
-        assert contract is not None
+        assert contract is not None, "Expected contract is not None"
         # SOLID principles
-        assert contract.get_rule("single-responsibility") is not None
-        assert contract.get_rule("open-closed") is not None
-        assert contract.get_rule("liskov-substitution") is not None
-        assert contract.get_rule("interface-segregation") is not None
-        assert contract.get_rule("dependency-inversion") is not None
+        assert contract.get_rule("single-responsibility") is not None, "Expected contract.get_rule('single-r... is not None"
+        assert contract.get_rule("open-closed") is not None, "Expected contract.get_rule('open-clo... is not None"
+        assert contract.get_rule("liskov-substitution") is not None, "Expected contract.get_rule('liskov-s... is not None"
+        assert contract.get_rule("interface-segregation") is not None, "Expected contract.get_rule('interfac... is not None"
+        assert contract.get_rule("dependency-inversion") is not None, "Expected contract.get_rule('dependen... is not None"
         # Code structure rules
-        assert contract.get_rule("function-size-limit") is not None
-        assert contract.get_rule("cyclomatic-complexity-limit") is not None
+        assert contract.get_rule("function-size-limit") is not None, "Expected contract.get_rule('function... is not None"
+        assert contract.get_rule("cyclomatic-complexity-limit") is not None, "Expected contract.get_rule('cyclomat... is not None"
         # Naming conventions
-        assert contract.get_rule("descriptive-naming") is not None
-        assert contract.get_rule("boolean-naming") is not None
+        assert contract.get_rule("descriptive-naming") is not None, "Expected contract.get_rule('descript... is not None"
+        assert contract.get_rule("boolean-naming") is not None, "Expected contract.get_rule('boolean-... is not None"
 
     def test_testing_patterns_contract(self, manager):
         """Testing patterns contract covers test structure and quality."""
         contract = manager.contracts.get("operation.testing-patterns.v1")
 
-        assert contract is not None
+        assert contract is not None, "Expected contract is not None"
         # Test structure
-        assert contract.get_rule("arrange-act-assert") is not None
-        assert contract.get_rule("one-assertion-concept") is not None
+        assert contract.get_rule("arrange-act-assert") is not None, "Expected contract.get_rule('arrange-... is not None"
+        assert contract.get_rule("one-assertion-concept") is not None, "Expected contract.get_rule('one-asse... is not None"
         # Test isolation
-        assert contract.get_rule("test-isolation") is not None
-        assert contract.get_rule("no-flaky-tests") is not None
-        assert contract.get_rule("mock-at-boundaries") is not None
+        assert contract.get_rule("test-isolation") is not None, "Expected contract.get_rule('test-iso... is not None"
+        assert contract.get_rule("no-flaky-tests") is not None, "Expected contract.get_rule('no-flaky... is not None"
+        assert contract.get_rule("mock-at-boundaries") is not None, "Expected contract.get_rule('mock-at-... is not None"
         # Test coverage
-        assert contract.get_rule("test-pyramid") is not None
-        assert contract.get_rule("coverage-requirements") is not None
+        assert contract.get_rule("test-pyramid") is not None, "Expected contract.get_rule('test-pyr... is not None"
+        assert contract.get_rule("coverage-requirements") is not None, "Expected contract.get_rule('coverage... is not None"
 
     def test_error_handling_contract(self, manager):
         """Error handling contract covers exceptions and Result pattern."""
         contract = manager.contracts.get("operation.error-handling.v1")
 
-        assert contract is not None
+        assert contract is not None, "Expected contract is not None"
         # Exception design
-        assert contract.get_rule("custom-exception-hierarchy") is not None
-        assert contract.get_rule("exception-information") is not None
+        assert contract.get_rule("custom-exception-hierarchy") is not None, "Expected contract.get_rule('custom-e... is not None"
+        assert contract.get_rule("exception-information") is not None, "Expected contract.get_rule('exceptio... is not None"
         # Exception handling
-        assert contract.get_rule("catch-specific-exceptions") is not None
-        assert contract.get_rule("no-swallowed-exceptions") is not None
+        assert contract.get_rule("catch-specific-exceptions") is not None, "Expected contract.get_rule('catch-sp... is not None"
+        assert contract.get_rule("no-swallowed-exceptions") is not None, "Expected contract.get_rule('no-swall... is not None"
         # Result pattern
-        assert contract.get_rule("result-pattern") is not None
+        assert contract.get_rule("result-pattern") is not None, "Expected contract.get_rule('result-p... is not None"
         # Validation
-        assert contract.get_rule("fail-fast-validation") is not None
+        assert contract.get_rule("fail-fast-validation") is not None, "Expected contract.get_rule('fail-fas... is not None"
 
     def test_api_design_contract(self, manager):
         """API design contract covers REST conventions."""
         contract = manager.contracts.get("operation.api-design.v1")
 
-        assert contract is not None
+        assert contract is not None, "Expected contract is not None"
         # Resource design
-        assert contract.get_rule("resource-naming") is not None
-        assert contract.get_rule("http-method-semantics") is not None
-        assert contract.get_rule("status-code-usage") is not None
+        assert contract.get_rule("resource-naming") is not None, "Expected contract.get_rule('resource... is not None"
+        assert contract.get_rule("http-method-semantics") is not None, "Expected contract.get_rule('http-met... is not None"
+        assert contract.get_rule("status-code-usage") is not None, "Expected contract.get_rule('status-c... is not None"
         # Request/response
-        assert contract.get_rule("request-validation") is not None
-        assert contract.get_rule("error-response-format") is not None
+        assert contract.get_rule("request-validation") is not None, "Expected contract.get_rule('request-... is not None"
+        assert contract.get_rule("error-response-format") is not None, "Expected contract.get_rule('error-re... is not None"
         # Versioning
-        assert contract.get_rule("api-versioning") is not None
+        assert contract.get_rule("api-versioning") is not None, "Expected contract.get_rule('api-vers... is not None"
 
     def test_async_patterns_contract(self, manager):
         """Async patterns contract covers concurrency."""
         contract = manager.contracts.get("operation.async-patterns.v1")
 
-        assert contract is not None
+        assert contract is not None, "Expected contract is not None"
         # Async basics
-        assert contract.get_rule("async-all-the-way") is not None
-        assert contract.get_rule("no-fire-and-forget") is not None
-        assert contract.get_rule("structured-concurrency") is not None
+        assert contract.get_rule("async-all-the-way") is not None, "Expected contract.get_rule('async-al... is not None"
+        assert contract.get_rule("no-fire-and-forget") is not None, "Expected contract.get_rule('no-fire-... is not None"
+        assert contract.get_rule("structured-concurrency") is not None, "Expected contract.get_rule('structur... is not None"
         # Cancellation and timeouts
-        assert contract.get_rule("cancellation-support") is not None
-        assert contract.get_rule("timeout-all-io") is not None
+        assert contract.get_rule("cancellation-support") is not None, "Expected contract.get_rule('cancella... is not None"
+        assert contract.get_rule("timeout-all-io") is not None, "Expected contract.get_rule('timeout-... is not None"
         # Concurrency control
-        assert contract.get_rule("limit-concurrency") is not None
+        assert contract.get_rule("limit-concurrency") is not None, "Expected contract.get_rule('limit-co... is not None"
 
     def test_observability_contract(self, manager):
         """Observability contract covers logging, metrics, tracing."""
         contract = manager.contracts.get("operation.observability.v1")
 
-        assert contract is not None
+        assert contract is not None, "Expected contract is not None"
         # Logging
-        assert contract.get_rule("structured-logging") is not None
-        assert contract.get_rule("log-levels") is not None
-        assert contract.get_rule("sensitive-data-logging") is not None
+        assert contract.get_rule("structured-logging") is not None, "Expected contract.get_rule('structur... is not None"
+        assert contract.get_rule("log-levels") is not None, "Expected contract.get_rule('log-leve... is not None"
+        assert contract.get_rule("sensitive-data-logging") is not None, "Expected contract.get_rule('sensitiv... is not None"
         # Metrics
-        assert contract.get_rule("metrics-naming") is not None
-        assert contract.get_rule("four-golden-signals") is not None
-        assert contract.get_rule("histogram-over-average") is not None
+        assert contract.get_rule("metrics-naming") is not None, "Expected contract.get_rule('metrics-... is not None"
+        assert contract.get_rule("four-golden-signals") is not None, "Expected contract.get_rule('four-gol... is not None"
+        assert contract.get_rule("histogram-over-average") is not None, "Expected contract.get_rule('histogra... is not None"
         # Tracing
-        assert contract.get_rule("trace-all-requests") is not None
-        assert contract.get_rule("span-naming") is not None
+        assert contract.get_rule("trace-all-requests") is not None, "Expected contract.get_rule('trace-al... is not None"
+        assert contract.get_rule("span-naming") is not None, "Expected contract.get_rule('span-nam... is not None"
 
     def test_design_patterns_contract(self, manager):
         """Design patterns contract covers GoF and architectural patterns."""
         contract = manager.contracts.get("operation.design-patterns.v1")
 
-        assert contract is not None
+        assert contract is not None, "Expected contract is not None"
         # Creational patterns
-        assert contract.get_rule("factory-method") is not None
-        assert contract.get_rule("abstract-factory") is not None
-        assert contract.get_rule("builder-pattern") is not None
-        assert contract.get_rule("singleton-pattern") is not None
-        assert contract.get_rule("prototype-pattern") is not None
+        assert contract.get_rule("factory-method") is not None, "Expected contract.get_rule('factory-... is not None"
+        assert contract.get_rule("abstract-factory") is not None, "Expected contract.get_rule('abstract... is not None"
+        assert contract.get_rule("builder-pattern") is not None, "Expected contract.get_rule('builder-... is not None"
+        assert contract.get_rule("singleton-pattern") is not None, "Expected contract.get_rule('singleto... is not None"
+        assert contract.get_rule("prototype-pattern") is not None, "Expected contract.get_rule('prototyp... is not None"
         # Structural patterns
-        assert contract.get_rule("adapter-pattern") is not None
-        assert contract.get_rule("decorator-pattern") is not None
-        assert contract.get_rule("facade-pattern") is not None
-        assert contract.get_rule("proxy-pattern") is not None
-        assert contract.get_rule("composite-pattern") is not None
-        assert contract.get_rule("bridge-pattern") is not None
-        assert contract.get_rule("flyweight-pattern") is not None
+        assert contract.get_rule("adapter-pattern") is not None, "Expected contract.get_rule('adapter-... is not None"
+        assert contract.get_rule("decorator-pattern") is not None, "Expected contract.get_rule('decorato... is not None"
+        assert contract.get_rule("facade-pattern") is not None, "Expected contract.get_rule('facade-p... is not None"
+        assert contract.get_rule("proxy-pattern") is not None, "Expected contract.get_rule('proxy-pa... is not None"
+        assert contract.get_rule("composite-pattern") is not None, "Expected contract.get_rule('composit... is not None"
+        assert contract.get_rule("bridge-pattern") is not None, "Expected contract.get_rule('bridge-p... is not None"
+        assert contract.get_rule("flyweight-pattern") is not None, "Expected contract.get_rule('flyweigh... is not None"
         # Behavioral patterns
-        assert contract.get_rule("strategy-pattern") is not None
-        assert contract.get_rule("observer-pattern") is not None
-        assert contract.get_rule("command-pattern") is not None
-        assert contract.get_rule("template-method-pattern") is not None
-        assert contract.get_rule("state-pattern") is not None
-        assert contract.get_rule("chain-of-responsibility") is not None
-        assert contract.get_rule("mediator-pattern") is not None
-        assert contract.get_rule("iterator-pattern") is not None
-        assert contract.get_rule("visitor-pattern") is not None
-        assert contract.get_rule("memento-pattern") is not None
+        assert contract.get_rule("strategy-pattern") is not None, "Expected contract.get_rule('strategy... is not None"
+        assert contract.get_rule("observer-pattern") is not None, "Expected contract.get_rule('observer... is not None"
+        assert contract.get_rule("command-pattern") is not None, "Expected contract.get_rule('command-... is not None"
+        assert contract.get_rule("template-method-pattern") is not None, "Expected contract.get_rule('template... is not None"
+        assert contract.get_rule("state-pattern") is not None, "Expected contract.get_rule('state-pa... is not None"
+        assert contract.get_rule("chain-of-responsibility") is not None, "Expected contract.get_rule('chain-of... is not None"
+        assert contract.get_rule("mediator-pattern") is not None, "Expected contract.get_rule('mediator... is not None"
+        assert contract.get_rule("iterator-pattern") is not None, "Expected contract.get_rule('iterator... is not None"
+        assert contract.get_rule("visitor-pattern") is not None, "Expected contract.get_rule('visitor-... is not None"
+        assert contract.get_rule("memento-pattern") is not None, "Expected contract.get_rule('memento-... is not None"
         # Architectural patterns
-        assert contract.get_rule("repository-pattern") is not None
-        assert contract.get_rule("unit-of-work-pattern") is not None
-        assert contract.get_rule("cqrs-pattern") is not None
-        assert contract.get_rule("event-sourcing-pattern") is not None
+        assert contract.get_rule("repository-pattern") is not None, "Expected contract.get_rule('reposito... is not None"
+        assert contract.get_rule("unit-of-work-pattern") is not None, "Expected contract.get_rule('unit-of-... is not None"
+        assert contract.get_rule("cqrs-pattern") is not None, "Expected contract.get_rule('cqrs-pat... is not None"
+        assert contract.get_rule("event-sourcing-pattern") is not None, "Expected contract.get_rule('event-so... is not None"
         # Modern patterns
-        assert contract.get_rule("dependency-injection-container") is not None
-        assert contract.get_rule("circuit-breaker-pattern") is not None
-        assert contract.get_rule("saga-pattern") is not None
-        assert contract.get_rule("specification-pattern") is not None
+        assert contract.get_rule("dependency-injection-container") is not None, "Expected contract.get_rule('dependen... is not None"
+        assert contract.get_rule("circuit-breaker-pattern") is not None, "Expected contract.get_rule('circuit-... is not None"
+        assert contract.get_rule("saga-pattern") is not None, "Expected contract.get_rule('saga-pat... is not None"
+        assert contract.get_rule("specification-pattern") is not None, "Expected contract.get_rule('specific... is not None"
 
     def test_all_contracts_have_rationales(self, manager):
         """All rules have rationales for human understanding."""

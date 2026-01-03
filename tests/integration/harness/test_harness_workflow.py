@@ -76,29 +76,29 @@ class TestSessionLifecycle:
             initial_phase="analyze",
             token_budget=50000
         )
-        assert session is not None
-        assert session.state == SessionState.ACTIVE
-        assert session.current_phase == "analyze"
+        assert session is not None, "Expected session is not None"
+        assert session.state == SessionState.ACTIVE, "Expected session.state to equal SessionState.ACTIVE"
+        assert session.current_phase == "analyze", "Expected session.current_phase to equal 'analyze'"
 
         # Record some token usage
         session_manager.record_tokens(1000)
-        assert session_manager.current_session.token_budget.tokens_used == 1000
+        assert session_manager.current_session.token_budget.tokens_used == 1000, "Expected session_manager.current_ses... to equal 1000"
 
         # Pause session - returns SessionContext
         paused = session_manager.pause()
-        assert paused.state == SessionState.PAUSED
+        assert paused.state == SessionState.PAUSED, "Expected paused.state to equal SessionState.PAUSED"
 
         # Resume session
         resumed = session_manager.resume()
-        assert resumed.state == SessionState.ACTIVE
+        assert resumed.state == SessionState.ACTIVE, "Expected resumed.state to equal SessionState.ACTIVE"
 
         # Advance phase
         advanced = session_manager.advance_phase("execute")
-        assert advanced.current_phase == "execute"
+        assert advanced.current_phase == "execute", "Expected advanced.current_phase to equal 'execute'"
 
         # Complete session
         completed = session_manager.complete()
-        assert completed.state == SessionState.COMPLETED
+        assert completed.state == SessionState.COMPLETED, "Expected completed.state to equal SessionState.COMPLETED"
 
     def test_session_persistence(self, session_manager, temp_dir):
         """Test session survives manager recreation."""
@@ -119,12 +119,12 @@ class TestSessionLifecycle:
 
         # Load session
         loaded = new_manager.load(session_id)
-        assert loaded is not None
-        assert loaded.session_id == session_id
-        assert loaded.workflow_type == "tdflow"
-        assert loaded.current_phase == "red"
-        assert loaded.token_budget.tokens_used == 5000
-        assert loaded.state == SessionState.PAUSED
+        assert loaded is not None, "Expected loaded is not None"
+        assert loaded.session_id == session_id, "Expected loaded.session_id to equal session_id"
+        assert loaded.workflow_type == "tdflow", "Expected loaded.workflow_type to equal 'tdflow'"
+        assert loaded.current_phase == "red", "Expected loaded.current_phase to equal 'red'"
+        assert loaded.token_budget.tokens_used == 5000, "Expected loaded.token_budget.tokens_... to equal 5000"
+        assert loaded.state == SessionState.PAUSED, "Expected loaded.state to equal SessionState.PAUSED"
 
 
 class TestMemoryIntegration:
@@ -156,9 +156,9 @@ class TestMemoryIntegration:
         memory_manager.set("coding_style", "PEP8", MemoryTier.PROJECT)
 
         # Retrieve
-        assert memory_manager.get("task", MemoryTier.TASK) == "Build REST API"
-        assert memory_manager.get("project_type", MemoryTier.SESSION) == "python"
-        assert memory_manager.get("coding_style", MemoryTier.PROJECT) == "PEP8"
+        assert memory_manager.get("task", MemoryTier.TASK) == "Build REST API", "Expected memory_manager.get('task', ... to equal 'Build REST API'"
+        assert memory_manager.get("project_type", MemoryTier.SESSION) == "python", "Expected memory_manager.get('project... to equal 'python'"
+        assert memory_manager.get("coding_style", MemoryTier.PROJECT) == "PEP8", "Expected memory_manager.get('coding_... to equal 'PEP8'"
 
     def test_memory_search(self, memory_manager):
         """Test searching across memory."""
@@ -169,7 +169,7 @@ class TestMemoryIntegration:
         # search takes tiers as a list
         results = memory_manager.search("main", tiers=[MemoryTier.TASK])
         # Search should find at least the entry containing "main"
-        assert len(results) >= 1 or memory_manager.get("file:main.py", MemoryTier.TASK) == "def main(): pass"
+        assert len(results) >= 1 or memory_manager.get("file:main.py", MemoryTier.TASK) == "def main(): pass", "Assertion failed"
 
     def test_get_context(self, memory_manager):
         """Test getting context from memory."""
@@ -179,9 +179,9 @@ class TestMemoryIntegration:
 
         # get_context returns formatted context string
         context = memory_manager.get_context(max_tokens=4000)
-        assert isinstance(context, str)
+        assert isinstance(context, str), "Expected isinstance() to be truthy"
         # Context should include stored values
-        assert "Fix bug" in context or "task" in context.lower()
+        assert "Fix bug" in context or "task" in context.lower(), "Assertion failed"
 
 
 class TestToolSelection:
@@ -229,16 +229,16 @@ class TestToolSelection:
         tools = selector.get_tools(workflow="tdflow", phase="red")
         tool_names = [t.name for t in tools]
 
-        assert "read_file" in tool_names
-        assert "write_file" in tool_names
-        assert "run_tests" in tool_names
+        assert "read_file" in tool_names, "Expected 'read_file' in tool_names"
+        assert "write_file" in tool_names, "Expected 'write_file' in tool_names"
+        assert "run_tests" in tool_names, "Expected 'run_tests' in tool_names"
 
     def test_tool_validation(self, tool_registry):
         """Test tool access validation."""
         selector = ToolSelector(registry=tool_registry)
 
-        assert selector.validate_tool_access("read_file", "tdflow", "red")
-        assert selector.validate_tool_access("run_tests", "tdflow", "red")
+        assert selector.validate_tool_access("read_file", "tdflow", "red"), "Expected selector.validate_tool_access() to be truthy"
+        assert selector.validate_tool_access("run_tests", "tdflow", "red"), "Expected selector.validate_tool_access() to be truthy"
 
 
 class TestMonitorAndRecovery:
@@ -270,9 +270,9 @@ class TestMonitorAndRecovery:
         )
 
         # Check loop_detection.detected (not loop_detected)
-        assert health.loop_detection is not None
-        assert health.loop_detection.detected
-        assert health.status in [HealthStatus.DEGRADED, HealthStatus.CRITICAL]
+        assert health.loop_detection is not None, "Expected health.loop_detection is not None"
+        assert health.loop_detection.detected, "Expected health.loop_detection.detected to be truthy"
+        assert health.status in [HealthStatus.DEGRADED, HealthStatus.CRITICAL], "Expected health.status in [HealthStatus.DEGRADED, Hea..."
 
     def test_checkpoint_creation_and_listing(self, checkpoint_manager, temp_dir):
         """Test checkpoint creation and listing."""
@@ -283,10 +283,10 @@ class TestMonitorAndRecovery:
             state={"step": 5, "last_action": "read_file"},
             description="Before risky change"
         )
-        assert checkpoint is not None
-        assert checkpoint.session_id == "test-session"
-        assert checkpoint.phase == "execute"
-        assert checkpoint.state == {"step": 5, "last_action": "read_file"}
+        assert checkpoint is not None, "Expected checkpoint is not None"
+        assert checkpoint.session_id == "test-session", "Expected checkpoint.session_id to equal 'test-session'"
+        assert checkpoint.phase == "execute", "Expected checkpoint.phase to equal 'execute'"
+        assert checkpoint.state == {"step": 5, "last_action": "read_file"}, "Expected checkpoint.state to equal {'step': 5, 'last_action': ..."
 
         # Create another checkpoint
         checkpoint2 = checkpoint_manager.create_checkpoint(
@@ -295,16 +295,16 @@ class TestMonitorAndRecovery:
             state={"step": 10},
             description="After implementation"
         )
-        assert checkpoint2 is not None
+        assert checkpoint2 is not None, "Expected checkpoint2 is not None"
 
         # List checkpoints for session
         checkpoints = checkpoint_manager.list_checkpoints(session_id="test-session")
-        assert len(checkpoints) == 2
+        assert len(checkpoints) == 2, "Expected len(checkpoints) to equal 2"
 
         # Get specific checkpoint
         retrieved = checkpoint_manager.get_checkpoint(checkpoint.id)
-        assert retrieved is not None
-        assert retrieved.id == checkpoint.id
+        assert retrieved is not None, "Expected retrieved is not None"
+        assert retrieved.id == checkpoint.id, "Expected retrieved.id to equal checkpoint.id"
 
 
 class TestOrchestratorIntegration:
@@ -392,13 +392,13 @@ class TestOrchestratorIntegration:
             workflow_type="agent",
             initial_phase="analyze"
         )
-        assert session_id is not None
+        assert session_id is not None, "Expected session_id is not None"
 
         # Run until complete
         result = orchestrator.run_until_complete(session_id, max_iterations=5)
 
-        assert result is not None
-        assert mock_llm_executor.execute_step.call_count == 2
+        assert result is not None, "Expected result is not None"
+        assert mock_llm_executor.execute_step.call_count == 2, "Expected mock_llm_executor.execute_s... to equal 2"
 
     def test_session_status(self, orchestrator):
         """Test getting session status."""
@@ -410,10 +410,10 @@ class TestOrchestratorIntegration:
 
         status = orchestrator.get_status(session_id)
 
-        assert status is not None
-        assert "state" in status
-        assert "iteration_count" in status
-        assert "health_status" in status  # Uses health_status not health
+        assert status is not None, "Expected status is not None"
+        assert "state" in status, "Expected 'state' in status"
+        assert "iteration_count" in status, "Expected 'iteration_count' in status"
+        assert "health_status" in status, "Expected 'health_status' in status"# Uses health_status not health
 
 
 class TestExecutionContextPersistence:
@@ -451,12 +451,12 @@ class TestExecutionContextPersistence:
         # Load context
         loaded = new_store.load_context("persist-test")
 
-        assert loaded is not None
-        assert loaded.session_id == "persist-test"
-        assert loaded.task_description == "Test persistence"
-        assert loaded.iteration == 5
-        assert loaded.tokens_used == 10000
-        assert len(loaded.conversation_history) == 2
+        assert loaded is not None, "Expected loaded is not None"
+        assert loaded.session_id == "persist-test", "Expected loaded.session_id to equal 'persist-test'"
+        assert loaded.task_description == "Test persistence", "Expected loaded.task_description to equal 'Test persistence'"
+        assert loaded.iteration == 5, "Expected loaded.iteration to equal 5"
+        assert loaded.tokens_used == 10000, "Expected loaded.tokens_used to equal 10000"
+        assert len(loaded.conversation_history) == 2, "Expected len(loaded.conversation_his... to equal 2"
 
     def test_step_history_accumulates(self, execution_store):
         """Test that step history accumulates correctly."""
@@ -475,9 +475,9 @@ class TestExecutionContextPersistence:
         # Retrieve history
         history = execution_store.get_history(session_id)
 
-        assert len(history) == 5
-        assert history[0].tokens_used == 100
-        assert history[4].tokens_used == 500
+        assert len(history) == 5, "Expected len(history) to equal 5"
+        assert history[0].tokens_used == 100, "Expected history[0].tokens_used to equal 100"
+        assert history[4].tokens_used == 500, "Expected history[4].tokens_used to equal 500"
 
 
 class TestEscalationFlow:
@@ -501,12 +501,12 @@ class TestEscalationFlow:
             priority=EscalationPriority.HIGH,
             context={"loop_count": 5, "last_action": "read_file"}
         )
-        assert escalation is not None
-        assert escalation.priority == EscalationPriority.HIGH
+        assert escalation is not None, "Expected escalation is not None"
+        assert escalation.priority == EscalationPriority.HIGH, "Expected escalation.priority to equal EscalationPriority.HIGH"
 
         # Check pending
         pending = escalation_manager.get_pending_escalations("test-session")
-        assert len(pending) == 1
+        assert len(pending) == 1, "Expected len(pending) to equal 1"
 
         # Resolve - uses ResolutionType enum and 'decision' parameter
         resolution = escalation_manager.resolve_escalation(
@@ -515,11 +515,11 @@ class TestEscalationFlow:
             decision="Continue with different approach",
             resolved_by="human"
         )
-        assert resolution is not None
+        assert resolution is not None, "Expected resolution is not None"
 
         # No more pending
         pending = escalation_manager.get_pending_escalations("test-session")
-        assert len(pending) == 0
+        assert len(pending) == 0, "Expected len(pending) to equal 0"
 
 
 class TestEndToEndWorkflow:
@@ -543,24 +543,24 @@ class TestEndToEndWorkflow:
             initial_phase="red",
             token_budget=100000
         )
-        assert session.current_phase == "red"
+        assert session.current_phase == "red", "Expected session.current_phase to equal 'red'"
 
         # Advance through phases
         manager.advance_phase("green")
-        assert manager.current_session.current_phase == "green"
+        assert manager.current_session.current_phase == "green", "Expected manager.current_session.cur... to equal 'green'"
 
         manager.advance_phase("refactor")
-        assert manager.current_session.current_phase == "refactor"
+        assert manager.current_session.current_phase == "refactor", "Expected manager.current_session.cur... to equal 'refactor'"
 
         # Complete
         manager.complete()
-        assert manager.current_session.state == SessionState.COMPLETED
+        assert manager.current_session.state == SessionState.COMPLETED, "Expected manager.current_session.state to equal SessionState.COMPLETED"
 
         # Verify history has phase transitions
         history = manager.current_session.history
-        assert len(history) >= 2  # At least green and refactor transitions
+        assert len(history) >= 2, "Expected len(history) >= 2"# At least green and refactor transitions
 
         # Check that phases are recorded in history
         history_phases = [h.phase for h in history if h.phase]
-        assert "green" in history_phases
-        assert "refactor" in history_phases
+        assert "green" in history_phases, "Expected 'green' in history_phases"
+        assert "refactor" in history_phases, "Expected 'refactor' in history_phases"

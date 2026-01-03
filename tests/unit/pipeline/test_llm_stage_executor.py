@@ -49,12 +49,12 @@ class TestLLMStageExecutor:
             mock_llm.return_value = {"response": "LLM response"}
             executor.execute(context)
 
-        assert "get_system_prompt" in calls
-        assert "get_user_message" in calls
-        assert "parse_response" in calls
+        assert "get_system_prompt" in calls, "Expected 'get_system_prompt' in calls"
+        assert "get_user_message" in calls, "Expected 'get_user_message' in calls"
+        assert "parse_response" in calls, "Expected 'parse_response' in calls"
         # Verify order
-        assert calls.index("get_system_prompt") < calls.index("parse_response")
-        assert calls.index("get_user_message") < calls.index("parse_response")
+        assert calls.index("get_system_prompt") < calls.index("parse_response"), "Expected calls.index('get_system_pro... < calls.index('parse_response')"
+        assert calls.index("get_user_message") < calls.index("parse_response"), "Expected calls.index('get_user_messa... < calls.index('parse_response')"
 
     def test_execute_calls_get_prompts_and_parse(self, temp_project):
         """Execute calls get_system_prompt, get_user_message, parse_response."""
@@ -91,9 +91,9 @@ class TestLLMStageExecutor:
             mock_llm.return_value = {"response": "test"}
             executor.execute(context)
 
-        assert executor.get_system_prompt_called
-        assert executor.get_user_message_called
-        assert executor.parse_response_called
+        assert executor.get_system_prompt_called, "Expected executor.get_system_prompt_... to be truthy"
+        assert executor.get_user_message_called, "Expected executor.get_user_message_c... to be truthy"
+        assert executor.parse_response_called, "Expected executor.parse_response_called to be truthy"
 
     def test_failed_parse_returns_failed_result(self, temp_project):
         """When parse_response returns None, result is FAILED."""
@@ -124,8 +124,8 @@ class TestLLMStageExecutor:
             mock_llm.return_value = {"response": "unparseable"}
             result = executor.execute(context)
 
-        assert result.status == StageStatus.FAILED
-        assert "parse" in result.error.lower() or "artifact" in result.error.lower()
+        assert result.status == StageStatus.FAILED, "Expected result.status to equal StageStatus.FAILED"
+        assert "parse" in result.error.lower() or "artifact" in result.error.lower(), "Assertion failed"
 
     def test_extract_yaml_from_code_block(self):
         """YAML in code blocks is extracted correctly."""
@@ -155,9 +155,9 @@ nested:
 More text after."""
 
         result = executor.extract_yaml_from_response(response)
-        assert result is not None
-        assert result["key"] == "value"
-        assert result["nested"]["item"] == 123
+        assert result is not None, "Expected result is not None"
+        assert result["key"] == "value", "Expected result['key'] to equal 'value'"
+        assert result["nested"]["item"] == 123, "Expected result['nested']['item'] to equal 123"
 
     def test_extract_yaml_from_raw_text(self):
         """Raw YAML without code blocks is parsed correctly."""
@@ -182,9 +182,9 @@ items:
   - two"""
 
         result = executor.extract_yaml_from_response(response)
-        assert result is not None
-        assert result["key"] == "value"
-        assert result["items"] == ["one", "two"]
+        assert result is not None, "Expected result is not None"
+        assert result["key"] == "value", "Expected result['key'] to equal 'value'"
+        assert result["items"] == ["one", "two"], "Expected result['items'] to equal ['one', 'two']"
 
     def test_extract_yaml_handles_invalid(self):
         """Invalid YAML returns None."""
@@ -206,7 +206,7 @@ items:
         response = "This is not YAML: {{{invalid}}}"
 
         result = executor.extract_yaml_from_response(response)
-        assert result is None
+        assert result is None, "Expected result is None"
 
     def test_extract_json_from_code_block(self):
         """JSON in code blocks is extracted correctly."""
@@ -233,9 +233,9 @@ items:
 """
 
         result = executor.extract_json_from_response(response)
-        assert result is not None
-        assert result["key"] == "value"
-        assert result["number"] == 42
+        assert result is not None, "Expected result is not None"
+        assert result["key"] == "value", "Expected result['key'] to equal 'value'"
+        assert result["number"] == 42, "Expected result['number'] to equal 42"
 
     def test_extract_json_from_raw_text(self):
         """JSON embedded in text is extracted correctly."""
@@ -257,9 +257,9 @@ items:
         response = 'The result is {"data": true, "count": 5} as shown.'
 
         result = executor.extract_json_from_response(response)
-        assert result is not None
-        assert result["data"] is True
-        assert result["count"] == 5
+        assert result is not None, "Expected result is not None"
+        assert result["data"] is True, "Expected result['data'] is True"
+        assert result["count"] == 5, "Expected result['count'] to equal 5"
 
 
 class TestToolBasedStageExecutor:
@@ -300,9 +300,9 @@ class TestToolBasedStageExecutor:
         }
 
         result = executor.parse_response(llm_result, context)
-        assert result is not None
-        assert result["analysis"] == "completed"
-        assert result["items"] == [1, 2, 3]
+        assert result is not None, "Expected result is not None"
+        assert result["analysis"] == "completed", "Expected result['analysis'] to equal 'completed'"
+        assert result["items"] == [1, 2, 3], "Expected result['items'] to equal [1, 2, 3]"
 
     def test_tool_based_executor_uses_artifact_tool_name(self, temp_project):
         """ToolBasedStageExecutor only extracts from configured tool name."""
@@ -340,7 +340,7 @@ class TestToolBasedStageExecutor:
 
         result = executor.parse_response(llm_result, context)
         # Should fall back to final_artifact or None
-        assert result is None or result.get("wrong") is None
+        assert result is None or result.get("wrong") is None, "Assertion failed"
 
     def test_tool_based_executor_fallback_to_final_artifact(self, temp_project):
         """ToolBasedStageExecutor falls back to final_artifact if tool not called."""
@@ -373,5 +373,5 @@ class TestToolBasedStageExecutor:
         }
 
         result = executor.parse_response(llm_result, context)
-        assert result is not None
-        assert result["fallback"] == "data"
+        assert result is not None, "Expected result is not None"
+        assert result["fallback"] == "data", "Expected result['fallback'] to equal 'data'"

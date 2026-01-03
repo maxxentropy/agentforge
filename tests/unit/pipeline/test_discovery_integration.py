@@ -87,10 +87,10 @@ class TestDiscoveredContext:
     def test_default_values(self):
         """DiscoveredContext has sensible defaults."""
         ctx = DiscoveredContext()
-        assert ctx.primary_language is None
-        assert ctx.languages == []
-        assert ctx.frameworks == []
-        assert ctx.estimated_coverage == 0.0
+        assert ctx.primary_language is None, "Expected ctx.primary_language is None"
+        assert ctx.languages == [], "Expected ctx.languages to equal []"
+        assert ctx.frameworks == [], "Expected ctx.frameworks to equal []"
+        assert ctx.estimated_coverage == 0.0, "Expected ctx.estimated_coverage to equal 0.0"
 
     def test_get_test_path_for_source(self):
         """get_test_path_for_source returns mapped test path."""
@@ -101,11 +101,11 @@ class TestDiscoveredContext:
             }
         )
 
-        assert ctx.get_test_path_for_source("src/foo.py") == "tests/test_foo.py"
+        assert ctx.get_test_path_for_source("src/foo.py") == "tests/test_foo.py", "Expected ctx.get_test_path_for_sourc... to equal 'tests/test_foo.py'"
         # Returns first when multiple
-        assert ctx.get_test_path_for_source("src/bar.py") == "tests/test_bar.py"
+        assert ctx.get_test_path_for_source("src/bar.py") == "tests/test_bar.py", "Expected ctx.get_test_path_for_sourc... to equal 'tests/test_bar.py'"
         # Returns None for unknown
-        assert ctx.get_test_path_for_source("src/unknown.py") is None
+        assert ctx.get_test_path_for_source("src/unknown.py") is None, "Expected ctx.get_test_path_for_sourc... is None"
 
     def test_has_test_for_source(self):
         """has_test_for_source checks mapping."""
@@ -113,21 +113,21 @@ class TestDiscoveredContext:
             source_to_test_mapping={"src/foo.py": ["tests/test_foo.py"]}
         )
 
-        assert ctx.has_test_for_source("src/foo.py") is True
-        assert ctx.has_test_for_source("src/bar.py") is False
+        assert ctx.has_test_for_source("src/foo.py") is True, "Expected ctx.has_test_for_source('sr... is True"
+        assert ctx.has_test_for_source("src/bar.py") is False, "Expected ctx.has_test_for_source('sr... is False"
 
     def test_get_language_for_file(self):
         """get_language_for_file returns correct language."""
         ctx = DiscoveredContext()
 
-        assert ctx.get_language_for_file("foo.py") == "python"
-        assert ctx.get_language_for_file("foo.cs") == "csharp"
-        assert ctx.get_language_for_file("foo.ts") == "typescript"
-        assert ctx.get_language_for_file("foo.tsx") == "typescript"
-        assert ctx.get_language_for_file("foo.js") == "javascript"
-        assert ctx.get_language_for_file("foo.go") == "go"
-        assert ctx.get_language_for_file("foo.rs") == "rust"
-        assert ctx.get_language_for_file("foo.unknown") is None
+        assert ctx.get_language_for_file("foo.py") == "python", "Expected ctx.get_language_for_file('... to equal 'python'"
+        assert ctx.get_language_for_file("foo.cs") == "csharp", "Expected ctx.get_language_for_file('... to equal 'csharp'"
+        assert ctx.get_language_for_file("foo.ts") == "typescript", "Expected ctx.get_language_for_file('... to equal 'typescript'"
+        assert ctx.get_language_for_file("foo.tsx") == "typescript", "Expected ctx.get_language_for_file('... to equal 'typescript'"
+        assert ctx.get_language_for_file("foo.js") == "javascript", "Expected ctx.get_language_for_file('... to equal 'javascript'"
+        assert ctx.get_language_for_file("foo.go") == "go", "Expected ctx.get_language_for_file('... to equal 'go'"
+        assert ctx.get_language_for_file("foo.rs") == "rust", "Expected ctx.get_language_for_file('... to equal 'rust'"
+        assert ctx.get_language_for_file("foo.unknown") is None, "Expected ctx.get_language_for_file('... is None"
 
     def test_to_dict(self):
         """to_dict serializes context."""
@@ -139,10 +139,10 @@ class TestDiscoveredContext:
         )
 
         d = ctx.to_dict()
-        assert d["primary_language"] == "python"
-        assert d["languages"] == ["python", "typescript"]
-        assert d["frameworks"] == ["fastapi", "react"]
-        assert d["estimated_coverage"] == 0.85
+        assert d["primary_language"] == "python", "Expected d['primary_language'] to equal 'python'"
+        assert d["languages"] == ["python", "typescript"], "Expected d['languages'] to equal ['python', 'typescript']"
+        assert d["frameworks"] == ["fastapi", "react"], "Expected d['frameworks'] to equal ['fastapi', 'react']"
+        assert d["estimated_coverage"] == 0.85, "Expected d['estimated_coverage'] to equal 0.85"
 
 
 # =============================================================================
@@ -164,11 +164,11 @@ class TestExtractContextFromProfile:
 
         ctx = extract_context_from_profile(profile)
 
-        assert ctx.primary_language == "python"
-        assert "python" in ctx.languages
-        assert "typescript" in ctx.languages
-        assert "FastAPI" in ctx.frameworks
-        assert "React" in ctx.frameworks
+        assert ctx.primary_language == "python", "Expected ctx.primary_language to equal 'python'"
+        assert "python" in ctx.languages, "Expected 'python' in ctx.languages"
+        assert "typescript" in ctx.languages, "Expected 'typescript' in ctx.languages"
+        assert "FastAPI" in ctx.frameworks, "Expected 'FastAPI' in ctx.frameworks"
+        assert "React" in ctx.frameworks, "Expected 'React' in ctx.frameworks"
 
     def test_extracts_structure(self):
         """Extracts structure information from profile."""
@@ -182,9 +182,9 @@ class TestExtractContextFromProfile:
 
         ctx = extract_context_from_profile(profile)
 
-        assert ctx.source_directories == ["src/", "lib/"]
-        assert ctx.test_directories == ["tests/"]
-        assert ctx.entry_points == ["main.py"]
+        assert ctx.source_directories == ["src/", "lib/"], "Expected ctx.source_directories to equal ['src/', 'lib/']"
+        assert ctx.test_directories == ["tests/"], "Expected ctx.test_directories to equal ['tests/']"
+        assert ctx.entry_points == ["main.py"], "Expected ctx.entry_points to equal ['main.py']"
 
     def test_extracts_test_analysis(self):
         """Extracts test analysis information from profile."""
@@ -200,9 +200,9 @@ class TestExtractContextFromProfile:
 
         ctx = extract_context_from_profile(profile)
 
-        assert ctx.test_framework == "pytest"
-        assert ctx.estimated_coverage == 0.75
-        assert ctx.source_to_test_mapping == {"src/foo.py": ["tests/test_foo.py"]}
+        assert ctx.test_framework == "pytest", "Expected ctx.test_framework to equal 'pytest'"
+        assert ctx.estimated_coverage == 0.75, "Expected ctx.estimated_coverage to equal 0.75"
+        assert ctx.source_to_test_mapping == {"src/foo.py": ["tests/test_foo.py"]}, "Expected ctx.source_to_test_mapping to equal {'src/foo.py': ['tests/test..."
 
     def test_extracts_dependencies(self):
         """Extracts dependency information from profile."""
@@ -216,9 +216,9 @@ class TestExtractContextFromProfile:
 
         ctx = extract_context_from_profile(profile)
 
-        assert "fastapi" in ctx.dependencies
-        assert "uvicorn" in ctx.dependencies
-        assert "pytest" in ctx.dev_dependencies
+        assert "fastapi" in ctx.dependencies, "Expected 'fastapi' in ctx.dependencies"
+        assert "uvicorn" in ctx.dependencies, "Expected 'uvicorn' in ctx.dependencies"
+        assert "pytest" in ctx.dev_dependencies, "Expected 'pytest' in ctx.dev_dependencies"
 
     def test_handles_empty_profile(self):
         """Handles profile with no data gracefully."""
@@ -226,9 +226,9 @@ class TestExtractContextFromProfile:
 
         ctx = extract_context_from_profile(profile)
 
-        assert ctx.primary_language is None
-        assert ctx.languages == []
-        assert ctx.estimated_coverage == 0.0
+        assert ctx.primary_language is None, "Expected ctx.primary_language is None"
+        assert ctx.languages == [], "Expected ctx.languages to equal []"
+        assert ctx.estimated_coverage == 0.0, "Expected ctx.estimated_coverage to equal 0.0"
 
 
 # =============================================================================
@@ -244,43 +244,43 @@ class TestGetContractsForLanguage:
         contracts = get_contracts_for_language("python")
 
         # Base contracts
-        assert "agentforge-lineage" in contracts
-        assert "agentforge-specs" in contracts
-        assert "agentforge-structure" in contracts
+        assert "agentforge-lineage" in contracts, "Expected 'agentforge-lineage' in contracts"
+        assert "agentforge-specs" in contracts, "Expected 'agentforge-specs' in contracts"
+        assert "agentforge-structure" in contracts, "Expected 'agentforge-structure' in contracts"
 
         # Python-specific
-        assert "_architecture-python" in contracts
-        assert "_patterns-python" in contracts
-        assert "_typing-python" in contracts
+        assert "_architecture-python" in contracts, "Expected '_architecture-python' in contracts"
+        assert "_patterns-python" in contracts, "Expected '_patterns-python' in contracts"
+        assert "_typing-python" in contracts, "Expected '_typing-python' in contracts"
 
     def test_csharp_contracts(self):
         """Returns C#-specific contracts."""
         contracts = get_contracts_for_language("csharp")
 
         # Base contracts
-        assert "agentforge-lineage" in contracts
+        assert "agentforge-lineage" in contracts, "Expected 'agentforge-lineage' in contracts"
 
         # C#-specific
-        assert "_patterns-csharp" in contracts
+        assert "_patterns-csharp" in contracts, "Expected '_patterns-csharp' in contracts"
 
     def test_typescript_contracts(self):
         """Returns TypeScript-specific contracts."""
         contracts = get_contracts_for_language("typescript")
 
-        assert "_patterns-typescript" in contracts
+        assert "_patterns-typescript" in contracts, "Expected '_patterns-typescript' in contracts"
 
     def test_javascript_uses_typescript_patterns(self):
         """JavaScript uses TypeScript pattern contracts."""
         contracts = get_contracts_for_language("javascript")
 
-        assert "_patterns-typescript" in contracts
+        assert "_patterns-typescript" in contracts, "Expected '_patterns-typescript' in contracts"
 
     def test_unknown_language_returns_base(self):
         """Unknown language returns only base contracts."""
         contracts = get_contracts_for_language("unknown")
 
-        assert "agentforge-lineage" in contracts
-        assert len([c for c in contracts if c.startswith("_")]) == 0
+        assert "agentforge-lineage" in contracts, "Expected 'agentforge-lineage' in contracts"
+        assert len([c for c in contracts if c.startswith("_")]) == 0, "Expected len([c for c in contracts i... to equal 0"
 
 
 # =============================================================================
@@ -303,12 +303,12 @@ class TestCreatePipelineContextFromDiscovery:
 
         ctx = create_pipeline_context_from_discovery(profile, tmp_path)
 
-        assert ctx["project_path"] == str(tmp_path)
-        assert ctx["primary_language"] == "python"
-        assert ctx["test_framework"] == "pytest"
-        assert ctx["estimated_coverage"] == 0.80
-        assert "applicable_contracts" in ctx
-        assert "_architecture-python" in ctx["applicable_contracts"]
+        assert ctx["project_path"] == str(tmp_path), "Expected ctx['project_path'] to equal str(tmp_path)"
+        assert ctx["primary_language"] == "python", "Expected ctx['primary_language'] to equal 'python'"
+        assert ctx["test_framework"] == "pytest", "Expected ctx['test_framework'] to equal 'pytest'"
+        assert ctx["estimated_coverage"] == 0.80, "Expected ctx['estimated_coverage'] to equal 0.8"
+        assert "applicable_contracts" in ctx, "Expected 'applicable_contracts' in ctx"
+        assert "_architecture-python" in ctx["applicable_contracts"], "Expected '_architecture-python' in ctx['applicable_contracts']"
 
     def test_includes_codebase_profile(self, tmp_path):
         """Includes serialized codebase profile."""
@@ -318,8 +318,8 @@ class TestCreatePipelineContextFromDiscovery:
 
         ctx = create_pipeline_context_from_discovery(profile, tmp_path)
 
-        assert "codebase_profile" in ctx
-        assert ctx["codebase_profile"]["primary_language"] == "typescript"
+        assert "codebase_profile" in ctx, "Expected 'codebase_profile' in ctx"
+        assert ctx["codebase_profile"]["primary_language"] == "typescript", "Expected ctx['codebase_profile']['pr... to equal 'typescript'"
 
 
 # =============================================================================
@@ -339,7 +339,7 @@ class TestResolveTestPath:
         )
 
         result = resolve_test_path("src/module.py", ctx)
-        assert result == "tests/unit/test_module.py"
+        assert result == "tests/unit/test_module.py", "Expected result to equal 'tests/unit/test_module.py'"
 
     def test_falls_back_to_convention_python(self, tmp_path):
         """Falls back to Python conventions."""
@@ -361,4 +361,4 @@ class TestResolveTestPath:
         ctx = DiscoveredContext()
 
         result = resolve_test_path("src/unknown.xyz", ctx)
-        assert result is None
+        assert result is None, "Expected result is None"

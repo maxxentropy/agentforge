@@ -104,9 +104,9 @@ class TestCheckLayerImports:
             layer_rules=layer_rules,
         )
 
-        assert len(violations) == 1
-        assert "infrastructure" in violations[0]["message"].lower()
-        assert violations[0]["severity"] == "error"
+        assert len(violations) == 1, "Expected len(violations) to equal 1"
+        assert "infrastructure" in violations[0]["message"].lower(), "Expected 'infrastructure' in violations[0]['message'].lo..."
+        assert violations[0]["severity"] == "error", "Expected violations[0]['severity'] to equal 'error'"
 
     def test_domain_importing_application_fails(
         self, temp_project: Path, layer_detection: dict, layer_rules: dict
@@ -129,8 +129,8 @@ class TestCheckLayerImports:
             layer_rules=layer_rules,
         )
 
-        assert len(violations) == 1
-        assert "application" in violations[0]["message"].lower()
+        assert len(violations) == 1, "Expected len(violations) to equal 1"
+        assert "application" in violations[0]["message"].lower(), "Expected 'application' in violations[0]['message'].lo..."
 
     def test_application_importing_domain_passes(
         self, temp_project: Path, layer_detection: dict, layer_rules: dict
@@ -156,7 +156,7 @@ class TestCheckLayerImports:
 
         # Should not flag imports from domain to application
         domain_violations = [v for v in violations if "domain" in v["message"].lower()]
-        assert len(domain_violations) == 0
+        assert len(domain_violations) == 0, "Expected len(domain_violations) to equal 0"
 
     def test_stdlib_imports_pass(
         self, temp_project: Path, layer_detection: dict, layer_rules: dict
@@ -185,7 +185,7 @@ class TestCheckLayerImports:
             layer_rules=layer_rules,
         )
 
-        assert len(violations) == 0
+        assert len(violations) == 0, "Expected len(violations) to equal 0"
 
     def test_import_form_detected(
         self, temp_project: Path, layer_detection: dict, layer_rules: dict
@@ -209,7 +209,7 @@ class TestCheckLayerImports:
             layer_rules=layer_rules,
         )
 
-        assert len(violations) == 2  # Both import forms detected
+        assert len(violations) == 2, "Expected len(violations) to equal 2"# Both import forms detected
 
     def test_qualified_import_detected(
         self, temp_project: Path, layer_detection: dict, layer_rules: dict
@@ -232,8 +232,8 @@ class TestCheckLayerImports:
             layer_rules=layer_rules,
         )
 
-        assert len(violations) == 1
-        assert "infrastructure" in violations[0]["message"].lower()
+        assert len(violations) == 1, "Expected len(violations) to equal 1"
+        assert "infrastructure" in violations[0]["message"].lower(), "Expected 'infrastructure' in violations[0]['message'].lo..."
 
     def test_no_layer_match_ignored(
         self, temp_project: Path, layer_detection: dict, layer_rules: dict
@@ -257,7 +257,7 @@ class TestCheckLayerImports:
         )
 
         # No violations because file doesn't match any layer
-        assert len(violations) == 0
+        assert len(violations) == 0, "Expected len(violations) to equal 0"
 
     def test_syntax_error_gracefully_handled(
         self, temp_project: Path, layer_detection: dict, layer_rules: dict
@@ -279,7 +279,7 @@ class TestCheckLayerImports:
             layer_rules=layer_rules,
         )
 
-        assert len(violations) == 0
+        assert len(violations) == 0, "Expected len(violations) to equal 0"
 
 
 # =============================================================================
@@ -311,9 +311,9 @@ class TestCheckConstructorInjection:
             class_patterns=class_patterns,
         )
 
-        assert len(violations) == 1
-        assert "UserService" in violations[0]["message"]
-        assert "no __init__" in violations[0]["message"].lower()
+        assert len(violations) == 1, "Expected len(violations) to equal 1"
+        assert "UserService" in violations[0]["message"], "Expected 'UserService' in violations[0]['message']"
+        assert "no __init__" in violations[0]["message"].lower(), "Expected 'no __init__' in violations[0]['message'].lo..."
 
     def test_service_with_no_params_fails(
         self, temp_project: Path, class_patterns: list
@@ -335,9 +335,9 @@ class TestCheckConstructorInjection:
             class_patterns=class_patterns,
         )
 
-        assert len(violations) == 1
-        assert "OrderService" in violations[0]["message"]
-        assert "no injected dependencies" in violations[0]["message"].lower()
+        assert len(violations) == 1, "Expected len(violations) to equal 1"
+        assert "OrderService" in violations[0]["message"], "Expected 'OrderService' in violations[0]['message']"
+        assert "no injected dependencies" in violations[0]["message"].lower(), "Expected 'no injected dependencies' in violations[0]['message'].lo..."
 
     def test_service_with_injected_deps_passes(
         self, temp_project: Path, class_patterns: list
@@ -360,7 +360,7 @@ class TestCheckConstructorInjection:
             class_patterns=class_patterns,
         )
 
-        assert len(violations) == 0
+        assert len(violations) == 0, "Expected len(violations) to equal 0"
 
     def test_non_service_class_ignored(
         self, temp_project: Path, class_patterns: list
@@ -382,7 +382,7 @@ class TestCheckConstructorInjection:
             class_patterns=class_patterns,
         )
 
-        assert len(violations) == 0
+        assert len(violations) == 0, "Expected len(violations) to equal 0"
 
     def test_direct_instantiation_in_init_fails(
         self, temp_project: Path, class_patterns: list
@@ -407,8 +407,8 @@ class TestCheckConstructorInjection:
         )
 
         # Should have violations for forbidden instantiations
-        assert len(violations) >= 1
-        assert any("HttpClient" in v["message"] for v in violations)
+        assert len(violations) >= 1, "Expected len(violations) >= 1"
+        assert any("HttpClient" in v["message"] for v in violations), "Expected any() to be truthy"
 
     def test_handler_class_checked(
         self, temp_project: Path, class_patterns: list
@@ -427,8 +427,8 @@ class TestCheckConstructorInjection:
             class_patterns=class_patterns,
         )
 
-        assert len(violations) == 1
-        assert "RequestHandler" in violations[0]["message"]
+        assert len(violations) == 1, "Expected len(violations) to equal 1"
+        assert "RequestHandler" in violations[0]["message"], "Expected 'RequestHandler' in violations[0]['message']"
 
     def test_check_for_init_params_disabled(
         self, temp_project: Path, class_patterns: list
@@ -448,7 +448,7 @@ class TestCheckConstructorInjection:
             check_for_init_params=False,
         )
 
-        assert len(violations) == 0
+        assert len(violations) == 0, "Expected len(violations) to equal 0"
 
 
 # =============================================================================
@@ -474,9 +474,9 @@ class TestCheckDomainPurity:
             file_paths=[domain_file],
         )
 
-        assert len(violations) >= 1
-        assert any("requests" in v["message"] for v in violations)
-        assert violations[0]["severity"] == "error"
+        assert len(violations) >= 1, "Expected len(violations) >= 1"
+        assert any("requests" in v["message"] for v in violations), "Expected any() to be truthy"
+        assert violations[0]["severity"] == "error", "Expected violations[0]['severity'] to equal 'error'"
 
     def test_importing_sqlite3_fails(self, temp_project: Path) -> None:
         """Importing database library in domain should be flagged."""
@@ -494,8 +494,8 @@ class TestCheckDomainPurity:
             file_paths=[domain_file],
         )
 
-        assert len(violations) >= 1
-        assert any("sqlite3" in v["message"] for v in violations)
+        assert len(violations) >= 1, "Expected len(violations) >= 1"
+        assert any("sqlite3" in v["message"] for v in violations), "Expected any() to be truthy"
 
     def test_calling_open_fails(self, temp_project: Path) -> None:
         """Calling open() in domain should be flagged."""
@@ -512,8 +512,8 @@ class TestCheckDomainPurity:
             file_paths=[domain_file],
         )
 
-        assert len(violations) >= 1
-        assert any("open" in v["message"] for v in violations)
+        assert len(violations) >= 1, "Expected len(violations) >= 1"
+        assert any("open" in v["message"] for v in violations), "Expected any() to be truthy"
 
     def test_calling_subprocess_fails(self, temp_project: Path) -> None:
         """Calling subprocess functions in domain should be flagged."""
@@ -531,7 +531,7 @@ class TestCheckDomainPurity:
             file_paths=[domain_file],
         )
 
-        assert len(violations) >= 1
+        assert len(violations) >= 1, "Expected len(violations) >= 1"
 
     def test_pure_business_logic_passes(self, temp_project: Path) -> None:
         """Pure business logic without I/O should pass."""
@@ -560,7 +560,7 @@ class TestCheckDomainPurity:
             file_paths=[domain_file],
         )
 
-        assert len(violations) == 0
+        assert len(violations) == 0, "Expected len(violations) to equal 0"
 
     def test_from_import_detected(self, temp_project: Path) -> None:
         """'from x import y' form should also be detected."""
@@ -577,8 +577,8 @@ class TestCheckDomainPurity:
             file_paths=[domain_file],
         )
 
-        assert len(violations) >= 1
-        assert any("requests" in v["message"] for v in violations)
+        assert len(violations) >= 1, "Expected len(violations) >= 1"
+        assert any("requests" in v["message"] for v in violations), "Expected any() to be truthy"
 
     def test_custom_forbidden_imports(self, temp_project: Path) -> None:
         """Custom forbidden imports should be detected."""
@@ -596,8 +596,8 @@ class TestCheckDomainPurity:
             forbidden_imports=["my_io_library"],
         )
 
-        assert len(violations) == 1
-        assert "my_io_library" in violations[0]["message"]
+        assert len(violations) == 1, "Expected len(violations) to equal 1"
+        assert "my_io_library" in violations[0]["message"], "Expected 'my_io_library' in violations[0]['message']"
 
 
 # =============================================================================
@@ -633,8 +633,8 @@ class TestCheckCircularImports:
             ],
         )
 
-        assert len(violations) >= 1
-        assert any("circular" in v["message"].lower() for v in violations)
+        assert len(violations) >= 1, "Expected len(violations) >= 1"
+        assert any("circular" in v["message"].lower() for v in violations), "Expected any() to be truthy"
 
     def test_three_way_cycle_detected(self, temp_project: Path) -> None:
         """A → B → C → A cycle should be detected."""
@@ -651,7 +651,7 @@ class TestCheckCircularImports:
             ],
         )
 
-        assert len(violations) >= 1
+        assert len(violations) >= 1, "Expected len(violations) >= 1"
 
     def test_type_checking_imports_ignored(self, temp_project: Path) -> None:
         """Imports inside TYPE_CHECKING blocks should be ignored by default."""
@@ -719,7 +719,7 @@ class TestCheckCircularImports:
             ],
         )
 
-        assert len(violations) == 0
+        assert len(violations) == 0, "Expected len(violations) to equal 0"
 
     def test_max_depth_limits_detection(self, temp_project: Path) -> None:
         """Cycles longer than max_depth should not be detected."""
@@ -753,7 +753,7 @@ class TestCheckCircularImports:
         )
 
         # Should complete without errors
-        assert isinstance(violations, list)
+        assert isinstance(violations, list), "Expected isinstance() to be truthy"
 
 
 # =============================================================================
@@ -772,7 +772,7 @@ class TestEdgeCases:
             layer_detection={},
             layer_rules={},
         )
-        assert v1 == []
+        assert v1 == [], "Expected v1 to equal []"
 
         # constructor_injection
         v2 = check_constructor_injection(
@@ -780,21 +780,21 @@ class TestEdgeCases:
             file_paths=[],
             class_patterns=["*Service"],
         )
-        assert v2 == []
+        assert v2 == [], "Expected v2 to equal []"
 
         # domain_purity
         v3 = check_domain_purity(
             repo_root=temp_project,
             file_paths=[],
         )
-        assert v3 == []
+        assert v3 == [], "Expected v3 to equal []"
 
         # circular_imports
         v4 = check_circular_imports(
             repo_root=temp_project,
             file_paths=[],
         )
-        assert v4 == []
+        assert v4 == [], "Expected v4 to equal []"
 
     def test_nonexistent_file(self, temp_project: Path) -> None:
         """Checks should handle nonexistent files gracefully."""
@@ -807,7 +807,7 @@ class TestEdgeCases:
             layer_detection={"**/domain/**": "domain"},
             layer_rules={"domain": {"forbidden": ["infrastructure"]}},
         )
-        assert violations == []
+        assert violations == [], "Expected violations to equal []"
 
     def test_empty_file(self, temp_project: Path) -> None:
         """Checks should handle empty files gracefully."""
@@ -818,7 +818,7 @@ class TestEdgeCases:
             repo_root=temp_project,
             file_paths=[empty_file],
         )
-        assert violations == []
+        assert violations == [], "Expected violations to equal []"
 
     def test_unicode_content(self, temp_project: Path) -> None:
         """Checks should handle unicode content."""
@@ -834,7 +834,7 @@ class TestEdgeCases:
             repo_root=temp_project,
             file_paths=[unicode_file],
         )
-        assert violations == []
+        assert violations == [], "Expected violations to equal []"
 
     def test_relative_path_handling(self, temp_project: Path) -> None:
         """Check that relative paths are properly handled."""
@@ -860,9 +860,9 @@ class TestEdgeCases:
             layer_rules=layer_rules,
         )
 
-        assert len(violations) == 1
+        assert len(violations) == 1, "Expected len(violations) to equal 1"
         # Verify the file path in violation is relative
-        assert "domain" in violations[0]["file"]
+        assert "domain" in violations[0]["file"], "Expected 'domain' in violations[0]['file']"
 
 
 # =============================================================================
@@ -907,14 +907,14 @@ class TestIntegration:
             layer_detection=layer_detection,
             layer_rules=layer_rules,
         )
-        assert len(layer_violations) >= 1
+        assert len(layer_violations) >= 1, "Expected len(layer_violations) >= 1"
 
         # Check domain purity
         purity_violations = check_domain_purity(
             repo_root=temp_project,
             file_paths=[domain_file],
         )
-        assert len(purity_violations) >= 1
+        assert len(purity_violations) >= 1, "Expected len(purity_violations) >= 1"
 
         # Check constructor injection
         di_violations = check_constructor_injection(
@@ -923,7 +923,7 @@ class TestIntegration:
             class_patterns=["*Service"],
             forbidden_instantiations=["Database("],
         )
-        assert len(di_violations) >= 1
+        assert len(di_violations) >= 1, "Expected len(di_violations) >= 1"
 
 
 if __name__ == "__main__":

@@ -39,32 +39,32 @@ class TestBaselineManager:
     def test_load_nonexistent(self, manager):
         """Test loading nonexistent baseline returns None."""
         result = manager.load()
-        assert result is None
+        assert result is None, "Expected result is None"
 
     def test_exists_false_when_no_file(self, manager):
         """Test exists returns False when no baseline file."""
-        assert manager.exists() is False
+        assert manager.exists() is False, "Expected manager.exists() is False"
 
     def test_save_and_load(self, manager, sample_violations):
         """Test saving and loading baseline."""
         baseline = manager.create_from_violations(sample_violations, "abc123")
         manager.save(baseline)
 
-        assert manager.exists()
+        assert manager.exists(), "Expected manager.exists() to be truthy"
 
         loaded = manager.load()
-        assert loaded is not None
-        assert loaded.commit_sha == "abc123"
-        assert len(loaded.entries) == 2
+        assert loaded is not None, "Expected loaded is not None"
+        assert loaded.commit_sha == "abc123", "Expected loaded.commit_sha to equal 'abc123'"
+        assert len(loaded.entries) == 2, "Expected len(loaded.entries) to equal 2"
 
     def test_create_from_violations(self, manager, sample_violations):
         """Test creating baseline from violations."""
         baseline = manager.create_from_violations(sample_violations, "sha123")
 
-        assert len(baseline.entries) == 2
-        assert baseline.commit_sha == "sha123"
+        assert len(baseline.entries) == 2, "Expected len(baseline.entries) to equal 2"
+        assert baseline.commit_sha == "sha123", "Expected baseline.commit_sha to equal 'sha123'"
         for violation in sample_violations:
-            assert baseline.contains(violation)
+            assert baseline.contains(violation), "Expected baseline.contains() to be truthy"
 
     def test_compare_success(self, manager, sample_violations):
         """Test comparing violations against baseline."""
@@ -75,9 +75,9 @@ class TestBaselineManager:
         # Compare with same violations
         comparison = manager.compare(sample_violations)
 
-        assert len(comparison.new_violations) == 0
-        assert len(comparison.fixed_violations) == 0
-        assert len(comparison.existing_violations) == 2
+        assert len(comparison.new_violations) == 0, "Expected len(comparison.new_violations) to equal 0"
+        assert len(comparison.fixed_violations) == 0, "Expected len(comparison.fixed_violat... to equal 0"
+        assert len(comparison.existing_violations) == 2, "Expected len(comparison.existing_vio... to equal 2"
 
     def test_compare_with_new_violation(self, manager, sample_violations):
         """Test comparing with a new violation."""
@@ -92,8 +92,8 @@ class TestBaselineManager:
 
         comparison = manager.compare(new_violations)
 
-        assert len(comparison.new_violations) == 1
-        assert comparison.new_violations[0].check_id == "check3"
+        assert len(comparison.new_violations) == 1, "Expected len(comparison.new_violations) to equal 1"
+        assert comparison.new_violations[0].check_id == "check3", "Expected comparison.new_violations[0... to equal 'check3'"
 
     def test_compare_no_baseline_raises(self, manager, sample_violations):
         """Test comparing when baseline doesn't exist raises error."""
@@ -109,9 +109,9 @@ class TestBaselineManager:
         # Update with more violations
         updated, added, removed = manager.update(sample_violations, "sha2")
 
-        assert added == 1
-        assert removed == 0
-        assert len(updated.entries) == 2
+        assert added == 1, "Expected added to equal 1"
+        assert removed == 0, "Expected removed to equal 0"
+        assert len(updated.entries) == 2, "Expected len(updated.entries) to equal 2"
 
     def test_update_removes_fixed(self, manager, sample_violations):
         """Test update removes fixed violations."""
@@ -122,9 +122,9 @@ class TestBaselineManager:
         # Update with fewer violations
         updated, added, removed = manager.update([sample_violations[0]], "sha2")
 
-        assert added == 0
-        assert removed == 1
-        assert len(updated.entries) == 1
+        assert added == 0, "Expected added to equal 0"
+        assert removed == 1, "Expected removed to equal 1"
+        assert len(updated.entries) == 1, "Expected len(updated.entries) to equal 1"
 
     def test_get_stats(self, manager, sample_violations):
         """Test getting baseline statistics."""
@@ -133,16 +133,16 @@ class TestBaselineManager:
 
         stats = manager.get_stats()
 
-        assert stats is not None
-        assert stats["total_entries"] == 2
-        assert stats["commit_sha"] == "sha123"
-        assert "by_check" in stats
-        assert "by_file" in stats
+        assert stats is not None, "Expected stats is not None"
+        assert stats["total_entries"] == 2, "Expected stats['total_entries'] to equal 2"
+        assert stats["commit_sha"] == "sha123", "Expected stats['commit_sha'] to equal 'sha123'"
+        assert "by_check" in stats, "Expected 'by_check' in stats"
+        assert "by_file" in stats, "Expected 'by_file' in stats"
 
     def test_get_stats_no_baseline(self, manager):
         """Test get_stats returns None when no baseline."""
         stats = manager.get_stats()
-        assert stats is None
+        assert stats is None, "Expected stats is None"
 
     def test_load_corrupted_baseline(self, manager, temp_baseline_dir):
         """Test loading corrupted baseline raises error."""
@@ -168,7 +168,7 @@ class TestGitHelper:
 
         files = GitHelper.get_changed_files("origin/main", "HEAD")
 
-        assert files == ["file1.py", "file2.py", "dir/file3.py"]
+        assert files == ["file1.py", "file2.py", "dir/file3.py"], "Expected files to equal ['file1.py', 'file2.py', 'd..."
         mock_run.assert_called_once()
 
     @patch("subprocess.run")
@@ -181,7 +181,7 @@ class TestGitHelper:
 
         files = GitHelper.get_changed_files("origin/main", "HEAD")
 
-        assert files == []
+        assert files == [], "Expected files to equal []"
 
     @patch("subprocess.run")
     def test_get_changed_files_error(self, mock_run):
@@ -202,7 +202,7 @@ class TestGitHelper:
 
         sha = GitHelper.get_current_sha()
 
-        assert sha == "abc123def456"
+        assert sha == "abc123def456", "Expected sha to equal 'abc123def456'"
 
     @patch("subprocess.run")
     def test_get_current_branch(self, mock_run):
@@ -214,14 +214,14 @@ class TestGitHelper:
 
         branch = GitHelper.get_current_branch()
 
-        assert branch == "feature/my-branch"
+        assert branch == "feature/my-branch", "Expected branch to equal 'feature/my-branch'"
 
     @patch("subprocess.run")
     def test_is_git_repo_true(self, mock_run):
         """Test is_git_repo returns True for git repos."""
         mock_run.return_value = MagicMock(returncode=0)
 
-        assert GitHelper.is_git_repo() is True
+        assert GitHelper.is_git_repo() is True, "Expected GitHelper.is_git_repo() is True"
 
     @patch("subprocess.run")
     def test_is_git_repo_false(self, mock_run):
@@ -229,7 +229,7 @@ class TestGitHelper:
         from subprocess import CalledProcessError
         mock_run.side_effect = CalledProcessError(1, "git")
 
-        assert GitHelper.is_git_repo() is False
+        assert GitHelper.is_git_repo() is False, "Expected GitHelper.is_git_repo() is False"
 
     @patch("subprocess.run")
     def test_get_merge_base(self, mock_run):
@@ -241,7 +241,7 @@ class TestGitHelper:
 
         result = GitHelper.get_merge_base("origin/main", "HEAD")
 
-        assert result == "deadbeef123"
+        assert result == "deadbeef123", "Expected result to equal 'deadbeef123'"
 
     @patch("subprocess.run")
     def test_get_repo_root(self, mock_run):
@@ -253,14 +253,14 @@ class TestGitHelper:
 
         root = GitHelper.get_repo_root()
 
-        assert root == Path("/path/to/repo")
+        assert root == Path("/path/to/repo"), "Expected root to equal Path('/path/to/repo')"
 
     @patch("subprocess.run")
     def test_file_exists_at_ref_true(self, mock_run):
         """Test file existence check at ref."""
         mock_run.return_value = MagicMock(returncode=0)
 
-        assert GitHelper.file_exists_at_ref("file.py", "HEAD") is True
+        assert GitHelper.file_exists_at_ref("file.py", "HEAD") is True, "Expected GitHelper.file_exists_at_re... is True"
 
     @patch("subprocess.run")
     def test_file_exists_at_ref_false(self, mock_run):
@@ -268,4 +268,4 @@ class TestGitHelper:
         from subprocess import CalledProcessError
         mock_run.side_effect = CalledProcessError(1, "git")
 
-        assert GitHelper.file_exists_at_ref("file.py", "HEAD") is False
+        assert GitHelper.file_exists_at_ref("file.py", "HEAD") is False, "Expected GitHelper.file_exists_at_re... is False"

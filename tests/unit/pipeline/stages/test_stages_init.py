@@ -19,10 +19,10 @@ class TestStagesPackageExports:
             SpecExecutor,
         )
 
-        assert IntakeExecutor is not None
-        assert ClarifyExecutor is not None
-        assert AnalyzeExecutor is not None
-        assert SpecExecutor is not None
+        assert IntakeExecutor is not None, "Expected IntakeExecutor is not None"
+        assert ClarifyExecutor is not None, "Expected ClarifyExecutor is not None"
+        assert AnalyzeExecutor is not None, "Expected AnalyzeExecutor is not None"
+        assert SpecExecutor is not None, "Expected SpecExecutor is not None"
 
     def test_exports_factory_functions(self):
         """Package exports factory functions."""
@@ -33,10 +33,10 @@ class TestStagesPackageExports:
             create_spec_executor,
         )
 
-        assert callable(create_intake_executor)
-        assert callable(create_clarify_executor)
-        assert callable(create_analyze_executor)
-        assert callable(create_spec_executor)
+        assert callable(create_intake_executor), "Expected callable() to be truthy"
+        assert callable(create_clarify_executor), "Expected callable() to be truthy"
+        assert callable(create_analyze_executor), "Expected callable() to be truthy"
+        assert callable(create_spec_executor), "Expected callable() to be truthy"
 
     def test_factory_functions_return_correct_types(self):
         """Factory functions return correct executor types."""
@@ -51,10 +51,10 @@ class TestStagesPackageExports:
             create_spec_executor,
         )
 
-        assert isinstance(create_intake_executor(), IntakeExecutor)
-        assert isinstance(create_clarify_executor(), ClarifyExecutor)
-        assert isinstance(create_analyze_executor(), AnalyzeExecutor)
-        assert isinstance(create_spec_executor(), SpecExecutor)
+        assert isinstance(create_intake_executor(), IntakeExecutor), "Expected isinstance() to be truthy"
+        assert isinstance(create_clarify_executor(), ClarifyExecutor), "Expected isinstance() to be truthy"
+        assert isinstance(create_analyze_executor(), AnalyzeExecutor), "Expected isinstance() to be truthy"
+        assert isinstance(create_spec_executor(), SpecExecutor), "Expected isinstance() to be truthy"
 
 
 class TestDesignStagesRegistration:
@@ -68,10 +68,10 @@ class TestDesignStagesRegistration:
         registry = StageExecutorRegistry()
         register_design_stages(registry)
 
-        assert registry.has_stage("intake")
-        assert registry.has_stage("clarify")
-        assert registry.has_stage("analyze")
-        assert registry.has_stage("spec")
+        assert registry.has_stage("intake"), "Expected registry.has_stage() to be truthy"
+        assert registry.has_stage("clarify"), "Expected registry.has_stage() to be truthy"
+        assert registry.has_stage("analyze"), "Expected registry.has_stage() to be truthy"
+        assert registry.has_stage("spec"), "Expected registry.has_stage() to be truthy"
 
     def test_registered_stages_create_correct_executors(self):
         """Registered stages create correct executor instances."""
@@ -87,7 +87,7 @@ class TestDesignStagesRegistration:
         registry = StageExecutorRegistry()
         register_design_stages(registry)
 
-        assert isinstance(registry.get("intake"), IntakeExecutor)
-        assert isinstance(registry.get("clarify"), ClarifyExecutor)
-        assert isinstance(registry.get("analyze"), AnalyzeExecutor)
-        assert isinstance(registry.get("spec"), SpecExecutor)
+        assert isinstance(registry.get("intake"), IntakeExecutor), "Expected isinstance() to be truthy"
+        assert isinstance(registry.get("clarify"), ClarifyExecutor), "Expected isinstance() to be truthy"
+        assert isinstance(registry.get("analyze"), AnalyzeExecutor), "Expected isinstance() to be truthy"
+        assert isinstance(registry.get("spec"), SpecExecutor), "Expected isinstance() to be truthy"

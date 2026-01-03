@@ -21,15 +21,15 @@ class TestContextRetrieverInit:
         """Test initialization with project path."""
         retriever = ContextRetriever(project_path=str(tmp_path))
 
-        assert retriever.project_path == tmp_path.resolve()
-        assert retriever.config is not None
+        assert retriever.project_path == tmp_path.resolve(), "Expected retriever.project_path to equal tmp_path.resolve()"
+        assert retriever.config is not None, "Expected retriever.config is not None"
 
     def test_init_loads_default_config(self, tmp_path: Path):
         """Test initialization loads default config when none exists."""
         retriever = ContextRetriever(project_path=str(tmp_path))
 
-        assert "retrieval" in retriever.config
-        assert "filters" in retriever.config
+        assert "retrieval" in retriever.config, "Expected 'retrieval' in retriever.config"
+        assert "filters" in retriever.config, "Expected 'filters' in retriever.config"
 
     def test_init_loads_custom_config(self, tmp_path: Path):
         """Test initialization loads custom config file."""
@@ -45,7 +45,7 @@ retrieval:
 
         retriever = ContextRetriever(project_path=str(tmp_path))
 
-        assert retriever.config["retrieval"]["budget"]["default_tokens"] == 8000
+        assert retriever.config["retrieval"]["budget"]["default_tokens"] == 8000, "Expected retriever.config['retrieval... to equal 8000"
 
     def test_init_with_explicit_config_path(self, tmp_path: Path):
         """Test initialization with explicit config path."""
@@ -61,16 +61,16 @@ retrieval:
             config_path=str(config_file)
         )
 
-        assert retriever.config["retrieval"]["budget"]["default_tokens"] == 5000
+        assert retriever.config["retrieval"]["budget"]["default_tokens"] == 5000, "Expected retriever.config['retrieval... to equal 5000"
 
     def test_lazy_load_assembler(self, tmp_path: Path):
         """Test assembler is lazily loaded."""
         retriever = ContextRetriever(project_path=str(tmp_path))
 
-        assert retriever._assembler is None
+        assert retriever._assembler is None, "Expected retriever._assembler is None"
         assembler = retriever.assembler
-        assert assembler is not None
-        assert retriever.assembler is assembler  # Same instance
+        assert assembler is not None, "Expected assembler is not None"
+        assert retriever.assembler is assembler, "Expected retriever.assembler is assembler"# Same instance
 
 
 class TestContextRetrieverLSP:
@@ -80,8 +80,8 @@ class TestContextRetrieverLSP:
         """Test LSP adapter is lazily loaded."""
         retriever = ContextRetriever(project_path=str(tmp_path))
 
-        assert retriever._lsp_adapter is None
-        assert retriever._lsp_available is None
+        assert retriever._lsp_adapter is None, "Expected retriever._lsp_adapter is None"
+        assert retriever._lsp_available is None, "Expected retriever._lsp_available is None"
 
     def test_lsp_adapter_not_available(self, tmp_path: Path):
         """Test graceful degradation when LSP not available."""
@@ -91,7 +91,7 @@ class TestContextRetrieverLSP:
             retriever._lsp_available = False
             symbols = retriever._retrieve_lsp_symbols("test query")
 
-        assert symbols == []
+        assert symbols == [], "Expected symbols to equal []"
 
     def test_lsp_adapter_import_error(self, tmp_path: Path):
         """Test graceful handling of LSP import errors."""
@@ -101,7 +101,7 @@ class TestContextRetrieverLSP:
         retriever._lsp_available = False
         adapter = retriever.lsp_adapter
 
-        assert adapter is None
+        assert adapter is None, "Expected adapter is None"
 
 
 class TestContextRetrieverVectorSearch:
@@ -111,8 +111,8 @@ class TestContextRetrieverVectorSearch:
         """Test vector search is lazily loaded."""
         retriever = ContextRetriever(project_path=str(tmp_path))
 
-        assert retriever._vector_search is None
-        assert retriever._vector_available is None
+        assert retriever._vector_search is None, "Expected retriever._vector_search is None"
+        assert retriever._vector_available is None, "Expected retriever._vector_available is None"
 
     def test_vector_search_not_available(self, tmp_path: Path):
         """Test graceful degradation when vector search not available."""
@@ -121,7 +121,7 @@ class TestContextRetrieverVectorSearch:
 
         results = retriever._retrieve_vector_results("test query")
 
-        assert results == []
+        assert results == [], "Expected results to equal []"
 
 
 class TestContextRetrieverRetrieve:
@@ -142,7 +142,7 @@ class TestContextRetrieverRetrieve:
                 with patch.object(retriever.assembler, 'assemble', return_value=mock_context):
                     context = retriever.retrieve("test query")
 
-        assert isinstance(context, CodeContext)
+        assert isinstance(context, CodeContext), "Expected isinstance() to be truthy"
 
     def test_retrieve_uses_default_budget(self, tmp_path: Path):
         """Test retrieve uses default token budget from config."""
@@ -160,7 +160,7 @@ class TestContextRetrieverRetrieve:
 
         # Check budget was passed to assemble
         call_kwargs = mock_assemble.call_args[1]
-        assert call_kwargs["budget_tokens"] == 6000  # Default
+        assert call_kwargs["budget_tokens"] == 6000, "Expected call_kwargs['budget_tokens'] to equal 6000"# Default
 
     def test_retrieve_with_custom_budget(self, tmp_path: Path):
         """Test retrieve with custom token budget."""
@@ -177,7 +177,7 @@ class TestContextRetrieverRetrieve:
                     retriever.retrieve("test query", budget_tokens=4000)
 
         call_kwargs = mock_assemble.call_args[1]
-        assert call_kwargs["budget_tokens"] == 4000
+        assert call_kwargs["budget_tokens"] == 4000, "Expected call_kwargs['budget_tokens'] to equal 4000"
 
     def test_retrieve_with_entry_points(self, tmp_path: Path):
         """Test retrieve with entry points."""
@@ -243,9 +243,9 @@ class TestContextRetrieverRetrieve:
                 with patch.object(retriever.assembler, 'assemble', return_value=mock_context):
                     context = retriever.retrieve("test query")
 
-        assert "project_path" in context.retrieval_metadata
-        assert context.retrieval_metadata["lsp_enabled"]
-        assert context.retrieval_metadata["vector_enabled"]
+        assert "project_path" in context.retrieval_metadata, "Expected 'project_path' in context.retrieval_metadata"
+        assert context.retrieval_metadata["lsp_enabled"], "Assertion failed"
+        assert context.retrieval_metadata["vector_enabled"], "Assertion failed"
 
 
 class TestKeywordExtraction:
@@ -257,9 +257,9 @@ class TestKeywordExtraction:
 
         keywords = retriever._extract_keywords("order discount processing")
 
-        assert "order" in keywords
-        assert "discount" in keywords
-        assert "processing" in keywords
+        assert "order" in keywords, "Expected 'order' in keywords"
+        assert "discount" in keywords, "Expected 'discount' in keywords"
+        assert "processing" in keywords, "Expected 'processing' in keywords"
 
     def test_extract_keywords_filters_stopwords(self, tmp_path: Path):
         """Test stopwords are filtered out."""
@@ -267,10 +267,10 @@ class TestKeywordExtraction:
 
         keywords = retriever._extract_keywords("the order is processing")
 
-        assert "the" not in keywords
-        assert "is" not in keywords
-        assert "order" in keywords
-        assert "processing" in keywords
+        assert "the" not in keywords, "Expected 'the' not in keywords"
+        assert "is" not in keywords, "Expected 'is' not in keywords"
+        assert "order" in keywords, "Expected 'order' in keywords"
+        assert "processing" in keywords, "Expected 'processing' in keywords"
 
     def test_extract_keywords_filters_short_words(self, tmp_path: Path):
         """Test short words (<=2 chars) are filtered."""
@@ -278,7 +278,7 @@ class TestKeywordExtraction:
 
         keywords = retriever._extract_keywords("a to be or")
 
-        assert len(keywords) == 0
+        assert len(keywords) == 0, "Expected len(keywords) to equal 0"
 
     def test_extract_keywords_handles_camelcase(self, tmp_path: Path):
         """Test camelCase identifiers are handled."""
@@ -286,8 +286,8 @@ class TestKeywordExtraction:
 
         keywords = retriever._extract_keywords("OrderService DiscountCalculator")
 
-        assert "OrderService" in keywords
-        assert "DiscountCalculator" in keywords
+        assert "OrderService" in keywords, "Expected 'OrderService' in keywords"
+        assert "DiscountCalculator" in keywords, "Expected 'DiscountCalculator' in keywords"
 
     def test_extract_keywords_deduplicates(self, tmp_path: Path):
         """Test duplicate keywords are removed."""
@@ -295,7 +295,7 @@ class TestKeywordExtraction:
 
         keywords = retriever._extract_keywords("order Order ORDER")
 
-        assert len([k for k in keywords if k.lower() == "order"]) == 1
+        assert len([k for k in keywords if k.lower() == "order"]) == 1, "Expected len([k for k in keywords if... to equal 1"
 
 
 class TestSymbolContext:
@@ -308,7 +308,7 @@ class TestSymbolContext:
 
         result = retriever.get_symbol_context("OrderService")
 
-        assert result is None
+        assert result is None, "Expected result is None"
 
     def test_get_symbol_context_symbol_not_found(self, tmp_path: Path):
         """Test get_symbol_context returns None when symbol not found."""
@@ -321,7 +321,7 @@ class TestSymbolContext:
 
         result = retriever.get_symbol_context("NonexistentSymbol")
 
-        assert result is None
+        assert result is None, "Expected result is None"
 
 
 class TestFileContext:
@@ -333,7 +333,7 @@ class TestFileContext:
 
         result = retriever.get_file_context(None)
 
-        assert result is None
+        assert result is None, "Expected result is None"
 
     def test_get_file_context_returns_file_context(self, tmp_path: Path):
         """Test get_file_context returns FileContext."""
@@ -357,7 +357,7 @@ class TestFileContext:
         with patch.object(retriever.assembler, 'assemble_from_files', return_value=mock_code_context):
             result = retriever.get_file_context(str(test_file))
 
-        assert result is not None
+        assert result is not None, "Expected result is not None"
 
 
 class TestIndexing:
@@ -370,7 +370,7 @@ class TestIndexing:
 
         stats = retriever.index()
 
-        assert isinstance(stats, IndexStats)
+        assert isinstance(stats, IndexStats), "Expected isinstance() to be truthy"
 
     def test_index_without_vector_search(self, tmp_path: Path):
         """Test index works when vector search unavailable."""
@@ -379,18 +379,18 @@ class TestIndexing:
 
         stats = retriever.index()
 
-        assert stats.file_count == 0
-        assert len(stats.errors) == 0
+        assert stats.file_count == 0, "Expected stats.file_count to equal 0"
+        assert len(stats.errors) == 0, "Expected len(stats.errors) to equal 0"
 
     def test_index_stats_fields(self, tmp_path: Path):
         """Test IndexStats has expected fields."""
         stats = IndexStats()
 
-        assert stats.file_count == 0
-        assert stats.chunk_count == 0
-        assert stats.symbol_count == 0
-        assert stats.duration_ms == 0
-        assert stats.errors == []
+        assert stats.file_count == 0, "Expected stats.file_count to equal 0"
+        assert stats.chunk_count == 0, "Expected stats.chunk_count to equal 0"
+        assert stats.symbol_count == 0, "Expected stats.symbol_count to equal 0"
+        assert stats.duration_ms == 0, "Expected stats.duration_ms to equal 0"
+        assert stats.errors == [], "Expected stats.errors to equal []"
 
 
 class TestCheckDependencies:
@@ -403,10 +403,10 @@ class TestCheckDependencies:
         with patch.dict('sys.modules', {'tools.lsp_adapter': None}):
             status = retriever.check_dependencies()
 
-        assert "lsp" in status
-        assert "vector" in status
-        assert "available" in status["lsp"]
-        assert "available" in status["vector"]
+        assert "lsp" in status, "Expected 'lsp' in status"
+        assert "vector" in status, "Expected 'vector' in status"
+        assert "available" in status["lsp"], "Expected 'available' in status['lsp']"
+        assert "available" in status["vector"], "Expected 'available' in status['vector']"
 
 
 class TestShutdown:
@@ -422,7 +422,7 @@ class TestShutdown:
         retriever.shutdown()
 
         mock_adapter.shutdown.assert_called_once()
-        assert retriever._lsp_adapter is None
+        assert retriever._lsp_adapter is None, "Expected retriever._lsp_adapter is None"
 
     def test_shutdown_handles_exception(self, tmp_path: Path):
         """Test shutdown handles adapter exception gracefully."""
@@ -435,7 +435,7 @@ class TestShutdown:
         # Should not raise
         retriever.shutdown()
 
-        assert retriever._lsp_adapter is None
+        assert retriever._lsp_adapter is None, "Expected retriever._lsp_adapter is None"
 
 
 if __name__ == "__main__":

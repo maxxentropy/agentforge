@@ -18,17 +18,17 @@ class TestAnthropicLLMClient:
     def test_client_import(self):
         """Verify AnthropicLLMClient can be imported."""
         from agentforge.core.llm.client import AnthropicLLMClient
-        assert AnthropicLLMClient is not None
+        assert AnthropicLLMClient is not None, "Expected AnthropicLLMClient is not None"
 
     def test_client_requires_api_key(self):
         """Client should require API key for real mode."""
         from agentforge.core.llm.client import AnthropicLLMClient
         # This tests that the client class exists and has expected signature
         # Actual API testing requires mock or integration tests
-        assert hasattr(AnthropicLLMClient, 'complete')
+        assert hasattr(AnthropicLLMClient, 'complete'), "Expected hasattr() to be truthy"
 
     def test_client_has_expected_methods(self):
         """Client should have expected interface methods."""
         from agentforge.core.llm.client import AnthropicLLMClient
-        assert hasattr(AnthropicLLMClient, 'complete')
-        assert hasattr(AnthropicLLMClient, 'complete_with_tools')
+        assert hasattr(AnthropicLLMClient, 'complete'), "Expected hasattr() to be truthy"
+        assert hasattr(AnthropicLLMClient, 'complete_with_tools'), "Expected hasattr() to be truthy"

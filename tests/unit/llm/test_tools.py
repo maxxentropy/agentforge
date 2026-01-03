@@ -47,53 +47,53 @@ class TestToolDefinitions:
 
     def test_read_file_has_valid_schema(self):
         """READ_FILE tool has valid input schema."""
-        assert READ_FILE.name == "read_file"
-        assert "path" in READ_FILE.input_schema["properties"]
-        assert "path" in READ_FILE.input_schema["required"]
+        assert READ_FILE.name == "read_file", "Expected READ_FILE.name to equal 'read_file'"
+        assert "path" in READ_FILE.input_schema["properties"], "Expected 'path' in READ_FILE.input_schema['pro..."
+        assert "path" in READ_FILE.input_schema["required"], "Expected 'path' in READ_FILE.input_schema['req..."
 
     def test_write_file_has_valid_schema(self):
         """WRITE_FILE tool has valid input schema."""
-        assert WRITE_FILE.name == "write_file"
+        assert WRITE_FILE.name == "write_file", "Expected WRITE_FILE.name to equal 'write_file'"
         props = WRITE_FILE.input_schema["properties"]
-        assert "path" in props
-        assert "content" in props
-        assert set(WRITE_FILE.input_schema["required"]) == {"path", "content"}
+        assert "path" in props, "Expected 'path' in props"
+        assert "content" in props, "Expected 'content' in props"
+        assert set(WRITE_FILE.input_schema["required"]) == {"path", "content"}, "Expected set(WRITE_FILE.input_schema... to equal {'path', 'content'}"
 
     def test_edit_file_has_valid_schema(self):
         """EDIT_FILE tool has valid input schema."""
-        assert EDIT_FILE.name == "edit_file"
+        assert EDIT_FILE.name == "edit_file", "Expected EDIT_FILE.name to equal 'edit_file'"
         props = EDIT_FILE.input_schema["properties"]
-        assert "start_line" in props
-        assert "end_line" in props
-        assert "new_content" in props
+        assert "start_line" in props, "Expected 'start_line' in props"
+        assert "end_line" in props, "Expected 'end_line' in props"
+        assert "new_content" in props, "Expected 'new_content' in props"
 
     def test_complete_has_valid_schema(self):
         """COMPLETE tool has valid input schema."""
-        assert COMPLETE.name == "complete"
-        assert "summary" in COMPLETE.input_schema["properties"]
-        assert "summary" in COMPLETE.input_schema["required"]
+        assert COMPLETE.name == "complete", "Expected COMPLETE.name to equal 'complete'"
+        assert "summary" in COMPLETE.input_schema["properties"], "Expected 'summary' in COMPLETE.input_schema['prop..."
+        assert "summary" in COMPLETE.input_schema["required"], "Expected 'summary' in COMPLETE.input_schema['requ..."
 
     def test_escalate_has_valid_schema(self):
         """ESCALATE tool has valid input schema."""
-        assert ESCALATE.name == "escalate"
-        assert "reason" in ESCALATE.input_schema["properties"]
-        assert "reason" in ESCALATE.input_schema["required"]
+        assert ESCALATE.name == "escalate", "Expected ESCALATE.name to equal 'escalate'"
+        assert "reason" in ESCALATE.input_schema["properties"], "Expected 'reason' in ESCALATE.input_schema['prop..."
+        assert "reason" in ESCALATE.input_schema["required"], "Expected 'reason' in ESCALATE.input_schema['requ..."
 
     def test_extract_function_has_valid_schema(self):
         """EXTRACT_FUNCTION tool has valid input schema."""
-        assert EXTRACT_FUNCTION.name == "extract_function"
+        assert EXTRACT_FUNCTION.name == "extract_function", "Expected EXTRACT_FUNCTION.name to equal 'extract_function'"
         props = EXTRACT_FUNCTION.input_schema["properties"]
-        assert "file_path" in props
-        assert "source_function" in props
-        assert "start_line" in props
-        assert "end_line" in props
-        assert "new_function_name" in props
+        assert "file_path" in props, "Expected 'file_path' in props"
+        assert "source_function" in props, "Expected 'source_function' in props"
+        assert "start_line" in props, "Expected 'start_line' in props"
+        assert "end_line" in props, "Expected 'end_line' in props"
+        assert "new_function_name" in props, "Expected 'new_function_name' in props"
 
     def test_run_check_has_valid_schema(self):
         """RUN_CHECK tool has valid input schema."""
-        assert RUN_CHECK.name == "run_check"
+        assert RUN_CHECK.name == "run_check", "Expected RUN_CHECK.name to equal 'run_check'"
         # run_check has optional parameters
-        assert RUN_CHECK.input_schema.get("required", []) == []
+        assert RUN_CHECK.input_schema.get("required", []) == [], "Expected RUN_CHECK.input_schema.get(... to equal []"
 
     def test_all_tools_are_tool_definitions(self):
         """All tools in collections are ToolDefinition instances."""
@@ -106,7 +106,7 @@ class TestToolDefinitions:
         ]
         for collection in all_collections:
             for tool in collection:
-                assert isinstance(tool, ToolDefinition)
+                assert isinstance(tool, ToolDefinition), "Expected isinstance() to be truthy"
 
     def test_all_tools_have_required_fields(self):
         """All tools have name, description, and input_schema."""
@@ -126,10 +126,10 @@ class TestToolDefinitions:
         """All tools can be converted to API format."""
         for tool in BASE_TOOLS:
             api_format = tool.to_api_format()
-            assert "name" in api_format
-            assert "description" in api_format
-            assert "input_schema" in api_format
-            assert api_format["name"] == tool.name
+            assert "name" in api_format, "Expected 'name' in api_format"
+            assert "description" in api_format, "Expected 'description' in api_format"
+            assert "input_schema" in api_format, "Expected 'input_schema' in api_format"
+            assert api_format["name"] == tool.name, "Expected api_format['name'] to equal tool.name"
 
 
 class TestToolCollections:
@@ -138,37 +138,37 @@ class TestToolCollections:
     def test_base_tools_contains_essential_tools(self):
         """BASE_TOOLS contains essential tools for all tasks."""
         base_names = {t.name for t in BASE_TOOLS}
-        assert "read_file" in base_names
-        assert "write_file" in base_names
-        assert "complete" in base_names
-        assert "escalate" in base_names
+        assert "read_file" in base_names, "Expected 'read_file' in base_names"
+        assert "write_file" in base_names, "Expected 'write_file' in base_names"
+        assert "complete" in base_names, "Expected 'complete' in base_names"
+        assert "escalate" in base_names, "Expected 'escalate' in base_names"
 
     def test_refactoring_tools_contains_refactoring_tools(self):
         """REFACTORING_TOOLS contains refactoring-specific tools."""
         refactor_names = {t.name for t in REFACTORING_TOOLS}
-        assert "extract_function" in refactor_names
-        assert "simplify_conditional" in refactor_names
-        assert "run_check" in refactor_names
+        assert "extract_function" in refactor_names, "Expected 'extract_function' in refactor_names"
+        assert "simplify_conditional" in refactor_names, "Expected 'simplify_conditional' in refactor_names"
+        assert "run_check" in refactor_names, "Expected 'run_check' in refactor_names"
 
     def test_discovery_tools_contains_analysis_tools(self):
         """DISCOVERY_TOOLS contains analysis-specific tools."""
         discovery_names = {t.name for t in DISCOVERY_TOOLS}
-        assert "analyze_dependencies" in discovery_names
-        assert "detect_patterns" in discovery_names
-        assert "map_structure" in discovery_names
+        assert "analyze_dependencies" in discovery_names, "Expected 'analyze_dependencies' in discovery_names"
+        assert "detect_patterns" in discovery_names, "Expected 'detect_patterns' in discovery_names"
+        assert "map_structure" in discovery_names, "Expected 'map_structure' in discovery_names"
 
     def test_testing_tools_contains_test_tools(self):
         """TESTING_TOOLS contains test-specific tools."""
         testing_names = {t.name for t in TESTING_TOOLS}
-        assert "generate_test" in testing_names
-        assert "run_single_test" in testing_names
+        assert "generate_test" in testing_names, "Expected 'generate_test' in testing_names"
+        assert "run_single_test" in testing_names, "Expected 'run_single_test' in testing_names"
 
     def test_review_tools_contains_review_tools(self):
         """REVIEW_TOOLS contains code review tools."""
         review_names = {t.name for t in REVIEW_TOOLS}
-        assert "analyze_diff" in review_names
-        assert "add_review_comment" in review_names
-        assert "generate_review_summary" in review_names
+        assert "analyze_diff" in review_names, "Expected 'analyze_diff' in review_names"
+        assert "add_review_comment" in review_names, "Expected 'add_review_comment' in review_names"
+        assert "generate_review_summary" in review_names, "Expected 'generate_review_summary' in review_names"
 
     def test_no_duplicate_tool_names(self):
         """No duplicate tool names across collections."""
@@ -188,67 +188,67 @@ class TestGetToolsForTask:
         tools = get_tools_for_task("fix_violation")
         names = {t.name for t in tools}
         # Base tools
-        assert "read_file" in names
-        assert "write_file" in names
-        assert "complete" in names
+        assert "read_file" in names, "Expected 'read_file' in names"
+        assert "write_file" in names, "Expected 'write_file' in names"
+        assert "complete" in names, "Expected 'complete' in names"
         # Refactoring tools
-        assert "extract_function" in names
-        assert "run_check" in names
+        assert "extract_function" in names, "Expected 'extract_function' in names"
+        assert "run_check" in names, "Expected 'run_check' in names"
 
     def test_implement_feature_includes_base_and_testing(self):
         """implement_feature task includes base and testing tools."""
         tools = get_tools_for_task("implement_feature")
         names = {t.name for t in tools}
         # Base tools
-        assert "read_file" in names
-        assert "write_file" in names
+        assert "read_file" in names, "Expected 'read_file' in names"
+        assert "write_file" in names, "Expected 'write_file' in names"
         # Testing tools
-        assert "generate_test" in names
-        assert "run_single_test" in names
+        assert "generate_test" in names, "Expected 'generate_test' in names"
+        assert "run_single_test" in names, "Expected 'run_single_test' in names"
         # Should NOT include refactoring-only tools
-        assert "extract_function" not in names
+        assert "extract_function" not in names, "Expected 'extract_function' not in names"
 
     def test_write_tests_includes_testing_tools(self):
         """write_tests task includes testing-specific tools."""
         tools = get_tools_for_task("write_tests")
         names = {t.name for t in tools}
-        assert "generate_test" in names
-        assert "run_single_test" in names
+        assert "generate_test" in names, "Expected 'generate_test' in names"
+        assert "run_single_test" in names, "Expected 'run_single_test' in names"
 
     def test_discovery_includes_analysis_tools(self):
         """discovery task includes analysis tools."""
         tools = get_tools_for_task("discovery")
         names = {t.name for t in tools}
-        assert "analyze_dependencies" in names
-        assert "detect_patterns" in names
-        assert "map_structure" in names
+        assert "analyze_dependencies" in names, "Expected 'analyze_dependencies' in names"
+        assert "detect_patterns" in names, "Expected 'detect_patterns' in names"
+        assert "map_structure" in names, "Expected 'map_structure' in names"
         # Discovery is read-only, no write_file
-        assert "write_file" not in names
+        assert "write_file" not in names, "Expected 'write_file' not in names"
 
     def test_bridge_includes_discovery_and_mapping(self):
         """bridge task includes discovery and mapping tools."""
         tools = get_tools_for_task("bridge")
         names = {t.name for t in tools}
-        assert "analyze_dependencies" in names
-        assert "create_mapping" in names
+        assert "analyze_dependencies" in names, "Expected 'analyze_dependencies' in names"
+        assert "create_mapping" in names, "Expected 'create_mapping' in names"
 
     def test_code_review_includes_review_tools(self):
         """code_review task includes review-specific tools."""
         tools = get_tools_for_task("code_review")
         names = {t.name for t in tools}
-        assert "analyze_diff" in names
-        assert "add_review_comment" in names
-        assert "generate_review_summary" in names
+        assert "analyze_diff" in names, "Expected 'analyze_diff' in names"
+        assert "add_review_comment" in names, "Expected 'add_review_comment' in names"
+        assert "generate_review_summary" in names, "Expected 'generate_review_summary' in names"
         # Code review is read-only
-        assert "write_file" not in names
+        assert "write_file" not in names, "Expected 'write_file' not in names"
 
     def test_refactor_includes_refactoring_tools(self):
         """refactor task includes refactoring tools."""
         tools = get_tools_for_task("refactor")
         names = {t.name for t in tools}
-        assert "extract_function" in names
-        assert "inline_function" in names
-        assert "rename_symbol" in names
+        assert "extract_function" in names, "Expected 'extract_function' in names"
+        assert "inline_function" in names, "Expected 'inline_function' in names"
+        assert "rename_symbol" in names, "Expected 'rename_symbol' in names"
 
     def test_unknown_task_type_raises_error(self):
         """Unknown task type raises ValueError."""
@@ -261,7 +261,7 @@ class TestGetToolsForTask:
             tools = get_tools_for_task(task_type)
             assert len(tools) > 0, f"Task type {task_type} returned no tools"
             for tool in tools:
-                assert isinstance(tool, ToolDefinition)
+                assert isinstance(tool, ToolDefinition), "Expected isinstance() to be truthy"
 
     def test_tools_are_sorted_by_name(self):
         """Tools returned are sorted by name for consistency."""
@@ -277,13 +277,13 @@ class TestGetToolByName:
     def test_get_existing_tool(self):
         """Can retrieve existing tool by name."""
         tool = get_tool_by_name("read_file")
-        assert tool.name == "read_file"
-        assert isinstance(tool, ToolDefinition)
+        assert tool.name == "read_file", "Expected tool.name to equal 'read_file'"
+        assert isinstance(tool, ToolDefinition), "Expected isinstance() to be truthy"
 
     def test_get_refactoring_tool(self):
         """Can retrieve refactoring tool by name."""
         tool = get_tool_by_name("extract_function")
-        assert tool.name == "extract_function"
+        assert tool.name == "extract_function", "Expected tool.name to equal 'extract_function'"
 
     def test_unknown_tool_raises_key_error(self):
         """Unknown tool name raises KeyError."""
@@ -297,27 +297,27 @@ class TestGetToolsByCategory:
     def test_get_base_category(self):
         """Can retrieve base category tools."""
         tools = get_tools_by_category("base")
-        assert tools == BASE_TOOLS
+        assert tools == BASE_TOOLS, "Expected tools to equal BASE_TOOLS"
 
     def test_get_refactoring_category(self):
         """Can retrieve refactoring category tools."""
         tools = get_tools_by_category("refactoring")
-        assert tools == REFACTORING_TOOLS
+        assert tools == REFACTORING_TOOLS, "Expected tools to equal REFACTORING_TOOLS"
 
     def test_get_discovery_category(self):
         """Can retrieve discovery category tools."""
         tools = get_tools_by_category("discovery")
-        assert tools == DISCOVERY_TOOLS
+        assert tools == DISCOVERY_TOOLS, "Expected tools to equal DISCOVERY_TOOLS"
 
     def test_get_testing_category(self):
         """Can retrieve testing category tools."""
         tools = get_tools_by_category("testing")
-        assert tools == TESTING_TOOLS
+        assert tools == TESTING_TOOLS, "Expected tools to equal TESTING_TOOLS"
 
     def test_get_review_category(self):
         """Can retrieve review category tools."""
         tools = get_tools_by_category("review")
-        assert tools == REVIEW_TOOLS
+        assert tools == REVIEW_TOOLS, "Expected tools to equal REVIEW_TOOLS"
 
     def test_unknown_category_raises_error(self):
         """Unknown category raises ValueError."""
@@ -331,30 +331,30 @@ class TestListFunctions:
     def test_list_task_types(self):
         """list_task_types returns all supported task types."""
         task_types = list_task_types()
-        assert "fix_violation" in task_types
-        assert "implement_feature" in task_types
-        assert "write_tests" in task_types
-        assert "refactor" in task_types
-        assert "discovery" in task_types
-        assert "bridge" in task_types
-        assert "code_review" in task_types
+        assert "fix_violation" in task_types, "Expected 'fix_violation' in task_types"
+        assert "implement_feature" in task_types, "Expected 'implement_feature' in task_types"
+        assert "write_tests" in task_types, "Expected 'write_tests' in task_types"
+        assert "refactor" in task_types, "Expected 'refactor' in task_types"
+        assert "discovery" in task_types, "Expected 'discovery' in task_types"
+        assert "bridge" in task_types, "Expected 'bridge' in task_types"
+        assert "code_review" in task_types, "Expected 'code_review' in task_types"
 
     def test_list_task_types_is_sorted(self):
         """list_task_types returns sorted list."""
         task_types = list_task_types()
-        assert task_types == sorted(task_types)
+        assert task_types == sorted(task_types), "Expected task_types to equal sorted(task_types)"
 
     def test_list_all_tools(self):
         """list_all_tools returns all tool names."""
         tools = list_all_tools()
-        assert "read_file" in tools
-        assert "extract_function" in tools
-        assert "analyze_diff" in tools
+        assert "read_file" in tools, "Expected 'read_file' in tools"
+        assert "extract_function" in tools, "Expected 'extract_function' in tools"
+        assert "analyze_diff" in tools, "Expected 'analyze_diff' in tools"
 
     def test_list_all_tools_is_sorted(self):
         """list_all_tools returns sorted list."""
         tools = list_all_tools()
-        assert tools == sorted(tools)
+        assert tools == sorted(tools), "Expected tools to equal sorted(tools)"
 
 
 class TestToolSchemaValidity:
@@ -363,13 +363,13 @@ class TestToolSchemaValidity:
     @pytest.mark.parametrize("tool", BASE_TOOLS + REFACTORING_TOOLS)
     def test_tool_schema_has_object_type(self, tool: ToolDefinition):
         """Each tool schema has object type."""
-        assert tool.input_schema["type"] == "object"
+        assert tool.input_schema["type"] == "object", "Expected tool.input_schema['type'] to equal 'object'"
 
     @pytest.mark.parametrize("tool", BASE_TOOLS + REFACTORING_TOOLS)
     def test_tool_schema_has_properties(self, tool: ToolDefinition):
         """Each tool schema has properties."""
-        assert "properties" in tool.input_schema
-        assert isinstance(tool.input_schema["properties"], dict)
+        assert "properties" in tool.input_schema, "Expected 'properties' in tool.input_schema"
+        assert isinstance(tool.input_schema["properties"], dict), "Expected isinstance() to be truthy"
 
     @pytest.mark.parametrize("tool", BASE_TOOLS + REFACTORING_TOOLS)
     def test_required_fields_exist_in_properties(self, tool: ToolDefinition):
@@ -405,8 +405,8 @@ class TestToolIntegration:
             tools=tools,
         )
 
-        assert response.has_tool_calls
-        assert response.tool_calls[0].name == "read_file"
+        assert response.has_tool_calls, "Expected response.has_tool_calls to be truthy"
+        assert response.tool_calls[0].name == "read_file", "Expected response.tool_calls[0].name to equal 'read_file'"
 
     def test_tool_api_format_is_valid(self):
         """Tool API format matches Anthropic expected structure."""
@@ -414,17 +414,17 @@ class TestToolIntegration:
         api_format = tool.to_api_format()
 
         # Check required fields for Anthropic API
-        assert "name" in api_format
-        assert "description" in api_format
-        assert "input_schema" in api_format
+        assert "name" in api_format, "Expected 'name' in api_format"
+        assert "description" in api_format, "Expected 'description' in api_format"
+        assert "input_schema" in api_format, "Expected 'input_schema' in api_format"
 
         # Name should be lowercase with underscores
-        assert api_format["name"] == "read_file"
+        assert api_format["name"] == "read_file", "Expected api_format['name'] to equal 'read_file'"
 
         # Description should be non-empty
-        assert len(api_format["description"]) > 0
+        assert len(api_format["description"]) > 0, "Expected len(api_format['description']) > 0"
 
         # Input schema should be valid
         schema = api_format["input_schema"]
-        assert schema["type"] == "object"
-        assert "properties" in schema
+        assert schema["type"] == "object", "Expected schema['type'] to equal 'object'"
+        assert "properties" in schema, "Expected 'properties' in schema"

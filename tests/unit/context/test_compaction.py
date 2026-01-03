@@ -46,29 +46,29 @@ class TestCompactionManager:
         tokens = manager.estimate_tokens(context)
 
         # Should be approximately len(yaml_output) / 4
-        assert tokens > 0
-        assert tokens < 200
+        assert tokens > 0, "Expected tokens > 0"
+        assert tokens < 200, "Expected tokens < 200"
 
     def test_no_compaction_under_threshold(self, manager):
         """No compaction needed when under threshold."""
         # Small context well under budget
         context = {"fingerprint": "small", "task": "test"}
-        assert not manager.needs_compaction(context)
+        assert not manager.needs_compaction(context), "Assertion failed"
 
     def test_compaction_triggers_at_threshold(self, manager):
         """Compaction triggers when over threshold."""
         # Large context over budget
         context = {"data": "x" * 5000}  # ~1250 tokens
-        assert manager.needs_compaction(context)
+        assert manager.needs_compaction(context), "Expected manager.needs_compaction() to be truthy"
 
     def test_preserved_sections_untouched(self, manager, sample_context):
         """Preserved sections are never compacted."""
         result, audit = manager.compact(sample_context)
 
         # fingerprint, task, phase should be unchanged
-        assert result["fingerprint"] == sample_context["fingerprint"]
-        assert result["task"] == sample_context["task"]
-        assert result["phase"] == sample_context["phase"]
+        assert result["fingerprint"] == sample_context["fingerprint"], "Expected result['fingerprint'] to equal sample_context['fingerprint']"
+        assert result["task"] == sample_context["task"], "Expected result['task'] to equal sample_context['task']"
+        assert result["phase"] == sample_context["phase"], "Expected result['phase'] to equal sample_context['phase']"
 
     def test_custom_preserve_list(self, manager, sample_context):
         """Custom preserve list is respected."""
@@ -78,7 +78,7 @@ class TestCompactionManager:
         )
 
         # understanding should be unchanged
-        assert result["understanding"] == sample_context["understanding"]
+        assert result["understanding"] == sample_context["understanding"], "Expected result['understanding'] to equal sample_context['understandi..."
 
     def test_rules_applied_in_order(self, manager, sample_context):
         """Rules are applied in priority order."""
@@ -96,7 +96,7 @@ class TestCompactionManager:
                     None,
                 )
                 if rule_i and rule_j:
-                    assert rule_i.priority <= rule_j.priority
+                    assert rule_i.priority <= rule_j.priority, "Expected rule_i.priority <= rule_j.priority"
 
     def test_compaction_stops_at_budget(self, manager):
         """Compaction stops once budget is met."""
@@ -112,7 +112,7 @@ class TestCompactionManager:
         result, audit = manager_tight.compact(context)
 
         # Should stop once under budget
-        assert manager_tight.estimate_tokens(result) <= manager_tight.max_budget
+        assert manager_tight.estimate_tokens(result) <= manager_tight.max_budget, "Expected manager_tight.estimate_toke... <= manager_tight.max_budget"
 
 
 class TestCompactionStrategies:
@@ -127,24 +127,24 @@ class TestCompactionStrategies:
         long_string = "x" * 5000
         result = manager._truncate(long_string, max_tokens=100)
 
-        assert len(result) < len(long_string)
-        assert result.endswith("... (truncated)")
+        assert len(result) < len(long_string), "Expected len(result) < len(long_string)"
+        assert result.endswith("... (truncated)"), "Expected result.endswith() to be truthy"
 
     def test_truncate_no_change_if_under(self, manager):
         """TRUNCATE doesn't change short strings."""
         short_string = "hello"
         result = manager._truncate(short_string, max_tokens=100)
 
-        assert result == short_string
+        assert result == short_string, "Expected result to equal short_string"
 
     def test_truncate_middle_strategy(self, manager):
         """TRUNCATE_MIDDLE keeps start and end."""
         long_string = "START" + "x" * 5000 + "END"
         result = manager._truncate_middle(long_string, max_tokens=100)
 
-        assert "START" in result[:50]
-        assert "END" in result[-50:]
-        assert "(middle truncated)" in result
+        assert "START" in result[:50], "Expected 'START' in result[:50]"
+        assert "END" in result[-50:], "Expected 'END' in result[-50:]"
+        assert "(middle truncated)" in result, "Expected '(middle truncated)' in result"
 
     def test_keep_first_strategy(self):
         """KEEP_FIRST keeps first N items."""
@@ -162,8 +162,8 @@ class TestCompactionStrategies:
         result, _ = manager.compact(context)
 
         # Should be truncated to first 3
-        assert len(result["items"]) == 3
-        assert result["items"][0]["data"].startswith("item0")
+        assert len(result["items"]) == 3, "Expected len(result['items']) to equal 3"
+        assert result["items"][0]["data"].startswith("item0"), "Expected result['items'][0]['data']....() to be truthy"
 
     def test_keep_last_strategy(self):
         """KEEP_LAST keeps last N items."""
@@ -181,8 +181,8 @@ class TestCompactionStrategies:
         result, _ = manager.compact(context)
 
         # Should be truncated to last 3
-        assert len(result["items"]) == 3
-        assert result["items"][-1]["data"].startswith("item19")
+        assert len(result["items"]) == 3, "Expected len(result['items']) to equal 3"
+        assert result["items"][-1]["data"].startswith("item19"), "Expected result['items'][-1]['data']...() to be truthy"
 
     def test_remove_strategy(self):
         """REMOVE deletes the section entirely."""
@@ -199,8 +199,8 @@ class TestCompactionStrategies:
         context = {"required": "keep", "optional": "x" * 500}
         result, _ = manager.compact(context)
 
-        assert "required" in result
-        assert "optional" not in result
+        assert "required" in result, "Expected 'required' in result"
+        assert "optional" not in result, "Expected 'optional' not in result"
 
 
 class TestCompactionAudit:
@@ -219,10 +219,10 @@ class TestCompactionAudit:
 
         result = audit.to_dict()
 
-        assert result["applied"] is True
-        assert result["original_tokens"] == 5000
-        assert result["final_tokens"] == 3000
-        assert result["tokens_saved"] == 2000
+        assert result["applied"] is True, "Expected result['applied'] is True"
+        assert result["original_tokens"] == 5000, "Expected result['original_tokens'] to equal 5000"
+        assert result["final_tokens"] == 3000, "Expected result['final_tokens'] to equal 3000"
+        assert result["tokens_saved"] == 2000, "Expected result['tokens_saved'] to equal 2000"
 
     def test_audit_no_rules_applied(self):
         """Audit shows not applied when no rules used."""
@@ -235,8 +235,8 @@ class TestCompactionAudit:
 
         result = audit.to_dict()
 
-        assert result["applied"] is False
-        assert result["tokens_saved"] == 0
+        assert result["applied"] is False, "Expected result['applied'] is False"
+        assert result["tokens_saved"] == 0, "Expected result['tokens_saved'] to equal 0"
 
 
 class TestCompactionRule:
@@ -252,17 +252,17 @@ class TestCompactionRule:
 
         sorted_rules = sorted(rules)
 
-        assert [r.section for r in sorted_rules] == ["a", "b", "c"]
+        assert [r.section for r in sorted_rules] == ["a", "b", "c"], "Expected [r.section for r in sorted_... to equal ['a', 'b', 'c']"
 
     def test_default_rules_exist(self):
         """Default rules are defined."""
-        assert len(DEFAULT_RULES) > 0
+        assert len(DEFAULT_RULES) > 0, "Expected len(DEFAULT_RULES) > 0"
 
         # Check rules have required fields
         for rule in DEFAULT_RULES:
-            assert rule.section
-            assert rule.strategy
-            assert rule.priority >= 0
+            assert rule.section, "Expected rule.section to be truthy"
+            assert rule.strategy, "Expected rule.strategy to be truthy"
+            assert rule.priority >= 0, "Expected rule.priority >= 0"
 
 
 class TestPreservedSections:
@@ -270,9 +270,9 @@ class TestPreservedSections:
 
     def test_preserved_sections_defined(self):
         """Preserved sections are defined."""
-        assert "fingerprint" in PRESERVED_SECTIONS
-        assert "task" in PRESERVED_SECTIONS
-        assert "phase" in PRESERVED_SECTIONS
+        assert "fingerprint" in PRESERVED_SECTIONS, "Expected 'fingerprint' in PRESERVED_SECTIONS"
+        assert "task" in PRESERVED_SECTIONS, "Expected 'task' in PRESERVED_SECTIONS"
+        assert "phase" in PRESERVED_SECTIONS, "Expected 'phase' in PRESERVED_SECTIONS"
 
     def test_nested_section_preserved(self):
         """Nested sections under preserved are protected."""
@@ -290,7 +290,7 @@ class TestPreservedSections:
         result, _ = manager.compact(context, preserve=["fingerprint"])
 
         # Nested section should be preserved
-        assert "identity" in result["fingerprint"]
+        assert "identity" in result["fingerprint"], "Expected 'identity' in result['fingerprint']"
 
 
 class TestDotNotation:
@@ -317,9 +317,9 @@ class TestDotNotation:
         result, audit = manager.compact(context)
 
         # analysis should be truncated
-        assert len(result["precomputed"]["analysis"]) < 1000
+        assert len(result["precomputed"]["analysis"]) < 1000, "Expected len(result['precomputed']['... < 1000"
         # other should be unchanged
-        assert result["precomputed"]["other"] == "keep"
+        assert result["precomputed"]["other"] == "keep", "Expected result['precomputed']['other'] to equal 'keep'"
 
     def test_missing_nested_section_skipped(self):
         """Missing nested sections are skipped gracefully."""
@@ -337,7 +337,7 @@ class TestDotNotation:
         result, audit = manager.compact(context)
 
         # Should not fail, should return unchanged
-        assert result["precomputed"]["existing"] == "data"
+        assert result["precomputed"]["existing"] == "data", "Expected result['precomputed']['exis... to equal 'data'"
 
 
 class TestSummarizeStrategy:
@@ -358,8 +358,8 @@ class TestSummarizeStrategy:
         result, audit = manager.compact(context)
 
         # Should be unchanged since no summarizer
-        assert result["content"] == context["content"]
-        assert len(audit.rules_applied) == 0
+        assert result["content"] == context["content"], "Expected result['content'] to equal context['content']"
+        assert len(audit.rules_applied) == 0, "Expected len(audit.rules_applied) to equal 0"
 
     def test_summarize_with_mock_summarizer(self):
         """SUMMARIZE calls summarizer and uses result."""
@@ -380,9 +380,9 @@ class TestSummarizeStrategy:
         context = {"content": "x" * 5000}
         result, audit = manager.compact(context)
 
-        assert "[Summarized]" in result["content"]
-        assert "5000 chars" in result["content"]
-        assert manager._summarization_calls == 1
+        assert "[Summarized]" in result["content"], "Expected '[Summarized]' in result['content']"
+        assert "5000 chars" in result["content"], "Expected '5000 chars' in result['content']"
+        assert manager._summarization_calls == 1, "Expected manager._summarization_calls to equal 1"
 
     def test_summarize_list_content(self):
         """SUMMARIZE handles list content."""
@@ -403,8 +403,8 @@ class TestSummarizeStrategy:
         context = {"items": [f"item{i}" for i in range(20)]}
         result, audit = manager.compact(context)
 
-        assert "[Summarized from 20 items]" in result["items"]
-        assert "Summarized list items" in result["items"]
+        assert "[Summarized from 20 items]" in result["items"], "Expected '[Summarized from 20 items]' in result['items']"
+        assert "Summarized list items" in result["items"], "Expected 'Summarized list items' in result['items']"
 
     def test_summarize_fallback_on_error(self):
         """SUMMARIZE falls back to truncation on error."""
@@ -426,8 +426,8 @@ class TestSummarizeStrategy:
         result, audit = manager.compact(context)
 
         # Should fall back to truncation
-        assert "... (truncated)" in result["content"]
-        assert len(result["content"]) < 5000
+        assert "... (truncated)" in result["content"], "Expected '... (truncated)' in result['content']"
+        assert len(result["content"]) < 5000, "Expected len(result['content']) < 5000"
 
     def test_set_summarizer_method(self):
         """set_summarizer method works correctly."""
@@ -437,10 +437,10 @@ class TestSummarizeStrategy:
                 return "summary"
 
         manager = CompactionManager(threshold=0.90, max_budget=1000)
-        assert manager.summarizer is None
+        assert manager.summarizer is None, "Expected manager.summarizer is None"
 
         manager.set_summarizer(MockSummarizer())
-        assert manager.summarizer is not None
+        assert manager.summarizer is not None, "Expected manager.summarizer is not None"
 
     def test_get_summarization_stats(self):
         """get_summarization_stats returns correct values."""
@@ -460,14 +460,14 @@ class TestSummarizeStrategy:
 
         # Initial state
         stats = manager.get_summarization_stats()
-        assert stats["summarization_calls"] == 0
+        assert stats["summarization_calls"] == 0, "Expected stats['summarization_calls'] to equal 0"
 
         # After compaction
         context = {"content": "x" * 5000}
         manager.compact(context)
 
         stats = manager.get_summarization_stats()
-        assert stats["summarization_calls"] == 1
+        assert stats["summarization_calls"] == 1, "Expected stats['summarization_calls'] to equal 1"
 
     def test_reset_stats(self):
         """reset_stats clears summarization counter."""
@@ -487,10 +487,10 @@ class TestSummarizeStrategy:
 
         context = {"content": "x" * 5000}
         manager.compact(context)
-        assert manager._summarization_calls == 1
+        assert manager._summarization_calls == 1, "Expected manager._summarization_calls to equal 1"
 
         manager.reset_stats()
-        assert manager._summarization_calls == 0
+        assert manager._summarization_calls == 0, "Expected manager._summarization_calls to equal 0"
 
     def test_summarize_short_content_not_changed(self):
         """SUMMARIZE doesn't change content under threshold."""
@@ -513,8 +513,8 @@ class TestSummarizeStrategy:
         result, audit = manager.compact(context)
 
         # Should not be summarized
-        assert result["content"] == "x" * 100
-        assert manager._summarization_calls == 0
+        assert result["content"] == "x" * 100, "Expected result['content'] to equal 'x' * 100"
+        assert manager._summarization_calls == 0, "Expected manager._summarization_calls to equal 0"
 
 
 class TestSummarizeRules:
@@ -528,7 +528,7 @@ class TestSummarizeRules:
         summarize_sections = {r.section for r in SUMMARIZE_RULES}
 
         # All default sections should be present
-        assert default_sections.issubset(summarize_sections)
+        assert default_sections.issubset(summarize_sections), "Expected default_sections.issubset() to be truthy"
 
     def test_summarize_rules_has_summarize_strategies(self):
         """SUMMARIZE_RULES includes SUMMARIZE strategy rules."""
@@ -536,7 +536,7 @@ class TestSummarizeRules:
 
         summarize_rules = [r for r in SUMMARIZE_RULES if r.strategy == CompactionStrategy.SUMMARIZE]
 
-        assert len(summarize_rules) > 0
+        assert len(summarize_rules) > 0, "Expected len(summarize_rules) > 0"
         # Summarize rules should have lower priority (run later)
         for rule in summarize_rules:
-            assert rule.priority > 10  # After default rules
+            assert rule.priority > 10, "Expected rule.priority > 10"# After default rules

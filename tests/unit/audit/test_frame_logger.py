@@ -39,13 +39,13 @@ class TestFrameLogger:
             output_schema_id="intake_output",
         )
 
-        assert frame.frame_id == "FRAME-0001"
-        assert frame.frame_type == FrameType.STAGE_EXECUTION
-        assert frame.stage_name == "intake"
-        assert frame.input_context is not None
-        assert frame.input_context.is_valid
-        assert frame.parsed_artifact is not None
-        assert frame.parsed_artifact.is_valid
+        assert frame.frame_id == "FRAME-0001", "Expected frame.frame_id to equal 'FRAME-0001'"
+        assert frame.frame_type == FrameType.STAGE_EXECUTION, "Expected frame.frame_type to equal FrameType.STAGE_EXECUTION"
+        assert frame.stage_name == "intake", "Expected frame.stage_name to equal 'intake'"
+        assert frame.input_context is not None, "Expected frame.input_context is not None"
+        assert frame.input_context.is_valid, "Expected frame.input_context.is_valid to be truthy"
+        assert frame.parsed_artifact is not None, "Expected frame.parsed_artifact is not None"
+        assert frame.parsed_artifact.is_valid, "Expected frame.parsed_artifact.is_valid to be truthy"
 
     def test_log_stage_frame_with_validation_failure(self, tmp_path):
         """Log stage frame with input validation failure."""
@@ -65,8 +65,8 @@ class TestFrameLogger:
             input_schema_id="intake_input",
         )
 
-        assert not frame.input_context.is_valid
-        assert "Missing required field: request" in frame.input_context.validation.errors
+        assert not frame.input_context.is_valid, "Assertion failed"
+        assert "Missing required field: request" in frame.input_context.validation.errors, "Expected 'Missing required field: re... in frame.input_context.validat..."
 
     def test_log_agent_step(self, tmp_path):
         """Log an agent step frame."""
@@ -84,10 +84,10 @@ class TestFrameLogger:
             duration_ms=1000,
         )
 
-        assert frame.frame_type == FrameType.AGENT_STEP
-        assert frame.llm_interaction is not None
-        assert frame.parsed_artifact is not None
-        assert frame.parsed_artifact.artifact_data["action"] == "read_file"
+        assert frame.frame_type == FrameType.AGENT_STEP, "Expected frame.frame_type to equal FrameType.AGENT_STEP"
+        assert frame.llm_interaction is not None, "Expected frame.llm_interaction is not None"
+        assert frame.parsed_artifact is not None, "Expected frame.parsed_artifact is not None"
+        assert frame.parsed_artifact.artifact_data["action"] == "read_file", "Expected frame.parsed_artifact.artif... to equal 'read_file'"
 
     def test_log_human_interaction(self, tmp_path):
         """Log a human-in-the-loop interaction frame."""
@@ -100,9 +100,9 @@ class TestFrameLogger:
             duration_ms=30000,
         )
 
-        assert frame.frame_type == FrameType.HUMAN_INTERACTION
-        assert frame.input_context.data["current_auth"] == "none"
-        assert frame.parsed_artifact.artifact_data["response"] == "Use JWT for stateless auth."
+        assert frame.frame_type == FrameType.HUMAN_INTERACTION, "Expected frame.frame_type to equal FrameType.HUMAN_INTERACTION"
+        assert frame.input_context.data["current_auth"] == "none", "Expected frame.input_context.data['c... to equal 'none'"
+        assert frame.parsed_artifact.artifact_data["response"] == "Use JWT for stateless auth.", "Expected frame.parsed_artifact.artif... to equal 'Use JWT for stateless auth.'"
 
     def test_log_spawn(self, tmp_path):
         """Log a spawn/delegation frame."""
@@ -114,9 +114,9 @@ class TestFrameLogger:
             delegated_context={"task": "security audit", "files": ["auth.py"]},
         )
 
-        assert frame.frame_type == FrameType.SPAWN
-        assert frame.input_context.data["task"] == "security audit"
-        assert frame.parsed_artifact.artifact_data["spawned_thread_id"] == "child-thread-001"
+        assert frame.frame_type == FrameType.SPAWN, "Expected frame.frame_type to equal FrameType.SPAWN"
+        assert frame.input_context.data["task"] == "security audit", "Expected frame.input_context.data['t... to equal 'security audit'"
+        assert frame.parsed_artifact.artifact_data["spawned_thread_id"] == "child-thread-001", "Expected frame.parsed_artifact.artif... to equal 'child-thread-001'"
 
     def test_sequential_frame_ids(self, tmp_path):
         """Frames should have sequential IDs."""
@@ -126,9 +126,9 @@ class TestFrameLogger:
         f2 = logger.log_agent_step({}, "...", "...", "...", "action2")
         f3 = logger.log_agent_step({}, "...", "...", "...", "action3")
 
-        assert f1.frame_id == "FRAME-0001"
-        assert f2.frame_id == "FRAME-0002"
-        assert f3.frame_id == "FRAME-0003"
+        assert f1.frame_id == "FRAME-0001", "Expected f1.frame_id to equal 'FRAME-0001'"
+        assert f2.frame_id == "FRAME-0002", "Expected f2.frame_id to equal 'FRAME-0002'"
+        assert f3.frame_id == "FRAME-0003", "Expected f3.frame_id to equal 'FRAME-0003'"
 
     def test_list_frames(self, tmp_path):
         """List all frames in order."""
@@ -139,7 +139,7 @@ class TestFrameLogger:
 
         frames = logger.list_frames()
 
-        assert frames == ["FRAME-0001", "FRAME-0002"]
+        assert frames == ["FRAME-0001", "FRAME-0002"], "Expected frames to equal ['FRAME-0001', 'FRAME-0002']"
 
     def test_get_frame(self, tmp_path):
         """Retrieve a specific frame."""
@@ -155,8 +155,8 @@ class TestFrameLogger:
 
         frame = logger.get_frame("FRAME-0001")
 
-        assert frame is not None
-        assert frame.frame_id == "FRAME-0001"
+        assert frame is not None, "Expected frame is not None"
+        assert frame.frame_id == "FRAME-0001", "Expected frame.frame_id to equal 'FRAME-0001'"
 
     def test_get_frame_content(self, tmp_path):
         """Get full LLM content for a frame."""
@@ -171,10 +171,10 @@ class TestFrameLogger:
 
         content = logger.get_frame_content("FRAME-0001")
 
-        assert content is not None
-        assert "You are helpful." in content
-        assert "Do the task." in content
-        assert "Task completed." in content
+        assert content is not None, "Expected content is not None"
+        assert "You are helpful." in content, "Expected 'You are helpful.' in content"
+        assert "Do the task." in content, "Expected 'Do the task.' in content"
+        assert "Task completed." in content, "Expected 'Task completed.' in content"
 
     def test_integrity_chain(self, tmp_path):
         """Frames should be linked in integrity chain."""
@@ -183,8 +183,8 @@ class TestFrameLogger:
         f1 = logger.log_agent_step({}, "...", "...", "...")
         f2 = logger.log_agent_step({}, "...", "...", "...")
 
-        assert f1.content_hash is not None
-        assert f2.previous_frame_hash == f1.content_hash
+        assert f1.content_hash is not None, "Expected f1.content_hash is not None"
+        assert f2.previous_frame_hash == f1.content_hash, "Expected f2.previous_frame_hash to equal f1.content_hash"
 
     def test_get_validation_summary(self, tmp_path):
         """Get summary of validation results."""
@@ -218,11 +218,11 @@ class TestFrameLogger:
 
         summary = logger.get_validation_summary()
 
-        assert summary["total_frames"] == 2
-        assert summary["input_validation"]["passed"] == 1
-        assert summary["input_validation"]["failed"] == 1
-        assert not summary["all_valid"]
-        assert len(summary["failures"]) == 2  # Input and output failures
+        assert summary["total_frames"] == 2, "Expected summary['total_frames'] to equal 2"
+        assert summary["input_validation"]["passed"] == 1, "Expected summary['input_validation']... to equal 1"
+        assert summary["input_validation"]["failed"] == 1, "Expected summary['input_validation']... to equal 1"
+        assert not summary["all_valid"], "Assertion failed"
+        assert len(summary["failures"]) == 2, "Expected len(summary['failures']) to equal 2"# Input and output failures
 
     def test_persistence_across_instances(self, tmp_path):
         """Frames persist across logger instances."""
@@ -234,9 +234,9 @@ class TestFrameLogger:
         logger2 = FrameLogger(tmp_path, "test-thread")
         f2 = logger2.log_agent_step({}, "...", "...", "...")
 
-        assert f2.frame_id == "FRAME-0002"
+        assert f2.frame_id == "FRAME-0002", "Expected f2.frame_id to equal 'FRAME-0002'"
         frames = logger2.list_frames()
-        assert len(frames) == 2
+        assert len(frames) == 2, "Expected len(frames) to equal 2"
 
 
 class TestFrameLoggerWithPipelineSchemas:
@@ -258,8 +258,8 @@ class TestFrameLoggerWithPipelineSchemas:
         )
 
         # Frame should still be created even if schema not found
-        assert frame is not None
-        assert frame.stage_name == "intake"
+        assert frame is not None, "Expected frame is not None"
+        assert frame.stage_name == "intake", "Expected frame.stage_name to equal 'intake'"
 
 
 class TestFrameLoggerEndToEnd:
@@ -301,7 +301,7 @@ class TestFrameLoggerEndToEnd:
             pipeline_id="pipeline-001",
         )
 
-        assert intake_frame.is_valid
+        assert intake_frame.is_valid, "Expected intake_frame.is_valid to be truthy"
 
         # Clarify stage
         clarify_frame = logger.log_stage_frame(
@@ -319,12 +319,12 @@ class TestFrameLoggerEndToEnd:
             pipeline_id="pipeline-001",
         )
 
-        assert clarify_frame.is_valid
+        assert clarify_frame.is_valid, "Expected clarify_frame.is_valid to be truthy"
 
         # Verify chain
-        assert clarify_frame.previous_frame_hash == intake_frame.content_hash
+        assert clarify_frame.previous_frame_hash == intake_frame.content_hash, "Expected clarify_frame.previous_fram... to equal intake_frame.content_hash"
 
         # Get validation summary
         summary = logger.get_validation_summary()
-        assert summary["all_valid"]
-        assert summary["total_frames"] == 2
+        assert summary["all_valid"], "Assertion failed"
+        assert summary["total_frames"] == 2, "Expected summary['total_frames'] to equal 2"

@@ -103,8 +103,8 @@ class TestStageDecision:
             decision=ReviewDecision.APPROVE,
         )
 
-        assert decision.stage_name == "intake"
-        assert decision.decision == ReviewDecision.APPROVE
+        assert decision.stage_name == "intake", "Expected decision.stage_name to equal 'intake'"
+        assert decision.decision == ReviewDecision.APPROVE, "Expected decision.decision to equal ReviewDecision.APPROVE"
 
     def test_create_modification(self):
         """Create a modification decision."""
@@ -115,8 +115,8 @@ class TestStageDecision:
             modifications={"output_requirements": ["clarified_requirements", "password_policy"]},
         )
 
-        assert decision.decision == ReviewDecision.MODIFY
-        assert "password policy" in decision.notes
+        assert decision.decision == ReviewDecision.MODIFY, "Expected decision.decision to equal ReviewDecision.MODIFY"
+        assert "password policy" in decision.notes, "Expected 'password policy' in decision.notes"
 
 
 class TestReviewFeedback:
@@ -126,8 +126,8 @@ class TestReviewFeedback:
         """Empty feedback has sensible defaults."""
         feedback = ReviewFeedback()
 
-        assert len(feedback.stage_decisions) == 0
-        assert feedback.overall_decision == OverallDecision.APPROVE
+        assert len(feedback.stage_decisions) == 0, "Expected len(feedback.stage_decisions) to equal 0"
+        assert feedback.overall_decision == OverallDecision.APPROVE, "Expected feedback.overall_decision to equal OverallDecision.APPROVE"
 
     def test_get_stage_decision(self):
         """Get decision for specific stage."""
@@ -142,10 +142,10 @@ class TestReviewFeedback:
         clarify = feedback.get_stage_decision("clarify")
         missing = feedback.get_stage_decision("nonexistent")
 
-        assert intake is not None
-        assert intake.decision == ReviewDecision.APPROVE
-        assert clarify.decision == ReviewDecision.MODIFY
-        assert missing is None
+        assert intake is not None, "Expected intake is not None"
+        assert intake.decision == ReviewDecision.APPROVE, "Expected intake.decision to equal ReviewDecision.APPROVE"
+        assert clarify.decision == ReviewDecision.MODIFY, "Expected clarify.decision to equal ReviewDecision.MODIFY"
+        assert missing is None, "Expected missing is None"
 
     def test_all_stages_approved_true(self):
         """All stages approved returns True."""
@@ -156,7 +156,7 @@ class TestReviewFeedback:
             ]
         )
 
-        assert feedback.all_stages_approved() is True
+        assert feedback.all_stages_approved() is True, "Expected feedback.all_stages_approved() is True"
 
     def test_all_stages_approved_false(self):
         """Not all stages approved returns False."""
@@ -167,7 +167,7 @@ class TestReviewFeedback:
             ]
         )
 
-        assert feedback.all_stages_approved() is False
+        assert feedback.all_stages_approved() is False, "Expected feedback.all_stages_approved() is False"
 
 
 class TestReviewSession:
@@ -180,9 +180,9 @@ class TestReviewSession:
             draft=sample_draft,
         )
 
-        assert session.session_id == "REVIEW-001"
-        assert session.status == "pending"
-        assert session.draft is sample_draft
+        assert session.session_id == "REVIEW-001", "Expected session.session_id to equal 'REVIEW-001'"
+        assert session.status == "pending", "Expected session.status to equal 'pending'"
+        assert session.draft is sample_draft, "Expected session.draft is sample_draft"
 
     def test_approve_session(self, sample_draft):
         """Approve a session."""
@@ -193,10 +193,10 @@ class TestReviewSession:
 
         approved = session.approve("REQ-001")
 
-        assert session.status == "approved"
-        assert approved is not None
-        assert approved.draft_id == sample_draft.draft_id
-        assert approved.request_id == "REQ-001"
+        assert session.status == "approved", "Expected session.status to equal 'approved'"
+        assert approved is not None, "Expected approved is not None"
+        assert approved.draft_id == sample_draft.draft_id, "Expected approved.draft_id to equal sample_draft.draft_id"
+        assert approved.request_id == "REQ-001", "Expected approved.request_id to equal 'REQ-001'"
 
 
 class TestContractReviewer:
@@ -211,44 +211,44 @@ class TestContractReviewer:
         """Create a review session."""
         session = reviewer.create_session(sample_draft)
 
-        assert session.session_id.startswith("REVIEW-")
-        assert session.draft is sample_draft
-        assert session.status == "pending"
+        assert session.session_id.startswith("REVIEW-"), "Expected session.session_id.startswith() to be truthy"
+        assert session.draft is sample_draft, "Expected session.draft is sample_draft"
+        assert session.status == "pending", "Expected session.status to equal 'pending'"
 
     def test_format_for_display(self, reviewer, sample_draft):
         """Format draft for CLI display."""
         output = reviewer.format_for_display(sample_draft)
 
-        assert "CONTRACT REVIEW" in output
-        assert "Add user authentication" in output
-        assert "STAGE: intake" in output
-        assert "STAGE: clarify" in output
-        assert "ESCALATION TRIGGERS" in output
-        assert "OPEN QUESTIONS" in output
-        assert "ASSUMPTIONS" in output
+        assert "CONTRACT REVIEW" in output, "Expected 'CONTRACT REVIEW' in output"
+        assert "Add user authentication" in output, "Expected 'Add user authentication' in output"
+        assert "STAGE: intake" in output, "Expected 'STAGE: intake' in output"
+        assert "STAGE: clarify" in output, "Expected 'STAGE: clarify' in output"
+        assert "ESCALATION TRIGGERS" in output, "Expected 'ESCALATION TRIGGERS' in output"
+        assert "OPEN QUESTIONS" in output, "Expected 'OPEN QUESTIONS' in output"
+        assert "ASSUMPTIONS" in output, "Expected 'ASSUMPTIONS' in output"
 
     def test_format_includes_confidence(self, reviewer, sample_draft):
         """Display includes confidence level."""
         output = reviewer.format_for_display(sample_draft)
 
-        assert "85%" in output or "0.85" in output
+        assert "85%" in output or "0.85" in output, "Assertion failed"
 
     def test_format_includes_validation_rules(self, reviewer, sample_draft):
         """Display includes validation rules."""
         output = reviewer.format_for_display(sample_draft)
 
-        assert "Validation" in output
+        assert "Validation" in output, "Expected 'Validation' in output"
 
     def test_format_stage_for_review(self, reviewer, sample_draft):
         """Format single stage for detailed review."""
         stage = sample_draft.stage_contracts[0]
         output = reviewer.format_stage_for_review(stage)
 
-        assert "STAGE: intake" in output
-        assert "Output Requirements" in output
-        assert "request_id" in output
-        assert "Validation Rules" in output
-        assert "R-001" in output
+        assert "STAGE: intake" in output, "Expected 'STAGE: intake' in output"
+        assert "Output Requirements" in output, "Expected 'Output Requirements' in output"
+        assert "request_id" in output, "Expected 'request_id' in output"
+        assert "Validation Rules" in output, "Expected 'Validation Rules' in output"
+        assert "R-001" in output, "Expected 'R-001' in output"
 
     def test_apply_feedback_approve(self, reviewer, sample_draft):
         """Apply approval feedback."""
@@ -264,8 +264,8 @@ class TestContractReviewer:
 
         updated = reviewer.apply_feedback(session, feedback)
 
-        assert updated.status == "approved"
-        assert updated.feedback is feedback
+        assert updated.status == "approved", "Expected updated.status to equal 'approved'"
+        assert updated.feedback is feedback, "Expected updated.feedback is feedback"
 
     def test_apply_feedback_refine(self, reviewer, sample_draft):
         """Apply refinement feedback."""
@@ -277,7 +277,7 @@ class TestContractReviewer:
 
         updated = reviewer.apply_feedback(session, feedback)
 
-        assert updated.status == "refined"
+        assert updated.status == "refined", "Expected updated.status to equal 'refined'"
 
     def test_apply_feedback_partial_approval(self, reviewer, sample_draft):
         """Partial approval keeps status pending."""
@@ -293,7 +293,7 @@ class TestContractReviewer:
         updated = reviewer.apply_feedback(session, feedback)
 
         # Partial approval means still pending
-        assert updated.status == "pending"
+        assert updated.status == "pending", "Expected updated.status to equal 'pending'"
 
     def test_finalize_approved(self, reviewer, sample_draft):
         """Finalize an approved session."""
@@ -302,9 +302,9 @@ class TestContractReviewer:
 
         approved = reviewer.finalize(session, "REQ-001")
 
-        assert approved is not None
-        assert approved.request_id == "REQ-001"
-        assert len(approved.stage_contracts) == len(sample_draft.stage_contracts)
+        assert approved is not None, "Expected approved is not None"
+        assert approved.request_id == "REQ-001", "Expected approved.request_id to equal 'REQ-001'"
+        assert len(approved.stage_contracts) == len(sample_draft.stage_contracts), "Expected len(approved.stage_contracts) to equal len(sample_draft.stage_cont..."
 
     def test_finalize_not_approved(self, reviewer, sample_draft):
         """Finalize returns None for non-approved session."""
@@ -313,7 +313,7 @@ class TestContractReviewer:
 
         result = reviewer.finalize(session, "REQ-001")
 
-        assert result is None
+        assert result is None, "Expected result is None"
 
     def test_get_summary(self, reviewer, sample_draft):
         """Get session summary."""
@@ -329,9 +329,9 @@ class TestContractReviewer:
 
         summary = reviewer.get_summary(session)
 
-        assert session.session_id in summary
-        assert "Status: pending" in summary
-        assert "Approved stages: 2/2" in summary
+        assert session.session_id in summary, "Expected session.session_id in summary"
+        assert "Status: pending" in summary, "Expected 'Status: pending' in summary"
+        assert "Approved stages: 2/2" in summary, "Expected 'Approved stages: 2/2' in summary"
 
 
 class TestReviewerWithEmptyDraft:
@@ -351,13 +351,13 @@ class TestReviewerWithEmptyDraft:
         reviewer = ContractReviewer()
         output = reviewer.format_for_display(empty_draft)
 
-        assert "CONTRACT REVIEW" in output
-        assert "Simple request" in output
+        assert "CONTRACT REVIEW" in output, "Expected 'CONTRACT REVIEW' in output"
+        assert "Simple request" in output, "Expected 'Simple request' in output"
 
     def test_session_with_empty_draft(self, empty_draft):
         """Create session with empty draft."""
         reviewer = ContractReviewer()
         session = reviewer.create_session(empty_draft)
 
-        assert session is not None
-        assert len(session.draft.stage_contracts) == 0
+        assert session is not None, "Expected session is not None"
+        assert len(session.draft.stage_contracts) == 0, "Expected len(session.draft.stage_con... to equal 0"

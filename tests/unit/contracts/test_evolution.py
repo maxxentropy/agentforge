@@ -55,8 +55,8 @@ class TestAssumptionViolation:
             impact="Security implications",
         )
 
-        assert violation.violation_id == "AV-001"
-        assert violation.violation_type == EvolutionViolationType.ASSUMPTION_WRONG
+        assert violation.violation_id == "AV-001", "Expected violation.violation_id to equal 'AV-001'"
+        assert violation.violation_type == EvolutionViolationType.ASSUMPTION_WRONG, "Expected violation.violation_type to equal EvolutionViolationType.ASSU..."
 
     def test_violation_to_dict(self):
         """Serialize violation to dictionary."""
@@ -68,8 +68,8 @@ class TestAssumptionViolation:
 
         data = violation.to_dict()
 
-        assert data["violation_id"] == "AV-001"
-        assert data["violation_type"] == "scope_change"
+        assert data["violation_id"] == "AV-001", "Expected data['violation_id'] to equal 'AV-001'"
+        assert data["violation_type"] == "scope_change", "Expected data['violation_type'] to equal 'scope_change'"
 
 
 class TestContractChange:
@@ -85,8 +85,8 @@ class TestContractChange:
             reason="New constraint discovered",
         )
 
-        assert change.change_id == "CHG-001"
-        assert change.change_type == "add_rule"
+        assert change.change_id == "CHG-001", "Expected change.change_id to equal 'CHG-001'"
+        assert change.change_type == "add_rule", "Expected change.change_type to equal 'add_rule'"
 
 
 class TestContractEscalation:
@@ -107,9 +107,9 @@ class TestContractEscalation:
             severity="blocking",
         )
 
-        assert escalation.escalation_id == "ESC-001"
-        assert len(escalation.violations) == 1
-        assert not escalation.resolved
+        assert escalation.escalation_id == "ESC-001", "Expected escalation.escalation_id to equal 'ESC-001'"
+        assert len(escalation.violations) == 1, "Expected len(escalation.violations) to equal 1"
+        assert not escalation.resolved, "Assertion failed"
 
 
 class TestContractEvolutionHandler:
@@ -137,8 +137,8 @@ class TestContractEvolutionHandler:
             "implement", context, sample_contracts
         )
 
-        assert violation is not None
-        assert violation.violation_type == EvolutionViolationType.ASSUMPTION_WRONG
+        assert violation is not None, "Expected violation is not None"
+        assert violation.violation_type == EvolutionViolationType.ASSUMPTION_WRONG, "Expected violation.violation_type to equal EvolutionViolationType.ASSU..."
 
     def test_detect_scope_change(self, handler, sample_contracts):
         """Detect scope change."""
@@ -151,8 +151,8 @@ class TestContractEvolutionHandler:
             "intake", context, sample_contracts
         )
 
-        assert violation is not None
-        assert violation.violation_type == EvolutionViolationType.SCOPE_CHANGE
+        assert violation is not None, "Expected violation is not None"
+        assert violation.violation_type == EvolutionViolationType.SCOPE_CHANGE, "Expected violation.violation_type to equal EvolutionViolationType.SCOP..."
 
     def test_detect_incomplete_contract(self, handler, sample_contracts):
         """Detect incomplete contract."""
@@ -165,8 +165,8 @@ class TestContractEvolutionHandler:
             "implement", context, sample_contracts
         )
 
-        assert violation is not None
-        assert violation.violation_type == EvolutionViolationType.CONTRACT_INCOMPLETE
+        assert violation is not None, "Expected violation is not None"
+        assert violation.violation_type == EvolutionViolationType.CONTRACT_INCOMPLETE, "Expected violation.violation_type to equal EvolutionViolationType.CONT..."
 
     def test_no_violation_detected(self, handler, sample_contracts):
         """No violation when context is normal."""
@@ -178,7 +178,7 @@ class TestContractEvolutionHandler:
             "intake", context, sample_contracts
         )
 
-        assert violation is None
+        assert violation is None, "Expected violation is None"
 
     def test_escalate_for_redraft(self, handler, sample_contracts):
         """Create escalation for redraft."""
@@ -191,10 +191,10 @@ class TestContractEvolutionHandler:
 
         escalation = handler.escalate_for_redraft(violation, sample_contracts)
 
-        assert escalation is not None
-        assert len(escalation.violations) == 1
-        assert len(escalation.proposed_changes) >= 1
-        assert "CONTRACT EVOLUTION REQUIRED" in escalation.prompt
+        assert escalation is not None, "Expected escalation is not None"
+        assert len(escalation.violations) == 1, "Expected len(escalation.violations) to equal 1"
+        assert len(escalation.proposed_changes) >= 1, "Expected len(escalation.proposed_cha... >= 1"
+        assert "CONTRACT EVOLUTION REQUIRED" in escalation.prompt, "Expected 'CONTRACT EVOLUTION REQUIRED' in escalation.prompt"
 
     def test_escalate_generates_prompt(self, handler, sample_contracts):
         """Escalation prompt includes key information."""
@@ -208,8 +208,8 @@ class TestContractEvolutionHandler:
 
         escalation = handler.escalate_for_redraft(violation, sample_contracts)
 
-        assert "scope_change" in escalation.prompt.lower()
-        assert "Options:" in escalation.prompt
+        assert "scope_change" in escalation.prompt.lower(), "Expected 'scope_change' in escalation.prompt.lower()"
+        assert "Options:" in escalation.prompt, "Expected 'Options:' in escalation.prompt"
 
     def test_apply_evolution_modify_stage(self, handler, sample_contracts):
         """Apply evolution that modifies a stage."""
@@ -225,10 +225,10 @@ class TestContractEvolutionHandler:
 
         evolved = handler.apply_evolution(sample_contracts, changes)
 
-        assert evolved.version == "1.1"
-        assert evolved.contract_set_id != sample_contracts.contract_set_id
+        assert evolved.version == "1.1", "Expected evolved.version to equal '1.1'"
+        assert evolved.contract_set_id != sample_contracts.contract_set_id, "Expected evolved.contract_set_id to not equal sample_contracts.contract_s..."
         intake = evolved.get_stage_contract("intake")
-        assert "new_field" in intake.output_requirements
+        assert "new_field" in intake.output_requirements, "Expected 'new_field' in intake.output_requirements"
 
     def test_apply_evolution_add_trigger(self, handler, sample_contracts):
         """Apply evolution that adds a trigger."""
@@ -245,8 +245,8 @@ class TestContractEvolutionHandler:
 
         evolved = handler.apply_evolution(sample_contracts, changes)
 
-        assert len(evolved.escalation_triggers) == 1
-        assert "T-EVOLVED" in evolved.escalation_triggers[0].trigger_id
+        assert len(evolved.escalation_triggers) == 1, "Expected len(evolved.escalation_trig... to equal 1"
+        assert "T-EVOLVED" in evolved.escalation_triggers[0].trigger_id, "Expected 'T-EVOLVED' in evolved.escalation_triggers..."
 
     def test_evolution_preserves_data(self, handler, sample_contracts):
         """Evolution preserves original data."""
@@ -254,9 +254,9 @@ class TestContractEvolutionHandler:
 
         evolved = handler.apply_evolution(sample_contracts, changes)
 
-        assert evolved.draft_id == sample_contracts.draft_id
-        assert evolved.request_id == sample_contracts.request_id
-        assert len(evolved.stage_contracts) == len(sample_contracts.stage_contracts)
+        assert evolved.draft_id == sample_contracts.draft_id, "Expected evolved.draft_id to equal sample_contracts.draft_id"
+        assert evolved.request_id == sample_contracts.request_id, "Expected evolved.request_id to equal sample_contracts.request_id"
+        assert len(evolved.stage_contracts) == len(sample_contracts.stage_contracts), "Expected len(evolved.stage_contracts) to equal len(sample_contracts.stage_..."
 
 
 class TestEvolutionViolationTypes:
@@ -265,19 +265,19 @@ class TestEvolutionViolationTypes:
     def test_assumption_wrong(self):
         """ASSUMPTION_WRONG type."""
         vtype = EvolutionViolationType.ASSUMPTION_WRONG
-        assert vtype.value == "assumption_wrong"
+        assert vtype.value == "assumption_wrong", "Expected vtype.value to equal 'assumption_wrong'"
 
     def test_scope_change(self):
         """SCOPE_CHANGE type."""
         vtype = EvolutionViolationType.SCOPE_CHANGE
-        assert vtype.value == "scope_change"
+        assert vtype.value == "scope_change", "Expected vtype.value to equal 'scope_change'"
 
     def test_new_constraint(self):
         """NEW_CONSTRAINT type."""
         vtype = EvolutionViolationType.NEW_CONSTRAINT
-        assert vtype.value == "new_constraint"
+        assert vtype.value == "new_constraint", "Expected vtype.value to equal 'new_constraint'"
 
     def test_contract_incomplete(self):
         """CONTRACT_INCOMPLETE type."""
         vtype = EvolutionViolationType.CONTRACT_INCOMPLETE
-        assert vtype.value == "contract_incomplete"
+        assert vtype.value == "contract_incomplete", "Expected vtype.value to equal 'contract_incomplete'"

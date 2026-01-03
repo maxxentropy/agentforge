@@ -32,12 +32,12 @@ class TestArtifactValidator:
 
         # Missing required
         errors = validator.validate({}, schema)
-        assert len(errors) == 2
-        assert "name" in errors[0] or "name" in errors[1]
+        assert len(errors) == 2, "Expected len(errors) to equal 2"
+        assert "name" in errors[0] or "name" in errors[1], "Assertion failed"
 
         # Has required
         errors = validator.validate({"name": "test", "version": "1.0"}, schema)
-        assert len(errors) == 0
+        assert len(errors) == 0, "Expected len(errors) to equal 0"
 
     def test_validate_string_type(self, validator):
         """validate() checks string type."""
@@ -48,11 +48,11 @@ class TestArtifactValidator:
         }
 
         errors = validator.validate({"name": "valid"}, schema)
-        assert len(errors) == 0
+        assert len(errors) == 0, "Expected len(errors) to equal 0"
 
         errors = validator.validate({"name": 123}, schema)
-        assert len(errors) == 1
-        assert "string" in errors[0]
+        assert len(errors) == 1, "Expected len(errors) to equal 1"
+        assert "string" in errors[0], "Expected 'string' in errors[0]"
 
     def test_validate_number_type(self, validator):
         """validate() checks number type."""
@@ -63,13 +63,13 @@ class TestArtifactValidator:
         }
 
         errors = validator.validate({"count": 42}, schema)
-        assert len(errors) == 0
+        assert len(errors) == 0, "Expected len(errors) to equal 0"
 
         errors = validator.validate({"count": 3.14}, schema)
-        assert len(errors) == 0
+        assert len(errors) == 0, "Expected len(errors) to equal 0"
 
         errors = validator.validate({"count": "42"}, schema)
-        assert len(errors) == 1
+        assert len(errors) == 1, "Expected len(errors) to equal 1"
 
     def test_validate_array_type(self, validator):
         """validate() checks array type."""
@@ -80,10 +80,10 @@ class TestArtifactValidator:
         }
 
         errors = validator.validate({"items": [1, 2, 3]}, schema)
-        assert len(errors) == 0
+        assert len(errors) == 0, "Expected len(errors) to equal 0"
 
         errors = validator.validate({"items": "not array"}, schema)
-        assert len(errors) == 1
+        assert len(errors) == 1, "Expected len(errors) to equal 1"
 
     def test_validate_object_type(self, validator):
         """validate() checks object type."""
@@ -94,10 +94,10 @@ class TestArtifactValidator:
         }
 
         errors = validator.validate({"config": {"key": "value"}}, schema)
-        assert len(errors) == 0
+        assert len(errors) == 0, "Expected len(errors) to equal 0"
 
         errors = validator.validate({"config": [1, 2]}, schema)
-        assert len(errors) == 1
+        assert len(errors) == 1, "Expected len(errors) to equal 1"
 
     def test_validate_boolean_type(self, validator):
         """validate() checks boolean type."""
@@ -108,10 +108,10 @@ class TestArtifactValidator:
         }
 
         errors = validator.validate({"enabled": True}, schema)
-        assert len(errors) == 0
+        assert len(errors) == 0, "Expected len(errors) to equal 0"
 
         errors = validator.validate({"enabled": "true"}, schema)
-        assert len(errors) == 1
+        assert len(errors) == 1, "Expected len(errors) to equal 1"
 
     def test_validate_array_items(self, validator):
         """validate() validates array item types."""
@@ -125,11 +125,11 @@ class TestArtifactValidator:
         }
 
         errors = validator.validate({"numbers": [1, 2, 3]}, schema)
-        assert len(errors) == 0
+        assert len(errors) == 0, "Expected len(errors) to equal 0"
 
         errors = validator.validate({"numbers": [1, "two", 3]}, schema)
-        assert len(errors) == 1
-        assert "numbers[1]" in errors[0]
+        assert len(errors) == 1, "Expected len(errors) to equal 1"
+        assert "numbers[1]" in errors[0], "Expected 'numbers[1]' in errors[0]"
 
 
 class TestValidateRequired:
@@ -145,7 +145,7 @@ class TestValidateRequired:
             {"a": 1, "b": 2, "c": 3},
             ["a", "b"],
         )
-        assert len(errors) == 0
+        assert len(errors) == 0, "Expected len(errors) to equal 0"
 
     def test_missing_keys(self, validator):
         """Errors for missing required keys."""
@@ -153,9 +153,9 @@ class TestValidateRequired:
             {"a": 1},
             ["a", "b", "c"],
         )
-        assert len(errors) == 2
-        assert any("b" in e for e in errors)
-        assert any("c" in e for e in errors)
+        assert len(errors) == 2, "Expected len(errors) to equal 2"
+        assert any("b" in e for e in errors), "Expected any() to be truthy"
+        assert any("c" in e for e in errors), "Expected any() to be truthy"
 
     def test_none_value(self, validator):
         """Error when required key has None value."""
@@ -163,8 +163,8 @@ class TestValidateRequired:
             {"a": None},
             ["a"],
         )
-        assert len(errors) == 1
-        assert "None" in errors[0]
+        assert len(errors) == 1, "Expected len(errors) to equal 1"
+        assert "None" in errors[0], "Expected 'None' in errors[0]"
 
 
 class TestValidateTypes:
@@ -180,7 +180,7 @@ class TestValidateTypes:
             {"name": "test", "count": 42, "enabled": True},
             {"name": str, "count": int, "enabled": bool},
         )
-        assert len(errors) == 0
+        assert len(errors) == 0, "Expected len(errors) to equal 0"
 
     def test_wrong_types(self, validator):
         """Errors when types don't match."""
@@ -188,7 +188,7 @@ class TestValidateTypes:
             {"name": 123, "count": "not int"},
             {"name": str, "count": int},
         )
-        assert len(errors) == 2
+        assert len(errors) == 2, "Expected len(errors) to equal 2"
 
     def test_tuple_type(self, validator):
         """Multiple acceptable types via tuple."""
@@ -196,13 +196,13 @@ class TestValidateTypes:
             {"value": 3.14},
             {"value": (int, float)},
         )
-        assert len(errors) == 0
+        assert len(errors) == 0, "Expected len(errors) to equal 0"
 
         errors = validator.validate_types(
             {"value": "string"},
             {"value": (int, float)},
         )
-        assert len(errors) == 1
+        assert len(errors) == 1, "Expected len(errors) to equal 1"
 
     def test_missing_key_ignored(self, validator):
         """Missing keys are not type-checked."""
@@ -210,7 +210,7 @@ class TestValidateTypes:
             {"a": 1},
             {"a": int, "b": str},
         )
-        assert len(errors) == 0
+        assert len(errors) == 0, "Expected len(errors) to equal 0"
 
 
 class TestValidateAndRaise:
@@ -236,8 +236,8 @@ class TestValidateAndRaise:
                 required=["name"],
             )
 
-        assert "name" in str(exc_info.value)
-        assert len(exc_info.value.errors) == 1
+        assert "name" in str(exc_info.value), "Expected 'name' in str(exc_info.value)"
+        assert len(exc_info.value.errors) == 1, "Expected len(exc_info.value.errors) to equal 1"
 
 
 class TestValidateArtifactsFunction:
@@ -249,8 +249,8 @@ class TestValidateArtifactsFunction:
             {"a": 1},
             required=["a", "b"],
         )
-        assert len(errors) == 1
-        assert "b" in errors[0]
+        assert len(errors) == 1, "Expected len(errors) to equal 1"
+        assert "b" in errors[0], "Expected 'b' in errors[0]"
 
     def test_with_types(self):
         """Works with types parameter."""
@@ -258,7 +258,7 @@ class TestValidateArtifactsFunction:
             {"count": "not int"},
             types={"count": int},
         )
-        assert len(errors) == 1
+        assert len(errors) == 1, "Expected len(errors) to equal 1"
 
     def test_with_schema(self):
         """Works with schema parameter."""
@@ -267,7 +267,7 @@ class TestValidateArtifactsFunction:
             "properties": {"name": {"type": "string"}},
         }
         errors = validate_artifacts({}, schema=schema)
-        assert len(errors) == 1
+        assert len(errors) == 1, "Expected len(errors) to equal 1"
 
 
 # =============================================================================
@@ -285,56 +285,56 @@ class TestStageInputValidation:
     def test_intake_stage_no_requirements(self, validator):
         """Intake stage has no required inputs (first stage)."""
         errors = validator.validate_stage_input("intake", {})
-        assert len(errors) == 0
+        assert len(errors) == 0, "Expected len(errors) to equal 0"
 
     def test_clarify_stage_requires_request_id(self, validator):
         """Clarify stage requires request_id and detected_scope."""
         errors = validator.validate_stage_input("clarify", {})
-        assert len(errors) == 2
-        assert any("request_id" in e for e in errors)
-        assert any("detected_scope" in e for e in errors)
+        assert len(errors) == 2, "Expected len(errors) to equal 2"
+        assert any("request_id" in e for e in errors), "Expected any() to be truthy"
+        assert any("detected_scope" in e for e in errors), "Expected any() to be truthy"
 
         errors = validator.validate_stage_input("clarify", {
             "request_id": "req-123",
             "detected_scope": "feature",
         })
-        assert len(errors) == 0
+        assert len(errors) == 0, "Expected len(errors) to equal 0"
 
     def test_spec_stage_requires_analysis(self, validator):
         """Spec stage requires request_id, analysis, and components."""
         errors = validator.validate_stage_input("spec", {})
-        assert len(errors) == 3
+        assert len(errors) == 3, "Expected len(errors) to equal 3"
 
         errors = validator.validate_stage_input("spec", {
             "request_id": "req-123",
             "analysis": {"summary": "test", "impact": "low"},
             "components": [{"name": "comp1", "path": "/src/comp.py"}],
         })
-        assert len(errors) == 0
+        assert len(errors) == 0, "Expected len(errors) to equal 0"
 
     def test_red_stage_requires_spec_and_test_cases(self, validator):
         """Red stage requires spec_id, components, and test_cases."""
         errors = validator.validate_stage_input("red", {})
-        assert len(errors) == 3
+        assert len(errors) == 3, "Expected len(errors) to equal 3"
 
         errors = validator.validate_stage_input("red", {
             "spec_id": "spec-123",
             "components": [],
             "test_cases": [],
         })
-        assert len(errors) == 0
+        assert len(errors) == 0, "Expected len(errors) to equal 0"
 
     def test_green_stage_requires_tests(self, validator):
         """Green stage requires spec_id, test_files, and failing_tests."""
         errors = validator.validate_stage_input("green", {})
-        assert len(errors) == 3
+        assert len(errors) == 3, "Expected len(errors) to equal 3"
 
         errors = validator.validate_stage_input("green", {
             "spec_id": "spec-123",
             "test_files": [],
             "failing_tests": ["test_1"],
         })
-        assert len(errors) == 0
+        assert len(errors) == 0, "Expected len(errors) to equal 0"
 
 
 class TestStageOutputValidation:
@@ -347,38 +347,38 @@ class TestStageOutputValidation:
     def test_intake_output_requires_request_id(self, validator):
         """Intake output requires request_id, detected_scope, original_request."""
         errors = validator.validate_stage_output("intake", {})
-        assert len(errors) == 3
+        assert len(errors) == 3, "Expected len(errors) to equal 3"
 
         errors = validator.validate_stage_output("intake", {
             "request_id": "req-123",
             "detected_scope": "feature",
             "original_request": "Add a logout button",
         })
-        assert len(errors) == 0
+        assert len(errors) == 0, "Expected len(errors) to equal 0"
 
     def test_red_output_requires_test_files(self, validator):
         """Red output requires spec_id, test_files, and test_results."""
         errors = validator.validate_stage_output("red", {})
-        assert len(errors) == 3
+        assert len(errors) == 3, "Expected len(errors) to equal 3"
 
         errors = validator.validate_stage_output("red", {
             "spec_id": "spec-123",
             "test_files": [{"path": "test_foo.py", "content": "def test..."}],
             "test_results": {"passed": 0, "failed": 1, "total": 1},
         })
-        assert len(errors) == 0
+        assert len(errors) == 0, "Expected len(errors) to equal 0"
 
     def test_green_output_requires_implementation(self, validator):
         """Green output requires spec_id, implementation_files, test_results."""
         errors = validator.validate_stage_output("green", {})
-        assert len(errors) == 3
+        assert len(errors) == 3, "Expected len(errors) to equal 3"
 
         errors = validator.validate_stage_output("green", {
             "spec_id": "spec-123",
             "implementation_files": [{"path": "foo.py", "content": "class..."}],
             "test_results": {"passed": 1, "failed": 0, "total": 1},
         })
-        assert len(errors) == 0
+        assert len(errors) == 0, "Expected len(errors) to equal 0"
 
 
 class TestTransitionValidation:
@@ -396,7 +396,7 @@ class TestTransitionValidation:
             "original_request": "Add feature",
         }
         errors = validator.validate_transition("intake", "clarify", artifacts)
-        assert len(errors) == 0
+        assert len(errors) == 0, "Expected len(errors) to equal 0"
 
     def test_invalid_intake_to_spec(self, validator):
         """Invalid intake→spec transition (skipping clarify)."""
@@ -406,8 +406,8 @@ class TestTransitionValidation:
             "original_request": "Add feature",
         }
         errors = validator.validate_transition("intake", "spec", artifacts)
-        assert len(errors) == 1
-        assert "Invalid transition" in errors[0]
+        assert len(errors) == 1, "Expected len(errors) to equal 1"
+        assert "Invalid transition" in errors[0], "Expected 'Invalid transition' in errors[0]"
 
     def test_valid_red_to_green(self, validator):
         """Valid red→green transition."""
@@ -418,7 +418,7 @@ class TestTransitionValidation:
             "failing_tests": ["test_foo"],
         }
         errors = validator.validate_transition("red", "green", artifacts)
-        assert len(errors) == 0
+        assert len(errors) == 0, "Expected len(errors) to equal 0"
 
     def test_transition_missing_required_for_next(self, validator):
         """Transition fails when missing required artifacts for next stage."""
@@ -431,7 +431,7 @@ class TestTransitionValidation:
         }
         errors = validator.validate_transition("clarify", "analyze", artifacts)
         # Should have error for missing clarified_requirements
-        assert any("clarified_requirements" in str(e) for e in errors)
+        assert any("clarified_requirements" in str(e) for e in errors), "Expected any() to be truthy"
 
 
 class TestLanguageSpecificValidation:
@@ -449,7 +449,7 @@ class TestLanguageSpecificValidation:
         errors = validator.validate_stage_output_for_language(
             "red", artifacts, "python"
         )
-        assert len(errors) == 0
+        assert len(errors) == 0, "Expected len(errors) to equal 0"
 
         # Wrong extension
         artifacts = {
@@ -458,8 +458,8 @@ class TestLanguageSpecificValidation:
         errors = validator.validate_stage_output_for_language(
             "red", artifacts, "python"
         )
-        assert len(errors) == 1
-        assert "unexpected extension" in errors[0]
+        assert len(errors) == 1, "Expected len(errors) to equal 1"
+        assert "unexpected extension" in errors[0], "Expected 'unexpected extension' in errors[0]"
 
     def test_typescript_test_file_extension(self, validator):
         """TypeScript test files should have .ts or .tsx extension."""
@@ -469,7 +469,7 @@ class TestLanguageSpecificValidation:
         errors = validator.validate_stage_output_for_language(
             "red", artifacts, "typescript"
         )
-        assert len(errors) == 0
+        assert len(errors) == 0, "Expected len(errors) to equal 0"
 
     def test_csharp_implementation_extension(self, validator):
         """C# implementation files should have .cs extension."""
@@ -479,7 +479,7 @@ class TestLanguageSpecificValidation:
         errors = validator.validate_stage_output_for_language(
             "green", artifacts, "csharp"
         )
-        assert len(errors) == 0
+        assert len(errors) == 0, "Expected len(errors) to equal 0"
 
         # Wrong extension
         artifacts = {
@@ -488,4 +488,4 @@ class TestLanguageSpecificValidation:
         errors = validator.validate_stage_output_for_language(
             "green", artifacts, "csharp"
         )
-        assert len(errors) == 1
+        assert len(errors) == 1, "Expected len(errors) to equal 1"

@@ -39,9 +39,9 @@ class TestEscalationManagerInit:
             storage_path = Path(temp_dir)
             manager = EscalationManager(storage_path=storage_path)
 
-            assert manager is not None
-            assert manager.storage_path == storage_path
-            assert manager.default_timeout == 3600  # default
+            assert manager is not None, "Expected manager is not None"
+            assert manager.storage_path == storage_path, "Expected manager.storage_path to equal storage_path"
+            assert manager.default_timeout == 3600, "Expected manager.default_timeout to equal 3600"# default
 
     def test_init_with_custom_timeout_sets_default(self):
         """Test that EscalationManager respects custom default_timeout."""
@@ -49,7 +49,7 @@ class TestEscalationManagerInit:
             storage_path = Path(temp_dir)
             manager = EscalationManager(storage_path=storage_path, default_timeout=7200)
 
-            assert manager.default_timeout == 7200
+            assert manager.default_timeout == 7200, "Expected manager.default_timeout to equal 7200"
 
     def test_init_creates_storage_directory_if_not_exists(self):
         """Test that EscalationManager creates storage directory."""
@@ -57,8 +57,8 @@ class TestEscalationManagerInit:
             storage_path = Path(temp_dir) / "escalations"
             EscalationManager(storage_path=storage_path)
 
-            assert storage_path.exists()
-            assert storage_path.is_dir()
+            assert storage_path.exists(), "Expected storage_path.exists() to be truthy"
+            assert storage_path.is_dir(), "Expected storage_path.is_dir() to be truthy"
 
     def test_init_with_channels_sets_active_channels(self):
         """Test that EscalationManager accepts channel configuration."""
@@ -69,7 +69,7 @@ class TestEscalationManagerInit:
                 channels=channels
             )
 
-            assert manager.channels == channels
+            assert manager.channels == channels, "Expected manager.channels to equal channels"
 
 
 class TestCreateEscalation:
@@ -89,13 +89,13 @@ class TestCreateEscalation:
             context={"key": "value"}
         )
 
-        assert isinstance(escalation, Escalation)
-        assert escalation.session_id == "session-123"
-        assert escalation.reason == "Test escalation"
-        assert escalation.context == {"key": "value"}
-        assert escalation.priority == EscalationPriority.MEDIUM  # default
-        assert escalation.status == EscalationStatus.PENDING
-        assert escalation.id is not None
+        assert isinstance(escalation, Escalation), "Expected isinstance() to be truthy"
+        assert escalation.session_id == "session-123", "Expected escalation.session_id to equal 'session-123'"
+        assert escalation.reason == "Test escalation", "Expected escalation.reason to equal 'Test escalation'"
+        assert escalation.context == {"key": "value"}, "Expected escalation.context to equal {'key': 'value'}"
+        assert escalation.priority == EscalationPriority.MEDIUM, "Expected escalation.priority to equal EscalationPriority.MEDIUM"# default
+        assert escalation.status == EscalationStatus.PENDING, "Expected escalation.status to equal EscalationStatus.PENDING"
+        assert escalation.id is not None, "Expected escalation.id is not None"
 
     def test_create_escalation_with_all_params(self, manager):
         """Test creating escalation with all parameters."""
@@ -108,16 +108,16 @@ class TestCreateEscalation:
             timeout_seconds=7200
         )
 
-        assert escalation.priority == EscalationPriority.CRITICAL
-        assert escalation.recommended_actions == ["Action 1", "Action 2"]
-        assert escalation.timeout_seconds == 7200
+        assert escalation.priority == EscalationPriority.CRITICAL, "Expected escalation.priority to equal EscalationPriority.CRITICAL"
+        assert escalation.recommended_actions == ["Action 1", "Action 2"], "Expected escalation.recommended_actions to equal ['Action 1', 'Action 2']"
+        assert escalation.timeout_seconds == 7200, "Expected escalation.timeout_seconds to equal 7200"
 
     def test_create_escalation_generates_unique_ids(self, manager):
         """Test that each escalation gets a unique ID."""
         esc1 = manager.create_escalation("session", "reason", {})
         esc2 = manager.create_escalation("session", "reason", {})
 
-        assert esc1.id != esc2.id
+        assert esc1.id != esc2.id, "Expected esc1.id to not equal esc2.id"
 
     def test_create_escalation_persists_to_storage(self, manager):
         """Test that escalation is saved to storage."""
@@ -129,8 +129,8 @@ class TestCreateEscalation:
 
         # Should be retrievable
         retrieved = manager.get_escalation(escalation.id)
-        assert retrieved is not None
-        assert retrieved.id == escalation.id
+        assert retrieved is not None, "Expected retrieved is not None"
+        assert retrieved.id == escalation.id, "Expected retrieved.id to equal escalation.id"
 
     def test_create_escalation_sets_created_at_timestamp(self, manager):
         """Test that creation timestamp is set correctly."""
@@ -138,7 +138,7 @@ class TestCreateEscalation:
         escalation = manager.create_escalation("session", "reason", {})
         after = datetime.now()
 
-        assert before <= escalation.created_at <= after
+        assert before <= escalation.created_at <= after, "Assertion failed"
 
 
 class TestAcknowledgeEscalation:
@@ -162,7 +162,7 @@ class TestAcknowledgeEscalation:
 
         result = manager.acknowledge_escalation(escalation.id)
 
-        assert result is True
+        assert result is True, "Expected result is True"
 
     def test_acknowledge_escalation_updates_status(self, manager_with_escalation):
         """Test that acknowledgment updates escalation status."""
@@ -171,8 +171,8 @@ class TestAcknowledgeEscalation:
         manager.acknowledge_escalation(escalation.id)
 
         updated = manager.get_escalation(escalation.id)
-        assert updated.status == EscalationStatus.ACKNOWLEDGED
-        assert updated.acknowledged_at is not None
+        assert updated.status == EscalationStatus.ACKNOWLEDGED, "Expected updated.status to equal EscalationStatus.ACKNOWLEDGED"
+        assert updated.acknowledged_at is not None, "Expected updated.acknowledged_at is not None"
 
     def test_acknowledge_escalation_with_acknowledged_by(self, manager_with_escalation):
         """Test acknowledgment with user identifier."""
@@ -182,7 +182,7 @@ class TestAcknowledgeEscalation:
 
         # Acknowledgment recorded (implementation may vary)
         updated = manager.get_escalation(escalation.id)
-        assert updated.status == EscalationStatus.ACKNOWLEDGED
+        assert updated.status == EscalationStatus.ACKNOWLEDGED, "Expected updated.status to equal EscalationStatus.ACKNOWLEDGED"
 
     def test_acknowledge_nonexistent_escalation_returns_false(self, manager_with_escalation):
         """Test acknowledging nonexistent escalation fails."""
@@ -190,7 +190,7 @@ class TestAcknowledgeEscalation:
 
         result = manager.acknowledge_escalation("nonexistent-id")
 
-        assert result is False
+        assert result is False, "Expected result is False"
 
 
 class TestResolveEscalation:
@@ -218,10 +218,10 @@ class TestResolveEscalation:
             decision="Proceed with operation"
         )
 
-        assert isinstance(resolution, EscalationResolution)
-        assert resolution.escalation_id == escalation.id
-        assert resolution.resolution_type == ResolutionType.APPROVED
-        assert resolution.decision == "Proceed with operation"
+        assert isinstance(resolution, EscalationResolution), "Expected isinstance() to be truthy"
+        assert resolution.escalation_id == escalation.id, "Expected resolution.escalation_id to equal escalation.id"
+        assert resolution.resolution_type == ResolutionType.APPROVED, "Expected resolution.resolution_type to equal ResolutionType.APPROVED"
+        assert resolution.decision == "Proceed with operation", "Expected resolution.decision to equal 'Proceed with operation'"
 
     def test_resolve_escalation_updates_status(self, manager_with_escalation):
         """Test that resolution updates escalation status."""
@@ -234,8 +234,8 @@ class TestResolveEscalation:
         )
 
         updated = manager.get_escalation(escalation.id)
-        assert updated.status == EscalationStatus.RESOLVED
-        assert updated.resolved_at is not None
+        assert updated.status == EscalationStatus.RESOLVED, "Expected updated.status to equal EscalationStatus.RESOLVED"
+        assert updated.resolved_at is not None, "Expected updated.resolved_at is not None"
 
     def test_resolve_escalation_with_notes(self, manager_with_escalation):
         """Test resolution with additional notes."""
@@ -248,7 +248,7 @@ class TestResolveEscalation:
             notes="Detailed explanation here"
         )
 
-        assert resolution.notes == "Detailed explanation here"
+        assert resolution.notes == "Detailed explanation here", "Expected resolution.notes to equal 'Detailed explanation here'"
 
     def test_resolve_escalation_with_resolved_by(self, manager_with_escalation):
         """Test resolution with resolver identifier."""
@@ -261,7 +261,7 @@ class TestResolveEscalation:
             resolved_by="admin@example.com"
         )
 
-        assert resolution.resolved_by == "admin@example.com"
+        assert resolution.resolved_by == "admin@example.com", "Expected resolution.resolved_by to equal 'admin@example.com'"
 
     def test_resolve_escalation_supports_all_resolution_types(self, manager_with_escalation):
         """Test that all resolution types are supported."""
@@ -274,7 +274,7 @@ class TestResolveEscalation:
                 resolution_type=res_type,
                 decision="Test"
             )
-            assert resolution.resolution_type == res_type
+            assert resolution.resolution_type == res_type, "Expected resolution.resolution_type to equal res_type"
 
 
 class TestGetEscalation:
@@ -298,9 +298,9 @@ class TestGetEscalation:
 
         retrieved = manager.get_escalation(escalation.id)
 
-        assert retrieved is not None
-        assert retrieved.id == escalation.id
-        assert retrieved.reason == escalation.reason
+        assert retrieved is not None, "Expected retrieved is not None"
+        assert retrieved.id == escalation.id, "Expected retrieved.id to equal escalation.id"
+        assert retrieved.reason == escalation.reason, "Expected retrieved.reason to equal escalation.reason"
 
     def test_get_escalation_nonexistent_returns_none(self, manager_with_escalation):
         """Test retrieving nonexistent escalation returns None."""
@@ -308,7 +308,7 @@ class TestGetEscalation:
 
         retrieved = manager.get_escalation("nonexistent-id")
 
-        assert retrieved is None
+        assert retrieved is None, "Expected retrieved is None"
 
 
 class TestListEscalations:
@@ -347,7 +347,7 @@ class TestListEscalations:
 
         escalations = manager.list_escalations()
 
-        assert len(escalations) == 3
+        assert len(escalations) == 3, "Expected len(escalations) to equal 3"
 
     def test_list_escalations_filter_by_session(self, manager_with_multiple_escalations):
         """Test listing escalations filtered by session."""
@@ -355,9 +355,9 @@ class TestListEscalations:
 
         escalations = manager.list_escalations(session_id="session-1")
 
-        assert len(escalations) == 2
+        assert len(escalations) == 2, "Expected len(escalations) to equal 2"
         for esc in escalations:
-            assert esc.session_id == "session-1"
+            assert esc.session_id == "session-1", "Expected esc.session_id to equal 'session-1'"
 
     def test_list_escalations_filter_by_status(self, manager_with_multiple_escalations):
         """Test listing escalations filtered by status."""
@@ -369,8 +369,8 @@ class TestListEscalations:
         pending = manager.list_escalations(status=EscalationStatus.PENDING)
         resolved = manager.list_escalations(status=EscalationStatus.RESOLVED)
 
-        assert len(pending) == 2
-        assert len(resolved) == 1
+        assert len(pending) == 2, "Expected len(pending) to equal 2"
+        assert len(resolved) == 1, "Expected len(resolved) to equal 1"
 
     def test_list_escalations_filter_by_priority(self, manager_with_multiple_escalations):
         """Test listing escalations filtered by priority."""
@@ -378,8 +378,8 @@ class TestListEscalations:
 
         high = manager.list_escalations(priority=EscalationPriority.HIGH)
 
-        assert len(high) == 1
-        assert high[0].priority == EscalationPriority.HIGH
+        assert len(high) == 1, "Expected len(high) to equal 1"
+        assert high[0].priority == EscalationPriority.HIGH, "Expected high[0].priority to equal EscalationPriority.HIGH"
 
 
 class TestGetPendingEscalations:
@@ -404,9 +404,9 @@ class TestGetPendingEscalations:
 
         pending = manager.get_pending_escalations()
 
-        assert len(pending) == 2
+        assert len(pending) == 2, "Expected len(pending) to equal 2"
         for esc in pending:
-            assert esc.status == EscalationStatus.PENDING
+            assert esc.status == EscalationStatus.PENDING, "Expected esc.status to equal EscalationStatus.PENDING"
 
     def test_get_pending_escalations_filter_by_session(self, manager_with_mixed_escalations):
         """Test filtering pending escalations by session."""
@@ -414,8 +414,8 @@ class TestGetPendingEscalations:
 
         pending = manager.get_pending_escalations(session_id="session-1")
 
-        assert len(pending) == 1
-        assert pending[0].session_id == "session-1"
+        assert len(pending) == 1, "Expected len(pending) to equal 1"
+        assert pending[0].session_id == "session-1", "Expected pending[0].session_id to equal 'session-1'"
 
 
 class TestCheckTimeouts:
@@ -437,9 +437,9 @@ class TestCheckTimeouts:
             # Check timeouts
             expired = manager.check_timeouts()
 
-            assert len(expired) >= 1
+            assert len(expired) >= 1, "Expected len(expired) >= 1"
             updated = manager.get_escalation(esc.id)
-            assert updated.status == EscalationStatus.EXPIRED
+            assert updated.status == EscalationStatus.EXPIRED, "Expected updated.status to equal EscalationStatus.EXPIRED"
 
     def test_check_timeouts_returns_expired_list(self):
         """Test that expired escalations are returned."""
@@ -456,7 +456,7 @@ class TestCheckTimeouts:
             expired = manager.check_timeouts()
 
             expired_ids = [e.id for e in expired]
-            assert esc.id in expired_ids
+            assert esc.id in expired_ids, "Expected esc.id in expired_ids"
 
     def test_check_timeouts_ignores_non_pending(self):
         """Test that resolved escalations aren't expired."""
@@ -474,7 +474,7 @@ class TestCheckTimeouts:
             expired = manager.check_timeouts()
 
             expired_ids = [e.id for e in expired]
-            assert esc.id not in expired_ids
+            assert esc.id not in expired_ids, "Expected esc.id not in expired_ids"
 
 
 class TestCancelEscalation:
@@ -498,7 +498,7 @@ class TestCancelEscalation:
 
         result = manager.cancel_escalation(escalation.id, "No longer needed")
 
-        assert result is True
+        assert result is True, "Expected result is True"
 
     def test_cancel_escalation_updates_status(self, manager_with_escalation):
         """Test that cancellation updates status."""
@@ -507,7 +507,7 @@ class TestCancelEscalation:
         manager.cancel_escalation(escalation.id, "Cancelled")
 
         updated = manager.get_escalation(escalation.id)
-        assert updated.status == EscalationStatus.CANCELLED
+        assert updated.status == EscalationStatus.CANCELLED, "Expected updated.status to equal EscalationStatus.CANCELLED"
 
     def test_cancel_nonexistent_escalation_returns_false(self, manager_with_escalation):
         """Test cancelling nonexistent escalation fails."""
@@ -515,7 +515,7 @@ class TestCancelEscalation:
 
         result = manager.cancel_escalation("nonexistent-id", "reason")
 
-        assert result is False
+        assert result is False, "Expected result is False"
 
     def test_cancel_resolved_escalation_returns_false(self, manager_with_escalation):
         """Test cancelling already resolved escalation fails."""
@@ -524,7 +524,7 @@ class TestCancelEscalation:
         manager.resolve_escalation(escalation.id, ResolutionType.APPROVED, "OK")
         result = manager.cancel_escalation(escalation.id, "reason")
 
-        assert result is False
+        assert result is False, "Expected result is False"
 
 
 class TestEscalationManagerIntegration:
@@ -541,12 +541,12 @@ class TestEscalationManagerIntegration:
                 reason="Integration test",
                 context={"test": True}
             )
-            assert esc.status == EscalationStatus.PENDING
+            assert esc.status == EscalationStatus.PENDING, "Expected esc.status to equal EscalationStatus.PENDING"
 
             # Acknowledge
             manager.acknowledge_escalation(esc.id)
             esc = manager.get_escalation(esc.id)
-            assert esc.status == EscalationStatus.ACKNOWLEDGED
+            assert esc.status == EscalationStatus.ACKNOWLEDGED, "Expected esc.status to equal EscalationStatus.ACKNOWLEDGED"
 
             # Resolve
             resolution = manager.resolve_escalation(
@@ -554,10 +554,10 @@ class TestEscalationManagerIntegration:
                 ResolutionType.APPROVED,
                 "Test passed"
             )
-            assert resolution.resolution_type == ResolutionType.APPROVED
+            assert resolution.resolution_type == ResolutionType.APPROVED, "Expected resolution.resolution_type to equal ResolutionType.APPROVED"
 
             esc = manager.get_escalation(esc.id)
-            assert esc.status == EscalationStatus.RESOLVED
+            assert esc.status == EscalationStatus.RESOLVED, "Expected esc.status to equal EscalationStatus.RESOLVED"
 
     def test_multiple_sessions_isolation(self):
         """Test that escalations are properly isolated by session."""
@@ -570,4 +570,4 @@ class TestEscalationManagerIntegration:
 
             for i in range(3):
                 session_escs = manager.list_escalations(session_id=f"session-{i}")
-                assert len(session_escs) == 2
+                assert len(session_escs) == 2, "Expected len(session_escs) to equal 2"

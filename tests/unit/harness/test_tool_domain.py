@@ -20,12 +20,12 @@ class TestToolDefinition:
             category="test"
         )
 
-        assert tool.name == "test_tool"
-        assert tool.description == "A test tool"
-        assert tool.parameters == {"param1": {"type": "string"}}
-        assert tool.category == "test"
-        assert tool.handler is None
-        assert tool.requires_approval is False
+        assert tool.name == "test_tool", "Expected tool.name to equal 'test_tool'"
+        assert tool.description == "A test tool", "Expected tool.description to equal 'A test tool'"
+        assert tool.parameters == {"param1": {"type": "string"}}, "Expected tool.parameters to equal {'param1': {'type': 'string'}}"
+        assert tool.category == "test", "Expected tool.category to equal 'test'"
+        assert tool.handler is None, "Expected tool.handler is None"
+        assert tool.requires_approval is False, "Expected tool.requires_approval is False"
 
     def test_init_with_all_fields_creates_instance(self):
         """Test that ToolDefinition can be created with all fields."""
@@ -38,12 +38,12 @@ class TestToolDefinition:
             category="test"
         )
 
-        assert tool.name == "test_tool"
-        assert tool.description == "A test tool"
-        assert tool.parameters == {"param1": {"type": "string"}}
-        assert tool.handler == "test.handler"
-        assert tool.requires_approval is True
-        assert tool.category == "test"
+        assert tool.name == "test_tool", "Expected tool.name to equal 'test_tool'"
+        assert tool.description == "A test tool", "Expected tool.description to equal 'A test tool'"
+        assert tool.parameters == {"param1": {"type": "string"}}, "Expected tool.parameters to equal {'param1': {'type': 'string'}}"
+        assert tool.handler == "test.handler", "Expected tool.handler to equal 'test.handler'"
+        assert tool.requires_approval is True, "Expected tool.requires_approval is True"
+        assert tool.category == "test", "Expected tool.category to equal 'test'"
 
     def test_to_dict_returns_serialized_data(self):
         """Test that to_dict returns proper dictionary representation."""
@@ -66,7 +66,7 @@ class TestToolDefinition:
             "requires_approval": True,
             "category": "test"
         }
-        assert result == expected
+        assert result == expected, "Expected result to equal expected"
 
     def test_from_dict_creates_instance_from_data(self):
         """Test that from_dict creates ToolDefinition from dictionary."""
@@ -81,12 +81,12 @@ class TestToolDefinition:
 
         tool = ToolDefinition.from_dict(data)
 
-        assert tool.name == "test_tool"
-        assert tool.description == "A test tool"
-        assert tool.parameters == {"param1": {"type": "string"}}
-        assert tool.handler == "test.handler"
-        assert tool.requires_approval is True
-        assert tool.category == "test"
+        assert tool.name == "test_tool", "Expected tool.name to equal 'test_tool'"
+        assert tool.description == "A test tool", "Expected tool.description to equal 'A test tool'"
+        assert tool.parameters == {"param1": {"type": "string"}}, "Expected tool.parameters to equal {'param1': {'type': 'string'}}"
+        assert tool.handler == "test.handler", "Expected tool.handler to equal 'test.handler'"
+        assert tool.requires_approval is True, "Expected tool.requires_approval is True"
+        assert tool.category == "test", "Expected tool.category to equal 'test'"
 
     def test_from_dict_with_minimal_data_uses_defaults(self):
         """Test that from_dict uses default values for optional fields."""
@@ -99,9 +99,9 @@ class TestToolDefinition:
 
         tool = ToolDefinition.from_dict(data)
 
-        assert tool.name == "test_tool"
-        assert tool.handler is None
-        assert tool.requires_approval is False
+        assert tool.name == "test_tool", "Expected tool.name to equal 'test_tool'"
+        assert tool.handler is None, "Expected tool.handler is None"
+        assert tool.requires_approval is False, "Expected tool.requires_approval is False"
 
 
 class TestToolProfile:
@@ -115,10 +115,10 @@ class TestToolProfile:
             tools=["tool1", "tool2"]
         )
 
-        assert profile.workflow == "test_workflow"
-        assert profile.phase == "test_phase"
-        assert profile.tools == ["tool1", "tool2"]
-        assert profile.description is None
+        assert profile.workflow == "test_workflow", "Expected profile.workflow to equal 'test_workflow'"
+        assert profile.phase == "test_phase", "Expected profile.phase to equal 'test_phase'"
+        assert profile.tools == ["tool1", "tool2"], "Expected profile.tools to equal ['tool1', 'tool2']"
+        assert profile.description is None, "Expected profile.description is None"
 
     def test_init_with_all_fields_creates_instance(self):
         """Test that ToolProfile can be created with all fields."""
@@ -129,10 +129,10 @@ class TestToolProfile:
             description="Test profile"
         )
 
-        assert profile.workflow == "test_workflow"
-        assert profile.phase == "test_phase"
-        assert profile.tools == ["tool1", "tool2"]
-        assert profile.description == "Test profile"
+        assert profile.workflow == "test_workflow", "Expected profile.workflow to equal 'test_workflow'"
+        assert profile.phase == "test_phase", "Expected profile.phase to equal 'test_phase'"
+        assert profile.tools == ["tool1", "tool2"], "Expected profile.tools to equal ['tool1', 'tool2']"
+        assert profile.description == "Test profile", "Expected profile.description to equal 'Test profile'"
 
     def test_to_dict_returns_serialized_data(self):
         """Test that to_dict returns proper dictionary representation."""
@@ -151,7 +151,7 @@ class TestToolProfile:
             "tools": ["tool1", "tool2"],
             "description": "Test profile"
         }
-        assert result == expected
+        assert result == expected, "Expected result to equal expected"
 
     def test_from_dict_creates_instance_from_data(self):
         """Test that from_dict creates ToolProfile from dictionary."""
@@ -164,10 +164,10 @@ class TestToolProfile:
 
         profile = ToolProfile.from_dict(data)
 
-        assert profile.workflow == "test_workflow"
-        assert profile.phase == "test_phase"
-        assert profile.tools == ["tool1", "tool2"]
-        assert profile.description == "Test profile"
+        assert profile.workflow == "test_workflow", "Expected profile.workflow to equal 'test_workflow'"
+        assert profile.phase == "test_phase", "Expected profile.phase to equal 'test_phase'"
+        assert profile.tools == ["tool1", "tool2"], "Expected profile.tools to equal ['tool1', 'tool2']"
+        assert profile.description == "Test profile", "Expected profile.description to equal 'Test profile'"
 
 
 class TestDomainTools:
@@ -181,6 +181,6 @@ class TestDomainTools:
             detection_patterns=["*.py", "pyproject.toml"]
         )
 
-        assert domain_tools.domain == "python"
-        assert domain_tools.tools == ["pytest", "ruff"]
-        assert domain_tools.detection_patterns == ["*.py", "pyproject.toml"]
+        assert domain_tools.domain == "python", "Expected domain_tools.domain to equal 'python'"
+        assert domain_tools.tools == ["pytest", "ruff"], "Expected domain_tools.tools to equal ['pytest', 'ruff']"
+        assert domain_tools.detection_patterns == ["*.py", "pyproject.toml"], "Expected domain_tools.detection_patt... to equal ['*.py', 'pyproject.toml']"

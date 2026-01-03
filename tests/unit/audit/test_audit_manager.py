@@ -23,13 +23,13 @@ class TestAuditManagerThreads:
             thread_type="pipeline",
         )
 
-        assert thread_id is not None
-        assert "pipeline" in thread_id
+        assert thread_id is not None, "Expected thread_id is not None"
+        assert "pipeline" in thread_id, "Expected 'pipeline' in thread_id"
 
         info = audit.get_thread_info(thread_id)
-        assert info is not None
-        assert info.name == "Test Pipeline"
-        assert info.status == ThreadStatus.RUNNING  # Auto-started
+        assert info is not None, "Expected info is not None"
+        assert info.name == "Test Pipeline", "Expected info.name to equal 'Test Pipeline'"
+        assert info.status == ThreadStatus.RUNNING, "Expected info.status to equal ThreadStatus.RUNNING"# Auto-started
 
     def test_spawn_child_thread(self, tmp_path):
         """Spawn a child thread for delegation."""
@@ -44,15 +44,15 @@ class TestAuditManagerThreads:
             thread_type="agent",
         )
 
-        assert child_id is not None
+        assert child_id is not None, "Expected child_id is not None"
 
         child_info = audit.get_thread_info(child_id)
-        assert child_info.parent_thread_id == parent_id
-        assert child_info.name == "Security Review"
+        assert child_info.parent_thread_id == parent_id, "Expected child_info.parent_thread_id to equal parent_id"
+        assert child_info.name == "Security Review", "Expected child_info.name to equal 'Security Review'"
 
         # Parent should have spawn transaction
         parent_txs = audit.get_transactions(parent_id)
-        assert len(parent_txs) >= 1
+        assert len(parent_txs) >= 1, "Expected len(parent_txs) >= 1"
 
     def test_spawn_parallel_group(self, tmp_path):
         """Spawn parallel execution group."""
@@ -72,13 +72,13 @@ class TestAuditManagerThreads:
             group_name="quality-checks",
         )
 
-        assert len(child_ids) == 3
+        assert len(child_ids) == 3, "Expected len(child_ids) to equal 3"
 
         # All children should reference same parallel group
         for child_id in child_ids:
             info = audit.get_thread_info(child_id)
-            assert info.parallel_group_id == "quality-checks"
-            assert info.parent_thread_id == parent_id
+            assert info.parallel_group_id == "quality-checks", "Expected info.parallel_group_id to equal 'quality-checks'"
+            assert info.parent_thread_id == parent_id, "Expected info.parent_thread_id to equal parent_id"
 
     def test_complete_thread(self, tmp_path):
         """Complete a thread with statistics."""
@@ -99,8 +99,8 @@ class TestAuditManagerThreads:
         audit.complete_thread(thread_id, outcome="success")
 
         info = audit.get_thread_info(thread_id)
-        assert info.status == ThreadStatus.COMPLETED
-        assert info.outcome == "success"
+        assert info.status == ThreadStatus.COMPLETED, "Expected info.status to equal ThreadStatus.COMPLETED"
+        assert info.outcome == "success", "Expected info.outcome to equal 'success'"
 
 
 class TestAuditManagerLogging:
@@ -126,19 +126,19 @@ class TestAuditManagerLogging:
             stage_name="implement",
         )
 
-        assert tx_id is not None
-        assert tx_id.startswith("TX-")
+        assert tx_id is not None, "Expected tx_id is not None"
+        assert tx_id.startswith("TX-"), "Expected tx_id.startswith() to be truthy"
 
         # Verify transaction exists
         tx = audit.get_transaction(thread_id, tx_id)
-        assert tx is not None
+        assert tx is not None, "Expected tx is not None"
 
         # Verify conversation archived
         turns = audit.get_conversation_turns(thread_id)
-        assert len(turns) == 1
+        assert len(turns) == 1, "Expected len(turns) to equal 1"
 
         content = audit.get_conversation_content(thread_id, turns[0])
-        assert "binary search" in content
+        assert "binary search" in content, "Expected 'binary search' in content"
 
     def test_log_llm_interaction_with_tool_calls(self, tmp_path):
         """Log LLM interaction with tool calls."""
@@ -171,7 +171,7 @@ class TestAuditManagerLogging:
         )
 
         tx = audit.get_transaction(thread_id, tx_id)
-        assert len(tx.tool_calls) == 2
+        assert len(tx.tool_calls) == 2, "Expected len(tx.tool_calls) to equal 2"
 
     def test_log_human_interaction(self, tmp_path):
         """Log human-in-the-loop interaction."""
@@ -186,11 +186,11 @@ class TestAuditManagerLogging:
             duration_ms=30000,
         )
 
-        assert tx_id is not None
+        assert tx_id is not None, "Expected tx_id is not None"
 
         tx = audit.get_transaction(thread_id, tx_id)
-        assert tx.human_prompt == "Should we use OAuth or JWT for authentication?"
-        assert tx.human_response == "Use JWT - we need stateless auth."
+        assert tx.human_prompt == "Should we use OAuth or JWT for authentication?", "Expected tx.human_prompt to equal 'Should we use OAuth or JWT..."
+        assert tx.human_response == "Use JWT - we need stateless auth.", "Expected tx.human_response to equal 'Use JWT - we need stateles..."
 
 
 class TestAuditManagerIntegrity:
@@ -217,8 +217,8 @@ class TestAuditManagerIntegrity:
 
         result = audit.verify_thread(thread_id)
 
-        assert result.valid is True
-        assert result.total_blocks >= 2
+        assert result.valid is True, "Expected result.valid is True"
+        assert result.total_blocks >= 2, "Expected result.total_blocks >= 2"
 
 
 class TestAuditManagerQueries:
@@ -247,8 +247,8 @@ class TestAuditManagerQueries:
 
         tree = audit.get_thread_tree(root_id)
 
-        assert tree["thread_id"] == root_id
-        assert len(tree["children"]) == 2
+        assert tree["thread_id"] == root_id, "Expected tree['thread_id'] to equal root_id"
+        assert len(tree["children"]) == 2, "Expected len(tree['children']) to equal 2"
 
     def test_get_ancestry(self, tmp_path):
         """Get ancestry chain."""
@@ -268,10 +268,10 @@ class TestAuditManagerQueries:
 
         ancestry = audit.get_ancestry(grandchild_id)
 
-        assert len(ancestry) == 3
-        assert ancestry[0].thread_id == grandchild_id
-        assert ancestry[1].thread_id == child_id
-        assert ancestry[2].thread_id == root_id
+        assert len(ancestry) == 3, "Expected len(ancestry) to equal 3"
+        assert ancestry[0].thread_id == grandchild_id, "Expected ancestry[0].thread_id to equal grandchild_id"
+        assert ancestry[1].thread_id == child_id, "Expected ancestry[1].thread_id to equal child_id"
+        assert ancestry[2].thread_id == root_id, "Expected ancestry[2].thread_id to equal root_id"
 
     def test_list_root_threads(self, tmp_path):
         """List all root threads."""
@@ -282,8 +282,8 @@ class TestAuditManagerQueries:
 
         roots = audit.list_root_threads()
 
-        assert id1 in roots
-        assert id2 in roots
+        assert id1 in roots, "Expected id1 in roots"
+        assert id2 in roots, "Expected id2 in roots"
 
     def test_get_summary(self, tmp_path):
         """Get thread summary with statistics."""
@@ -308,10 +308,10 @@ class TestAuditManagerQueries:
 
         summary = audit.get_summary(thread_id)
 
-        assert summary["name"] == "Test Pipeline"
-        assert summary["transaction_count"] >= 1
-        assert "token_summary" in summary
-        assert len(summary.get("children_summary", [])) == 1
+        assert summary["name"] == "Test Pipeline", "Expected summary['name'] to equal 'Test Pipeline'"
+        assert summary["transaction_count"] >= 1, "Expected summary['transaction_count'] >= 1"
+        assert "token_summary" in summary, "Expected 'token_summary' in summary"
+        assert len(summary.get("children_summary", [])) == 1, "Expected len(summary.get('children_s... to equal 1"
 
 
 class TestAuditManagerEndToEnd:
@@ -374,15 +374,15 @@ class TestAuditManagerEndToEnd:
 
         # 7. Verify integrity
         result = audit.verify_thread(pipeline_id)
-        assert result.valid is True
+        assert result.valid is True, "Expected result.valid is True"
 
         # 8. Check summary
         summary = audit.get_summary(pipeline_id)
-        assert summary["status"] == "completed"
-        assert len(summary["children_summary"]) == 2
-        assert all(c["outcome"] == "success" for c in summary["children_summary"])
+        assert summary["status"] == "completed", "Expected summary['status'] to equal 'completed'"
+        assert len(summary["children_summary"]) == 2, "Expected len(summary['children_summa... to equal 2"
+        assert all(c["outcome"] == "success" for c in summary["children_summary"]), "Expected all() to be truthy"
 
         # 9. Check ancestry
         ancestry = audit.get_ancestry(child_ids[0])
-        assert len(ancestry) == 2
-        assert ancestry[1].thread_id == pipeline_id
+        assert len(ancestry) == 2, "Expected len(ancestry) to equal 2"
+        assert ancestry[1].thread_id == pipeline_id, "Expected ancestry[1].thread_id to equal pipeline_id"

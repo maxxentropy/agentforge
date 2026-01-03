@@ -27,8 +27,8 @@ class TestValidatePathSecurity:
 
         resolved, error = validate_path_security("src/module.py", tmp_path)
 
-        assert error is None
-        assert resolved == test_file
+        assert error is None, "Expected error is None"
+        assert resolved == test_file, "Expected resolved to equal test_file"
 
     def test_valid_absolute_path(self, tmp_path):
         """Valid absolute path within base directory."""
@@ -37,15 +37,15 @@ class TestValidatePathSecurity:
 
         resolved, error = validate_path_security(str(test_file), tmp_path)
 
-        assert error is None
-        assert resolved == test_file
+        assert error is None, "Expected error is None"
+        assert resolved == test_file, "Expected resolved to equal test_file"
 
     def test_path_traversal_rejected(self, tmp_path):
         """Path traversal attempts are rejected."""
         resolved, error = validate_path_security("../../../etc/passwd", tmp_path)
 
-        assert error is not None
-        assert "escapes project directory" in error
+        assert error is not None, "Expected error is not None"
+        assert "escapes project directory" in error, "Expected 'escapes project directory' in error"
 
     def test_path_traversal_with_dots(self, tmp_path):
         """Path with .. components that escape is rejected."""
@@ -53,15 +53,15 @@ class TestValidatePathSecurity:
 
         resolved, error = validate_path_security("src/../../outside.py", tmp_path)
 
-        assert error is not None
-        assert "escapes project directory" in error
+        assert error is not None, "Expected error is not None"
+        assert "escapes project directory" in error, "Expected 'escapes project directory' in error"
 
     def test_file_not_found(self, tmp_path):
         """Non-existent file returns error."""
         resolved, error = validate_path_security("nonexistent.py", tmp_path)
 
-        assert error is not None
-        assert "not found" in error.lower()
+        assert error is not None, "Expected error is not None"
+        assert "not found" in error.lower(), "Expected 'not found' in error.lower()"
 
     def test_allow_create(self, tmp_path):
         """allow_create=True allows non-existent files."""
@@ -69,8 +69,8 @@ class TestValidatePathSecurity:
             "new_file.py", tmp_path, allow_create=True
         )
 
-        assert error is None
-        assert resolved == tmp_path / "new_file.py"
+        assert error is None, "Expected error is None"
+        assert resolved == tmp_path / "new_file.py", "Expected resolved to equal tmp_path / 'new_file.py'"
 
     def test_allow_create_with_subdirectory(self, tmp_path):
         """allow_create=True allows non-existent files in subdirs."""
@@ -78,8 +78,8 @@ class TestValidatePathSecurity:
             "new_dir/new_file.py", tmp_path, allow_create=True
         )
 
-        assert error is None
-        assert resolved == tmp_path / "new_dir" / "new_file.py"
+        assert error is None, "Expected error is None"
+        assert resolved == tmp_path / "new_dir" / "new_file.py", "Expected resolved to equal tmp_path / 'new_dir' / 'new..."
 
     def test_symlink_escape_rejected(self, tmp_path):
         """Symlinks that escape base directory are rejected."""
@@ -96,8 +96,8 @@ class TestValidatePathSecurity:
 
         resolved, error = validate_path_security("escape/secret.txt", tmp_path)
 
-        assert error is not None
-        assert "escapes project directory" in error
+        assert error is not None, "Expected error is not None"
+        assert "escapes project directory" in error, "Expected 'escapes project directory' in error"
 
     def test_absolute_path_outside_allowed(self, tmp_path):
         """Absolute path outside base directory is allowed (explicit paths trusted).
@@ -112,10 +112,10 @@ class TestValidatePathSecurity:
         # Allowed but file may not exist on all systems
         # If file exists, no error; if not, "not found" error
         if resolved.exists():
-            assert error is None
+            assert error is None, "Expected error is None"
         else:
-            assert error is not None
-            assert "not found" in error.lower()
+            assert error is not None, "Expected error is not None"
+            assert "not found" in error.lower(), "Expected 'not found' in error.lower()"
 
     def test_path_with_valid_dots(self, tmp_path):
         """Path with .. that stays inside is allowed."""
@@ -126,8 +126,8 @@ class TestValidatePathSecurity:
 
         resolved, error = validate_path_security("src/../lib/module.py", tmp_path)
 
-        assert error is None
-        assert resolved == test_file
+        assert error is None, "Expected error is None"
+        assert resolved == test_file, "Expected resolved to equal test_file"
 
 
 class TestActionHandler:
@@ -143,5 +143,5 @@ class TestActionHandler:
 
         # This is a type check - the function should be compatible
         handler: ActionHandler = my_handler
-        assert callable(handler)
-        assert handler({"key": "value"}) == "result"
+        assert callable(handler), "Expected callable() to be truthy"
+        assert handler({"key": "value"}) == "result", "Expected handler({'key': 'value'}) to equal 'result'"

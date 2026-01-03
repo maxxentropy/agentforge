@@ -87,12 +87,12 @@ class TestAgentOrchestratorInit:
             escalation_manager=escalation_manager
         )
 
-        assert orchestrator.session_manager == session_manager
-        assert orchestrator.memory_manager == memory_manager
-        assert orchestrator.tool_selector == tool_selector
-        assert orchestrator.agent_monitor == agent_monitor
-        assert orchestrator.recovery_executor == recovery_executor
-        assert orchestrator.escalation_manager == escalation_manager
+        assert orchestrator.session_manager == session_manager, "Expected orchestrator.session_manager to equal session_manager"
+        assert orchestrator.memory_manager == memory_manager, "Expected orchestrator.memory_manager to equal memory_manager"
+        assert orchestrator.tool_selector == tool_selector, "Expected orchestrator.tool_selector to equal tool_selector"
+        assert orchestrator.agent_monitor == agent_monitor, "Expected orchestrator.agent_monitor to equal agent_monitor"
+        assert orchestrator.recovery_executor == recovery_executor, "Expected orchestrator.recovery_executor to equal recovery_executor"
+        assert orchestrator.escalation_manager == escalation_manager, "Expected orchestrator.escalation_man... to equal escalation_manager"
 
     def test_init_with_default_config(self):
         """Test initialization creates default config."""
@@ -105,8 +105,8 @@ class TestAgentOrchestratorInit:
             escalation_manager=Mock()
         )
 
-        assert orchestrator.config is not None
-        assert orchestrator.config.execution_mode == ExecutionMode.AUTONOMOUS
+        assert orchestrator.config is not None, "Expected orchestrator.config is not None"
+        assert orchestrator.config.execution_mode == ExecutionMode.AUTONOMOUS, "Expected orchestrator.config.executi... to equal ExecutionMode.AUTONOMOUS"
 
     def test_init_with_custom_config(self):
         """Test initialization with custom config."""
@@ -125,8 +125,8 @@ class TestAgentOrchestratorInit:
             config=config
         )
 
-        assert orchestrator.config.execution_mode == ExecutionMode.SUPERVISED
-        assert orchestrator.config.max_iterations == 50
+        assert orchestrator.config.execution_mode == ExecutionMode.SUPERVISED, "Expected orchestrator.config.executi... to equal ExecutionMode.SUPERVISED"
+        assert orchestrator.config.max_iterations == 50, "Expected orchestrator.config.max_ite... to equal 50"
 
 
 class TestStartSession:
@@ -158,9 +158,9 @@ class TestStartSession:
             context={"file": "main.py"}
         )
 
-        assert session_id is not None
-        assert isinstance(session_id, str)
-        assert session_id == "session-001"
+        assert session_id is not None, "Expected session_id is not None"
+        assert isinstance(session_id, str), "Expected isinstance() to be truthy"
+        assert session_id == "session-001", "Expected session_id to equal 'session-001'"
 
     def test_start_session_calls_create(self, orchestrator):
         """Test that start_session creates session via manager."""
@@ -185,7 +185,7 @@ class TestStartSession:
             execution_mode=ExecutionMode.INTERACTIVE
         )
 
-        assert session_id is not None
+        assert session_id is not None, "Expected session_id is not None"
 
     def test_start_session_stores_context_in_memory(self, orchestrator):
         """Test that start_session stores context in memory manager."""
@@ -229,7 +229,7 @@ class TestResumeSession:
         """Test that resume_session returns True for valid session."""
         result = orchestrator.resume_session("session-001")
 
-        assert result is True
+        assert result is True, "Expected result is True"
 
     def test_resume_session_returns_false_for_nonexistent(self, orchestrator):
         """Test resume_session returns False for nonexistent session."""
@@ -237,7 +237,7 @@ class TestResumeSession:
 
         result = orchestrator.resume_session("nonexistent")
 
-        assert result is False
+        assert result is False, "Expected result is False"
 
     def test_resume_session_loads_session(self, orchestrator):
         """Test that resume_session loads session state."""
@@ -294,7 +294,7 @@ class TestExecuteStep:
         """Test that execute_step returns an ExecutionResult."""
         result = orchestrator.execute_step("session-001")
 
-        assert isinstance(result, ExecutionResult)
+        assert isinstance(result, ExecutionResult), "Expected isinstance() to be truthy"
 
     def test_execute_step_checks_for_escalations(self, orchestrator):
         """Test that execute_step checks for pending escalations."""
@@ -315,7 +315,7 @@ class TestExecuteStep:
             input_data={"user_input": "continue"}
         )
 
-        assert result is not None
+        assert result is not None, "Expected result is not None"
 
 
 class TestRunUntilComplete:
@@ -361,7 +361,7 @@ class TestRunUntilComplete:
         """Test that run_until_complete returns final result."""
         result = orchestrator.run_until_complete("session-001")
 
-        assert isinstance(result, ExecutionResult)
+        assert isinstance(result, ExecutionResult), "Expected isinstance() to be truthy"
 
     def test_run_until_complete_respects_max_iterations(self, orchestrator):
         """Test that execution stops at max iterations."""
@@ -370,14 +370,14 @@ class TestRunUntilComplete:
             max_iterations=3
         )
 
-        assert result is not None
+        assert result is not None, "Expected result is not None"
 
     def test_run_until_complete_uses_config_max(self, orchestrator):
         """Test that run_until_complete uses config max_iterations."""
         result = orchestrator.run_until_complete("session-001")
 
         # Should respect config.max_iterations = 5
-        assert result is not None
+        assert result is not None, "Expected result is not None"
 
 
 class TestPauseSession:
@@ -409,7 +409,7 @@ class TestPauseSession:
         """Test that pause_session returns True on success."""
         result = orchestrator.pause_session("session-001", "User requested")
 
-        assert result is True
+        assert result is True, "Expected result is True"
 
     def test_pause_session_calls_session_manager_pause(self, orchestrator):
         """Test that pause_session calls session manager's pause method."""
@@ -423,7 +423,7 @@ class TestPauseSession:
 
         result = orchestrator.pause_session("nonexistent", "reason")
 
-        assert result is False
+        assert result is False, "Expected result is False"
 
 
 class TestGetStatus:
@@ -465,31 +465,31 @@ class TestGetStatus:
         """Test that get_status returns a status dict."""
         status = orchestrator.get_status("session-001")
 
-        assert isinstance(status, dict)
+        assert isinstance(status, dict), "Expected isinstance() to be truthy"
 
     def test_get_status_includes_state(self, orchestrator):
         """Test that status includes orchestrator state."""
         status = orchestrator.get_status("session-001")
 
-        assert "state" in status
+        assert "state" in status, "Expected 'state' in status"
 
     def test_get_status_includes_iteration_count(self, orchestrator):
         """Test that status includes iteration count."""
         status = orchestrator.get_status("session-001")
 
-        assert "iteration_count" in status
+        assert "iteration_count" in status, "Expected 'iteration_count' in status"
 
     def test_get_status_includes_health(self, orchestrator):
         """Test that status includes health status."""
         status = orchestrator.get_status("session-001")
 
-        assert "health_status" in status
+        assert "health_status" in status, "Expected 'health_status' in status"
 
     def test_get_status_includes_pending_escalations(self, orchestrator):
         """Test that status includes pending escalation count."""
         status = orchestrator.get_status("session-001")
 
-        assert "pending_escalations" in status
+        assert "pending_escalations" in status, "Expected 'pending_escalations' in status"
 
     def test_get_status_calls_get_health_with_context(self, orchestrator):
         """Test that get_status calls get_health with proper parameters."""
@@ -531,14 +531,14 @@ class TestGetAvailableTools:
         """Test that get_available_tools returns a list."""
         tools = orchestrator.get_available_tools("session-001")
 
-        assert isinstance(tools, list)
+        assert isinstance(tools, list), "Expected isinstance() to be truthy"
 
     def test_get_available_tools_uses_tool_selector(self, orchestrator):
         """Test that tool selector is used."""
         tools = orchestrator.get_available_tools("session-001")
 
-        assert "read" in tools
-        assert "write" in tools
+        assert "read" in tools, "Expected 'read' in tools"
+        assert "write" in tools, "Expected 'write' in tools"
 
     def test_get_available_tools_passes_workflow_and_phase(self, orchestrator):
         """Test that get_tool_names is called with workflow, phase, domain."""
@@ -589,7 +589,7 @@ class TestHandleHealthCheck:
 
         result = orchestrator.handle_health_check("session-001")
 
-        assert result is None
+        assert result is None, "Expected result is None"
 
     def test_handle_health_check_triggers_recovery_when_unhealthy(self, orchestrator):
         """Test that recovery is triggered when issues detected."""
@@ -607,7 +607,7 @@ class TestHandleHealthCheck:
 
         result = orchestrator.handle_health_check("session-001")
 
-        assert result is not None
+        assert result is not None, "Expected result is not None"
         orchestrator.recovery_executor.execute_recovery.assert_called()
 
 
@@ -649,7 +649,7 @@ class TestHandleEscalation:
 
         result = orchestrator.handle_escalation("session-001", resolution)
 
-        assert result is True
+        assert result is True, "Expected result is True"
 
     def test_handle_escalation_returns_false_for_nonexistent_session(self, orchestrator):
         """Test handle_escalation returns False for nonexistent session."""
@@ -664,7 +664,7 @@ class TestHandleEscalation:
 
         result = orchestrator.handle_escalation("nonexistent", resolution)
 
-        assert result is False
+        assert result is False, "Expected result is False"
 
 
 class TestCompleteSession:
@@ -705,7 +705,7 @@ class TestCompleteSession:
 
         success = orchestrator.complete_session("session-001", result)
 
-        assert success is True
+        assert success is True, "Expected success is True"
 
     def test_complete_session_calls_session_manager_complete(self, orchestrator):
         """Test that complete_session calls session manager's complete method."""
@@ -752,7 +752,7 @@ class TestFailSession:
         """Test that fail_session returns True on success."""
         success = orchestrator.fail_session("session-001", "Unrecoverable error")
 
-        assert success is True
+        assert success is True, "Expected success is True"
 
     def test_fail_session_calls_session_manager_abort(self, orchestrator):
         """Test that fail_session calls session manager's abort method."""
@@ -785,7 +785,7 @@ class TestGetSessionHistory:
         """Test that get_session_history returns a list."""
         history = orchestrator.get_session_history("session-001")
 
-        assert isinstance(history, list)
+        assert isinstance(history, list), "Expected isinstance() to be truthy"
 
 
 class TestCleanup:
@@ -810,8 +810,8 @@ class TestCleanup:
         """Test that cleanup returns count of cleaned items."""
         count = orchestrator.cleanup(max_age_days=30)
 
-        assert isinstance(count, int)
-        assert count == 5
+        assert isinstance(count, int), "Expected isinstance() to be truthy"
+        assert count == 5, "Expected count to equal 5"
 
     def test_cleanup_uses_session_manager_cleanup_old_sessions(self, orchestrator):
         """Test that cleanup uses session manager's cleanup_old_sessions."""
@@ -860,18 +860,18 @@ class TestOrchestratorIntegration:
 
         # Start session
         session_id = orchestrator.start_session("Test task", {})
-        assert session_id is not None
-        assert session_id == "session-001"
+        assert session_id is not None, "Expected session_id is not None"
+        assert session_id == "session-001", "Expected session_id to equal 'session-001'"
 
         # Execute step
         result = orchestrator.execute_step(session_id)
-        assert isinstance(result, ExecutionResult)
+        assert isinstance(result, ExecutionResult), "Expected isinstance() to be truthy"
 
         # Get status
         status = orchestrator.get_status(session_id)
-        assert "state" in status
+        assert "state" in status, "Expected 'state' in status"
 
         # Complete session
         success = orchestrator.complete_session(session_id, result)
-        assert success is True
+        assert success is True, "Expected success is True"
         session_manager.complete.assert_called_once()

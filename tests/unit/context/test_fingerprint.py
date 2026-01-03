@@ -38,8 +38,8 @@ class TestProjectFingerprint:
         )
 
         yaml_output = fp.to_context_yaml()
-        assert "name: test" in yaml_output
-        assert "language: python" in yaml_output
+        assert "name: test" in yaml_output, "Expected 'name: test' in yaml_output"
+        assert "language: python" in yaml_output, "Expected 'language: python' in yaml_output"
 
     def test_to_context_yaml_with_frameworks(self):
         """Test YAML output includes frameworks."""
@@ -54,8 +54,8 @@ class TestProjectFingerprint:
         )
 
         yaml_output = fp.to_context_yaml()
-        assert "fastapi" in yaml_output
-        assert "pydantic" in yaml_output
+        assert "fastapi" in yaml_output, "Expected 'fastapi' in yaml_output"
+        assert "pydantic" in yaml_output, "Expected 'pydantic' in yaml_output"
 
     def test_to_context_yaml_with_patterns(self):
         """Test YAML output includes detected patterns."""
@@ -71,9 +71,9 @@ class TestProjectFingerprint:
         )
 
         yaml_output = fp.to_context_yaml()
-        assert "clean_architecture" in yaml_output
-        assert "snake_case" in yaml_output
-        assert "google" in yaml_output
+        assert "clean_architecture" in yaml_output, "Expected 'clean_architecture' in yaml_output"
+        assert "snake_case" in yaml_output, "Expected 'snake_case' in yaml_output"
+        assert "google" in yaml_output, "Expected 'google' in yaml_output"
 
     def test_to_context_yaml_excludes_unknown(self):
         """Test YAML output excludes 'unknown' pattern values."""
@@ -86,7 +86,7 @@ class TestProjectFingerprint:
 
         yaml_output = fp.to_context_yaml()
         # Unknown values should not appear in output
-        assert "unknown" not in yaml_output
+        assert "unknown" not in yaml_output, "Expected 'unknown' not in yaml_output"
 
     def test_estimate_tokens(self):
         """Test token estimation."""
@@ -98,8 +98,8 @@ class TestProjectFingerprint:
         )
 
         tokens = fp.estimate_tokens()
-        assert tokens > 0
-        assert tokens < 200  # Minimal fingerprint should be small
+        assert tokens > 0, "Expected tokens > 0"
+        assert tokens < 200, "Expected tokens < 200"# Minimal fingerprint should be small
 
     def test_with_task_context(self):
         """Test adding task context creates new instance."""
@@ -117,15 +117,15 @@ class TestProjectFingerprint:
         )
 
         # New instance
-        assert with_task is not base
+        assert with_task is not base, "Expected with_task is not base"
 
         # Task context added
-        assert with_task.task_type == "fix_violation"
-        assert with_task.task_constraints["correctness_first"] is True
-        assert "Tests pass" in with_task.success_criteria
+        assert with_task.task_type == "fix_violation", "Expected with_task.task_type to equal 'fix_violation'"
+        assert with_task.task_constraints["correctness_first"] is True, "Expected with_task.task_constraints[... is True"
+        assert "Tests pass" in with_task.success_criteria, "Expected 'Tests pass' in with_task.success_criteria"
 
         # Original unchanged
-        assert base.task_type is None
+        assert base.task_type is None, "Expected base.task_type is None"
 
     def test_with_task_context_in_yaml(self):
         """Test task context appears in YAML output."""
@@ -143,8 +143,8 @@ class TestProjectFingerprint:
         )
 
         yaml_output = with_task.to_context_yaml()
-        assert "correctness_first" in yaml_output
-        assert "Tests pass" in yaml_output
+        assert "correctness_first" in yaml_output, "Expected 'correctness_first' in yaml_output"
+        assert "Tests pass" in yaml_output, "Expected 'Tests pass' in yaml_output"
 
 
 class TestFingerprintGenerator:
@@ -183,10 +183,10 @@ dependencies = [
         generator = FingerprintGenerator(temp_project)
         fp = generator.generate()
 
-        assert fp.technical.language == "python"
-        assert "pydantic" in fp.technical.frameworks
-        assert "pytest" in fp.technical.frameworks
-        assert fp.technical.version == "3.11"
+        assert fp.technical.language == "python", "Expected fp.technical.language to equal 'python'"
+        assert "pydantic" in fp.technical.frameworks, "Expected 'pydantic' in fp.technical.frameworks"
+        assert "pytest" in fp.technical.frameworks, "Expected 'pytest' in fp.technical.frameworks"
+        assert fp.technical.version == "3.11", "Expected fp.technical.version to equal '3.11'"
 
     def test_detect_python_with_fastapi(self, temp_project):
         """Detect FastAPI framework."""
@@ -201,8 +201,8 @@ dependencies = ["fastapi>=0.100.0"]
         generator = FingerprintGenerator(temp_project)
         fp = generator.generate()
 
-        assert fp.technical.language == "python"
-        assert "fastapi" in fp.technical.frameworks
+        assert fp.technical.language == "python", "Expected fp.technical.language to equal 'python'"
+        assert "fastapi" in fp.technical.frameworks, "Expected 'fastapi' in fp.technical.frameworks"
 
     def test_detect_node_project(self, temp_project):
         """Detect Node.js project from package.json."""
@@ -225,10 +225,10 @@ dependencies = ["fastapi>=0.100.0"]
         generator = FingerprintGenerator(temp_project)
         fp = generator.generate()
 
-        assert fp.technical.language == "javascript"
-        assert "react" in fp.technical.frameworks
-        assert "express" in fp.technical.frameworks
-        assert fp.technical.test_framework == "jest"
+        assert fp.technical.language == "javascript", "Expected fp.technical.language to equal 'javascript'"
+        assert "react" in fp.technical.frameworks, "Expected 'react' in fp.technical.frameworks"
+        assert "express" in fp.technical.frameworks, "Expected 'express' in fp.technical.frameworks"
+        assert fp.technical.test_framework == "jest", "Expected fp.technical.test_framework to equal 'jest'"
 
     def test_detect_typescript_project(self, temp_project):
         """Detect TypeScript project."""
@@ -238,7 +238,7 @@ dependencies = ["fastapi>=0.100.0"]
         generator = FingerprintGenerator(temp_project)
         fp = generator.generate()
 
-        assert fp.technical.language == "typescript"
+        assert fp.technical.language == "typescript", "Expected fp.technical.language to equal 'typescript'"
 
     def test_detect_rust_project(self, temp_project):
         """Detect Rust project."""
@@ -247,8 +247,8 @@ dependencies = ["fastapi>=0.100.0"]
         generator = FingerprintGenerator(temp_project)
         fp = generator.generate()
 
-        assert fp.technical.language == "rust"
-        assert fp.technical.build_system == "cargo"
+        assert fp.technical.language == "rust", "Expected fp.technical.language to equal 'rust'"
+        assert fp.technical.build_system == "cargo", "Expected fp.technical.build_system to equal 'cargo'"
 
     def test_detect_go_project(self, temp_project):
         """Detect Go project."""
@@ -257,8 +257,8 @@ dependencies = ["fastapi>=0.100.0"]
         generator = FingerprintGenerator(temp_project)
         fp = generator.generate()
 
-        assert fp.technical.language == "go"
-        assert fp.technical.build_system == "go"
+        assert fp.technical.language == "go", "Expected fp.technical.language to equal 'go'"
+        assert fp.technical.build_system == "go", "Expected fp.technical.build_system to equal 'go'"
 
     def test_detect_clean_architecture(self, temp_project):
         """Detect clean architecture pattern."""
@@ -271,7 +271,7 @@ dependencies = ["fastapi>=0.100.0"]
         generator = FingerprintGenerator(temp_project)
         fp = generator.generate()
 
-        assert fp.patterns.architecture == "clean_architecture"
+        assert fp.patterns.architecture == "clean_architecture", "Expected fp.patterns.architecture to equal 'clean_architecture'"
 
     def test_detect_mvc_architecture(self, temp_project):
         """Detect MVC architecture pattern."""
@@ -284,7 +284,7 @@ dependencies = ["fastapi>=0.100.0"]
         generator = FingerprintGenerator(temp_project)
         fp = generator.generate()
 
-        assert fp.patterns.architecture == "mvc"
+        assert fp.patterns.architecture == "mvc", "Expected fp.patterns.architecture to equal 'mvc'"
 
     def test_detect_structure(self, temp_project):
         """Detect project structure."""
@@ -295,9 +295,9 @@ dependencies = ["fastapi>=0.100.0"]
         generator = FingerprintGenerator(temp_project)
         fp = generator.generate()
 
-        assert fp.structure.source_root == "src"
-        assert fp.structure.test_root == "tests"
-        assert "pyproject.toml" in fp.structure.config_files
+        assert fp.structure.source_root == "src", "Expected fp.structure.source_root to equal 'src'"
+        assert fp.structure.test_root == "tests", "Expected fp.structure.test_root to equal 'tests'"
+        assert "pyproject.toml" in fp.structure.config_files, "Expected 'pyproject.toml' in fp.structure.config_files"
 
     def test_cache_hit(self, temp_project):
         """Test that cache is used on second call."""
@@ -309,7 +309,7 @@ dependencies = ["fastapi>=0.100.0"]
         fp2 = generator.generate()
 
         # Same object (cached)
-        assert fp1 is fp2
+        assert fp1 is fp2, "Expected fp1 is fp2"
 
     def test_cache_invalidation_on_file_change(self, temp_project):
         """Test that cache invalidates on file change."""
@@ -327,7 +327,7 @@ dependencies = ["fastapi>=0.100.0"]
         fp2 = generator.generate()
 
         # Different objects
-        assert fp1 is not fp2
+        assert fp1 is not fp2, "Expected fp1 is not fp2"
 
     def test_force_refresh(self, temp_project):
         """Test force refresh bypasses cache."""
@@ -339,7 +339,7 @@ dependencies = ["fastapi>=0.100.0"]
         fp2 = generator.generate(force_refresh=True)
 
         # Different objects
-        assert fp1 is not fp2
+        assert fp1 is not fp2, "Expected fp1 is not fp2"
 
     def test_with_task_context_method(self, temp_project):
         """Test generating fingerprint with task context."""
@@ -353,21 +353,21 @@ dependencies = ["fastapi>=0.100.0"]
             success_criteria=["Check passes", "Tests pass"],
         )
 
-        assert fp.task_type == "fix_violation"
-        assert fp.task_constraints["correctness_first"] is True
-        assert "Check passes" in fp.success_criteria
+        assert fp.task_type == "fix_violation", "Expected fp.task_type to equal 'fix_violation'"
+        assert fp.task_constraints["correctness_first"] is True, "Expected fp.task_constraints['correc... is True"
+        assert "Check passes" in fp.success_criteria, "Expected 'Check passes' in fp.success_criteria"
 
         # Base fingerprint is cached without task context
         base = generator.generate()
-        assert base.task_type is None
+        assert base.task_type is None, "Expected base.task_type is None"
 
     def test_unknown_project(self, temp_project):
         """Test handling of project with no recognized config."""
         generator = FingerprintGenerator(temp_project)
         fp = generator.generate()
 
-        assert fp.technical.language == "unknown"
-        assert fp.identity.name == "test_project"
+        assert fp.technical.language == "unknown", "Expected fp.technical.language to equal 'unknown'"
+        assert fp.identity.name == "test_project", "Expected fp.identity.name to equal 'test_project'"
 
     def test_entry_points_detection(self, temp_project):
         """Test detection of entry points at root level."""
@@ -377,8 +377,8 @@ dependencies = ["fastapi>=0.100.0"]
         generator = FingerprintGenerator(temp_project)
         fp = generator.generate()
 
-        assert len(fp.structure.entry_points) > 0
-        assert "main.py" in fp.structure.entry_points
+        assert len(fp.structure.entry_points) > 0, "Expected len(fp.structure.entry_points) > 0"
+        assert "main.py" in fp.structure.entry_points, "Expected 'main.py' in fp.structure.entry_points"
 
     def test_identity_content_hash(self, temp_project):
         """Test that identity includes content hash."""
@@ -387,5 +387,5 @@ dependencies = ["fastapi>=0.100.0"]
         generator = FingerprintGenerator(temp_project)
         fp = generator.generate()
 
-        assert fp.identity.content_hash
-        assert len(fp.identity.content_hash) == 16
+        assert fp.identity.content_hash, "Expected fp.identity.content_hash to be truthy"
+        assert len(fp.identity.content_hash) == 16, "Expected len(fp.identity.content_hash) to equal 16"

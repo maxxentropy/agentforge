@@ -28,9 +28,9 @@ class TestToolCallDetail:
 
         data = tc.to_dict()
 
-        assert data["tool_name"] == "read_file"
-        assert data["success"] is True
-        assert data["duration_ms"] == 100
+        assert data["tool_name"] == "read_file", "Expected data['tool_name'] to equal 'read_file'"
+        assert data["success"] is True, "Expected data['success'] is True"
+        assert data["duration_ms"] == 100, "Expected data['duration_ms'] to equal 100"
 
     def test_tool_call_truncates_large_output(self):
         """Large outputs are truncated in to_dict."""
@@ -44,8 +44,8 @@ class TestToolCallDetail:
 
         data = tc.to_dict()
 
-        assert len(data["output"]) == 500
-        assert data["output_length"] == 1000
+        assert len(data["output"]) == 500, "Expected len(data['output']) to equal 500"
+        assert data["output_length"] == 1000, "Expected data['output_length'] to equal 1000"
 
 
 class TestConversationTurn:
@@ -65,8 +65,8 @@ class TestConversationTurn:
             tokens_output=50,
         )
 
-        assert turn.turn_id == "TURN-0001"
-        assert turn.model == "claude-sonnet-4-20250514"
+        assert turn.turn_id == "TURN-0001", "Expected turn.turn_id to equal 'TURN-0001'"
+        assert turn.model == "claude-sonnet-4-20250514", "Expected turn.model to equal 'claude-sonnet-4-20250514'"
 
     def test_turn_to_dict(self):
         """Serialize turn to dictionary."""
@@ -84,9 +84,9 @@ class TestConversationTurn:
 
         data = turn.to_dict()
 
-        assert data["turn_id"] == "TURN-0001"
-        assert data["tokens"]["input"] == 100
-        assert data["content_lengths"]["system_prompt"] == 6
+        assert data["turn_id"] == "TURN-0001", "Expected data['turn_id'] to equal 'TURN-0001'"
+        assert data["tokens"]["input"] == 100, "Expected data['tokens']['input'] to equal 100"
+        assert data["content_lengths"]["system_prompt"] == 6, "Expected data['content_lengths']['sy... to equal 6"
 
     def test_turn_to_markdown(self):
         """Format turn as markdown."""
@@ -102,10 +102,10 @@ class TestConversationTurn:
 
         md = turn.to_markdown()
 
-        assert "# Conversation Turn TURN-0001" in md
-        assert "You are helpful." in md
-        assert "Help me." in md
-        assert "Sure!" in md
+        assert "# Conversation Turn TURN-0001" in md, "Expected '# Conversation Turn TURN-0... in md"
+        assert "You are helpful." in md, "Expected 'You are helpful.' in md"
+        assert "Help me." in md, "Expected 'Help me.' in md"
+        assert "Sure!" in md, "Expected 'Sure!' in md"
 
     def test_turn_with_tool_calls(self):
         """Turn with tool calls."""
@@ -129,8 +129,8 @@ class TestConversationTurn:
 
         data = turn.to_dict()
 
-        assert data["tool_call_count"] == 1
-        assert data["tool_calls"][0]["tool_name"] == "read_file"
+        assert data["tool_call_count"] == 1, "Expected data['tool_call_count'] to equal 1"
+        assert data["tool_calls"][0]["tool_name"] == "read_file", "Expected data['tool_calls'][0]['tool... to equal 'read_file'"
 
 
 class TestConversationArchive:
@@ -151,12 +151,12 @@ class TestConversationArchive:
             duration_ms=1500,
         )
 
-        assert turn.turn_id == "TURN-0001"
-        assert turn.thread_id == "thread-001"
+        assert turn.turn_id == "TURN-0001", "Expected turn.turn_id to equal 'TURN-0001'"
+        assert turn.thread_id == "thread-001", "Expected turn.thread_id to equal 'thread-001'"
 
         # Verify files created
-        assert (tmp_path / "conversations" / "TURN-0001.md").exists()
-        assert (tmp_path / "conversations" / "TURN-0001.yaml").exists()
+        assert (tmp_path / "conversations" / "TURN-0001.md").exists(), "Expected (tmp_path / 'conversations'...() to be truthy"
+        assert (tmp_path / "conversations" / "TURN-0001.yaml").exists(), "Expected (tmp_path / 'conversations'...() to be truthy"
 
     def test_sequential_turn_ids(self, tmp_path):
         """Turns get sequential IDs."""
@@ -166,9 +166,9 @@ class TestConversationArchive:
         t2 = archive.archive_turn("...", "...", "...", "model", "thread")
         t3 = archive.archive_turn("...", "...", "...", "model", "thread")
 
-        assert t1.turn_id == "TURN-0001"
-        assert t2.turn_id == "TURN-0002"
-        assert t3.turn_id == "TURN-0003"
+        assert t1.turn_id == "TURN-0001", "Expected t1.turn_id to equal 'TURN-0001'"
+        assert t2.turn_id == "TURN-0002", "Expected t2.turn_id to equal 'TURN-0002'"
+        assert t3.turn_id == "TURN-0003", "Expected t3.turn_id to equal 'TURN-0003'"
 
     def test_list_turns(self, tmp_path):
         """List all turns."""
@@ -179,7 +179,7 @@ class TestConversationArchive:
 
         turns = archive.list_turns()
 
-        assert turns == ["TURN-0001", "TURN-0002"]
+        assert turns == ["TURN-0001", "TURN-0002"], "Expected turns to equal ['TURN-0001', 'TURN-0002']"
 
     def test_get_turn_content(self, tmp_path):
         """Get full markdown content of turn."""
@@ -195,10 +195,10 @@ class TestConversationArchive:
 
         content = archive.get_turn_content("TURN-0001")
 
-        assert content is not None
-        assert "System prompt here" in content
-        assert "User message here" in content
-        assert "Response here" in content
+        assert content is not None, "Expected content is not None"
+        assert "System prompt here" in content, "Expected 'System prompt here' in content"
+        assert "User message here" in content, "Expected 'User message here' in content"
+        assert "Response here" in content, "Expected 'Response here' in content"
 
     def test_get_summary(self, tmp_path):
         """Get archive summary."""
@@ -209,8 +209,8 @@ class TestConversationArchive:
 
         summary = archive.get_summary()
 
-        assert summary["total_turns"] == 2
-        assert len(summary["turns"]) == 2
+        assert summary["total_turns"] == 2, "Expected summary['total_turns'] to equal 2"
+        assert len(summary["turns"]) == 2, "Expected len(summary['turns']) to equal 2"
 
     def test_get_total_tokens(self, tmp_path):
         """Get total token usage."""
@@ -227,9 +227,9 @@ class TestConversationArchive:
 
         totals = archive.get_total_tokens()
 
-        assert totals["input"] == 300
-        assert totals["output"] == 150
-        assert totals["total"] == 450
+        assert totals["input"] == 300, "Expected totals['input'] to equal 300"
+        assert totals["output"] == 150, "Expected totals['output'] to equal 150"
+        assert totals["total"] == 450, "Expected totals['total'] to equal 450"
 
     def test_persistence_across_instances(self, tmp_path):
         """Archive persists across instances."""
@@ -239,8 +239,8 @@ class TestConversationArchive:
         archive2 = ConversationArchive(tmp_path)
         t2 = archive2.archive_turn("...", "...", "...", "model", "thread")
 
-        assert t2.turn_id == "TURN-0002"
-        assert len(archive2.list_turns()) == 2
+        assert t2.turn_id == "TURN-0002", "Expected t2.turn_id to equal 'TURN-0002'"
+        assert len(archive2.list_turns()) == 2, "Expected len(archive2.list_turns()) to equal 2"
 
     def test_archive_with_tool_calls(self, tmp_path):
         """Archive turn with tool calls."""
@@ -265,11 +265,11 @@ class TestConversationArchive:
             tool_calls=tool_calls,
         )
 
-        assert len(turn.tool_calls) == 1
+        assert len(turn.tool_calls) == 1, "Expected len(turn.tool_calls) to equal 1"
 
         # Verify in markdown
         content = archive.get_turn_content("TURN-0001")
-        assert "read_file" in content
+        assert "read_file" in content, "Expected 'read_file' in content"
 
     def test_archive_with_stage_context(self, tmp_path):
         """Archive turn with pipeline context."""
@@ -285,8 +285,8 @@ class TestConversationArchive:
             pipeline_id="pipeline-001",
         )
 
-        assert turn.stage_name == "intake"
-        assert turn.pipeline_id == "pipeline-001"
+        assert turn.stage_name == "intake", "Expected turn.stage_name to equal 'intake'"
+        assert turn.pipeline_id == "pipeline-001", "Expected turn.pipeline_id to equal 'pipeline-001'"
 
         summary = archive.get_summary()
-        assert summary["turns"][0]["stage_name"] == "intake"
+        assert summary["turns"][0]["stage_name"] == "intake", "Expected summary['turns'][0]['stage_... to equal 'intake'"

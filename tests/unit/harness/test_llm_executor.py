@@ -24,10 +24,10 @@ class TestLLMExecutorInit:
 
             executor = LLMExecutor()
 
-            assert executor.provider == mock_provider
-            assert executor.prompt_builder is not None
-            assert executor.action_parser is not None
-            assert executor.tool_executors == {}
+            assert executor.provider == mock_provider, "Expected executor.provider to equal mock_provider"
+            assert executor.prompt_builder is not None, "Expected executor.prompt_builder is not None"
+            assert executor.action_parser is not None, "Expected executor.action_parser is not None"
+            assert executor.tool_executors == {}, "Expected executor.tool_executors to equal {}"
 
     def test_custom_components(self):
         """Executor accepts custom components."""
@@ -43,10 +43,10 @@ class TestLLMExecutorInit:
             tool_executors=tools,
         )
 
-        assert executor.provider == mock_provider
-        assert executor.prompt_builder == mock_builder
-        assert executor.action_parser == mock_parser
-        assert "test" in executor.tool_executors
+        assert executor.provider == mock_provider, "Expected executor.provider to equal mock_provider"
+        assert executor.prompt_builder == mock_builder, "Expected executor.prompt_builder to equal mock_builder"
+        assert executor.action_parser == mock_parser, "Expected executor.action_parser to equal mock_parser"
+        assert "test" in executor.tool_executors, "Expected 'test' in executor.tool_executors"
 
 
 class TestToolRegistration:
@@ -58,7 +58,7 @@ class TestToolRegistration:
             executor = LLMExecutor()
             executor.register_tool("my_tool", lambda n, p: ToolResult.success_result(n, "ok"))
 
-            assert "my_tool" in executor.tool_executors
+            assert "my_tool" in executor.tool_executors, "Expected 'my_tool' in executor.tool_executors"
 
     def test_register_multiple_tools(self):
         """Register multiple tools at once."""
@@ -69,8 +69,8 @@ class TestToolRegistration:
                 "tool2": lambda n, p: ToolResult.success_result(n, "2"),
             })
 
-            assert "tool1" in executor.tool_executors
-            assert "tool2" in executor.tool_executors
+            assert "tool1" in executor.tool_executors, "Expected 'tool1' in executor.tool_executors"
+            assert "tool2" in executor.tool_executors, "Expected 'tool2' in executor.tool_executors"
 
 
 class TestExecuteStep:
@@ -107,7 +107,7 @@ class TestExecuteStep:
         result = executor.execute_step(context)
 
         mock_provider.generate.assert_called_once()
-        assert result.success is True
+        assert result.success is True, "Expected result.success is True"
 
     def test_execute_step_parses_action(self, mock_provider, context):
         """Execute step parses the LLM response into action."""
@@ -116,9 +116,9 @@ class TestExecuteStep:
 
         result = executor.execute_step(context)
 
-        assert result.action is not None
-        assert result.action.action_type == ActionType.TOOL_CALL
-        assert len(result.action.tool_calls) == 1
+        assert result.action is not None, "Expected result.action is not None"
+        assert result.action.action_type == ActionType.TOOL_CALL, "Expected result.action.action_type to equal ActionType.TOOL_CALL"
+        assert len(result.action.tool_calls) == 1, "Expected len(result.action.tool_calls) to equal 1"
 
     def test_execute_step_runs_tools(self, mock_provider, context):
         """Execute step runs tool calls."""
@@ -133,26 +133,26 @@ class TestExecuteStep:
 
         result = executor.execute_step(context)
 
-        assert len(tool_called) == 1
-        assert tool_called[0][0] == "read_file"
-        assert tool_called[0][1] == {"path": "/test.py"}
-        assert len(result.tool_results) == 1
-        assert result.tool_results[0].success is True
+        assert len(tool_called) == 1, "Expected len(tool_called) to equal 1"
+        assert tool_called[0][0] == "read_file", "Expected tool_called[0][0] to equal 'read_file'"
+        assert tool_called[0][1] == {"path": "/test.py"}, "Expected tool_called[0][1] to equal {'path': '/test.py'}"
+        assert len(result.tool_results) == 1, "Expected len(result.tool_results) to equal 1"
+        assert result.tool_results[0].success is True, "Expected result.tool_results[0].success is True"
 
     def test_execute_step_updates_context(self, mock_provider, context):
         """Execute step updates execution context."""
         executor = LLMExecutor(provider=mock_provider)
         executor.register_tool("read_file", lambda n, p: ToolResult.success_result(n, "ok"))
 
-        assert context.iteration == 0
-        assert len(context.conversation_history) == 0
+        assert context.iteration == 0, "Expected context.iteration to equal 0"
+        assert len(context.conversation_history) == 0, "Expected len(context.conversation_hi... to equal 0"
 
         executor.execute_step(context)
 
-        assert context.iteration == 1
-        assert context.tokens_used > 0
+        assert context.iteration == 1, "Expected context.iteration to equal 1"
+        assert context.tokens_used > 0, "Expected context.tokens_used > 0"
         # History should have assistant message + tool result
-        assert len(context.conversation_history) == 2
+        assert len(context.conversation_history) == 2, "Expected len(context.conversation_hi... to equal 2"
 
     def test_execute_step_unknown_tool(self, context):
         """Execute step handles unknown tools gracefully."""
@@ -171,10 +171,10 @@ class TestExecuteStep:
 
         result = executor.execute_step(context)
 
-        assert result.success is True
-        assert len(result.tool_results) == 1
-        assert result.tool_results[0].success is False
-        assert "Unknown tool" in result.tool_results[0].error
+        assert result.success is True, "Expected result.success is True"
+        assert len(result.tool_results) == 1, "Expected len(result.tool_results) to equal 1"
+        assert result.tool_results[0].success is False, "Expected result.tool_results[0].success is False"
+        assert "Unknown tool" in result.tool_results[0].error, "Expected 'Unknown tool' in result.tool_results[0].error"
 
     def test_execute_step_complete_action(self, context):
         """Execute step handles completion action."""
@@ -191,9 +191,9 @@ class TestExecuteStep:
 
         result = executor.execute_step(context)
 
-        assert result.success is True
-        assert result.action.action_type == ActionType.COMPLETE
-        assert result.should_continue is False
+        assert result.success is True, "Expected result.success is True"
+        assert result.action.action_type == ActionType.COMPLETE, "Expected result.action.action_type to equal ActionType.COMPLETE"
+        assert result.should_continue is False, "Expected result.should_continue is False"
 
 
 class TestToolExecution:
@@ -208,8 +208,8 @@ class TestToolExecution:
             tool_call = ToolCall(name="test", parameters={})
             result = executor._execute_single_tool(tool_call)
 
-            assert result.success is True
-            assert result.output == "done"
+            assert result.success is True, "Expected result.success is True"
+            assert result.output == "done", "Expected result.output to equal 'done'"
 
     def test_tool_failure(self):
         """Failed tool execution."""
@@ -220,8 +220,8 @@ class TestToolExecution:
             tool_call = ToolCall(name="test", parameters={})
             result = executor._execute_single_tool(tool_call)
 
-            assert result.success is False
-            assert result.error == "failed"
+            assert result.success is False, "Expected result.success is False"
+            assert result.error == "failed", "Expected result.error to equal 'failed'"
 
     def test_tool_exception_caught(self):
         """Tool exceptions are caught and converted to failures."""
@@ -236,9 +236,9 @@ class TestToolExecution:
             tool_call = ToolCall(name="bad", parameters={})
             result = executor._execute_single_tool(tool_call)
 
-            assert result.success is False
-            assert "Tool execution error" in result.error
-            assert "Something broke" in result.error
+            assert result.success is False, "Expected result.success is False"
+            assert "Tool execution error" in result.error, "Expected 'Tool execution error' in result.error"
+            assert "Something broke" in result.error, "Expected 'Something broke' in result.error"
 
     def test_tool_returns_non_result(self):
         """Tool returning non-ToolResult is wrapped."""
@@ -249,8 +249,8 @@ class TestToolExecution:
             tool_call = ToolCall(name="raw", parameters={})
             result = executor._execute_single_tool(tool_call)
 
-            assert result.success is True
-            assert result.output == "raw output"
+            assert result.success is True, "Expected result.success is True"
+            assert result.output == "raw output", "Expected result.output to equal 'raw output'"
 
 
 class TestRunUntilComplete:
@@ -285,8 +285,8 @@ class TestRunUntilComplete:
 
         results = executor.run_until_complete(context, max_iterations=10)
 
-        assert len(results) == 2
-        assert results[-1].action.action_type == ActionType.COMPLETE
+        assert len(results) == 2, "Expected len(results) to equal 2"
+        assert results[-1].action.action_type == ActionType.COMPLETE, "Expected results[-1].action.action_type to equal ActionType.COMPLETE"
 
     def test_respects_max_iterations(self):
         """Executor stops at max iterations."""
@@ -311,7 +311,7 @@ class TestRunUntilComplete:
 
         results = executor.run_until_complete(context, max_iterations=3)
 
-        assert len(results) == 3
+        assert len(results) == 3, "Expected len(results) to equal 3"
 
     def test_stops_on_token_budget(self):
         """Executor stops when token budget exhausted."""
@@ -338,8 +338,8 @@ class TestRunUntilComplete:
         results = executor.run_until_complete(context, max_iterations=10)
 
         # Should stop after tokens exhausted
-        assert len(results) <= 3
-        assert results[-1].error == "Token budget exhausted" or results[-1].should_continue is False
+        assert len(results) <= 3, "Expected len(results) <= 3"
+        assert results[-1].error == "Token budget exhausted" or results[-1].should_continue is False, "Assertion failed"
 
     def test_calls_on_step_callback(self):
         """Callback is called after each step."""
@@ -366,7 +366,7 @@ class TestRunUntilComplete:
             on_step=lambda r: callback_results.append(r),
         )
 
-        assert len(callback_results) == 1
+        assert len(callback_results) == 1, "Expected len(callback_results) to equal 1"
 
 
 class TestMessagesToPrompt:
@@ -380,9 +380,9 @@ class TestMessagesToPrompt:
             messages = [{"role": "system", "content": "You are helpful."}]
             result = executor._messages_to_prompt(messages)
 
-            assert "<system>" in result
-            assert "You are helpful." in result
-            assert "</system>" in result
+            assert "<system>" in result, "Expected '<system>' in result"
+            assert "You are helpful." in result, "Expected 'You are helpful.' in result"
+            assert "</system>" in result, "Expected '</system>' in result"
 
     def test_user_message_format(self):
         """User messages are formatted correctly."""
@@ -392,8 +392,8 @@ class TestMessagesToPrompt:
             messages = [{"role": "user", "content": "Hello"}]
             result = executor._messages_to_prompt(messages)
 
-            assert "<user>" in result
-            assert "Hello" in result
+            assert "<user>" in result, "Expected '<user>' in result"
+            assert "Hello" in result, "Expected 'Hello' in result"
 
     def test_assistant_message_format(self):
         """Assistant messages are formatted correctly."""
@@ -403,8 +403,8 @@ class TestMessagesToPrompt:
             messages = [{"role": "assistant", "content": "Hi there"}]
             result = executor._messages_to_prompt(messages)
 
-            assert "<assistant>" in result
-            assert "Hi there" in result
+            assert "<assistant>" in result, "Expected '<assistant>' in result"
+            assert "Hi there" in result, "Expected 'Hi there' in result"
 
 
 class TestCreateDefaultExecutor:
@@ -414,7 +414,7 @@ class TestCreateDefaultExecutor:
         """Factory creates configured executor."""
         with patch("agentforge.core.harness.llm_executor.get_provider"):
             executor = create_default_executor()
-            assert isinstance(executor, LLMExecutor)
+            assert isinstance(executor, LLMExecutor), "Expected isinstance() to be truthy"
 
     def test_accepts_tools(self):
         """Factory accepts tool executors."""
@@ -422,10 +422,10 @@ class TestCreateDefaultExecutor:
 
         with patch("agentforge.core.harness.llm_executor.get_provider"):
             executor = create_default_executor(tool_executors=tools)
-            assert "my_tool" in executor.tool_executors
+            assert "my_tool" in executor.tool_executors, "Expected 'my_tool' in executor.tool_executors"
 
     def test_accepts_model(self):
         """Factory accepts model parameter."""
         with patch("agentforge.core.harness.llm_executor.get_provider"):
             executor = create_default_executor(model="claude-opus-4-20250514")
-            assert executor.model == "claude-opus-4-20250514"
+            assert executor.model == "claude-opus-4-20250514", "Expected executor.model to equal 'claude-opus-4-20250514'"

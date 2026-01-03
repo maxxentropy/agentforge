@@ -56,9 +56,9 @@ class TestSearchCodeHandler:
 
         result = handler({"pattern": "calculate_total"})
 
-        assert "module.py" in result
-        assert "1" in result or "line" in result.lower()
-        assert "Found" in result
+        assert "module.py" in result, "Expected 'module.py' in result"
+        assert "1" in result or "line" in result.lower(), "Assertion failed"
+        assert "Found" in result, "Expected 'Found' in result"
 
     def test_regex_search_with_file_pattern(self, temp_project):
         """File pattern limits search scope."""
@@ -66,9 +66,9 @@ class TestSearchCodeHandler:
 
         result = handler({"pattern": "def", "file_pattern": "src/*.py"})
 
-        assert "module.py" in result or "utils.py" in result
+        assert "module.py" in result or "utils.py" in result, "Assertion failed"
         # Should not include test files
-        assert "test_module" not in result
+        assert "test_module" not in result, "Expected 'test_module' not in result"
 
     def test_regex_no_matches(self, temp_project):
         """No matches returns informative message."""
@@ -76,7 +76,7 @@ class TestSearchCodeHandler:
 
         result = handler({"pattern": "nonexistent_symbol_xyz123"})
 
-        assert "No matches" in result
+        assert "No matches" in result, "Expected 'No matches' in result"
 
     def test_invalid_regex(self, temp_project):
         """Invalid regex returns error."""
@@ -84,8 +84,8 @@ class TestSearchCodeHandler:
 
         result = handler({"pattern": "[invalid("})
 
-        assert "ERROR" in result
-        assert "Invalid regex" in result
+        assert "ERROR" in result, "Expected 'ERROR' in result"
+        assert "Invalid regex" in result, "Expected 'Invalid regex' in result"
 
     def test_no_pattern_error(self, temp_project):
         """Error when no pattern provided."""
@@ -93,8 +93,8 @@ class TestSearchCodeHandler:
 
         result = handler({})
 
-        assert "ERROR" in result
-        assert "pattern" in result.lower()
+        assert "ERROR" in result, "Expected 'ERROR' in result"
+        assert "pattern" in result.lower(), "Expected 'pattern' in result.lower()"
 
     def test_case_insensitive_search(self, temp_project):
         """Search is case insensitive."""
@@ -102,8 +102,8 @@ class TestSearchCodeHandler:
 
         result = handler({"pattern": "CALCULATE_TOTAL"})
 
-        assert "module.py" in result
-        assert "Found" in result
+        assert "module.py" in result, "Expected 'module.py' in result"
+        assert "Found" in result, "Expected 'Found' in result"
 
     def test_max_results_limits_output(self, temp_project):
         """max_results limits number of results."""
@@ -112,7 +112,7 @@ class TestSearchCodeHandler:
         result = handler({"pattern": "def", "max_results": 2})
 
         # Should have limited results message
-        assert "limited" in result.lower() or len(result.split("\n")) < 10
+        assert "limited" in result.lower() or len(result.split("\n")) < 10, "Assertion failed"
 
 
 class TestLoadContextHandler:
@@ -124,9 +124,9 @@ class TestLoadContextHandler:
 
         result = handler({"path": "src/module.py"})
 
-        assert "SUCCESS" in result
-        assert "module.py" in result
-        assert "context" in result.lower()
+        assert "SUCCESS" in result, "Expected 'SUCCESS' in result"
+        assert "module.py" in result, "Expected 'module.py' in result"
+        assert "context" in result.lower(), "Expected 'context' in result.lower()"
 
     def test_load_file_by_item(self, temp_project):
         """Load a file using item parameter."""
@@ -134,8 +134,8 @@ class TestLoadContextHandler:
 
         result = handler({"item": "full_file:src/module.py"})
 
-        assert "SUCCESS" in result
-        assert "module.py" in result
+        assert "SUCCESS" in result, "Expected 'SUCCESS' in result"
+        assert "module.py" in result, "Expected 'module.py' in result"
 
     def test_load_file_not_found(self, temp_project):
         """Error on missing file."""
@@ -143,8 +143,8 @@ class TestLoadContextHandler:
 
         result = handler({"path": "nonexistent.py"})
 
-        assert "ERROR" in result
-        assert "not found" in result.lower()
+        assert "ERROR" in result, "Expected 'ERROR' in result"
+        assert "not found" in result.lower(), "Expected 'not found' in result.lower()"
 
     def test_load_no_params_error(self, temp_project):
         """Error when no parameters provided."""
@@ -152,7 +152,7 @@ class TestLoadContextHandler:
 
         result = handler({})
 
-        assert "ERROR" in result
+        assert "ERROR" in result, "Expected 'ERROR' in result"
 
     def test_load_query_redirect(self, temp_project):
         """Query parameter suggests using read_file."""
@@ -160,8 +160,8 @@ class TestLoadContextHandler:
 
         result = handler({"query": "find something"})
 
-        assert "ERROR" in result
-        assert "read_file" in result
+        assert "ERROR" in result, "Expected 'ERROR' in result"
+        assert "read_file" in result, "Expected 'read_file' in result"
 
 
 class TestFindRelatedHandler:
@@ -173,8 +173,8 @@ class TestFindRelatedHandler:
 
         result = handler({"file_path": "src/module.py", "type": "same_dir"})
 
-        assert "utils.py" in result
-        assert "same_dir" in result
+        assert "utils.py" in result, "Expected 'utils.py' in result"
+        assert "same_dir" in result, "Expected 'same_dir' in result"
 
     def test_find_test_files(self, temp_project):
         """Find related test files."""
@@ -182,7 +182,7 @@ class TestFindRelatedHandler:
 
         result = handler({"file_path": "src/module.py", "type": "tests"})
 
-        assert "test_module.py" in result or "No related" in result
+        assert "test_module.py" in result or "No related" in result, "Assertion failed"
 
     def test_find_file_not_found(self, temp_project):
         """Error on missing file."""
@@ -190,8 +190,8 @@ class TestFindRelatedHandler:
 
         result = handler({"file_path": "nonexistent.py"})
 
-        assert "ERROR" in result
-        assert "not found" in result.lower()
+        assert "ERROR" in result, "Expected 'ERROR' in result"
+        assert "not found" in result.lower(), "Expected 'not found' in result.lower()"
 
     def test_find_no_path_error(self, temp_project):
         """Error when no path provided."""
@@ -199,8 +199,8 @@ class TestFindRelatedHandler:
 
         result = handler({})
 
-        assert "ERROR" in result
-        assert "path" in result.lower()
+        assert "ERROR" in result, "Expected 'ERROR' in result"
+        assert "path" in result.lower(), "Expected 'path' in result.lower()"
 
     def test_find_all_types(self, temp_project):
         """Find all related file types."""
@@ -209,4 +209,4 @@ class TestFindRelatedHandler:
         result = handler({"file_path": "src/module.py", "type": "all"})
 
         # Should include at least same_dir results
-        assert "Related files" in result or "No related" in result
+        assert "Related files" in result or "No related" in result, "Assertion failed"

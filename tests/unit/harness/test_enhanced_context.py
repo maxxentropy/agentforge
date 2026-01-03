@@ -59,9 +59,9 @@ class TestFact:
             source="run_check:test",
             step=1,
         )
-        assert fact.id == "fact_001"
-        assert fact.category == FactCategory.VERIFICATION
-        assert fact.confidence == 0.95
+        assert fact.id == "fact_001", "Expected fact.id to equal 'fact_001'"
+        assert fact.category == FactCategory.VERIFICATION, "Expected fact.category to equal FactCategory.VERIFICATION"
+        assert fact.confidence == 0.95, "Expected fact.confidence to equal 0.95"
 
     def test_fact_immutable(self):
         """Test that facts are immutable (frozen)."""
@@ -86,7 +86,7 @@ class TestFact:
             source="run_check:test",
             step=1,
         )
-        assert fact.confidence == 0.96
+        assert fact.confidence == 0.96, "Expected fact.confidence to equal 0.96"
 
     def test_confidence_bounds(self):
         """Test confidence must be between 0 and 1."""
@@ -128,8 +128,8 @@ class TestUnderstanding:
         understanding = Understanding(facts=facts, superseded_facts=["fact_001"])
 
         active = understanding.get_active_facts()
-        assert len(active) == 1
-        assert active[0].id == "fact_002"
+        assert len(active) == 1, "Expected len(active) to equal 1"
+        assert active[0].id == "fact_002", "Expected active[0].id to equal 'fact_002'"
 
     def test_get_by_category(self):
         """Test filtering facts by category."""
@@ -154,8 +154,8 @@ class TestUnderstanding:
         understanding = Understanding(facts=facts)
 
         errors = understanding.get_by_category(FactCategory.ERROR)
-        assert len(errors) == 1
-        assert errors[0].statement == "Edit failed"
+        assert len(errors) == 1, "Expected len(errors) to equal 1"
+        assert errors[0].statement == "Edit failed", "Expected errors[0].statement to equal 'Edit failed'"
 
     def test_get_high_confidence(self):
         """Test filtering facts by confidence threshold."""
@@ -180,8 +180,8 @@ class TestUnderstanding:
         understanding = Understanding(facts=facts)
 
         high_conf = understanding.get_high_confidence(threshold=0.8)
-        assert len(high_conf) == 1
-        assert high_conf[0].confidence >= 0.8
+        assert len(high_conf) == 1, "Expected len(high_conf) to equal 1"
+        assert high_conf[0].confidence >= 0.8, "Expected high_conf[0].confidence >= 0.8"
 
 
 class TestAgentContext:
@@ -204,9 +204,9 @@ class TestAgentContext:
         context = AgentContext(task=task, state=state, actions=actions)
 
         yaml_output = context.to_yaml()
-        assert "task:" in yaml_output
-        assert "goal:" in yaml_output
-        assert "Fix complexity violation" in yaml_output
+        assert "task:" in yaml_output, "Expected 'task:' in yaml_output"
+        assert "goal:" in yaml_output, "Expected 'goal:' in yaml_output"
+        assert "Fix complexity violation" in yaml_output, "Expected 'Fix complexity violation' in yaml_output"
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -227,10 +227,10 @@ class TestExtractionRuleSet:
             step=1,
         )
 
-        assert len(facts) >= 1
+        assert len(facts) >= 1, "Expected len(facts) >= 1"
         # Should find check passed fact
         passed_facts = [f for f in facts if "passed" in f.statement.lower()]
-        assert len(passed_facts) >= 1
+        assert len(passed_facts) >= 1, "Expected len(passed_facts) >= 1"
 
     def test_extract_complexity_violation(self):
         """Test extracting complexity violation."""
@@ -242,10 +242,10 @@ class TestExtractionRuleSet:
             step=1,
         )
 
-        assert len(facts) >= 1
+        assert len(facts) >= 1, "Expected len(facts) >= 1"
         complexity_facts = [f for f in facts if "complexity" in f.statement.lower()]
-        assert len(complexity_facts) >= 1
-        assert "process_data" in complexity_facts[0].statement
+        assert len(complexity_facts) >= 1, "Expected len(complexity_facts) >= 1"
+        assert "process_data" in complexity_facts[0].statement, "Expected 'process_data' in complexity_facts[0].statement"
 
     def test_extract_test_results(self):
         """Test extracting test results."""
@@ -257,10 +257,10 @@ class TestExtractionRuleSet:
             step=1,
         )
 
-        assert len(facts) >= 1
+        assert len(facts) >= 1, "Expected len(facts) >= 1"
         # Should extract both passed and failed counts
         statements = [f.statement for f in facts]
-        assert any("passed" in s.lower() for s in statements)
+        assert any("passed" in s.lower() for s in statements), "Expected any() to be truthy"
 
 
 class TestFactStore:
@@ -279,7 +279,7 @@ class TestFactStore:
         )
         store.add(fact)
 
-        assert len(store.get_active()) == 1
+        assert len(store.get_active()) == 1, "Expected len(store.get_active()) to equal 1"
 
     def test_supersession(self):
         """Test fact supersession."""
@@ -309,8 +309,8 @@ class TestFactStore:
 
         # Only newer fact should be active
         active = store.get_active()
-        assert len(active) == 1
-        assert active[0].id == "fact_002"
+        assert len(active) == 1, "Expected len(active) to equal 1"
+        assert active[0].id == "fact_002", "Expected active[0].id to equal 'fact_002'"
 
     def test_compaction(self):
         """Test fact compaction when threshold exceeded."""
@@ -330,7 +330,7 @@ class TestFactStore:
 
         # Should compact to max_facts
         active = store.get_active()
-        assert len(active) <= 5
+        assert len(active) <= 5, "Expected len(active) <= 5"
 
     def test_to_understanding(self):
         """Test converting to Understanding model."""
@@ -346,8 +346,8 @@ class TestFactStore:
         store.add(fact)
 
         understanding = store.to_understanding()
-        assert isinstance(understanding, Understanding)
-        assert len(understanding.facts) == 1
+        assert isinstance(understanding, Understanding), "Expected isinstance() to be truthy"
+        assert len(understanding.facts) == 1, "Expected len(understanding.facts) to equal 1"
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -376,9 +376,9 @@ class TestLoopDetector:
         ]
 
         result = detector.check(actions)
-        assert result.detected
-        assert result.loop_type == LoopType.IDENTICAL_ACTION
-        assert len(result.suggestions) > 0
+        assert result.detected, "Expected result.detected to be truthy"
+        assert result.loop_type == LoopType.IDENTICAL_ACTION, "Expected result.loop_type to equal LoopType.IDENTICAL_ACTION"
+        assert len(result.suggestions) > 0, "Expected len(result.suggestions) > 0"
 
     def test_no_loop_with_different_actions(self):
         """Test no loop when actions differ."""
@@ -406,7 +406,7 @@ class TestLoopDetector:
         ]
 
         result = detector.check(actions)
-        assert not result.detected
+        assert not result.detected, "Assertion failed"
 
     def test_detect_no_progress(self):
         """Test detecting no-progress loop."""
@@ -423,8 +423,8 @@ class TestLoopDetector:
         ]
 
         result = detector.check(actions)
-        assert result.detected
-        assert result.loop_type == LoopType.NO_PROGRESS
+        assert result.detected, "Expected result.detected to be truthy"
+        assert result.loop_type == LoopType.NO_PROGRESS, "Expected result.loop_type to equal LoopType.NO_PROGRESS"
 
     def test_error_cycle_detection(self):
         """Test detecting A->B->A error cycles."""
@@ -446,8 +446,8 @@ class TestLoopDetector:
             )
 
         result = detector.check(actions)
-        assert result.detected
-        assert result.loop_type == LoopType.ERROR_CYCLE
+        assert result.detected, "Expected result.detected to be truthy"
+        assert result.loop_type == LoopType.ERROR_CYCLE, "Expected result.loop_type to equal LoopType.ERROR_CYCLE"
 
 
 class TestActionSignature:
@@ -469,9 +469,9 @@ class TestActionSignature:
         )
 
         # Non-strict match (same type and outcome)
-        assert sig1.matches(sig2, strict=False)
+        assert sig1.matches(sig2, strict=False), "Expected sig1.matches() to be truthy"
         # Strict match fails (different targets)
-        assert not sig1.matches(sig2, strict=True)
+        assert not sig1.matches(sig2, strict=True), "Assertion failed"
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -485,14 +485,14 @@ class TestPhaseMachine:
     def test_initial_phase(self):
         """Test machine starts in INIT phase."""
         machine = PhaseMachine()
-        assert machine.current_phase == Phase.INIT
-        assert machine.steps_in_phase == 0
+        assert machine.current_phase == Phase.INIT, "Expected machine.current_phase to equal Phase.INIT"
+        assert machine.steps_in_phase == 0, "Expected machine.steps_in_phase to equal 0"
 
     def test_advance_step(self):
         """Test step advancement."""
         machine = PhaseMachine()
         machine.advance_step()
-        assert machine.steps_in_phase == 1
+        assert machine.steps_in_phase == 1, "Expected machine.steps_in_phase to equal 1"
 
     def test_transition_init_to_analyze(self):
         """Test transitioning from INIT to ANALYZE."""
@@ -507,10 +507,10 @@ class TestPhaseMachine:
             facts=[],
         )
 
-        assert machine.can_transition(Phase.ANALYZE, context)
+        assert machine.can_transition(Phase.ANALYZE, context), "Expected machine.can_transition() to be truthy"
         success = machine.transition(Phase.ANALYZE, context)
-        assert success
-        assert machine.current_phase == Phase.ANALYZE
+        assert success, "Expected success to be truthy"
+        assert machine.current_phase == Phase.ANALYZE, "Expected machine.current_phase to equal Phase.ANALYZE"
 
     def test_guard_blocks_transition(self):
         """Test that guards can block transitions."""
@@ -529,7 +529,7 @@ class TestPhaseMachine:
         )
 
         # Should not be able to transition to VERIFY without modifications
-        assert not machine.can_transition(Phase.VERIFY, context)
+        assert not machine.can_transition(Phase.VERIFY, context), "Assertion failed"
 
     def test_verify_to_complete(self):
         """Test transitioning from VERIFY to COMPLETE."""
@@ -546,10 +546,10 @@ class TestPhaseMachine:
             facts=[],
         )
 
-        assert machine.can_transition(Phase.COMPLETE, context)
+        assert machine.can_transition(Phase.COMPLETE, context), "Expected machine.can_transition() to be truthy"
         success = machine.transition(Phase.COMPLETE, context)
-        assert success
-        assert machine.current_phase == Phase.COMPLETE
+        assert success, "Expected success to be truthy"
+        assert machine.current_phase == Phase.COMPLETE, "Expected machine.current_phase to equal Phase.COMPLETE"
 
     def test_analyze_to_implement_with_code_structure_fact(self):
         """Test transition from ANALYZE to IMPLEMENT when code_structure fact exists.
@@ -631,7 +631,7 @@ class TestPhaseMachine:
 
         # Should suggest escalation when stuck
         next_phase = machine.should_auto_transition(context)
-        assert next_phase is not None
+        assert next_phase is not None, "Expected next_phase is not None"
 
     def test_to_state_and_from_state(self):
         """Test state persistence round-trip."""
@@ -642,14 +642,14 @@ class TestPhaseMachine:
 
         # Convert to state
         state = machine.to_state()
-        assert state.current_phase == "implement"
-        assert state.steps_in_phase == 3
+        assert state.current_phase == "implement", "Expected state.current_phase to equal 'implement'"
+        assert state.steps_in_phase == 3, "Expected state.steps_in_phase to equal 3"
 
         # Reconstruct from state
         restored = PhaseMachine.from_state(state)
-        assert restored.current_phase == Phase.IMPLEMENT
-        assert restored.steps_in_phase == 3
-        assert len(restored.phase_history) == 2
+        assert restored.current_phase == Phase.IMPLEMENT, "Expected restored.current_phase to equal Phase.IMPLEMENT"
+        assert restored.steps_in_phase == 3, "Expected restored.steps_in_phase to equal 3"
+        assert len(restored.phase_history) == 2, "Expected len(restored.phase_history) to equal 2"
 
     def test_get_available_transitions(self):
         """Test getting available transitions."""
@@ -670,7 +670,7 @@ class TestPhaseMachine:
         available = machine.get_available_transitions(context)
         # Should be able to go back to IMPLEMENT
         target_phases = [t.to_phase for t in available]
-        assert Phase.IMPLEMENT in target_phases
+        assert Phase.IMPLEMENT in target_phases, "Expected Phase.IMPLEMENT in target_phases"
 
 
 class TestPhaseContext:
@@ -687,7 +687,7 @@ class TestPhaseContext:
             files_modified=[],
             facts=[],
         )
-        assert not ctx_no_mods.has_modifications()
+        assert not ctx_no_mods.has_modifications(), "Assertion failed"
 
         ctx_with_mods = PhaseContext(
             current_phase=Phase.IMPLEMENT,
@@ -698,7 +698,7 @@ class TestPhaseContext:
             files_modified=["file.py"],
             facts=[],
         )
-        assert ctx_with_mods.has_modifications()
+        assert ctx_with_mods.has_modifications(), "Expected ctx_with_mods.has_modificat...() to be truthy"
 
     def test_has_fact_of_type(self):
         """Test fact type detection."""
@@ -721,8 +721,8 @@ class TestPhaseContext:
             facts=[fact],
         )
 
-        assert ctx.has_fact_of_type("code_structure")
-        assert not ctx.has_fact_of_type("verification")
+        assert ctx.has_fact_of_type("code_structure"), "Expected ctx.has_fact_of_type() to be truthy"
+        assert not ctx.has_fact_of_type("verification"), "Assertion failed"
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -753,9 +753,9 @@ class TestWorkingMemoryFactStorage:
             )
 
             facts = mgr.get_facts()
-            assert len(facts) == 1
-            assert facts[0]["statement"] == "Check passed"
-            assert facts[0]["confidence"] == 0.95
+            assert len(facts) == 1, "Expected len(facts) to equal 1"
+            assert facts[0]["statement"] == "Check passed", "Expected facts[0]['statement'] to equal 'Check passed'"
+            assert facts[0]["confidence"] == 0.95, "Expected facts[0]['confidence'] to equal 0.95"
 
     def test_supersession(self):
         """Test fact supersession in working memory."""
@@ -785,8 +785,8 @@ class TestWorkingMemoryFactStorage:
 
             # Only new fact should be returned
             facts = mgr.get_facts()
-            assert len(facts) == 1
-            assert facts[0]["id"] == "fact_002"
+            assert len(facts) == 1, "Expected len(facts) to equal 1"
+            assert facts[0]["id"] == "fact_002", "Expected facts[0]['id'] to equal 'fact_002'"
 
     def test_get_facts_for_context(self):
         """Test getting facts formatted for context."""
@@ -814,10 +814,10 @@ class TestWorkingMemoryFactStorage:
             ctx_facts = mgr.get_facts_for_context()
 
             # Should be grouped by category
-            assert "verification" in ctx_facts
-            assert "error" in ctx_facts
-            assert len(ctx_facts["verification"]) == 1
-            assert "Check passed" in ctx_facts["verification"][0]
+            assert "verification" in ctx_facts, "Expected 'verification' in ctx_facts"
+            assert "error" in ctx_facts, "Expected 'error' in ctx_facts"
+            assert len(ctx_facts["verification"]) == 1, "Expected len(ctx_facts['verification']) to equal 1"
+            assert "Check passed" in ctx_facts["verification"][0], "Expected 'Check passed' in ctx_facts['verification'][0]"
 
     def test_high_confidence_pinning(self):
         """Test that high-confidence facts are pinned."""
@@ -847,9 +847,9 @@ class TestWorkingMemoryFactStorage:
 
             # High-confidence fact should still be there
             facts = mgr.get_facts(min_confidence=0.9)
-            assert len(facts) >= 1
+            assert len(facts) >= 1, "Expected len(facts) >= 1"
             high_conf_facts = [f for f in facts if f["id"] == "high_conf"]
-            assert len(high_conf_facts) == 1
+            assert len(high_conf_facts) == 1, "Expected len(high_conf_facts) to equal 1"
 
     def test_add_facts_from_list(self):
         """Test adding facts from Fact model objects."""
@@ -878,7 +878,7 @@ class TestWorkingMemoryFactStorage:
             mgr.add_facts_from_list(facts, step=1)
 
             stored = mgr.get_facts()
-            assert len(stored) == 2
+            assert len(stored) == 2, "Expected len(stored) to equal 2"
 
     def test_clear_facts(self):
         """Test clearing all facts."""
@@ -903,15 +903,15 @@ class TestWorkingMemoryFactStorage:
             )
 
             cleared = mgr.clear_facts()
-            assert cleared == 1
+            assert cleared == 1, "Expected cleared to equal 1"
 
             # Facts should be gone
             facts = mgr.get_facts()
-            assert len(facts) == 0
+            assert len(facts) == 0, "Expected len(facts) to equal 0"
 
             # Action results should still be there
             actions = mgr.get_action_results()
-            assert len(actions) == 1
+            assert len(actions) == 1, "Expected len(actions) to equal 1"
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -947,11 +947,11 @@ class TestAdaptiveBudgetEnhancedLoopDetection:
 
         should_continue, reason, loop_detection = budget.check_continue(3, actions)
 
-        assert not should_continue
-        assert "IDENTICAL_ACTION" in reason
-        assert loop_detection is not None
-        assert loop_detection.detected
-        assert loop_detection.loop_type == LoopType.IDENTICAL_ACTION
+        assert not should_continue, "Assertion failed"
+        assert "IDENTICAL_ACTION" in reason, "Expected 'IDENTICAL_ACTION' in reason"
+        assert loop_detection is not None, "Expected loop_detection is not None"
+        assert loop_detection.detected, "Expected loop_detection.detected to be truthy"
+        assert loop_detection.loop_type == LoopType.IDENTICAL_ACTION, "Expected loop_detection.loop_type to equal LoopType.IDENTICAL_ACTION"
 
     def test_error_cycle_detection(self):
         """Test detection of A->B->A error cycling."""
@@ -975,10 +975,10 @@ class TestAdaptiveBudgetEnhancedLoopDetection:
 
         should_continue, reason, loop_detection = budget.check_continue(5, actions)
 
-        assert not should_continue
-        assert loop_detection is not None
-        assert loop_detection.detected
-        assert loop_detection.loop_type == LoopType.ERROR_CYCLE
+        assert not should_continue, "Assertion failed"
+        assert loop_detection is not None, "Expected loop_detection is not None"
+        assert loop_detection.detected, "Expected loop_detection.detected to be truthy"
+        assert loop_detection.loop_type == LoopType.ERROR_CYCLE, "Expected loop_detection.loop_type to equal LoopType.ERROR_CYCLE"
 
     def test_no_loop_with_progress(self):
         """Test that successful actions don't trigger loop detection."""
@@ -995,9 +995,9 @@ class TestAdaptiveBudgetEnhancedLoopDetection:
 
         should_continue, reason, loop_detection = budget.check_continue(3, actions)
 
-        assert should_continue
-        assert "Continue" in reason
-        assert loop_detection is None
+        assert should_continue, "Expected should_continue to be truthy"
+        assert "Continue" in reason, "Expected 'Continue' in reason"
+        assert loop_detection is None, "Expected loop_detection is None"
 
     def test_legacy_fallback(self):
         """Test fallback to legacy detection when enhanced is disabled."""
@@ -1007,7 +1007,7 @@ class TestAdaptiveBudgetEnhancedLoopDetection:
             use_enhanced_loop_detection=False,
         )
 
-        assert budget.loop_detector is None
+        assert budget.loop_detector is None, "Expected budget.loop_detector is None"
 
         # Create identical failing actions
         actions = [
@@ -1024,9 +1024,9 @@ class TestAdaptiveBudgetEnhancedLoopDetection:
 
         should_continue, reason, loop_detection = budget.check_continue(3, actions)
 
-        assert not should_continue
-        assert "Runaway" in reason
-        assert loop_detection is None  # No LoopDetection in legacy mode
+        assert not should_continue, "Assertion failed"
+        assert "Runaway" in reason, "Expected 'Runaway' in reason"
+        assert loop_detection is None, "Expected loop_detection is None"# No LoopDetection in legacy mode
 
     def test_get_loop_suggestions(self):
         """Test getting suggestions from last loop detection."""
@@ -1037,7 +1037,7 @@ class TestAdaptiveBudgetEnhancedLoopDetection:
         )
 
         # No suggestions initially
-        assert budget.get_loop_suggestions() == []
+        assert budget.get_loop_suggestions() == [], "Expected budget.get_loop_suggestions() to equal []"
 
         # Trigger a loop
         actions = [
@@ -1055,8 +1055,8 @@ class TestAdaptiveBudgetEnhancedLoopDetection:
         budget.check_continue(3, actions)
 
         suggestions = budget.get_loop_suggestions()
-        assert len(suggestions) > 0
-        assert any("re-read" in s.lower() or "replace_lines" in s.lower() for s in suggestions)
+        assert len(suggestions) > 0, "Expected len(suggestions) > 0"
+        assert any("re-read" in s.lower() or "replace_lines" in s.lower() for s in suggestions), "Expected any() to be truthy"
 
     def test_budget_exhaustion(self):
         """Test budget exhaustion still works with enhanced detection."""
@@ -1075,8 +1075,8 @@ class TestAdaptiveBudgetEnhancedLoopDetection:
 
         should_continue, reason, loop_detection = budget.check_continue(3, actions)
 
-        assert not should_continue
-        assert "Budget exhausted" in reason
+        assert not should_continue, "Assertion failed"
+        assert "Budget exhausted" in reason, "Expected 'Budget exhausted' in reason"
 
     def test_step_outcome_includes_loop_info(self):
         """Test that StepOutcome can include loop detection info."""
@@ -1104,9 +1104,9 @@ class TestAdaptiveBudgetEnhancedLoopDetection:
 
         outcome_dict = outcome.to_dict()
 
-        assert "loop_detection" in outcome_dict
-        assert outcome_dict["loop_detection"]["type"] == "identical_action"
-        assert outcome_dict["loop_detection"]["suggestions"] == ["Try something different"]
+        assert "loop_detection" in outcome_dict, "Expected 'loop_detection' in outcome_dict"
+        assert outcome_dict["loop_detection"]["type"] == "identical_action", "Expected outcome_dict['loop_detectio... to equal 'identical_action'"
+        assert outcome_dict["loop_detection"]["suggestions"] == ["Try something different"], "Expected outcome_dict['loop_detectio... to equal ['Try something different']"
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1150,9 +1150,9 @@ class TestPhaseMachineIntegration:
         loaded_task = store.load(task.task_id)
         loaded_machine = loaded_task.get_phase_machine()
 
-        assert loaded_machine.current_phase == Phase.IMPLEMENT
-        assert loaded_machine.steps_in_phase == 3
-        assert len(loaded_machine.phase_history) == 2
+        assert loaded_machine.current_phase == Phase.IMPLEMENT, "Expected loaded_machine.current_phase to equal Phase.IMPLEMENT"
+        assert loaded_machine.steps_in_phase == 3, "Expected loaded_machine.steps_in_phase to equal 3"
+        assert len(loaded_machine.phase_history) == 2, "Expected len(loaded_machine.phase_hi... to equal 2"
 
     def test_task_state_backward_compatible(self, tmp_path):
         """Test that legacy tasks without phase_machine_state still work."""
@@ -1177,8 +1177,8 @@ class TestPhaseMachineIntegration:
 
         # Should get a fresh machine
         machine = loaded_task.get_phase_machine()
-        assert machine.current_phase == Phase.INIT
-        assert machine.steps_in_phase == 0
+        assert machine.current_phase == Phase.INIT, "Expected machine.current_phase to equal Phase.INIT"
+        assert machine.steps_in_phase == 0, "Expected machine.steps_in_phase to equal 0"
 
     def test_update_phase_machine_method(self, tmp_path):
         """Test state_store.update_phase_machine method."""
@@ -1211,8 +1211,8 @@ class TestPhaseMachineIntegration:
         loaded = store.load(task.task_id)
         loaded_machine = loaded.get_phase_machine()
 
-        assert loaded_machine.current_phase == Phase.VERIFY
-        assert loaded_machine.steps_in_phase == 2
+        assert loaded_machine.current_phase == Phase.VERIFY, "Expected loaded_machine.current_phase to equal Phase.VERIFY"
+        assert loaded_machine.steps_in_phase == 2, "Expected loaded_machine.steps_in_phase to equal 2"
 
     def test_phase_context_building(self, tmp_path):
         """Test that PhaseContext is built correctly from state."""
@@ -1257,11 +1257,11 @@ class TestPhaseMachineIntegration:
             last_action_result="success",
         )
 
-        assert context.current_phase == Phase.INIT
-        assert context.verification_passing is True
-        assert context.tests_passing is True
-        assert context.files_modified == ["test.py"]
-        assert context.last_action == "edit_file"
+        assert context.current_phase == Phase.INIT, "Expected context.current_phase to equal Phase.INIT"
+        assert context.verification_passing is True, "Expected context.verification_passing is True"
+        assert context.tests_passing is True, "Expected context.tests_passing is True"
+        assert context.files_modified == ["test.py"], "Expected context.files_modified to equal ['test.py']"
+        assert context.last_action == "edit_file", "Expected context.last_action to equal 'edit_file'"
 
     def test_phase_transition_via_handle_method(self, tmp_path):
         """Test _handle_phase_transition updates both state store and machine state."""
@@ -1302,10 +1302,10 @@ class TestPhaseMachineIntegration:
 
         # Verify both states updated
         loaded = store.load(task.task_id)
-        assert loaded.phase == Phase.COMPLETE
+        assert loaded.phase == Phase.COMPLETE, "Expected loaded.phase to equal Phase.COMPLETE"
 
         loaded_machine = loaded.get_phase_machine()
-        assert loaded_machine.current_phase == Phase.COMPLETE
+        assert loaded_machine.current_phase == Phase.COMPLETE, "Expected loaded_machine.current_phase to equal Phase.COMPLETE"
 
     def test_phase_machine_always_enabled(self, tmp_path):
         """Test that phase machine is always enabled in the unified executor."""
@@ -1321,7 +1321,7 @@ class TestPhaseMachineIntegration:
         )
 
         # Verify phase machine is always enabled
-        assert executor.use_phase_machine is True
+        assert executor.use_phase_machine is True, "Expected executor.use_phase_machine is True"
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1369,8 +1369,8 @@ class TestTemplateContextBuilderIntegration:
         context = builder.build(task.task_id)
 
         # TemplateContextBuilder returns TemplateStepContext, not AgentContext
-        assert context.total_tokens > 0
-        assert "Fix complexity violation" in context.user_message
+        assert context.total_tokens > 0, "Expected context.total_tokens > 0"
+        assert "Fix complexity violation" in context.user_message, "Expected 'Fix complexity violation' in context.user_message"
 
     def test_build_messages(self, tmp_path):
         """Test building LLM messages."""
@@ -1410,12 +1410,12 @@ class TestTemplateContextBuilderIntegration:
 
         messages = builder.build_messages(task.task_id)
 
-        assert len(messages) == 2
-        assert messages[0]["role"] == "system"
-        assert messages[1]["role"] == "user"
+        assert len(messages) == 2, "Expected len(messages) to equal 2"
+        assert messages[0]["role"] == "system", "Expected messages[0]['role'] to equal 'system'"
+        assert messages[1]["role"] == "user", "Expected messages[1]['role'] to equal 'user'"
 
         # Check user message has context
-        assert "Test messages" in messages[1]["content"]
+        assert "Test messages" in messages[1]["content"], "Expected 'Test messages' in messages[1]['content']"
 
     def test_token_breakdown(self, tmp_path):
         """Test token breakdown calculation."""
@@ -1456,11 +1456,11 @@ class TestTemplateContextBuilderIntegration:
         breakdown = builder.get_token_breakdown(task.task_id)
 
         # Breakdown contains section-by-section token counts
-        assert isinstance(breakdown, dict)
-        assert len(breakdown) > 0
+        assert isinstance(breakdown, dict), "Expected isinstance() to be truthy"
+        assert len(breakdown) > 0, "Expected len(breakdown) > 0"
         # Should contain at least task and system_prompt sections
         total_tokens = sum(breakdown.values())
-        assert total_tokens > 0
+        assert total_tokens > 0, "Expected total_tokens > 0"
 
     def test_executor_uses_template_context_builder(self, tmp_path):
         """Test executor uses template-based context builder."""
@@ -1478,7 +1478,7 @@ class TestTemplateContextBuilderIntegration:
             state_store=store,
         )
 
-        assert isinstance(executor.context_builder, TemplateContextBuilder)
+        assert isinstance(executor.context_builder, TemplateContextBuilder), "Expected isinstance() to be truthy"
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1501,11 +1501,11 @@ class TestUnifiedArchitecture:
         workflow = MinimalContextFixWorkflow(project_path=tmp_path)
 
         # Verify unified executor is used
-        assert isinstance(workflow.executor, MinimalContextExecutor)
+        assert isinstance(workflow.executor, MinimalContextExecutor), "Expected isinstance() to be truthy"
         # Verify template-based context builder
-        assert isinstance(workflow.executor.context_builder, TemplateContextBuilder)
+        assert isinstance(workflow.executor.context_builder, TemplateContextBuilder), "Expected isinstance() to be truthy"
         # Features always enabled
-        assert workflow.executor.use_phase_machine is True
+        assert workflow.executor.use_phase_machine is True, "Expected workflow.executor.use_phase... is True"
 
     def test_factory_function_creates_workflow(self, tmp_path):
         """Test factory function creates workflow with unified architecture."""
@@ -1518,25 +1518,25 @@ class TestUnifiedArchitecture:
         workflow = create_minimal_fix_workflow(project_path=tmp_path)
 
         # Verify unified architecture
-        assert isinstance(workflow.executor, MinimalContextExecutor)
-        assert isinstance(workflow.executor.context_builder, TemplateContextBuilder)
-        assert workflow.executor.use_phase_machine is True
+        assert isinstance(workflow.executor, MinimalContextExecutor), "Expected isinstance() to be truthy"
+        assert isinstance(workflow.executor.context_builder, TemplateContextBuilder), "Expected isinstance() to be truthy"
+        assert workflow.executor.use_phase_machine is True, "Expected workflow.executor.use_phase... is True"
 
     def test_deprecated_exports_removed(self):
         """Test that deprecated exports are no longer in the public API."""
         import agentforge.core.harness.minimal_context as mc
 
         # These deprecated exports should no longer be in the module
-        assert not hasattr(mc, 'EnhancedContextBuilder')
-        assert not hasattr(mc, 'TokenBudget')
-        assert not hasattr(mc, 'MinimalContextExecutorV2')
-        assert not hasattr(mc, 'create_executor_v2')
-        assert not hasattr(mc, 'should_use_v2')
+        assert not hasattr(mc, 'EnhancedContextBuilder'), "Assertion failed"
+        assert not hasattr(mc, 'TokenBudget'), "Assertion failed"
+        assert not hasattr(mc, 'MinimalContextExecutorV2'), "Assertion failed"
+        assert not hasattr(mc, 'create_executor_v2'), "Assertion failed"
+        assert not hasattr(mc, 'should_use_v2'), "Assertion failed"
 
         # These should still exist (unified architecture)
-        assert hasattr(mc, 'MinimalContextExecutor')
-        assert hasattr(mc, 'TemplateContextBuilder')
-        assert hasattr(mc, 'create_executor')
+        assert hasattr(mc, 'MinimalContextExecutor'), "Expected hasattr() to be truthy"
+        assert hasattr(mc, 'TemplateContextBuilder'), "Expected hasattr() to be truthy"
+        assert hasattr(mc, 'create_executor'), "Expected hasattr() to be truthy"
 
     def test_workflow_preserves_custom_iterations(self, tmp_path):
         """Test that custom iteration settings are preserved."""
@@ -1548,8 +1548,8 @@ class TestUnifiedArchitecture:
             max_iterations=100,
         )
 
-        assert workflow.base_iterations == 20
-        assert workflow.max_iterations == 100
+        assert workflow.base_iterations == 20, "Expected workflow.base_iterations to equal 20"
+        assert workflow.max_iterations == 100, "Expected workflow.max_iterations to equal 100"
 
     def test_module_docstring_documents_features(self):
         """Test that module docstring documents architecture features."""
@@ -1558,9 +1558,9 @@ class TestUnifiedArchitecture:
         docstring = mc.__doc__
 
         # Architecture features documented
-        assert "TemplateContextBuilder" in docstring
-        assert "PhaseMachine" in docstring
-        assert "Progressive Compaction" in docstring
+        assert "TemplateContextBuilder" in docstring, "Expected 'TemplateContextBuilder' in docstring"
+        assert "PhaseMachine" in docstring, "Expected 'PhaseMachine' in docstring"
+        assert "Progressive Compaction" in docstring, "Expected 'Progressive Compaction' in docstring"
 
 
 class TestTokenBudgetEnforcement:
@@ -1597,8 +1597,8 @@ class TestTokenBudgetEnforcement:
         tokens = context.estimate_tokens()
 
         # Should be a reasonable positive number
-        assert tokens > 0
-        assert tokens < 1000  # Simple context should be under 1000 tokens
+        assert tokens > 0, "Expected tokens > 0"
+        assert tokens < 1000, "Expected tokens < 1000"# Simple context should be under 1000 tokens
 
 
 class TestResponseValidation:
@@ -1619,8 +1619,8 @@ parameters:
 
         action, params = executor._parse_action(response)
 
-        assert action == "read_file"
-        assert params == {"path": "/tmp/test.py"}
+        assert action == "read_file", "Expected action to equal 'read_file'"
+        assert params == {"path": "/tmp/test.py"}, "Expected params to equal {'path': '/tmp/test.py'}"
 
     def test_parse_yaml_block_format(self):
         """Test parsing YAML block format with 'action' key."""
@@ -1637,8 +1637,8 @@ parameters:
 
         action, params = executor._parse_action(response)
 
-        assert action == "read_file"
-        assert params == {"path": "/tmp/test.py"}
+        assert action == "read_file", "Expected action to equal 'read_file'"
+        assert params == {"path": "/tmp/test.py"}, "Expected params to equal {'path': '/tmp/test.py'}"
 
     def test_parse_with_reasoning(self):
         """Test that reasoning is accepted but not returned."""
@@ -1657,8 +1657,8 @@ reasoning: "Replacing foo with bar to fix the bug"
 
         action, params = executor._parse_action(response)
 
-        assert action == "edit_file"
-        assert params == {"path": "/tmp/test.py", "old_text": "foo", "new_text": "bar"}
+        assert action == "edit_file", "Expected action to equal 'edit_file'"
+        assert params == {"path": "/tmp/test.py", "old_text": "foo", "new_text": "bar"}, "Expected params to equal {'path': '/tmp/test.py', 'o..."
 
     def test_parse_validates_against_schema(self):
         """Test that response is validated against AgentResponse schema."""
@@ -1674,11 +1674,11 @@ parameters:
 ```'''
 
         action, params = executor._parse_action(response)
-        assert action == "complete"
+        assert action == "complete", "Expected action to equal 'complete'"
 
         # The parsed values should be valid for AgentResponse
         validated = AgentResponse(action=action, parameters=params)
-        assert validated.action == "complete"
+        assert validated.action == "complete", "Expected validated.action to equal 'complete'"
 
     def test_parse_fallback_to_simple_pattern(self):
         """Test fallback to simple pattern matching."""
@@ -1690,8 +1690,8 @@ parameters:
 
         action, params = executor._parse_action(response)
 
-        assert action == "read_file"
-        assert params == {}
+        assert action == "read_file", "Expected action to equal 'read_file'"
+        assert params == {}, "Expected params to equal {}"
 
     def test_parse_handles_malformed_yaml(self):
         """Test handling of malformed YAML."""
@@ -1708,8 +1708,8 @@ parameters:
         action, params = executor._parse_action(response)
 
         # Should fallback to unknown when YAML is malformed
-        assert action == "unknown"
-        assert params == {}
+        assert action == "unknown", "Expected action to equal 'unknown'"
+        assert params == {}, "Expected params to equal {}"
 
     def test_parse_handles_empty_parameters(self):
         """Test handling of empty/null parameters."""
@@ -1724,8 +1724,8 @@ parameters:
 
         action, params = executor._parse_action(response)
 
-        assert action == "complete"
-        assert params == {}
+        assert action == "complete", "Expected action to equal 'complete'"
+        assert params == {}, "Expected params to equal {}"
 
 
 class TestSchemaVersioning:
@@ -1735,7 +1735,7 @@ class TestSchemaVersioning:
         """Test that SCHEMA_VERSION is exported."""
         from agentforge.core.harness.minimal_context import SCHEMA_VERSION
 
-        assert SCHEMA_VERSION == "2.0"
+        assert SCHEMA_VERSION == "2.0", "Expected SCHEMA_VERSION to equal '2.0'"
 
     def test_new_task_has_schema_version(self, tmp_path):
         """Test that newly created tasks have schema version."""
@@ -1755,7 +1755,7 @@ class TestSchemaVersioning:
         with open(state_file) as f:
             state_data = yaml.safe_load(f)
 
-        assert state_data["schema_version"] == "2.0"
+        assert state_data["schema_version"] == "2.0", "Expected state_data['schema_version'] to equal '2.0'"
 
     def test_migrate_v1_to_v2(self, tmp_path):
         """Test migration from v1.0 (no version) to v2.0."""
@@ -1801,18 +1801,18 @@ class TestSchemaVersioning:
         loaded = store.load("legacy-task")
 
         # Verify migration
-        assert loaded is not None
-        assert loaded.phase == Phase.INIT
-        assert loaded.current_step == 5
-        assert loaded.phase_machine_state == {}  # Added by migration
-        assert loaded.verification.ready_for_completion is False  # Added by migration
+        assert loaded is not None, "Expected loaded is not None"
+        assert loaded.phase == Phase.INIT, "Expected loaded.phase to equal Phase.INIT"
+        assert loaded.current_step == 5, "Expected loaded.current_step to equal 5"
+        assert loaded.phase_machine_state == {}, "Expected loaded.phase_machine_state to equal {}"# Added by migration
+        assert loaded.verification.ready_for_completion is False, "Expected loaded.verification.ready_f... is False"# Added by migration
 
         # Verify state.yaml was updated with new version
         with open(task_dir / "state.yaml") as f:
             updated_data = yaml.safe_load(f)
 
-        assert updated_data["schema_version"] == "2.0"
-        assert "phase_machine_state" in updated_data
+        assert updated_data["schema_version"] == "2.0", "Expected updated_data['schema_version'] to equal '2.0'"
+        assert "phase_machine_state" in updated_data, "Expected 'phase_machine_state' in updated_data"
 
     def test_load_current_version_no_migration(self, tmp_path):
         """Test that current version doesn't trigger migration."""
@@ -1830,8 +1830,8 @@ class TestSchemaVersioning:
         # Load it back
         loaded = store.load(task.task_id)
 
-        assert loaded is not None
-        assert loaded.task_id == task.task_id
+        assert loaded is not None, "Expected loaded is not None"
+        assert loaded.task_id == task.task_id, "Expected loaded.task_id to equal task.task_id"
 
     def test_migration_preserves_data(self, tmp_path):
         """Test that migration preserves all existing data."""
@@ -1879,13 +1879,13 @@ class TestSchemaVersioning:
         store = TaskStateStore(tmp_path)
         loaded = store.load("preserve-test")
 
-        assert loaded.current_step == 42
-        assert loaded.verification.checks_passing == 5
-        assert loaded.verification.checks_failing == 2
-        assert loaded.verification.details == {"custom": "data"}
-        assert loaded.error == "Previous error"
-        assert loaded.context_data["file_path"] == "important.py"
-        assert loaded.context_data["precomputed"]["analysis"] == "results"
+        assert loaded.current_step == 42, "Expected loaded.current_step to equal 42"
+        assert loaded.verification.checks_passing == 5, "Expected loaded.verification.checks_... to equal 5"
+        assert loaded.verification.checks_failing == 2, "Expected loaded.verification.checks_... to equal 2"
+        assert loaded.verification.details == {"custom": "data"}, "Expected loaded.verification.details to equal {'custom': 'data'}"
+        assert loaded.error == "Previous error", "Expected loaded.error to equal 'Previous error'"
+        assert loaded.context_data["file_path"] == "important.py", "Expected loaded.context_data['file_p... to equal 'important.py'"
+        assert loaded.context_data["precomputed"]["analysis"] == "results", "Expected loaded.context_data['precom... to equal 'results'"
 
 
 class TestFactCompaction:
@@ -1913,11 +1913,11 @@ class TestFactCompaction:
         ]
 
         understanding = Understanding(facts=facts)
-        assert len(understanding.get_active_facts()) == 30
+        assert len(understanding.get_active_facts()) == 30, "Expected len(understanding.get_activ... to equal 30"
 
         # Compact to 15
         compacted = understanding.compact(max_facts=15)
-        assert len(compacted.get_active_facts()) == 15
+        assert len(compacted.get_active_facts()) == 15, "Expected len(compacted.get_active_fa... to equal 15"
 
     def test_understanding_compact_preserves_high_value(self):
         """Test that compaction preserves high-value facts."""
@@ -1965,8 +1965,8 @@ class TestFactCompaction:
         compacted = understanding.compact(max_facts=5)
 
         active_ids = [f.id for f in compacted.get_active_facts()]
-        assert "high-1" in active_ids
-        assert "high-2" in active_ids
+        assert "high-1" in active_ids, "Expected 'high-1' in active_ids"
+        assert "high-2" in active_ids, "Expected 'high-2' in active_ids"
 
     def test_understanding_compact_noop_under_threshold(self):
         """Test that compaction is a no-op under threshold."""
@@ -1992,8 +1992,8 @@ class TestFactCompaction:
         compacted = understanding.compact(max_facts=20)
 
         # Should be the same object since under threshold
-        assert compacted is understanding
-        assert len(compacted.get_active_facts()) == 10
+        assert compacted is understanding, "Expected compacted is understanding"
+        assert len(compacted.get_active_facts()) == 10, "Expected len(compacted.get_active_fa... to equal 10"
 
     def test_understanding_compact_prioritizes_categories(self):
         """Test that compaction prioritizes by category importance."""
@@ -2044,6 +2044,6 @@ class TestFactCompaction:
 
         active_ids = [f.id for f in compacted.get_active_facts()]
         # VERIFICATION (0.7 + 0.3 = 1.0) and ERROR (0.7 + 0.2 = 0.9) should be kept
-        assert "verify" in active_ids
-        assert "error" in active_ids
-        assert "infer" not in active_ids
+        assert "verify" in active_ids, "Expected 'verify' in active_ids"
+        assert "error" in active_ids, "Expected 'error' in active_ids"
+        assert "infer" not in active_ids, "Expected 'infer' not in active_ids"

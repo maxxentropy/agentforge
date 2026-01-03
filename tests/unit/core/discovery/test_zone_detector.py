@@ -27,23 +27,23 @@ class TestZoneMarkerConfig:
     def test_zone_markers_have_correct_structure(self):
         """Should have (pattern, language, priority) tuples."""
         for marker in ZONE_MARKERS:
-            assert len(marker) == 3
+            assert len(marker) == 3, "Expected len(marker) to equal 3"
             pattern, language, priority = marker
-            assert isinstance(pattern, str)
-            assert isinstance(language, str)
-            assert isinstance(priority, int)
+            assert isinstance(pattern, str), "Expected isinstance() to be truthy"
+            assert isinstance(language, str), "Expected isinstance() to be truthy"
+            assert isinstance(priority, int), "Expected isinstance() to be truthy"
 
     def test_sln_has_highest_priority(self):
         """Solution files should have highest priority."""
         sln_entry = next(m for m in ZONE_MARKERS if m[0] == "*.sln")
-        assert sln_entry[2] == 100
+        assert sln_entry[2] == 100, "Expected sln_entry[2] to equal 100"
 
     def test_skip_directories_configured(self):
         """Should have common build/cache directories."""
-        assert "node_modules" in SKIP_DIRECTORIES
-        assert "__pycache__" in SKIP_DIRECTORIES
-        assert ".git" in SKIP_DIRECTORIES
-        assert "venv" in SKIP_DIRECTORIES
+        assert "node_modules" in SKIP_DIRECTORIES, "Expected 'node_modules' in SKIP_DIRECTORIES"
+        assert "__pycache__" in SKIP_DIRECTORIES, "Expected '__pycache__' in SKIP_DIRECTORIES"
+        assert ".git" in SKIP_DIRECTORIES, "Expected '.git' in SKIP_DIRECTORIES"
+        assert "venv" in SKIP_DIRECTORIES, "Expected 'venv' in SKIP_DIRECTORIES"
 
 
 class TestZoneDetector:
@@ -58,7 +58,7 @@ class TestZoneDetector:
         """Should return empty list for repo without markers."""
         detector = ZoneDetector(repo_root)
         zones = detector.detect_zones()
-        assert zones == []
+        assert zones == [], "Expected zones to equal []"
 
     def test_detect_single_python_zone(self, repo_root):
         """Should detect Python zone from pyproject.toml."""
@@ -67,11 +67,11 @@ class TestZoneDetector:
         detector = ZoneDetector(repo_root)
         zones = detector.detect_zones()
 
-        assert len(zones) == 1
-        assert zones[0].language == "python"
-        assert zones[0].path == repo_root
-        assert zones[0].marker == repo_root / "pyproject.toml"
-        assert zones[0].detection == ZoneDetectionMode.AUTO
+        assert len(zones) == 1, "Expected len(zones) to equal 1"
+        assert zones[0].language == "python", "Expected zones[0].language to equal 'python'"
+        assert zones[0].path == repo_root, "Expected zones[0].path to equal repo_root"
+        assert zones[0].marker == repo_root / "pyproject.toml", "Expected zones[0].marker to equal repo_root / 'pyproject.toml'"
+        assert zones[0].detection == ZoneDetectionMode.AUTO, "Expected zones[0].detection to equal ZoneDetectionMode.AUTO"
 
     def test_detect_python_zone_from_setup_py(self, repo_root):
         """Should detect Python zone from setup.py."""
@@ -80,8 +80,8 @@ class TestZoneDetector:
         detector = ZoneDetector(repo_root)
         zones = detector.detect_zones()
 
-        assert len(zones) == 1
-        assert zones[0].language == "python"
+        assert len(zones) == 1, "Expected len(zones) to equal 1"
+        assert zones[0].language == "python", "Expected zones[0].language to equal 'python'"
 
     def test_detect_single_csharp_zone(self, repo_root):
         """Should detect C# zone from .csproj."""
@@ -92,10 +92,10 @@ class TestZoneDetector:
         detector = ZoneDetector(repo_root)
         zones = detector.detect_zones()
 
-        assert len(zones) == 1
-        assert zones[0].language == "csharp"
-        assert zones[0].name == "MyProject"
-        assert zones[0].path == project_dir
+        assert len(zones) == 1, "Expected len(zones) to equal 1"
+        assert zones[0].language == "csharp", "Expected zones[0].language to equal 'csharp'"
+        assert zones[0].name == "MyProject", "Expected zones[0].name to equal 'MyProject'"
+        assert zones[0].path == project_dir, "Expected zones[0].path to equal project_dir"
 
     def test_detect_solution_zone(self, repo_root):
         """Should detect solution-level zone from .sln."""
@@ -104,9 +104,9 @@ class TestZoneDetector:
         detector = ZoneDetector(repo_root)
         zones = detector.detect_zones()
 
-        assert len(zones) == 1
-        assert zones[0].language == "csharp"
-        assert zones[0].name == "Solution"
+        assert len(zones) == 1, "Expected len(zones) to equal 1"
+        assert zones[0].language == "csharp", "Expected zones[0].language to equal 'csharp'"
+        assert zones[0].name == "Solution", "Expected zones[0].name to equal 'Solution'"
 
     def test_detect_typescript_zone(self, repo_root):
         """Should detect TypeScript zone from package.json."""
@@ -115,8 +115,8 @@ class TestZoneDetector:
         detector = ZoneDetector(repo_root)
         zones = detector.detect_zones()
 
-        assert len(zones) == 1
-        assert zones[0].language == "typescript"
+        assert len(zones) == 1, "Expected len(zones) to equal 1"
+        assert zones[0].language == "typescript", "Expected zones[0].language to equal 'typescript'"
 
     def test_detect_go_zone(self, repo_root):
         """Should detect Go zone from go.mod."""
@@ -125,8 +125,8 @@ class TestZoneDetector:
         detector = ZoneDetector(repo_root)
         zones = detector.detect_zones()
 
-        assert len(zones) == 1
-        assert zones[0].language == "go"
+        assert len(zones) == 1, "Expected len(zones) to equal 1"
+        assert zones[0].language == "go", "Expected zones[0].language to equal 'go'"
 
     def test_detect_rust_zone(self, repo_root):
         """Should detect Rust zone from Cargo.toml."""
@@ -135,8 +135,8 @@ class TestZoneDetector:
         detector = ZoneDetector(repo_root)
         zones = detector.detect_zones()
 
-        assert len(zones) == 1
-        assert zones[0].language == "rust"
+        assert len(zones) == 1, "Expected len(zones) to equal 1"
+        assert zones[0].language == "rust", "Expected zones[0].language to equal 'rust'"
 
     def test_detect_multiple_independent_zones(self, repo_root):
         """Should detect multiple non-nested zones."""
@@ -151,9 +151,9 @@ class TestZoneDetector:
         detector = ZoneDetector(repo_root)
         zones = detector.detect_zones()
 
-        assert len(zones) == 2
+        assert len(zones) == 2, "Expected len(zones) to equal 2"
         languages = {z.language for z in zones}
-        assert languages == {"python", "typescript"}
+        assert languages == {"python", "typescript"}, "Expected languages to equal {'python', 'typescript'}"
 
     def test_solution_takes_precedence_over_csproj(self, repo_root):
         """Solution should subsume nested csproj files."""
@@ -166,9 +166,9 @@ class TestZoneDetector:
         zones = detector.detect_zones()
 
         # Should only have one zone (the solution), not a separate csproj zone
-        assert len(zones) == 1
-        assert zones[0].name == "App"
-        assert zones[0].marker.suffix == ".sln"
+        assert len(zones) == 1, "Expected len(zones) to equal 1"
+        assert zones[0].name == "App", "Expected zones[0].name to equal 'App'"
+        assert zones[0].marker.suffix == ".sln", "Expected zones[0].marker.suffix to equal '.sln'"
 
     def test_pyproject_takes_precedence_over_setup_py(self, repo_root):
         """pyproject.toml should take precedence over setup.py."""
@@ -178,8 +178,8 @@ class TestZoneDetector:
         detector = ZoneDetector(repo_root)
         zones = detector.detect_zones()
 
-        assert len(zones) == 1
-        assert zones[0].marker.name == "pyproject.toml"
+        assert len(zones) == 1, "Expected len(zones) to equal 1"
+        assert zones[0].marker.name == "pyproject.toml", "Expected zones[0].marker.name to equal 'pyproject.toml'"
 
     def test_skip_node_modules(self, repo_root):
         """Should not detect zones inside node_modules."""
@@ -192,8 +192,8 @@ class TestZoneDetector:
         zones = detector.detect_zones()
 
         # Should only detect root zone, not nested package
-        assert len(zones) == 1
-        assert zones[0].path == repo_root
+        assert len(zones) == 1, "Expected len(zones) to equal 1"
+        assert zones[0].path == repo_root, "Expected zones[0].path to equal repo_root"
 
     def test_skip_venv(self, repo_root):
         """Should not detect zones inside venv."""
@@ -205,8 +205,8 @@ class TestZoneDetector:
         detector = ZoneDetector(repo_root)
         zones = detector.detect_zones()
 
-        assert len(zones) == 1
-        assert zones[0].path == repo_root
+        assert len(zones) == 1, "Expected len(zones) to equal 1"
+        assert zones[0].path == repo_root, "Expected zones[0].path to equal repo_root"
 
     def test_skip_pycache(self, repo_root):
         """Should not detect zones inside __pycache__."""
@@ -218,7 +218,7 @@ class TestZoneDetector:
         detector = ZoneDetector(repo_root)
         zones = detector.detect_zones()
 
-        assert zones == []
+        assert zones == [], "Expected zones to equal []"
 
     def test_zones_sorted_by_path_depth(self, repo_root):
         """Should return zones sorted by path depth (outer first)."""
@@ -233,9 +233,9 @@ class TestZoneDetector:
         detector = ZoneDetector(repo_root)
         zones = detector.detect_zones()
 
-        assert len(zones) == 2
+        assert len(zones) == 2, "Expected len(zones) to equal 2"
         # Shallower zone should come first (fewer path parts)
-        assert len(zones[0].path.parts) <= len(zones[1].path.parts)
+        assert len(zones[0].path.parts) <= len(zones[1].path.parts), "Expected len(zones[0].path.parts) <= len(zones[1].path.parts)"
 
 
 class TestDeriveZoneName:
@@ -252,7 +252,7 @@ class TestDeriveZoneName:
 
         name = detector._derive_zone_name(marker)
 
-        assert name == "MySolution"
+        assert name == "MySolution", "Expected name to equal 'MySolution'"
 
     def test_derive_name_from_csproj(self, detector, tmp_path):
         """Should use stem for .csproj files."""
@@ -261,7 +261,7 @@ class TestDeriveZoneName:
 
         name = detector._derive_zone_name(marker)
 
-        assert name == "MyProject"
+        assert name == "MyProject", "Expected name to equal 'MyProject'"
 
     def test_derive_name_from_pyproject(self, detector, tmp_path):
         """Should use directory name for pyproject.toml."""
@@ -272,7 +272,7 @@ class TestDeriveZoneName:
 
         name = detector._derive_zone_name(marker)
 
-        assert name == "backend"
+        assert name == "backend", "Expected name to equal 'backend'"
 
 
 class TestDeriveZonePath:
@@ -289,7 +289,7 @@ class TestDeriveZonePath:
 
         path = detector._derive_zone_path(marker)
 
-        assert path == tmp_path
+        assert path == tmp_path, "Expected path to equal tmp_path"
 
     def test_derive_path_from_csproj(self, detector, tmp_path):
         """Should use parent directory for .csproj files."""
@@ -300,7 +300,7 @@ class TestDeriveZonePath:
 
         path = detector._derive_zone_path(marker)
 
-        assert path == project_dir
+        assert path == project_dir, "Expected path to equal project_dir"
 
     def test_derive_path_from_pyproject(self, detector, tmp_path):
         """Should use parent directory for pyproject.toml."""
@@ -311,7 +311,7 @@ class TestDeriveZonePath:
 
         path = detector._derive_zone_path(marker)
 
-        assert path == subdir
+        assert path == subdir, "Expected path to equal subdir"
 
 
 class TestDetectZonesConvenienceFunction:
@@ -323,10 +323,10 @@ class TestDetectZonesConvenienceFunction:
 
         zones = detect_zones(tmp_path)
 
-        assert len(zones) == 1
-        assert zones[0].language == "python"
+        assert len(zones) == 1, "Expected len(zones) to equal 1"
+        assert zones[0].language == "python", "Expected zones[0].language to equal 'python'"
 
     def test_detect_zones_empty(self, tmp_path):
         """Should return empty list for repo without markers."""
         zones = detect_zones(tmp_path)
-        assert zones == []
+        assert zones == [], "Expected zones to equal []"

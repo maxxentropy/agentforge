@@ -54,13 +54,13 @@ components:
         """Create session initializes correctly."""
         session = manager.create(spec_file, test_framework="pytest")
 
-        assert session.session_id.startswith("tdflow_")
-        assert session.spec_file == spec_file
-        assert session.test_framework == "pytest"
-        assert len(session.components) == 2
-        assert session.components[0].name == "TestService"
-        assert session.components[1].name == "OtherService"
-        assert session.current_phase == TDFlowPhase.INIT
+        assert session.session_id.startswith("tdflow_"), "Expected session.session_id.startswith() to be truthy"
+        assert session.spec_file == spec_file, "Expected session.spec_file to equal spec_file"
+        assert session.test_framework == "pytest", "Expected session.test_framework to equal 'pytest'"
+        assert len(session.components) == 2, "Expected len(session.components) to equal 2"
+        assert session.components[0].name == "TestService", "Expected session.components[0].name to equal 'TestService'"
+        assert session.components[1].name == "OtherService", "Expected session.components[1].name to equal 'OtherService'"
+        assert session.current_phase == TDFlowPhase.INIT, "Expected session.current_phase to equal TDFlowPhase.INIT"
 
     def test_save_and_load_session(self, manager: SessionManager, spec_file: Path):
         """Session can be saved and loaded."""
@@ -74,17 +74,17 @@ components:
         # Load
         loaded = manager.load(original.session_id)
 
-        assert loaded is not None
-        assert loaded.session_id == original.session_id
-        assert loaded.spec_file == original.spec_file
-        assert loaded.current_phase == TDFlowPhase.RED
-        assert loaded.components[0].status == ComponentStatus.RED
-        assert len(loaded.history) == len(original.history)
+        assert loaded is not None, "Expected loaded is not None"
+        assert loaded.session_id == original.session_id, "Expected loaded.session_id to equal original.session_id"
+        assert loaded.spec_file == original.spec_file, "Expected loaded.spec_file to equal original.spec_file"
+        assert loaded.current_phase == TDFlowPhase.RED, "Expected loaded.current_phase to equal TDFlowPhase.RED"
+        assert loaded.components[0].status == ComponentStatus.RED, "Expected loaded.components[0].status to equal ComponentStatus.RED"
+        assert len(loaded.history) == len(original.history), "Expected len(loaded.history) to equal len(original.history)"
 
     def test_load_nonexistent_session(self, manager: SessionManager):
         """Loading nonexistent session returns None."""
         result = manager.load("nonexistent_session")
-        assert result is None
+        assert result is None, "Expected result is None"
 
     def test_get_latest(self, manager: SessionManager, spec_file: Path):
         """Get latest returns most recent session."""
@@ -94,13 +94,13 @@ components:
 
         result = manager.get_latest()
 
-        assert result is not None
-        assert result.session_id == latest.session_id
+        assert result is not None, "Expected result is not None"
+        assert result.session_id == latest.session_id, "Expected result.session_id to equal latest.session_id"
 
     def test_get_latest_no_sessions(self, manager: SessionManager):
         """Get latest returns None when no sessions."""
         result = manager.get_latest()
-        assert result is None
+        assert result is None, "Expected result is None"
 
     def test_list_sessions(self, manager: SessionManager, spec_file: Path):
         """List sessions returns all session summaries."""
@@ -112,12 +112,12 @@ components:
 
         sessions = manager.list_sessions()
 
-        assert len(sessions) == 2
+        assert len(sessions) == 2, "Expected len(sessions) to equal 2"
         for sess in sessions:
-            assert "session_id" in sess
-            assert "started_at" in sess
-            assert "spec_file" in sess
-            assert "current_phase" in sess
+            assert "session_id" in sess, "Expected 'session_id' in sess"
+            assert "started_at" in sess, "Expected 'started_at' in sess"
+            assert "spec_file" in sess, "Expected 'spec_file' in sess"
+            assert "current_phase" in sess, "Expected 'current_phase' in sess"
 
     def test_session_serialization_with_artifacts(
         self, manager: SessionManager, spec_file: Path, temp_dir: Path
@@ -146,7 +146,7 @@ components:
         manager.save(session)
         loaded = manager.load(session.session_id)
 
-        assert loaded.components[0].tests is not None
-        assert loaded.components[0].implementation is not None
-        assert loaded.components[0].status == ComponentStatus.GREEN
-        assert loaded.components[0].coverage == 85.5
+        assert loaded.components[0].tests is not None, "Expected loaded.components[0].tests is not None"
+        assert loaded.components[0].implementation is not None, "Expected loaded.components[0].implem... is not None"
+        assert loaded.components[0].status == ComponentStatus.GREEN, "Expected loaded.components[0].status to equal ComponentStatus.GREEN"
+        assert loaded.components[0].coverage == 85.5, "Expected loaded.components[0].coverage to equal 85.5"

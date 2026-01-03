@@ -92,8 +92,8 @@ class TestViolation:
             field_path="output.auth_type",
         )
 
-        assert violation.violation_id == "V-001"
-        assert violation.severity == ViolationSeverity.ERROR
+        assert violation.violation_id == "V-001", "Expected violation.violation_id to equal 'V-001'"
+        assert violation.severity == ViolationSeverity.ERROR, "Expected violation.severity to equal ViolationSeverity.ERROR"
 
     def test_violation_to_dict(self):
         """Serialize violation."""
@@ -108,8 +108,8 @@ class TestViolation:
 
         data = violation.to_dict()
 
-        assert data["violation_type"] == "enum_violation"
-        assert data["severity"] == "error"
+        assert data["violation_type"] == "enum_violation", "Expected data['violation_type'] to equal 'enum_violation'"
+        assert data["severity"] == "error", "Expected data['severity'] to equal 'error'"
 
 
 class TestValidationResult:
@@ -119,9 +119,9 @@ class TestValidationResult:
         """Empty result is valid."""
         result = ValidationResult(valid=True)
 
-        assert result.valid
-        assert result.error_count == 0
-        assert result.warning_count == 0
+        assert result.valid, "Expected result.valid to be truthy"
+        assert result.error_count == 0, "Expected result.error_count to equal 0"
+        assert result.warning_count == 0, "Expected result.warning_count to equal 0"
 
     def test_add_error_violation(self):
         """Adding error makes result invalid."""
@@ -133,8 +133,8 @@ class TestValidationResult:
             message="Missing field",
         ))
 
-        assert not result.valid
-        assert result.error_count == 1
+        assert not result.valid, "Assertion failed"
+        assert result.error_count == 1, "Expected result.error_count to equal 1"
 
     def test_add_warning_keeps_valid(self):
         """Adding warning keeps result valid."""
@@ -146,8 +146,8 @@ class TestValidationResult:
             message="Type mismatch",
         ))
 
-        assert result.valid
-        assert result.warning_count == 1
+        assert result.valid, "Expected result.valid to be truthy"
+        assert result.warning_count == 1, "Expected result.warning_count to equal 1"
 
     def test_merge_results(self):
         """Merge multiple results."""
@@ -163,9 +163,9 @@ class TestValidationResult:
 
         merged = result1.merge(result2)
 
-        assert not merged.valid
-        assert merged.error_count == 1
-        assert merged.warning_count == 1
+        assert not merged.valid, "Assertion failed"
+        assert merged.error_count == 1, "Expected merged.error_count to equal 1"
+        assert merged.warning_count == 1, "Expected merged.warning_count to equal 1"
 
 
 class TestContractEnforcer:
@@ -180,7 +180,7 @@ class TestContractEnforcer:
         """Create enforcer with contracts."""
         enforcer = ContractEnforcer(sample_contracts)
 
-        assert enforcer.contracts is sample_contracts
+        assert enforcer.contracts is sample_contracts, "Expected enforcer.contracts is sample_contracts"
 
     def test_validate_input_passes(self, enforcer):
         """Validate passing input."""
@@ -189,8 +189,8 @@ class TestContractEnforcer:
             {"request_id": "REQ-001"},
         )
 
-        assert result.valid
-        assert result.error_count == 0
+        assert result.valid, "Expected result.valid to be truthy"
+        assert result.error_count == 0, "Expected result.error_count to equal 0"
 
     def test_validate_input_missing_required(self, enforcer):
         """Validate input with missing required field."""
@@ -199,9 +199,9 @@ class TestContractEnforcer:
             {},  # Missing request_id
         )
 
-        assert not result.valid
-        assert result.error_count == 1
-        assert "request_id" in result.violations[0].message
+        assert not result.valid, "Assertion failed"
+        assert result.error_count == 1, "Expected result.error_count to equal 1"
+        assert "request_id" in result.violations[0].message, "Expected 'request_id' in result.violations[0].message"
 
     def test_validate_output_passes(self, enforcer):
         """Validate passing output."""
@@ -210,8 +210,8 @@ class TestContractEnforcer:
             {"request_id": "REQ-001", "auth_type": "jwt"},
         )
 
-        assert result.valid
-        assert result.error_count == 0
+        assert result.valid, "Expected result.valid to be truthy"
+        assert result.error_count == 0, "Expected result.error_count to equal 0"
 
     def test_validate_output_missing_required(self, enforcer):
         """Validate output with missing required field."""
@@ -220,8 +220,8 @@ class TestContractEnforcer:
             {"request_id": "REQ-001"},  # Missing auth_type
         )
 
-        assert not result.valid
-        assert any("auth_type" in v.message for v in result.violations)
+        assert not result.valid, "Assertion failed"
+        assert any("auth_type" in v.message for v in result.violations), "Expected any() to be truthy"
 
     def test_validate_output_enum_violation(self, enforcer):
         """Validate output with invalid enum value."""
@@ -230,8 +230,8 @@ class TestContractEnforcer:
             {"request_id": "REQ-001", "auth_type": "invalid"},
         )
 
-        assert not result.valid
-        assert any(v.violation_type == ViolationType.ENUM_VIOLATION for v in result.violations)
+        assert not result.valid, "Assertion failed"
+        assert any(v.violation_type == ViolationType.ENUM_VIOLATION for v in result.violations), "Expected any() to be truthy"
 
     def test_validate_output_type_mismatch(self, enforcer):
         """Validate output with type mismatch."""
@@ -240,8 +240,8 @@ class TestContractEnforcer:
             {"request_id": 123, "auth_type": "jwt"},  # request_id should be string
         )
 
-        assert not result.valid
-        assert any(v.violation_type == ViolationType.TYPE_MISMATCH for v in result.violations)
+        assert not result.valid, "Assertion failed"
+        assert any(v.violation_type == ViolationType.TYPE_MISMATCH for v in result.violations), "Expected any() to be truthy"
 
     def test_validate_unknown_stage(self, enforcer):
         """Validate unknown stage passes (no contract)."""
@@ -250,7 +250,7 @@ class TestContractEnforcer:
             {"anything": "goes"},
         )
 
-        assert result.valid
+        assert result.valid, "Expected result.valid to be truthy"
 
     def test_check_escalation_trigger_not_met(self, enforcer):
         """Escalation trigger not met."""
@@ -260,7 +260,7 @@ class TestContractEnforcer:
         )
 
         triggered = [c for c in checks if c.triggered]
-        assert len(triggered) == 0
+        assert len(triggered) == 0, "Expected len(triggered) to equal 0"
 
     def test_check_escalation_trigger_met(self, enforcer):
         """Escalation trigger met."""
@@ -270,8 +270,8 @@ class TestContractEnforcer:
         )
 
         triggered = [c for c in checks if c.triggered]
-        assert len(triggered) == 1
-        assert triggered[0].trigger.trigger_id == "T-001"
+        assert len(triggered) == 1, "Expected len(triggered) to equal 1"
+        assert triggered[0].trigger.trigger_id == "T-001", "Expected triggered[0].trigger.trigge... to equal 'T-001'"
 
     def test_check_quality_gate_pass(self, enforcer):
         """Quality gate passes."""
@@ -281,8 +281,8 @@ class TestContractEnforcer:
             {"security_approved": True},
         )
 
-        assert result.passed
-        assert len(result.failed_checks) == 0
+        assert result.passed, "Expected result.passed to be truthy"
+        assert len(result.failed_checks) == 0, "Expected len(result.failed_checks) to equal 0"
 
     def test_check_quality_gate_fail(self, enforcer):
         """Quality gate fails."""
@@ -292,9 +292,9 @@ class TestContractEnforcer:
             {"security_approved": False},  # Security not approved
         )
 
-        assert not result.passed
-        assert len(result.failed_checks) > 0
-        assert result.action == "escalate"
+        assert not result.passed, "Assertion failed"
+        assert len(result.failed_checks) > 0, "Expected len(result.failed_checks) > 0"
+        assert result.action == "escalate", "Expected result.action to equal 'escalate'"
 
     def test_check_quality_gate_not_found(self, enforcer):
         """Unknown gate passes by default."""
@@ -303,7 +303,7 @@ class TestContractEnforcer:
             {},
         )
 
-        assert result.passed
+        assert result.passed, "Expected result.passed to be truthy"
 
     def test_get_summary(self, enforcer):
         """Get summary of multiple results."""
@@ -318,9 +318,9 @@ class TestContractEnforcer:
 
         summary = enforcer.get_summary([result1, result2])
 
-        assert not summary["valid"]
-        assert summary["total_errors"] >= 1
-        assert summary["stages_checked"] == 2
+        assert not summary["valid"], "Assertion failed"
+        assert summary["total_errors"] >= 1, "Expected summary['total_errors'] >= 1"
+        assert summary["stages_checked"] == 2, "Expected summary['stages_checked'] to equal 2"
 
 
 class TestEnforcerWithEmptyContracts:
@@ -337,4 +337,4 @@ class TestEnforcerWithEmptyContracts:
 
         result = enforcer.validate_stage_output("any", {"data": "value"})
 
-        assert result.valid
+        assert result.valid, "Expected result.valid to be truthy"

@@ -29,8 +29,8 @@ class TestToolSelector:
 
         selector = ToolSelector(registry)
 
-        assert selector.registry == registry
-        assert selector.project_domain is None
+        assert selector.registry == registry, "Expected selector.registry to equal registry"
+        assert selector.project_domain is None, "Expected selector.project_domain is None"
 
     def test_init_with_project_domain_sets_domain(self):
         """Test that ToolSelector initializes with project domain."""
@@ -38,8 +38,8 @@ class TestToolSelector:
 
         selector = ToolSelector(registry, project_domain="python")
 
-        assert selector.registry == registry
-        assert selector.project_domain == "python"
+        assert selector.registry == registry, "Expected selector.registry to equal registry"
+        assert selector.project_domain == "python", "Expected selector.project_domain to equal 'python'"
 
     def test_get_tools_returns_combined_tool_list(self):
         """Test that get_tools returns combined tools from multiple sources."""
@@ -71,9 +71,9 @@ class TestToolSelector:
 
         # Should contain tools from all sources
         tool_names = [tool.name for tool in result]
-        assert "base_tool" in tool_names
-        assert "phase_tool" in tool_names
-        assert "domain_tool" in tool_names
+        assert "base_tool" in tool_names, "Expected 'base_tool' in tool_names"
+        assert "phase_tool" in tool_names, "Expected 'phase_tool' in tool_names"
+        assert "domain_tool" in tool_names, "Expected 'domain_tool' in tool_names"
 
     def test_get_tools_without_domain_excludes_domain_tools(self):
         """Test that get_tools works without domain specification."""
@@ -96,8 +96,8 @@ class TestToolSelector:
         result = selector.get_tools("test_workflow", "test_phase")
 
         tool_names = [tool.name for tool in result]
-        assert "base_tool" in tool_names
-        assert "phase_tool" in tool_names
+        assert "base_tool" in tool_names, "Expected 'base_tool' in tool_names"
+        assert "phase_tool" in tool_names, "Expected 'phase_tool' in tool_names"
 
     def test_get_tools_deduplicates_by_name_phase_overrides_base(self):
         """Test that get_tools deduplicates tools with phase tools overriding base."""
@@ -116,8 +116,8 @@ class TestToolSelector:
         selector = ToolSelector(registry)
         result = selector.get_tools("test_workflow", "test_phase")
 
-        assert len(result) == 1
-        assert result[0].description == "Phase version"  # Phase overrides base
+        assert len(result) == 1, "Expected len(result) to equal 1"
+        assert result[0].description == "Phase version", "Expected result[0].description to equal 'Phase version'"# Phase overrides base
 
     def test_detect_domain_identifies_python_project(self):
         """Test that detect_domain identifies Python projects."""
@@ -131,7 +131,7 @@ class TestToolSelector:
 
             result = selector.detect_domain(project_path)
 
-        assert result == "python"
+        assert result == "python", "Expected result to equal 'python'"
 
     def test_detect_domain_identifies_dotnet_project(self):
         """Test that detect_domain identifies .NET projects."""
@@ -145,7 +145,7 @@ class TestToolSelector:
 
             result = selector.detect_domain(project_path)
 
-        assert result == "dotnet"
+        assert result == "dotnet", "Expected result to equal 'dotnet'"
 
     def test_detect_domain_identifies_typescript_project(self):
         """Test that detect_domain identifies TypeScript projects."""
@@ -160,7 +160,7 @@ class TestToolSelector:
 
             result = selector.detect_domain(project_path)
 
-        assert result == "typescript"
+        assert result == "typescript", "Expected result to equal 'typescript'"
 
     def test_detect_domain_returns_none_for_unknown_project(self):
         """Test that detect_domain returns None for unknown project types."""
@@ -173,7 +173,7 @@ class TestToolSelector:
 
             result = selector.detect_domain(project_path)
 
-        assert result is None
+        assert result is None, "Expected result is None"
 
     def test_get_tool_names_returns_tool_names_only(self):
         """Test that get_tool_names returns just tool names."""
@@ -187,7 +187,7 @@ class TestToolSelector:
         selector = ToolSelector(registry)
         result = selector.get_tool_names("test_workflow", "test_phase")
 
-        assert result == ["tool1", "tool2"]
+        assert result == ["tool1", "tool2"], "Expected result to equal ['tool1', 'tool2']"
 
     def test_validate_tool_access_returns_true_for_allowed_tool(self):
         """Test that validate_tool_access returns True for allowed tools."""
@@ -200,7 +200,7 @@ class TestToolSelector:
         selector = ToolSelector(registry)
         result = selector.validate_tool_access("allowed_tool", "test_workflow", "test_phase")
 
-        assert result is True
+        assert result is True, "Expected result is True"
 
     def test_validate_tool_access_returns_false_for_disallowed_tool(self):
         """Test that validate_tool_access returns False for disallowed tools."""
@@ -213,7 +213,7 @@ class TestToolSelector:
         selector = ToolSelector(registry)
         result = selector.validate_tool_access("forbidden_tool", "test_workflow", "test_phase")
 
-        assert result is False
+        assert result is False, "Expected result is False"
 
     def test_get_tools_handles_missing_profile_gracefully(self):
         """Test that get_tools handles missing workflow/phase profile gracefully."""
@@ -224,7 +224,7 @@ class TestToolSelector:
         selector = ToolSelector(registry)
         result = selector.get_tools("unknown_workflow", "unknown_phase")
 
-        assert result == []  # Should return empty list, not crash
+        assert result == [], "Expected result to equal []"# Should return empty list, not crash
 
     def test_get_tools_with_project_domain_uses_domain_tools(self):
         """Test that get_tools uses project domain when set."""
@@ -246,4 +246,4 @@ class TestToolSelector:
 
         registry.get_domain_tools.assert_called_with("python")
         tool_names = [t.name for t in result]
-        assert "domain_tool" in tool_names
+        assert "domain_tool" in tool_names, "Expected 'domain_tool' in tool_names"

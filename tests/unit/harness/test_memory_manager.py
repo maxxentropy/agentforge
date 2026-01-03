@@ -29,9 +29,9 @@ class TestMemoryManagerInit:
 
         manager = MemoryManager(mock_store)
 
-        assert manager.store == mock_store
-        assert manager.session_id is None
-        assert manager.task_id is None
+        assert manager.store == mock_store, "Expected manager.store to equal mock_store"
+        assert manager.session_id is None, "Expected manager.session_id is None"
+        assert manager.task_id is None, "Expected manager.task_id is None"
 
     def test_init_with_session_context_sets_session_id(self):
         """Test that manager can be initialized with session context."""
@@ -40,9 +40,9 @@ class TestMemoryManagerInit:
 
         manager = MemoryManager(mock_store, session_id=session_id)
 
-        assert manager.store == mock_store
-        assert manager.session_id == session_id
-        assert manager.task_id is None
+        assert manager.store == mock_store, "Expected manager.store to equal mock_store"
+        assert manager.session_id == session_id, "Expected manager.session_id to equal session_id"
+        assert manager.task_id is None, "Expected manager.task_id is None"
 
 
 class TestMemoryManagerGet:
@@ -59,7 +59,7 @@ class TestMemoryManagerGet:
         manager = MemoryManager(mock_store)
         result = manager.get("test_key", MemoryTier.PROJECT)
 
-        assert result == "test_value"
+        assert result == "test_value", "Expected result to equal 'test_value'"
         mock_store.get.assert_called_once_with("test_key", MemoryTier.PROJECT)
 
     def test_get_with_fallback_searches_lower_tiers(self):
@@ -75,8 +75,8 @@ class TestMemoryManagerGet:
         manager = MemoryManager(mock_store)
         result = manager.get("test_key", MemoryTier.TASK, fallback=True)
 
-        assert result == "fallback_value"
-        assert mock_store.get.call_count == 2
+        assert result == "fallback_value", "Expected result to equal 'fallback_value'"
+        assert mock_store.get.call_count == 2, "Expected mock_store.get.call_count to equal 2"
         mock_store.get.assert_any_call("test_key", MemoryTier.TASK)
         mock_store.get.assert_any_call("test_key", MemoryTier.PROJECT)
 
@@ -90,7 +90,7 @@ class TestMemoryManagerGet:
         manager = MemoryManager(mock_store)
         result = manager.get("test_key", MemoryTier.SESSION)
 
-        assert result is None
+        assert result is None, "Expected result is None"
 
     def test_get_nonexistent_key_returns_none(self):
         """Test that getting a nonexistent key returns None."""
@@ -100,7 +100,7 @@ class TestMemoryManagerGet:
         manager = MemoryManager(mock_store)
         result = manager.get("nonexistent_key", MemoryTier.SESSION)
 
-        assert result is None
+        assert result is None, "Expected result is None"
 
 
 class TestMemoryManagerSet:
@@ -230,9 +230,9 @@ class TestMemoryManagerSearch:
         manager = MemoryManager(mock_store)
         results = manager.search("keyword")
 
-        assert len(results) == 2
-        assert any(r["key"] == "session_key1" for r in results)
-        assert any(r["key"] == "task_key1" for r in results)
+        assert len(results) == 2, "Expected len(results) to equal 2"
+        assert any(r["key"] == "session_key1" for r in results), "Expected any() to be truthy"
+        assert any(r["key"] == "task_key1" for r in results), "Expected any() to be truthy"
 
     def test_search_with_tier_filter_searches_specific_tier(self):
         """Test that search can be limited to specific tiers."""
@@ -250,7 +250,7 @@ class TestMemoryManagerSearch:
         results = manager.search("search", tiers=[MemoryTier.PROJECT])
 
         mock_store.list_keys.assert_called_once_with(MemoryTier.PROJECT)
-        assert len(results) == 2
+        assert len(results) == 2, "Expected len(results) to equal 2"
 
     def test_search_excludes_expired_entries(self):
         """Test that search excludes expired entries."""
@@ -264,7 +264,7 @@ class TestMemoryManagerSearch:
         manager = MemoryManager(mock_store)
         results = manager.search("keyword")
 
-        assert len(results) == 0
+        assert len(results) == 0, "Expected len(results) to equal 0"
 
 
 class TestMemoryManagerGetContext:
@@ -289,9 +289,9 @@ class TestMemoryManagerGetContext:
         manager = MemoryManager(mock_store)
         context = manager.get_context(max_tokens=1000)
 
-        assert "content from tier 0" in context
-        assert "content from tier 1" in context
-        assert "content from tier 2" in context
+        assert "content from tier 0" in context, "Expected 'content from tier 0' in context"
+        assert "content from tier 1" in context, "Expected 'content from tier 1' in context"
+        assert "content from tier 2" in context, "Expected 'content from tier 2' in context"
 
     def test_get_context_respects_token_limit(self):
         """Test that get_context respects the token limit."""
@@ -310,7 +310,7 @@ class TestMemoryManagerGetContext:
         context = manager.get_context(max_tokens=100)
 
         # Context should be truncated or limited
-        assert len(context) <= 500  # Rough token-to-char conversion
+        assert len(context) <= 500, "Expected len(context) <= 500"# Rough token-to-char conversion
 
     def test_get_context_prioritizes_recent_entries(self):
         """Test that get_context prioritizes more recent entries."""
@@ -335,7 +335,7 @@ class TestMemoryManagerGetContext:
         context = manager.get_context(max_tokens=50)  # Very limited
 
         # Should prioritize recent content
-        assert "recent content" in context
+        assert "recent content" in context, "Expected 'recent content' in context"
 
 
 class TestMemoryManagerLinkSession:
@@ -349,7 +349,7 @@ class TestMemoryManagerLinkSession:
         session_id = "test-session-456"
         manager.link_session(session_id)
 
-        assert manager.session_id == session_id
+        assert manager.session_id == session_id, "Expected manager.session_id to equal session_id"
 
     def test_link_session_enables_session_tier_operations(self):
         """Test that linking session enables session tier operations."""
@@ -357,14 +357,14 @@ class TestMemoryManagerLinkSession:
         manager = MemoryManager(mock_store)
 
         # Initially no session linked
-        assert manager.session_id is None
+        assert manager.session_id is None, "Expected manager.session_id is None"
 
         # Link session
         session_id = "test-session-789"
         manager.link_session(session_id)
 
         # Now session operations should work
-        assert manager.session_id == session_id
+        assert manager.session_id == session_id, "Expected manager.session_id to equal session_id"
 
 
 class TestMemoryManagerLinkTask:
@@ -378,7 +378,7 @@ class TestMemoryManagerLinkTask:
         task_id = "test-task-123"
         manager.link_task(task_id)
 
-        assert manager.task_id == task_id
+        assert manager.task_id == task_id, "Expected manager.task_id to equal task_id"
 
     def test_link_task_enables_task_tier_operations(self):
         """Test that linking task enables task tier operations."""
@@ -386,14 +386,14 @@ class TestMemoryManagerLinkTask:
         manager = MemoryManager(mock_store)
 
         # Initially no task linked
-        assert manager.task_id is None
+        assert manager.task_id is None, "Expected manager.task_id is None"
 
         # Link task
         task_id = "test-task-456"
         manager.link_task(task_id)
 
         # Now task operations should work
-        assert manager.task_id == task_id
+        assert manager.task_id == task_id, "Expected manager.task_id to equal task_id"
 
     def test_link_task_can_change_existing_task(self):
         """Test that link_task can change an existing task association."""
@@ -403,12 +403,12 @@ class TestMemoryManagerLinkTask:
         # Link first task
         first_task = "task-1"
         manager.link_task(first_task)
-        assert manager.task_id == first_task
+        assert manager.task_id == first_task, "Expected manager.task_id to equal first_task"
 
         # Link different task
         second_task = "task-2"
         manager.link_task(second_task)
-        assert manager.task_id == second_task
+        assert manager.task_id == second_task, "Expected manager.task_id to equal second_task"
 
 
 class TestMemoryManagerIntegration:
@@ -428,8 +428,8 @@ class TestMemoryManagerIntegration:
         manager.set("task_key", "task_value", MemoryTier.TASK)
 
         # Verify store was called correctly
-        assert mock_store.set.call_count == 2
+        assert mock_store.set.call_count == 2, "Expected mock_store.set.call_count to equal 2"
 
         # Verify session and task are linked
-        assert manager.session_id == "session-123"
-        assert manager.task_id == "task-456"
+        assert manager.session_id == "session-123", "Expected manager.session_id to equal 'session-123'"
+        assert manager.task_id == "task-456", "Expected manager.task_id to equal 'task-456'"

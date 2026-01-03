@@ -25,15 +25,15 @@ class TestPipelineStateStore:
         state_store.save(sample_pipeline_state)
         loaded = state_store.load(sample_pipeline_state.pipeline_id)
 
-        assert loaded is not None
-        assert loaded.pipeline_id == sample_pipeline_state.pipeline_id
-        assert loaded.template == sample_pipeline_state.template
-        assert loaded.request == sample_pipeline_state.request
+        assert loaded is not None, "Expected loaded is not None"
+        assert loaded.pipeline_id == sample_pipeline_state.pipeline_id, "Expected loaded.pipeline_id to equal sample_pipeline_state.pipel..."
+        assert loaded.template == sample_pipeline_state.template, "Expected loaded.template to equal sample_pipeline_state.template"
+        assert loaded.request == sample_pipeline_state.request, "Expected loaded.request to equal sample_pipeline_state.request"
 
     def test_load_nonexistent(self, state_store):
         """Loading non-existent pipeline returns None."""
         loaded = state_store.load("PL-99999999-nonexist")
-        assert loaded is None
+        assert loaded is None, "Expected loaded is None"
 
     def test_save_creates_directories(self, temp_project):
         """Save creates storage directories if they don't exist."""
@@ -41,23 +41,23 @@ class TestPipelineStateStore:
         state = create_pipeline_state("test", temp_project)
         store.save(state)
 
-        assert (temp_project / ".agentforge" / "pipeline" / "active").exists()
-        assert (temp_project / ".agentforge" / "pipeline" / "completed").exists()
+        assert (temp_project / ".agentforge" / "pipeline" / "active").exists(), "Expected (temp_project / '.agentforg...() to be truthy"
+        assert (temp_project / ".agentforge" / "pipeline" / "completed").exists(), "Expected (temp_project / '.agentforg...() to be truthy"
 
     def test_active_vs_completed_storage(self, state_store, sample_pipeline_state):
         """Active and completed pipelines stored in different directories."""
         # Save as active (PENDING status)
         state_store.save(sample_pipeline_state)
         active_path = state_store._get_active_path(sample_pipeline_state.pipeline_id)
-        assert active_path.exists()
+        assert active_path.exists(), "Expected active_path.exists() to be truthy"
 
         # Mark as completed and save
         sample_pipeline_state.status = PipelineStatus.COMPLETED
         state_store.save(sample_pipeline_state)
 
         completed_path = state_store._get_completed_path(sample_pipeline_state.pipeline_id)
-        assert completed_path.exists()
-        assert not active_path.exists()  # Moved from active
+        assert completed_path.exists(), "Expected completed_path.exists() to be truthy"
+        assert not active_path.exists(), "Assertion failed"# Moved from active
 
     def test_list_active_pipelines(self, state_store, temp_project):
         """list_active() returns only active pipelines."""
@@ -77,9 +77,9 @@ class TestPipelineStateStore:
         active = state_store.list_active()
         active_ids = [s.pipeline_id for s in active]
 
-        assert state1.pipeline_id in active_ids
-        assert state2.pipeline_id in active_ids
-        assert state3.pipeline_id not in active_ids
+        assert state1.pipeline_id in active_ids, "Expected state1.pipeline_id in active_ids"
+        assert state2.pipeline_id in active_ids, "Expected state2.pipeline_id in active_ids"
+        assert state3.pipeline_id not in active_ids, "Expected state3.pipeline_id not in active_ids"
 
     def test_list_completed_pipelines(self, state_store, temp_project):
         """list_completed() returns only completed pipelines."""
@@ -95,8 +95,8 @@ class TestPipelineStateStore:
         completed = state_store.list_completed()
         completed_ids = [s.pipeline_id for s in completed]
 
-        assert state1.pipeline_id in completed_ids
-        assert state2.pipeline_id not in completed_ids
+        assert state1.pipeline_id in completed_ids, "Expected state1.pipeline_id in completed_ids"
+        assert state2.pipeline_id not in completed_ids, "Expected state2.pipeline_id not in completed_ids"
 
     def test_list_completed_limit(self, state_store, temp_project):
         """list_completed() respects limit parameter."""
@@ -106,39 +106,39 @@ class TestPipelineStateStore:
             state_store.save(state)
 
         completed = state_store.list_completed(limit=3)
-        assert len(completed) == 3
+        assert len(completed) == 3, "Expected len(completed) to equal 3"
 
     def test_delete_pipeline(self, state_store, sample_pipeline_state):
         """delete() removes pipeline state."""
         state_store.save(sample_pipeline_state)
-        assert state_store.load(sample_pipeline_state.pipeline_id) is not None
+        assert state_store.load(sample_pipeline_state.pipeline_id) is not None, "Expected state_store.load(sample_pip... is not None"
 
         result = state_store.delete(sample_pipeline_state.pipeline_id)
-        assert result is True
-        assert state_store.load(sample_pipeline_state.pipeline_id) is None
+        assert result is True, "Expected result is True"
+        assert state_store.load(sample_pipeline_state.pipeline_id) is None, "Expected state_store.load(sample_pip... is None"
 
     def test_delete_nonexistent(self, state_store):
         """delete() returns False for non-existent pipeline."""
         result = state_store.delete("PL-99999999-nonexist")
-        assert result is False
+        assert result is False, "Expected result is False"
 
     def test_archive_pipeline(self, state_store, sample_pipeline_state):
         """archive() moves pipeline from active to completed."""
         state_store.save(sample_pipeline_state)
         active_path = state_store._get_active_path(sample_pipeline_state.pipeline_id)
-        assert active_path.exists()
+        assert active_path.exists(), "Expected active_path.exists() to be truthy"
 
         result = state_store.archive(sample_pipeline_state.pipeline_id)
-        assert result is True
-        assert not active_path.exists()
+        assert result is True, "Expected result is True"
+        assert not active_path.exists(), "Assertion failed"
 
         completed_path = state_store._get_completed_path(sample_pipeline_state.pipeline_id)
-        assert completed_path.exists()
+        assert completed_path.exists(), "Expected completed_path.exists() to be truthy"
 
     def test_archive_nonexistent(self, state_store):
         """archive() returns False for non-existent pipeline."""
         result = state_store.archive("PL-99999999-nonexist")
-        assert result is False
+        assert result is False, "Expected result is False"
 
     def test_corrupted_state_recovery(self, state_store, temp_project):
         """Corrupted state files are quarantined."""
@@ -151,19 +151,19 @@ class TestPipelineStateStore:
             f.write("invalid: yaml: content: [}")
 
         loaded = state_store.load(pipeline_id)
-        assert loaded is None
+        assert loaded is None, "Expected loaded is None"
 
         # Original file should be quarantined
         corrupted_path = file_path.with_suffix(".yaml.corrupted")
-        assert corrupted_path.exists()
-        assert not file_path.exists()
+        assert corrupted_path.exists(), "Expected corrupted_path.exists() to be truthy"
+        assert not file_path.exists(), "Assertion failed"
 
     def test_index_updated_on_save(self, state_store, sample_pipeline_state):
         """Index file is updated when pipeline is saved."""
         state_store.save(sample_pipeline_state)
 
         index_data = state_store._read_yaml(state_store.index_file)
-        assert sample_pipeline_state.pipeline_id in index_data["pipelines"]
+        assert sample_pipeline_state.pipeline_id in index_data["pipelines"], "Expected sample_pipeline_state.pipel... in index_data['pipelines']"
 
     def test_get_by_status(self, state_store, temp_project):
         """get_by_status() filters pipelines by status."""
@@ -180,10 +180,10 @@ class TestPipelineStateStore:
         state_store.save(state3)
 
         running = state_store.get_by_status(PipelineStatus.RUNNING)
-        assert len(running) == 2
+        assert len(running) == 2, "Expected len(running) to equal 2"
 
         paused = state_store.get_by_status(PipelineStatus.PAUSED)
-        assert len(paused) == 1
+        assert len(paused) == 1, "Expected len(paused) to equal 1"
 
     def test_concurrent_access(self, temp_project):
         """Concurrent saves don't corrupt data."""
@@ -214,11 +214,11 @@ class TestPipelineStateStore:
         for t in threads:
             t.join()
 
-        assert len(errors) == 0
+        assert len(errors) == 0, "Expected len(errors) to equal 0"
 
         # State should have some updates (order depends on timing)
         final = store.load(state.pipeline_id)
-        assert final is not None
+        assert final is not None, "Expected final is not None"
 
 
 class TestStateStoreList:
@@ -238,7 +238,7 @@ class TestStateStoreList:
             state_store.save(state)
 
         all_pipelines = state_store.list()
-        assert len(all_pipelines) == 4
+        assert len(all_pipelines) == 4, "Expected len(all_pipelines) to equal 4"
 
     def test_list_filtered_by_status(self, state_store, temp_project):
         """list(status=...) filters correctly."""
@@ -255,10 +255,10 @@ class TestStateStoreList:
         state_store.save(state3)
 
         running = state_store.list(status=PipelineStatus.RUNNING)
-        assert len(running) == 2
+        assert len(running) == 2, "Expected len(running) to equal 2"
 
         completed = state_store.list(status=PipelineStatus.COMPLETED)
-        assert len(completed) == 1
+        assert len(completed) == 1, "Expected len(completed) to equal 1"
 
     def test_list_respects_limit(self, state_store, temp_project):
         """list(limit=N) returns at most N results."""
@@ -267,7 +267,7 @@ class TestStateStoreList:
             state_store.save(state)
 
         limited = state_store.list(limit=5)
-        assert len(limited) == 5
+        assert len(limited) == 5, "Expected len(limited) to equal 5"
 
     def test_list_ordered_by_date_newest_first(self, state_store, temp_project):
         """list() returns results ordered by created_at descending."""
@@ -283,13 +283,13 @@ class TestStateStoreList:
         result = state_store.list()
 
         # Newest (last created) should be first
-        assert result[0].pipeline_id == states[2].pipeline_id
-        assert result[2].pipeline_id == states[0].pipeline_id
+        assert result[0].pipeline_id == states[2].pipeline_id, "Expected result[0].pipeline_id to equal states[2].pipeline_id"
+        assert result[2].pipeline_id == states[0].pipeline_id, "Expected result[2].pipeline_id to equal states[0].pipeline_id"
 
     def test_list_empty_store(self, state_store):
         """list() returns empty list when no pipelines."""
         result = state_store.list()
-        assert result == []
+        assert result == [], "Expected result to equal []"
 
     def test_list_with_status_and_limit(self, state_store, temp_project):
         """list() combines status filter and limit."""
@@ -299,6 +299,6 @@ class TestStateStoreList:
             state_store.save(state)
 
         running = state_store.list(status=PipelineStatus.RUNNING, limit=3)
-        assert len(running) == 3
+        assert len(running) == 3, "Expected len(running) to equal 3"
         for s in running:
-            assert s.status == PipelineStatus.RUNNING
+            assert s.status == PipelineStatus.RUNNING, "Expected s.status to equal PipelineStatus.RUNNING"

@@ -40,13 +40,13 @@ class TestBuildContractErrors:
 
         errors = build_contract_errors([contract_result])
 
-        assert len(errors) == 1
-        assert errors[0]["contract"] == "test-contract"
-        assert errors[0]["check"] == "check-001"
-        assert errors[0]["severity"] == "error"
-        assert errors[0]["message"] == "Something failed"
-        assert errors[0]["file"] == "src/example.py"
-        assert errors[0]["line"] == 42
+        assert len(errors) == 1, "Expected len(errors) to equal 1"
+        assert errors[0]["contract"] == "test-contract", "Expected errors[0]['contract'] to equal 'test-contract'"
+        assert errors[0]["check"] == "check-001", "Expected errors[0]['check'] to equal 'check-001'"
+        assert errors[0]["severity"] == "error", "Expected errors[0]['severity'] to equal 'error'"
+        assert errors[0]["message"] == "Something failed", "Expected errors[0]['message'] to equal 'Something failed'"
+        assert errors[0]["file"] == "src/example.py", "Expected errors[0]['file'] to equal 'src/example.py'"
+        assert errors[0]["line"] == 42, "Expected errors[0]['line'] to equal 42"
 
     def test_build_errors_ignores_passed_checks(self):
         """Should not include passed checks in errors."""
@@ -59,7 +59,7 @@ class TestBuildContractErrors:
 
         errors = build_contract_errors([contract_result])
 
-        assert len(errors) == 0
+        assert len(errors) == 0, "Expected len(errors) to equal 0"
 
     def test_build_errors_ignores_exempted_checks(self):
         """Should not include exempted checks in errors."""
@@ -72,7 +72,7 @@ class TestBuildContractErrors:
 
         errors = build_contract_errors([contract_result])
 
-        assert len(errors) == 0
+        assert len(errors) == 0, "Expected len(errors) to equal 0"
 
     def test_build_errors_multiple_results(self):
         """Should handle multiple contract results."""
@@ -87,15 +87,15 @@ class TestBuildContractErrors:
 
         errors = build_contract_errors([result1, result2])
 
-        assert len(errors) == 2
-        assert errors[0]["check"] == "c1"
-        assert errors[1]["check"] == "c2"
+        assert len(errors) == 2, "Expected len(errors) to equal 2"
+        assert errors[0]["check"] == "c1", "Expected errors[0]['check'] to equal 'c1'"
+        assert errors[1]["check"] == "c2", "Expected errors[1]['check'] to equal 'c2'"
 
     def test_build_errors_empty_results(self):
         """Should handle empty results list."""
         errors = build_contract_errors([])
 
-        assert errors == []
+        assert errors == [], "Expected errors to equal []"
 
 
 class TestAggregateContractStats:
@@ -111,10 +111,10 @@ class TestAggregateContractStats:
 
         stats = aggregate_contract_stats([result])
 
-        assert stats["errors"] == 0
-        assert stats["warnings"] == 0
-        assert stats["exempted"] == 0
-        assert stats["all_passed"] is True
+        assert stats["errors"] == 0, "Expected stats['errors'] to equal 0"
+        assert stats["warnings"] == 0, "Expected stats['warnings'] to equal 0"
+        assert stats["exempted"] == 0, "Expected stats['exempted'] to equal 0"
+        assert stats["all_passed"] is True, "Expected stats['all_passed'] is True"
 
     def test_aggregate_with_failures(self):
         """Should aggregate stats with failures."""
@@ -123,19 +123,19 @@ class TestAggregateContractStats:
 
         stats = aggregate_contract_stats([result1, result2])
 
-        assert stats["errors"] == 3
-        assert stats["warnings"] == 1
-        assert stats["exempted"] == 3
-        assert stats["all_passed"] is False
+        assert stats["errors"] == 3, "Expected stats['errors'] to equal 3"
+        assert stats["warnings"] == 1, "Expected stats['warnings'] to equal 1"
+        assert stats["exempted"] == 3, "Expected stats['exempted'] to equal 3"
+        assert stats["all_passed"] is False, "Expected stats['all_passed'] is False"
 
     def test_aggregate_empty_results(self):
         """Should handle empty results list."""
         stats = aggregate_contract_stats([])
 
-        assert stats["errors"] == 0
-        assert stats["warnings"] == 0
-        assert stats["exempted"] == 0
-        assert stats["all_passed"] is True  # vacuously true
+        assert stats["errors"] == 0, "Expected stats['errors'] to equal 0"
+        assert stats["warnings"] == 0, "Expected stats['warnings'] to equal 0"
+        assert stats["exempted"] == 0, "Expected stats['exempted'] to equal 0"
+        assert stats["all_passed"] is True, "Expected stats['all_passed'] is True"# vacuously true
 
 
 class TestBuildContractMessage:
@@ -148,10 +148,10 @@ class TestBuildContractMessage:
 
         message = build_contract_message(results, stats)
 
-        assert "Ran 2 contracts" in message
-        assert "2 errors" in message
-        assert "1 warnings" in message
-        assert "exempted" not in message
+        assert "Ran 2 contracts" in message, "Expected 'Ran 2 contracts' in message"
+        assert "2 errors" in message, "Expected '2 errors' in message"
+        assert "1 warnings" in message, "Expected '1 warnings' in message"
+        assert "exempted" not in message, "Expected 'exempted' not in message"
 
     def test_build_message_with_exemptions(self):
         """Should include exemption count when non-zero."""
@@ -160,7 +160,7 @@ class TestBuildContractMessage:
 
         message = build_contract_message(results, stats)
 
-        assert "5 exempted" in message
+        assert "5 exempted" in message, "Expected '5 exempted' in message"
 
     def test_build_message_no_results(self):
         """Should handle zero contracts."""
@@ -169,7 +169,7 @@ class TestBuildContractMessage:
 
         message = build_contract_message(results, stats)
 
-        assert "Ran 0 contracts" in message
+        assert "Ran 0 contracts" in message, "Expected 'Ran 0 contracts' in message"
 
 
 class TestGetContractResults:

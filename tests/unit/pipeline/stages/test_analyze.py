@@ -60,9 +60,9 @@ class TestAnalyzeExecutor:
             mock_llm.return_value = tool_result
             result = executor.execute(context)
 
-        assert result.status == StageStatus.COMPLETED
-        assert len(result.artifacts["affected_files"]) > 0
-        assert len(result.artifacts["components"]) > 0
+        assert result.status == StageStatus.COMPLETED, "Expected result.status to equal StageStatus.COMPLETED"
+        assert len(result.artifacts["affected_files"]) > 0, "Expected len(result.artifacts['affec... > 0"
+        assert len(result.artifacts["components"]) > 0, "Expected len(result.artifacts['compo... > 0"
 
     def test_defines_required_tools(self):
         """Executor defines search_code, read_file, find_related, submit_analysis tools."""
@@ -71,10 +71,10 @@ class TestAnalyzeExecutor:
         executor = AnalyzeExecutor()
         tool_names = [t["name"] for t in executor.tools]
 
-        assert "search_code" in tool_names
-        assert "read_file" in tool_names
-        assert "find_related" in tool_names
-        assert "submit_analysis" in tool_names
+        assert "search_code" in tool_names, "Expected 'search_code' in tool_names"
+        assert "read_file" in tool_names, "Expected 'read_file' in tool_names"
+        assert "find_related" in tool_names, "Expected 'find_related' in tool_names"
+        assert "submit_analysis" in tool_names, "Expected 'submit_analysis' in tool_names"
 
     def test_produces_affected_files_list(
         self, tmp_path, sample_clarify_artifact
@@ -111,9 +111,9 @@ class TestAnalyzeExecutor:
             mock_llm.return_value = tool_result
             result = executor.execute(context)
 
-        assert "affected_files" in result.artifacts
-        assert len(result.artifacts["affected_files"]) > 0
-        assert result.artifacts["affected_files"][0]["path"] == "file1.py"
+        assert "affected_files" in result.artifacts, "Expected 'affected_files' in result.artifacts"
+        assert len(result.artifacts["affected_files"]) > 0, "Expected len(result.artifacts['affec... > 0"
+        assert result.artifacts["affected_files"][0]["path"] == "file1.py", "Expected result.artifacts['affected_... to equal 'file1.py'"
 
     def test_produces_components_list(self, tmp_path, sample_clarify_artifact):
         """Output includes components list."""
@@ -152,9 +152,9 @@ class TestAnalyzeExecutor:
             mock_llm.return_value = tool_result
             result = executor.execute(context)
 
-        assert "components" in result.artifacts
-        assert len(result.artifacts["components"]) > 0
-        assert result.artifacts["components"][0]["name"] == "AuthHandler"
+        assert "components" in result.artifacts, "Expected 'components' in result.artifacts"
+        assert len(result.artifacts["components"]) > 0, "Expected len(result.artifacts['compo... > 0"
+        assert result.artifacts["components"][0]["name"] == "AuthHandler", "Expected result.artifacts['component... to equal 'AuthHandler'"
 
     def test_identifies_risks(self, tmp_path, sample_clarify_artifact):
         """Output includes risk assessment."""
@@ -194,9 +194,9 @@ class TestAnalyzeExecutor:
             mock_llm.return_value = tool_result
             result = executor.execute(context)
 
-        assert "risks" in result.artifacts
-        assert len(result.artifacts["risks"]) > 0
-        assert result.artifacts["risks"][0]["severity"] == "high"
+        assert "risks" in result.artifacts, "Expected 'risks' in result.artifacts"
+        assert len(result.artifacts["risks"]) > 0, "Expected len(result.artifacts['risks']) > 0"
+        assert result.artifacts["risks"][0]["severity"] == "high", "Expected result.artifacts['risks'][0... to equal 'high'"
 
     def test_handles_missing_tool_call(self, tmp_path, sample_clarify_artifact):
         """Handles case where submit_analysis tool was not called."""
@@ -224,7 +224,7 @@ class TestAnalyzeExecutor:
             result = executor.execute(context)
 
         # Should fall back to text parsing or return minimal artifact
-        assert result.status in [StageStatus.COMPLETED, StageStatus.FAILED]
+        assert result.status in [StageStatus.COMPLETED, StageStatus.FAILED], "Expected result.status in [StageStatus.COMPLETED, Sta..."
 
     def test_fallback_to_text_parsing(self, tmp_path, sample_clarify_artifact):
         """Falls back to text parsing if tool not called."""
@@ -260,7 +260,7 @@ components:
             result = executor.execute(context)
 
         # Should have parsed something
-        assert result.artifacts.get("request_id") is not None
+        assert result.artifacts.get("request_id") is not None, "Expected result.artifacts.get('reque... is not None"
 
     def test_validates_output_analysis_section(self, tmp_path):
         """Output validation checks for analysis section."""
@@ -276,8 +276,8 @@ components:
         }
 
         validation = executor.validate_output(artifact)
-        assert not validation.valid
-        assert any("analysis" in e.lower() for e in validation.errors)
+        assert not validation.valid, "Assertion failed"
+        assert any("analysis" in e.lower() for e in validation.errors), "Expected any() to be truthy"
 
     def test_carries_forward_requirements(
         self, tmp_path, sample_clarify_artifact
@@ -313,7 +313,7 @@ components:
             result = executor.execute(context)
 
         # Should carry forward clarified_requirements
-        assert "clarified_requirements" in result.artifacts
+        assert "clarified_requirements" in result.artifacts, "Expected 'clarified_requirements' in result.artifacts"
 
 
 class TestCreateAnalyzeExecutor:
@@ -327,7 +327,7 @@ class TestCreateAnalyzeExecutor:
         )
 
         executor = create_analyze_executor()
-        assert isinstance(executor, AnalyzeExecutor)
+        assert isinstance(executor, AnalyzeExecutor), "Expected isinstance() to be truthy"
 
     def test_accepts_config(self):
         """Factory accepts config parameter."""
@@ -335,4 +335,4 @@ class TestCreateAnalyzeExecutor:
 
         config = {"max_files_to_read": 30}
         executor = create_analyze_executor(config)
-        assert executor.config.get("max_files_to_read") == 30
+        assert executor.config.get("max_files_to_read") == 30, "Expected executor.config.get('max_fi... to equal 30"

@@ -33,9 +33,9 @@ class TestSchemaReference:
 
         data = ref.to_dict()
 
-        assert data["schema_id"] == "INTAKE_OUTPUT_SCHEMA"
-        assert data["schema_type"] == "json_schema"
-        assert data["schema_location"] == "schemas.py"
+        assert data["schema_id"] == "INTAKE_OUTPUT_SCHEMA", "Expected data['schema_id'] to equal 'INTAKE_OUTPUT_SCHEMA'"
+        assert data["schema_type"] == "json_schema", "Expected data['schema_type'] to equal 'json_schema'"
+        assert data["schema_location"] == "schemas.py", "Expected data['schema_location'] to equal 'schemas.py'"
 
 
 class TestValidationResult:
@@ -45,8 +45,8 @@ class TestValidationResult:
         """Create passed validation result."""
         result = ValidationResult(status=ValidationStatus.PASSED)
 
-        assert result.status == ValidationStatus.PASSED
-        assert result.errors == []
+        assert result.status == ValidationStatus.PASSED, "Expected result.status to equal ValidationStatus.PASSED"
+        assert result.errors == [], "Expected result.errors to equal []"
 
     def test_failed_validation_with_errors(self):
         """Create failed validation with errors."""
@@ -55,8 +55,8 @@ class TestValidationResult:
             errors=["Missing required field: request_id"],
         )
 
-        assert result.status == ValidationStatus.FAILED
-        assert len(result.errors) == 1
+        assert result.status == ValidationStatus.FAILED, "Expected result.status to equal ValidationStatus.FAILED"
+        assert len(result.errors) == 1, "Expected len(result.errors) to equal 1"
 
     def test_to_dict(self):
         """Serialize validation result."""
@@ -68,9 +68,9 @@ class TestValidationResult:
 
         data = result.to_dict()
 
-        assert data["status"] == "passed"
-        assert "schema" in data
-        assert data["schema"]["schema_id"] == "test"
+        assert data["status"] == "passed", "Expected data['status'] to equal 'passed'"
+        assert "schema" in data, "Expected 'schema' in data"
+        assert data["schema"]["schema_id"] == "test", "Expected data['schema']['schema_id'] to equal 'test'"
 
 
 class TestValidatedContext:
@@ -84,8 +84,8 @@ class TestValidatedContext:
             required_fields=["request_id"],
         )
 
-        assert context.is_valid
-        assert context.data["request_id"] == "REQ-001"
+        assert context.is_valid, "Expected context.is_valid to be truthy"
+        assert context.data["request_id"] == "REQ-001", "Expected context.data['request_id'] to equal 'REQ-001'"
 
     def test_invalid_context(self):
         """Create invalid context."""
@@ -98,8 +98,8 @@ class TestValidatedContext:
             required_fields=["request_id"],
         )
 
-        assert not context.is_valid
-        assert len(context.validation.errors) == 1
+        assert not context.is_valid, "Assertion failed"
+        assert len(context.validation.errors) == 1, "Expected len(context.validation.errors) to equal 1"
 
 
 class TestLLMInteractionEnvelope:
@@ -119,9 +119,9 @@ class TestLLMInteractionEnvelope:
             duration_ms=1500,
         )
 
-        assert envelope.model == "claude-sonnet-4-20250514"
-        assert envelope.tokens_input == 100
-        assert len(envelope.system_prompt) > 0
+        assert envelope.model == "claude-sonnet-4-20250514", "Expected envelope.model to equal 'claude-sonnet-4-20250514'"
+        assert envelope.tokens_input == 100, "Expected envelope.tokens_input to equal 100"
+        assert len(envelope.system_prompt) > 0, "Expected len(envelope.system_prompt) > 0"
 
     def test_to_dict_stores_lengths(self):
         """to_dict stores content lengths, not full content."""
@@ -134,9 +134,9 @@ class TestLLMInteractionEnvelope:
 
         data = envelope.to_dict()
 
-        assert "content_lengths" in data
-        assert data["content_lengths"]["system_prompt"] == len("System prompt text")
-        assert data["content_lengths"]["user_message"] == len("User message text")
+        assert "content_lengths" in data, "Expected 'content_lengths' in data"
+        assert data["content_lengths"]["system_prompt"] == len("System prompt text"), "Expected data['content_lengths']['sy... to equal len('System prompt text')"
+        assert data["content_lengths"]["user_message"] == len("User message text"), "Expected data['content_lengths']['us... to equal len('User message text')"
 
     def test_to_markdown(self):
         """Format envelope as markdown."""
@@ -149,10 +149,10 @@ class TestLLMInteractionEnvelope:
 
         md = envelope.to_markdown()
 
-        assert "# LLM Interaction" in md
-        assert "You are an expert." in md
-        assert "Analyze this." in md
-        assert "Analysis complete." in md
+        assert "# LLM Interaction" in md, "Expected '# LLM Interaction' in md"
+        assert "You are an expert." in md, "Expected 'You are an expert.' in md"
+        assert "Analyze this." in md, "Expected 'Analyze this.' in md"
+        assert "Analysis complete." in md, "Expected 'Analysis complete.' in md"
 
 
 class TestParsedArtifact:
@@ -167,8 +167,8 @@ class TestParsedArtifact:
             artifact_type="IntakeArtifact",
         )
 
-        assert artifact.is_valid
-        assert artifact.artifact_data["request_id"] == "REQ-001"
+        assert artifact.is_valid, "Expected artifact.is_valid to be truthy"
+        assert artifact.artifact_data["request_id"] == "REQ-001", "Expected artifact.artifact_data['req... to equal 'REQ-001'"
 
     def test_failed_parsing(self):
         """Handle failed parsing."""
@@ -181,8 +181,8 @@ class TestParsedArtifact:
             ),
         )
 
-        assert not artifact.is_valid
-        assert artifact.artifact_data is None
+        assert not artifact.is_valid, "Assertion failed"
+        assert artifact.artifact_data is None, "Expected artifact.artifact_data is None"
 
 
 class TestContextFrameBuilder:
@@ -216,14 +216,14 @@ class TestContextFrameBuilder:
             .build()
         )
 
-        assert frame.frame_id == "FRAME-0001"
-        assert frame.frame_type == FrameType.STAGE_EXECUTION
-        assert frame.stage_name == "intake"
-        assert frame.input_context is not None
-        assert frame.input_context.is_valid
-        assert frame.llm_interaction is not None
-        assert frame.parsed_artifact is not None
-        assert frame.parsed_artifact.is_valid
+        assert frame.frame_id == "FRAME-0001", "Expected frame.frame_id to equal 'FRAME-0001'"
+        assert frame.frame_type == FrameType.STAGE_EXECUTION, "Expected frame.frame_type to equal FrameType.STAGE_EXECUTION"
+        assert frame.stage_name == "intake", "Expected frame.stage_name to equal 'intake'"
+        assert frame.input_context is not None, "Expected frame.input_context is not None"
+        assert frame.input_context.is_valid, "Expected frame.input_context.is_valid to be truthy"
+        assert frame.llm_interaction is not None, "Expected frame.llm_interaction is not None"
+        assert frame.parsed_artifact is not None, "Expected frame.parsed_artifact is not None"
+        assert frame.parsed_artifact.is_valid, "Expected frame.parsed_artifact.is_valid to be truthy"
 
     def test_build_with_validation_failure(self):
         """Build frame with validation failure."""
@@ -237,9 +237,9 @@ class TestContextFrameBuilder:
             .build()
         )
 
-        assert frame.input_context is not None
-        assert not frame.input_context.is_valid
-        assert "Missing required field: request" in frame.input_context.validation.errors
+        assert frame.input_context is not None, "Expected frame.input_context is not None"
+        assert not frame.input_context.is_valid, "Assertion failed"
+        assert "Missing required field: request" in frame.input_context.validation.errors, "Expected 'Missing required field: re... in frame.input_context.validat..."
 
     def test_build_with_type_mismatch(self):
         """Build frame with type validation failure."""
@@ -256,8 +256,8 @@ class TestContextFrameBuilder:
             .build()
         )
 
-        assert not frame.input_context.is_valid
-        assert any("expected string" in e for e in frame.input_context.validation.errors)
+        assert not frame.input_context.is_valid, "Assertion failed"
+        assert any("expected string" in e for e in frame.input_context.validation.errors), "Expected any() to be truthy"
 
 
 class TestContextFrame:
@@ -277,9 +277,9 @@ class TestContextFrame:
 
         data = frame.to_dict()
 
-        assert data["frame_id"] == "FRAME-0001"
-        assert data["frame_type"] == "stage_execution"
-        assert data["stage_name"] == "intake"
+        assert data["frame_id"] == "FRAME-0001", "Expected data['frame_id'] to equal 'FRAME-0001'"
+        assert data["frame_type"] == "stage_execution", "Expected data['frame_type'] to equal 'stage_execution'"
+        assert data["stage_name"] == "intake", "Expected data['stage_name'] to equal 'intake'"
 
     def test_frame_is_valid(self):
         """Check frame validity based on component validations."""
@@ -299,7 +299,7 @@ class TestContextFrame:
             ),
         )
 
-        assert frame.is_valid
+        assert frame.is_valid, "Expected frame.is_valid to be truthy"
 
     def test_frame_invalid_with_failed_validation(self):
         """Frame is invalid if any validation failed."""
@@ -315,4 +315,4 @@ class TestContextFrame:
             ),
         )
 
-        assert not frame.is_valid
+        assert not frame.is_valid, "Assertion failed"

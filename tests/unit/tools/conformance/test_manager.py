@@ -36,19 +36,19 @@ class TestConformanceManagerInit:
         """Test path initialization."""
         manager = ConformanceManager(tmp_path)
 
-        assert manager.repo_root == tmp_path
-        assert manager.agentforge_path == tmp_path / ".agentforge"
+        assert manager.repo_root == tmp_path, "Expected manager.repo_root to equal tmp_path"
+        assert manager.agentforge_path == tmp_path / ".agentforge", "Expected manager.agentforge_path to equal tmp_path / '.agentforge'"
 
     def test_is_initialized_false(self, tmp_path: Path):
         """Test is_initialized returns false when not initialized."""
         manager = ConformanceManager(tmp_path)
-        assert not manager.is_initialized()
+        assert not manager.is_initialized(), "Assertion failed"
 
     def test_is_initialized_true(self, tmp_path: Path):
         """Test is_initialized returns true after init."""
         manager = ConformanceManager(tmp_path)
         manager.initialize()
-        assert manager.is_initialized()
+        assert manager.is_initialized(), "Expected manager.is_initialized() to be truthy"
 
 
 class TestConformanceManagerInitialize:
@@ -59,10 +59,10 @@ class TestConformanceManagerInitialize:
         manager = ConformanceManager(tmp_path)
         manager.initialize()
 
-        assert (tmp_path / ".agentforge").is_dir()
-        assert (tmp_path / ".agentforge" / "violations").is_dir()
-        assert (tmp_path / ".agentforge" / "exemptions").is_dir()
-        assert (tmp_path / ".agentforge" / "history").is_dir()
+        assert (tmp_path / ".agentforge").is_dir(), "Expected (tmp_path / '.agentforge')....() to be truthy"
+        assert (tmp_path / ".agentforge" / "violations").is_dir(), "Expected (tmp_path / '.agentforge' /...() to be truthy"
+        assert (tmp_path / ".agentforge" / "exemptions").is_dir(), "Expected (tmp_path / '.agentforge' /...() to be truthy"
+        assert (tmp_path / ".agentforge" / "history").is_dir(), "Expected (tmp_path / '.agentforge' /...() to be truthy"
 
     def test_initialize_creates_report(self, tmp_path: Path):
         """Test initialize creates initial report."""
@@ -70,7 +70,7 @@ class TestConformanceManagerInitialize:
         manager.initialize()
 
         report_path = tmp_path / ".agentforge" / "conformance_report.yaml"
-        assert report_path.exists()
+        assert report_path.exists(), "Expected report_path.exists() to be truthy"
 
     def test_initialize_updates_gitignore_new(self, tmp_path: Path):
         """Test gitignore is created if missing."""
@@ -78,8 +78,8 @@ class TestConformanceManagerInitialize:
         manager.initialize()
 
         gitignore = tmp_path / ".gitignore"
-        assert gitignore.exists()
-        assert ".agentforge/local.yaml" in gitignore.read_text()
+        assert gitignore.exists(), "Expected gitignore.exists() to be truthy"
+        assert ".agentforge/local.yaml" in gitignore.read_text(), "Expected '.agentforge/local.yaml' in gitignore.read_text()"
 
     def test_initialize_updates_gitignore_existing(self, tmp_path: Path):
         """Test gitignore is updated if exists."""
@@ -90,8 +90,8 @@ class TestConformanceManagerInitialize:
         manager.initialize()
 
         content = gitignore.read_text()
-        assert "*.pyc" in content
-        assert ".agentforge/local.yaml" in content
+        assert "*.pyc" in content, "Expected '*.pyc' in content"
+        assert ".agentforge/local.yaml" in content, "Expected '.agentforge/local.yaml' in content"
 
     def test_initialize_fails_if_exists(self, tmp_path: Path):
         """Test initialize fails if already initialized."""
@@ -107,7 +107,7 @@ class TestConformanceManagerInitialize:
         manager.initialize()
         manager.initialize(force=True)  # Should not raise
 
-        assert manager.is_initialized()
+        assert manager.is_initialized(), "Expected manager.is_initialized() to be truthy"
 
 
 class TestConformanceCheck:
@@ -140,10 +140,10 @@ class TestConformanceCheck:
             is_full_run=True,
         )
 
-        assert report.summary.failed == 1
+        assert report.summary.failed == 1, "Expected report.summary.failed to equal 1"
         violations = manager.list_violations()
-        assert len(violations) == 1
-        assert violations[0].message == "Found print statement"
+        assert len(violations) == 1, "Expected len(violations) to equal 1"
+        assert violations[0].message == "Found print statement", "Expected violations[0].message to equal 'Found print statement'"
 
     def test_deterministic_violation_ids(self, manager):
         """Test same result produces same violation ID."""
@@ -173,7 +173,7 @@ class TestConformanceCheck:
         )
 
         v2_id = manager.list_violations()[0].violation_id
-        assert v1_id == v2_id
+        assert v1_id == v2_id, "Expected v1_id to equal v2_id"
 
     def test_updates_last_seen(self, manager):
         """Test last_seen_at is updated on re-detection."""
@@ -202,7 +202,7 @@ class TestConformanceCheck:
         )
         second_seen = manager.list_violations()[0].last_seen_at
 
-        assert second_seen >= first_seen
+        assert second_seen >= first_seen, "Expected second_seen >= first_seen"
 
     def test_full_run_marks_resolved(self, manager):
         """Test full run marks missing violations as resolved."""
@@ -232,7 +232,7 @@ class TestConformanceCheck:
         )
 
         violations = manager.list_violations(status=ViolationStatus.RESOLVED)
-        assert len(violations) == 1
+        assert len(violations) == 1, "Expected len(violations) to equal 1"
 
     def test_incremental_run_marks_stale(self, manager):
         """Test incremental run marks missing violations as stale."""
@@ -260,7 +260,7 @@ class TestConformanceCheck:
         )
 
         violations = manager.list_violations(status=ViolationStatus.STALE)
-        assert len(violations) == 1
+        assert len(violations) == 1, "Expected len(violations) to equal 1"
 
     def test_reopens_resolved_violation(self, manager):
         """Test resolved violation is reopened if seen again."""
@@ -295,7 +295,7 @@ class TestConformanceCheck:
         )
 
         violations = manager.list_violations(status=ViolationStatus.OPEN)
-        assert len(violations) == 1
+        assert len(violations) == 1, "Expected len(violations) to equal 1"
 
     def test_report_trend_calculation(self, manager):
         """Test trend is calculated from previous report."""
@@ -321,8 +321,8 @@ class TestConformanceCheck:
             is_full_run=True,
         )
 
-        assert report.trend is not None
-        assert report.trend["failed_delta"] == -1
+        assert report.trend is not None, "Expected report.trend is not None"
+        assert report.trend["failed_delta"] == -1, "Expected report.trend['failed_delta'] to equal -1"
 
 
 class TestExemptionHandling:
@@ -361,11 +361,11 @@ class TestExemptionHandling:
             files_checked=1,
         )
 
-        assert report.summary.exempted == 1
-        assert report.summary.failed == 0
+        assert report.summary.exempted == 1, "Expected report.summary.exempted to equal 1"
+        assert report.summary.failed == 0, "Expected report.summary.failed to equal 0"
 
         violations = manager.list_violations()
-        assert violations[0].exemption_id == "test-exemption"
+        assert violations[0].exemption_id == "test-exemption", "Expected violations[0].exemption_id to equal 'test-exemption'"
 
     def test_expired_exemption_handled(self, manager):
         """Test expired exemption marks violation as exemption_expired."""
@@ -409,8 +409,8 @@ class TestExemptionHandling:
 
         manager.exemption_registry.load_all()
         updated_exemption = manager.exemption_registry.get("expired-exemption")
-        assert updated_exemption is not None
-        assert updated_exemption.status == ExemptionStatus.EXPIRED
+        assert updated_exemption is not None, "Expected updated_exemption is not None"
+        assert updated_exemption.status == ExemptionStatus.EXPIRED, "Expected updated_exemption.status to equal ExemptionStatus.EXPIRED"
 
 
 class TestListViolations:
@@ -466,39 +466,39 @@ class TestListViolations:
     def test_filter_by_status(self, manager_with_violations):
         """Test filtering by status."""
         open_violations = manager_with_violations.list_violations(status=ViolationStatus.OPEN)
-        assert len(open_violations) == 2
+        assert len(open_violations) == 2, "Expected len(open_violations) to equal 2"
 
         resolved = manager_with_violations.list_violations(status=ViolationStatus.RESOLVED)
-        assert len(resolved) == 1
+        assert len(resolved) == 1, "Expected len(resolved) to equal 1"
 
     def test_filter_by_severity(self, manager_with_violations):
         """Test filtering by severity."""
         blockers = manager_with_violations.list_violations(severity=Severity.BLOCKER)
-        assert len(blockers) == 1
-        assert blockers[0].violation_id == "V-001"
+        assert len(blockers) == 1, "Expected len(blockers) to equal 1"
+        assert blockers[0].violation_id == "V-001", "Expected blockers[0].violation_id to equal 'V-001'"
 
     def test_filter_by_contract(self, manager_with_violations):
         """Test filtering by contract."""
         contract_a = manager_with_violations.list_violations(contract_id="contract-a")
-        assert len(contract_a) == 2
+        assert len(contract_a) == 2, "Expected len(contract_a) to equal 2"
 
     def test_filter_by_file_pattern(self, manager_with_violations):
         """Test filtering by file pattern."""
         tests = manager_with_violations.list_violations(file_pattern="tests/*.py")
-        assert len(tests) == 1
-        assert tests[0].violation_id == "V-003"
+        assert len(tests) == 1, "Expected len(tests) to equal 1"
+        assert tests[0].violation_id == "V-003", "Expected tests[0].violation_id to equal 'V-003'"
 
     def test_filter_limit(self, manager_with_violations):
         """Test result limit."""
         limited = manager_with_violations.list_violations(limit=1)
-        assert len(limited) == 1
+        assert len(limited) == 1, "Expected len(limited) to equal 1"
 
     def test_sorted_by_severity(self, manager_with_violations):
         """Test results are sorted by severity."""
         all_violations = manager_with_violations.list_violations()
         # Should be sorted: blocker, major, minor
-        assert all_violations[0].severity == Severity.BLOCKER
-        assert all_violations[-1].severity == Severity.MINOR
+        assert all_violations[0].severity == Severity.BLOCKER, "Expected all_violations[0].severity to equal Severity.BLOCKER"
+        assert all_violations[-1].severity == Severity.MINOR, "Expected all_violations[-1].severity to equal Severity.MINOR"
 
 
 class TestPruneViolations:
@@ -525,24 +525,24 @@ class TestPruneViolations:
     def test_prune_dry_run(self, manager):
         """Test dry run doesn't delete."""
         count = manager.prune_violations(older_than_days=30, dry_run=True)
-        assert count == 2  # old-resolved and old-stale
+        assert count == 2, "Expected count to equal 2"# old-resolved and old-stale
 
         # Verify nothing deleted
         all_violations = manager.list_violations()
-        assert len(all_violations) == 4
+        assert len(all_violations) == 4, "Expected len(all_violations) to equal 4"
 
     def test_prune_actual(self, manager):
         """Test actual prune deletes old violations."""
         count = manager.prune_violations(older_than_days=30, dry_run=False)
-        assert count == 2
+        assert count == 2, "Expected count to equal 2"
 
         all_violations = manager.list_violations()
-        assert len(all_violations) == 2
+        assert len(all_violations) == 2, "Expected len(all_violations) to equal 2"
 
         # Open violations preserved
-        assert any(v.violation_id == "V-open" for v in all_violations)
+        assert any(v.violation_id == "V-open" for v in all_violations), "Expected any() to be truthy"
         # Recent resolved preserved
-        assert any(v.violation_id == "V-recent-resolved" for v in all_violations)
+        assert any(v.violation_id == "V-recent-resolved" for v in all_violations), "Expected any() to be truthy"
 
 
 class TestGetSummaryStats:
@@ -553,7 +553,7 @@ class TestGetSummaryStats:
         manager = ConformanceManager(tmp_path)
         stats = manager.get_summary_stats()
 
-        assert stats["initialized"] is False
+        assert stats["initialized"] is False, "Expected stats['initialized'] is False"
 
     def test_initialized_with_data(self, tmp_path: Path):
         """Test stats with initialized data."""
@@ -571,7 +571,7 @@ class TestGetSummaryStats:
 
         stats = manager.get_summary_stats()
 
-        assert stats["initialized"] is True
-        assert "last_run" in stats
-        assert stats["violations"]["open"] == 1
-        assert "c" in stats["contracts_checked"]
+        assert stats["initialized"] is True, "Expected stats['initialized'] is True"
+        assert "last_run" in stats, "Expected 'last_run' in stats"
+        assert stats["violations"]["open"] == 1, "Expected stats['violations']['open'] to equal 1"
+        assert "c" in stats["contracts_checked"], "Expected 'c' in stats['contracts_checked']"

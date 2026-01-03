@@ -23,37 +23,37 @@ class TestTypeAliasExports:
         from agentforge.core.pipeline.types import StageConfigDict
 
         # Verify it's a type alias for dict[str, Any]
-        assert StageConfigDict is not None
+        assert StageConfigDict is not None, "Expected StageConfigDict is not None"
 
     def test_pipeline_config_dict_importable(self):
         """PipelineConfigDict should be importable."""
         from agentforge.core.pipeline.types import PipelineConfigDict
 
-        assert PipelineConfigDict is not None
+        assert PipelineConfigDict is not None, "Expected PipelineConfigDict is not None"
 
     def test_artifact_dict_importable(self):
         """ArtifactDict should be importable."""
         from agentforge.core.pipeline.types import ArtifactDict
 
-        assert ArtifactDict is not None
+        assert ArtifactDict is not None, "Expected ArtifactDict is not None"
 
     def test_tool_params_dict_importable(self):
         """ToolParamsDict should be importable."""
         from agentforge.core.pipeline.types import ToolParamsDict
 
-        assert ToolParamsDict is not None
+        assert ToolParamsDict is not None, "Expected ToolParamsDict is not None"
 
     def test_tool_result_dict_importable(self):
         """ToolResultDict should be importable."""
         from agentforge.core.pipeline.types import ToolResultDict
 
-        assert ToolResultDict is not None
+        assert ToolResultDict is not None, "Expected ToolResultDict is not None"
 
     def test_test_results_dict_importable(self):
         """TestResultsDict should be importable."""
         from agentforge.core.pipeline.types import TestResultsDict
 
-        assert TestResultsDict is not None
+        assert TestResultsDict is not None, "Expected TestResultsDict is not None"
 
 
 class TestTypeAliasUsage:
@@ -64,7 +64,7 @@ class TestTypeAliasUsage:
         from agentforge.core.pipeline.types import StageConfigDict
 
         config: StageConfigDict = {"max_iterations": 20, "timeout": 120}
-        assert config["max_iterations"] == 20
+        assert config["max_iterations"] == 20, "Expected config['max_iterations'] to equal 20"
 
     def test_artifact_dict_accepts_nested_data(self):
         """ArtifactDict should accept nested structures."""
@@ -74,7 +74,7 @@ class TestTypeAliasUsage:
             "files": ["file1.py", "file2.py"],
             "metadata": {"author": "test", "version": 1},
         }
-        assert len(artifact["files"]) == 2
+        assert len(artifact["files"]) == 2, "Expected len(artifact['files']) to equal 2"
 
     def test_tool_params_dict_accepts_various_types(self):
         """ToolParamsDict should accept various value types."""
@@ -86,7 +86,7 @@ class TestTypeAliasUsage:
             "count": 42,
             "options": ["a", "b"],
         }
-        assert params["verbose"] is True
+        assert params["verbose"] is True, "Expected params['verbose'] is True"
 
 
 class TestAllExports:
@@ -111,4 +111,4 @@ class TestAllExports:
             "ToolResultDict",
             "TestResultsDict",
         ]
-        assert sorted(__all__) == sorted(expected)
+        assert sorted(__all__) == sorted(expected), "Expected sorted(__all__) to equal sorted(expected)"

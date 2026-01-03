@@ -20,7 +20,7 @@ class TestPyrightRunner:
         """Verify pyright is accessible."""
         runner = PyrightRunner()
         # Should not raise
-        assert runner is not None
+        assert runner is not None, "Expected runner is not None"
 
     def test_check_valid_file(self, tmp_path: Path):
         """Check a valid Python file."""
@@ -32,8 +32,8 @@ def add(a: int, b: int) -> int:
 ''')
 
         result = check_python_types(test_file)
-        assert result.success
-        assert result.error_count == 0
+        assert result.success, "Expected result.success to be truthy"
+        assert result.error_count == 0, "Expected result.error_count to equal 0"
 
     def test_check_file_with_type_error(self, tmp_path: Path):
         """Check a file with type errors."""
@@ -44,10 +44,10 @@ def add(a: int, b: int) -> int:
 ''')
 
         result = check_python_types(test_file)
-        assert not result.success
-        assert result.error_count > 0
+        assert not result.success, "Assertion failed"
+        assert result.error_count > 0, "Expected result.error_count > 0"
         # Pyright should report a return type mismatch
-        assert len(result.diagnostics) > 0
+        assert len(result.diagnostics) > 0, "Expected len(result.diagnostics) > 0"
 
 
 class TestCommandRunner:
@@ -58,17 +58,17 @@ class TestCommandRunner:
         runner = CommandRunner()
         result = runner.run(["echo", "hello"])
 
-        assert result.success
-        assert result.return_code == 0
-        assert "hello" in result.stdout
+        assert result.success, "Expected result.success to be truthy"
+        assert result.return_code == 0, "Expected result.return_code to equal 0"
+        assert "hello" in result.stdout, "Expected 'hello' in result.stdout"
 
     def test_run_missing_command(self):
         """Test handling of missing command."""
         runner = CommandRunner()
         result = runner.run(["nonexistent_command_12345"])
 
-        assert not result.success
-        assert "not found" in result.stderr.lower()
+        assert not result.success, "Assertion failed"
+        assert "not found" in result.stderr.lower(), "Expected 'not found' in result.stderr.lower()"
 
     def test_run_radon(self, tmp_path: Path):
         """Test radon execution."""
@@ -91,8 +91,8 @@ def complex_func(x):
         result = runner.run_radon_cc(test_file)
 
         # Should complete successfully
-        assert result.return_code == 0
-        assert result.parsed_output is not None
+        assert result.return_code == 0, "Expected result.return_code to equal 0"
+        assert result.parsed_output is not None, "Expected result.parsed_output is not None"
 
 
 class TestVerificationRunner:
@@ -124,9 +124,9 @@ class TestVerificationRunner:
         }
 
         result = runner.run_check(check, {})
-        assert result.status.value == 'failed'
-        assert len(result.errors) > 0
-        assert result.errors[0]['function'] == 'long_function'
+        assert result.status.value == 'failed', "Expected result.status.value to equal 'failed'"
+        assert len(result.errors) > 0, "Expected len(result.errors) > 0"
+        assert result.errors[0]['function'] == 'long_function', "Expected result.errors[0]['function'] to equal 'long_function'"
 
     def test_ast_check_nesting_depth(self, tmp_path: Path):
         """Test AST check for nesting depth."""
@@ -158,8 +158,8 @@ def deep_nesting():
         }
 
         result = runner.run_check(check, {})
-        assert result.status.value == 'failed'
-        assert any('depth' in str(e.get('message', '')).lower() for e in result.errors)
+        assert result.status.value == 'failed', "Expected result.status.value to equal 'failed'"
+        assert any('depth' in str(e.get('message', '')).lower() for e in result.errors), "Expected any() to be truthy"
 
     def test_lsp_query_check(self, tmp_path: Path):
         """Test LSP query check using pyright."""
@@ -183,7 +183,7 @@ def greet(name: str) -> str:
         }
 
         result = runner.run_check(check, {})
-        assert result.status.value == 'passed'
+        assert result.status.value == 'passed', "Expected result.status.value to equal 'passed'"
 
 
 if __name__ == "__main__":

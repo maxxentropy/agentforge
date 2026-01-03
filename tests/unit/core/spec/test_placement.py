@@ -22,9 +22,9 @@ class TestPlacementActionEnum:
         """PlacementAction should have EXTEND, CREATE, ESCALATE values."""
         from agentforge.core.spec.placement import PlacementAction
 
-        assert PlacementAction.EXTEND.value == "extend"
-        assert PlacementAction.CREATE.value == "create"
-        assert PlacementAction.ESCALATE.value == "escalate"
+        assert PlacementAction.EXTEND.value == "extend", "Expected PlacementAction.EXTEND.value to equal 'extend'"
+        assert PlacementAction.CREATE.value == "create", "Expected PlacementAction.CREATE.value to equal 'create'"
+        assert PlacementAction.ESCALATE.value == "escalate", "Expected PlacementAction.ESCALATE.value to equal 'escalate'"
 
 
 class TestSpecInfo:
@@ -47,9 +47,9 @@ class TestSpecInfo:
 
         spec_info = SpecInfo.from_yaml(spec_file, data)
 
-        assert spec_info.spec_id == 'test-v1'
-        assert spec_info.name == 'test'
-        assert len(spec_info.components) == 2
+        assert spec_info.spec_id == 'test-v1', "Expected spec_info.spec_id to equal 'test-v1'"
+        assert spec_info.name == 'test', "Expected spec_info.name to equal 'test'"
+        assert len(spec_info.components) == 2, "Expected len(spec_info.components) to equal 2"
 
     def test_spec_info_covered_locations(self, tmp_path):
         """Should extract covered location prefixes from components."""
@@ -68,7 +68,7 @@ class TestSpecInfo:
 
         spec_info = SpecInfo.from_yaml(spec_file, data)
 
-        assert 'src/agentforge/core/api' in spec_info.covered_locations
+        assert 'src/agentforge/core/api' in spec_info.covered_locations, "Expected 'src/agentforge/core/api' in spec_info.covered_locations"
 
 
 class TestPlacementDecision:
@@ -85,9 +85,9 @@ class TestPlacementDecision:
             spec_file=Path(".agentforge/specs/cli-v1.yaml"),
         )
 
-        assert decision.action == PlacementAction.EXTEND
-        assert decision.spec_id == "cli-v1"
-        assert "EXTEND cli-v1" in str(decision)
+        assert decision.action == PlacementAction.EXTEND, "Expected decision.action to equal PlacementAction.EXTEND"
+        assert decision.spec_id == "cli-v1", "Expected decision.spec_id to equal 'cli-v1'"
+        assert "EXTEND cli-v1" in str(decision), "Expected 'EXTEND cli-v1' in str(decision)"
 
     def test_placement_decision_create(self):
         """CREATE decision should have suggested_spec_id."""
@@ -99,9 +99,9 @@ class TestPlacementDecision:
             suggested_spec_id="core-newmodule-v1",
         )
 
-        assert decision.action == PlacementAction.CREATE
-        assert decision.suggested_spec_id == "core-newmodule-v1"
-        assert "CREATE" in str(decision)
+        assert decision.action == PlacementAction.CREATE, "Expected decision.action to equal PlacementAction.CREATE"
+        assert decision.suggested_spec_id == "core-newmodule-v1", "Expected decision.suggested_spec_id to equal 'core-newmodule-v1'"
+        assert "CREATE" in str(decision), "Expected 'CREATE' in str(decision)"
 
     def test_placement_decision_escalate(self):
         """ESCALATE decision should have options list."""
@@ -116,9 +116,9 @@ class TestPlacementDecision:
             ]
         )
 
-        assert decision.action == PlacementAction.ESCALATE
-        assert len(decision.options) == 2
-        assert "ESCALATE" in str(decision)
+        assert decision.action == PlacementAction.ESCALATE, "Expected decision.action to equal PlacementAction.ESCALATE"
+        assert len(decision.options) == 2, "Expected len(decision.options) to equal 2"
+        assert "ESCALATE" in str(decision), "Expected 'ESCALATE' in str(decision)"
 
 
 class TestSpecPlacementAnalyzer:
@@ -163,8 +163,8 @@ class TestSpecPlacementAnalyzer:
         analyzer.load_specs()
 
         spec_ids = analyzer.get_spec_ids()
-        assert 'cli-v1' in spec_ids
-        assert 'core-api-v1' in spec_ids
+        assert 'cli-v1' in spec_ids, "Expected 'cli-v1' in spec_ids"
+        assert 'core-api-v1' in spec_ids, "Expected 'core-api-v1' in spec_ids"
 
     def test_analyzer_empty_specs_dir(self, tmp_path):
         """Should handle empty specs directory."""
@@ -176,7 +176,7 @@ class TestSpecPlacementAnalyzer:
         analyzer = SpecPlacementAnalyzer(empty_dir)
         analyzer.load_specs()
 
-        assert analyzer.get_spec_ids() == []
+        assert analyzer.get_spec_ids() == [], "Expected analyzer.get_spec_ids() to equal []"
 
     def test_analyzer_find_covering_specs(self, specs_dir):
         """Should find specs that cover a location."""
@@ -186,13 +186,13 @@ class TestSpecPlacementAnalyzer:
 
         # CLI location should be covered by cli-v1
         covering = analyzer.find_covering_specs('src/agentforge/cli/commands/new.py')
-        assert len(covering) == 1
-        assert covering[0].spec_id == 'cli-v1'
+        assert len(covering) == 1, "Expected len(covering) to equal 1"
+        assert covering[0].spec_id == 'cli-v1', "Expected covering[0].spec_id to equal 'cli-v1'"
 
         # API location should be covered by core-api-v1
         covering = analyzer.find_covering_specs('src/agentforge/core/api/rate_limiter.py')
-        assert len(covering) == 1
-        assert covering[0].spec_id == 'core-api-v1'
+        assert len(covering) == 1, "Expected len(covering) to equal 1"
+        assert covering[0].spec_id == 'core-api-v1', "Expected covering[0].spec_id to equal 'core-api-v1'"
 
     def test_analyzer_analyze_extend(self, specs_dir):
         """Should recommend EXTEND when location covered by existing spec."""
@@ -205,8 +205,8 @@ class TestSpecPlacementAnalyzer:
             target_locations=['src/agentforge/cli/commands/newcmd.py'],
         )
 
-        assert decision.action == PlacementAction.EXTEND
-        assert decision.spec_id == 'cli-v1'
+        assert decision.action == PlacementAction.EXTEND, "Expected decision.action to equal PlacementAction.EXTEND"
+        assert decision.spec_id == 'cli-v1', "Expected decision.spec_id to equal 'cli-v1'"
 
     def test_analyzer_analyze_create(self, specs_dir):
         """Should recommend CREATE when no spec covers location."""
@@ -219,8 +219,8 @@ class TestSpecPlacementAnalyzer:
             target_locations=['src/agentforge/core/newmodule/thing.py'],
         )
 
-        assert decision.action == PlacementAction.CREATE
-        assert decision.suggested_spec_id == 'core-newmodule-v1'
+        assert decision.action == PlacementAction.CREATE, "Expected decision.action to equal PlacementAction.CREATE"
+        assert decision.suggested_spec_id == 'core-newmodule-v1', "Expected decision.suggested_spec_id to equal 'core-newmodule-v1'"
 
     def test_analyzer_analyze_escalate(self, tmp_path):
         """Should recommend ESCALATE when multiple specs could cover."""
@@ -256,8 +256,8 @@ class TestSpecPlacementAnalyzer:
             target_locations=['src/agentforge/core/shared/new.py'],
         )
 
-        assert decision.action == PlacementAction.ESCALATE
-        assert len(decision.options) == 2
+        assert decision.action == PlacementAction.ESCALATE, "Expected decision.action to equal PlacementAction.ESCALATE"
+        assert len(decision.options) == 2, "Expected len(decision.options) to equal 2"
 
     def test_analyzer_explicit_spec_id(self, specs_dir):
         """Should use explicit spec_id when provided."""
@@ -271,8 +271,8 @@ class TestSpecPlacementAnalyzer:
             explicit_spec_id='cli-v1',
         )
 
-        assert decision.action == PlacementAction.EXTEND
-        assert decision.spec_id == 'cli-v1'
+        assert decision.action == PlacementAction.EXTEND, "Expected decision.action to equal PlacementAction.EXTEND"
+        assert decision.spec_id == 'cli-v1', "Expected decision.spec_id to equal 'cli-v1'"
 
     def test_suggest_component_id(self, specs_dir):
         """Should generate correct component_id."""
@@ -281,10 +281,10 @@ class TestSpecPlacementAnalyzer:
         analyzer = SpecPlacementAnalyzer(specs_dir)
 
         comp_id = analyzer.suggest_component_id('cli-v1', 'spec_adapt')
-        assert comp_id == 'cli-spec_adapt'
+        assert comp_id == 'cli-spec_adapt', "Expected comp_id to equal 'cli-spec_adapt'"
 
         comp_id = analyzer.suggest_component_id('core-api-v1', 'rate-limiter')
-        assert comp_id == 'core-api-rate_limiter'
+        assert comp_id == 'core-api-rate_limiter', "Expected comp_id to equal 'core-api-rate_limiter'"
 
     def test_validate_unique_component_id(self, specs_dir):
         """Should validate component_id uniqueness."""
@@ -294,4 +294,4 @@ class TestSpecPlacementAnalyzer:
 
         # 'main' exists in cli-v1 components (based on our fixture)
         # Note: component_id isn't in our fixture, so this should return True
-        assert analyzer.validate_unique_component_id('cli-v1', 'new-component') is True
+        assert analyzer.validate_unique_component_id('cli-v1', 'new-component') is True, "Expected analyzer.validate_unique_co... is True"

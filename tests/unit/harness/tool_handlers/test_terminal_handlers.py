@@ -38,8 +38,8 @@ class TestCompleteHandler:
 
         result = handler({})
 
-        assert "COMPLETE" in result
-        assert "completed" in result.lower()
+        assert "COMPLETE" in result, "Expected 'COMPLETE' in result"
+        assert "completed" in result.lower(), "Expected 'completed' in result.lower()"
 
     def test_complete_with_summary(self):
         """Complete with custom summary."""
@@ -47,8 +47,8 @@ class TestCompleteHandler:
 
         result = handler({"summary": "Fixed the bug in module.py"})
 
-        assert "COMPLETE" in result
-        assert "Fixed the bug" in result
+        assert "COMPLETE" in result, "Expected 'COMPLETE' in result"
+        assert "Fixed the bug" in result, "Expected 'Fixed the bug' in result"
 
     def test_complete_with_files_modified(self):
         """Complete shows modified files."""
@@ -59,9 +59,9 @@ class TestCompleteHandler:
             "files_modified": ["a.py", "b.py"],
         })
 
-        assert "COMPLETE" in result
-        assert "a.py" in result
-        assert "b.py" in result
+        assert "COMPLETE" in result, "Expected 'COMPLETE' in result"
+        assert "a.py" in result, "Expected 'a.py' in result"
+        assert "b.py" in result, "Expected 'b.py' in result"
 
     def test_complete_with_context_files(self):
         """Complete uses context for files."""
@@ -72,8 +72,8 @@ class TestCompleteHandler:
             "_context": {"files_modified": ["c.py"]},
         })
 
-        assert "COMPLETE" in result
-        assert "c.py" in result
+        assert "COMPLETE" in result, "Expected 'COMPLETE' in result"
+        assert "c.py" in result, "Expected 'c.py' in result"
 
 
 class TestEscalateHandler:
@@ -85,8 +85,8 @@ class TestEscalateHandler:
 
         result = handler({"reason": "Need human review"})
 
-        assert "ESCALATE" in result
-        assert "human review" in result.lower()
+        assert "ESCALATE" in result, "Expected 'ESCALATE' in result"
+        assert "human review" in result.lower(), "Expected 'human review' in result.lower()"
 
     def test_escalate_with_priority(self):
         """Escalate includes priority."""
@@ -97,8 +97,8 @@ class TestEscalateHandler:
             "priority": "high",
         })
 
-        assert "ESCALATE" in result
-        assert "high" in result.lower()
+        assert "ESCALATE" in result, "Expected 'ESCALATE' in result"
+        assert "high" in result.lower(), "Expected 'high' in result.lower()"
 
     def test_escalate_with_suggestions(self):
         """Escalate includes suggestions."""
@@ -109,9 +109,9 @@ class TestEscalateHandler:
             "suggestions": ["Try approach A", "Consider option B"],
         })
 
-        assert "ESCALATE" in result
-        assert "approach A" in result
-        assert "option B" in result
+        assert "ESCALATE" in result, "Expected 'ESCALATE' in result"
+        assert "approach A" in result, "Expected 'approach A' in result"
+        assert "option B" in result, "Expected 'option B' in result"
 
 
 class TestCannotFixHandler:
@@ -128,12 +128,12 @@ class TestCannotFixHandler:
             "_context": {"violation_id": "V-001", "task_id": "T-123"},
         })
 
-        assert "CANNOT_FIX" in result
-        assert "ESC-" in result
+        assert "CANNOT_FIX" in result, "Expected 'CANNOT_FIX' in result"
+        assert "ESC-" in result, "Expected 'ESC-' in result"
 
         # Check file was created
         escalations = list((temp_project / ".agentforge" / "escalations").glob("ESC-*.yaml"))
-        assert len(escalations) == 1
+        assert len(escalations) == 1, "Expected len(escalations) to equal 1"
 
     def test_cannot_fix_records_details(self, temp_project):
         """Escalation file contains all details."""
@@ -149,9 +149,9 @@ class TestCannotFixHandler:
         with open(escalation_file) as f:
             data = yaml.safe_load(f)
 
-        assert data["reason"] == "Test reason"
-        assert data["alternatives"] == ["Alt 1", "Alt 2"]
-        assert data["violation_id"] == "V-002"
+        assert data["reason"] == "Test reason", "Expected data['reason'] to equal 'Test reason'"
+        assert data["alternatives"] == ["Alt 1", "Alt 2"], "Expected data['alternatives'] to equal ['Alt 1', 'Alt 2']"
+        assert data["violation_id"] == "V-002", "Expected data['violation_id'] to equal 'V-002'"
 
     def test_cannot_fix_requires_reason(self, temp_project):
         """Error without reason parameter."""
@@ -159,8 +159,8 @@ class TestCannotFixHandler:
 
         result = handler({})
 
-        assert "ERROR" in result
-        assert "reason" in result.lower()
+        assert "ERROR" in result, "Expected 'ERROR' in result"
+        assert "reason" in result.lower(), "Expected 'reason' in result.lower()"
 
     def test_cannot_fix_includes_constraints(self, temp_project):
         """Escalation includes constraints."""
@@ -171,9 +171,9 @@ class TestCannotFixHandler:
             "constraints": ["Frozen interface", "Breaking change"],
         })
 
-        assert "CANNOT_FIX" in result
-        assert "Frozen interface" in result
-        assert "Breaking change" in result
+        assert "CANNOT_FIX" in result, "Expected 'CANNOT_FIX' in result"
+        assert "Frozen interface" in result, "Expected 'Frozen interface' in result"
+        assert "Breaking change" in result, "Expected 'Breaking change' in result"
 
 
 class TestRequestHelpHandler:
@@ -188,8 +188,8 @@ class TestRequestHelpHandler:
             "_context": {"task_id": "T-001"},
         })
 
-        assert "HELP_REQUESTED" in result
-        assert "Which approach" in result
+        assert "HELP_REQUESTED" in result, "Expected 'HELP_REQUESTED' in result"
+        assert "Which approach" in result, "Expected 'Which approach' in result"
 
     def test_request_help_with_options(self, temp_project):
         """Help request includes options."""
@@ -200,9 +200,9 @@ class TestRequestHelpHandler:
             "options": ["Option A", "Option B", "Option C"],
         })
 
-        assert "HELP_REQUESTED" in result
-        assert "Option A" in result
-        assert "Option B" in result
+        assert "HELP_REQUESTED" in result, "Expected 'HELP_REQUESTED' in result"
+        assert "Option A" in result, "Expected 'Option A' in result"
+        assert "Option B" in result, "Expected 'Option B' in result"
 
     def test_request_help_requires_question(self, temp_project):
         """Error without question parameter."""
@@ -210,8 +210,8 @@ class TestRequestHelpHandler:
 
         result = handler({})
 
-        assert "ERROR" in result
-        assert "question" in result.lower()
+        assert "ERROR" in result, "Expected 'ERROR' in result"
+        assert "question" in result.lower(), "Expected 'question' in result.lower()"
 
     def test_request_help_creates_file(self, temp_project):
         """Help request creates file."""
@@ -223,7 +223,7 @@ class TestRequestHelpHandler:
         })
 
         help_files = list((temp_project / ".agentforge" / "help_requests").glob("HELP-*.yaml"))
-        assert len(help_files) == 1
+        assert len(help_files) == 1, "Expected len(help_files) to equal 1"
 
 
 class TestPlanFixHandler:
@@ -238,8 +238,8 @@ class TestPlanFixHandler:
             "approach": "Extract helper functions",
         })
 
-        assert "PLAN_RECORDED" in result
-        assert "Extract helper" in result
+        assert "PLAN_RECORDED" in result, "Expected 'PLAN_RECORDED' in result"
+        assert "Extract helper" in result, "Expected 'Extract helper' in result"
 
     def test_plan_fix_with_steps(self, temp_project):
         """Plan includes steps."""
@@ -250,9 +250,9 @@ class TestPlanFixHandler:
             "steps": ["Step 1: Identify", "Step 2: Extract", "Step 3: Test"],
         })
 
-        assert "PLAN_RECORDED" in result
-        assert "Step 1" in result
-        assert "Step 2" in result
+        assert "PLAN_RECORDED" in result, "Expected 'PLAN_RECORDED' in result"
+        assert "Step 1" in result, "Expected 'Step 1' in result"
+        assert "Step 2" in result, "Expected 'Step 2' in result"
 
     def test_plan_fix_requires_approach(self, temp_project):
         """Error without approach parameter."""
@@ -260,8 +260,8 @@ class TestPlanFixHandler:
 
         result = handler({})
 
-        assert "ERROR" in result
-        assert "approach" in result.lower()
+        assert "ERROR" in result, "Expected 'ERROR' in result"
+        assert "approach" in result.lower(), "Expected 'approach' in result.lower()"
 
     def test_plan_fix_truncates_long_text(self, temp_project):
         """Long text is truncated in output."""
@@ -273,5 +273,5 @@ class TestPlanFixHandler:
             "approach": long_approach,
         })
 
-        assert "PLAN_RECORDED" in result
-        assert "..." in result  # Truncation indicator
+        assert "PLAN_RECORDED" in result, "Expected 'PLAN_RECORDED' in result"
+        assert "..." in result, "Expected '...' in result"# Truncation indicator

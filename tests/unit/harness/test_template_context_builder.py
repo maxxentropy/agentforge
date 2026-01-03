@@ -119,8 +119,8 @@ dependencies = ["pytest"]
             task_type="fix_violation",
         )
 
-        assert builder.template is not None
-        assert builder.template.task_type == "fix_violation"
+        assert builder.template is not None, "Expected builder.template is not None"
+        assert builder.template.task_type == "fix_violation", "Expected builder.template.task_type to equal 'fix_violation'"
 
     def test_init_falls_back_to_fix_violation(self, temp_project, state_store):
         """Builder falls back to fix_violation for unknown type."""
@@ -130,7 +130,7 @@ dependencies = ["pytest"]
             task_type="unknown_type",
         )
 
-        assert builder.template.task_type == "fix_violation"
+        assert builder.template.task_type == "fix_violation", "Expected builder.template.task_type to equal 'fix_violation'"
 
     def test_build_returns_template_step_context(self, temp_project, state_store, task_state):
         """build() returns TemplateStepContext."""
@@ -142,10 +142,10 @@ dependencies = ["pytest"]
 
         context = builder.build(task_state.task_id)
 
-        assert isinstance(context, TemplateStepContext)
-        assert context.system_prompt != ""
-        assert context.user_message != ""
-        assert context.template_name == "fix_violation"
+        assert isinstance(context, TemplateStepContext), "Expected isinstance() to be truthy"
+        assert context.system_prompt != "", "Expected context.system_prompt to not equal ''"
+        assert context.user_message != "", "Expected context.user_message to not equal ''"
+        assert context.template_name == "fix_violation", "Expected context.template_name to equal 'fix_violation'"
 
     def test_build_messages_returns_list(self, temp_project, state_store, task_state):
         """build_messages() returns message list for executor."""
@@ -157,10 +157,10 @@ dependencies = ["pytest"]
 
         messages = builder.build_messages(task_state.task_id)
 
-        assert isinstance(messages, list)
-        assert len(messages) == 2
-        assert messages[0]["role"] == "system"
-        assert messages[1]["role"] == "user"
+        assert isinstance(messages, list), "Expected isinstance() to be truthy"
+        assert len(messages) == 2, "Expected len(messages) to equal 2"
+        assert messages[0]["role"] == "system", "Expected messages[0]['role'] to equal 'system'"
+        assert messages[1]["role"] == "user", "Expected messages[1]['role'] to equal 'user'"
 
     def test_phases_property(self, temp_project, state_store):
         """phases property returns template phases."""
@@ -170,7 +170,7 @@ dependencies = ["pytest"]
             task_type="fix_violation",
         )
 
-        assert builder.phases == ["init", "analyze", "implement", "verify"]
+        assert builder.phases == ["init", "analyze", "implement", "verify"], "Expected builder.phases to equal ['init', 'analyze', 'implem..."
 
 
 class TestTemplateContextBuilderPhaseTranslation:
@@ -214,8 +214,8 @@ class TestTemplateContextBuilderPhaseTranslation:
         context = builder.build(task_id)
 
         # Phase should be translated from init to scan
-        assert context.phase == "scan"
-        assert context.template_name == "discovery"
+        assert context.phase == "scan", "Expected context.phase to equal 'scan'"
+        assert context.template_name == "discovery", "Expected context.template_name to equal 'discovery'"
 
     def test_bridge_phase_translation_init(self, temp_project, state_store):
         """Bridge task translates init phase to analyze."""
@@ -237,8 +237,8 @@ class TestTemplateContextBuilderPhaseTranslation:
         context = builder.build(task_id)
 
         # Phase should be translated from init to analyze
-        assert context.phase == "analyze"
-        assert context.template_name == "bridge"
+        assert context.phase == "analyze", "Expected context.phase to equal 'analyze'"
+        assert context.template_name == "bridge", "Expected context.template_name to equal 'bridge'"
 
     def test_code_review_phase_translation(self, temp_project, state_store):
         """Code review task uses its own phase names."""
@@ -260,8 +260,8 @@ class TestTemplateContextBuilderPhaseTranslation:
         context = builder.build(task_id)
 
         # Init stays as init for code_review
-        assert context.phase == "init"
-        assert context.template_name == "code_review"
+        assert context.phase == "init", "Expected context.phase to equal 'init'"
+        assert context.template_name == "code_review", "Expected context.template_name to equal 'code_review'"
 
     def test_fix_violation_uses_standard_phases(self, temp_project, state_store):
         """fix_violation uses standard phases unchanged."""
@@ -282,8 +282,8 @@ class TestTemplateContextBuilderPhaseTranslation:
 
         context = builder.build(task_id)
 
-        assert context.phase == "init"
-        assert context.template_name == "fix_violation"
+        assert context.phase == "init", "Expected context.phase to equal 'init'"
+        assert context.template_name == "fix_violation", "Expected context.template_name to equal 'fix_violation'"
 
 
 class TestTemplateContextBuilderDifferentTaskTypes:
@@ -335,9 +335,9 @@ class TestTemplateContextBuilderDifferentTaskTypes:
 
         context = builder.build(task_id)
 
-        assert isinstance(context, TemplateStepContext)
-        assert context.template_name == task_type
-        assert context.phase in builder.phases
+        assert isinstance(context, TemplateStepContext), "Expected isinstance() to be truthy"
+        assert context.template_name == task_type, "Expected context.template_name to equal task_type"
+        assert context.phase in builder.phases, "Expected context.phase in builder.phases"
 
     @pytest.mark.parametrize("task_type", [
         "fix_violation",
@@ -367,11 +367,11 @@ class TestTemplateContextBuilderDifferentTaskTypes:
 
         messages = builder.build_messages(task_id)
 
-        assert len(messages) == 2
-        assert messages[0]["role"] == "system"
-        assert messages[1]["role"] == "user"
+        assert len(messages) == 2, "Expected len(messages) to equal 2"
+        assert messages[0]["role"] == "system", "Expected messages[0]['role'] to equal 'system'"
+        assert messages[1]["role"] == "user", "Expected messages[1]['role'] to equal 'user'"
         # User message should contain task info
-        assert "Task" in messages[1]["content"] or "task" in messages[1]["content"]
+        assert "Task" in messages[1]["content"] or "task" in messages[1]["content"], "Assertion failed"
 
 
 class TestTemplateContextBuilderTokenTracking:
@@ -410,9 +410,9 @@ class TestTemplateContextBuilderTokenTracking:
 
         breakdown = builder.get_token_breakdown(task_id)
 
-        assert isinstance(breakdown, dict)
-        assert "system_prompt" in breakdown
-        assert breakdown["system_prompt"] > 0
+        assert isinstance(breakdown, dict), "Expected isinstance() to be truthy"
+        assert "system_prompt" in breakdown, "Expected 'system_prompt' in breakdown"
+        assert breakdown["system_prompt"] > 0, "Expected breakdown['system_prompt'] > 0"
 
     def test_context_total_tokens(self, temp_project, state_store):
         """Context total_tokens is reasonable."""
@@ -434,6 +434,6 @@ class TestTemplateContextBuilderTokenTracking:
         context = builder.build(task_id)
 
         # Should be under 5000 tokens
-        assert context.total_tokens < 5000
+        assert context.total_tokens < 5000, "Expected context.total_tokens < 5000"
         # But should be non-trivial
-        assert context.total_tokens > 100
+        assert context.total_tokens > 100, "Expected context.total_tokens > 100"

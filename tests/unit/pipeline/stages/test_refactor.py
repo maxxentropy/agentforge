@@ -18,47 +18,47 @@ class TestRefactorPhaseExecutor:
         from agentforge.core.pipeline.stages.refactor import RefactorPhaseExecutor
 
         executor = RefactorPhaseExecutor()
-        assert executor.stage_name == "refactor"
+        assert executor.stage_name == "refactor", "Expected executor.stage_name to equal 'refactor'"
 
     def test_artifact_type_is_refactored_code(self):
         """RefactorPhaseExecutor has artifact_type 'refactored_code'."""
         from agentforge.core.pipeline.stages.refactor import RefactorPhaseExecutor
 
         executor = RefactorPhaseExecutor()
-        assert executor.artifact_type == "refactored_code"
+        assert executor.artifact_type == "refactored_code", "Expected executor.artifact_type to equal 'refactored_code'"
 
     def test_required_input_fields(self):
         """RefactorPhaseExecutor requires spec_id, implementation_files, test_results."""
         from agentforge.core.pipeline.stages.refactor import RefactorPhaseExecutor
 
         executor = RefactorPhaseExecutor()
-        assert "spec_id" in executor.required_input_fields
-        assert "implementation_files" in executor.required_input_fields
-        assert "test_results" in executor.required_input_fields
+        assert "spec_id" in executor.required_input_fields, "Expected 'spec_id' in executor.required_input_fields"
+        assert "implementation_files" in executor.required_input_fields, "Expected 'implementation_files' in executor.required_input_fields"
+        assert "test_results" in executor.required_input_fields, "Expected 'test_results' in executor.required_input_fields"
 
     def test_output_fields(self):
         """RefactorPhaseExecutor outputs expected fields."""
         from agentforge.core.pipeline.stages.refactor import RefactorPhaseExecutor
 
         executor = RefactorPhaseExecutor()
-        assert "spec_id" in executor.output_fields
-        assert "refactored_files" in executor.output_fields
-        assert "final_files" in executor.output_fields
+        assert "spec_id" in executor.output_fields, "Expected 'spec_id' in executor.output_fields"
+        assert "refactored_files" in executor.output_fields, "Expected 'refactored_files' in executor.output_fields"
+        assert "final_files" in executor.output_fields, "Expected 'final_files' in executor.output_fields"
 
     def test_has_max_iterations_config(self):
         """RefactorPhaseExecutor has max_iterations configuration."""
         from agentforge.core.pipeline.stages.refactor import RefactorPhaseExecutor
 
         executor = RefactorPhaseExecutor()
-        assert hasattr(executor, "max_iterations")
-        assert executor.max_iterations == 10
+        assert hasattr(executor, "max_iterations"), "Expected hasattr() to be truthy"
+        assert executor.max_iterations == 10, "Expected executor.max_iterations to equal 10"
 
     def test_max_iterations_from_config(self):
         """RefactorPhaseExecutor uses max_iterations from config."""
         from agentforge.core.pipeline.stages.refactor import RefactorPhaseExecutor
 
         executor = RefactorPhaseExecutor({"max_iterations": 5})
-        assert executor.max_iterations == 5
+        assert executor.max_iterations == 5, "Expected executor.max_iterations to equal 5"
 
 
 class TestRefactorPhaseSkipLogic:
@@ -91,9 +91,9 @@ class TestRefactorPhaseSkipLogic:
 
                 result = executor.execute(context)
 
-        assert result.status == StageStatus.COMPLETED
+        assert result.status == StageStatus.COMPLETED, "Expected result.status to equal StageStatus.COMPLETED"
         # Should be passthrough (no refactoring needed)
-        assert result.artifacts.get("refactored_files") == []
+        assert result.artifacts.get("refactored_files") == [], "Expected result.artifacts.get('refac... to equal []"
 
     def test_skips_when_tests_pass_and_conformance_clean(
         self,
@@ -121,7 +121,7 @@ class TestRefactorPhaseSkipLogic:
 
                 result = executor.execute(context)
 
-        assert result.status == StageStatus.COMPLETED
+        assert result.status == StageStatus.COMPLETED, "Expected result.status to equal StageStatus.COMPLETED"
 
 
 class TestRefactorPhaseExecution:
@@ -167,8 +167,8 @@ class TestRefactorPhaseExecution:
 
                     result = executor.execute(context)
 
-        assert result.status == StageStatus.COMPLETED
-        assert result.artifacts is not None
+        assert result.status == StageStatus.COMPLETED, "Expected result.status to equal StageStatus.COMPLETED"
+        assert result.artifacts is not None, "Expected result.artifacts is not None"
 
     def test_verifies_tests_still_pass_after_refactoring(
         self,
@@ -207,7 +207,7 @@ class TestRefactorPhaseExecution:
                     executor.execute(context)
 
         # Tests should be run multiple times
-        assert mock_tests.call_count >= 2
+        assert mock_tests.call_count >= 2, "Expected mock_tests.call_count >= 2"
 
     def test_fails_if_tests_break_during_refactoring(
         self,
@@ -245,8 +245,8 @@ class TestRefactorPhaseExecution:
 
                     result = executor.execute(context)
 
-        assert result.status == StageStatus.FAILED
-        assert "tests" in result.error.lower()
+        assert result.status == StageStatus.FAILED, "Expected result.status to equal StageStatus.FAILED"
+        assert "tests" in result.error.lower(), "Expected 'tests' in result.error.lower()"
 
     def test_fails_if_initial_tests_fail(
         self,
@@ -271,8 +271,8 @@ class TestRefactorPhaseExecution:
 
             result = executor.execute(context)
 
-        assert result.status == StageStatus.FAILED
-        assert "must pass" in result.error.lower()
+        assert result.status == StageStatus.FAILED, "Expected result.status to equal StageStatus.FAILED"
+        assert "must pass" in result.error.lower(), "Expected 'must pass' in result.error.lower()"
 
 
 class TestRefactorPhaseTestExecution:
@@ -301,8 +301,8 @@ class TestRefactorPhaseTestExecution:
 
             results = executor._run_tests(context)
 
-        assert "passed" in results
-        assert "failed" in results
+        assert "passed" in results, "Expected 'passed' in results"
+        assert "failed" in results, "Expected 'failed' in results"
 
     def test_handles_test_timeout(self, sample_green_artifact, temp_project_path):
         """Handles test execution timeout."""
@@ -325,7 +325,7 @@ class TestRefactorPhaseTestExecution:
 
             results = executor._run_tests(context)
 
-        assert "error" in results
+        assert "error" in results, "Expected 'error' in results"
 
     def test_parses_pytest_output(self, sample_green_artifact, temp_project_path):
         """Parses pytest output correctly."""
@@ -350,7 +350,7 @@ class TestRefactorPhaseTestExecution:
 
             results = executor._run_tests(context)
 
-        assert results["passed"] == 3
+        assert results["passed"] == 3, "Expected results['passed'] to equal 3"
 
 
 class TestRefactorPhaseConformance:
@@ -379,7 +379,7 @@ class TestRefactorPhaseConformance:
 
             results = executor._run_conformance(context)
 
-        assert results["passed"] is True
+        assert results["passed"] is True, "Expected results['passed'] is True"
 
     def test_handles_conformance_failure(self, sample_green_artifact, temp_project_path):
         """Handles conformance check execution failure."""
@@ -401,7 +401,7 @@ class TestRefactorPhaseConformance:
             results = executor._run_conformance(context)
 
         # Should handle gracefully
-        assert "error" in results or results.get("passed", False)
+        assert "error" in results or results.get("passed", False), "Assertion failed"
 
     def test_handles_conformance_json_output(self, sample_green_artifact, temp_project_path):
         """Parses JSON conformance output."""
@@ -430,8 +430,8 @@ class TestRefactorPhaseConformance:
 
             results = executor._run_conformance(context)
 
-        assert results["passed"] is False
-        assert len(results["violations"]) == 1
+        assert results["passed"] is False, "Expected results['passed'] is False"
+        assert len(results["violations"]) == 1, "Expected len(results['violations']) to equal 1"
 
 
 class TestRefactorPhaseArtifactBuilding:
@@ -455,9 +455,9 @@ class TestRefactorPhaseArtifactBuilding:
 
         artifact = executor._create_passthrough_artifact(context, test_results)
 
-        assert artifact["spec_id"] == sample_green_artifact["spec_id"]
-        assert artifact["refactored_files"] == []
-        assert artifact["conformance_passed"] is True
+        assert artifact["spec_id"] == sample_green_artifact["spec_id"], "Expected artifact['spec_id'] to equal sample_green_artifact['spec..."
+        assert artifact["refactored_files"] == [], "Expected artifact['refactored_files'] to equal []"
+        assert artifact["conformance_passed"] is True, "Expected artifact['conformance_passed'] is True"
 
     def test_builds_refactor_artifact(self, sample_green_artifact, temp_project_path):
         """Builds complete refactor artifact."""
@@ -482,9 +482,9 @@ class TestRefactorPhaseArtifactBuilding:
 
         artifact = executor._build_artifact(context, result, test_results, conformance)
 
-        assert artifact["spec_id"] == sample_green_artifact["spec_id"]
-        assert "final_files" in artifact
-        assert artifact["conformance_passed"] is True
+        assert artifact["spec_id"] == sample_green_artifact["spec_id"], "Expected artifact['spec_id'] to equal sample_green_artifact['spec..."
+        assert "final_files" in artifact, "Expected 'final_files' in artifact"
+        assert artifact["conformance_passed"] is True, "Expected artifact['conformance_passed'] is True"
 
     def test_includes_improvements_in_artifact(self, sample_green_artifact, temp_project_path):
         """Artifact includes improvements from refactoring."""
@@ -509,8 +509,8 @@ class TestRefactorPhaseArtifactBuilding:
 
         artifact = executor._build_artifact(context, result, test_results, conformance)
 
-        assert "improvements" in artifact
-        assert len(artifact["improvements"]) == 2
+        assert "improvements" in artifact, "Expected 'improvements' in artifact"
+        assert len(artifact["improvements"]) == 2, "Expected len(artifact['improvements']) to equal 2"
 
 
 class TestRefactorPhaseTaskBuilding:
@@ -527,7 +527,7 @@ class TestRefactorPhaseTaskBuilding:
 
         task = executor._build_task(sample_green_artifact, test_results, conformance)
 
-        assert "src/auth/oauth_provider.py" in task
+        assert "src/auth/oauth_provider.py" in task, "Expected 'src/auth/oauth_provider.py' in task"
 
     def test_builds_task_with_test_status(self, sample_green_artifact):
         """Task includes test status."""
@@ -540,7 +540,7 @@ class TestRefactorPhaseTaskBuilding:
 
         task = executor._build_task(sample_green_artifact, test_results, conformance)
 
-        assert "3 passed" in task
+        assert "3 passed" in task, "Expected '3 passed' in task"
 
     def test_builds_task_with_acceptance_criteria(self, sample_green_artifact):
         """Task includes acceptance criteria."""
@@ -553,7 +553,7 @@ class TestRefactorPhaseTaskBuilding:
 
         task = executor._build_task(sample_green_artifact, test_results, conformance)
 
-        assert "OAuth flow" in task or "criterion" in task.lower()
+        assert "OAuth flow" in task or "criterion" in task.lower(), "Assertion failed"
 
 
 class TestRefactorPhasePrompts:
@@ -567,9 +567,9 @@ class TestRefactorPhasePrompts:
 
         prompt = executor.SYSTEM_PROMPT
 
-        assert "refactor" in prompt.lower()
-        assert "test" in prompt.lower()
-        assert "quality" in prompt.lower()
+        assert "refactor" in prompt.lower(), "Expected 'refactor' in prompt.lower()"
+        assert "test" in prompt.lower(), "Expected 'test' in prompt.lower()"
+        assert "quality" in prompt.lower(), "Expected 'quality' in prompt.lower()"
 
     def test_task_template_has_placeholders(self):
         """Task template has required placeholders."""
@@ -579,9 +579,9 @@ class TestRefactorPhasePrompts:
 
         template = executor.TASK_TEMPLATE
 
-        assert "{implementation_files}" in template
-        assert "{test_status}" in template
-        assert "{acceptance_criteria}" in template
+        assert "{implementation_files}" in template, "Expected '{implementation_files}' in template"
+        assert "{test_status}" in template, "Expected '{test_status}' in template"
+        assert "{acceptance_criteria}" in template, "Expected '{acceptance_criteria}' in template"
 
 
 class TestRefactorPhaseValidation:
@@ -603,7 +603,7 @@ class TestRefactorPhaseValidation:
         validation = executor.validate_output(artifact)
 
         # Should warn or fail on empty final_files
-        assert not validation.valid or len(validation.warnings) > 0
+        assert not validation.valid or len(validation.warnings) > 0, "Assertion failed"
 
     def test_validates_conformance_status(self):
         """Validates conformance status is present."""
@@ -621,7 +621,7 @@ class TestRefactorPhaseValidation:
         validation = executor.validate_output(artifact)
 
         # Should be valid when conformance passed
-        assert validation.valid
+        assert validation.valid, "Expected validation.valid to be truthy"
 
 
 class TestRefactorPhaseEdgeCases:
@@ -652,7 +652,7 @@ class TestRefactorPhaseEdgeCases:
 
         # Should handle gracefully
         task = executor._build_task(artifact, test_results, conformance)
-        assert isinstance(task, str)
+        assert isinstance(task, str), "Expected isinstance() to be truthy"
 
     def test_handles_no_test_results(self, temp_project_path):
         """Handles input with missing test results."""
@@ -671,7 +671,7 @@ class TestRefactorPhaseEdgeCases:
 
         # Should handle gracefully
         task = executor._build_task(artifact, test_results, conformance)
-        assert isinstance(task, str)
+        assert isinstance(task, str), "Expected isinstance() to be truthy"
 
 
 class TestCreateRefactorExecutor:
@@ -686,7 +686,7 @@ class TestCreateRefactorExecutor:
 
         executor = create_refactor_executor()
 
-        assert isinstance(executor, RefactorPhaseExecutor)
+        assert isinstance(executor, RefactorPhaseExecutor), "Expected isinstance() to be truthy"
 
     def test_passes_config(self):
         """Factory passes config to executor."""
@@ -696,4 +696,4 @@ class TestCreateRefactorExecutor:
 
         executor = create_refactor_executor(config)
 
-        assert executor.max_iterations == 5
+        assert executor.max_iterations == 5, "Expected executor.max_iterations to equal 5"

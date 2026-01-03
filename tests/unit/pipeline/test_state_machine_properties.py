@@ -104,29 +104,29 @@ class TestTerminalStateInvariant:
     def test_is_terminal_identifies_terminal_states(self, state: PipelineState):
         """is_terminal() correctly identifies terminal states."""
         state.status = PipelineStatus.COMPLETED
-        assert state.is_terminal() is True
+        assert state.is_terminal() is True, "Expected state.is_terminal() is True"
 
         state.status = PipelineStatus.FAILED
-        assert state.is_terminal() is True
+        assert state.is_terminal() is True, "Expected state.is_terminal() is True"
 
         state.status = PipelineStatus.ABORTED
-        assert state.is_terminal() is True
+        assert state.is_terminal() is True, "Expected state.is_terminal() is True"
 
     @given(pipeline_state_st())
     @settings(max_examples=100)
     def test_is_terminal_identifies_non_terminal_states(self, state: PipelineState):
         """is_terminal() correctly identifies non-terminal states."""
         state.status = PipelineStatus.PENDING
-        assert state.is_terminal() is False
+        assert state.is_terminal() is False, "Expected state.is_terminal() is False"
 
         state.status = PipelineStatus.RUNNING
-        assert state.is_terminal() is False
+        assert state.is_terminal() is False, "Expected state.is_terminal() is False"
 
         state.status = PipelineStatus.PAUSED
-        assert state.is_terminal() is False
+        assert state.is_terminal() is False, "Expected state.is_terminal() is False"
 
         state.status = PipelineStatus.WAITING_APPROVAL
-        assert state.is_terminal() is False
+        assert state.is_terminal() is False, "Expected state.is_terminal() is False"
 
     @given(
         st.sampled_from(list(TERMINAL_STATUSES)),
@@ -147,7 +147,7 @@ class TestTerminalStateInvariant:
 
         # Set terminal status
         state.status = terminal_status
-        assert state.is_terminal() is True
+        assert state.is_terminal() is True, "Expected state.is_terminal() is True"
 
         # The invariant is that code should check is_terminal() before
         # allowing status changes. We verify the check works.
@@ -157,7 +157,7 @@ class TestTerminalStateInvariant:
             # Simulate what the controller should do
             if not state.is_terminal():
                 state.status = any_status
-            assert state.status == original_status
+            assert state.status == original_status, "Expected state.status to equal original_status"
 
 
 # =============================================================================
@@ -179,7 +179,7 @@ class TestTimestampInvariant:
 
         for _ in range(touch_count):
             state.touch()
-            assert state.updated_at >= previous
+            assert state.updated_at >= previous, "Expected state.updated_at >= previous"
             previous = state.updated_at
 
     @given(pipeline_state_st())
@@ -192,7 +192,7 @@ class TestTimestampInvariant:
         for _ in range(5):
             state.touch()
 
-        assert state.created_at == original_created
+        assert state.created_at == original_created, "Expected state.created_at to equal original_created"
 
     def test_stage_timestamps_are_ordered_running_to_completed(self):
         """Stage started_at should always be before completed_at for valid transitions."""
@@ -203,8 +203,8 @@ class TestTimestampInvariant:
         started = stage.started_at
         stage.mark_completed()
 
-        assert stage.started_at == started  # started_at shouldn't change
-        assert stage.started_at <= stage.completed_at
+        assert stage.started_at == started, "Expected stage.started_at to equal started"# started_at shouldn't change
+        assert stage.started_at <= stage.completed_at, "Expected stage.started_at <= stage.completed_at"
 
     def test_stage_timestamps_are_ordered_running_to_failed(self):
         """Stage started_at should always be before completed_at for failures."""
@@ -215,8 +215,8 @@ class TestTimestampInvariant:
         started = stage.started_at
         stage.mark_failed("test error")
 
-        assert stage.started_at == started  # started_at shouldn't change
-        assert stage.started_at <= stage.completed_at
+        assert stage.started_at == started, "Expected stage.started_at to equal started"# started_at shouldn't change
+        assert stage.started_at <= stage.completed_at, "Expected stage.started_at <= stage.completed_at"
 
     @given(st.booleans())
     @settings(max_examples=20)
@@ -224,17 +224,17 @@ class TestTimestampInvariant:
         """Marking a stage complete/failed should always set completed_at."""
         stage = StageState(stage_name="test_stage")
 
-        assert stage.completed_at is None
+        assert stage.completed_at is None, "Expected stage.completed_at is None"
 
         stage.mark_running()
-        assert stage.completed_at is None
+        assert stage.completed_at is None, "Expected stage.completed_at is None"
 
         if use_failure:
             stage.mark_failed("error")
         else:
             stage.mark_completed()
 
-        assert stage.completed_at is not None
+        assert stage.completed_at is not None, "Expected stage.completed_at is not None"
 
 
 # =============================================================================
@@ -262,17 +262,17 @@ class TestStageOrderInvariant:
                 # First stage
                 state.current_stage = None
                 next_stage = state.get_next_stage()
-                assert next_stage == expected
+                assert next_stage == expected, "Expected next_stage to equal expected"
             else:
                 state.current_stage = expected_stages[i - 1]
                 next_stage = state.get_next_stage()
-                assert next_stage == expected
+                assert next_stage == expected, "Expected next_stage to equal expected"
 
             state.current_stage = expected
 
         # After last stage, should return None
         state.current_stage = expected_stages[-1]
-        assert state.get_next_stage() is None
+        assert state.get_next_stage() is None, "Expected state.get_next_stage() is None"
 
     @given(template_st)
     @settings(max_examples=20)
@@ -287,7 +287,7 @@ class TestStageOrderInvariant:
         expected_stages = set(PIPELINE_TEMPLATES[template])
         actual_stages = set(state.stages.keys())
 
-        assert expected_stages == actual_stages
+        assert expected_stages == actual_stages, "Expected expected_stages to equal actual_stages"
 
 
 # =============================================================================
@@ -308,19 +308,19 @@ class TestSerializationInvariant:
         restored = PipelineState.from_dict(data)
 
         # Verify key fields
-        assert restored.pipeline_id == state.pipeline_id
-        assert restored.template == state.template
-        assert restored.status == state.status
-        assert restored.request == state.request
-        assert restored.current_stage == state.current_stage
-        assert restored.stage_order == state.stage_order
+        assert restored.pipeline_id == state.pipeline_id, "Expected restored.pipeline_id to equal state.pipeline_id"
+        assert restored.template == state.template, "Expected restored.template to equal state.template"
+        assert restored.status == state.status, "Expected restored.status to equal state.status"
+        assert restored.request == state.request, "Expected restored.request to equal state.request"
+        assert restored.current_stage == state.current_stage, "Expected restored.current_stage to equal state.current_stage"
+        assert restored.stage_order == state.stage_order, "Expected restored.stage_order to equal state.stage_order"
 
         # Verify all stages
-        assert set(restored.stages.keys()) == set(state.stages.keys())
+        assert set(restored.stages.keys()) == set(state.stages.keys()), "Expected set(restored.stages.keys()) to equal set(state.stages.keys())"
         for name, original_stage in state.stages.items():
             restored_stage = restored.stages[name]
-            assert restored_stage.stage_name == original_stage.stage_name
-            assert restored_stage.status == original_stage.status
+            assert restored_stage.stage_name == original_stage.stage_name, "Expected restored_stage.stage_name to equal original_stage.stage_name"
+            assert restored_stage.status == original_stage.status, "Expected restored_stage.status to equal original_stage.status"
 
     @given(st.text(min_size=1, max_size=50), stage_status_st)
     @settings(max_examples=50)
@@ -340,9 +340,9 @@ class TestSerializationInvariant:
         data = stage.to_dict()
         restored = StageState.from_dict(data)
 
-        assert restored.stage_name == stage.stage_name
-        assert restored.status == stage.status
-        assert restored.error == stage.error
+        assert restored.stage_name == stage.stage_name, "Expected restored.stage_name to equal stage.stage_name"
+        assert restored.status == stage.status, "Expected restored.status to equal stage.status"
+        assert restored.error == stage.error, "Expected restored.error to equal stage.error"
 
 
 # =============================================================================
@@ -385,7 +385,7 @@ class TestStatusTransitionInvariant:
     def test_terminal_states_have_no_transitions(self, status: PipelineStatus):
         """Terminal states should have no valid outgoing transitions."""
         if status in TERMINAL_STATUSES:
-            assert VALID_TRANSITIONS[status] == set()
+            assert VALID_TRANSITIONS[status] == set(), "Expected VALID_TRANSITIONS[status] to equal set()"
 
     @given(pipeline_status_st, pipeline_status_st)
     @settings(max_examples=100)
@@ -403,7 +403,7 @@ class TestStatusTransitionInvariant:
 
         # Either it's a valid transition, or it's the same state,
         # or it's explicitly invalid
-        assert is_valid or is_same or to_status not in valid_targets
+        assert is_valid or is_same or to_status not in valid_targets, "Assertion failed"
 
     def test_can_resume_matches_valid_transitions(self):
         """can_resume() should match states that can transition to RUNNING."""
@@ -415,22 +415,22 @@ class TestStatusTransitionInvariant:
 
         # PAUSED can resume
         state.status = PipelineStatus.PAUSED
-        assert state.can_resume() is True
-        assert PipelineStatus.RUNNING in VALID_TRANSITIONS[PipelineStatus.PAUSED]
+        assert state.can_resume() is True, "Expected state.can_resume() is True"
+        assert PipelineStatus.RUNNING in VALID_TRANSITIONS[PipelineStatus.PAUSED], "Expected PipelineStatus.RUNNING in VALID_TRANSITIONS[PipelineS..."
 
         # WAITING_APPROVAL can resume
         state.status = PipelineStatus.WAITING_APPROVAL
-        assert state.can_resume() is True
-        assert PipelineStatus.RUNNING in VALID_TRANSITIONS[PipelineStatus.WAITING_APPROVAL]
+        assert state.can_resume() is True, "Expected state.can_resume() is True"
+        assert PipelineStatus.RUNNING in VALID_TRANSITIONS[PipelineStatus.WAITING_APPROVAL], "Expected PipelineStatus.RUNNING in VALID_TRANSITIONS[PipelineS..."
 
         # RUNNING cannot "resume"
         state.status = PipelineStatus.RUNNING
-        assert state.can_resume() is False
+        assert state.can_resume() is False, "Expected state.can_resume() is False"
 
         # Terminal states cannot resume
         for terminal in TERMINAL_STATUSES:
             state.status = terminal
-            assert state.can_resume() is False
+            assert state.can_resume() is False, "Expected state.can_resume() is False"
 
 
 # =============================================================================
@@ -460,8 +460,8 @@ class TestArtifactCollectionInvariant:
         artifacts = state.collect_artifacts()
 
         # Should have artifacts from completed stages only
-        assert "order" in artifacts
-        assert "stage" in artifacts
+        assert "order" in artifacts, "Expected 'order' in artifacts"
+        assert "stage" in artifacts, "Expected 'stage' in artifacts"
 
     @given(pipeline_state_st())
     @settings(max_examples=50)
@@ -481,7 +481,7 @@ class TestArtifactCollectionInvariant:
             stage.mark_completed({"completed_artifact": "should_appear"})
 
             artifacts = state.collect_artifacts()
-            assert "completed_artifact" in artifacts
+            assert "completed_artifact" in artifacts, "Expected 'completed_artifact' in artifacts"
 
 
 # =============================================================================
@@ -496,14 +496,14 @@ class TestPipelineIdInvariant:
     def test_pipeline_ids_are_unique(self, count: int):
         """Generated pipeline IDs should be unique."""
         ids = {generate_pipeline_id() for _ in range(count)}
-        assert len(ids) == count
+        assert len(ids) == count, "Expected len(ids) to equal count"
 
     def test_pipeline_id_format(self):
         """Pipeline ID should follow expected format."""
         pipeline_id = generate_pipeline_id()
 
-        assert pipeline_id.startswith("PL-")
+        assert pipeline_id.startswith("PL-"), "Expected pipeline_id.startswith() to be truthy"
         parts = pipeline_id.split("-")
-        assert len(parts) == 3
-        assert len(parts[1]) == 8  # YYYYMMDD
-        assert len(parts[2]) == 8  # 8 hex chars
+        assert len(parts) == 3, "Expected len(parts) to equal 3"
+        assert len(parts[1]) == 8, "Expected len(parts[1]) to equal 8"# YYYYMMDD
+        assert len(parts[2]) == 8, "Expected len(parts[2]) to equal 8"# 8 hex chars

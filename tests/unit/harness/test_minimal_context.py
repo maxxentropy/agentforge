@@ -21,7 +21,7 @@ class TestMinimalContextExecutor:
     def test_executor_import(self):
         """Verify executor can be imported."""
         from agentforge.core.harness.minimal_context.executor import MinimalContextExecutor
-        assert MinimalContextExecutor is not None
+        assert MinimalContextExecutor is not None, "Expected MinimalContextExecutor is not None"
 
 
 class TestTaskStateStore:
@@ -30,7 +30,7 @@ class TestTaskStateStore:
     def test_state_store_import(self):
         """Verify TaskStateStore can be imported."""
         from agentforge.core.harness.minimal_context.state_store import TaskStateStore
-        assert TaskStateStore is not None
+        assert TaskStateStore is not None, "Expected TaskStateStore is not None"
 
 
 class TestWorkingMemoryManager:
@@ -39,4 +39,4 @@ class TestWorkingMemoryManager:
     def test_working_memory_import(self):
         """Verify WorkingMemoryManager can be imported."""
         from agentforge.core.harness.minimal_context.working_memory import WorkingMemoryManager
-        assert WorkingMemoryManager is not None
+        assert WorkingMemoryManager is not None, "Expected WorkingMemoryManager is not None"

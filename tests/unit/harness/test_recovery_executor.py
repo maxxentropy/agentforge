@@ -47,9 +47,9 @@ class TestRecoveryExecutorInit:
 
         executor = RecoveryExecutor(checkpoint_manager, policies)
 
-        assert executor.checkpoint_manager == checkpoint_manager
-        assert len(executor.policies) == 1
-        assert executor.policies[0].name == "test_policy"
+        assert executor.checkpoint_manager == checkpoint_manager, "Expected executor.checkpoint_manager to equal checkpoint_manager"
+        assert len(executor.policies) == 1, "Expected len(executor.policies) to equal 1"
+        assert executor.policies[0].name == "test_policy", "Expected executor.policies[0].name to equal 'test_policy'"
 
     def test_init_with_default_policies_when_none_provided(self):
         """Test initialization loads default policies when none provided."""
@@ -58,11 +58,11 @@ class TestRecoveryExecutorInit:
         executor = RecoveryExecutor(checkpoint_manager)
 
         # Should have default policies loaded
-        assert len(executor.policies) > 0
+        assert len(executor.policies) > 0, "Expected len(executor.policies) > 0"
         policy_names = [p.name for p in executor.policies]
-        assert "loop_recovery" in policy_names
-        assert "drift_recovery" in policy_names
-        assert "thrashing_recovery" in policy_names
+        assert "loop_recovery" in policy_names, "Expected 'loop_recovery' in policy_names"
+        assert "drift_recovery" in policy_names, "Expected 'drift_recovery' in policy_names"
+        assert "thrashing_recovery" in policy_names, "Expected 'thrashing_recovery' in policy_names"
 
 
 class TestExecuteRecovery:
@@ -94,8 +94,8 @@ class TestExecuteRecovery:
 
             result = executor.execute_recovery(health, "session123", {"state": "data"})
 
-            assert result.action == RecoveryAction.CHECKPOINT
-            assert result.trigger == "Loop detected in workflow"
+            assert result.action == RecoveryAction.CHECKPOINT, "Expected result.action to equal RecoveryAction.CHECKPOINT"
+            assert result.trigger == "Loop detected in workflow", "Expected result.trigger to equal 'Loop detected in workflow'"
             mock_execute.assert_called_once()
 
     def test_execute_recovery_respects_cooldown_periods(self):
@@ -119,7 +119,7 @@ class TestExecuteRecovery:
         result = executor.execute_recovery(health, "session123", {"state": "data"})
 
         # Should skip because cooldown hasn't passed, resulting in no matching policy
-        assert result.result == RecoveryResult.SKIPPED
+        assert result.result == RecoveryResult.SKIPPED, "Expected result.result to equal RecoveryResult.SKIPPED"
 
     def test_execute_recovery_tries_actions_in_order_until_success(self):
         """Test that recovery tries actions in order until one succeeds."""
@@ -147,9 +147,9 @@ class TestExecuteRecovery:
 
             result = executor.execute_recovery(health, "session123", {"state": "data"})
 
-            assert result.action == RecoveryAction.ROLLBACK
-            assert result.result == RecoveryResult.SUCCESS
-            assert mock_execute.call_count == 2
+            assert result.action == RecoveryAction.ROLLBACK, "Expected result.action to equal RecoveryAction.ROLLBACK"
+            assert result.result == RecoveryResult.SUCCESS, "Expected result.result to equal RecoveryResult.SUCCESS"
+            assert mock_execute.call_count == 2, "Expected mock_execute.call_count to equal 2"
 
     def test_execute_recovery_records_attempt_result(self):
         """Test that recovery execution records the attempt result."""
@@ -161,8 +161,8 @@ class TestExecuteRecovery:
 
         result = executor.execute_recovery(health, "session123", {"state": "data"})
 
-        assert isinstance(result, RecoveryAttempt)
-        assert result.timestamp is not None
+        assert isinstance(result, RecoveryAttempt), "Expected isinstance() to be truthy"
+        assert result.timestamp is not None, "Expected result.timestamp is not None"
         # Note: SKIPPED results from no matching policy aren't recorded
         # Only actual recovery attempts are recorded in recovery_history
 
@@ -192,7 +192,7 @@ class TestExecuteAction:
 
             # Implementation calls with keyword args and uses state.get("phase")
             mock_checkpoint.assert_called_once()
-            assert result.action == RecoveryAction.CHECKPOINT
+            assert result.action == RecoveryAction.CHECKPOINT, "Expected result.action to equal RecoveryAction.CHECKPOINT"
 
     def test_execute_action_rollback_calls_rollback_method(self):
         """Test that ROLLBACK action calls the rollback method."""
@@ -212,7 +212,7 @@ class TestExecuteAction:
             result = executor.execute_action(RecoveryAction.ROLLBACK, context)
 
             mock_rollback.assert_called_once_with("session123")
-            assert result.action == RecoveryAction.ROLLBACK
+            assert result.action == RecoveryAction.ROLLBACK, "Expected result.action to equal RecoveryAction.ROLLBACK"
 
     def test_execute_action_unknown_action_returns_failed_attempt(self):
         """Test that unknown action returns a failed attempt."""
@@ -225,8 +225,8 @@ class TestExecuteAction:
 
         result = executor.execute_action(unknown_action, context)
 
-        assert result.result == RecoveryResult.FAILED
-        assert "unknown action" in result.error.lower()
+        assert result.result == RecoveryResult.FAILED, "Expected result.result to equal RecoveryResult.FAILED"
+        assert "unknown action" in result.error.lower(), "Expected 'unknown action' in result.error.lower()"
 
 
 class TestCheckpointMethod:
@@ -254,11 +254,11 @@ class TestCheckpointMethod:
         # Implementation uses keyword args with description
         checkpoint_manager.create_checkpoint.assert_called_once()
         call_kwargs = checkpoint_manager.create_checkpoint.call_args
-        assert call_kwargs.kwargs.get("session_id") == "session123"
-        assert call_kwargs.kwargs.get("phase") == "analysis"
-        assert result.action == RecoveryAction.CHECKPOINT
-        assert result.result == RecoveryResult.SUCCESS
-        assert result.details["checkpoint_id"] == "checkpoint123"
+        assert call_kwargs.kwargs.get("session_id") == "session123", "Expected call_kwargs.kwargs.get('ses... to equal 'session123'"
+        assert call_kwargs.kwargs.get("phase") == "analysis", "Expected call_kwargs.kwargs.get('pha... to equal 'analysis'"
+        assert result.action == RecoveryAction.CHECKPOINT, "Expected result.action to equal RecoveryAction.CHECKPOINT"
+        assert result.result == RecoveryResult.SUCCESS, "Expected result.result to equal RecoveryResult.SUCCESS"
+        assert result.details["checkpoint_id"] == "checkpoint123", "Expected result.details['checkpoint_... to equal 'checkpoint123'"
 
     def test_checkpoint_handles_creation_failure(self):
         """Test checkpoint creation failure handling."""
@@ -269,9 +269,9 @@ class TestCheckpointMethod:
 
         result = executor.checkpoint("session123", "analysis", {"key": "value"})
 
-        assert result.action == RecoveryAction.CHECKPOINT
-        assert result.result == RecoveryResult.FAILED
-        assert "Disk full" in result.error
+        assert result.action == RecoveryAction.CHECKPOINT, "Expected result.action to equal RecoveryAction.CHECKPOINT"
+        assert result.result == RecoveryResult.FAILED, "Expected result.result to equal RecoveryResult.FAILED"
+        assert "Disk full" in result.error, "Expected 'Disk full' in result.error"
 
 
 class TestRollbackMethod:
@@ -297,8 +297,8 @@ class TestRollbackMethod:
 
         checkpoint_manager.list_checkpoints.assert_called_once_with("session123")
         checkpoint_manager.restore_checkpoint.assert_called_once_with("checkpoint123")
-        assert result.action == RecoveryAction.ROLLBACK
-        assert result.result == RecoveryResult.SUCCESS
+        assert result.action == RecoveryAction.ROLLBACK, "Expected result.action to equal RecoveryAction.ROLLBACK"
+        assert result.result == RecoveryResult.SUCCESS, "Expected result.result to equal RecoveryResult.SUCCESS"
 
     def test_rollback_fails_when_no_checkpoints_available(self):
         """Test rollback failure when no checkpoints are available."""
@@ -309,9 +309,9 @@ class TestRollbackMethod:
 
         result = executor.rollback("session123")
 
-        assert result.action == RecoveryAction.ROLLBACK
-        assert result.result == RecoveryResult.FAILED
-        assert "no checkpoints" in result.error.lower()
+        assert result.action == RecoveryAction.ROLLBACK, "Expected result.action to equal RecoveryAction.ROLLBACK"
+        assert result.result == RecoveryResult.FAILED, "Expected result.result to equal RecoveryResult.FAILED"
+        assert "no checkpoints" in result.error.lower(), "Expected 'no checkpoints' in result.error.lower()"
 
     def test_rollback_fails_when_restore_fails(self):
         """Test rollback failure when checkpoint restore fails."""
@@ -331,8 +331,8 @@ class TestRollbackMethod:
 
         result = executor.rollback("session123")
 
-        assert result.action == RecoveryAction.ROLLBACK
-        assert result.result == RecoveryResult.FAILED
+        assert result.action == RecoveryAction.ROLLBACK, "Expected result.action to equal RecoveryAction.ROLLBACK"
+        assert result.result == RecoveryResult.FAILED, "Expected result.result to equal RecoveryResult.FAILED"
 
 
 class TestSummarizeContext:
@@ -349,11 +349,11 @@ class TestSummarizeContext:
 
         result = executor.summarize_context(long_context, max_tokens)
 
-        assert result.action == RecoveryAction.SUMMARIZE
-        assert result.result == RecoveryResult.SUCCESS
-        assert "original_length" in result.details
-        assert "new_length" in result.details  # Implementation uses "new_length"
-        assert result.details["new_length"] < result.details["original_length"]
+        assert result.action == RecoveryAction.SUMMARIZE, "Expected result.action to equal RecoveryAction.SUMMARIZE"
+        assert result.result == RecoveryResult.SUCCESS, "Expected result.result to equal RecoveryResult.SUCCESS"
+        assert "original_length" in result.details, "Expected 'original_length' in result.details"
+        assert "new_length" in result.details, "Expected 'new_length' in result.details"# Implementation uses "new_length"
+        assert result.details["new_length"] < result.details["original_length"], "Expected result.details['new_length'] < result.details['original_le..."
 
     def test_summarize_context_preserves_first_and_last_tokens(self):
         """Test that summarization preserves first and last portions."""
@@ -366,9 +366,9 @@ class TestSummarizeContext:
         result = executor.summarize_context(context, max_tokens)
 
         summarized = result.details["summarized_context"]
-        assert "FIRST" in summarized
-        assert "LAST" in summarized
-        assert result.result == RecoveryResult.SUCCESS
+        assert "FIRST" in summarized, "Expected 'FIRST' in summarized"
+        assert "LAST" in summarized, "Expected 'LAST' in summarized"
+        assert result.result == RecoveryResult.SUCCESS, "Expected result.result to equal RecoveryResult.SUCCESS"
 
     def test_summarize_context_handles_short_context(self):
         """Test that short context is returned unchanged."""
@@ -380,9 +380,9 @@ class TestSummarizeContext:
 
         result = executor.summarize_context(short_context, max_tokens)
 
-        assert result.action == RecoveryAction.SUMMARIZE
-        assert result.result == RecoveryResult.SUCCESS
-        assert result.details["summarized_context"] == short_context
+        assert result.action == RecoveryAction.SUMMARIZE, "Expected result.action to equal RecoveryAction.SUMMARIZE"
+        assert result.result == RecoveryResult.SUCCESS, "Expected result.result to equal RecoveryResult.SUCCESS"
+        assert result.details["summarized_context"] == short_context, "Expected result.details['summarized_... to equal short_context"
 
 
 class TestResetState:
@@ -397,11 +397,11 @@ class TestResetState:
 
         result = executor.reset_state("session123", preserve_keys)
 
-        assert result.action == RecoveryAction.RESET
-        assert result.result == RecoveryResult.SUCCESS
-        assert result.details["preserved_keys"] == preserve_keys
-        assert result.details["reset_complete"] is True
-        assert result.details["session_id"] == "session123"
+        assert result.action == RecoveryAction.RESET, "Expected result.action to equal RecoveryAction.RESET"
+        assert result.result == RecoveryResult.SUCCESS, "Expected result.result to equal RecoveryResult.SUCCESS"
+        assert result.details["preserved_keys"] == preserve_keys, "Expected result.details['preserved_k... to equal preserve_keys"
+        assert result.details["reset_complete"] is True, "Expected result.details['reset_compl... is True"
+        assert result.details["session_id"] == "session123", "Expected result.details['session_id'] to equal 'session123'"
 
     def test_reset_state_handles_empty_preserve_keys(self):
         """Test reset with no keys to preserve."""
@@ -410,9 +410,9 @@ class TestResetState:
 
         result = executor.reset_state("session123", [])
 
-        assert result.action == RecoveryAction.RESET
-        assert result.result == RecoveryResult.SUCCESS
-        assert result.details["preserved_keys"] == []
+        assert result.action == RecoveryAction.RESET, "Expected result.action to equal RecoveryAction.RESET"
+        assert result.result == RecoveryResult.SUCCESS, "Expected result.result to equal RecoveryResult.SUCCESS"
+        assert result.details["preserved_keys"] == [], "Expected result.details['preserved_k... to equal []"
 
 
 class TestEscalate:
@@ -428,12 +428,12 @@ class TestEscalate:
 
         result = executor.escalate(reason, context)
 
-        assert result.action == RecoveryAction.ESCALATE
-        assert result.result == RecoveryResult.SUCCESS  # Escalation always succeeds
-        assert result.details["reason"] == reason
-        assert result.details["session_id"] == "session123"
-        assert "timestamp" in result.details
-        assert "recommended_actions" in result.details
+        assert result.action == RecoveryAction.ESCALATE, "Expected result.action to equal RecoveryAction.ESCALATE"
+        assert result.result == RecoveryResult.SUCCESS, "Expected result.result to equal RecoveryResult.SUCCESS"# Escalation always succeeds
+        assert result.details["reason"] == reason, "Expected result.details['reason'] to equal reason"
+        assert result.details["session_id"] == "session123", "Expected result.details['session_id'] to equal 'session123'"
+        assert "timestamp" in result.details, "Expected 'timestamp' in result.details"
+        assert "recommended_actions" in result.details, "Expected 'recommended_actions' in result.details"
 
     def test_escalate_includes_state_and_health_info(self):
         """Test that escalation includes state snapshot and health status."""
@@ -448,8 +448,8 @@ class TestEscalate:
             {"session_id": "session123", "state": {"key": "value"}, "health": health}
         )
 
-        assert result.details["state_snapshot"] == {"key": "value"}
-        assert "health_status" in result.details
+        assert result.details["state_snapshot"] == {"key": "value"}, "Expected result.details['state_snaps... to equal {'key': 'value'}"
+        assert "health_status" in result.details, "Expected 'health_status' in result.details"
 
 
 class TestRecoveryHistory:
@@ -479,7 +479,7 @@ class TestRecoveryHistory:
 
         history = executor.get_recovery_history()
 
-        assert len(history) == 2
+        assert len(history) == 2, "Expected len(history) to equal 2"
 
     def test_get_recovery_history_filters_by_session(self):
         """Test getting recovery history filtered by session."""
@@ -490,7 +490,7 @@ class TestRecoveryHistory:
         # The actual implementation would need to track session_id in attempts
         history = executor.get_recovery_history("session123")
 
-        assert isinstance(history, list)
+        assert isinstance(history, list), "Expected isinstance() to be truthy"
 
     def test_get_recovery_history_respects_limit(self):
         """Test that history limit is respected."""
@@ -510,7 +510,7 @@ class TestRecoveryHistory:
 
         history = executor.get_recovery_history(limit=5)
 
-        assert len(history) <= 5
+        assert len(history) <= 5, "Expected len(history) <= 5"
 
 
 class TestPolicyManagement:
@@ -531,8 +531,8 @@ class TestPolicyManagement:
 
         executor.register_policy(policy)
 
-        assert policy in executor.policies
-        assert executor.get_policy_for_issue("custom_issue") == policy
+        assert policy in executor.policies, "Expected policy in executor.policies"
+        assert executor.get_policy_for_issue("custom_issue") == policy, "Expected executor.get_policy_for_iss... to equal policy"
 
     def test_get_policy_for_issue_finds_matching_policy(self):
         """Test finding policy that matches an issue."""
@@ -548,7 +548,7 @@ class TestPolicyManagement:
 
         found_policy = executor.get_policy_for_issue("Loop detected in workflow")
 
-        assert found_policy == policy
+        assert found_policy == policy, "Expected found_policy to equal policy"
 
     def test_get_policy_for_issue_returns_none_when_no_match(self):
         """Test that no policy is returned when no triggers match."""
@@ -557,7 +557,7 @@ class TestPolicyManagement:
 
         found_policy = executor.get_policy_for_issue("unknown issue type")
 
-        assert found_policy is None
+        assert found_policy is None, "Expected found_policy is None"
 
     def test_get_policy_for_issue_matches_partial_triggers(self):
         """Test that policy matching works with partial trigger matches."""
@@ -574,7 +574,7 @@ class TestPolicyManagement:
         # Should match "drift" trigger
         found_policy = executor.get_policy_for_issue("Context drift detected")
 
-        assert found_policy == policy
+        assert found_policy == policy, "Expected found_policy to equal policy"
 
 
 class TestDefaultPolicies:
@@ -595,7 +595,7 @@ class TestDefaultPolicies:
         ]
 
         for expected in expected_policies:
-            assert expected in policy_names
+            assert expected in policy_names, "Expected expected in policy_names"
 
     def test_loop_recovery_policy_configuration(self):
         """Test loop recovery policy has correct configuration."""
@@ -604,13 +604,13 @@ class TestDefaultPolicies:
 
         policy = executor.get_policy_for_issue("Loop detected")
 
-        assert policy is not None
-        assert policy.name == "loop_recovery"
-        assert RecoveryAction.CHECKPOINT in policy.actions
-        assert RecoveryAction.ROLLBACK in policy.actions
-        assert RecoveryAction.RESET in policy.actions
-        assert policy.max_attempts == 3
-        assert policy.cooldown_seconds == 30
+        assert policy is not None, "Expected policy is not None"
+        assert policy.name == "loop_recovery", "Expected policy.name to equal 'loop_recovery'"
+        assert RecoveryAction.CHECKPOINT in policy.actions, "Expected RecoveryAction.CHECKPOINT in policy.actions"
+        assert RecoveryAction.ROLLBACK in policy.actions, "Expected RecoveryAction.ROLLBACK in policy.actions"
+        assert RecoveryAction.RESET in policy.actions, "Expected RecoveryAction.RESET in policy.actions"
+        assert policy.max_attempts == 3, "Expected policy.max_attempts to equal 3"
+        assert policy.cooldown_seconds == 30, "Expected policy.cooldown_seconds to equal 30"
 
     def test_context_pressure_recovery_policy_configuration(self):
         """Test context pressure recovery policy configuration."""
@@ -619,12 +619,12 @@ class TestDefaultPolicies:
 
         policy = executor.get_policy_for_issue("Critical context pressure")
 
-        assert policy is not None
-        assert policy.name == "context_pressure_recovery"
-        assert RecoveryAction.SUMMARIZE in policy.actions
-        assert RecoveryAction.CHECKPOINT in policy.actions
-        assert policy.max_attempts == 2
-        assert policy.cooldown_seconds == 120
+        assert policy is not None, "Expected policy is not None"
+        assert policy.name == "context_pressure_recovery", "Expected policy.name to equal 'context_pressure_recovery'"
+        assert RecoveryAction.SUMMARIZE in policy.actions, "Expected RecoveryAction.SUMMARIZE in policy.actions"
+        assert RecoveryAction.CHECKPOINT in policy.actions, "Expected RecoveryAction.CHECKPOINT in policy.actions"
+        assert policy.max_attempts == 2, "Expected policy.max_attempts to equal 2"
+        assert policy.cooldown_seconds == 120, "Expected policy.cooldown_seconds to equal 120"
 
 
 class TestConstraints:
@@ -651,7 +651,7 @@ class TestConstraints:
         result = executor.execute_recovery(health, "session123", {})
 
         # Should skip because cooldown hasn't expired
-        assert result.result == RecoveryResult.SKIPPED
+        assert result.result == RecoveryResult.SKIPPED, "Expected result.result to equal RecoveryResult.SKIPPED"
 
     def test_escalation_always_succeeds_as_fallback(self):
         """Test that escalation always succeeds and serves as fallback."""
@@ -660,8 +660,8 @@ class TestConstraints:
 
         result = executor.escalate("Test escalation", {"context": "data"})
 
-        assert result.result == RecoveryResult.SUCCESS
-        assert result.action == RecoveryAction.ESCALATE
+        assert result.result == RecoveryResult.SUCCESS, "Expected result.result to equal RecoveryResult.SUCCESS"
+        assert result.action == RecoveryAction.ESCALATE, "Expected result.action to equal RecoveryAction.ESCALATE"
 
     def test_recovery_attempts_are_logged_for_audit(self):
         """Test that recovery attempts during execute_recovery are logged."""
@@ -683,10 +683,10 @@ class TestConstraints:
         # Execute recovery which should log the attempt
         executor.execute_recovery(health, "session123", {})
 
-        assert len(executor.recovery_history) == initial_history_length + 1
+        assert len(executor.recovery_history) == initial_history_length + 1, "Expected len(executor.recovery_history) to equal initial_history_length + 1"
 
         # Verify the logged attempt has all required fields
         logged_attempt = executor.recovery_history[-1]
-        assert logged_attempt.action is not None
-        assert logged_attempt.timestamp is not None
-        assert logged_attempt.result is not None
+        assert logged_attempt.action is not None, "Expected logged_attempt.action is not None"
+        assert logged_attempt.timestamp is not None, "Expected logged_attempt.timestamp is not None"
+        assert logged_attempt.result is not None, "Expected logged_attempt.result is not None"

@@ -18,19 +18,19 @@ class TestValidationError:
             message="Unknown stage: unknown",
             severity="error",
         )
-        assert error.path == "stages.unknown"
-        assert error.message == "Unknown stage: unknown"
-        assert error.severity == "error"
+        assert error.path == "stages.unknown", "Expected error.path to equal 'stages.unknown'"
+        assert error.message == "Unknown stage: unknown", "Expected error.message to equal 'Unknown stage: unknown'"
+        assert error.severity == "error", "Expected error.severity to equal 'error'"
 
     def test_validation_error_severity_options(self):
         """ValidationError accepts error and warning severities."""
         from agentforge.core.pipeline.config_validator import ValidationError
 
         error = ValidationError(path="test", message="An error", severity="error")
-        assert error.severity == "error"
+        assert error.severity == "error", "Expected error.severity to equal 'error'"
 
         warning = ValidationError(path="test", message="A warning", severity="warning")
-        assert warning.severity == "warning"
+        assert warning.severity == "warning", "Expected warning.severity to equal 'warning'"
 
 
 class TestConfigValidator:
@@ -50,7 +50,7 @@ class TestConfigValidator:
         validator = ConfigValidator()
         errors = validator.validate_template(template)
 
-        assert len(errors) == 0
+        assert len(errors) == 0, "Expected len(errors) to equal 0"
 
     def test_validates_stage_names(self):
         """Rejects invalid stage names."""
@@ -66,10 +66,10 @@ class TestConfigValidator:
         validator = ConfigValidator()
         errors = validator.validate_template(template)
 
-        assert len(errors) == 1
-        assert errors[0].severity == "error"
-        assert "unknown_stage" in errors[0].message
-        assert "stages.unknown_stage" in errors[0].path
+        assert len(errors) == 1, "Expected len(errors) to equal 1"
+        assert errors[0].severity == "error", "Expected errors[0].severity to equal 'error'"
+        assert "unknown_stage" in errors[0].message, "Expected 'unknown_stage' in errors[0].message"
+        assert "stages.unknown_stage" in errors[0].path, "Expected 'stages.unknown_stage' in errors[0].path"
 
     def test_validates_multiple_invalid_stages(self):
         """Reports all invalid stage names."""
@@ -85,10 +85,10 @@ class TestConfigValidator:
         validator = ConfigValidator()
         errors = validator.validate_template(template)
 
-        assert len(errors) == 2
+        assert len(errors) == 2, "Expected len(errors) to equal 2"
         messages = [e.message for e in errors]
-        assert any("bad1" in m for m in messages)
-        assert any("bad2" in m for m in messages)
+        assert any("bad1" in m for m in messages), "Expected any() to be truthy"
+        assert any("bad2" in m for m in messages), "Expected any() to be truthy"
 
     def test_warns_green_without_red(self):
         """Warns when GREEN without RED."""
@@ -105,8 +105,8 @@ class TestConfigValidator:
         errors = validator.validate_template(template)
 
         warnings = [e for e in errors if e.severity == "warning"]
-        assert len(warnings) == 1
-        assert "RED" in warnings[0].message or "red" in warnings[0].message.lower()
+        assert len(warnings) == 1, "Expected len(warnings) to equal 1"
+        assert "RED" in warnings[0].message or "red" in warnings[0].message.lower(), "Assertion failed"
 
     def test_no_warning_when_green_with_red(self):
         """No warning when GREEN has RED."""
@@ -123,7 +123,7 @@ class TestConfigValidator:
         errors = validator.validate_template(template)
 
         warnings = [e for e in errors if e.severity == "warning"]
-        assert len(warnings) == 0
+        assert len(warnings) == 0, "Expected len(warnings) to equal 0"
 
     def test_validates_exit_after(self):
         """Error when exit_after not in stages."""
@@ -141,9 +141,9 @@ class TestConfigValidator:
         errors = validator.validate_template(template)
 
         error_messages = [e for e in errors if e.severity == "error"]
-        assert len(error_messages) == 1
-        assert "exit_after" in error_messages[0].path
-        assert "spec" in error_messages[0].message
+        assert len(error_messages) == 1, "Expected len(error_messages) to equal 1"
+        assert "exit_after" in error_messages[0].path, "Expected 'exit_after' in error_messages[0].path"
+        assert "spec" in error_messages[0].message, "Expected 'spec' in error_messages[0].message"
 
     def test_valid_exit_after(self):
         """No error when exit_after is in stages."""
@@ -161,7 +161,7 @@ class TestConfigValidator:
         errors = validator.validate_template(template)
 
         error_messages = [e for e in errors if e.severity == "error"]
-        assert len(error_messages) == 0
+        assert len(error_messages) == 0, "Expected len(error_messages) to equal 0"
 
     def test_valid_stages_constant(self):
         """VALID_STAGES contains all expected stages."""
@@ -174,7 +174,7 @@ class TestConfigValidator:
 
         validator = ConfigValidator()
         for stage in expected:
-            assert stage in validator.VALID_STAGES
+            assert stage in validator.VALID_STAGES, "Expected stage in validator.VALID_STAGES"
 
     def test_validates_settings_valid(self):
         """Returns no errors for valid settings."""
@@ -190,7 +190,7 @@ class TestConfigValidator:
         validator = ConfigValidator()
         errors = validator.validate_settings(settings)
 
-        assert len(errors) == 0
+        assert len(errors) == 0, "Expected len(errors) to equal 0"
 
     def test_validates_settings_negative_cost(self):
         """Warns on negative cost limit."""
@@ -204,9 +204,9 @@ class TestConfigValidator:
         validator = ConfigValidator()
         errors = validator.validate_settings(settings)
 
-        assert len(errors) == 1
-        assert errors[0].severity == "warning"
-        assert "cost" in errors[0].path.lower()
+        assert len(errors) == 1, "Expected len(errors) to equal 1"
+        assert errors[0].severity == "warning", "Expected errors[0].severity to equal 'warning'"
+        assert "cost" in errors[0].path.lower(), "Expected 'cost' in errors[0].path.lower()"
 
     def test_validates_settings_zero_cost_ok(self):
         """Zero cost is valid (unlimited)."""
@@ -222,7 +222,7 @@ class TestConfigValidator:
 
         # Zero is acceptable (means unlimited)
         cost_errors = [e for e in errors if "cost" in e.path.lower()]
-        assert len(cost_errors) == 0
+        assert len(cost_errors) == 0, "Expected len(cost_errors) to equal 0"
 
     def test_validates_empty_stages(self):
         """Error when stages is empty."""
@@ -239,8 +239,8 @@ class TestConfigValidator:
         errors = validator.validate_template(template)
 
         error_messages = [e for e in errors if e.severity == "error"]
-        assert len(error_messages) == 1
-        assert "empty" in error_messages[0].message.lower() or "no stages" in error_messages[0].message.lower()
+        assert len(error_messages) == 1, "Expected len(error_messages) to equal 1"
+        assert "empty" in error_messages[0].message.lower() or "no stages" in error_messages[0].message.lower(), "Assertion failed"
 
     def test_validates_duplicate_stages(self):
         """Warns on duplicate stages."""
@@ -257,7 +257,7 @@ class TestConfigValidator:
         errors = validator.validate_template(template)
 
         warnings = [e for e in errors if e.severity == "warning"]
-        assert any("duplicate" in w.message.lower() for w in warnings)
+        assert any("duplicate" in w.message.lower() for w in warnings), "Expected any() to be truthy"
 
 
 class TestConfigValidatorIntegration:
@@ -275,7 +275,7 @@ class TestConfigValidatorIntegration:
         errors = validator.validate_template(template)
 
         error_messages = [e for e in errors if e.severity == "error"]
-        assert len(error_messages) == 0
+        assert len(error_messages) == 0, "Expected len(error_messages) to equal 0"
 
     def test_validates_design_template(self, tmp_path):
         """Design template passes validation."""
@@ -289,7 +289,7 @@ class TestConfigValidatorIntegration:
         errors = validator.validate_template(template)
 
         error_messages = [e for e in errors if e.severity == "error"]
-        assert len(error_messages) == 0
+        assert len(error_messages) == 0, "Expected len(error_messages) to equal 0"
 
     def test_validates_test_template(self, tmp_path):
         """Test template passes validation."""
@@ -303,7 +303,7 @@ class TestConfigValidatorIntegration:
         errors = validator.validate_template(template)
 
         error_messages = [e for e in errors if e.severity == "error"]
-        assert len(error_messages) == 0
+        assert len(error_messages) == 0, "Expected len(error_messages) to equal 0"
 
     def test_validates_fix_template(self, tmp_path):
         """Fix template passes validation (green without red is intentional)."""
@@ -318,4 +318,4 @@ class TestConfigValidatorIntegration:
 
         # Fix template may have a warning for green without red, but no errors
         error_messages = [e for e in errors if e.severity == "error"]
-        assert len(error_messages) == 0
+        assert len(error_messages) == 0, "Expected len(error_messages) to equal 0"

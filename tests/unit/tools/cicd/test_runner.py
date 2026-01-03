@@ -45,16 +45,16 @@ class TestCheckCache:
     def test_get_miss(self, cache):
         """Test cache miss returns None."""
         result = cache.get("nonexistent-key")
-        assert result is None
+        assert result is None, "Expected result is None"
 
     def test_set_and_get(self, cache, sample_violations):
         """Test setting and getting cached value."""
         cache.set("test-key", sample_violations)
         result = cache.get("test-key")
 
-        assert result is not None
-        assert len(result) == 1
-        assert result[0].check_id == "check1"
+        assert result is not None, "Expected result is not None"
+        assert len(result) == 1, "Expected len(result) to equal 1"
+        assert result[0].check_id == "check1", "Expected result[0].check_id to equal 'check1'"
 
     def test_cache_expiration(self, cache, sample_violations):
         """Test expired cache entries return None."""
@@ -62,7 +62,7 @@ class TestCheckCache:
         cache.set("test-key", sample_violations)
 
         # Read immediately should work
-        assert cache.get("test-key") is not None
+        assert cache.get("test-key") is not None, "Expected cache.get('test-key') is not None"
 
         # Mock time passing - need to modify the cached_at in the file
         cache_file = cache.cache_dir / "test-key.json"
@@ -72,7 +72,7 @@ class TestCheckCache:
 
         # Now should be expired (TTL is 1 hour, we set cached_at to 2 hours ago)
         result = cache.get("test-key")
-        assert result is None
+        assert result is None, "Expected result is None"
 
     def test_clear(self, cache, sample_violations):
         """Test clearing cache."""
@@ -81,9 +81,9 @@ class TestCheckCache:
 
         count = cache.clear()
 
-        assert count == 2
-        assert cache.get("key1") is None
-        assert cache.get("key2") is None
+        assert count == 2, "Expected count to equal 2"
+        assert cache.get("key1") is None, "Expected cache.get('key1') is None"
+        assert cache.get("key2") is None, "Expected cache.get('key2') is None"
 
     def test_prune_expired(self, cache, sample_violations):
         """Test pruning expired entries."""
@@ -97,19 +97,19 @@ class TestCheckCache:
 
         count = cache.prune_expired()
 
-        assert count == 1
+        assert count == 1, "Expected count to equal 1"
 
     def test_clear_empty_cache(self, cache):
         """Test clearing empty cache returns 0."""
         count = cache.clear()
-        assert count == 0
+        assert count == 0, "Expected count to equal 0"
 
     def test_cache_creates_directory(self, cache_dir, sample_violations):
         """Test cache creates directory if it doesn't exist."""
         cache = CheckCache(cache_dir / "subdir")
         cache.set("key", sample_violations)
 
-        assert (cache_dir / "subdir" / "key.json").exists()
+        assert (cache_dir / "subdir" / "key.json").exists(), "Expected (cache_dir / 'subdir' / 'ke...() to be truthy"
 
 
 class TestCIRunner:
@@ -149,8 +149,8 @@ class TestCIRunner:
 
     def test_runner_init(self, runner, repo_root):
         """Test runner initialization."""
-        assert runner.repo_root == repo_root
-        assert runner.config.mode == CIMode.FULL
+        assert runner.repo_root == repo_root, "Expected runner.repo_root to equal repo_root"
+        assert runner.config.mode == CIMode.FULL, "Expected runner.config.mode to equal CIMode.FULL"
 
     @patch("agentforge.core.cicd.runner.CIRunner._execute_checks")
     def test_run_full_mode(self, mock_execute, runner, sample_contracts):
@@ -159,8 +159,8 @@ class TestCIRunner:
 
         result = runner.run(sample_contracts)
 
-        assert result.mode == CIMode.FULL
-        assert result.exit_code == ExitCode.SUCCESS
+        assert result.mode == CIMode.FULL, "Expected result.mode to equal CIMode.FULL"
+        assert result.exit_code == ExitCode.SUCCESS, "Expected result.exit_code to equal ExitCode.SUCCESS"
 
     @patch("agentforge.core.cicd.runner.CIRunner._execute_checks")
     def test_run_with_violations(self, mock_execute, runner, sample_contracts):
@@ -177,24 +177,24 @@ class TestCIRunner:
 
         result = runner.run(sample_contracts)
 
-        assert result.exit_code == ExitCode.VIOLATIONS_FOUND
-        assert len(result.violations) == 1
+        assert result.exit_code == ExitCode.VIOLATIONS_FOUND, "Expected result.exit_code to equal ExitCode.VIOLATIONS_FOUND"
+        assert len(result.violations) == 1, "Expected len(result.violations) to equal 1"
 
     def test_config_parallel_settings(self, repo_root):
         """Test parallel configuration is respected."""
         config = CIConfig(parallel_enabled=False, max_workers=2)
         runner = CIRunner(repo_root, config)
 
-        assert runner.config.parallel_enabled is False
-        assert runner.config.max_workers == 2
+        assert runner.config.parallel_enabled is False, "Expected runner.config.parallel_enabled is False"
+        assert runner.config.max_workers == 2, "Expected runner.config.max_workers to equal 2"
 
     def test_config_fail_thresholds(self, repo_root):
         """Test fail threshold configuration."""
         config = CIConfig(fail_on_new_errors=True, fail_on_new_warnings=True)
         runner = CIRunner(repo_root, config)
 
-        assert runner.config.fail_on_new_errors is True
-        assert runner.config.fail_on_new_warnings is True
+        assert runner.config.fail_on_new_errors is True, "Expected runner.config.fail_on_new_e... is True"
+        assert runner.config.fail_on_new_warnings is True, "Expected runner.config.fail_on_new_w... is True"
 
     @patch("agentforge.core.cicd.runner.CIRunner._execute_checks")
     @patch("agentforge.core.cicd.runner.GitHelper.get_changed_files")
@@ -208,7 +208,7 @@ class TestCIRunner:
 
         result = runner.run(sample_contracts)
 
-        assert result.mode == CIMode.INCREMENTAL
+        assert result.mode == CIMode.INCREMENTAL, "Expected result.mode to equal CIMode.INCREMENTAL"
         mock_git.assert_called_once()
 
     @patch("agentforge.core.cicd.runner.CIRunner._execute_checks")
@@ -227,8 +227,8 @@ class TestCIRunner:
 
         result = runner.run(sample_contracts)
 
-        assert result.mode == CIMode.PR
-        assert result.comparison is not None
+        assert result.mode == CIMode.PR, "Expected result.mode to equal CIMode.PR"
+        assert result.comparison is not None, "Expected result.comparison is not None"
 
     @patch("agentforge.core.cicd.runner.CIRunner._execute_checks")
     def test_result_includes_timing(self, mock_execute, runner, sample_contracts):
@@ -237,10 +237,10 @@ class TestCIRunner:
 
         result = runner.run(sample_contracts)
 
-        assert result.duration_seconds >= 0
-        assert result.started_at is not None
-        assert result.completed_at is not None
-        assert result.completed_at >= result.started_at
+        assert result.duration_seconds >= 0, "Expected result.duration_seconds >= 0"
+        assert result.started_at is not None, "Expected result.started_at is not None"
+        assert result.completed_at is not None, "Expected result.completed_at is not None"
+        assert result.completed_at >= result.started_at, "Expected result.completed_at >= result.started_at"
 
     @patch("agentforge.core.cicd.runner.CIRunner._execute_checks")
     @patch("agentforge.core.cicd.runner.GitHelper.get_current_sha")
@@ -251,7 +251,7 @@ class TestCIRunner:
 
         result = runner.run(sample_contracts)
 
-        assert result.commit_sha == "abc123"
+        assert result.commit_sha == "abc123", "Expected result.commit_sha to equal 'abc123'"
 
     def test_contract_applies_to_files_matching(self, runner):
         """Test contract pattern matching."""
@@ -264,10 +264,10 @@ class TestCIRunner:
             }]
         }
 
-        assert runner._contract_applies_to_files(contract, {"src/main.py"})
-        assert runner._contract_applies_to_files(contract, {"src/sub/file.py"})
-        assert runner._contract_applies_to_files(contract, {"test/main.py"})
-        assert not runner._contract_applies_to_files(contract, {"test/main.js"})
+        assert runner._contract_applies_to_files(contract, {"src/main.py"}), "Expected runner._contract_applies_to...() to be truthy"
+        assert runner._contract_applies_to_files(contract, {"src/sub/file.py"}), "Expected runner._contract_applies_to...() to be truthy"
+        assert runner._contract_applies_to_files(contract, {"test/main.py"}), "Expected runner._contract_applies_to...() to be truthy"
+        assert not runner._contract_applies_to_files(contract, {"test/main.js"}), "Assertion failed"
 
     def test_contract_applies_excludes(self, runner):
         """Test contract exclusion patterns."""
@@ -282,8 +282,8 @@ class TestCIRunner:
             }]
         }
 
-        assert runner._contract_applies_to_files(contract, {"src/main.py"})
-        assert not runner._contract_applies_to_files(contract, {"tests/test_main.py"})
+        assert runner._contract_applies_to_files(contract, {"src/main.py"}), "Expected runner._contract_applies_to...() to be truthy"
+        assert not runner._contract_applies_to_files(contract, {"tests/test_main.py"}), "Assertion failed"
 
     @patch("agentforge.core.cicd.runner.CIRunner._execute_checks")
     def test_exit_code_success_no_violations(self, mock_execute, runner, sample_contracts):
@@ -292,7 +292,7 @@ class TestCIRunner:
 
         result = runner.run(sample_contracts)
 
-        assert result.exit_code == ExitCode.SUCCESS
+        assert result.exit_code == ExitCode.SUCCESS, "Expected result.exit_code to equal ExitCode.SUCCESS"
 
     @patch("agentforge.core.cicd.runner.CIRunner._execute_checks")
     def test_exit_code_violations_found(self, mock_execute, runner, sample_contracts):
@@ -303,7 +303,7 @@ class TestCIRunner:
 
         result = runner.run(sample_contracts)
 
-        assert result.exit_code == ExitCode.VIOLATIONS_FOUND
+        assert result.exit_code == ExitCode.VIOLATIONS_FOUND, "Expected result.exit_code to equal ExitCode.VIOLATIONS_FOUND"
 
     @patch("agentforge.core.cicd.runner.CIRunner._execute_checks")
     def test_warnings_dont_fail_by_default(self, mock_execute, runner, sample_contracts):
@@ -314,7 +314,7 @@ class TestCIRunner:
 
         result = runner.run(sample_contracts)
 
-        assert result.exit_code == ExitCode.SUCCESS
+        assert result.exit_code == ExitCode.SUCCESS, "Expected result.exit_code to equal ExitCode.SUCCESS"
 
     @patch("agentforge.core.cicd.runner.CIRunner._execute_checks")
     def test_warnings_fail_when_configured(self, mock_execute, repo_root, sample_contracts):
@@ -328,7 +328,7 @@ class TestCIRunner:
 
         result = runner.run(sample_contracts)
 
-        assert result.exit_code == ExitCode.VIOLATIONS_FOUND
+        assert result.exit_code == ExitCode.VIOLATIONS_FOUND, "Expected result.exit_code to equal ExitCode.VIOLATIONS_FOUND"
 
     def test_error_result_on_baseline_not_found(self, repo_root, sample_contracts):
         """Test BASELINE_NOT_FOUND when baseline missing in PR mode."""
@@ -339,4 +339,4 @@ class TestCIRunner:
         with patch("agentforge.core.cicd.runner.CIRunner._execute_checks", return_value=[]):
             result = runner.run(sample_contracts)
 
-        assert result.exit_code == ExitCode.BASELINE_NOT_FOUND
+        assert result.exit_code == ExitCode.BASELINE_NOT_FOUND, "Expected result.exit_code to equal ExitCode.BASELINE_NOT_FOUND"

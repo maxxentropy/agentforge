@@ -40,9 +40,9 @@ def add(a, b):
 ```
 '''
         files = parser.parse(response)
-        assert len(files) == 1
-        assert files[0].path == Path("src/calculator.py")
-        assert "def add" in files[0].content
+        assert len(files) == 1, "Expected len(files) to equal 1"
+        assert files[0].path == Path("src/calculator.py"), "Expected files[0].path to equal Path('src/calculator.py')"
+        assert "def add" in files[0].content, "Expected 'def add' in files[0].content"
 
     def test_parse_multiple_files(self, parser):
         response = '''Creating test and implementation:
@@ -60,36 +60,36 @@ def add(a, b):
 ```
 '''
         files = parser.parse(response)
-        assert len(files) == 2
-        assert files[0].path == Path("tests/test_calc.py")
-        assert files[1].path == Path("src/calc.py")
+        assert len(files) == 2, "Expected len(files) to equal 2"
+        assert files[0].path == Path("tests/test_calc.py"), "Expected files[0].path to equal Path('tests/test_calc.py')"
+        assert files[1].path == Path("src/calc.py"), "Expected files[1].path to equal Path('src/calc.py')"
 
     def test_parse_py_shorthand(self, parser):
         response = '''```py:src/module.py
 x = 1
 ```'''
         files = parser.parse(response)
-        assert len(files) == 1
-        assert files[0].path == Path("src/module.py")
+        assert len(files) == 1, "Expected len(files) to equal 1"
+        assert files[0].path == Path("src/module.py"), "Expected files[0].path to equal Path('src/module.py')"
 
     def test_file_action_is_create(self, parser):
         response = '''```python:src/new_file.py
 pass
 ```'''
         files = parser.parse(response)
-        assert files[0].action == FileAction.CREATE
+        assert files[0].action == FileAction.CREATE, "Expected files[0].action to equal FileAction.CREATE"
 
     def test_no_files_raises_parse_error(self, parser):
         response = "Here's some text without any code blocks."
         with pytest.raises(ParseError) as exc_info:
             parser.parse(response)
-        assert "No code files found" in str(exc_info.value)
+        assert "No code files found" in str(exc_info.value), "Expected 'No code files found' in str(exc_info.value)"
 
     def test_parse_error_includes_raw_response(self, parser):
         response = "No code here"
         with pytest.raises(ParseError) as exc_info:
             parser.parse(response)
-        assert exc_info.value.raw_response == "No code here"
+        assert exc_info.value.raw_response == "No code here", "Expected exc_info.value.raw_response to equal 'No code here'"
 
 
 class TestResponseParserContentCleaning:
@@ -106,7 +106,7 @@ def foo():
 ```'''
         files = parser.parse(response)
         # Lines should not have trailing spaces
-        assert "   \n" not in files[0].content
+        assert "   \n" not in files[0].content, "Expected '   \n' not in files[0].content"
 
     def test_removes_leading_blank_lines(self, parser):
         response = '''```python:test.py
@@ -115,7 +115,7 @@ def foo():
     pass
 ```'''
         files = parser.parse(response)
-        assert files[0].content.startswith("def foo")
+        assert files[0].content.startswith("def foo"), "Expected files[0].content.startswith() to be truthy"
 
     def test_removes_trailing_blank_lines(self, parser):
         response = '''```python:test.py
@@ -124,7 +124,7 @@ def foo():
 
 ```'''
         files = parser.parse(response)
-        assert files[0].content.rstrip() == "def foo():\n    pass"
+        assert files[0].content.rstrip() == "def foo():\n    pass", "Expected files[0].content.rstrip() to equal 'def foo():\n    pass'"
 
     def test_preserves_internal_blank_lines(self, parser):
         response = '''```python:test.py
@@ -135,13 +135,13 @@ def bar():
     pass
 ```'''
         files = parser.parse(response)
-        assert "\n\n" in files[0].content
+        assert "\n\n" in files[0].content, "Expected '\n\n' in files[0].content"
 
     def test_adds_trailing_newline(self, parser):
         response = '''```python:test.py
 x = 1```'''
         files = parser.parse(response)
-        assert files[0].content.endswith("\n")
+        assert files[0].content.endswith("\n"), "Expected files[0].content.endswith() to be truthy"
 
 
 class TestResponseParserSyntaxValidation:
@@ -161,7 +161,7 @@ def foo():
     return 42
 ```'''
         files = parser.parse(response)
-        assert len(files) == 1
+        assert len(files) == 1, "Expected len(files) to equal 1"
 
     def test_invalid_syntax_raises(self, parser):
         response = '''```python:test.py
@@ -170,8 +170,8 @@ def foo(
 ```'''
         with pytest.raises(ParseError) as exc_info:
             parser.parse(response)
-        assert "Invalid Python syntax" in str(exc_info.value)
-        assert "test.py" in str(exc_info.value)
+        assert "Invalid Python syntax" in str(exc_info.value), "Expected 'Invalid Python syntax' in str(exc_info.value)"
+        assert "test.py" in str(exc_info.value), "Expected 'test.py' in str(exc_info.value)"
 
     def test_validation_disabled(self, no_validate_parser):
         response = '''```python:test.py
@@ -179,7 +179,7 @@ def foo(
     # this is invalid but should pass
 ```'''
         files = no_validate_parser.parse(response)
-        assert len(files) == 1
+        assert len(files) == 1, "Expected len(files) to equal 1"
 
     def test_parse_error_includes_line_number(self, parser):
         response = '''```python:test.py
@@ -189,7 +189,7 @@ def bar(
 ```'''
         with pytest.raises(ParseError) as exc_info:
             parser.parse(response)
-        assert exc_info.value.position is not None
+        assert exc_info.value.position is not None, "Expected exc_info.value.position is not None"
 
 
 class TestResponseParserImplicitPaths:
@@ -207,8 +207,8 @@ def test_foo():
     pass
 ```'''
         files = parser.parse(response)
-        assert len(files) == 1
-        assert files[0].path == Path("tests/test_example.py")
+        assert len(files) == 1, "Expected len(files) to equal 1"
+        assert files[0].path == Path("tests/test_example.py"), "Expected files[0].path to equal Path('tests/test_example.py')"
 
     def test_infers_path_from_output_to(self, parser):
         response = '''Output to: src/module.py
@@ -217,7 +217,7 @@ def test_foo():
 x = 1
 ```'''
         files = parser.parse(response)
-        assert files[0].path == Path("src/module.py")
+        assert files[0].path == Path("src/module.py"), "Expected files[0].path to equal Path('src/module.py')"
 
     def test_infers_path_with_backticks(self, parser):
         response = '''Write to `src/util.py`:
@@ -227,7 +227,7 @@ def helper():
     pass
 ```'''
         files = parser.parse(response)
-        assert files[0].path == Path("src/util.py")
+        assert files[0].path == Path("src/util.py"), "Expected files[0].path to equal Path('src/util.py')"
 
     def test_no_path_found_raises(self, parser):
         response = '''Here's some code:
@@ -256,9 +256,9 @@ x = 1
 This creates a simple variable.'''
 
         explanation = parser.extract_explanation(response)
-        assert "Here's the implementation" in explanation
-        assert "creates a simple variable" in explanation
-        assert "x = 1" not in explanation
+        assert "Here's the implementation" in explanation, "Expected \"Here's the implementation\" in explanation"
+        assert "creates a simple variable" in explanation, "Expected 'creates a simple variable' in explanation"
+        assert "x = 1" not in explanation, "Expected 'x = 1' not in explanation"
 
     def test_extract_explanation_removes_code_blocks(self, parser):
         response = '''Before code.
@@ -270,7 +270,7 @@ code
 After code.'''
 
         explanation = parser.extract_explanation(response)
-        assert "code" not in explanation or "Before" in explanation
+        assert "code" not in explanation or "Before" in explanation, "Assertion failed"
 
     def test_parse_with_explanation(self, parser):
         response = '''Creating module:
@@ -282,9 +282,9 @@ x = 1
 Done!'''
 
         files, explanation = parser.parse_with_explanation(response)
-        assert len(files) == 1
-        assert "Creating module" in explanation
-        assert "Done" in explanation
+        assert len(files) == 1, "Expected len(files) to equal 1"
+        assert "Creating module" in explanation, "Expected 'Creating module' in explanation"
+        assert "Done" in explanation, "Expected 'Done' in explanation"
 
 
 # =============================================================================
@@ -304,15 +304,15 @@ class TestMultiLanguageParser:
 const x: number = 1;
 ```'''
         files = parser.parse(response)
-        assert len(files) == 1
-        assert files[0].path == Path("src/index.ts")
+        assert len(files) == 1, "Expected len(files) to equal 1"
+        assert files[0].path == Path("src/index.ts"), "Expected files[0].path to equal Path('src/index.ts')"
 
     def test_parse_csharp(self, parser):
         response = '''```csharp:src/Program.cs
 class Program { }
 ```'''
         files = parser.parse(response)
-        assert files[0].path == Path("src/Program.cs")
+        assert files[0].path == Path("src/Program.cs"), "Expected files[0].path to equal Path('src/Program.cs')"
 
     def test_parse_mixed_languages(self, parser):
         response = '''```python:src/main.py
@@ -323,9 +323,9 @@ print("hello")
 console.log("hello");
 ```'''
         files = parser.parse(response)
-        assert len(files) == 2
-        assert files[0].path.suffix == ".py"
-        assert files[1].path.suffix == ".ts"
+        assert len(files) == 2, "Expected len(files) to equal 2"
+        assert files[0].path.suffix == ".py", "Expected files[0].path.suffix to equal '.py'"
+        assert files[1].path.suffix == ".ts", "Expected files[1].path.suffix to equal '.ts'"
 
     def test_validates_python_only(self, parser):
         # Invalid Python should raise
@@ -340,7 +340,7 @@ def foo(
 const x: = 1; // invalid TS
 ```'''
         files = parser.parse(response)
-        assert len(files) == 1
+        assert len(files) == 1, "Expected len(files) to equal 1"
 
     def test_falls_back_to_python_parser(self, parser):
         # Standard python:path format should still work
@@ -348,7 +348,7 @@ const x: = 1; // invalid TS
 x = 1
 ```'''
         files = parser.parse(response)
-        assert len(files) == 1
+        assert len(files) == 1, "Expected len(files) to equal 1"
 
 
 # =============================================================================
@@ -364,14 +364,14 @@ class TestParseResponseFunction:
 x = 1
 ```'''
         files = parse_response(response)
-        assert len(files) == 1
+        assert len(files) == 1, "Expected len(files) to equal 1"
 
     def test_with_validation_disabled(self):
         response = '''```python:test.py
 def bad(
 ```'''
         files = parse_response(response, validate_syntax=False)
-        assert len(files) == 1
+        assert len(files) == 1, "Expected len(files) to equal 1"
 
     def test_with_validation_enabled(self):
         response = '''```python:test.py
@@ -413,21 +413,21 @@ x = 1
 x = 1
 ```'''
         files = parser.parse(response)
-        assert "my module" in str(files[0].path)
+        assert "my module" in str(files[0].path), "Expected 'my module' in str(files[0].path)"
 
     def test_deeply_nested_path(self, parser):
         response = '''```python:src/a/b/c/d/e/test.py
 x = 1
 ```'''
         files = parser.parse(response)
-        assert files[0].path == Path("src/a/b/c/d/e/test.py")
+        assert files[0].path == Path("src/a/b/c/d/e/test.py"), "Expected files[0].path to equal Path('src/a/b/c/d/e/test.py')"
 
     def test_relative_path_with_dots(self, parser):
         response = '''```python:../tests/test.py
 x = 1
 ```'''
         files = parser.parse(response)
-        assert ".." in str(files[0].path)
+        assert ".." in str(files[0].path), "Expected '..' in str(files[0].path)"
 
     def test_preserves_indentation(self, parser):
         response = '''```python:test.py
@@ -438,9 +438,9 @@ class Foo:
 ```'''
         files = parser.parse(response)
         content = files[0].content
-        assert "    def bar" in content
-        assert "        if True" in content
-        assert "            return" in content
+        assert "    def bar" in content, "Expected '    def bar' in content"
+        assert "        if True" in content, "Expected '        if True' in content"
+        assert "            return" in content, "Expected '            return' in content"
 
     def test_handles_triple_quotes_in_code(self, parser):
         response = '''```python:test.py
@@ -448,11 +448,11 @@ class Foo:
 x = 1
 ```'''
         files = parser.parse(response)
-        assert '"""Docstring"""' in files[0].content
+        assert '"""Docstring"""' in files[0].content, "Expected '\"\"\"Docstring\"\"\"' in files[0].content"
 
     def test_handles_backticks_in_strings(self, parser):
         response = '''```python:test.py
 x = "contains `backticks`"
 ```'''
         files = parser.parse(response)
-        assert "`backticks`" in files[0].content
+        assert "`backticks`" in files[0].content, "Expected '`backticks`' in files[0].content"

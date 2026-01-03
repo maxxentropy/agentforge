@@ -42,10 +42,10 @@ test_example.py .....                                                    [100%]
 """
         result = runner._parse_output(output, 0)
 
-        assert result.total == 5
-        assert result.passed == 5
-        assert result.failed == 0
-        assert result.duration_seconds == 0.12
+        assert result.total == 5, "Expected result.total to equal 5"
+        assert result.passed == 5, "Expected result.passed to equal 5"
+        assert result.failed == 0, "Expected result.failed to equal 0"
+        assert result.duration_seconds == 0.12, "Expected result.duration_seconds to equal 0.12"
 
     def test_parse_output_failures(self, runner: PytestRunner):
         """Parse output correctly identifies failed tests."""
@@ -59,10 +59,10 @@ test_example.py ...FF                                                    [100%]
 """
         result = runner._parse_output(output, 1)
 
-        assert result.total == 5
-        assert result.passed == 3
-        assert result.failed == 2
-        assert result.duration_seconds == 0.56
+        assert result.total == 5, "Expected result.total to equal 5"
+        assert result.passed == 3, "Expected result.passed to equal 3"
+        assert result.failed == 2, "Expected result.failed to equal 2"
+        assert result.duration_seconds == 0.56, "Expected result.duration_seconds to equal 0.56"
 
     def test_parse_output_with_errors(self, runner: PytestRunner):
         """Parse output handles errors."""
@@ -74,9 +74,9 @@ collected 5 items
 """
         result = runner._parse_output(output, 1)
 
-        assert result.passed == 3
-        assert result.failed == 1
-        assert result.errors == 1
+        assert result.passed == 3, "Expected result.passed to equal 3"
+        assert result.failed == 1, "Expected result.failed to equal 1"
+        assert result.errors == 1, "Expected result.errors to equal 1"
 
     def test_parse_output_with_skipped(self, runner: PytestRunner):
         """Parse output handles skipped tests."""
@@ -88,8 +88,8 @@ collected 5 items
 """
         result = runner._parse_output(output, 0)
 
-        assert result.total == 5
-        assert result.passed == 3
+        assert result.total == 5, "Expected result.total to equal 5"
+        assert result.passed == 3, "Expected result.passed to equal 3"
 
     def test_parse_verbose_output(self, runner: PytestRunner):
         """Parse verbose output with PASSED/FAILED markers."""
@@ -102,8 +102,8 @@ test_example.py::test_four PASSED
         result = runner._parse_output(output, 1)
 
         # Fallback parsing from verbose output
-        assert result.passed == 3
-        assert result.failed == 1
+        assert result.passed == 3, "Expected result.passed to equal 3"
+        assert result.failed == 1, "Expected result.failed to equal 1"
 
 
 class TestTestRunnerDetection:
@@ -119,7 +119,7 @@ class TestTestRunnerDetection:
 
         from agentforge.core.tdflow.runners.dotnet import DotNetTestRunner
 
-        assert isinstance(runner, DotNetTestRunner)
+        assert isinstance(runner, DotNetTestRunner), "Expected isinstance() to be truthy"
 
     def test_detect_python(self, tmp_path: Path):
         """Detect Python project from pyproject.toml."""
@@ -129,7 +129,7 @@ class TestTestRunnerDetection:
 
         runner = TestRunner.detect(tmp_path)
 
-        assert isinstance(runner, PytestRunner)
+        assert isinstance(runner, PytestRunner), "Expected isinstance() to be truthy"
 
     def test_detect_python_from_test_files(self, tmp_path: Path):
         """Detect Python project from test files."""
@@ -140,7 +140,7 @@ class TestTestRunnerDetection:
 
         runner = TestRunner.detect(tmp_path)
 
-        assert isinstance(runner, PytestRunner)
+        assert isinstance(runner, PytestRunner), "Expected isinstance() to be truthy"
 
     def test_detect_fails_unknown(self, tmp_path: Path):
         """Detect fails for unknown project type."""
@@ -156,7 +156,7 @@ class TestTestRunnerDetection:
 
         runner = TestRunner.for_framework("xunit", tmp_path)
 
-        assert isinstance(runner, DotNetTestRunner)
+        assert isinstance(runner, DotNetTestRunner), "Expected isinstance() to be truthy"
 
     def test_for_framework_pytest(self, tmp_path: Path):
         """Get runner for pytest framework."""
@@ -164,7 +164,7 @@ class TestTestRunnerDetection:
 
         runner = TestRunner.for_framework("pytest", tmp_path)
 
-        assert isinstance(runner, PytestRunner)
+        assert isinstance(runner, PytestRunner), "Expected isinstance() to be truthy"
 
     def test_for_framework_unsupported(self, tmp_path: Path):
         """Get runner fails for unsupported framework."""

@@ -28,12 +28,12 @@ class TestMemoryStoreInit:
         store = MemoryStore()
 
         # Should have paths configured for each tier
-        assert hasattr(store, '_tier_paths')
-        assert len(store._tier_paths) == 4
-        assert MemoryTier.SESSION in store._tier_paths
-        assert MemoryTier.TASK in store._tier_paths
-        assert MemoryTier.PROJECT in store._tier_paths
-        assert MemoryTier.ORGANIZATION in store._tier_paths
+        assert hasattr(store, '_tier_paths'), "Expected hasattr() to be truthy"
+        assert len(store._tier_paths) == 4, "Expected len(store._tier_paths) to equal 4"
+        assert MemoryTier.SESSION in store._tier_paths, "Expected MemoryTier.SESSION in store._tier_paths"
+        assert MemoryTier.TASK in store._tier_paths, "Expected MemoryTier.TASK in store._tier_paths"
+        assert MemoryTier.PROJECT in store._tier_paths, "Expected MemoryTier.PROJECT in store._tier_paths"
+        assert MemoryTier.ORGANIZATION in store._tier_paths, "Expected MemoryTier.ORGANIZATION in store._tier_paths"
 
     def test_init_with_custom_paths(self):
         """Test initialization with custom tier paths."""
@@ -46,7 +46,7 @@ class TestMemoryStoreInit:
 
         store = MemoryStore(tier_paths=custom_paths)
 
-        assert store._tier_paths == custom_paths
+        assert store._tier_paths == custom_paths, "Expected store._tier_paths to equal custom_paths"
 
 
 class TestMemoryStoreGet:
@@ -62,7 +62,7 @@ class TestMemoryStoreGet:
 
         result = store.get("test_key", MemoryTier.SESSION)
 
-        assert result == entry
+        assert result == entry, "Expected result to equal entry"
 
     def test_get_existing_key_from_persistent_tier(self):
         """Test retrieving existing key from persistent tier."""
@@ -75,7 +75,7 @@ class TestMemoryStoreGet:
 
             result = store.get("test_key", MemoryTier.PROJECT)
 
-            assert result == entry
+            assert result == entry, "Expected result to equal entry"
             mock_load.assert_called_once_with(MemoryTier.PROJECT)
 
     def test_get_nonexistent_key_returns_none(self):
@@ -84,7 +84,7 @@ class TestMemoryStoreGet:
 
         result = store.get("nonexistent", MemoryTier.SESSION)
 
-        assert result is None
+        assert result is None, "Expected result is None"
 
     def test_get_from_corrupted_tier_returns_none(self):
         """Test retrieving from corrupted tier returns None gracefully."""
@@ -93,7 +93,7 @@ class TestMemoryStoreGet:
         with patch.object(store, '_load_tier', side_effect=Exception("Corrupted file")):
             result = store.get("test_key", MemoryTier.PROJECT)
 
-            assert result is None
+            assert result is None, "Expected result is None"
 
 
 class TestMemoryStoreSet:
@@ -107,8 +107,8 @@ class TestMemoryStoreSet:
         store.set("test_key", entry, MemoryTier.SESSION)
 
         # Should be stored in memory
-        assert MemoryTier.SESSION in store._data
-        assert store._data[MemoryTier.SESSION]["test_key"] == entry
+        assert MemoryTier.SESSION in store._data, "Expected MemoryTier.SESSION in store._data"
+        assert store._data[MemoryTier.SESSION]["test_key"] == entry, "Expected store._data[MemoryTier.SESS... to equal entry"
 
     def test_set_in_persistent_tier_auto_saves(self):
         """Test storing value in persistent tier triggers auto-save."""
@@ -138,7 +138,7 @@ class TestMemoryStoreSet:
         store.set("test_key", old_entry, MemoryTier.SESSION)
         store.set("test_key", new_entry, MemoryTier.SESSION)
 
-        assert store._data[MemoryTier.SESSION]["test_key"] == new_entry
+        assert store._data[MemoryTier.SESSION]["test_key"] == new_entry, "Expected store._data[MemoryTier.SESS... to equal new_entry"
 
 
 class TestMemoryStoreDelete:
@@ -152,7 +152,7 @@ class TestMemoryStoreDelete:
 
         store.delete("test_key", MemoryTier.SESSION)
 
-        assert "test_key" not in store._data[MemoryTier.SESSION]
+        assert "test_key" not in store._data[MemoryTier.SESSION], "Expected 'test_key' not in store._data[MemoryTier.SESS..."
 
     def test_delete_existing_key_from_persistent_tier(self):
         """Test deleting existing key from persistent tier triggers save."""
@@ -192,7 +192,7 @@ class TestMemoryStoreListKeys:
 
         keys = store.list_keys(MemoryTier.SESSION)
 
-        assert set(keys) == {"key1", "key2"}
+        assert set(keys) == {"key1", "key2"}, "Expected set(keys) to equal {'key1', 'key2'}"
 
     def test_list_keys_from_persistent_tier(self):
         """Test listing keys from persistent tier."""
@@ -205,7 +205,7 @@ class TestMemoryStoreListKeys:
 
             keys = store.list_keys(MemoryTier.PROJECT)
 
-            assert set(keys) == {"key1", "key2"}
+            assert set(keys) == {"key1", "key2"}, "Expected set(keys) to equal {'key1', 'key2'}"
 
     def test_list_keys_with_prefix_filter(self):
         """Test listing keys filtered by prefix."""
@@ -221,7 +221,7 @@ class TestMemoryStoreListKeys:
 
         keys = store.list_keys(MemoryTier.SESSION, prefix="user_")
 
-        assert set(keys) == {"user_key1", "user_key2"}
+        assert set(keys) == {"user_key1", "user_key2"}, "Expected set(keys) to equal {'user_key1', 'user_key2'}"
 
     def test_list_keys_empty_tier(self):
         """Test listing keys from empty tier returns empty list."""
@@ -229,7 +229,7 @@ class TestMemoryStoreListKeys:
 
         keys = store.list_keys(MemoryTier.SESSION)
 
-        assert keys == []
+        assert keys == [], "Expected keys to equal []"
 
 
 class TestMemoryStoreClearTier:
@@ -244,7 +244,7 @@ class TestMemoryStoreClearTier:
 
         store.clear_tier(MemoryTier.SESSION)
 
-        assert store._data[MemoryTier.SESSION] == {}
+        assert store._data[MemoryTier.SESSION] == {}, "Expected store._data[MemoryTier.SESS... to equal {}"
 
     def test_clear_persistent_tier_triggers_save(self):
         """Test clearing persistent tier triggers save."""
@@ -298,7 +298,7 @@ class TestMemoryStoreLoadTier:
 
             data = store._load_tier(MemoryTier.PROJECT)
 
-            assert "key1" in data
+            assert "key1" in data, "Expected 'key1' in data"
 
     def test_load_tier_missing_file_returns_empty(self):
         """Test loading missing file returns empty dict gracefully."""
@@ -307,7 +307,7 @@ class TestMemoryStoreLoadTier:
         with patch("builtins.open", side_effect=FileNotFoundError()):
             data = store._load_tier(MemoryTier.PROJECT)
 
-            assert data == {}
+            assert data == {}, "Expected data to equal {}"
 
     def test_load_tier_corrupted_file_returns_empty(self):
         """Test loading corrupted file returns empty dict gracefully."""
@@ -317,7 +317,7 @@ class TestMemoryStoreLoadTier:
             with patch("yaml.safe_load", side_effect=Exception("YAML error")):
                 data = store._load_tier(MemoryTier.PROJECT)
 
-                assert data == {}
+                assert data == {}, "Expected data to equal {}"
 
     def test_load_tier_session_tier_returns_memory_data(self):
         """Test loading session tier returns in-memory data."""
@@ -327,7 +327,7 @@ class TestMemoryStoreLoadTier:
 
         data = store._load_tier(MemoryTier.SESSION)
 
-        assert data == {"key1": entry}
+        assert data == {"key1": entry}, "Expected data to equal {'key1': entry}"
 
 
 class TestMemoryStoreSaveTier:
@@ -420,12 +420,12 @@ class TestMemoryStoreIntegration:
 
             # Verify it can be retrieved
             retrieved = store.get("test_key", MemoryTier.PROJECT)
-            assert retrieved.value == "test_value"
+            assert retrieved.value == "test_value", "Expected retrieved.value to equal 'test_value'"
 
             # Verify it's in key list
             keys = store.list_keys(MemoryTier.PROJECT)
-            assert "test_key" in keys
+            assert "test_key" in keys, "Expected 'test_key' in keys"
 
             # Delete and verify removal
             store.delete("test_key", MemoryTier.PROJECT)
-            assert store.get("test_key", MemoryTier.PROJECT) is None
+            assert store.get("test_key", MemoryTier.PROJECT) is None, "Expected store.get('test_key', Memor... is None"

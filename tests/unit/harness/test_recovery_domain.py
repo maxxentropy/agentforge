@@ -35,17 +35,17 @@ class TestRecoveryAction:
             'SKIP'
         }
         actual_values = {action.name for action in RecoveryAction}
-        assert actual_values == expected_values
+        assert actual_values == expected_values, "Expected actual_values to equal expected_values"
 
     def test_recovery_action_values_are_accessible(self):
         """Test that individual RecoveryAction values can be accessed."""
-        assert RecoveryAction.CHECKPOINT
-        assert RecoveryAction.ROLLBACK
-        assert RecoveryAction.SUMMARIZE
-        assert RecoveryAction.RESET
-        assert RecoveryAction.ESCALATE
-        assert RecoveryAction.RETRY
-        assert RecoveryAction.SKIP
+        assert RecoveryAction.CHECKPOINT, "Expected RecoveryAction.CHECKPOINT to be truthy"
+        assert RecoveryAction.ROLLBACK, "Expected RecoveryAction.ROLLBACK to be truthy"
+        assert RecoveryAction.SUMMARIZE, "Expected RecoveryAction.SUMMARIZE to be truthy"
+        assert RecoveryAction.RESET, "Expected RecoveryAction.RESET to be truthy"
+        assert RecoveryAction.ESCALATE, "Expected RecoveryAction.ESCALATE to be truthy"
+        assert RecoveryAction.RETRY, "Expected RecoveryAction.RETRY to be truthy"
+        assert RecoveryAction.SKIP, "Expected RecoveryAction.SKIP to be truthy"
 
 
 class TestRecoveryResult:
@@ -60,14 +60,14 @@ class TestRecoveryResult:
             'SKIPPED'
         }
         actual_values = {result.name for result in RecoveryResult}
-        assert actual_values == expected_values
+        assert actual_values == expected_values, "Expected actual_values to equal expected_values"
 
     def test_recovery_result_values_are_accessible(self):
         """Test that individual RecoveryResult values can be accessed."""
-        assert RecoveryResult.SUCCESS
-        assert RecoveryResult.PARTIAL
-        assert RecoveryResult.FAILED
-        assert RecoveryResult.SKIPPED
+        assert RecoveryResult.SUCCESS, "Expected RecoveryResult.SUCCESS to be truthy"
+        assert RecoveryResult.PARTIAL, "Expected RecoveryResult.PARTIAL to be truthy"
+        assert RecoveryResult.FAILED, "Expected RecoveryResult.FAILED to be truthy"
+        assert RecoveryResult.SKIPPED, "Expected RecoveryResult.SKIPPED to be truthy"
 
 
 class TestCheckpoint:
@@ -85,13 +85,13 @@ class TestCheckpoint:
             file_backups=["/path/to/backup1.txt", "/path/to/backup2.txt"]
         )
 
-        assert checkpoint.id == "test-checkpoint-1"
-        assert checkpoint.timestamp == timestamp
-        assert checkpoint.session_id == "session-123"
-        assert checkpoint.phase == "planning"
-        assert checkpoint.state == {"key": "value"}
-        assert checkpoint.file_backups == ["/path/to/backup1.txt", "/path/to/backup2.txt"]
-        assert checkpoint.description is None
+        assert checkpoint.id == "test-checkpoint-1", "Expected checkpoint.id to equal 'test-checkpoint-1'"
+        assert checkpoint.timestamp == timestamp, "Expected checkpoint.timestamp to equal timestamp"
+        assert checkpoint.session_id == "session-123", "Expected checkpoint.session_id to equal 'session-123'"
+        assert checkpoint.phase == "planning", "Expected checkpoint.phase to equal 'planning'"
+        assert checkpoint.state == {"key": "value"}, "Expected checkpoint.state to equal {'key': 'value'}"
+        assert checkpoint.file_backups == ["/path/to/backup1.txt", "/path/to/backup2.txt"], "Expected checkpoint.file_backups to equal ['/path/to/backup1.txt', '/..."
+        assert checkpoint.description is None, "Expected checkpoint.description is None"
 
     def test_checkpoint_creation_with_optional_description(self):
         """Test creating a Checkpoint with optional description field."""
@@ -105,7 +105,7 @@ class TestCheckpoint:
             description="Before risky operation"
         )
 
-        assert checkpoint.description == "Before risky operation"
+        assert checkpoint.description == "Before risky operation", "Expected checkpoint.description to equal 'Before risky operation'"
 
     def test_checkpoint_state_can_be_complex_dict(self):
         """Test that Checkpoint state field can hold complex nested data."""
@@ -124,7 +124,7 @@ class TestCheckpoint:
             file_backups=[]
         )
 
-        assert checkpoint.state == complex_state
+        assert checkpoint.state == complex_state, "Expected checkpoint.state to equal complex_state"
 
     def test_checkpoint_file_backups_can_be_empty_list(self):
         """Test that Checkpoint can have empty file_backups list."""
@@ -137,7 +137,7 @@ class TestCheckpoint:
             file_backups=[]
         )
 
-        assert checkpoint.file_backups == []
+        assert checkpoint.file_backups == [], "Expected checkpoint.file_backups to equal []"
 
 
 class TestRecoveryAttempt:
@@ -153,12 +153,12 @@ class TestRecoveryAttempt:
             result=RecoveryResult.SUCCESS
         )
 
-        assert attempt.action == RecoveryAction.CHECKPOINT
-        assert attempt.timestamp == timestamp
-        assert attempt.trigger == "loop detected"
-        assert attempt.result == RecoveryResult.SUCCESS
-        assert attempt.details is None
-        assert attempt.error is None
+        assert attempt.action == RecoveryAction.CHECKPOINT, "Expected attempt.action to equal RecoveryAction.CHECKPOINT"
+        assert attempt.timestamp == timestamp, "Expected attempt.timestamp to equal timestamp"
+        assert attempt.trigger == "loop detected", "Expected attempt.trigger to equal 'loop detected'"
+        assert attempt.result == RecoveryResult.SUCCESS, "Expected attempt.result to equal RecoveryResult.SUCCESS"
+        assert attempt.details is None, "Expected attempt.details is None"
+        assert attempt.error is None, "Expected attempt.error is None"
 
     def test_recovery_attempt_creation_with_optional_fields(self):
         """Test creating a RecoveryAttempt with optional details and error."""
@@ -171,8 +171,8 @@ class TestRecoveryAttempt:
             error="Failed to restore file: permission denied"
         )
 
-        assert attempt.details == {"checkpoint_id": "cp-123", "files_restored": 3}
-        assert attempt.error == "Failed to restore file: permission denied"
+        assert attempt.details == {"checkpoint_id": "cp-123", "files_restored": 3}, "Expected attempt.details to equal {'checkpoint_id': 'cp-123',..."
+        assert attempt.error == "Failed to restore file: permission denied", "Expected attempt.error to equal 'Failed to restore file: pe..."
 
     def test_recovery_attempt_supports_all_action_types(self):
         """Test that RecoveryAttempt can be created with all RecoveryAction types."""
@@ -183,7 +183,7 @@ class TestRecoveryAttempt:
                 trigger="test trigger",
                 result=RecoveryResult.SUCCESS
             )
-            assert attempt.action == action
+            assert attempt.action == action, "Expected attempt.action to equal action"
 
     def test_recovery_attempt_supports_all_result_types(self):
         """Test that RecoveryAttempt can be created with all RecoveryResult types."""
@@ -194,7 +194,7 @@ class TestRecoveryAttempt:
                 trigger="test trigger",
                 result=result
             )
-            assert attempt.result == result
+            assert attempt.result == result, "Expected attempt.result to equal result"
 
 
 class TestRecoveryPolicy:
@@ -208,11 +208,11 @@ class TestRecoveryPolicy:
             actions=[RecoveryAction.CHECKPOINT, RecoveryAction.ROLLBACK]
         )
 
-        assert policy.name == "test_policy"
-        assert policy.triggers == ["loop", "drift"]
-        assert policy.actions == [RecoveryAction.CHECKPOINT, RecoveryAction.ROLLBACK]
-        assert policy.max_attempts == 3  # default value
-        assert policy.cooldown_seconds == 60  # default value
+        assert policy.name == "test_policy", "Expected policy.name to equal 'test_policy'"
+        assert policy.triggers == ["loop", "drift"], "Expected policy.triggers to equal ['loop', 'drift']"
+        assert policy.actions == [RecoveryAction.CHECKPOINT, RecoveryAction.ROLLBACK], "Expected policy.actions to equal [RecoveryAction.CHECKPOINT,..."
+        assert policy.max_attempts == 3, "Expected policy.max_attempts to equal 3"# default value
+        assert policy.cooldown_seconds == 60, "Expected policy.cooldown_seconds to equal 60"# default value
 
     def test_recovery_policy_creation_with_custom_defaults(self):
         """Test creating a RecoveryPolicy with custom max_attempts and cooldown."""
@@ -224,8 +224,8 @@ class TestRecoveryPolicy:
             cooldown_seconds=120
         )
 
-        assert policy.max_attempts == 5
-        assert policy.cooldown_seconds == 120
+        assert policy.max_attempts == 5, "Expected policy.max_attempts to equal 5"
+        assert policy.cooldown_seconds == 120, "Expected policy.cooldown_seconds to equal 120"
 
     def test_recovery_policy_supports_multiple_triggers(self):
         """Test that RecoveryPolicy can handle multiple trigger conditions."""
@@ -242,7 +242,7 @@ class TestRecoveryPolicy:
             actions=[RecoveryAction.CHECKPOINT]
         )
 
-        assert policy.triggers == triggers
+        assert policy.triggers == triggers, "Expected policy.triggers to equal triggers"
 
     def test_recovery_policy_supports_multiple_actions(self):
         """Test that RecoveryPolicy can handle multiple recovery actions."""
@@ -259,7 +259,7 @@ class TestRecoveryPolicy:
             actions=actions
         )
 
-        assert policy.actions == actions
+        assert policy.actions == actions, "Expected policy.actions to equal actions"
 
     def test_recovery_policy_empty_triggers_list(self):
         """Test that RecoveryPolicy can be created with empty triggers list."""
@@ -269,7 +269,7 @@ class TestRecoveryPolicy:
             actions=[RecoveryAction.ESCALATE]
         )
 
-        assert policy.triggers == []
+        assert policy.triggers == [], "Expected policy.triggers to equal []"
 
     def test_recovery_policy_single_action(self):
         """Test that RecoveryPolicy can be created with single action."""
@@ -279,8 +279,8 @@ class TestRecoveryPolicy:
             actions=[RecoveryAction.ESCALATE]
         )
 
-        assert len(policy.actions) == 1
-        assert policy.actions[0] == RecoveryAction.ESCALATE
+        assert len(policy.actions) == 1, "Expected len(policy.actions) to equal 1"
+        assert policy.actions[0] == RecoveryAction.ESCALATE, "Expected policy.actions[0] to equal RecoveryAction.ESCALATE"
 
     def test_recovery_policy_max_attempts_custom_value(self):
         """Test that RecoveryPolicy accepts custom max_attempts value."""
@@ -290,7 +290,7 @@ class TestRecoveryPolicy:
             actions=[RecoveryAction.RETRY],
             max_attempts=1
         )
-        assert policy.max_attempts == 1
+        assert policy.max_attempts == 1, "Expected policy.max_attempts to equal 1"
 
         # Zero attempts is technically allowed (caller's responsibility)
         policy_zero = RecoveryPolicy(
@@ -299,7 +299,7 @@ class TestRecoveryPolicy:
             actions=[RecoveryAction.RETRY],
             max_attempts=0
         )
-        assert policy_zero.max_attempts == 0
+        assert policy_zero.max_attempts == 0, "Expected policy_zero.max_attempts to equal 0"
 
     def test_recovery_policy_cooldown_custom_value(self):
         """Test that RecoveryPolicy accepts custom cooldown_seconds value."""
@@ -309,7 +309,7 @@ class TestRecoveryPolicy:
             actions=[RecoveryAction.RETRY],
             cooldown_seconds=0
         )
-        assert policy.cooldown_seconds == 0
+        assert policy.cooldown_seconds == 0, "Expected policy.cooldown_seconds to equal 0"
 
         # Large cooldown
         policy_large = RecoveryPolicy(
@@ -318,4 +318,4 @@ class TestRecoveryPolicy:
             actions=[RecoveryAction.RETRY],
             cooldown_seconds=3600
         )
-        assert policy_large.cooldown_seconds == 3600
+        assert policy_large.cooldown_seconds == 3600, "Expected policy_large.cooldown_seconds to equal 3600"

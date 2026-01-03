@@ -30,25 +30,25 @@ class TestToolExecutorBridge:
     def test_init_with_default_working_dir(self):
         """Bridge initializes with current directory by default."""
         bridge = ToolExecutorBridge()
-        assert bridge.working_dir == Path.cwd()
+        assert bridge.working_dir == Path.cwd(), "Expected bridge.working_dir to equal Path.cwd()"
 
     def test_init_with_custom_working_dir(self, temp_dir):
         """Bridge accepts custom working directory."""
         bridge = ToolExecutorBridge(working_dir=temp_dir)
-        assert bridge.working_dir == temp_dir
+        assert bridge.working_dir == temp_dir, "Expected bridge.working_dir to equal temp_dir"
 
     def test_get_default_executors(self, bridge):
         """Default executors include common tools."""
         executors = bridge.get_default_executors()
 
-        assert "read_file" in executors
-        assert "write_file" in executors
-        assert "edit_file" in executors
-        assert "glob" in executors
-        assert "grep" in executors
-        assert "bash" in executors
-        assert "run_tests" in executors
-        assert "list_files" in executors
+        assert "read_file" in executors, "Expected 'read_file' in executors"
+        assert "write_file" in executors, "Expected 'write_file' in executors"
+        assert "edit_file" in executors, "Expected 'edit_file' in executors"
+        assert "glob" in executors, "Expected 'glob' in executors"
+        assert "grep" in executors, "Expected 'grep' in executors"
+        assert "bash" in executors, "Expected 'bash' in executors"
+        assert "run_tests" in executors, "Expected 'run_tests' in executors"
+        assert "list_files" in executors, "Expected 'list_files' in executors"
 
     def test_register_custom_tool(self, bridge):
         """Register a custom tool executor."""
@@ -59,7 +59,7 @@ class TestToolExecutorBridge:
         bridge.register_custom_tool("custom", custom_exec)
 
         executors = bridge.get_default_executors()
-        assert "custom" in executors
+        assert "custom" in executors, "Expected 'custom' in executors"
 
 
 class TestReadFile:
@@ -81,8 +81,8 @@ class TestReadFile:
 
         result = bridge._execute_read_file("read_file", {"path": str(test_file)})
 
-        assert result.success is True
-        assert result.output == "Hello World"
+        assert result.success is True, "Expected result.success is True"
+        assert result.output == "Hello World", "Expected result.output to equal 'Hello World'"
 
     def test_read_relative_path(self, bridge, temp_dir):
         """Read with relative path."""
@@ -91,22 +91,22 @@ class TestReadFile:
 
         result = bridge._execute_read_file("read_file", {"path": "test.txt"})
 
-        assert result.success is True
-        assert result.output == "Content"
+        assert result.success is True, "Expected result.success is True"
+        assert result.output == "Content", "Expected result.output to equal 'Content'"
 
     def test_read_nonexistent_file(self, bridge):
         """Read a file that doesn't exist."""
         result = bridge._execute_read_file("read_file", {"path": "nonexistent.txt"})
 
-        assert result.success is False
-        assert "not found" in result.error.lower()
+        assert result.success is False, "Expected result.success is False"
+        assert "not found" in result.error.lower(), "Expected 'not found' in result.error.lower()"
 
     def test_read_missing_path_param(self, bridge):
         """Read without path parameter fails."""
         result = bridge._execute_read_file("read_file", {})
 
-        assert result.success is False
-        assert "Missing required parameter" in result.error
+        assert result.success is False, "Expected result.success is False"
+        assert "Missing required parameter" in result.error, "Expected 'Missing required parameter' in result.error"
 
 
 class TestWriteFile:
@@ -128,8 +128,8 @@ class TestWriteFile:
             {"path": "new.txt", "content": "New content"}
         )
 
-        assert result.success is True
-        assert (temp_dir / "new.txt").read_text() == "New content"
+        assert result.success is True, "Expected result.success is True"
+        assert (temp_dir / "new.txt").read_text() == "New content", "Expected (temp_dir / 'new.txt').read... to equal 'New content'"
 
     def test_write_creates_directories(self, bridge, temp_dir):
         """Write creates parent directories."""
@@ -138,18 +138,18 @@ class TestWriteFile:
             {"path": "a/b/c/file.txt", "content": "Deep"}
         )
 
-        assert result.success is True
-        assert (temp_dir / "a/b/c/file.txt").read_text() == "Deep"
+        assert result.success is True, "Expected result.success is True"
+        assert (temp_dir / "a/b/c/file.txt").read_text() == "Deep", "Expected (temp_dir / 'a/b/c/file.txt... to equal 'Deep'"
 
     def test_write_missing_path(self, bridge):
         """Write without path fails."""
         result = bridge._execute_write_file("write_file", {"content": "test"})
-        assert result.success is False
+        assert result.success is False, "Expected result.success is False"
 
     def test_write_missing_content(self, bridge):
         """Write without content fails."""
         result = bridge._execute_write_file("write_file", {"path": "test.txt"})
-        assert result.success is False
+        assert result.success is False, "Expected result.success is False"
 
 
 class TestEditFile:
@@ -174,8 +174,8 @@ class TestEditFile:
             {"path": str(test_file), "old_string": "pass", "new_string": "return 42"}
         )
 
-        assert result.success is True
-        assert test_file.read_text() == "def foo():\n    return 42\n"
+        assert result.success is True, "Expected result.success is True"
+        assert test_file.read_text() == "def foo():\n    return 42\n", "Expected test_file.read_text() to equal 'def foo():\n    return 42\n'"
 
     def test_edit_string_not_found(self, bridge, temp_dir):
         """Edit fails when string not found."""
@@ -187,8 +187,8 @@ class TestEditFile:
             {"path": str(test_file), "old_string": "nonexistent", "new_string": "x"}
         )
 
-        assert result.success is False
-        assert "not found" in result.error.lower()
+        assert result.success is False, "Expected result.success is False"
+        assert "not found" in result.error.lower(), "Expected 'not found' in result.error.lower()"
 
     def test_edit_nonexistent_file(self, bridge):
         """Edit fails for nonexistent file."""
@@ -196,7 +196,7 @@ class TestEditFile:
             "edit_file",
             {"path": "nope.py", "old_string": "a", "new_string": "b"}
         )
-        assert result.success is False
+        assert result.success is False, "Expected result.success is False"
 
 
 class TestGlob:
@@ -219,22 +219,22 @@ class TestGlob:
 
         result = bridge._execute_glob("glob", {"pattern": "*.py"})
 
-        assert result.success is True
-        assert "a.py" in result.output
-        assert "b.py" in result.output
-        assert "c.txt" not in result.output
+        assert result.success is True, "Expected result.success is True"
+        assert "a.py" in result.output, "Expected 'a.py' in result.output"
+        assert "b.py" in result.output, "Expected 'b.py' in result.output"
+        assert "c.txt" not in result.output, "Expected 'c.txt' not in result.output"
 
     def test_glob_no_matches(self, bridge, temp_dir):
         """Glob with no matches returns message."""
         result = bridge._execute_glob("glob", {"pattern": "*.xyz"})
 
-        assert result.success is True
-        assert "No matches" in result.output
+        assert result.success is True, "Expected result.success is True"
+        assert "No matches" in result.output, "Expected 'No matches' in result.output"
 
     def test_glob_missing_pattern(self, bridge):
         """Glob without pattern fails."""
         result = bridge._execute_glob("glob", {})
-        assert result.success is False
+        assert result.success is False, "Expected result.success is False"
 
 
 class TestBash:
@@ -253,25 +253,25 @@ class TestBash:
         """Bash executes a simple command."""
         result = bridge._execute_bash("bash", {"command": "echo hello"})
 
-        assert result.success is True
-        assert "hello" in result.output
+        assert result.success is True, "Expected result.success is True"
+        assert "hello" in result.output, "Expected 'hello' in result.output"
 
     def test_bash_blocks_dangerous_commands(self, bridge):
         """Bash blocks dangerous commands."""
         result = bridge._execute_bash("bash", {"command": "rm -rf /"})
 
-        assert result.success is False
-        assert "blocked" in result.error.lower()
+        assert result.success is False, "Expected result.success is False"
+        assert "blocked" in result.error.lower(), "Expected 'blocked' in result.error.lower()"
 
     def test_bash_missing_command(self, bridge):
         """Bash without command fails."""
         result = bridge._execute_bash("bash", {})
-        assert result.success is False
+        assert result.success is False, "Expected result.success is False"
 
     def test_bash_failed_command(self, bridge):
         """Bash returns failure for failed commands."""
         result = bridge._execute_bash("bash", {"command": "exit 1"})
-        assert result.success is False
+        assert result.success is False, "Expected result.success is False"
 
 
 class TestListFiles:
@@ -293,9 +293,9 @@ class TestListFiles:
 
         result = bridge._execute_list_files("list_files", {"path": "."})
 
-        assert result.success is True
-        assert "file.txt" in result.output
-        assert "subdir" in result.output
+        assert result.success is True, "Expected result.success is True"
+        assert "file.txt" in result.output, "Expected 'file.txt' in result.output"
+        assert "subdir" in result.output, "Expected 'subdir' in result.output"
 
     def test_list_files_marks_directories(self, bridge, temp_dir):
         """List files marks directories with 'd' prefix."""
@@ -304,13 +304,13 @@ class TestListFiles:
 
         result = bridge._execute_list_files("list_files", {"path": "."})
 
-        assert "d subdir" in result.output
-        assert "f file.txt" in result.output
+        assert "d subdir" in result.output, "Expected 'd subdir' in result.output"
+        assert "f file.txt" in result.output, "Expected 'f file.txt' in result.output"
 
     def test_list_nonexistent_dir(self, bridge):
         """List nonexistent directory fails."""
         result = bridge._execute_list_files("list_files", {"path": "nope"})
-        assert result.success is False
+        assert result.success is False, "Expected result.success is False"
 
 
 class TestCreateToolBridge:
@@ -319,10 +319,10 @@ class TestCreateToolBridge:
     def test_creates_bridge(self):
         """Factory creates bridge."""
         bridge = create_tool_bridge()
-        assert isinstance(bridge, ToolExecutorBridge)
+        assert isinstance(bridge, ToolExecutorBridge), "Expected isinstance() to be truthy"
 
     def test_creates_with_working_dir(self):
         """Factory accepts working directory."""
         custom_dir = Path("/tmp")
         bridge = create_tool_bridge(working_dir=custom_dir)
-        assert bridge.working_dir == custom_dir
+        assert bridge.working_dir == custom_dir, "Expected bridge.working_dir to equal custom_dir"

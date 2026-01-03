@@ -51,10 +51,10 @@ class TestContextInjection:
 
         result = executor_with_context.execute(tool_call)
 
-        assert not result.is_error
-        assert "COMPLETE" in result.content
+        assert not result.is_error, "Assertion failed"
+        assert "COMPLETE" in result.content, "Expected 'COMPLETE' in result.content"
         # Should include files from context
-        assert "src/fixed.py" in result.content
+        assert "src/fixed.py" in result.content, "Expected 'src/fixed.py' in result.content"
 
     def test_complete_merges_files_modified(self, executor_with_context):
         """Complete handler merges files_modified from params and context."""
@@ -69,9 +69,9 @@ class TestContextInjection:
 
         result = executor_with_context.execute(tool_call)
 
-        assert not result.is_error
+        assert not result.is_error, "Assertion failed"
         # Should have files from both context and params
-        assert "src/fixed.py" in result.content or "src/another.py" in result.content
+        assert "src/fixed.py" in result.content or "src/another.py" in result.content, "Assertion failed"
 
     def test_escalate_handler_with_context(self, executor_with_context):
         """Escalate handler works with injected context."""
@@ -86,9 +86,9 @@ class TestContextInjection:
 
         result = executor_with_context.execute(tool_call)
 
-        assert not result.is_error
-        assert "ESCALATE" in result.content
-        assert "high" in result.content
+        assert not result.is_error, "Assertion failed"
+        assert "ESCALATE" in result.content, "Expected 'ESCALATE' in result.content"
+        assert "high" in result.content, "Expected 'high' in result.content"
 
     def test_cannot_fix_receives_violation_id(self, tmp_path):
         """Cannot_fix handler receives violation_id from context."""
@@ -114,9 +114,9 @@ class TestContextInjection:
 
         result = executor.execute(tool_call)
 
-        assert not result.is_error
-        assert "CANNOT_FIX" in result.content
-        assert "V-TEST-123" in result.content
+        assert not result.is_error, "Assertion failed"
+        assert "CANNOT_FIX" in result.content, "Expected 'CANNOT_FIX' in result.content"
+        assert "V-TEST-123" in result.content, "Expected 'V-TEST-123' in result.content"
 
     def test_context_persists_across_calls(self, executor_with_context):
         """Context remains available across multiple tool calls."""
@@ -127,7 +127,7 @@ class TestContextInjection:
             input={"summary": "Step 1"},
         )
         result1 = executor_with_context.execute(call1)
-        assert not result1.is_error
+        assert not result1.is_error, "Assertion failed"
 
         # Second call should still have context
         call2 = ToolCall(
@@ -136,8 +136,8 @@ class TestContextInjection:
             input={"summary": "Step 2"},
         )
         result2 = executor_with_context.execute(call2)
-        assert not result2.is_error
-        assert "src/fixed.py" in result2.content
+        assert not result2.is_error, "Assertion failed"
+        assert "src/fixed.py" in result2.content, "Expected 'src/fixed.py' in result2.content"
 
 
 class TestExecutorWithHandlers:
@@ -166,8 +166,8 @@ class TestExecutorWithHandlers:
             input={"path": "src/module.py"},
         )
         read_result = executor.execute(read_call)
-        assert not read_result.is_error
-        assert "hello" in read_result.content
+        assert not read_result.is_error, "Assertion failed"
+        assert "hello" in read_result.content, "Expected 'hello' in read_result.content"
 
         # Write a new file
         write_call = ToolCall(
@@ -179,8 +179,8 @@ class TestExecutorWithHandlers:
             },
         )
         write_result = executor.execute(write_call)
-        assert not write_result.is_error
-        assert "SUCCESS" in write_result.content
+        assert not write_result.is_error, "Assertion failed"
+        assert "SUCCESS" in write_result.content, "Expected 'SUCCESS' in write_result.content"
 
         # Edit the original file
         edit_call = ToolCall(
@@ -194,7 +194,7 @@ class TestExecutorWithHandlers:
             },
         )
         edit_result = executor.execute(edit_call)
-        assert not edit_result.is_error
+        assert not edit_result.is_error, "Assertion failed"
 
         # Verify edit
         verify_read = ToolCall(
@@ -203,7 +203,7 @@ class TestExecutorWithHandlers:
             input={"path": "src/module.py"},
         )
         verify_result = executor.execute(verify_read)
-        assert "modified" in verify_result.content
+        assert "modified" in verify_result.content, "Expected 'modified' in verify_result.content"
 
     def test_search_finds_content(self, executor, temp_project):
         """Search handler finds content in files."""
@@ -215,8 +215,8 @@ class TestExecutorWithHandlers:
 
         result = executor.execute(search_call)
 
-        assert not result.is_error
-        assert "module.py" in result.content
+        assert not result.is_error, "Assertion failed"
+        assert "module.py" in result.content, "Expected 'module.py' in result.content"
 
     def test_execution_log_tracks_calls(self, executor, temp_project):
         """Execution log records all tool calls."""
@@ -234,10 +234,10 @@ class TestExecutorWithHandlers:
 
         log = executor.get_execution_log()
 
-        assert len(log) == 2
-        assert log[0]["tool_name"] == "read_file"
-        assert log[0]["success"] is True
-        assert log[1]["tool_name"] == "complete"
+        assert len(log) == 2, "Expected len(log) to equal 2"
+        assert log[0]["tool_name"] == "read_file", "Expected log[0]['tool_name'] to equal 'read_file'"
+        assert log[0]["success"] is True, "Expected log[0]['success'] is True"
+        assert log[1]["tool_name"] == "complete", "Expected log[1]['tool_name'] to equal 'complete'"
 
     def test_unknown_tool_error(self, executor):
         """Unknown tool returns an error result."""
@@ -249,8 +249,8 @@ class TestExecutorWithHandlers:
 
         result = executor.execute(call)
 
-        assert result.is_error
-        assert "Unknown tool" in result.content
+        assert result.is_error, "Expected result.is_error to be truthy"
+        assert "Unknown tool" in result.content, "Expected 'Unknown tool' in result.content"
 
 
 class TestContextFromParams:
@@ -273,5 +273,5 @@ class TestContextFromParams:
         call = ToolCall(id="c1", name="custom", input={"arg": "test"})
         executor.execute(call)
 
-        assert received_context.get("key") == "value"
-        assert received_context.get("task_id") == "T-1"
+        assert received_context.get("key") == "value", "Expected received_context.get('key') to equal 'value'"
+        assert received_context.get("task_id") == "T-1", "Expected received_context.get('task_... to equal 'T-1'"

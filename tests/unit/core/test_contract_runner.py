@@ -26,7 +26,7 @@ class TestContractRunnerInit:
         with patch.object(Path, '__new__', return_value=tmp_path):
             runner = ContractRunner()
             # Just verify it doesn't crash - actual paths depend on project root
-            assert runner is not None
+            assert runner is not None, "Expected runner is not None"
 
     def test_init_with_custom_dirs(self, tmp_path):
         """Should initialize with custom directories."""
@@ -39,9 +39,9 @@ class TestContractRunnerInit:
             outputs_dir=outputs_dir
         )
 
-        assert runner.contracts_dir == contracts_dir
-        assert runner.outputs_dir == outputs_dir
-        assert outputs_dir.exists()  # Should be created
+        assert runner.contracts_dir == contracts_dir, "Expected runner.contracts_dir to equal contracts_dir"
+        assert runner.outputs_dir == outputs_dir, "Expected runner.outputs_dir to equal outputs_dir"
+        assert outputs_dir.exists(), "Expected outputs_dir.exists() to be truthy"# Should be created
 
     def test_init_creates_outputs_dir(self, tmp_path):
         """Should create outputs directory if it doesn't exist."""
@@ -49,14 +49,14 @@ class TestContractRunnerInit:
         outputs_dir = tmp_path / "new_outputs"
         contracts_dir.mkdir()
 
-        assert not outputs_dir.exists()
+        assert not outputs_dir.exists(), "Assertion failed"
 
         ContractRunner(
             contracts_dir=contracts_dir,
             outputs_dir=outputs_dir
         )
 
-        assert outputs_dir.exists()
+        assert outputs_dir.exists(), "Expected outputs_dir.exists() to be truthy"
 
 
 class TestLoadProjectContext:
@@ -79,7 +79,7 @@ class TestLoadProjectContext:
                 outputs_dir=outputs_dir
             )
             # The context is loaded during init; we're verifying the mechanism exists
-            assert runner.project_context is not None
+            assert runner.project_context is not None, "Expected runner.project_context is not None"
 
     def test_load_project_context_when_missing(self, tmp_path):
         """Should return default message when context file doesn't exist."""
@@ -93,7 +93,7 @@ class TestLoadProjectContext:
         )
 
         # Should get default message since sample_data doesn't exist
-        assert "No project context configured" in runner.project_context or runner.project_context
+        assert "No project context configured" in runner.project_context or runner.project_context, "Assertion failed"
 
 
 class TestLoadContract:
@@ -117,8 +117,8 @@ class TestLoadContract:
         )
         contract = runner.load_contract("test-contract")
 
-        assert contract["contract"]["id"] == "test-contract"
-        assert contract["contract"]["version"] == "1.0"
+        assert contract["contract"]["id"] == "test-contract", "Expected contract['contract']['id'] to equal 'test-contract'"
+        assert contract["contract"]["version"] == "1.0", "Expected contract['contract']['versi... to equal '1.0'"
 
     def test_load_contract_not_found(self, tmp_path):
         """Should raise FileNotFoundError for missing contract."""
@@ -162,8 +162,8 @@ class TestBuildSystemMessage:
 
         message = runner._build_system_message(contract)
 
-        assert "First section" in message
-        assert "Second section" in message
+        assert "First section" in message, "Expected 'First section' in message"
+        assert "Second section" in message, "Expected 'Second section' in message"
 
     def test_build_system_message_empty_sections(self, tmp_path):
         """Should handle empty sections list."""
@@ -179,7 +179,7 @@ class TestBuildSystemMessage:
         contract = {"template": {"system": {"sections": []}}}
         message = runner._build_system_message(contract)
 
-        assert message == ""
+        assert message == "", "Expected message to equal ''"
 
     def test_build_system_message_missing_template(self, tmp_path):
         """Should handle missing template gracefully."""
@@ -195,7 +195,7 @@ class TestBuildSystemMessage:
         contract = {}
         message = runner._build_system_message(contract)
 
-        assert message == ""
+        assert message == "", "Expected message to equal ''"
 
 
 class TestShouldIncludeSection:
@@ -212,7 +212,7 @@ class TestShouldIncludeSection:
         """Should include section when no condition specified."""
         section = {"content": "Always include"}
         result = runner._should_include_section(section, {}, {})
-        assert result is True
+        assert result is True, "Expected result is True"
 
     def test_include_section_truthy_input(self, runner):
         """Should include section when input condition is truthy."""
@@ -220,7 +220,7 @@ class TestShouldIncludeSection:
         result = runner._should_include_section(
             section, {"has_context": True}, {}
         )
-        assert result is True
+        assert result is True, "Expected result is True"
 
     def test_include_section_truthy_context(self, runner):
         """Should include section when context condition is truthy."""
@@ -228,13 +228,13 @@ class TestShouldIncludeSection:
         result = runner._should_include_section(
             section, {}, {"has_context": "some value"}
         )
-        assert result is True
+        assert result is True, "Expected result is True"
 
     def test_exclude_section_falsy_condition(self, runner):
         """Should exclude section when condition is falsy."""
         section = {"content": "Conditional", "condition": "missing_var"}
         result = runner._should_include_section(section, {}, {})
-        assert result is False
+        assert result is False, "Expected result is False"
 
     def test_exclude_section_empty_string(self, runner):
         """Should exclude section when condition is empty string."""
@@ -242,7 +242,7 @@ class TestShouldIncludeSection:
         result = runner._should_include_section(
             section, {"empty_var": ""}, {}
         )
-        assert result is False
+        assert result is False, "Expected result is False"
 
     def test_include_section_nonempty_list(self, runner):
         """Should include section when condition is non-empty list."""
@@ -250,7 +250,7 @@ class TestShouldIncludeSection:
         result = runner._should_include_section(
             section, {"items": [1, 2, 3]}, {}
         )
-        assert result is True
+        assert result is True, "Expected result is True"
 
 
 class TestBuildUserMessage:
@@ -278,8 +278,8 @@ class TestBuildUserMessage:
 
         message = runner._build_user_message(contract, {}, {})
 
-        assert "Part A" in message
-        assert "Part B" in message
+        assert "Part A" in message, "Expected 'Part A' in message"
+        assert "Part B" in message, "Expected 'Part B' in message"
 
     def test_build_user_message_conditional_sections(self, runner):
         """Should filter sections based on conditions."""
@@ -299,9 +299,9 @@ class TestBuildUserMessage:
             contract, {"show_extra": True}, {}
         )
 
-        assert "Always" in message
-        assert "Sometimes" in message
-        assert "Never" not in message
+        assert "Always" in message, "Expected 'Always' in message"
+        assert "Sometimes" in message, "Expected 'Sometimes' in message"
+        assert "Never" not in message, "Expected 'Never' not in message"
 
 
 class TestSubstituteVariables:
@@ -318,7 +318,7 @@ class TestSubstituteVariables:
         """Should substitute string variables."""
         message = "Hello, {name}!"
         result = runner._substitute_variables(message, {"name": "World"})
-        assert result == "Hello, World!"
+        assert result == "Hello, World!", "Expected result to equal 'Hello, World!'"
 
     def test_substitute_multiple_variables(self, runner):
         """Should substitute multiple variables."""
@@ -326,7 +326,7 @@ class TestSubstituteVariables:
         result = runner._substitute_variables(
             message, {"greeting": "Hi", "name": "Alice"}
         )
-        assert result == "Hi, Alice!"
+        assert result == "Hi, Alice!", "Expected result to equal 'Hi, Alice!'"
 
     def test_substitute_dict_variable(self, runner):
         """Should substitute dict as YAML."""
@@ -334,7 +334,7 @@ class TestSubstituteVariables:
         result = runner._substitute_variables(
             message, {"config": {"key": "value"}}
         )
-        assert "key: value" in result
+        assert "key: value" in result, "Expected 'key: value' in result"
 
     def test_substitute_list_variable(self, runner):
         """Should substitute list as YAML."""
@@ -342,20 +342,20 @@ class TestSubstituteVariables:
         result = runner._substitute_variables(
             message, {"items": ["a", "b", "c"]}
         )
-        assert "- a" in result
-        assert "- b" in result
+        assert "- a" in result, "Expected '- a' in result"
+        assert "- b" in result, "Expected '- b' in result"
 
     def test_substitute_integer_variable(self, runner):
         """Should substitute integer as string."""
         message = "Count: {count}"
         result = runner._substitute_variables(message, {"count": 42})
-        assert result == "Count: 42"
+        assert result == "Count: 42", "Expected result to equal 'Count: 42'"
 
     def test_no_matching_variable(self, runner):
         """Should leave unmatched placeholders as-is."""
         message = "Hello, {name}!"
         result = runner._substitute_variables(message, {"other": "value"})
-        assert result == "Hello, {name}!"
+        assert result == "Hello, {name}!", "Expected result to equal 'Hello, {name}!'"
 
 
 class TestAssemblePrompt:
@@ -384,15 +384,15 @@ class TestAssemblePrompt:
             contract, {"request": "Help me"}
         )
 
-        assert result["contract_id"] == "test"
-        assert result["contract_version"] == "1.0"
-        assert "generated_at" in result
-        assert result["inputs_provided"] == {"request": "Help me"}
-        assert "System msg" in result["prompt"]["system"]
-        assert "Help me" in result["prompt"]["user"]
-        assert result["execution"]["temperature"] == 0.5
-        assert result["execution"]["max_tokens"] == 2000
-        assert result["expected_output"]["format"] == "json"
+        assert result["contract_id"] == "test", "Expected result['contract_id'] to equal 'test'"
+        assert result["contract_version"] == "1.0", "Expected result['contract_version'] to equal '1.0'"
+        assert "generated_at" in result, "Expected 'generated_at' in result"
+        assert result["inputs_provided"] == {"request": "Help me"}, "Expected result['inputs_provided'] to equal {'request': 'Help me'}"
+        assert "System msg" in result["prompt"]["system"], "Expected 'System msg' in result['prompt']['system']"
+        assert "Help me" in result["prompt"]["user"], "Expected 'Help me' in result['prompt']['user']"
+        assert result["execution"]["temperature"] == 0.5, "Expected result['execution']['temper... to equal 0.5"
+        assert result["execution"]["max_tokens"] == 2000, "Expected result['execution']['max_to... to equal 2000"
+        assert result["expected_output"]["format"] == "json", "Expected result['expected_output']['... to equal 'json'"
 
     def test_assemble_prompt_default_execution(self, runner):
         """Should use default execution settings when not specified."""
@@ -406,9 +406,9 @@ class TestAssemblePrompt:
 
         result = runner.assemble_prompt(contract, {})
 
-        assert result["execution"]["temperature"] == 0.0
-        assert result["execution"]["max_tokens"] == 4096
-        assert result["expected_output"]["format"] == "yaml"
+        assert result["execution"]["temperature"] == 0.0, "Expected result['execution']['temper... to equal 0.0"
+        assert result["execution"]["max_tokens"] == 4096, "Expected result['execution']['max_to... to equal 4096"
+        assert result["expected_output"]["format"] == "yaml", "Expected result['expected_output']['... to equal 'yaml'"
 
     def test_assemble_prompt_with_context(self, runner):
         """Should merge context with inputs."""
@@ -426,8 +426,8 @@ class TestAssemblePrompt:
             {"ctx_val": "from_context"}
         )
 
-        assert "from_input" in result["prompt"]["user"]
-        assert "from_context" in result["prompt"]["user"]
+        assert "from_input" in result["prompt"]["user"], "Expected 'from_input' in result['prompt']['user']"
+        assert "from_context" in result["prompt"]["user"], "Expected 'from_context' in result['prompt']['user']"
 
 
 class TestValidateOutput:
@@ -449,7 +449,7 @@ class TestValidateOutput:
         result = runner.validate_output(contract, output, {})
         # Result may be None if validator not available, or a validation report
         # The key test is that it doesn't crash and processes the fence stripping
-        assert result is None or hasattr(result, 'is_valid') or isinstance(result, (dict, bool))
+        assert result is None or hasattr(result, 'is_valid') or isinstance(result, (dict, bool)), "Assertion failed"
 
     def test_validate_output_invalid_yaml(self, runner):
         """Should return None for invalid YAML."""
@@ -457,7 +457,7 @@ class TestValidateOutput:
         output = "not: valid: yaml: here: :::"
 
         result = runner.validate_output(contract, output, {})
-        assert result is None
+        assert result is None, "Expected result is None"
 
 
 class TestSavePrompt:
@@ -481,9 +481,9 @@ class TestSavePrompt:
 
         filepath = runner.save_prompt(prompt, "test")
 
-        assert filepath.exists()
-        assert "test" in filepath.name
-        assert filepath.suffix == ".yaml"
+        assert filepath.exists(), "Expected filepath.exists() to be truthy"
+        assert "test" in filepath.name, "Expected 'test' in filepath.name"
+        assert filepath.suffix == ".yaml", "Expected filepath.suffix to equal '.yaml'"
 
     def test_save_prompt_multiline_preserved(self, tmp_path):
         """Should preserve multiline strings with block style."""
@@ -504,8 +504,8 @@ class TestSavePrompt:
         content = filepath.read_text()
 
         # Multiline should use block style (|)
-        assert "Line 1" in content
-        assert "Line 2" in content
+        assert "Line 1" in content, "Expected 'Line 1' in content"
+        assert "Line 2" in content, "Expected 'Line 2' in content"
 
 
 class TestSaveOutput:
@@ -525,7 +525,7 @@ class TestSaveOutput:
         output = "key: value\nother: data"
         filepath = runner.save_output(output, "test-contract")
 
-        assert filepath.exists()
-        assert filepath.read_text() == output
-        assert "test-contract" in filepath.name
-        assert "_output.yaml" in filepath.name
+        assert filepath.exists(), "Expected filepath.exists() to be truthy"
+        assert filepath.read_text() == output, "Expected filepath.read_text() to equal output"
+        assert "test-contract" in filepath.name, "Expected 'test-contract' in filepath.name"
+        assert "_output.yaml" in filepath.name, "Expected '_output.yaml' in filepath.name"

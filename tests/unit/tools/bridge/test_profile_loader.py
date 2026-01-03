@@ -62,9 +62,9 @@ patterns:
 
         raw_profile = loader.load()
 
-        assert raw_profile is not None
-        assert "schema_version" in raw_profile
-        assert loader.profile_hash.startswith("sha256:")
+        assert raw_profile is not None, "Expected raw_profile is not None"
+        assert "schema_version" in raw_profile, "Expected 'schema_version' in raw_profile"
+        assert loader.profile_hash.startswith("sha256:"), "Expected loader.profile_hash.startswith() to be truthy"
 
     def test_get_zones_returns_zone_names(self, sample_profile):
         """get_zones returns zone names."""
@@ -74,7 +74,7 @@ patterns:
         zones = loader.get_zones()
 
         # Single zone profile returns ['default']
-        assert zones == ["default"]
+        assert zones == ["default"], "Expected zones to equal ['default']"
 
     def test_get_all_contexts(self, sample_profile):
         """get_all_contexts returns MappingContext objects."""
@@ -83,9 +83,9 @@ patterns:
 
         contexts = loader.get_all_contexts()
 
-        assert len(contexts) >= 1
+        assert len(contexts) >= 1, "Expected len(contexts) >= 1"
         context = contexts[0]
-        assert context.language == "csharp"
+        assert context.language == "csharp", "Expected context.language to equal 'csharp'"
 
     def test_context_has_patterns(self, sample_profile):
         """Context includes detected patterns."""
@@ -95,8 +95,8 @@ patterns:
         contexts = loader.get_all_contexts()
         context = contexts[0]
 
-        assert context.is_pattern_detected("cqrs")
-        assert context.get_pattern_confidence("cqrs") == 0.92
+        assert context.is_pattern_detected("cqrs"), "Expected context.is_pattern_detected() to be truthy"
+        assert context.get_pattern_confidence("cqrs") == 0.92, "Expected context.get_pattern_confide... to equal 0.92"
 
     def test_context_has_language(self, sample_profile):
         """Context includes language."""
@@ -106,7 +106,7 @@ patterns:
         contexts = loader.get_all_contexts()
         context = contexts[0]
 
-        assert context.language == "csharp"
+        assert context.language == "csharp", "Expected context.language to equal 'csharp'"
 
     def test_profile_hash_changes_with_content(self, tmp_path):
         """Profile hash changes when content changes."""
@@ -123,7 +123,7 @@ patterns:
         loader2.load()
         hash2 = loader2.profile_hash
 
-        assert hash1 != hash2
+        assert hash1 != hash2, "Expected hash1 to not equal hash2"
 
 
 class TestProfileLoaderEdgeCases:
@@ -152,8 +152,8 @@ patterns: {}
         loader.load()
         contexts = loader.get_all_contexts()
 
-        assert len(contexts) >= 1
-        assert len(contexts[0].patterns) == 0
+        assert len(contexts) >= 1, "Expected len(contexts) >= 1"
+        assert len(contexts[0].patterns) == 0, "Expected len(contexts[0].patterns) to equal 0"
 
     def test_handles_missing_optional_fields(self, tmp_path):
         """Handles profiles with minimal fields."""
@@ -170,8 +170,8 @@ languages:
         loader.load()
         contexts = loader.get_all_contexts()
 
-        assert len(contexts) >= 1
-        assert contexts[0].language == "python"
+        assert len(contexts) >= 1, "Expected len(contexts) >= 1"
+        assert contexts[0].language == "python", "Expected contexts[0].language to equal 'python'"
 
     def test_get_primary_language(self, tmp_path):
         """Can get primary language."""
@@ -189,4 +189,4 @@ languages:
         loader = ProfileLoader(tmp_path)
         loader.load()
 
-        assert loader.get_primary_language() == "python"
+        assert loader.get_primary_language() == "python", "Expected loader.get_primary_language() to equal 'python'"

@@ -28,12 +28,12 @@ class TestThreadCorrelator:
             description="A test pipeline",
         )
 
-        assert info.thread_id == "root-001"
-        assert info.parent_thread_id is None
-        assert info.root_thread_id is None  # Root has no root reference
-        assert info.thread_type == "pipeline"
-        assert info.name == "Test Pipeline"
-        assert info.status == ThreadStatus.PENDING
+        assert info.thread_id == "root-001", "Expected info.thread_id to equal 'root-001'"
+        assert info.parent_thread_id is None, "Expected info.parent_thread_id is None"
+        assert info.root_thread_id is None, "Expected info.root_thread_id is None"# Root has no root reference
+        assert info.thread_type == "pipeline", "Expected info.thread_type to equal 'pipeline'"
+        assert info.name == "Test Pipeline", "Expected info.name to equal 'Test Pipeline'"
+        assert info.status == ThreadStatus.PENDING, "Expected info.status to equal ThreadStatus.PENDING"
 
     def test_spawn_child_thread(self, tmp_path):
         """Spawn a child thread from parent."""
@@ -56,14 +56,14 @@ class TestThreadCorrelator:
             spawn_reason="Delegating security review",
         )
 
-        assert child.parent_thread_id == "parent-001"
-        assert child.root_thread_id == "parent-001"
-        assert child.spawn_type == SpawnType.DELEGATION
-        assert child.spawn_reason == "Delegating security review"
+        assert child.parent_thread_id == "parent-001", "Expected child.parent_thread_id to equal 'parent-001'"
+        assert child.root_thread_id == "parent-001", "Expected child.root_thread_id to equal 'parent-001'"
+        assert child.spawn_type == SpawnType.DELEGATION, "Expected child.spawn_type to equal SpawnType.DELEGATION"
+        assert child.spawn_reason == "Delegating security review", "Expected child.spawn_reason to equal 'Delegating security review'"
 
         # Parent should have child in list
         parent_updated = correlator.get_thread("parent-001")
-        assert "child-001" in parent_updated.child_thread_ids
+        assert "child-001" in parent_updated.child_thread_ids, "Expected 'child-001' in parent_updated.child_thread..."
 
     def test_nested_spawning_tracks_root(self, tmp_path):
         """Nested spawns should track back to root."""
@@ -83,8 +83,8 @@ class TestThreadCorrelator:
         )
 
         # Grandchild should trace back to root
-        assert grandchild.parent_thread_id == "child"
-        assert grandchild.root_thread_id == "root"
+        assert grandchild.parent_thread_id == "child", "Expected grandchild.parent_thread_id to equal 'child'"
+        assert grandchild.root_thread_id == "root", "Expected grandchild.root_thread_id to equal 'root'"
 
     def test_get_children(self, tmp_path):
         """Get direct children of a thread."""
@@ -100,10 +100,10 @@ class TestThreadCorrelator:
 
         children = correlator.get_children("parent")
 
-        assert len(children) == 2
+        assert len(children) == 2, "Expected len(children) to equal 2"
         child_ids = [c.thread_id for c in children]
-        assert "child1" in child_ids
-        assert "child2" in child_ids
+        assert "child1" in child_ids, "Expected 'child1' in child_ids"
+        assert "child2" in child_ids, "Expected 'child2' in child_ids"
 
     def test_get_ancestry(self, tmp_path):
         """Get ancestry chain from child to root."""
@@ -122,10 +122,10 @@ class TestThreadCorrelator:
 
         ancestry = correlator.get_ancestry("grandchild")
 
-        assert len(ancestry) == 3
-        assert ancestry[0].thread_id == "grandchild"
-        assert ancestry[1].thread_id == "child"
-        assert ancestry[2].thread_id == "root"
+        assert len(ancestry) == 3, "Expected len(ancestry) to equal 3"
+        assert ancestry[0].thread_id == "grandchild", "Expected ancestry[0].thread_id to equal 'grandchild'"
+        assert ancestry[1].thread_id == "child", "Expected ancestry[1].thread_id to equal 'child'"
+        assert ancestry[2].thread_id == "root", "Expected ancestry[2].thread_id to equal 'root'"
 
     def test_thread_tree(self, tmp_path):
         """Build complete thread tree."""
@@ -144,12 +144,12 @@ class TestThreadCorrelator:
 
         tree = correlator.get_thread_tree("root")
 
-        assert tree["thread_id"] == "root"
-        assert len(tree["children"]) == 2
+        assert tree["thread_id"] == "root", "Expected tree['thread_id'] to equal 'root'"
+        assert len(tree["children"]) == 2, "Expected len(tree['children']) to equal 2"
 
         child1 = next(c for c in tree["children"] if c["thread_id"] == "child1")
-        assert len(child1["children"]) == 1
-        assert child1["children"][0]["thread_id"] == "grandchild"
+        assert len(child1["children"]) == 1, "Expected len(child1['children']) to equal 1"
+        assert child1["children"][0]["thread_id"] == "grandchild", "Expected child1['children'][0]['thre... to equal 'grandchild'"
 
     def test_parallel_group(self, tmp_path):
         """Create and track parallel execution group."""
@@ -169,18 +169,18 @@ class TestThreadCorrelator:
             tasks=tasks,
         )
 
-        assert len(threads) == 3
+        assert len(threads) == 3, "Expected len(threads) to equal 3"
 
         # All should have same parallel_group_id
         for i, thread in enumerate(threads):
-            assert thread.parallel_group_id == "parallel-test"
-            assert thread.parallel_index == i
-            assert thread.parent_thread_id == "parent"
+            assert thread.parallel_group_id == "parallel-test", "Expected thread.parallel_group_id to equal 'parallel-test'"
+            assert thread.parallel_index == i, "Expected thread.parallel_index to equal i"
+            assert thread.parent_thread_id == "parent", "Expected thread.parent_thread_id to equal 'parent'"
 
         # Get parallel group
         group = correlator.get_parallel_group("parallel-test")
-        assert len(group) == 3
-        assert [t.thread_id for t in group] == ["p1", "p2", "p3"]
+        assert len(group) == 3, "Expected len(group) to equal 3"
+        assert [t.thread_id for t in group] == ["p1", "p2", "p3"], "Expected [t.thread_id for t in group] to equal ['p1', 'p2', 'p3']"
 
     def test_complete_thread(self, tmp_path):
         """Mark thread as completed with statistics."""
@@ -198,11 +198,11 @@ class TestThreadCorrelator:
         )
 
         thread = correlator.get_thread("test")
-        assert thread.status == ThreadStatus.COMPLETED
-        assert thread.outcome == "success"
-        assert thread.transaction_count == 10
-        assert thread.total_tokens == 5000
-        assert thread.completed_at is not None
+        assert thread.status == ThreadStatus.COMPLETED, "Expected thread.status to equal ThreadStatus.COMPLETED"
+        assert thread.outcome == "success", "Expected thread.outcome to equal 'success'"
+        assert thread.transaction_count == 10, "Expected thread.transaction_count to equal 10"
+        assert thread.total_tokens == 5000, "Expected thread.total_tokens to equal 5000"
+        assert thread.completed_at is not None, "Expected thread.completed_at is not None"
 
     def test_complete_thread_failure(self, tmp_path):
         """Mark thread as failed."""
@@ -218,8 +218,8 @@ class TestThreadCorrelator:
         )
 
         thread = correlator.get_thread("test")
-        assert thread.status == ThreadStatus.FAILED
-        assert thread.error == "Test error message"
+        assert thread.status == ThreadStatus.FAILED, "Expected thread.status to equal ThreadStatus.FAILED"
+        assert thread.error == "Test error message", "Expected thread.error to equal 'Test error message'"
 
     def test_thread_persistence(self, tmp_path):
         """Threads should persist across correlator instances."""
@@ -235,9 +235,9 @@ class TestThreadCorrelator:
         correlator2 = ThreadCorrelator(tmp_path)
         thread = correlator2.get_thread("persist-test")
 
-        assert thread is not None
-        assert thread.thread_id == "persist-test"
-        assert thread.name == "Persistent Thread"
+        assert thread is not None, "Expected thread is not None"
+        assert thread.thread_id == "persist-test", "Expected thread.thread_id to equal 'persist-test'"
+        assert thread.name == "Persistent Thread", "Expected thread.name to equal 'Persistent Thread'"
 
 
 class TestSpawnType:
@@ -245,8 +245,8 @@ class TestSpawnType:
 
     def test_spawn_types(self):
         """All spawn types should be valid."""
-        assert SpawnType.DELEGATION.value == "delegation"
-        assert SpawnType.PARALLEL.value == "parallel"
-        assert SpawnType.RETRY.value == "retry"
-        assert SpawnType.ESCALATION.value == "escalation"
-        assert SpawnType.PIPELINE_STAGE.value == "pipeline_stage"
+        assert SpawnType.DELEGATION.value == "delegation", "Expected SpawnType.DELEGATION.value to equal 'delegation'"
+        assert SpawnType.PARALLEL.value == "parallel", "Expected SpawnType.PARALLEL.value to equal 'parallel'"
+        assert SpawnType.RETRY.value == "retry", "Expected SpawnType.RETRY.value to equal 'retry'"
+        assert SpawnType.ESCALATION.value == "escalation", "Expected SpawnType.ESCALATION.value to equal 'escalation'"
+        assert SpawnType.PIPELINE_STAGE.value == "pipeline_stage", "Expected SpawnType.PIPELINE_STAGE.value to equal 'pipeline_stage'"

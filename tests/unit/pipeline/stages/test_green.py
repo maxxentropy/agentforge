@@ -17,43 +17,43 @@ class TestGreenPhaseExecutor:
     def test_stage_name_is_green(self):
         """GreenPhaseExecutor has stage_name 'green'."""
         executor = GreenPhaseExecutor()
-        assert executor.stage_name == "green"
+        assert executor.stage_name == "green", "Expected executor.stage_name to equal 'green'"
 
     def test_artifact_type_is_implementation(self):
         """GreenPhaseExecutor has artifact_type 'implementation'."""
         executor = GreenPhaseExecutor()
-        assert executor.artifact_type == "implementation"
+        assert executor.artifact_type == "implementation", "Expected executor.artifact_type to equal 'implementation'"
 
     def test_required_input_fields(self):
         """GreenPhaseExecutor requires spec_id, test_files, failing_tests."""
         executor = GreenPhaseExecutor()
-        assert "spec_id" in executor.required_input_fields
-        assert "test_files" in executor.required_input_fields
-        assert "failing_tests" in executor.required_input_fields
+        assert "spec_id" in executor.required_input_fields, "Expected 'spec_id' in executor.required_input_fields"
+        assert "test_files" in executor.required_input_fields, "Expected 'test_files' in executor.required_input_fields"
+        assert "failing_tests" in executor.required_input_fields, "Expected 'failing_tests' in executor.required_input_fields"
 
     def test_output_fields(self):
         """GreenPhaseExecutor outputs spec_id, implementation_files, test_results."""
         executor = GreenPhaseExecutor()
-        assert "spec_id" in executor.output_fields
-        assert "implementation_files" in executor.output_fields
-        assert "test_results" in executor.output_fields
+        assert "spec_id" in executor.output_fields, "Expected 'spec_id' in executor.output_fields"
+        assert "implementation_files" in executor.output_fields, "Expected 'implementation_files' in executor.output_fields"
+        assert "test_results" in executor.output_fields, "Expected 'test_results' in executor.output_fields"
 
     def test_has_max_iterations_config(self):
         """GreenPhaseExecutor has max_iterations configuration."""
         executor = GreenPhaseExecutor()
-        assert hasattr(executor, "max_iterations")
-        assert executor.max_iterations == 20
+        assert hasattr(executor, "max_iterations"), "Expected hasattr() to be truthy"
+        assert executor.max_iterations == 20, "Expected executor.max_iterations to equal 20"
 
     def test_max_iterations_from_config(self):
         """GreenPhaseExecutor uses max_iterations from config."""
         executor = GreenPhaseExecutor({"max_iterations": 10})
-        assert executor.max_iterations == 10
+        assert executor.max_iterations == 10, "Expected executor.max_iterations to equal 10"
 
     def test_has_test_timeout_config(self):
         """GreenPhaseExecutor has test_timeout configuration."""
         executor = GreenPhaseExecutor()
-        assert hasattr(executor, "test_timeout")
-        assert executor.test_timeout == 120
+        assert hasattr(executor, "test_timeout"), "Expected hasattr() to be truthy"
+        assert executor.test_timeout == 120, "Expected executor.test_timeout to equal 120"
 
 
 class TestGreenPhaseTools:
@@ -64,35 +64,35 @@ class TestGreenPhaseTools:
         executor = GreenPhaseExecutor()
 
         tool_names = [t["name"] for t in executor.tools]
-        assert "read_file" in tool_names
+        assert "read_file" in tool_names, "Expected 'read_file' in tool_names"
 
     def test_defines_write_file_tool(self):
         """Defines write_file tool."""
         executor = GreenPhaseExecutor()
 
         tool_names = [t["name"] for t in executor.tools]
-        assert "write_file" in tool_names
+        assert "write_file" in tool_names, "Expected 'write_file' in tool_names"
 
     def test_defines_edit_file_tool(self):
         """Defines edit_file tool."""
         executor = GreenPhaseExecutor()
 
         tool_names = [t["name"] for t in executor.tools]
-        assert "edit_file" in tool_names
+        assert "edit_file" in tool_names, "Expected 'edit_file' in tool_names"
 
     def test_defines_run_tests_tool(self):
         """Defines run_tests tool."""
         executor = GreenPhaseExecutor()
 
         tool_names = [t["name"] for t in executor.tools]
-        assert "run_tests" in tool_names
+        assert "run_tests" in tool_names, "Expected 'run_tests' in tool_names"
 
     def test_defines_complete_implementation_tool(self):
         """Defines complete_implementation tool."""
         executor = GreenPhaseExecutor()
 
         tool_names = [t["name"] for t in executor.tools]
-        assert "complete_implementation" in tool_names
+        assert "complete_implementation" in tool_names, "Expected 'complete_implementation' in tool_names"
 
 
 class TestGreenPhaseIteration:
@@ -116,9 +116,9 @@ class TestGreenPhaseIteration:
 
         message = executor._build_user_message(context)
 
-        assert "test_authenticate" in message
-        assert "test_invalid_code" in message
-        assert "test_refresh" in message
+        assert "test_authenticate" in message, "Expected 'test_authenticate' in message"
+        assert "test_invalid_code" in message, "Expected 'test_invalid_code' in message"
+        assert "test_refresh" in message, "Expected 'test_refresh' in message"
 
     def test_builds_iteration_message(self):
         """Builds message for subsequent iterations."""
@@ -137,9 +137,9 @@ class TestGreenPhaseIteration:
 
         message = executor._build_iteration_message(test_results, 2)
 
-        assert "Iteration 2" in message
-        assert "Passed: 1/3" in message
-        assert "Failed: 2/3" in message
+        assert "Iteration 2" in message, "Expected 'Iteration 2' in message"
+        assert "Passed: 1/3" in message, "Expected 'Passed: 1/3' in message"
+        assert "Failed: 2/3" in message, "Expected 'Failed: 2/3' in message"
 
     def test_includes_failure_details(self):
         """Iteration message includes failure details."""
@@ -160,8 +160,8 @@ class TestGreenPhaseIteration:
 
         message = executor._build_iteration_message(test_results, 1)
 
-        assert "test_example" in message
-        assert "Error:" in message or "ModuleNotFoundError" in message
+        assert "test_example" in message, "Expected 'test_example' in message"
+        assert "Error:" in message or "ModuleNotFoundError" in message, "Assertion failed"
 
 
 class TestGreenPhaseCompletion:
@@ -181,7 +181,7 @@ class TestGreenPhaseCompletion:
             ]
         }
 
-        assert executor._check_completion(result)
+        assert executor._check_completion(result), "Expected executor._check_completion() to be truthy"
 
     def test_no_completion_without_signal(self):
         """Returns False when no completion signal."""
@@ -197,7 +197,7 @@ class TestGreenPhaseCompletion:
             ]
         }
 
-        assert not executor._check_completion(result)
+        assert not executor._check_completion(result), "Assertion failed"
 
     def test_extracts_completion_data(self):
         """Extracts completion data from tool result."""
@@ -218,8 +218,8 @@ class TestGreenPhaseCompletion:
 
         data = executor._extract_completion_data(result)
 
-        assert data["implementation_files"] == ["file1.py", "file2.py"]
-        assert data["summary"] == "Implemented OAuth"
+        assert data["implementation_files"] == ["file1.py", "file2.py"], "Expected data['implementation_files'] to equal ['file1.py', 'file2.py']"
+        assert data["summary"] == "Implemented OAuth", "Expected data['summary'] to equal 'Implemented OAuth'"
 
     def test_extracts_written_files(self):
         """Extracts list of files written during iteration."""
@@ -247,9 +247,9 @@ class TestGreenPhaseCompletion:
 
         files = executor._extract_written_files(result)
 
-        assert len(files) == 2
-        assert "src/auth/oauth.py" in files
-        assert "src/auth/token.py" in files
+        assert len(files) == 2, "Expected len(files) to equal 2"
+        assert "src/auth/oauth.py" in files, "Expected 'src/auth/oauth.py' in files"
+        assert "src/auth/token.py" in files, "Expected 'src/auth/token.py' in files"
 
 
 class TestGreenPhaseTestExecution:
@@ -279,8 +279,8 @@ class TestGreenPhaseTestExecution:
                 ["tests/test.py"]
             )
 
-        assert results["passed"] == 2
-        assert results["failed"] == 0
+        assert results["passed"] == 2, "Expected results['passed'] to equal 2"
+        assert results["failed"] == 0, "Expected results['failed'] to equal 0"
 
     def test_runs_specific_test(self, sample_red_artifact, temp_project_path):
         """Runs specific test when provided."""
@@ -309,8 +309,8 @@ class TestGreenPhaseTestExecution:
 
             # Check -k flag was used
             call_args = mock_subprocess.call_args[0][0]
-            assert "-k" in call_args
-            assert "test_specific" in call_args
+            assert "-k" in call_args, "Expected '-k' in call_args"
+            assert "test_specific" in call_args, "Expected 'test_specific' in call_args"
 
     def test_handles_test_timeout(self, sample_red_artifact, temp_project_path):
         """Handles test execution timeout."""
@@ -331,7 +331,7 @@ class TestGreenPhaseTestExecution:
 
             results = executor._run_all_tests(context, ["tests/test.py"])
 
-        assert "error" in results
+        assert "error" in results, "Expected 'error' in results"
 
 
 class TestGreenPhasePytestParsing:
@@ -351,8 +351,8 @@ class TestGreenPhasePytestParsing:
 
         executor._parse_pytest_output(mock_pytest_passing_output, results)
 
-        assert results["passed"] == 3
-        assert len([d for d in results["test_details"] if d["status"] == "passed"]) == 3
+        assert results["passed"] == 3, "Expected results['passed'] to equal 3"
+        assert len([d for d in results["test_details"] if d["status"] == "passed"]) == 3, "Expected len([d for d in results['te... to equal 3"
 
     def test_parses_failed_tests(self, mock_pytest_failing_output):
         """Parses failed test results."""
@@ -368,8 +368,8 @@ class TestGreenPhasePytestParsing:
 
         executor._parse_pytest_output(mock_pytest_failing_output, results)
 
-        assert results["failed"] == 3
-        assert len([d for d in results["test_details"] if d["status"] == "failed"]) == 3
+        assert results["failed"] == 3, "Expected results['failed'] to equal 3"
+        assert len([d for d in results["test_details"] if d["status"] == "failed"]) == 3, "Expected len([d for d in results['te... to equal 3"
 
 
 class TestGreenPhaseValidation:
@@ -388,8 +388,8 @@ class TestGreenPhaseValidation:
 
         validation = executor.validate_output(artifact)
 
-        assert not validation.valid
-        assert any("implementation" in e.lower() for e in validation.errors)
+        assert not validation.valid, "Assertion failed"
+        assert any("implementation" in e.lower() for e in validation.errors), "Expected any() to be truthy"
 
     def test_validates_all_tests_pass(self):
         """Validates that all tests pass."""
@@ -404,8 +404,8 @@ class TestGreenPhaseValidation:
 
         validation = executor.validate_output(artifact)
 
-        assert not validation.valid
-        assert any("failing" in e.lower() or "tests" in e.lower() for e in validation.errors)
+        assert not validation.valid, "Assertion failed"
+        assert any("failing" in e.lower() or "tests" in e.lower() for e in validation.errors), "Expected any() to be truthy"
 
     def test_reports_failing_count(self):
         """Reports number of failing tests in validation."""
@@ -420,7 +420,7 @@ class TestGreenPhaseValidation:
 
         validation = executor.validate_output(artifact)
 
-        assert any("5" in e for e in validation.errors)
+        assert any("5" in e for e in validation.errors), "Expected any() to be truthy"
 
 
 class TestGreenPhaseEdgeCases:
@@ -447,7 +447,7 @@ class TestGreenPhaseEdgeCases:
         message = executor._build_user_message(context)
 
         # Should handle gracefully
-        assert "SPEC-123" in message
+        assert "SPEC-123" in message, "Expected 'SPEC-123' in message"
 
     def test_handles_empty_test_files(self, temp_project_path):
         """Handles input with empty test files list."""
@@ -470,7 +470,7 @@ class TestGreenPhaseEdgeCases:
         message = executor._build_user_message(context)
 
         # Should handle gracefully
-        assert "test_one" in message
+        assert "test_one" in message, "Expected 'test_one' in message"
 
 
 class TestGreenPhasePrompts:
@@ -482,9 +482,9 @@ class TestGreenPhasePrompts:
 
         prompt = executor.SYSTEM_PROMPT
 
-        assert "green" in prompt.lower() or "tdd" in prompt.lower()
-        assert "test" in prompt.lower()
-        assert "pass" in prompt.lower()
+        assert "green" in prompt.lower() or "tdd" in prompt.lower(), "Assertion failed"
+        assert "test" in prompt.lower(), "Expected 'test' in prompt.lower()"
+        assert "pass" in prompt.lower(), "Expected 'pass' in prompt.lower()"
 
     def test_user_message_includes_spec_id(self, sample_red_artifact, temp_project_path):
         """User message includes spec ID."""
@@ -500,7 +500,7 @@ class TestGreenPhasePrompts:
 
         message = executor._build_user_message(context)
 
-        assert sample_red_artifact["spec_id"] in message
+        assert sample_red_artifact["spec_id"] in message, "Expected sample_red_artifact['spec_id'] in message"
 
     def test_user_message_includes_failing_count(self, sample_red_artifact, temp_project_path):
         """User message includes count of failing tests."""
@@ -517,7 +517,7 @@ class TestGreenPhasePrompts:
         message = executor._build_user_message(context)
 
         # Should include number of failing tests
-        assert "3" in message or "FAILING" in message
+        assert "3" in message or "FAILING" in message, "Assertion failed"
 
 
 class TestCreateGreenExecutor:
@@ -527,7 +527,7 @@ class TestCreateGreenExecutor:
         """Factory creates GreenPhaseExecutor instance."""
         executor = create_green_executor()
 
-        assert isinstance(executor, GreenPhaseExecutor)
+        assert isinstance(executor, GreenPhaseExecutor), "Expected isinstance() to be truthy"
 
     def test_passes_config(self):
         """Factory passes config to executor."""
@@ -535,5 +535,5 @@ class TestCreateGreenExecutor:
 
         executor = create_green_executor(config)
 
-        assert executor.max_iterations == 15
-        assert executor.test_timeout == 60
+        assert executor.max_iterations == 15, "Expected executor.max_iterations to equal 15"
+        assert executor.test_timeout == 60, "Expected executor.test_timeout to equal 60"

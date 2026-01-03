@@ -61,10 +61,10 @@ dependencies = ["pytest"]
 
         outcome = executor.execute_step("non-existent-task-id")
 
-        assert outcome.success is False
-        assert outcome.action_name == "error"
-        assert "not found" in outcome.summary.lower()
-        assert outcome.should_continue is False
+        assert outcome.success is False, "Expected outcome.success is False"
+        assert outcome.action_name == "error", "Expected outcome.action_name to equal 'error'"
+        assert "not found" in outcome.summary.lower(), "Expected 'not found' in outcome.summary.lower()"
+        assert outcome.should_continue is False, "Expected outcome.should_continue is False"
 
     def test_execute_step_already_complete(self, temp_project):
         """execute_step handles already completed tasks gracefully."""
@@ -84,9 +84,9 @@ dependencies = ["pytest"]
 
         outcome = executor.execute_step(state.task_id)
 
-        assert outcome.success is True
-        assert outcome.action_name == "already_complete"
-        assert outcome.should_continue is False
+        assert outcome.success is True, "Expected outcome.success is True"
+        assert outcome.action_name == "already_complete", "Expected outcome.action_name to equal 'already_complete'"
+        assert outcome.should_continue is False, "Expected outcome.should_continue is False"
 
     def test_execute_step_already_failed(self, temp_project):
         """execute_step handles already failed tasks gracefully."""
@@ -105,9 +105,9 @@ dependencies = ["pytest"]
 
         outcome = executor.execute_step(state.task_id)
 
-        assert outcome.success is True
-        assert "FAILED" in outcome.summary.upper() or "failed" in outcome.summary.lower()
-        assert outcome.should_continue is False
+        assert outcome.success is True, "Expected outcome.success is True"
+        assert "FAILED" in outcome.summary.upper() or "failed" in outcome.summary.lower(), "Assertion failed"
+        assert outcome.should_continue is False, "Expected outcome.should_continue is False"
 
     def test_execute_step_already_escalated(self, temp_project):
         """execute_step handles already escalated tasks gracefully."""
@@ -126,8 +126,8 @@ dependencies = ["pytest"]
 
         outcome = executor.execute_step(state.task_id)
 
-        assert outcome.success is True
-        assert outcome.should_continue is False
+        assert outcome.success is True, "Expected outcome.success is True"
+        assert outcome.should_continue is False, "Expected outcome.should_continue is False"
 
     def test_action_executor_raises_exception(self, temp_project):
         """Action executor exception is handled gracefully."""
@@ -151,8 +151,8 @@ dependencies = ["pytest"]
         # Execute the action directly
         result = executor._execute_action("failing_action", {}, state)
 
-        assert result["status"] == "failure"
-        assert "Simulated action failure" in result["error"]
+        assert result["status"] == "failure", "Expected result['status'] to equal 'failure'"
+        assert "Simulated action failure" in result["error"], "Expected 'Simulated action failure' in result['error']"
 
     def test_action_executor_returns_non_dict(self, temp_project):
         """Action executor returning non-dict is wrapped."""
@@ -175,8 +175,8 @@ dependencies = ["pytest"]
 
         result = executor._execute_action("string_action", {}, state)
 
-        assert result["status"] == "success"
-        assert result["summary"] == "Simple string result"
+        assert result["status"] == "success", "Expected result['status'] to equal 'success'"
+        assert result["summary"] == "Simple string result", "Expected result['summary'] to equal 'Simple string result'"
 
     def test_unknown_action_returns_failure(self, temp_project):
         """Unknown action returns failure result."""
@@ -194,8 +194,8 @@ dependencies = ["pytest"]
 
         result = executor._execute_action("completely_unknown_action", {}, state)
 
-        assert result["status"] == "failure"
-        assert "unknown action" in result["summary"].lower()
+        assert result["status"] == "failure", "Expected result['status'] to equal 'failure'"
+        assert "unknown action" in result["summary"].lower(), "Expected 'unknown action' in result['summary'].lower()"
 
 
 class TestParseActionEdgeCases:
@@ -220,8 +220,8 @@ class TestParseActionEdgeCases:
 
         action_name, params = executor._parse_action("")
 
-        assert action_name == "unknown"
-        assert params == {}
+        assert action_name == "unknown", "Expected action_name to equal 'unknown'"
+        assert params == {}, "Expected params to equal {}"
 
     def test_parse_action_no_action_block(self, temp_project):
         """Response without action block tries fallbacks."""
@@ -233,7 +233,7 @@ class TestParseActionEdgeCases:
         response = "I will now complete the task successfully."
         action_name, params = executor._parse_action(response)
 
-        assert action_name == "complete"
+        assert action_name == "complete", "Expected action_name to equal 'complete'"
 
     def test_parse_action_malformed_yaml(self, temp_project):
         """Malformed YAML in action block is handled."""
@@ -251,7 +251,7 @@ parameters:
 
         action_name, params = executor._parse_action(response)
         # Should fall back gracefully
-        assert action_name in ("unknown", "test_action")
+        assert action_name in ("unknown", "test_action"), "Expected action_name in ('unknown', 'test_action')"
 
     def test_parse_action_yaml_without_name(self, temp_project):
         """YAML without name/action field returns None from parser."""
@@ -266,7 +266,7 @@ parameters:
 ```"""
 
         action_name, params = executor._parse_action(response)
-        assert action_name == "unknown"
+        assert action_name == "unknown", "Expected action_name to equal 'unknown'"
 
     def test_parse_action_simple_pattern_fallback(self, temp_project):
         """Simple action: pattern is detected."""
@@ -278,7 +278,7 @@ parameters:
         response = "action: read_file\npath: /some/file.py"
         action_name, params = executor._parse_action(response)
 
-        assert action_name == "read_file"
+        assert action_name == "read_file", "Expected action_name to equal 'read_file'"
 
     def test_parse_action_name_pattern_fallback(self, temp_project):
         """Simple name: pattern is detected."""
@@ -290,7 +290,7 @@ parameters:
         response = "name: write_file\npath: /some/file.py"
         action_name, params = executor._parse_action(response)
 
-        assert action_name == "write_file"
+        assert action_name == "write_file", "Expected action_name to equal 'write_file'"
 
 
 class TestAdaptiveBudgetEdgeCases:
@@ -302,8 +302,8 @@ class TestAdaptiveBudgetEdgeCases:
 
         should_continue, reason, loop = budget.check_continue(1, [])
 
-        assert should_continue is True
-        assert "Continue" in reason
+        assert should_continue is True, "Expected should_continue is True"
+        assert "Continue" in reason, "Expected 'Continue' in reason"
 
     def test_single_action_no_loop(self):
         """Single action doesn't trigger loop detection."""
@@ -312,8 +312,8 @@ class TestAdaptiveBudgetEdgeCases:
         actions = [{"action": "read_file", "result": "success", "summary": "Read OK"}]
         should_continue, reason, loop = budget.check_continue(1, actions)
 
-        assert should_continue is True
-        assert loop is None
+        assert should_continue is True, "Expected should_continue is True"
+        assert loop is None, "Expected loop is None"
 
     def test_repeated_failures_trigger_loop(self):
         """Repeated identical failures trigger loop detection."""
@@ -331,8 +331,8 @@ class TestAdaptiveBudgetEdgeCases:
         ]
         should_continue, reason, loop = budget.check_continue(3, actions)
 
-        assert should_continue is False
-        assert "runaway" in reason.lower() or "stopped" in reason.lower()
+        assert should_continue is False, "Expected should_continue is False"
+        assert "runaway" in reason.lower() or "stopped" in reason.lower(), "Assertion failed"
 
     def test_budget_exhaustion(self):
         """Budget exhaustion stops execution."""
@@ -341,8 +341,8 @@ class TestAdaptiveBudgetEdgeCases:
         actions = [{"action": "read_file", "result": "success", "summary": "Read OK"}]
         should_continue, reason, loop = budget.check_continue(3, actions)
 
-        assert should_continue is False
-        assert "budget" in reason.lower()
+        assert should_continue is False, "Expected should_continue is False"
+        assert "budget" in reason.lower(), "Expected 'budget' in reason.lower()"
 
     def test_no_progress_streak_stops(self):
         """No progress for several steps stops execution."""
@@ -365,8 +365,8 @@ class TestAdaptiveBudgetEdgeCases:
         budget.check_continue(2, non_progress_actions[:2])
         should_continue, reason, loop = budget.check_continue(3, non_progress_actions)
 
-        assert should_continue is False
-        assert "no progress" in reason.lower()
+        assert should_continue is False, "Expected should_continue is False"
+        assert "no progress" in reason.lower(), "Expected 'no progress' in reason.lower()"
 
     def test_progress_extends_budget(self):
         """Making progress extends the dynamic budget."""
@@ -380,7 +380,7 @@ class TestAdaptiveBudgetEdgeCases:
 
         # Check that budget extended
         dynamic = budget._calculate_budget()
-        assert dynamic > 5
+        assert dynamic > 5, "Expected dynamic > 5"
 
 
 class TestNativeToolEdgeCases:
@@ -420,9 +420,9 @@ class TestNativeToolEdgeCases:
         )
 
         # Should stop after processing - may complete if executor handles no-tool gracefully
-        assert result["steps"] >= 1
+        assert result["steps"] >= 1, "Expected result['steps'] >= 1"
         # Result could be various statuses depending on how executor handles no-tool response
-        assert result["status"] in ("stopped", "failed", "no_outcomes", "completed")
+        assert result["status"] in ("stopped", "failed", "no_outcomes", "completed"), "Expected result['status'] in ('stopped', 'failed', 'no_o..."
 
     def test_run_task_native_minimal_domain_context(self, temp_project):
         """Minimal domain context works properly."""
@@ -445,7 +445,7 @@ class TestNativeToolEdgeCases:
             max_steps=3,
         )
 
-        assert result["status"] == "completed"
+        assert result["status"] == "completed", "Expected result['status'] to equal 'completed'"
 
     def test_run_task_native_cannot_fix(self, temp_project):
         """cannot_fix action is handled correctly."""
@@ -471,7 +471,7 @@ class TestNativeToolEdgeCases:
             max_steps=3,
         )
 
-        assert result["status"] == "escalated"
+        assert result["status"] == "escalated", "Expected result['status'] to equal 'escalated'"
 
 
 class TestCompleteActionEdgeCases:
@@ -505,8 +505,8 @@ class TestCompleteActionEdgeCases:
 
         result = executor._execute_action("complete", {}, state)
 
-        assert result["status"] == "failure"
-        assert "verification" in result["summary"].lower()
+        assert result["status"] == "failure", "Expected result['status'] to equal 'failure'"
+        assert "verification" in result["summary"].lower(), "Expected 'verification' in result['summary'].lower()"
 
     def test_complete_with_verification_succeeds(self, temp_project):
         """Complete action succeeds when verification passing."""
@@ -526,7 +526,7 @@ class TestCompleteActionEdgeCases:
 
         result = executor._execute_action("complete", {}, state)
 
-        assert result["status"] == "success"
+        assert result["status"] == "success", "Expected result['status'] to equal 'success'"
 
 
 class TestPhaseTransitionEdgeCases:
@@ -566,7 +566,7 @@ class TestPhaseTransitionEdgeCases:
         executor._handle_phase_transition(state.task_id, "write_file", action_result, state)
 
         updated_state = executor.state_store.load(state.task_id)
-        assert updated_state.phase == Phase.FAILED
+        assert updated_state.phase == Phase.FAILED, "Expected updated_state.phase to equal Phase.FAILED"
 
     def test_escalate_transitions_to_escalated(self, temp_project):
         """Escalate action transitions to ESCALATED phase."""
@@ -588,7 +588,7 @@ class TestPhaseTransitionEdgeCases:
         executor._handle_phase_transition(state.task_id, "escalate", action_result, state)
 
         updated_state = executor.state_store.load(state.task_id)
-        assert updated_state.phase == Phase.ESCALATED
+        assert updated_state.phase == Phase.ESCALATED, "Expected updated_state.phase to equal Phase.ESCALATED"
 
     def test_cannot_fix_stores_reason(self, temp_project):
         """cannot_fix action stores the reason in context data."""
@@ -613,8 +613,8 @@ class TestPhaseTransitionEdgeCases:
         executor._handle_phase_transition(state.task_id, "cannot_fix", action_result, state)
 
         updated_state = executor.state_store.load(state.task_id)
-        assert updated_state.phase == Phase.ESCALATED
-        assert updated_state.context_data.get("cannot_fix_reason") == "Requires architectural changes"
+        assert updated_state.phase == Phase.ESCALATED, "Expected updated_state.phase to equal Phase.ESCALATED"
+        assert updated_state.context_data.get("cannot_fix_reason") == "Requires architectural changes", "Expected updated_state.context_data.... to equal 'Requires architectural cha..."
 
 
 class TestStepOutcomeEdgeCases:
@@ -635,9 +635,9 @@ class TestStepOutcomeEdgeCases:
 
         result = outcome.to_dict()
 
-        assert result["success"] is True
-        assert result["action_name"] == "read_file"
-        assert "loop_detection" not in result
+        assert result["success"] is True, "Expected result['success'] is True"
+        assert result["action_name"] == "read_file", "Expected result['action_name'] to equal 'read_file'"
+        assert "loop_detection" not in result, "Expected 'loop_detection' not in result"
 
     def test_step_outcome_to_dict_with_loop(self):
         """StepOutcome.to_dict includes loop detection info."""
@@ -668,6 +668,6 @@ class TestStepOutcomeEdgeCases:
 
         result = outcome.to_dict()
 
-        assert "loop_detection" in result
-        assert result["loop_detection"]["type"] == "identical_action"
-        assert result["loop_detection"]["confidence"] == 0.9
+        assert "loop_detection" in result, "Expected 'loop_detection' in result"
+        assert result["loop_detection"]["type"] == "identical_action", "Expected result['loop_detection']['t... to equal 'identical_action'"
+        assert result["loop_detection"]["confidence"] == 0.9, "Expected result['loop_detection']['c... to equal 0.9"

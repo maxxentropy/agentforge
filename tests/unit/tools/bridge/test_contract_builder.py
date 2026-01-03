@@ -64,12 +64,12 @@ class TestContractBuilder:
             confidence_threshold=0.6,
         )
 
-        assert contract.name == "core"
-        assert contract.zone == "core"
-        assert contract.language == "csharp"
-        assert len(contract.checks) == 2
-        assert contract.enabled_count == 1
-        assert contract.disabled_count == 1
+        assert contract.name == "core", "Expected contract.name to equal 'core'"
+        assert contract.zone == "core", "Expected contract.zone to equal 'core'"
+        assert contract.language == "csharp", "Expected contract.language to equal 'csharp'"
+        assert len(contract.checks) == 2, "Expected len(contract.checks) to equal 2"
+        assert contract.enabled_count == 1, "Expected contract.enabled_count to equal 1"
+        assert contract.disabled_count == 1, "Expected contract.disabled_count to equal 1"
 
     def test_build_contract_default_zone(self, builder, sample_checks):
         """Default zone uses 'generated' as name."""
@@ -81,8 +81,8 @@ class TestContractBuilder:
             profile_hash="sha256:abc",
         )
 
-        assert contract.name == "generated"
-        assert contract.zone is None
+        assert contract.name == "generated", "Expected contract.name to equal 'generated'"
+        assert contract.zone is None, "Expected contract.zone is None"
 
     def test_metadata_includes_patterns(self, builder, sample_checks):
         """Metadata includes mapped patterns."""
@@ -94,8 +94,8 @@ class TestContractBuilder:
             profile_hash="sha256:abc",
         )
 
-        assert "cqrs" in contract.metadata.patterns_mapped
-        assert contract.metadata.patterns_mapped["cqrs"] == 0.95
+        assert "cqrs" in contract.metadata.patterns_mapped, "Expected 'cqrs' in contract.metadata.patterns_..."
+        assert contract.metadata.patterns_mapped["cqrs"] == 0.95, "Expected contract.metadata.patterns_... to equal 0.95"
 
     def test_write_contract_creates_file(self, builder, sample_checks):
         """Writing a contract creates the file."""
@@ -109,9 +109,9 @@ class TestContractBuilder:
 
         output_path = builder.write_contract(contract)
 
-        assert output_path is not None
-        assert output_path.exists()
-        assert output_path.name == "core.contract.yaml"
+        assert output_path is not None, "Expected output_path is not None"
+        assert output_path.exists(), "Expected output_path.exists() to be truthy"
+        assert output_path.name == "core.contract.yaml", "Expected output_path.name to equal 'core.contract.yaml'"
 
     def test_write_contract_dry_run(self, builder, sample_checks):
         """Dry run returns path but doesn't create file."""
@@ -125,8 +125,8 @@ class TestContractBuilder:
 
         output_path = builder.write_contract(contract, dry_run=True)
 
-        assert output_path is not None
-        assert not output_path.exists()
+        assert output_path is not None, "Expected output_path is not None"
+        assert not output_path.exists(), "Assertion failed"
 
     def test_contract_yaml_has_header(self, builder, sample_checks):
         """Generated YAML has proper header."""
@@ -141,9 +141,9 @@ class TestContractBuilder:
         output_path = builder.write_contract(contract)
         content = output_path.read_text()
 
-        assert "AUTO-GENERATED CONTRACT" in content
-        assert "DO NOT EDIT MANUALLY" in content
-        assert "AgentForge Bridge" in content
+        assert "AUTO-GENERATED CONTRACT" in content, "Expected 'AUTO-GENERATED CONTRACT' in content"
+        assert "DO NOT EDIT MANUALLY" in content, "Expected 'DO NOT EDIT MANUALLY' in content"
+        assert "AgentForge Bridge" in content, "Expected 'AgentForge Bridge' in content"
 
     def test_contract_yaml_has_metadata(self, builder, sample_checks):
         """Generated YAML includes generation metadata."""
@@ -158,9 +158,9 @@ class TestContractBuilder:
         output_path = builder.write_contract(contract)
         content = output_path.read_text()
 
-        assert "generation_metadata:" in content
-        assert "source_profile: test.yaml" in content
-        assert "source_hash: sha256:abc" in content
+        assert "generation_metadata:" in content, "Expected 'generation_metadata:' in content"
+        assert "source_profile: test.yaml" in content, "Expected 'source_profile: test.yaml' in content"
+        assert "source_hash: sha256:abc" in content, "Expected 'source_hash: sha256:abc' in content"
 
     def test_contract_yaml_has_checks_with_provenance(self, builder, sample_checks):
         """Checks include generation provenance."""
@@ -175,9 +175,9 @@ class TestContractBuilder:
         output_path = builder.write_contract(contract)
         content = output_path.read_text()
 
-        assert "generation:" in content
-        assert "source_pattern: cqrs" in content
-        assert "source_confidence: 0.95" in content
+        assert "generation:" in content, "Expected 'generation:' in content"
+        assert "source_pattern: cqrs" in content, "Expected 'source_pattern: cqrs' in content"
+        assert "source_confidence: 0.95" in content, "Expected 'source_confidence: 0.95' in content"
 
 
 class TestContractBuilderEdgeCases:
@@ -198,9 +198,9 @@ class TestContractBuilderEdgeCases:
             profile_hash="sha256:abc",
         )
 
-        assert contract.name == "empty"
-        assert len(contract.checks) == 0
-        assert contract.enabled_count == 0
+        assert contract.name == "empty", "Expected contract.name to equal 'empty'"
+        assert len(contract.checks) == 0, "Expected len(contract.checks) to equal 0"
+        assert contract.enabled_count == 0, "Expected contract.enabled_count to equal 0"
 
     def test_handles_special_characters_in_zone_name(self, builder):
         """Handles special characters in zone names."""
@@ -227,5 +227,5 @@ class TestContractBuilderEdgeCases:
 
         output_path = builder.write_contract(contract)
 
-        assert output_path.name == "my-zone.contract.yaml"
-        assert output_path.exists()
+        assert output_path.name == "my-zone.contract.yaml", "Expected output_path.name to equal 'my-zone.contract.yaml'"
+        assert output_path.exists(), "Expected output_path.exists() to be truthy"

@@ -33,9 +33,9 @@ class TestCheckpointManagerInit:
 
         manager = CheckpointManager(storage_path=storage_path)
 
-        assert manager is not None
-        assert manager.storage_path == storage_path
-        assert manager.max_checkpoints == 10  # default value
+        assert manager is not None, "Expected manager is not None"
+        assert manager.storage_path == storage_path, "Expected manager.storage_path to equal storage_path"
+        assert manager.max_checkpoints == 10, "Expected manager.max_checkpoints to equal 10"# default value
 
     def test_init_with_custom_max_checkpoints_sets_limit(self):
         """Test that CheckpointManager respects custom max_checkpoints."""
@@ -44,7 +44,7 @@ class TestCheckpointManagerInit:
 
         manager = CheckpointManager(storage_path=storage_path, max_checkpoints=max_checkpoints)
 
-        assert manager.max_checkpoints == max_checkpoints
+        assert manager.max_checkpoints == max_checkpoints, "Expected manager.max_checkpoints to equal max_checkpoints"
 
     def test_init_creates_storage_directory_if_not_exists(self):
         """Test that CheckpointManager creates storage directory."""
@@ -53,8 +53,8 @@ class TestCheckpointManagerInit:
 
             CheckpointManager(storage_path=storage_path)
 
-            assert storage_path.exists()
-            assert storage_path.is_dir()
+            assert storage_path.exists(), "Expected storage_path.exists() to be truthy"
+            assert storage_path.is_dir(), "Expected storage_path.is_dir() to be truthy"
 
 
 class TestCreateCheckpoint:
@@ -79,14 +79,14 @@ class TestCreateCheckpoint:
             state=state
         )
 
-        assert isinstance(checkpoint, Checkpoint)
-        assert checkpoint.session_id == session_id
-        assert checkpoint.phase == phase
-        assert checkpoint.state == state
-        assert checkpoint.id is not None
-        assert isinstance(checkpoint.timestamp, datetime)
-        assert checkpoint.file_backups == []
-        assert checkpoint.description is None
+        assert isinstance(checkpoint, Checkpoint), "Expected isinstance() to be truthy"
+        assert checkpoint.session_id == session_id, "Expected checkpoint.session_id to equal session_id"
+        assert checkpoint.phase == phase, "Expected checkpoint.phase to equal phase"
+        assert checkpoint.state == state, "Expected checkpoint.state to equal state"
+        assert checkpoint.id is not None, "Expected checkpoint.id is not None"
+        assert isinstance(checkpoint.timestamp, datetime), "Expected isinstance() to be truthy"
+        assert checkpoint.file_backups == [], "Expected checkpoint.file_backups to equal []"
+        assert checkpoint.description is None, "Expected checkpoint.description is None"
 
     def test_create_checkpoint_with_all_params_returns_complete_checkpoint(self, manager):
         """Test creating checkpoint with all parameters."""
@@ -107,12 +107,12 @@ class TestCreateCheckpoint:
                 description=description
             )
 
-            assert checkpoint.session_id == session_id
-            assert checkpoint.phase == phase
-            assert checkpoint.state == state
-            assert checkpoint.description == description
-            assert len(checkpoint.file_backups) == 2
-            assert mock_copy.call_count == 2
+            assert checkpoint.session_id == session_id, "Expected checkpoint.session_id to equal session_id"
+            assert checkpoint.phase == phase, "Expected checkpoint.phase to equal phase"
+            assert checkpoint.state == state, "Expected checkpoint.state to equal state"
+            assert checkpoint.description == description, "Expected checkpoint.description to equal description"
+            assert len(checkpoint.file_backups) == 2, "Expected len(checkpoint.file_backups) to equal 2"
+            assert mock_copy.call_count == 2, "Expected mock_copy.call_count to equal 2"
 
     def test_create_checkpoint_generates_unique_ids(self, manager):
         """Test that each checkpoint gets a unique ID."""
@@ -123,7 +123,7 @@ class TestCreateCheckpoint:
         checkpoint1 = manager.create_checkpoint(session_id, phase, state)
         checkpoint2 = manager.create_checkpoint(session_id, phase, state)
 
-        assert checkpoint1.id != checkpoint2.id
+        assert checkpoint1.id != checkpoint2.id, "Expected checkpoint1.id to not equal checkpoint2.id"
 
     def test_create_checkpoint_saves_to_storage(self, manager):
         """Test that checkpoint is persisted to storage."""
@@ -135,9 +135,9 @@ class TestCreateCheckpoint:
 
         # Should create nested directory structure: session_id/checkpoint_id/
         checkpoint_dir = manager.storage_path / session_id / checkpoint.id
-        assert checkpoint_dir.exists()
-        assert (checkpoint_dir / "metadata.json").exists()
-        assert (checkpoint_dir / "state.json").exists()
+        assert checkpoint_dir.exists(), "Expected checkpoint_dir.exists() to be truthy"
+        assert (checkpoint_dir / "metadata.json").exists(), "Expected (checkpoint_dir / 'metadata...() to be truthy"
+        assert (checkpoint_dir / "state.json").exists(), "Expected (checkpoint_dir / 'state.js...() to be truthy"
 
     def test_create_checkpoint_with_nonexistent_files_skips_them(self, manager):
         """Test that nonexistent files are silently skipped during backup."""
@@ -150,8 +150,8 @@ class TestCreateCheckpoint:
         checkpoint = manager.create_checkpoint(session_id, phase, state, files_to_backup)
 
         # Should succeed but with no backups since file didn't exist
-        assert checkpoint is not None
-        assert checkpoint.file_backups == []
+        assert checkpoint is not None, "Expected checkpoint is not None"
+        assert checkpoint.file_backups == [], "Expected checkpoint.file_backups to equal []"
 
 
 class TestRestoreCheckpoint:
@@ -179,7 +179,7 @@ class TestRestoreCheckpoint:
 
         result = manager.restore_checkpoint(checkpoint.id)
 
-        assert result is True
+        assert result is True, "Expected result is True"
 
     def test_restore_checkpoint_with_invalid_id_returns_false(self, manager_with_checkpoint):
         """Test restoring nonexistent checkpoint fails gracefully."""
@@ -187,7 +187,7 @@ class TestRestoreCheckpoint:
 
         result = manager.restore_checkpoint("nonexistent_id")
 
-        assert result is False
+        assert result is False, "Expected result is False"
 
     def test_restore_checkpoint_restores_backed_up_files(self, manager_with_checkpoint):
         """Test that file backups are restored during checkpoint restoration."""
@@ -208,10 +208,10 @@ class TestRestoreCheckpoint:
             )
 
             # Verify backup was created
-            assert len(checkpoint.file_backups) == 1
+            assert len(checkpoint.file_backups) == 1, "Expected len(checkpoint.file_backups) to equal 1"
 
             result = manager.restore_checkpoint(checkpoint.id)
-            assert result is True
+            assert result is True, "Expected result is True"
         finally:
             if tmp_path.exists():
                 tmp_path.unlink()
@@ -230,7 +230,7 @@ class TestRestoreCheckpoint:
 
         # Restoration returns True even if file restore has issues (simplified behavior)
         result = manager.restore_checkpoint(checkpoint.id)
-        assert result is True
+        assert result is True, "Expected result is True"
 
 
 class TestListCheckpoints:
@@ -256,10 +256,10 @@ class TestListCheckpoints:
 
         checkpoints = manager.list_checkpoints()
 
-        assert len(checkpoints) == 3
+        assert len(checkpoints) == 3, "Expected len(checkpoints) to equal 3"
         checkpoint_ids = [cp.id for cp in checkpoints]
         for created_cp in created_checkpoints:
-            assert created_cp.id in checkpoint_ids
+            assert created_cp.id in checkpoint_ids, "Expected created_cp.id in checkpoint_ids"
 
     def test_list_checkpoints_with_session_filters_correctly(self, manager_with_multiple_checkpoints):
         """Test listing checkpoints filtered by session ID."""
@@ -267,9 +267,9 @@ class TestListCheckpoints:
 
         checkpoints = manager.list_checkpoints(session_id="session1")
 
-        assert len(checkpoints) == 2
+        assert len(checkpoints) == 2, "Expected len(checkpoints) to equal 2"
         for checkpoint in checkpoints:
-            assert checkpoint.session_id == "session1"
+            assert checkpoint.session_id == "session1", "Expected checkpoint.session_id to equal 'session1'"
 
     def test_list_checkpoints_with_nonexistent_session_returns_empty(self, manager_with_multiple_checkpoints):
         """Test listing checkpoints for nonexistent session returns empty list."""
@@ -277,7 +277,7 @@ class TestListCheckpoints:
 
         checkpoints = manager.list_checkpoints(session_id="nonexistent")
 
-        assert checkpoints == []
+        assert checkpoints == [], "Expected checkpoints to equal []"
 
     def test_list_checkpoints_returns_sorted_by_timestamp(self, manager_with_multiple_checkpoints):
         """Test that checkpoints are returned sorted by timestamp (newest first)."""
@@ -287,7 +287,7 @@ class TestListCheckpoints:
 
         # Should be sorted by timestamp descending
         timestamps = [cp.timestamp for cp in checkpoints]
-        assert timestamps == sorted(timestamps, reverse=True)
+        assert timestamps == sorted(timestamps, reverse=True), "Expected timestamps to equal sorted(timestamps, reverse=..."
 
 
 class TestGetCheckpoint:
@@ -308,9 +308,9 @@ class TestGetCheckpoint:
 
         checkpoint = manager.get_checkpoint(created_checkpoint.id)
 
-        assert checkpoint is not None
-        assert checkpoint.id == created_checkpoint.id
-        assert checkpoint.session_id == created_checkpoint.session_id
+        assert checkpoint is not None, "Expected checkpoint is not None"
+        assert checkpoint.id == created_checkpoint.id, "Expected checkpoint.id to equal created_checkpoint.id"
+        assert checkpoint.session_id == created_checkpoint.session_id, "Expected checkpoint.session_id to equal created_checkpoint.session_id"
 
     def test_get_checkpoint_with_invalid_id_returns_none(self, manager_with_checkpoint):
         """Test retrieving nonexistent checkpoint returns None."""
@@ -318,7 +318,7 @@ class TestGetCheckpoint:
 
         checkpoint = manager.get_checkpoint("nonexistent_id")
 
-        assert checkpoint is None
+        assert checkpoint is None, "Expected checkpoint is None"
 
 
 class TestDeleteCheckpoint:
@@ -339,7 +339,7 @@ class TestDeleteCheckpoint:
 
         result = manager.delete_checkpoint(checkpoint.id)
 
-        assert result is True
+        assert result is True, "Expected result is True"
 
     def test_delete_checkpoint_removes_from_storage(self, manager_with_checkpoint):
         """Test that deleted checkpoint is removed from storage."""
@@ -349,7 +349,7 @@ class TestDeleteCheckpoint:
 
         # Should no longer be retrievable
         retrieved = manager.get_checkpoint(checkpoint.id)
-        assert retrieved is None
+        assert retrieved is None, "Expected retrieved is None"
 
     def test_delete_checkpoint_removes_backup_files(self, manager_with_checkpoint):
         """Test that backup files are cleaned up when checkpoint is deleted."""
@@ -357,13 +357,13 @@ class TestDeleteCheckpoint:
 
         # Verify checkpoint directory exists
         checkpoint_dir = manager.storage_path / checkpoint.session_id / checkpoint.id
-        assert checkpoint_dir.exists()
+        assert checkpoint_dir.exists(), "Expected checkpoint_dir.exists() to be truthy"
 
         result = manager.delete_checkpoint(checkpoint.id)
 
-        assert result is True
+        assert result is True, "Expected result is True"
         # Implementation uses shutil.rmtree which removes entire directory
-        assert not checkpoint_dir.exists()
+        assert not checkpoint_dir.exists(), "Assertion failed"
 
     def test_delete_checkpoint_with_invalid_id_returns_false(self, manager_with_checkpoint):
         """Test deleting nonexistent checkpoint returns False."""
@@ -371,7 +371,7 @@ class TestDeleteCheckpoint:
 
         result = manager.delete_checkpoint("nonexistent_id")
 
-        assert result is False
+        assert result is False, "Expected result is False"
 
 
 class TestCleanupOldCheckpoints:
@@ -393,15 +393,15 @@ class TestCleanupOldCheckpoints:
             manager.cleanup_old_checkpoints(session_id)
 
             remaining = manager.list_checkpoints(session_id)
-            assert len(remaining) == 3
+            assert len(remaining) == 3, "Expected len(remaining) to equal 3"
 
             # Should keep the 3 most recent
             remaining_ids = [cp.id for cp in remaining]
-            assert checkpoints[-1].id in remaining_ids  # Most recent
-            assert checkpoints[-2].id in remaining_ids
-            assert checkpoints[-3].id in remaining_ids
-            assert checkpoints[0].id not in remaining_ids  # Oldest should be gone
-            assert checkpoints[1].id not in remaining_ids
+            assert checkpoints[-1].id in remaining_ids, "Expected checkpoints[-1].id in remaining_ids"# Most recent
+            assert checkpoints[-2].id in remaining_ids, "Expected checkpoints[-2].id in remaining_ids"
+            assert checkpoints[-3].id in remaining_ids, "Expected checkpoints[-3].id in remaining_ids"
+            assert checkpoints[0].id not in remaining_ids, "Expected checkpoints[0].id not in remaining_ids"# Oldest should be gone
+            assert checkpoints[1].id not in remaining_ids, "Expected checkpoints[1].id not in remaining_ids"
 
     def test_cleanup_old_checkpoints_only_affects_specified_session(self):
         """Test that cleanup only removes checkpoints for specified session."""
@@ -421,11 +421,11 @@ class TestCleanupOldCheckpoints:
 
             # Session1 should be cleaned up to 2
             session1_remaining = manager.list_checkpoints("session1")
-            assert len(session1_remaining) == 2
+            assert len(session1_remaining) == 2, "Expected len(session1_remaining) to equal 2"
 
             # Session2 should be untouched (still 3)
             session2_remaining = manager.list_checkpoints("session2")
-            assert len(session2_remaining) == 3
+            assert len(session2_remaining) == 3, "Expected len(session2_remaining) to equal 3"
 
     def test_cleanup_old_checkpoints_with_no_excess_does_nothing(self):
         """Test that cleanup does nothing when within limit."""
@@ -443,12 +443,12 @@ class TestCleanupOldCheckpoints:
             manager.cleanup_old_checkpoints(session_id)
 
             remaining = manager.list_checkpoints(session_id)
-            assert len(remaining) == 3
+            assert len(remaining) == 3, "Expected len(remaining) to equal 3"
 
             # All original checkpoints should still exist
             remaining_ids = [cp.id for cp in remaining]
             for original_cp in checkpoints:
-                assert original_cp.id in remaining_ids
+                assert original_cp.id in remaining_ids, "Expected original_cp.id in remaining_ids"
 
 
 class TestCheckpointManagerIntegration:
@@ -466,29 +466,29 @@ class TestCheckpointManagerIntegration:
             state = {"lifecycle_test": True, "step": 1}
 
             checkpoint = manager.create_checkpoint(session_id, phase, state)
-            assert checkpoint is not None
+            assert checkpoint is not None, "Expected checkpoint is not None"
 
             # List and verify
             checkpoints = manager.list_checkpoints(session_id)
-            assert len(checkpoints) == 1
-            assert checkpoints[0].id == checkpoint.id
+            assert len(checkpoints) == 1, "Expected len(checkpoints) to equal 1"
+            assert checkpoints[0].id == checkpoint.id, "Expected checkpoints[0].id to equal checkpoint.id"
 
             # Get specific checkpoint
             retrieved = manager.get_checkpoint(checkpoint.id)
-            assert retrieved is not None
-            assert retrieved.state == state
+            assert retrieved is not None, "Expected retrieved is not None"
+            assert retrieved.state == state, "Expected retrieved.state to equal state"
 
             # Restore checkpoint
             restore_result = manager.restore_checkpoint(checkpoint.id)
-            assert restore_result is True
+            assert restore_result is True, "Expected restore_result is True"
 
             # Delete checkpoint
             delete_result = manager.delete_checkpoint(checkpoint.id)
-            assert delete_result is True
+            assert delete_result is True, "Expected delete_result is True"
 
             # Verify deletion
             final_checkpoints = manager.list_checkpoints(session_id)
-            assert len(final_checkpoints) == 0
+            assert len(final_checkpoints) == 0, "Expected len(final_checkpoints) to equal 0"
 
     def test_concurrent_checkpoint_operations(self):
         """Test that checkpoint operations work correctly with multiple sessions."""
@@ -514,10 +514,10 @@ class TestCheckpointManagerIntegration:
             # Verify each session has its checkpoints
             for session in sessions:
                 session_cps = manager.list_checkpoints(session)
-                assert len(session_cps) == 3
+                assert len(session_cps) == 3, "Expected len(session_cps) to equal 3"
                 for cp in session_cps:
-                    assert cp.session_id == session
+                    assert cp.session_id == session, "Expected cp.session_id to equal session"
 
             # Verify total count
             all_cps = manager.list_checkpoints()
-            assert len(all_cps) == 9  # 3 sessions × 3 checkpoints each
+            assert len(all_cps) == 9, "Expected len(all_cps) to equal 9"# 3 sessions × 3 checkpoints each

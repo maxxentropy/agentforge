@@ -71,9 +71,9 @@ class TestListCommand:
             ["list", "--drafts", "-p", str(temp_project)],
         )
 
-        assert result.exit_code == 0
-        assert "PENDING DRAFTS" in result.output
-        assert "DRAFT-TEST-001" in result.output
+        assert result.exit_code == 0, "Expected result.exit_code to equal 0"
+        assert "PENDING DRAFTS" in result.output, "Expected 'PENDING DRAFTS' in result.output"
+        assert "DRAFT-TEST-001" in result.output, "Expected 'DRAFT-TEST-001' in result.output"
 
     def test_list_approved(self, runner, temp_project):
         """List approved contracts."""
@@ -82,9 +82,9 @@ class TestListCommand:
             ["list", "--approved", "-p", str(temp_project)],
         )
 
-        assert result.exit_code == 0
-        assert "APPROVED CONTRACTS" in result.output
-        assert "CONTRACT-TEST-001" in result.output
+        assert result.exit_code == 0, "Expected result.exit_code to equal 0"
+        assert "APPROVED CONTRACTS" in result.output, "Expected 'APPROVED CONTRACTS' in result.output"
+        assert "CONTRACT-TEST-001" in result.output, "Expected 'CONTRACT-TEST-001' in result.output"
 
     def test_list_both(self, runner, temp_project):
         """List both drafts and approved."""
@@ -93,9 +93,9 @@ class TestListCommand:
             ["list", "-p", str(temp_project)],
         )
 
-        assert result.exit_code == 0
-        assert "PENDING DRAFTS" in result.output
-        assert "APPROVED CONTRACTS" in result.output
+        assert result.exit_code == 0, "Expected result.exit_code to equal 0"
+        assert "PENDING DRAFTS" in result.output, "Expected 'PENDING DRAFTS' in result.output"
+        assert "APPROVED CONTRACTS" in result.output, "Expected 'APPROVED CONTRACTS' in result.output"
 
     def test_list_empty(self, runner, tmp_path):
         """List with no contracts."""
@@ -104,8 +104,8 @@ class TestListCommand:
             ["list", "-p", str(tmp_path)],
         )
 
-        assert result.exit_code == 0
-        assert "(none)" in result.output
+        assert result.exit_code == 0, "Expected result.exit_code to equal 0"
+        assert "(none)" in result.output, "Expected '(none)' in result.output"
 
 
 class TestShowCommand:
@@ -118,8 +118,8 @@ class TestShowCommand:
             ["show", "DRAFT-TEST-001", "-p", str(temp_project)],
         )
 
-        assert result.exit_code == 0
-        assert "CONTRACT REVIEW" in result.output or "Test authentication" in result.output
+        assert result.exit_code == 0, "Expected result.exit_code to equal 0"
+        assert "CONTRACT REVIEW" in result.output or "Test authentication" in result.output, "Assertion failed"
 
     def test_show_draft_yaml(self, runner, temp_project):
         """Show draft as YAML."""
@@ -128,9 +128,9 @@ class TestShowCommand:
             ["show", "DRAFT-TEST-001", "--yaml", "-p", str(temp_project)],
         )
 
-        assert result.exit_code == 0
-        assert "draft_id:" in result.output
-        assert "DRAFT-TEST-001" in result.output
+        assert result.exit_code == 0, "Expected result.exit_code to equal 0"
+        assert "draft_id:" in result.output, "Expected 'draft_id:' in result.output"
+        assert "DRAFT-TEST-001" in result.output, "Expected 'DRAFT-TEST-001' in result.output"
 
     def test_show_approved(self, runner, temp_project):
         """Show an approved contract."""
@@ -139,8 +139,8 @@ class TestShowCommand:
             ["show", "CONTRACT-TEST-001", "-p", str(temp_project)],
         )
 
-        assert result.exit_code == 0
-        assert "CONTRACT-TEST-001" in result.output
+        assert result.exit_code == 0, "Expected result.exit_code to equal 0"
+        assert "CONTRACT-TEST-001" in result.output, "Expected 'CONTRACT-TEST-001' in result.output"
 
     def test_show_approved_yaml(self, runner, temp_project):
         """Show approved contract as YAML."""
@@ -149,8 +149,8 @@ class TestShowCommand:
             ["show", "CONTRACT-TEST-001", "--yaml", "-p", str(temp_project)],
         )
 
-        assert result.exit_code == 0
-        assert "contract_set_id:" in result.output
+        assert result.exit_code == 0, "Expected result.exit_code to equal 0"
+        assert "contract_set_id:" in result.output, "Expected 'contract_set_id:' in result.output"
 
     def test_show_not_found(self, runner, temp_project):
         """Show nonexistent contract."""
@@ -159,8 +159,8 @@ class TestShowCommand:
             ["show", "NONEXISTENT", "-p", str(temp_project)],
         )
 
-        assert result.exit_code != 0
-        assert "not found" in result.output
+        assert result.exit_code != 0, "Expected result.exit_code to not equal 0"
+        assert "not found" in result.output, "Expected 'not found' in result.output"
 
 
 class TestApproveCommand:
@@ -173,15 +173,15 @@ class TestApproveCommand:
             ["approve", "DRAFT-TEST-001", "-r", "REQ-NEW", "-p", str(temp_project)],
         )
 
-        assert result.exit_code == 0
-        assert "Approved" in result.output
-        assert "REQ-NEW" in result.output
+        assert result.exit_code == 0, "Expected result.exit_code to equal 0"
+        assert "Approved" in result.output, "Expected 'Approved' in result.output"
+        assert "REQ-NEW" in result.output, "Expected 'REQ-NEW' in result.output"
 
         # Verify draft is deleted and approved exists
         registry = ContractRegistry(temp_project)
-        assert registry.get_draft("DRAFT-TEST-001") is None
+        assert registry.get_draft("DRAFT-TEST-001") is None, "Expected registry.get_draft('DRAFT-T... is None"
         approved = registry.get_for_request("REQ-NEW")
-        assert approved is not None
+        assert approved is not None, "Expected approved is not None"
 
     def test_approve_not_found(self, runner, temp_project):
         """Approve nonexistent draft."""
@@ -190,8 +190,8 @@ class TestApproveCommand:
             ["approve", "NONEXISTENT", "-r", "REQ", "-p", str(temp_project)],
         )
 
-        assert result.exit_code != 0
-        assert "not found" in result.output
+        assert result.exit_code != 0, "Expected result.exit_code to not equal 0"
+        assert "not found" in result.output, "Expected 'not found' in result.output"
 
 
 class TestDeleteCommand:
@@ -204,12 +204,12 @@ class TestDeleteCommand:
             ["delete", "DRAFT-TEST-001", "-f", "-p", str(temp_project)],
         )
 
-        assert result.exit_code == 0
-        assert "Deleted" in result.output
+        assert result.exit_code == 0, "Expected result.exit_code to equal 0"
+        assert "Deleted" in result.output, "Expected 'Deleted' in result.output"
 
         # Verify draft is gone
         registry = ContractRegistry(temp_project)
-        assert registry.get_draft("DRAFT-TEST-001") is None
+        assert registry.get_draft("DRAFT-TEST-001") is None, "Expected registry.get_draft('DRAFT-T... is None"
 
     def test_delete_not_found(self, runner, temp_project):
         """Delete nonexistent draft."""
@@ -218,8 +218,8 @@ class TestDeleteCommand:
             ["delete", "NONEXISTENT", "-f", "-p", str(temp_project)],
         )
 
-        assert result.exit_code != 0
-        assert "not found" in result.output
+        assert result.exit_code != 0, "Expected result.exit_code to not equal 0"
+        assert "not found" in result.output, "Expected 'not found' in result.output"
 
     def test_delete_cancelled(self, runner, temp_project):
         """Delete cancelled by user."""
@@ -229,11 +229,11 @@ class TestDeleteCommand:
             input="n\n",  # Say no to confirmation
         )
 
-        assert "Cancelled" in result.output
+        assert "Cancelled" in result.output, "Expected 'Cancelled' in result.output"
 
         # Verify draft still exists
         registry = ContractRegistry(temp_project)
-        assert registry.get_draft("DRAFT-TEST-001") is not None
+        assert registry.get_draft("DRAFT-TEST-001") is not None, "Expected registry.get_draft('DRAFT-T... is not None"
 
 
 class TestContractGroup:
@@ -243,16 +243,16 @@ class TestContractGroup:
         """Show contract command help."""
         result = runner.invoke(task_contracts, ["--help"])
 
-        assert result.exit_code == 0
-        assert "Task contract management" in result.output
+        assert result.exit_code == 0, "Expected result.exit_code to equal 0"
+        assert "Task contract management" in result.output, "Expected 'Task contract management' in result.output"
 
     def test_contract_subcommands(self, runner):
         """Contract has expected subcommands."""
         result = runner.invoke(task_contracts, ["--help"])
 
-        assert "draft" in result.output
-        assert "review" in result.output
-        assert "list" in result.output
-        assert "show" in result.output
-        assert "approve" in result.output
-        assert "delete" in result.output
+        assert "draft" in result.output, "Expected 'draft' in result.output"
+        assert "review" in result.output, "Expected 'review' in result.output"
+        assert "list" in result.output, "Expected 'list' in result.output"
+        assert "show" in result.output, "Expected 'show' in result.output"
+        assert "approve" in result.output, "Expected 'approve' in result.output"
+        assert "delete" in result.output, "Expected 'delete' in result.output"

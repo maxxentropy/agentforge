@@ -85,9 +85,9 @@ class TestRunCheckHandler:
         result = handler({})
 
         # Should return some result (may pass or fail depending on setup)
-        assert isinstance(result, str)
+        assert isinstance(result, str), "Expected isinstance() to be truthy"
         # Should have some status indication
-        assert "CHECK" in result or "ERROR" in result
+        assert "CHECK" in result or "ERROR" in result, "Assertion failed"
 
     def test_run_check_with_file(self, temp_project):
         """Run check on specific file."""
@@ -95,7 +95,7 @@ class TestRunCheckHandler:
 
         result = handler({"file_path": "src/valid.py"})
 
-        assert isinstance(result, str)
+        assert isinstance(result, str), "Expected isinstance() to be truthy"
 
     def test_run_check_with_context(self, temp_project_with_violation):
         """Run check uses context for violation checking."""
@@ -108,7 +108,7 @@ class TestRunCheckHandler:
             }
         })
 
-        assert isinstance(result, str)
+        assert isinstance(result, str), "Expected isinstance() to be truthy"
 
 
 class TestRunTestsHandler:
@@ -121,9 +121,9 @@ class TestRunTestsHandler:
         result = handler({})
 
         # Should return some result
-        assert isinstance(result, str)
+        assert isinstance(result, str), "Expected isinstance() to be truthy"
         # Should have some status indication
-        assert "TEST" in result or "ERROR" in result or "PASSED" in result or "FAILED" in result
+        assert "TEST" in result or "ERROR" in result or "PASSED" in result or "FAILED" in result, "Assertion failed"
 
     def test_run_tests_with_path(self, temp_project):
         """Run specific test path."""
@@ -131,7 +131,7 @@ class TestRunTestsHandler:
 
         result = handler({"path": "tests/"})
 
-        assert isinstance(result, str)
+        assert isinstance(result, str), "Expected isinstance() to be truthy"
 
     def test_run_tests_with_context_files(self, temp_project):
         """Run tests for modified files from context."""
@@ -143,7 +143,7 @@ class TestRunTestsHandler:
             }
         })
 
-        assert isinstance(result, str)
+        assert isinstance(result, str), "Expected isinstance() to be truthy"
 
 
 class TestValidatePythonHandler:
@@ -155,8 +155,8 @@ class TestValidatePythonHandler:
 
         result = handler({"file_path": "src/valid.py"})
 
-        assert "PASSED" in result or "OK" in result
-        assert "Syntax" in result
+        assert "PASSED" in result or "OK" in result, "Assertion failed"
+        assert "Syntax" in result, "Expected 'Syntax' in result"
 
     def test_validate_syntax_error(self, temp_project):
         """Detect syntax error in Python file."""
@@ -164,7 +164,7 @@ class TestValidatePythonHandler:
 
         result = handler({"file_path": "src/syntax_error.py"})
 
-        assert "SYNTAX ERROR" in result or "SyntaxError" in result
+        assert "SYNTAX ERROR" in result or "SyntaxError" in result, "Assertion failed"
 
     def test_validate_file_not_found(self, temp_project):
         """Error on missing file."""
@@ -172,8 +172,8 @@ class TestValidatePythonHandler:
 
         result = handler({"file_path": "nonexistent.py"})
 
-        assert "ERROR" in result
-        assert "not found" in result.lower()
+        assert "ERROR" in result, "Expected 'ERROR' in result"
+        assert "not found" in result.lower(), "Expected 'not found' in result.lower()"
 
     def test_validate_non_python_file(self, temp_project):
         """Error on non-Python file."""
@@ -184,8 +184,8 @@ class TestValidatePythonHandler:
 
         result = handler({"file_path": "readme.md"})
 
-        assert "ERROR" in result
-        assert "Python" in result
+        assert "ERROR" in result, "Expected 'ERROR' in result"
+        assert "Python" in result, "Expected 'Python' in result"
 
     def test_validate_no_path_error(self, temp_project):
         """Error when no path provided."""
@@ -193,8 +193,8 @@ class TestValidatePythonHandler:
 
         result = handler({})
 
-        assert "ERROR" in result
-        assert "path" in result.lower()
+        assert "ERROR" in result, "Expected 'ERROR' in result"
+        assert "path" in result.lower(), "Expected 'path' in result.lower()"
 
     def test_validate_import_error(self, temp_project):
         """Detect import error in Python file."""
@@ -208,4 +208,4 @@ class TestValidatePythonHandler:
         result = handler({"file_path": "src/bad_import.py"})
 
         # May detect NameError depending on how the code is structured
-        assert isinstance(result, str)
+        assert isinstance(result, str), "Expected isinstance() to be truthy"

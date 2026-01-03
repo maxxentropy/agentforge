@@ -52,8 +52,8 @@ class TestContextAuditLogger:
     def test_audit_directory_created(self, logger, temp_project):
         """Audit directory is created on init."""
         expected = temp_project / ".agentforge" / "context_audit" / "test-task-001"
-        assert expected.exists()
-        assert expected.is_dir()
+        assert expected.exists(), "Expected expected.exists() to be truthy"
+        assert expected.is_dir(), "Expected expected.is_dir() to be truthy"
 
     def test_step_audit_created(self, logger, sample_context, sample_breakdown):
         """Step audit file is created."""
@@ -64,13 +64,13 @@ class TestContextAuditLogger:
         )
 
         audit_file = logger.audit_dir / "step_1.yaml"
-        assert audit_file.exists()
+        assert audit_file.exists(), "Expected audit_file.exists() to be truthy"
 
         audit = yaml.safe_load(audit_file.read_text())
-        assert audit["task_id"] == "test-task-001"
-        assert audit["step"] == 1
-        assert "timestamp" in audit
-        assert audit["total_tokens"] == 180
+        assert audit["task_id"] == "test-task-001", "Expected audit['task_id'] to equal 'test-task-001'"
+        assert audit["step"] == 1, "Expected audit['step'] to equal 1"
+        assert "timestamp" in audit, "Expected 'timestamp' in audit"
+        assert audit["total_tokens"] == 180, "Expected audit['total_tokens'] to equal 180"
 
     def test_context_snapshot_saved(self, logger, sample_context, sample_breakdown):
         """Context snapshot is saved."""
@@ -81,10 +81,10 @@ class TestContextAuditLogger:
         )
 
         context_file = logger.audit_dir / "step_1_context.yaml"
-        assert context_file.exists()
+        assert context_file.exists(), "Expected context_file.exists() to be truthy"
 
         saved_context = yaml.safe_load(context_file.read_text())
-        assert saved_context == sample_context
+        assert saved_context == sample_context, "Expected saved_context to equal sample_context"
 
     def test_thinking_saved_separately(self, logger, sample_context, sample_breakdown):
         """Thinking content is saved to separate file."""
@@ -99,13 +99,13 @@ class TestContextAuditLogger:
 
         # Check thinking file created
         thinking_file = logger.audit_dir / "step_2_thinking.md"
-        assert thinking_file.exists()
-        assert thinking in thinking_file.read_text()
+        assert thinking_file.exists(), "Expected thinking_file.exists() to be truthy"
+        assert thinking in thinking_file.read_text(), "Expected thinking in thinking_file.read_text()"
 
         # Check audit references thinking
         audit = logger.get_step_audit(2)
-        assert audit["thinking_file"] == "step_2_thinking.md"
-        assert "thinking_tokens" in audit
+        assert audit["thinking_file"] == "step_2_thinking.md", "Expected audit['thinking_file'] to equal 'step_2_thinking.md'"
+        assert "thinking_tokens" in audit, "Expected 'thinking_tokens' in audit"
 
     def test_compaction_logged(self, logger, sample_context, sample_breakdown):
         """Compaction info is logged when provided."""
@@ -124,15 +124,15 @@ class TestContextAuditLogger:
         )
 
         audit = logger.get_step_audit(1)
-        assert audit["compaction"] == compaction
+        assert audit["compaction"] == compaction, "Expected audit['compaction'] to equal compaction"
 
     def test_hash_reproducible(self, logger, sample_context):
         """Same context produces same hash."""
         hash1 = logger._hash_context(sample_context)
         hash2 = logger._hash_context(sample_context)
 
-        assert hash1 == hash2
-        assert len(hash1) == 16
+        assert hash1 == hash2, "Expected hash1 to equal hash2"
+        assert len(hash1) == 16, "Expected len(hash1) to equal 16"
 
     def test_hash_changes_on_diff(self, logger, sample_context):
         """Different contexts produce different hashes."""
@@ -142,7 +142,7 @@ class TestContextAuditLogger:
         modified_context["extra"] = "data"
         hash2 = logger._hash_context(modified_context)
 
-        assert hash1 != hash2
+        assert hash1 != hash2, "Expected hash1 to not equal hash2"
 
     def test_summary_created(self, logger):
         """Task summary is created correctly."""
@@ -154,16 +154,16 @@ class TestContextAuditLogger:
         )
 
         summary_file = logger.audit_dir / "summary.yaml"
-        assert summary_file.exists()
+        assert summary_file.exists(), "Expected summary_file.exists() to be truthy"
 
         summary = yaml.safe_load(summary_file.read_text())
-        assert summary["task_id"] == "test-task-001"
-        assert summary["total_steps"] == 5
-        assert summary["final_status"] == "completed"
-        assert summary["total_input_tokens"] == 10000
-        assert summary["cached_tokens"] == 4000
+        assert summary["task_id"] == "test-task-001", "Expected summary['task_id'] to equal 'test-task-001'"
+        assert summary["total_steps"] == 5, "Expected summary['total_steps'] to equal 5"
+        assert summary["final_status"] == "completed", "Expected summary['final_status'] to equal 'completed'"
+        assert summary["total_input_tokens"] == 10000, "Expected summary['total_input_tokens'] to equal 10000"
+        assert summary["cached_tokens"] == 4000, "Expected summary['cached_tokens'] to equal 4000"
         # effective = 10000 - (4000 * 0.9) = 6400
-        assert summary["effective_tokens"] == 6400
+        assert summary["effective_tokens"] == 6400, "Expected summary['effective_tokens'] to equal 6400"
 
     def test_summary_with_compaction(self, logger):
         """Summary includes compaction stats."""
@@ -177,8 +177,8 @@ class TestContextAuditLogger:
         )
 
         summary = logger.get_summary()
-        assert summary["compaction_events"] == 3
-        assert summary["total_tokens_saved"] == 2000
+        assert summary["compaction_events"] == 3, "Expected summary['compaction_events'] to equal 3"
+        assert summary["total_tokens_saved"] == 2000, "Expected summary['total_tokens_saved'] to equal 2000"
 
     def test_summary_with_thinking(self, logger, sample_context, sample_breakdown):
         """Summary includes thinking stats when thinking was logged."""
@@ -197,8 +197,8 @@ class TestContextAuditLogger:
         )
 
         summary = logger.get_summary()
-        assert summary["thinking_enabled"] is True
-        assert summary["total_thinking_tokens"] > 0
+        assert summary["thinking_enabled"] is True, "Expected summary['thinking_enabled'] is True"
+        assert summary["total_thinking_tokens"] > 0, "Expected summary['total_thinking_tok... > 0"
 
 
 class TestRetrieval:
@@ -239,43 +239,43 @@ class TestRetrieval:
         """Can retrieve step audit."""
         audit = logger_with_data.get_step_audit(2)
 
-        assert audit is not None
-        assert audit["step"] == 2
-        assert "timestamp" in audit
+        assert audit is not None, "Expected audit is not None"
+        assert audit["step"] == 2, "Expected audit['step'] to equal 2"
+        assert "timestamp" in audit, "Expected 'timestamp' in audit"
 
     def test_get_step_audit_missing(self, logger_with_data):
         """Missing step returns None."""
         audit = logger_with_data.get_step_audit(99)
-        assert audit is None
+        assert audit is None, "Expected audit is None"
 
     def test_get_step_context(self, logger_with_data):
         """Can retrieve step context."""
         context = logger_with_data.get_step_context(2)
 
-        assert context is not None
-        assert context["step"] == 2
-        assert context["data"] == "step2"
+        assert context is not None, "Expected context is not None"
+        assert context["step"] == 2, "Expected context['step'] to equal 2"
+        assert context["data"] == "step2", "Expected context['data'] to equal 'step2'"
 
     def test_get_thinking(self, logger_with_data):
         """Can retrieve thinking content."""
         thinking = logger_with_data.get_thinking(2)
 
-        assert thinking is not None
-        assert "step 2" in thinking
+        assert thinking is not None, "Expected thinking is not None"
+        assert "step 2" in thinking, "Expected 'step 2' in thinking"
 
     def test_get_summary(self, logger_with_data):
         """Can retrieve task summary."""
         summary = logger_with_data.get_summary()
 
-        assert summary is not None
-        assert summary["total_steps"] == 3
-        assert summary["final_status"] == "completed"
+        assert summary is not None, "Expected summary is not None"
+        assert summary["total_steps"] == 3, "Expected summary['total_steps'] to equal 3"
+        assert summary["final_status"] == "completed", "Expected summary['final_status'] to equal 'completed'"
 
     def test_list_steps(self, logger_with_data):
         """Can list all logged steps."""
         steps = logger_with_data.list_steps()
 
-        assert steps == [1, 2, 3]
+        assert steps == [1, 2, 3], "Expected steps to equal [1, 2, 3]"
 
 
 class TestClassMethods:
@@ -308,13 +308,13 @@ class TestClassMethods:
         # Load it back
         loaded = ContextAuditLogger.load_task_audit(temp_project, "existing-task")
 
-        assert loaded is not None
-        assert loaded.get_step_audit(1) is not None
+        assert loaded is not None, "Expected loaded is not None"
+        assert loaded.get_step_audit(1) is not None, "Expected loaded.get_step_audit(1) is not None"
 
     def test_load_missing_task(self, temp_project):
         """Loading missing task returns None."""
         loaded = ContextAuditLogger.load_task_audit(temp_project, "nonexistent")
-        assert loaded is None
+        assert loaded is None, "Expected loaded is None"
 
     def test_list_task_audits(self, temp_project):
         """Can list all task audits."""
@@ -330,15 +330,15 @@ class TestClassMethods:
 
         task_ids = ContextAuditLogger.list_task_audits(temp_project)
 
-        assert len(task_ids) == 3
-        assert "task-a" in task_ids
-        assert "task-b" in task_ids
-        assert "task-c" in task_ids
+        assert len(task_ids) == 3, "Expected len(task_ids) to equal 3"
+        assert "task-a" in task_ids, "Expected 'task-a' in task_ids"
+        assert "task-b" in task_ids, "Expected 'task-b' in task_ids"
+        assert "task-c" in task_ids, "Expected 'task-c' in task_ids"
 
     def test_list_empty_audits(self, temp_project):
         """Empty project returns empty list."""
         task_ids = ContextAuditLogger.list_task_audits(temp_project)
-        assert task_ids == []
+        assert task_ids == [], "Expected task_ids to equal []"
 
 
 class TestEdgeCases:
@@ -364,10 +364,10 @@ class TestEdgeCases:
         )
 
         context = logger.get_step_context(1)
-        assert context["data"] == "日本語テスト 🎉"
+        assert context["data"] == "日本語テスト 🎉", "Expected context['data'] to equal '日本語テスト 🎉'"
 
         thinking = logger.get_thinking(1)
-        assert "考え中" in thinking
+        assert "考え中" in thinking, "Expected '考え中' in thinking"
 
     def test_empty_context(self, temp_project):
         """Handles empty context."""
@@ -380,8 +380,8 @@ class TestEdgeCases:
         )
 
         audit = logger.get_step_audit(1)
-        assert audit["total_tokens"] == 0
-        assert audit["sections_present"] == []
+        assert audit["total_tokens"] == 0, "Expected audit['total_tokens'] to equal 0"
+        assert audit["sections_present"] == [], "Expected audit['sections_present'] to equal []"
 
     def test_large_context(self, temp_project):
         """Handles large context."""
@@ -400,5 +400,5 @@ class TestEdgeCases:
 
         # Should still be retrievable
         retrieved = logger.get_step_context(1)
-        assert retrieved["data"] == large_context["data"]
-        assert len(retrieved["list"]) == 1000
+        assert retrieved["data"] == large_context["data"], "Expected retrieved['data'] to equal large_context['data']"
+        assert len(retrieved["list"]) == 1000, "Expected len(retrieved['list']) to equal 1000"

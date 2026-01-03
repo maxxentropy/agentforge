@@ -34,19 +34,19 @@ class TestEscalationPriority:
         """Test that EscalationPriority enum contains all specified values."""
         expected_values = {'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'}
         actual_values = {p.name for p in EscalationPriority}
-        assert actual_values == expected_values
+        assert actual_values == expected_values, "Expected actual_values to equal expected_values"
 
     def test_escalation_priority_values_are_accessible(self):
         """Test that individual EscalationPriority values can be accessed."""
-        assert EscalationPriority.LOW
-        assert EscalationPriority.MEDIUM
-        assert EscalationPriority.HIGH
-        assert EscalationPriority.CRITICAL
+        assert EscalationPriority.LOW, "Expected EscalationPriority.LOW to be truthy"
+        assert EscalationPriority.MEDIUM, "Expected EscalationPriority.MEDIUM to be truthy"
+        assert EscalationPriority.HIGH, "Expected EscalationPriority.HIGH to be truthy"
+        assert EscalationPriority.CRITICAL, "Expected EscalationPriority.CRITICAL to be truthy"
 
     def test_escalation_priority_ordering(self):
         """Test that priorities can be compared for ordering."""
         # Using enum values for comparison
-        assert EscalationPriority.LOW.value < EscalationPriority.CRITICAL.value
+        assert EscalationPriority.LOW.value < EscalationPriority.CRITICAL.value, "Expected EscalationPriority.LOW.value < EscalationPriority.CRITICAL..."
 
 
 class TestEscalationStatus:
@@ -56,16 +56,16 @@ class TestEscalationStatus:
         """Test that EscalationStatus enum contains all specified values."""
         expected_values = {'PENDING', 'ACKNOWLEDGED', 'IN_PROGRESS', 'RESOLVED', 'EXPIRED', 'CANCELLED'}
         actual_values = {s.name for s in EscalationStatus}
-        assert actual_values == expected_values
+        assert actual_values == expected_values, "Expected actual_values to equal expected_values"
 
     def test_escalation_status_values_are_accessible(self):
         """Test that individual EscalationStatus values can be accessed."""
-        assert EscalationStatus.PENDING
-        assert EscalationStatus.ACKNOWLEDGED
-        assert EscalationStatus.IN_PROGRESS
-        assert EscalationStatus.RESOLVED
-        assert EscalationStatus.EXPIRED
-        assert EscalationStatus.CANCELLED
+        assert EscalationStatus.PENDING, "Expected EscalationStatus.PENDING to be truthy"
+        assert EscalationStatus.ACKNOWLEDGED, "Expected EscalationStatus.ACKNOWLEDGED to be truthy"
+        assert EscalationStatus.IN_PROGRESS, "Expected EscalationStatus.IN_PROGRESS to be truthy"
+        assert EscalationStatus.RESOLVED, "Expected EscalationStatus.RESOLVED to be truthy"
+        assert EscalationStatus.EXPIRED, "Expected EscalationStatus.EXPIRED to be truthy"
+        assert EscalationStatus.CANCELLED, "Expected EscalationStatus.CANCELLED to be truthy"
 
 
 class TestEscalationChannel:
@@ -75,14 +75,14 @@ class TestEscalationChannel:
         """Test that EscalationChannel enum contains all specified values."""
         expected_values = {'CLI', 'FILE', 'WEBHOOK', 'EMAIL'}
         actual_values = {c.name for c in EscalationChannel}
-        assert actual_values == expected_values
+        assert actual_values == expected_values, "Expected actual_values to equal expected_values"
 
     def test_escalation_channel_values_are_accessible(self):
         """Test that individual EscalationChannel values can be accessed."""
-        assert EscalationChannel.CLI
-        assert EscalationChannel.FILE
-        assert EscalationChannel.WEBHOOK
-        assert EscalationChannel.EMAIL
+        assert EscalationChannel.CLI, "Expected EscalationChannel.CLI to be truthy"
+        assert EscalationChannel.FILE, "Expected EscalationChannel.FILE to be truthy"
+        assert EscalationChannel.WEBHOOK, "Expected EscalationChannel.WEBHOOK to be truthy"
+        assert EscalationChannel.EMAIL, "Expected EscalationChannel.EMAIL to be truthy"
 
 
 class TestResolutionType:
@@ -92,15 +92,15 @@ class TestResolutionType:
         """Test that ResolutionType enum contains all specified values."""
         expected_values = {'APPROVED', 'REJECTED', 'MODIFIED', 'DEFERRED', 'TIMEOUT'}
         actual_values = {r.name for r in ResolutionType}
-        assert actual_values == expected_values
+        assert actual_values == expected_values, "Expected actual_values to equal expected_values"
 
     def test_resolution_type_values_are_accessible(self):
         """Test that individual ResolutionType values can be accessed."""
-        assert ResolutionType.APPROVED
-        assert ResolutionType.REJECTED
-        assert ResolutionType.MODIFIED
-        assert ResolutionType.DEFERRED
-        assert ResolutionType.TIMEOUT
+        assert ResolutionType.APPROVED, "Expected ResolutionType.APPROVED to be truthy"
+        assert ResolutionType.REJECTED, "Expected ResolutionType.REJECTED to be truthy"
+        assert ResolutionType.MODIFIED, "Expected ResolutionType.MODIFIED to be truthy"
+        assert ResolutionType.DEFERRED, "Expected ResolutionType.DEFERRED to be truthy"
+        assert ResolutionType.TIMEOUT, "Expected ResolutionType.TIMEOUT to be truthy"
 
 
 class TestEscalation:
@@ -120,17 +120,17 @@ class TestEscalation:
             recommended_actions=["Check network", "Retry connection"]
         )
 
-        assert escalation.id == "esc-001"
-        assert escalation.session_id == "session-123"
-        assert escalation.created_at == created_at
-        assert escalation.priority == EscalationPriority.HIGH
-        assert escalation.status == EscalationStatus.PENDING
-        assert escalation.reason == "Critical error encountered"
-        assert escalation.context == {"error": "Connection timeout"}
-        assert escalation.recommended_actions == ["Check network", "Retry connection"]
-        assert escalation.timeout_seconds is None
-        assert escalation.acknowledged_at is None
-        assert escalation.resolved_at is None
+        assert escalation.id == "esc-001", "Expected escalation.id to equal 'esc-001'"
+        assert escalation.session_id == "session-123", "Expected escalation.session_id to equal 'session-123'"
+        assert escalation.created_at == created_at, "Expected escalation.created_at to equal created_at"
+        assert escalation.priority == EscalationPriority.HIGH, "Expected escalation.priority to equal EscalationPriority.HIGH"
+        assert escalation.status == EscalationStatus.PENDING, "Expected escalation.status to equal EscalationStatus.PENDING"
+        assert escalation.reason == "Critical error encountered", "Expected escalation.reason to equal 'Critical error encountered'"
+        assert escalation.context == {"error": "Connection timeout"}, "Expected escalation.context to equal {'error': 'Connection timeo..."
+        assert escalation.recommended_actions == ["Check network", "Retry connection"], "Expected escalation.recommended_actions to equal ['Check network', 'Retry co..."
+        assert escalation.timeout_seconds is None, "Expected escalation.timeout_seconds is None"
+        assert escalation.acknowledged_at is None, "Expected escalation.acknowledged_at is None"
+        assert escalation.resolved_at is None, "Expected escalation.resolved_at is None"
 
     def test_escalation_creation_with_optional_fields(self):
         """Test creating an Escalation with optional fields."""
@@ -150,8 +150,8 @@ class TestEscalation:
             acknowledged_at=acknowledged_at
         )
 
-        assert escalation.timeout_seconds == 3600
-        assert escalation.acknowledged_at == acknowledged_at
+        assert escalation.timeout_seconds == 3600, "Expected escalation.timeout_seconds to equal 3600"
+        assert escalation.acknowledged_at == acknowledged_at, "Expected escalation.acknowledged_at to equal acknowledged_at"
 
     def test_escalation_context_can_be_complex_dict(self):
         """Test that Escalation context field can hold complex nested data."""
@@ -172,7 +172,7 @@ class TestEscalation:
             recommended_actions=[]
         )
 
-        assert escalation.context == complex_context
+        assert escalation.context == complex_context, "Expected escalation.context to equal complex_context"
 
     def test_escalation_supports_all_priority_levels(self):
         """Test that Escalation can be created with all priority levels."""
@@ -187,7 +187,7 @@ class TestEscalation:
                 context={},
                 recommended_actions=[]
             )
-            assert escalation.priority == priority
+            assert escalation.priority == priority, "Expected escalation.priority to equal priority"
 
     def test_escalation_supports_all_status_values(self):
         """Test that Escalation can be created with all status values."""
@@ -202,7 +202,7 @@ class TestEscalation:
                 context={},
                 recommended_actions=[]
             )
-            assert escalation.status == status
+            assert escalation.status == status, "Expected escalation.status to equal status"
 
 
 class TestEscalationResolution:
@@ -218,12 +218,12 @@ class TestEscalationResolution:
             resolved_at=resolved_at
         )
 
-        assert resolution.escalation_id == "esc-001"
-        assert resolution.resolution_type == ResolutionType.APPROVED
-        assert resolution.decision == "Proceed with the operation"
-        assert resolution.resolved_at == resolved_at
-        assert resolution.notes is None
-        assert resolution.resolved_by is None
+        assert resolution.escalation_id == "esc-001", "Expected resolution.escalation_id to equal 'esc-001'"
+        assert resolution.resolution_type == ResolutionType.APPROVED, "Expected resolution.resolution_type to equal ResolutionType.APPROVED"
+        assert resolution.decision == "Proceed with the operation", "Expected resolution.decision to equal 'Proceed with the operation'"
+        assert resolution.resolved_at == resolved_at, "Expected resolution.resolved_at to equal resolved_at"
+        assert resolution.notes is None, "Expected resolution.notes is None"
+        assert resolution.resolved_by is None, "Expected resolution.resolved_by is None"
 
     def test_escalation_resolution_creation_with_optional_fields(self):
         """Test creating an EscalationResolution with optional fields."""
@@ -236,8 +236,8 @@ class TestEscalationResolution:
             resolved_by="user@example.com"
         )
 
-        assert resolution.notes == "Changed parameters based on review"
-        assert resolution.resolved_by == "user@example.com"
+        assert resolution.notes == "Changed parameters based on review", "Expected resolution.notes to equal 'Changed parameters based o..."
+        assert resolution.resolved_by == "user@example.com", "Expected resolution.resolved_by to equal 'user@example.com'"
 
     def test_escalation_resolution_supports_all_resolution_types(self):
         """Test that EscalationResolution can be created with all resolution types."""
@@ -248,7 +248,7 @@ class TestEscalationResolution:
                 decision="Test decision",
                 resolved_at=datetime.now()
             )
-            assert resolution.resolution_type == res_type
+            assert resolution.resolution_type == res_type, "Expected resolution.resolution_type to equal res_type"
 
 
 class TestEscalationRule:
@@ -263,12 +263,12 @@ class TestEscalationRule:
             channels=[EscalationChannel.CLI, EscalationChannel.FILE]
         )
 
-        assert rule.name == "critical_error"
-        assert rule.triggers == ["fatal", "critical"]
-        assert rule.priority == EscalationPriority.CRITICAL
-        assert rule.channels == [EscalationChannel.CLI, EscalationChannel.FILE]
-        assert rule.timeout_seconds == 3600  # default
-        assert rule.auto_resolve_action is None
+        assert rule.name == "critical_error", "Expected rule.name to equal 'critical_error'"
+        assert rule.triggers == ["fatal", "critical"], "Expected rule.triggers to equal ['fatal', 'critical']"
+        assert rule.priority == EscalationPriority.CRITICAL, "Expected rule.priority to equal EscalationPriority.CRITICAL"
+        assert rule.channels == [EscalationChannel.CLI, EscalationChannel.FILE], "Expected rule.channels to equal [EscalationChannel.CLI, Esc..."
+        assert rule.timeout_seconds == 3600, "Expected rule.timeout_seconds to equal 3600"# default
+        assert rule.auto_resolve_action is None, "Expected rule.auto_resolve_action is None"
 
     def test_escalation_rule_creation_with_custom_timeout(self):
         """Test creating an EscalationRule with custom timeout."""
@@ -281,8 +281,8 @@ class TestEscalationRule:
             auto_resolve_action="approve"
         )
 
-        assert rule.timeout_seconds == 86400
-        assert rule.auto_resolve_action == "approve"
+        assert rule.timeout_seconds == 86400, "Expected rule.timeout_seconds to equal 86400"
+        assert rule.auto_resolve_action == "approve", "Expected rule.auto_resolve_action to equal 'approve'"
 
     def test_escalation_rule_supports_multiple_triggers(self):
         """Test that EscalationRule can have multiple triggers."""
@@ -294,8 +294,8 @@ class TestEscalationRule:
             channels=[EscalationChannel.CLI]
         )
 
-        assert rule.triggers == triggers
-        assert len(rule.triggers) == 4
+        assert rule.triggers == triggers, "Expected rule.triggers to equal triggers"
+        assert len(rule.triggers) == 4, "Expected len(rule.triggers) to equal 4"
 
     def test_escalation_rule_supports_multiple_channels(self):
         """Test that EscalationRule can have multiple channels."""
@@ -307,8 +307,8 @@ class TestEscalationRule:
             channels=channels
         )
 
-        assert rule.channels == channels
-        assert len(rule.channels) == 3
+        assert rule.channels == channels, "Expected rule.channels to equal channels"
+        assert len(rule.channels) == 3, "Expected len(rule.channels) to equal 3"
 
     def test_escalation_rule_empty_triggers_allowed(self):
         """Test that EscalationRule can have empty triggers list."""
@@ -319,4 +319,4 @@ class TestEscalationRule:
             channels=[EscalationChannel.FILE]
         )
 
-        assert rule.triggers == []
+        assert rule.triggers == [], "Expected rule.triggers to equal []"

@@ -21,9 +21,9 @@ class TestToolHandlerConstants:
             SEARCH_DEFAULT_MAX_RESULTS,
             WORKING_MEMORY_MAX_CONTENT_SIZE,
         )
-        assert FILE_PREVIEW_MAX_LINES is not None
-        assert SEARCH_DEFAULT_MAX_RESULTS is not None
-        assert WORKING_MEMORY_MAX_CONTENT_SIZE is not None
+        assert FILE_PREVIEW_MAX_LINES is not None, "Expected FILE_PREVIEW_MAX_LINES is not None"
+        assert SEARCH_DEFAULT_MAX_RESULTS is not None, "Expected SEARCH_DEFAULT_MAX_RESULTS is not None"
+        assert WORKING_MEMORY_MAX_CONTENT_SIZE is not None, "Expected WORKING_MEMORY_MAX_CONTENT_... is not None"
 
     def test_file_preview_constants(self):
         """File preview constants should have positive values."""
@@ -31,10 +31,10 @@ class TestToolHandlerConstants:
             FILE_PREVIEW_LINE_MAX_CHARS,
             FILE_PREVIEW_MAX_LINES,
         )
-        assert isinstance(FILE_PREVIEW_MAX_LINES, int)
-        assert FILE_PREVIEW_MAX_LINES > 0
-        assert isinstance(FILE_PREVIEW_LINE_MAX_CHARS, int)
-        assert FILE_PREVIEW_LINE_MAX_CHARS > 0
+        assert isinstance(FILE_PREVIEW_MAX_LINES, int), "Expected isinstance() to be truthy"
+        assert FILE_PREVIEW_MAX_LINES > 0, "Expected FILE_PREVIEW_MAX_LINES > 0"
+        assert isinstance(FILE_PREVIEW_LINE_MAX_CHARS, int), "Expected isinstance() to be truthy"
+        assert FILE_PREVIEW_LINE_MAX_CHARS > 0, "Expected FILE_PREVIEW_LINE_MAX_CHARS > 0"
 
     def test_search_constants(self):
         """Search constants should have positive values."""
@@ -42,10 +42,10 @@ class TestToolHandlerConstants:
             SEARCH_DEFAULT_MAX_RESULTS,
             SEARCH_LINE_MAX_CHARS,
         )
-        assert isinstance(SEARCH_DEFAULT_MAX_RESULTS, int)
-        assert SEARCH_DEFAULT_MAX_RESULTS > 0
-        assert isinstance(SEARCH_LINE_MAX_CHARS, int)
-        assert SEARCH_LINE_MAX_CHARS > 0
+        assert isinstance(SEARCH_DEFAULT_MAX_RESULTS, int), "Expected isinstance() to be truthy"
+        assert SEARCH_DEFAULT_MAX_RESULTS > 0, "Expected SEARCH_DEFAULT_MAX_RESULTS > 0"
+        assert isinstance(SEARCH_LINE_MAX_CHARS, int), "Expected isinstance() to be truthy"
+        assert SEARCH_LINE_MAX_CHARS > 0, "Expected SEARCH_LINE_MAX_CHARS > 0"
 
     def test_working_memory_constants(self):
         """Working memory constants should have sensible values."""
@@ -53,10 +53,10 @@ class TestToolHandlerConstants:
             WORKING_MEMORY_EXPIRY_STEPS,
             WORKING_MEMORY_MAX_CONTENT_SIZE,
         )
-        assert isinstance(WORKING_MEMORY_MAX_CONTENT_SIZE, int)
-        assert WORKING_MEMORY_MAX_CONTENT_SIZE > 0
-        assert isinstance(WORKING_MEMORY_EXPIRY_STEPS, int)
-        assert WORKING_MEMORY_EXPIRY_STEPS > 0
+        assert isinstance(WORKING_MEMORY_MAX_CONTENT_SIZE, int), "Expected isinstance() to be truthy"
+        assert WORKING_MEMORY_MAX_CONTENT_SIZE > 0, "Expected WORKING_MEMORY_MAX_CONTENT_... > 0"
+        assert isinstance(WORKING_MEMORY_EXPIRY_STEPS, int), "Expected isinstance() to be truthy"
+        assert WORKING_MEMORY_EXPIRY_STEPS > 0, "Expected WORKING_MEMORY_EXPIRY_STEPS > 0"
 
     def test_timeout_constants(self):
         """Timeout constants should be positive."""
@@ -65,9 +65,9 @@ class TestToolHandlerConstants:
             PYTHON_VALIDATION_TIMEOUT,
             TEST_RUN_TIMEOUT,
         )
-        assert CONFORMANCE_CHECK_TIMEOUT > 0
-        assert TEST_RUN_TIMEOUT > 0
-        assert PYTHON_VALIDATION_TIMEOUT > 0
+        assert CONFORMANCE_CHECK_TIMEOUT > 0, "Expected CONFORMANCE_CHECK_TIMEOUT > 0"
+        assert TEST_RUN_TIMEOUT > 0, "Expected TEST_RUN_TIMEOUT > 0"
+        assert PYTHON_VALIDATION_TIMEOUT > 0, "Expected PYTHON_VALIDATION_TIMEOUT > 0"
 
     def test_output_truncation_constants(self):
         """Output truncation limits should be positive."""
@@ -76,6 +76,6 @@ class TestToolHandlerConstants:
             CHECK_PASSED_OUTPUT_MAX_CHARS,
             CHECK_STDERR_MAX_CHARS,
         )
-        assert CHECK_PASSED_OUTPUT_MAX_CHARS > 0
-        assert CHECK_FAILED_OUTPUT_MAX_CHARS > 0
-        assert CHECK_STDERR_MAX_CHARS > 0
+        assert CHECK_PASSED_OUTPUT_MAX_CHARS > 0, "Expected CHECK_PASSED_OUTPUT_MAX_CHARS > 0"
+        assert CHECK_FAILED_OUTPUT_MAX_CHARS > 0, "Expected CHECK_FAILED_OUTPUT_MAX_CHARS > 0"
+        assert CHECK_STDERR_MAX_CHARS > 0, "Expected CHECK_STDERR_MAX_CHARS > 0"

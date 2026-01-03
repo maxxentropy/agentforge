@@ -26,8 +26,8 @@ class TestStageExecutorRegistry:
         fresh_registry.register("intake", lambda: PassthroughExecutor("intake"))
 
         executor = fresh_registry.get("intake")
-        assert executor is not None
-        assert executor.stage_name == "intake"
+        assert executor is not None, "Expected executor is not None"
+        assert executor.stage_name == "intake", "Expected executor.stage_name to equal 'intake'"
 
     def test_register_class(self, fresh_registry):
         """register_class() creates factory from class."""
@@ -39,15 +39,15 @@ class TestStageExecutorRegistry:
         fresh_registry.register_class("test", TestExecutor)
 
         executor = fresh_registry.get("test")
-        assert isinstance(executor, TestExecutor)
+        assert isinstance(executor, TestExecutor), "Expected isinstance() to be truthy"
 
     def test_get_unknown_stage(self, fresh_registry):
         """get() raises StageNotFoundError for unknown stage."""
         with pytest.raises(StageNotFoundError) as exc_info:
             fresh_registry.get("unknown")
 
-        assert "unknown" in str(exc_info.value)
-        assert "Available stages" in str(exc_info.value)
+        assert "unknown" in str(exc_info.value), "Expected 'unknown' in str(exc_info.value)"
+        assert "Available stages" in str(exc_info.value), "Expected 'Available stages' in str(exc_info.value)"
 
     def test_duplicate_registration(self, fresh_registry):
         """Duplicate registration raises error."""
@@ -64,7 +64,7 @@ class TestStageExecutorRegistry:
         )
 
         executor = fresh_registry.get("stage1")
-        assert executor.stage_name == "v2"
+        assert executor.stage_name == "v2", "Expected executor.stage_name to equal 'v2'"
 
     def test_list_stages(self, fresh_registry):
         """list_stages() returns all registered stage names."""
@@ -73,37 +73,37 @@ class TestStageExecutorRegistry:
         fresh_registry.register("analyze", lambda: PassthroughExecutor())
 
         stages = fresh_registry.list_stages()
-        assert stages == ["analyze", "clarify", "intake"]  # Sorted
+        assert stages == ["analyze", "clarify", "intake"], "Expected stages to equal ['analyze', 'clarify', 'int..."# Sorted
 
     def test_has_stage(self, fresh_registry):
         """has_stage() checks for stage existence."""
         fresh_registry.register("intake", lambda: PassthroughExecutor())
 
-        assert fresh_registry.has_stage("intake") is True
-        assert fresh_registry.has_stage("unknown") is False
+        assert fresh_registry.has_stage("intake") is True, "Expected fresh_registry.has_stage('i... is True"
+        assert fresh_registry.has_stage("unknown") is False, "Expected fresh_registry.has_stage('u... is False"
 
     def test_unregister(self, fresh_registry):
         """unregister() removes a stage."""
         fresh_registry.register("intake", lambda: PassthroughExecutor())
-        assert fresh_registry.has_stage("intake") is True
+        assert fresh_registry.has_stage("intake") is True, "Expected fresh_registry.has_stage('i... is True"
 
         result = fresh_registry.unregister("intake")
-        assert result is True
-        assert fresh_registry.has_stage("intake") is False
+        assert result is True, "Expected result is True"
+        assert fresh_registry.has_stage("intake") is False, "Expected fresh_registry.has_stage('i... is False"
 
     def test_unregister_nonexistent(self, fresh_registry):
         """unregister() returns False for non-existent stage."""
         result = fresh_registry.unregister("unknown")
-        assert result is False
+        assert result is False, "Expected result is False"
 
     def test_clear(self, fresh_registry):
         """clear() removes all stages."""
         fresh_registry.register("intake", lambda: PassthroughExecutor())
         fresh_registry.register("clarify", lambda: PassthroughExecutor())
-        assert len(fresh_registry.list_stages()) == 2
+        assert len(fresh_registry.list_stages()) == 2, "Expected len(fresh_registry.list_sta... to equal 2"
 
         fresh_registry.clear()
-        assert len(fresh_registry.list_stages()) == 0
+        assert len(fresh_registry.list_stages()) == 0, "Expected len(fresh_registry.list_sta... to equal 0"
 
     def test_factory_creates_new_instances(self, fresh_registry):
         """get() creates new executor instance each time."""
@@ -118,8 +118,8 @@ class TestStageExecutorRegistry:
         executor1 = fresh_registry.get("stage")
         executor2 = fresh_registry.get("stage")
 
-        assert call_count[0] == 2
-        assert executor1 is not executor2
+        assert call_count[0] == 2, "Expected call_count[0] to equal 2"
+        assert executor1 is not executor2, "Expected executor1 is not executor2"
 
 
 class TestGlobalRegistry:
@@ -129,7 +129,7 @@ class TestGlobalRegistry:
         """get_registry() returns singleton instance."""
         registry1 = get_registry()
         registry2 = get_registry()
-        assert registry1 is registry2
+        assert registry1 is registry2, "Expected registry1 is registry2"
 
     def test_reset_instance(self):
         """reset_instance() clears the singleton."""
@@ -139,8 +139,8 @@ class TestGlobalRegistry:
         StageExecutorRegistry.reset_instance()
 
         registry2 = get_registry()
-        assert registry1 is not registry2
-        assert not registry2.has_stage("test")
+        assert registry1 is not registry2, "Expected registry1 is not registry2"
+        assert not registry2.has_stage("test"), "Assertion failed"
 
 
 class TestRegisterStageDecorator:
@@ -156,10 +156,10 @@ class TestRegisterStageDecorator:
                 return StageResult.success()
 
         registry = get_registry()
-        assert registry.has_stage("decorated")
+        assert registry.has_stage("decorated"), "Expected registry.has_stage() to be truthy"
 
         executor = registry.get("decorated")
-        assert isinstance(executor, DecoratedExecutor)
+        assert isinstance(executor, DecoratedExecutor), "Expected isinstance() to be truthy"
 
         # Cleanup
         StageExecutorRegistry.reset_instance()
@@ -175,7 +175,7 @@ class TestRegisterStageDecorator:
 
         # Class should still be usable
         instance = AnotherExecutor()
-        assert isinstance(instance, StageExecutor)
+        assert isinstance(instance, StageExecutor), "Expected isinstance() to be truthy"
 
         # Cleanup
         StageExecutorRegistry.reset_instance()

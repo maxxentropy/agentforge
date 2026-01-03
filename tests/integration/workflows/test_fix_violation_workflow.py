@@ -53,8 +53,8 @@ class TestToolHandlerIntegration:
         result = executor.execute(tool_call)
 
         assert not result.is_error, f"Unexpected error: {result.content}"
-        assert "SUCCESS" in result.content
-        assert "process_data" in result.content  # Function name should appear
+        assert "SUCCESS" in result.content, "Expected 'SUCCESS' in result.content"
+        assert "process_data" in result.content, "Expected 'process_data' in result.content"# Function name should appear
 
     def test_edit_file_preserves_formatting(self, project_with_violation: dict[str, Any]):
         """
@@ -99,16 +99,16 @@ class TestToolHandlerIntegration:
         result = executor.execute(tool_call)
 
         assert not result.is_error, f"Unexpected error: {result.content}"
-        assert "SUCCESS" in result.content
+        assert "SUCCESS" in result.content, "Expected 'SUCCESS' in result.content"
 
         # Verify the edit was applied
         new_content = source_file.read_text()
-        assert "better docstring" in new_content
-        assert "cleaned = value.strip()" in new_content
+        assert "better docstring" in new_content, "Expected 'better docstring' in new_content"
+        assert "cleaned = value.strip()" in new_content, "Expected 'cleaned = value.strip()' in new_content"
 
         # Verify process_data function is unchanged (first part of file)
-        assert 'def process_data(data: dict, mode: str, flags: list) -> dict:' in new_content
-        assert 'if mode == "parse":' in new_content
+        assert 'def process_data(data: dict, mode: str, flags: list) -> dict:' in new_content, "Expected 'def process_data(data: dic... in new_content"
+        assert 'if mode == "parse":' in new_content, "Expected 'if mode == \"parse\":' in new_content"
 
     def test_replace_lines_handler(self, project_with_violation: dict[str, Any]):
         """Test that replace_lines works correctly with line numbers."""
@@ -125,7 +125,7 @@ class TestToolHandlerIntegration:
             input={"path": "src/complex_module.py"}
         )
         read_result = executor.execute(read_call)
-        assert not read_result.is_error
+        assert not read_result.is_error, "Assertion failed"
 
         # Replace the docstring (lines 5-8 approximately)
         replace_call = ToolCall(
@@ -141,11 +141,11 @@ class TestToolHandlerIntegration:
         result = executor.execute(replace_call)
 
         assert not result.is_error, f"Unexpected error: {result.content}"
-        assert "SUCCESS" in result.content
+        assert "SUCCESS" in result.content, "Expected 'SUCCESS' in result.content"
 
         # Verify the change
         new_content = source_file.read_text()
-        assert "refactored for clarity" in new_content
+        assert "refactored for clarity" in new_content, "Expected 'refactored for clarity' in new_content"
 
     def test_insert_lines_handler(self, project_with_violation: dict[str, Any]):
         """Test that insert_lines adds code at the correct position."""
@@ -171,7 +171,7 @@ class TestToolHandlerIntegration:
         result = executor.execute(insert_call)
 
         assert not result.is_error, f"Unexpected error: {result.content}"
-        assert "SUCCESS" in result.content
+        assert "SUCCESS" in result.content, "Expected 'SUCCESS' in result.content"
 
         # Verify insertion
         new_content = source_file.read_text()
@@ -209,7 +209,7 @@ class TestToolHandlerIntegration:
         result = executor.execute(search_call)
 
         assert not result.is_error, f"Unexpected error: {result.content}"
-        assert "complex_module.py" in result.content or "process_data" in result.content
+        assert "complex_module.py" in result.content or "process_data" in result.content, "Assertion failed"
 
     def test_complete_handler(self, project_with_violation: dict[str, Any]):
         """Test that complete handler returns proper completion message."""
@@ -227,9 +227,9 @@ class TestToolHandlerIntegration:
         )
         result = executor.execute(complete_call)
 
-        assert not result.is_error
-        assert "COMPLETE" in result.content
-        assert "Fixed complexity" in result.content
+        assert not result.is_error, "Assertion failed"
+        assert "COMPLETE" in result.content, "Expected 'COMPLETE' in result.content"
+        assert "Fixed complexity" in result.content, "Expected 'Fixed complexity' in result.content"
 
     def test_cannot_fix_handler(self, project_with_generated_file: dict[str, Any]):
         """Test that cannot_fix handler creates proper escalation."""
@@ -248,8 +248,8 @@ class TestToolHandlerIntegration:
         )
         result = executor.execute(cannot_fix_call)
 
-        assert not result.is_error
-        assert "ESCALATE" in result.content or "cannot_fix" in result.content.lower()
+        assert not result.is_error, "Assertion failed"
+        assert "ESCALATE" in result.content or "cannot_fix" in result.content.lower(), "Assertion failed"
 
 
 class TestWorkflowSequence:
@@ -286,8 +286,8 @@ class TestWorkflowSequence:
             name="read_file",
             input={"path": "src/complex_module.py"}
         ))
-        assert not read_result.is_error
-        assert "process_data" in read_result.content
+        assert not read_result.is_error, "Assertion failed"
+        assert "process_data" in read_result.content, "Expected 'process_data' in read_result.content"
 
         # Step 2: Search for related code (uses 'pattern' parameter)
         search_result = executor.execute(ToolCall(
@@ -295,7 +295,7 @@ class TestWorkflowSequence:
             name="search_code",
             input={"pattern": "simple_helper"}
         ))
-        assert not search_result.is_error
+        assert not search_result.is_error, "Assertion failed"
 
         # Step 3: Edit to add a comment to the module docstring (line 1)
         # The edit_file handler uses line numbers, not text matching
@@ -309,19 +309,19 @@ class TestWorkflowSequence:
                 "new_content": '"""Module with a complex function that needs refactoring.\n\nRefactored to reduce cyclomatic complexity.\n"""'
             }
         ))
-        assert not edit_result.is_error
+        assert not edit_result.is_error, "Assertion failed"
 
         # Verify the edit persisted
         new_content = source_file.read_text()
-        assert "Refactored to reduce cyclomatic complexity" in new_content
+        assert "Refactored to reduce cyclomatic complexity" in new_content, "Expected 'Refactored to reduce cyclo... in new_content"
 
         # Verify execution log
         log = executor.get_execution_log()
-        assert len(log) == 3
-        assert log[0]["tool_name"] == "read_file"
-        assert log[1]["tool_name"] == "search_code"
-        assert log[2]["tool_name"] == "edit_file"
-        assert all(entry["success"] for entry in log)
+        assert len(log) == 3, "Expected len(log) to equal 3"
+        assert log[0]["tool_name"] == "read_file", "Expected log[0]['tool_name'] to equal 'read_file'"
+        assert log[1]["tool_name"] == "search_code", "Expected log[1]['tool_name'] to equal 'search_code'"
+        assert log[2]["tool_name"] == "edit_file", "Expected log[2]['tool_name'] to equal 'edit_file'"
+        assert all(entry["success"] for entry in log), "Expected all() to be truthy"
 
     def test_handler_returns_success_on_valid_replacement(
         self, project_with_violation: dict[str, Any]
@@ -352,8 +352,8 @@ class TestWorkflowSequence:
         ))
 
         # The edit should succeed
-        assert not edit_result.is_error
-        assert "SUCCESS" in edit_result.content
+        assert not edit_result.is_error, "Assertion failed"
+        assert "SUCCESS" in edit_result.content, "Expected 'SUCCESS' in edit_result.content"
 
         # Verify the file is still valid Python
         final_content = source_file.read_text()
@@ -385,7 +385,7 @@ class TestWorkflowSequence:
             input={"path": "src/complex_module.py"}
         ))
 
-        assert not result.is_error
+        assert not result.is_error, "Assertion failed"
         # The handler received context (verified by not crashing)
         # In production, handlers use context for decisions
 
@@ -407,7 +407,7 @@ class TestEdgeCases:
         ))
 
         # Should return an error message, not crash
-        assert "ERROR" in result.content or "not found" in result.content.lower()
+        assert "ERROR" in result.content or "not found" in result.content.lower(), "Assertion failed"
 
     def test_edit_with_no_match(self, project_with_violation: dict[str, Any]):
         """Test editing with old_text that doesn't exist returns error."""
@@ -426,7 +426,7 @@ class TestEdgeCases:
             }
         ))
 
-        assert "ERROR" in result.content or "not found" in result.content.lower()
+        assert "ERROR" in result.content or "not found" in result.content.lower(), "Assertion failed"
 
     def test_unknown_tool_returns_error(self, project_with_violation: dict[str, Any]):
         """Test calling an unknown tool returns helpful error."""
@@ -441,10 +441,10 @@ class TestEdgeCases:
             input={}
         ))
 
-        assert result.is_error
-        assert "Unknown tool" in result.content
+        assert result.is_error, "Expected result.is_error to be truthy"
+        assert "Unknown tool" in result.content, "Expected 'Unknown tool' in result.content"
         # Should list available tools
-        assert "read_file" in result.content or "Available" in result.content
+        assert "read_file" in result.content or "Available" in result.content, "Assertion failed"
 
     def test_replace_lines_invalid_range(self, project_with_violation: dict[str, Any]):
         """Test replace_lines with invalid line range returns error."""
@@ -464,7 +464,7 @@ class TestEdgeCases:
             }
         ))
 
-        assert "ERROR" in result.content or "invalid" in result.content.lower()
+        assert "ERROR" in result.content or "invalid" in result.content.lower(), "Assertion failed"
 
 
 class TestHandlerRegistry:
@@ -503,9 +503,9 @@ class TestHandlerRegistry:
         handlers = create_fix_violation_handlers(project_path)
 
         # Should include fix-specific handlers
-        assert "edit_file" in handlers
-        assert "run_check" in handlers
-        assert "cannot_fix" in handlers
+        assert "edit_file" in handlers, "Expected 'edit_file' in handlers"
+        assert "run_check" in handlers, "Expected 'run_check' in handlers"
+        assert "cannot_fix" in handlers, "Expected 'cannot_fix' in handlers"
 
     def test_executor_register_action_dynamically(
         self, project_with_violation: dict[str, Any]
@@ -528,5 +528,5 @@ class TestHandlerRegistry:
             input={"value": "test123"}
         ))
 
-        assert not result.is_error
-        assert "Custom result: test123" in result.content
+        assert not result.is_error, "Assertion failed"
+        assert "Custom result: test123" in result.content, "Expected 'Custom result: test123' in result.content"

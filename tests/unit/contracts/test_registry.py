@@ -38,8 +38,8 @@ class TestContractRegistry:
         """Registry creates required directories."""
         registry = ContractRegistry(temp_project)
 
-        assert (temp_project / ".agentforge" / "contracts" / "approved").exists()
-        assert (temp_project / ".agentforge" / "contracts" / "drafts").exists()
+        assert (temp_project / ".agentforge" / "contracts" / "approved").exists(), "Expected (temp_project / '.agentforg...() to be truthy"
+        assert (temp_project / ".agentforge" / "contracts" / "drafts").exists(), "Expected (temp_project / '.agentforg...() to be truthy"
 
     def test_register_approved_contracts(self, registry):
         """Register approved contracts."""
@@ -55,13 +55,13 @@ class TestContractRegistry:
 
         result_id = registry.register(contracts)
 
-        assert result_id == "CONTRACT-20240103-120000"
+        assert result_id == "CONTRACT-20240103-120000", "Expected result_id to equal 'CONTRACT-20240103-120000'"
 
         # Verify file created
         contracts_file = (
             registry.approved_dir / "CONTRACT-20240103-120000.yaml"
         )
-        assert contracts_file.exists()
+        assert contracts_file.exists(), "Expected contracts_file.exists() to be truthy"
 
     def test_get_approved_contracts(self, registry):
         """Retrieve registered contracts."""
@@ -80,16 +80,16 @@ class TestContractRegistry:
 
         retrieved = registry.get("CONTRACT-20240103-120000")
 
-        assert retrieved is not None
-        assert retrieved.contract_set_id == "CONTRACT-20240103-120000"
-        assert len(retrieved.stage_contracts) == 1
-        assert "request_id" in retrieved.stage_contracts[0].output_requirements
+        assert retrieved is not None, "Expected retrieved is not None"
+        assert retrieved.contract_set_id == "CONTRACT-20240103-120000", "Expected retrieved.contract_set_id to equal 'CONTRACT-20240103-120000'"
+        assert len(retrieved.stage_contracts) == 1, "Expected len(retrieved.stage_contracts) to equal 1"
+        assert "request_id" in retrieved.stage_contracts[0].output_requirements, "Expected 'request_id' in retrieved.stage_contracts[0..."
 
     def test_get_nonexistent_contracts(self, registry):
         """Get returns None for nonexistent contracts."""
         result = registry.get("CONTRACT-NONEXISTENT")
 
-        assert result is None
+        assert result is None, "Expected result is None"
 
     def test_get_for_request(self, registry):
         """Get contracts by request ID."""
@@ -102,14 +102,14 @@ class TestContractRegistry:
 
         retrieved = registry.get_for_request("REQ-AUTH-001")
 
-        assert retrieved is not None
-        assert retrieved.request_id == "REQ-AUTH-001"
+        assert retrieved is not None, "Expected retrieved is not None"
+        assert retrieved.request_id == "REQ-AUTH-001", "Expected retrieved.request_id to equal 'REQ-AUTH-001'"
 
     def test_get_for_request_nonexistent(self, registry):
         """Get for request returns None if not found."""
         result = registry.get_for_request("REQ-NONEXISTENT")
 
-        assert result is None
+        assert result is None, "Expected result is None"
 
     def test_list_approved(self, registry):
         """List all approved contract sets."""
@@ -125,9 +125,9 @@ class TestContractRegistry:
 
         summaries = registry.list_approved()
 
-        assert len(summaries) == 3
-        assert all("contract_set_id" in s for s in summaries)
-        assert all("stage_count" in s for s in summaries)
+        assert len(summaries) == 3, "Expected len(summaries) to equal 3"
+        assert all("contract_set_id" in s for s in summaries), "Expected all() to be truthy"
+        assert all("stage_count" in s for s in summaries), "Expected all() to be truthy"
 
     def test_save_draft(self, registry):
         """Save a contract draft."""
@@ -142,9 +142,9 @@ class TestContractRegistry:
 
         result_id = registry.save_draft(draft)
 
-        assert result_id == "DRAFT-20240103-120000"
+        assert result_id == "DRAFT-20240103-120000", "Expected result_id to equal 'DRAFT-20240103-120000'"
         draft_file = registry.drafts_dir / "DRAFT-20240103-120000.yaml"
-        assert draft_file.exists()
+        assert draft_file.exists(), "Expected draft_file.exists() to be truthy"
 
     def test_get_draft(self, registry):
         """Retrieve a saved draft."""
@@ -158,15 +158,15 @@ class TestContractRegistry:
 
         retrieved = registry.get_draft("DRAFT-20240103-120000")
 
-        assert retrieved is not None
-        assert retrieved.draft_id == "DRAFT-20240103-120000"
-        assert retrieved.confidence == 0.85
+        assert retrieved is not None, "Expected retrieved is not None"
+        assert retrieved.draft_id == "DRAFT-20240103-120000", "Expected retrieved.draft_id to equal 'DRAFT-20240103-120000'"
+        assert retrieved.confidence == 0.85, "Expected retrieved.confidence to equal 0.85"
 
     def test_get_draft_nonexistent(self, registry):
         """Get draft returns None if not found."""
         result = registry.get_draft("DRAFT-NONEXISTENT")
 
-        assert result is None
+        assert result is None, "Expected result is None"
 
     def test_list_drafts(self, registry):
         """List all pending drafts."""
@@ -181,9 +181,9 @@ class TestContractRegistry:
 
         summaries = registry.list_drafts()
 
-        assert len(summaries) == 2
-        assert all("draft_id" in s for s in summaries)
-        assert all("confidence" in s for s in summaries)
+        assert len(summaries) == 2, "Expected len(summaries) to equal 2"
+        assert all("draft_id" in s for s in summaries), "Expected all() to be truthy"
+        assert all("confidence" in s for s in summaries), "Expected all() to be truthy"
 
     def test_delete_draft(self, registry):
         """Delete a draft."""
@@ -196,14 +196,14 @@ class TestContractRegistry:
 
         result = registry.delete_draft("DRAFT-TO-DELETE")
 
-        assert result is True
-        assert registry.get_draft("DRAFT-TO-DELETE") is None
+        assert result is True, "Expected result is True"
+        assert registry.get_draft("DRAFT-TO-DELETE") is None, "Expected registry.get_draft('DRAFT-T... is None"
 
     def test_delete_draft_nonexistent(self, registry):
         """Delete returns False for nonexistent draft."""
         result = registry.delete_draft("DRAFT-NONEXISTENT")
 
-        assert result is False
+        assert result is False, "Expected result is False"
 
     def test_evolve_contracts(self, registry):
         """Evolve contracts to new version."""
@@ -234,9 +234,9 @@ class TestContractRegistry:
 
         # Verify new contracts
         evolved = registry.get(new_id)
-        assert evolved is not None
-        assert evolved.version == "1.1"
-        assert "auth_method" in evolved.stage_contracts[0].output_requirements
+        assert evolved is not None, "Expected evolved is not None"
+        assert evolved.version == "1.1", "Expected evolved.version to equal '1.1'"
+        assert "auth_method" in evolved.stage_contracts[0].output_requirements, "Expected 'auth_method' in evolved.stage_contracts[0]...."
 
     def test_evolve_adds_triggers(self, registry):
         """Evolution can add new escalation triggers."""
@@ -259,8 +259,8 @@ class TestContractRegistry:
         )
 
         evolved = registry.get(new_id)
-        assert len(evolved.escalation_triggers) == 1
-        assert evolved.escalation_triggers[0].trigger_id == "T-NEW"
+        assert len(evolved.escalation_triggers) == 1, "Expected len(evolved.escalation_trig... to equal 1"
+        assert evolved.escalation_triggers[0].trigger_id == "T-NEW", "Expected evolved.escalation_triggers... to equal 'T-NEW'"
 
     def test_evolve_nonexistent_raises(self, registry):
         """Evolve raises for nonexistent contracts."""
@@ -280,8 +280,8 @@ class TestContractRegistry:
         new_registry = ContractRegistry(temp_project)
         retrieved = new_registry.get_for_request("REQ-PERSIST")
 
-        assert retrieved is not None
-        assert retrieved.contract_set_id == "CONTRACT-001"
+        assert retrieved is not None, "Expected retrieved is not None"
+        assert retrieved.contract_set_id == "CONTRACT-001", "Expected retrieved.contract_set_id to equal 'CONTRACT-001'"
 
 
 class TestIdGenerators:
@@ -292,8 +292,8 @@ class TestIdGenerators:
         id1 = generate_contract_set_id()
         id2 = generate_contract_set_id()
 
-        assert id1.startswith("CONTRACT-")
-        assert id2.startswith("CONTRACT-")
+        assert id1.startswith("CONTRACT-"), "Expected id1.startswith() to be truthy"
+        assert id2.startswith("CONTRACT-"), "Expected id2.startswith() to be truthy"
         # IDs should be unique (timestamp-based)
         # Note: could be same if generated in same second
 
@@ -302,5 +302,5 @@ class TestIdGenerators:
         id1 = generate_draft_id()
         id2 = generate_draft_id()
 
-        assert id1.startswith("DRAFT-")
-        assert id2.startswith("DRAFT-")
+        assert id1.startswith("DRAFT-"), "Expected id1.startswith() to be truthy"
+        assert id2.startswith("DRAFT-"), "Expected id2.startswith() to be truthy"

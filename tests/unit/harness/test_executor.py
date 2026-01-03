@@ -63,8 +63,8 @@ dependencies = ["pytest"]
             task_type="fix_violation",
         )
 
-        assert executor.config is not None
-        assert executor.config.defaults.max_steps > 0
+        assert executor.config is not None, "Expected executor.config is not None"
+        assert executor.config.defaults.max_steps > 0, "Expected executor.config.defaults.ma... > 0"
 
     def test_init_loads_fingerprint(self, temp_project):
         """Executor can generate fingerprint."""
@@ -75,8 +75,8 @@ dependencies = ["pytest"]
 
         fp = executor.get_fingerprint()
 
-        assert fp is not None
-        assert fp.technical.language == "python"
+        assert fp is not None, "Expected fp is not None"
+        assert fp.technical.language == "python", "Expected fp.technical.language to equal 'python'"
 
     def test_init_loads_template(self, temp_project):
         """Executor loads template for task type."""
@@ -85,8 +85,8 @@ dependencies = ["pytest"]
             task_type="fix_violation",
         )
 
-        assert executor.template is not None
-        assert executor.template.task_type == "fix_violation"
+        assert executor.template is not None, "Expected executor.template is not None"
+        assert executor.template.task_type == "fix_violation", "Expected executor.template.task_type to equal 'fix_violation'"
 
     def test_init_with_unknown_task_type_falls_back(self, temp_project):
         """Unknown task type falls back to fix_violation template."""
@@ -96,7 +96,7 @@ dependencies = ["pytest"]
         )
 
         # Should fall back to fix_violation
-        assert executor.template.task_type == "fix_violation"
+        assert executor.template.task_type == "fix_violation", "Expected executor.template.task_type to equal 'fix_violation'"
 
     def test_compaction_disabled(self, temp_project):
         """Compaction can be disabled."""
@@ -106,7 +106,7 @@ dependencies = ["pytest"]
             compaction_enabled=False,
         )
 
-        assert executor.compaction_manager is None
+        assert executor.compaction_manager is None, "Expected executor.compaction_manager is None"
 
     def test_compaction_enabled_by_default(self, temp_project):
         """Compaction is enabled by default."""
@@ -115,7 +115,7 @@ dependencies = ["pytest"]
             task_type="fix_violation",
         )
 
-        assert executor.compaction_manager is not None
+        assert executor.compaction_manager is not None, "Expected executor.compaction_manager is not None"
 
     def test_audit_disabled_by_env(self, temp_project):
         """Audit can be disabled via environment."""
@@ -125,7 +125,7 @@ dependencies = ["pytest"]
                 task_type="fix_violation",
             )
 
-            assert executor.audit_enabled is False
+            assert executor.audit_enabled is False, "Expected executor.audit_enabled is False"
 
     def test_audit_enabled_by_default(self, temp_project):
         """Audit is enabled by default."""
@@ -134,7 +134,7 @@ dependencies = ["pytest"]
             task_type="fix_violation",
         )
 
-        assert executor.audit_enabled is True
+        assert executor.audit_enabled is True, "Expected executor.audit_enabled is True"
 
     def test_register_action(self, temp_project):
         """Actions can be registered."""
@@ -146,7 +146,7 @@ dependencies = ["pytest"]
         mock_action = MagicMock()
         executor.register_action("test_action", mock_action)
 
-        assert "test_action" in executor.action_executors
+        assert "test_action" in executor.action_executors, "Expected 'test_action' in executor.action_executors"
 
     def test_register_actions(self, temp_project):
         """Multiple actions can be registered."""
@@ -161,8 +161,8 @@ dependencies = ["pytest"]
         }
         executor.register_actions(actions)
 
-        assert "action1" in executor.action_executors
-        assert "action2" in executor.action_executors
+        assert "action1" in executor.action_executors, "Expected 'action1' in executor.action_executors"
+        assert "action2" in executor.action_executors, "Expected 'action2' in executor.action_executors"
 
 
 class TestCreateExecutor:
@@ -184,7 +184,7 @@ class TestCreateExecutor:
             task_type="fix_violation",
         )
 
-        assert isinstance(executor, MinimalContextExecutor)
+        assert isinstance(executor, MinimalContextExecutor), "Expected isinstance() to be truthy"
 
     def test_registers_actions(self, temp_project):
         """Factory registers actions."""
@@ -195,7 +195,7 @@ class TestCreateExecutor:
             action_executors=actions,
         )
 
-        assert "test" in executor.action_executors
+        assert "test" in executor.action_executors, "Expected 'test' in executor.action_executors"
 
 
 class TestFingerprint:
@@ -229,8 +229,8 @@ dependencies = ["pydantic", "fastapi"]
             success_criteria=["Tests pass"],
         )
 
-        assert fp.task_constraints["correctness_first"] is True
-        assert "Tests pass" in fp.success_criteria
+        assert fp.task_constraints["correctness_first"] is True, "Expected fp.task_constraints['correc... is True"
+        assert "Tests pass" in fp.success_criteria, "Expected 'Tests pass' in fp.success_criteria"
 
     def test_fingerprint_has_project_info(self, temp_project):
         """Fingerprint contains project information."""
@@ -241,8 +241,8 @@ dependencies = ["pydantic", "fastapi"]
 
         fp = executor.get_fingerprint()
 
-        assert fp.technical.language == "python"
-        assert "pydantic" in fp.technical.frameworks or "fastapi" in fp.technical.frameworks
+        assert fp.technical.language == "python", "Expected fp.technical.language to equal 'python'"
+        assert "pydantic" in fp.technical.frameworks or "fastapi" in fp.technical.frameworks, "Assertion failed"
 
 
 class TestNativeToolIntegration:
@@ -273,8 +273,8 @@ requires-python = ">=3.11"
             task_type="fix_violation",
         )
 
-        assert executor.native_tool_executor is not None
-        assert isinstance(executor.native_tool_executor, NativeToolExecutor)
+        assert executor.native_tool_executor is not None, "Expected executor.native_tool_executor is not None"
+        assert isinstance(executor.native_tool_executor, NativeToolExecutor), "Expected isinstance() to be truthy"
 
     def test_native_executor_has_standard_handlers(self, temp_project):
         """Native executor has standard handlers registered."""
@@ -284,10 +284,10 @@ requires-python = ">=3.11"
         )
 
         native = executor.native_tool_executor
-        assert native.has_action("read_file")
-        assert native.has_action("write_file")
-        assert native.has_action("complete")
-        assert native.has_action("escalate")
+        assert native.has_action("read_file"), "Expected native.has_action() to be truthy"
+        assert native.has_action("write_file"), "Expected native.has_action() to be truthy"
+        assert native.has_action("complete"), "Expected native.has_action() to be truthy"
+        assert native.has_action("escalate"), "Expected native.has_action() to be truthy"
 
     def test_register_action_adds_to_both_executors(self, temp_project):
         """register_action adds to both action_executors and native executors."""
@@ -300,8 +300,8 @@ requires-python = ">=3.11"
         executor.register_action("custom_action", mock_handler)
 
         # Check both have the action
-        assert "custom_action" in executor.action_executors
-        assert executor.native_tool_executor.has_action("custom_action")
+        assert "custom_action" in executor.action_executors, "Expected 'custom_action' in executor.action_executors"
+        assert executor.native_tool_executor.has_action("custom_action"), "Expected executor.native_tool_execut...() to be truthy"
 
     def test_get_native_tool_executor(self, temp_project):
         """Can get native tool executor via accessor."""
@@ -311,7 +311,7 @@ requires-python = ">=3.11"
         )
 
         native = executor.get_native_tool_executor()
-        assert native is executor.native_tool_executor
+        assert native is executor.native_tool_executor, "Expected native is executor.native_tool_executor"
 
     def _get_violation_context(self):
         """Get minimal violation context for fix_violation tasks."""
@@ -354,9 +354,9 @@ requires-python = ">=3.11"
             max_steps=5,
         )
 
-        assert result["status"] == "completed"
-        assert result["native_tools"] is True
-        assert result["steps"] == 1
+        assert result["status"] == "completed", "Expected result['status'] to equal 'completed'"
+        assert result["native_tools"] is True, "Expected result['native_tools'] is True"
+        assert result["steps"] == 1, "Expected result['steps'] to equal 1"
 
     def test_run_task_native_with_file_read(self, temp_project):
         """run_task_native can read files via native tools."""
@@ -392,13 +392,13 @@ requires-python = ">=3.11"
             max_steps=5,
         )
 
-        assert result["status"] == "completed"
-        assert result["steps"] == 2
+        assert result["status"] == "completed", "Expected result['status'] to equal 'completed'"
+        assert result["steps"] == 2, "Expected result['steps'] to equal 2"
 
         # Check first step read the file
         outcomes = result["outcomes"]
-        assert outcomes[0]["action_name"] == "read_file"
-        assert "Hello from test file" in outcomes[0]["result"]
+        assert outcomes[0]["action_name"] == "read_file", "Expected outcomes[0]['action_name'] to equal 'read_file'"
+        assert "Hello from test file" in outcomes[0]["result"], "Expected 'Hello from test file' in outcomes[0]['result']"
 
     def test_run_task_native_escalation(self, temp_project):
         """run_task_native handles escalation."""
@@ -425,8 +425,8 @@ requires-python = ">=3.11"
             max_steps=5,
         )
 
-        assert result["status"] == "escalated"
-        assert "ESCALATE" in result["outcomes"][0]["result"]
+        assert result["status"] == "escalated", "Expected result['status'] to equal 'escalated'"
+        assert "ESCALATE" in result["outcomes"][0]["result"], "Expected 'ESCALATE' in result['outcomes'][0]['resu..."
 
     def test_run_task_native_step_callback(self, temp_project):
         """run_task_native calls step callback."""
@@ -458,8 +458,8 @@ requires-python = ">=3.11"
             on_step=on_step,
         )
 
-        assert len(step_outcomes) == 1
-        assert step_outcomes[0].action_name == "complete"
+        assert len(step_outcomes) == 1, "Expected len(step_outcomes) to equal 1"
+        assert step_outcomes[0].action_name == "complete", "Expected step_outcomes[0].action_name to equal 'complete'"
 
     def test_run_task_native_max_steps_limit(self, temp_project):
         """run_task_native respects max_steps limit."""
@@ -490,8 +490,8 @@ requires-python = ">=3.11"
             max_steps=3,
         )
 
-        assert result["status"] == "stopped"
-        assert result["steps"] == 3
+        assert result["status"] == "stopped", "Expected result['status'] to equal 'stopped'"
+        assert result["steps"] == 3, "Expected result['steps'] to equal 3"
 
 
 class TestShouldUseNativeTools:
@@ -501,17 +501,17 @@ class TestShouldUseNativeTools:
         """Returns False when env not set."""
         with patch.dict(os.environ, {}, clear=True):
             os.environ.pop("AGENTFORGE_NATIVE_TOOLS", None)
-            assert should_use_native_tools() is False
+            assert should_use_native_tools() is False, "Expected should_use_native_tools() is False"
 
     def test_returns_true_when_enabled(self):
         """Returns True when env var is true."""
         with patch.dict(os.environ, {"AGENTFORGE_NATIVE_TOOLS": "true"}):
-            assert should_use_native_tools() is True
+            assert should_use_native_tools() is True, "Expected should_use_native_tools() is True"
 
     def test_returns_true_case_insensitive(self):
         """Returns True with any case."""
         with patch.dict(os.environ, {"AGENTFORGE_NATIVE_TOOLS": "TRUE"}):
-            assert should_use_native_tools() is True
+            assert should_use_native_tools() is True, "Expected should_use_native_tools() is True"
 
         with patch.dict(os.environ, {"AGENTFORGE_NATIVE_TOOLS": "True"}):
-            assert should_use_native_tools() is True
+            assert should_use_native_tools() is True, "Expected should_use_native_tools() is True"

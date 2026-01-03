@@ -16,11 +16,11 @@ class TestRecordingLLMClient:
     def test_recording_client_import(self):
         """Verify RecordingLLMClient can be imported."""
         from agentforge.core.llm.recording import RecordingLLMClient
-        assert RecordingLLMClient is not None
+        assert RecordingLLMClient is not None, "Expected RecordingLLMClient is not None"
 
     def test_recording_client_has_expected_methods(self):
         """Recording client should have expected interface methods."""
         from agentforge.core.llm.recording import RecordingLLMClient
-        assert hasattr(RecordingLLMClient, 'complete')
-        assert hasattr(RecordingLLMClient, 'save')
-        assert hasattr(RecordingLLMClient, 'get_recording')
+        assert hasattr(RecordingLLMClient, 'complete'), "Expected hasattr() to be truthy"
+        assert hasattr(RecordingLLMClient, 'save'), "Expected hasattr() to be truthy"
+        assert hasattr(RecordingLLMClient, 'get_recording'), "Expected hasattr() to be truthy"

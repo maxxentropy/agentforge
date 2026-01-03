@@ -34,26 +34,26 @@ namespace MyApp {
 """
         symbols = _extract_symbols(content, "class", ".cs")
         names = [s[0] for s in symbols]
-        assert "MyService" in names
-        assert "Helper" in names
+        assert "MyService" in names, "Expected 'MyService' in names"
+        assert "Helper" in names, "Expected 'Helper' in names"
 
     def test_extract_csharp_sealed_class(self):
         """Extract C# sealed class."""
         content = """public sealed class SealedService { }"""
         symbols = _extract_symbols(content, "class", ".cs")
-        assert symbols[0][0] == "SealedService"
+        assert symbols[0][0] == "SealedService", "Expected symbols[0][0] to equal 'SealedService'"
 
     def test_extract_csharp_abstract_class(self):
         """Extract C# abstract class."""
         content = """public abstract class BaseHandler { }"""
         symbols = _extract_symbols(content, "class", ".cs")
-        assert symbols[0][0] == "BaseHandler"
+        assert symbols[0][0] == "BaseHandler", "Expected symbols[0][0] to equal 'BaseHandler'"
 
     def test_extract_csharp_partial_class(self):
         """Extract C# partial class."""
         content = """public partial class PartialCommand { }"""
         symbols = _extract_symbols(content, "class", ".cs")
-        assert symbols[0][0] == "PartialCommand"
+        assert symbols[0][0] == "PartialCommand", "Expected symbols[0][0] to equal 'PartialCommand'"
 
     def test_extract_csharp_interface(self):
         """Extract C# interface names."""
@@ -63,8 +63,8 @@ internal interface IService { }
 """
         symbols = _extract_symbols(content, "interface", ".cs")
         names = [s[0] for s in symbols]
-        assert "IRepository" in names
-        assert "IService" in names
+        assert "IRepository" in names, "Expected 'IRepository' in names"
+        assert "IService" in names, "Expected 'IService' in names"
 
     def test_extract_python_class(self):
         """Extract Python class names."""
@@ -77,8 +77,8 @@ class AnotherClass(BaseClass):
 """
         symbols = _extract_symbols(content, "class", ".py")
         names = [s[0] for s in symbols]
-        assert "MyHandler" in names
-        assert "AnotherClass" in names
+        assert "MyHandler" in names, "Expected 'MyHandler' in names"
+        assert "AnotherClass" in names, "Expected 'AnotherClass' in names"
 
     def test_extract_typescript_class(self):
         """Extract TypeScript class names."""
@@ -90,13 +90,13 @@ abstract class BaseRepository {
 """
         symbols = _extract_symbols(content, "class", ".ts")
         names = [s[0] for s in symbols]
-        assert "UserService" in names
-        assert "BaseRepository" in names
+        assert "UserService" in names, "Expected 'UserService' in names"
+        assert "BaseRepository" in names, "Expected 'BaseRepository' in names"
 
     def test_extract_unsupported_language(self):
         """Return empty for unsupported file type."""
         symbols = _extract_symbols("class Foo", "class", ".rb")
-        assert symbols == []
+        assert symbols == [], "Expected symbols to equal []"
 
     def test_line_numbers_correct(self):
         """Verify line numbers are correct."""
@@ -106,7 +106,7 @@ public class MyClass {
 }
 """
         symbols = _extract_symbols(content, "class", ".cs")
-        assert symbols[0][1] == 3  # Line 3
+        assert symbols[0][1] == 3, "Expected symbols[0][1] to equal 3"# Line 3
 
 
 class TestExtractClassWithBases:
@@ -116,39 +116,39 @@ class TestExtractClassWithBases:
         """Extract C# class with interface."""
         content = """public class CreateCommand : IRequest<Response> { }"""
         classes = _extract_class_with_bases(content, ".cs")
-        assert len(classes) == 1
-        assert classes[0][0] == "CreateCommand"
-        assert "IRequest<Response>" in classes[0][1]
+        assert len(classes) == 1, "Expected len(classes) to equal 1"
+        assert classes[0][0] == "CreateCommand", "Expected classes[0][0] to equal 'CreateCommand'"
+        assert "IRequest<Response>" in classes[0][1], "Expected 'IRequest<Response>' in classes[0][1]"
 
     def test_csharp_class_multiple_interfaces(self):
         """Extract C# class with multiple interfaces."""
         content = """public class Handler : BaseHandler, IRequestHandler<Cmd, Resp>, IDisposable { }"""
         classes = _extract_class_with_bases(content, ".cs")
-        assert len(classes) == 1
+        assert len(classes) == 1, "Expected len(classes) to equal 1"
         name, bases, _ = classes[0]
-        assert name == "Handler"
-        assert "BaseHandler" in bases
-        assert "IRequestHandler<Cmd, Resp>" in bases
-        assert "IDisposable" in bases
+        assert name == "Handler", "Expected name to equal 'Handler'"
+        assert "BaseHandler" in bases, "Expected 'BaseHandler' in bases"
+        assert "IRequestHandler<Cmd, Resp>" in bases, "Expected 'IRequestHandler<Cmd, Resp>' in bases"
+        assert "IDisposable" in bases, "Expected 'IDisposable' in bases"
 
     def test_csharp_class_no_inheritance(self):
         """Extract C# class without inheritance."""
         content = """public class SimpleClass { }"""
         classes = _extract_class_with_bases(content, ".cs")
-        assert len(classes) == 1
-        assert classes[0][0] == "SimpleClass"
-        assert classes[0][1] == ""
+        assert len(classes) == 1, "Expected len(classes) to equal 1"
+        assert classes[0][0] == "SimpleClass", "Expected classes[0][0] to equal 'SimpleClass'"
+        assert classes[0][1] == "", "Expected classes[0][1] to equal ''"
 
     def test_python_class_with_bases(self):
         """Extract Python class with base classes."""
         content = """class MyHandler(BaseHandler, Mixin):
     pass"""
         classes = _extract_class_with_bases(content, ".py")
-        assert len(classes) == 1
+        assert len(classes) == 1, "Expected len(classes) to equal 1"
         name, bases, _ = classes[0]
-        assert name == "MyHandler"
-        assert "BaseHandler" in bases
-        assert "Mixin" in bases
+        assert name == "MyHandler", "Expected name to equal 'MyHandler'"
+        assert "BaseHandler" in bases, "Expected 'BaseHandler' in bases"
+        assert "Mixin" in bases, "Expected 'Mixin' in bases"
 
 
 class TestParseInheritanceList:
@@ -157,23 +157,23 @@ class TestParseInheritanceList:
     def test_simple_list(self):
         """Parse simple comma-separated list."""
         bases = _parse_inheritance_list("IFoo, IBar, IBaz", ".cs")
-        assert bases == ["IFoo", "IBar", "IBaz"]
+        assert bases == ["IFoo", "IBar", "IBaz"], "Expected bases to equal ['IFoo', 'IBar', 'IBaz']"
 
     def test_generic_types(self):
         """Remove generic parameters."""
         bases = _parse_inheritance_list("IRequest<TResponse>, IDisposable", ".cs")
-        assert "IRequest" in bases
-        assert "IDisposable" in bases
+        assert "IRequest" in bases, "Expected 'IRequest' in bases"
+        assert "IDisposable" in bases, "Expected 'IDisposable' in bases"
 
     def test_where_clause(self):
         """Handle where clause in C#."""
         bases = _parse_inheritance_list("IHandler where T : class", ".cs")
-        assert bases == ["IHandler"]
+        assert bases == ["IHandler"], "Expected bases to equal ['IHandler']"
 
     def test_empty_string(self):
         """Return empty for empty string."""
         bases = _parse_inheritance_list("", ".cs")
-        assert bases == []
+        assert bases == [], "Expected bases to equal []"
 
 
 class TestNamingCheck:
@@ -206,8 +206,8 @@ namespace App.Commands {
         results = _execute_naming_check(ctx)
         # Helper doesn't match, but CreateUserCommand and UpdateUserCommand do
         violations = [r for r in results if not r.passed]
-        assert len(violations) == 1  # Only Helper
-        assert "Helper" in violations[0].message
+        assert len(violations) == 1, "Expected len(violations) to equal 1"# Only Helper
+        assert "Helper" in violations[0].message, "Expected 'Helper' in violations[0].message"
 
     def test_naming_forbid_mode(self, tmp_path: Path):
         """Forbid mode catches matching names."""
@@ -223,8 +223,8 @@ namespace App.Commands {
             file_paths=[test_file],
         )
         results = _execute_naming_check(ctx)
-        assert len(results) == 1
-        assert "forbidden pattern" in results[0].message.lower()
+        assert len(results) == 1, "Expected len(results) to equal 1"
+        assert "forbidden pattern" in results[0].message.lower(), "Expected 'forbidden pattern' in results[0].message.lower()"
 
     def test_naming_missing_pattern_error(self, tmp_path: Path):
         """Missing pattern in config produces error."""
@@ -237,8 +237,8 @@ namespace App.Commands {
             file_paths=[],
         )
         results = _execute_naming_check(ctx)
-        assert len(results) == 1
-        assert "missing 'pattern'" in results[0].message.lower()
+        assert len(results) == 1, "Expected len(results) to equal 1"
+        assert "missing 'pattern'" in results[0].message.lower(), "Expected \"missing 'pattern'\" in results[0].message.lower()"
 
     def test_naming_invalid_pattern_error(self, tmp_path: Path):
         """Invalid regex pattern produces error."""
@@ -251,8 +251,8 @@ namespace App.Commands {
             file_paths=[],
         )
         results = _execute_naming_check(ctx)
-        assert len(results) == 1
-        assert "invalid" in results[0].message.lower()
+        assert len(results) == 1, "Expected len(results) to equal 1"
+        assert "invalid" in results[0].message.lower(), "Expected 'invalid' in results[0].message.lower()"
 
 
 class TestAstInterfaceCheck:
@@ -287,7 +287,7 @@ namespace App.Commands {
         )
         results = _execute_ast_interface_check(ctx)
         # CreateUserCommand implements IRequest<UserDto>, which starts with IRequest
-        assert len(results) == 0
+        assert len(results) == 0, "Expected len(results) to equal 0"
 
     def test_must_implement_violated(self, tmp_path: Path, temp_command_file: Path):
         """Violation when required interface is missing."""
@@ -303,8 +303,8 @@ namespace App.Commands {
             file_paths=[temp_command_file],
         )
         results = _execute_ast_interface_check(ctx)
-        assert len(results) == 1
-        assert "must implement 'IRequest'" in results[0].message
+        assert len(results) == 1, "Expected len(results) to equal 1"
+        assert "must implement 'IRequest'" in results[0].message, "Expected \"must implement 'IRequest'\" in results[0].message"
 
     def test_must_implement_pattern_match(self, tmp_path: Path, temp_command_file: Path):
         """Pattern matching selects correct classes."""
@@ -321,8 +321,8 @@ namespace App.Commands {
         )
         results = _execute_ast_interface_check(ctx)
         # Only BadCommand should fail - CreateUserCommand and DeleteUserCommand have IRequest
-        assert len(results) == 1
-        assert "BadCommand" in results[0].message
+        assert len(results) == 1, "Expected len(results) to equal 1"
+        assert "BadCommand" in results[0].message, "Expected 'BadCommand' in results[0].message"
 
     def test_must_not_implement(self, tmp_path: Path, temp_command_file: Path):
         """Violation when forbidden interface is implemented."""
@@ -338,9 +338,9 @@ namespace App.Commands {
             file_paths=[temp_command_file],
         )
         results = _execute_ast_interface_check(ctx)
-        assert len(results) == 1
-        assert "DeleteUserCommand" in results[0].message
-        assert "must not implement" in results[0].message
+        assert len(results) == 1, "Expected len(results) to equal 1"
+        assert "DeleteUserCommand" in results[0].message, "Expected 'DeleteUserCommand' in results[0].message"
+        assert "must not implement" in results[0].message, "Expected 'must not implement' in results[0].message"
 
     def test_missing_class_pattern_error(self, tmp_path: Path):
         """Missing class_pattern produces error."""
@@ -353,8 +353,8 @@ namespace App.Commands {
             file_paths=[],
         )
         results = _execute_ast_interface_check(ctx)
-        assert len(results) == 1
-        assert "missing 'class_pattern'" in results[0].message.lower()
+        assert len(results) == 1, "Expected len(results) to equal 1"
+        assert "missing 'class_pattern'" in results[0].message.lower(), "Expected \"missing 'class_pattern'\" in results[0].message.lower()"
 
     def test_invalid_class_pattern_error(self, tmp_path: Path):
         """Invalid class pattern regex produces error."""
@@ -367,8 +367,8 @@ namespace App.Commands {
             file_paths=[],
         )
         results = _execute_ast_interface_check(ctx)
-        assert len(results) == 1
-        assert "invalid" in results[0].message.lower()
+        assert len(results) == 1, "Expected len(results) to equal 1"
+        assert "invalid" in results[0].message.lower(), "Expected 'invalid' in results[0].message.lower()"
 
 
 class TestIntegration:
@@ -391,7 +391,7 @@ class TestIntegration:
         }
         results = execute_check(check, tmp_path, [test_file])
         # Should not return "Unknown check type"
-        assert not any("unknown check type" in r.message.lower() for r in results)
+        assert not any("unknown check type" in r.message.lower() for r in results), "Assertion failed"
 
     def test_ast_check_type_registered(self, tmp_path: Path):
         """Verify 'ast' check type is in dispatch table."""
@@ -413,4 +413,4 @@ class TestIntegration:
         }
         results = execute_check(check, tmp_path, [test_file])
         # Should not return "Unknown check type"
-        assert not any("unknown check type" in r.message.lower() for r in results)
+        assert not any("unknown check type" in r.message.lower() for r in results), "Assertion failed"

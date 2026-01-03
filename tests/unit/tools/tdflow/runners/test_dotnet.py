@@ -47,10 +47,10 @@ Passed!  - Failed:     0, Passed:     5, Skipped:     0, Total:     5, Duration:
 """
         result = runner._parse_output(output, 0)
 
-        assert result.total == 5
-        assert result.passed == 5
-        assert result.failed == 0
-        assert result.errors == 0
+        assert result.total == 5, "Expected result.total to equal 5"
+        assert result.passed == 5, "Expected result.passed to equal 5"
+        assert result.failed == 0, "Expected result.failed to equal 0"
+        assert result.errors == 0, "Expected result.errors to equal 0"
 
     def test_parse_output_failures(self, runner: DotNetTestRunner):
         """Parse output correctly identifies failed tests."""
@@ -62,10 +62,10 @@ Failed!  - Failed:     2, Passed:     3, Skipped:     0, Total:     5, Duration:
 """
         result = runner._parse_output(output, 1)
 
-        assert result.total == 5
-        assert result.passed == 3
-        assert result.failed == 2
-        assert result.errors == 0
+        assert result.total == 5, "Expected result.total to equal 5"
+        assert result.passed == 3, "Expected result.passed to equal 3"
+        assert result.failed == 2, "Expected result.failed to equal 2"
+        assert result.errors == 0, "Expected result.errors to equal 0"
 
     def test_parse_output_with_duration(self, runner: DotNetTestRunner):
         """Parse output extracts duration."""
@@ -75,7 +75,7 @@ Duration: 1.234 s
 """
         result = runner._parse_output(output, 0)
 
-        assert result.duration_seconds == 1.234
+        assert result.duration_seconds == 1.234, "Expected result.duration_seconds to equal 1.234"
 
     def test_parse_output_no_tests(self, runner: DotNetTestRunner):
         """Parse output handles no tests found."""
@@ -84,9 +84,9 @@ No test matches the given testcase filter
 """
         result = runner._parse_output(output, 0)
 
-        assert result.total == 0
-        assert result.passed == 0
-        assert result.failed == 0
+        assert result.total == 0, "Expected result.total to equal 0"
+        assert result.passed == 0, "Expected result.passed to equal 0"
+        assert result.failed == 0, "Expected result.failed to equal 0"
 
 
 class TestRunResultProperties:
@@ -97,21 +97,21 @@ class TestRunResultProperties:
         result = RunResult(
             total=5, passed=5, failed=0, errors=0, duration_seconds=1.0, output=""
         )
-        assert result.all_passed is True
-        assert result.all_failed is False
+        assert result.all_passed is True, "Expected result.all_passed is True"
+        assert result.all_failed is False, "Expected result.all_failed is False"
 
     def test_all_failed_true(self):
         """All failed when no tests pass."""
         result = RunResult(
             total=5, passed=0, failed=5, errors=0, duration_seconds=1.0, output=""
         )
-        assert result.all_failed is True
-        assert result.all_passed is False
+        assert result.all_failed is True, "Expected result.all_failed is True"
+        assert result.all_passed is False, "Expected result.all_passed is False"
 
     def test_partial_pass(self):
         """Partial pass neither all passed nor all failed."""
         result = RunResult(
             total=5, passed=3, failed=2, errors=0, duration_seconds=1.0, output=""
         )
-        assert result.all_passed is False
-        assert result.all_failed is False
+        assert result.all_passed is False, "Expected result.all_passed is False"
+        assert result.all_failed is False, "Expected result.all_failed is False"

@@ -46,9 +46,9 @@ estimated_complexity: "low"
             mock_llm.return_value = mock_llm_response(yaml_response)
             result = executor.execute(context)
 
-        assert result.status == StageStatus.COMPLETED
-        assert result.artifacts["request_id"] == "REQ-20260101120000-0001"
-        assert result.artifacts["detected_scope"] == "feature_addition"
+        assert result.status == StageStatus.COMPLETED, "Expected result.status to equal StageStatus.COMPLETED"
+        assert result.artifacts["request_id"] == "REQ-20260101120000-0001", "Expected result.artifacts['request_id'] to equal 'REQ-20260101120000-0001'"
+        assert result.artifacts["detected_scope"] == "feature_addition", "Expected result.artifacts['detected_... to equal 'feature_addition'"
 
     def test_detects_bug_fix_scope(self, tmp_path, mock_llm_response):
         """Bug fix requests detected correctly."""
@@ -87,8 +87,8 @@ estimated_complexity: "medium"
             mock_llm.return_value = mock_llm_response(yaml_response)
             result = executor.execute(context)
 
-        assert result.status == StageStatus.COMPLETED
-        assert result.artifacts["detected_scope"] == "bug_fix"
+        assert result.status == StageStatus.COMPLETED, "Expected result.status to equal StageStatus.COMPLETED"
+        assert result.artifacts["detected_scope"] == "bug_fix", "Expected result.artifacts['detected_... to equal 'bug_fix'"
 
     def test_detects_feature_addition_scope(self, tmp_path, mock_llm_response):
         """Feature requests detected correctly."""
@@ -114,7 +114,7 @@ priority: "medium"
             mock_llm.return_value = mock_llm_response(yaml_response)
             result = executor.execute(context)
 
-        assert result.artifacts["detected_scope"] == "feature_addition"
+        assert result.artifacts["detected_scope"] == "feature_addition", "Expected result.artifacts['detected_... to equal 'feature_addition'"
 
     def test_detects_refactoring_scope(self, tmp_path, mock_llm_response):
         """Refactoring requests detected correctly."""
@@ -140,7 +140,7 @@ priority: "low"
             mock_llm.return_value = mock_llm_response(yaml_response)
             result = executor.execute(context)
 
-        assert result.artifacts["detected_scope"] == "refactoring"
+        assert result.artifacts["detected_scope"] == "refactoring", "Expected result.artifacts['detected_... to equal 'refactoring'"
 
     def test_generates_blocking_questions_for_unclear(
         self, tmp_path, mock_llm_response
@@ -175,14 +175,14 @@ initial_questions:
             mock_llm.return_value = mock_llm_response(yaml_response)
             result = executor.execute(context)
 
-        assert result.artifacts["detected_scope"] == "unclear"
-        assert len(result.artifacts["initial_questions"]) >= 1
+        assert result.artifacts["detected_scope"] == "unclear", "Expected result.artifacts['detected_... to equal 'unclear'"
+        assert len(result.artifacts["initial_questions"]) >= 1, "Expected len(result.artifacts['initi... >= 1"
         blocking = [
             q
             for q in result.artifacts["initial_questions"]
             if q.get("priority") == "blocking"
         ]
-        assert len(blocking) >= 1
+        assert len(blocking) >= 1, "Expected len(blocking) >= 1"
 
     def test_generates_unique_request_ids(self, tmp_path, mock_llm_response):
         """Each execution generates unique request_id."""
@@ -230,7 +230,7 @@ priority: "high"
             mock_llm.return_value = mock_llm_response(yaml_response2)
             result2 = executor.execute(context2)
 
-        assert result1.artifacts["request_id"] != result2.artifacts["request_id"]
+        assert result1.artifacts["request_id"] != result2.artifacts["request_id"], "Expected result1.artifacts['request_... to not equal result2.artifacts['request_..."
 
     def test_validates_output_required_fields(self, tmp_path, mock_llm_response):
         """Output validation catches missing fields."""
@@ -245,8 +245,8 @@ priority: "high"
         }
 
         validation = executor.validate_output(artifact)
-        assert not validation.valid
-        assert any("request_id" in e for e in validation.errors)
+        assert not validation.valid, "Assertion failed"
+        assert any("request_id" in e for e in validation.errors), "Expected any() to be truthy"
 
     def test_validates_output_scope_values(self, tmp_path):
         """Output validation catches invalid scope values."""
@@ -261,8 +261,8 @@ priority: "high"
         }
 
         validation = executor.validate_output(artifact)
-        assert not validation.valid
-        assert any("scope" in e.lower() for e in validation.errors)
+        assert not validation.valid, "Assertion failed"
+        assert any("scope" in e.lower() for e in validation.errors), "Expected any() to be truthy"
 
     def test_validates_output_priority_values(self, tmp_path):
         """Output validation warns on invalid priority values."""
@@ -278,7 +278,7 @@ priority: "high"
 
         validation = executor.validate_output(artifact)
         # Invalid priority is a warning, not an error
-        assert len(validation.warnings) >= 1 or not validation.valid
+        assert len(validation.warnings) >= 1 or not validation.valid, "Assertion failed"
 
     def test_handles_empty_request(self, tmp_path, mock_llm_response):
         """Empty request is handled gracefully."""
@@ -307,8 +307,8 @@ initial_questions:
             mock_llm.return_value = mock_llm_response(yaml_response)
             result = executor.execute(context)
 
-        assert result.status == StageStatus.COMPLETED
-        assert result.artifacts["detected_scope"] == "unclear"
+        assert result.status == StageStatus.COMPLETED, "Expected result.status to equal StageStatus.COMPLETED"
+        assert result.artifacts["detected_scope"] == "unclear", "Expected result.artifacts['detected_... to equal 'unclear'"
 
     def test_carries_forward_project_context(self, tmp_path, mock_llm_response):
         """Project context from input is included in prompt."""
@@ -336,7 +336,7 @@ priority: "medium"
 
         # Check that get_user_message includes project context
         user_msg = executor.get_user_message(context)
-        assert "Python web application" in user_msg
+        assert "Python web application" in user_msg, "Expected 'Python web application' in user_msg"
 
 
 class TestCreateIntakeExecutor:
@@ -350,7 +350,7 @@ class TestCreateIntakeExecutor:
         )
 
         executor = create_intake_executor()
-        assert isinstance(executor, IntakeExecutor)
+        assert isinstance(executor, IntakeExecutor), "Expected isinstance() to be truthy"
 
     def test_accepts_config(self):
         """Factory accepts config parameter."""
@@ -358,4 +358,4 @@ class TestCreateIntakeExecutor:
 
         config = {"custom_setting": True}
         executor = create_intake_executor(config)
-        assert executor.config.get("custom_setting") is True
+        assert executor.config.get("custom_setting") is True, "Expected executor.config.get('custom... is True"

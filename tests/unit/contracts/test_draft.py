@@ -34,9 +34,9 @@ class TestValidationRule:
             rationale="Only these auth methods are supported",
         )
 
-        assert rule.rule_id == "R-001"
-        assert rule.check_type == "enum_constraint"
-        assert rule.severity == "error"
+        assert rule.rule_id == "R-001", "Expected rule.rule_id to equal 'R-001'"
+        assert rule.check_type == "enum_constraint", "Expected rule.check_type to equal 'enum_constraint'"
+        assert rule.severity == "error", "Expected rule.severity to equal 'error'"
 
     def test_validation_rule_to_dict(self):
         """Serialize validation rule."""
@@ -50,8 +50,8 @@ class TestValidationRule:
 
         data = rule.to_dict()
 
-        assert data["rule_id"] == "R-001"
-        assert data["check_type"] == "required_field"
+        assert data["rule_id"] == "R-001", "Expected data['rule_id'] to equal 'R-001'"
+        assert data["check_type"] == "required_field", "Expected data['check_type'] to equal 'required_field'"
 
     def test_validation_rule_from_dict(self):
         """Deserialize validation rule."""
@@ -66,8 +66,8 @@ class TestValidationRule:
 
         rule = ValidationRule.from_dict(data)
 
-        assert rule.rule_id == "R-001"
-        assert rule.severity == "warning"
+        assert rule.rule_id == "R-001", "Expected rule.rule_id to equal 'R-001'"
+        assert rule.severity == "warning", "Expected rule.severity to equal 'warning'"
 
 
 class TestEscalationTrigger:
@@ -84,9 +84,9 @@ class TestEscalationTrigger:
             rationale="Low confidence requires human review",
         )
 
-        assert trigger.trigger_id == "T-001"
-        assert trigger.stage == "clarify"
-        assert trigger.severity == "blocking"
+        assert trigger.trigger_id == "T-001", "Expected trigger.trigger_id to equal 'T-001'"
+        assert trigger.stage == "clarify", "Expected trigger.stage to equal 'clarify'"
+        assert trigger.severity == "blocking", "Expected trigger.severity to equal 'blocking'"
 
     def test_trigger_to_dict(self):
         """Serialize trigger."""
@@ -97,8 +97,8 @@ class TestEscalationTrigger:
 
         data = trigger.to_dict()
 
-        assert data["trigger_id"] == "T-001"
-        assert data["condition"] == "Test condition"
+        assert data["trigger_id"] == "T-001", "Expected data['trigger_id'] to equal 'T-001'"
+        assert data["condition"] == "Test condition", "Expected data['condition'] to equal 'Test condition'"
 
     def test_trigger_from_dict(self):
         """Deserialize trigger."""
@@ -110,8 +110,8 @@ class TestEscalationTrigger:
 
         trigger = EscalationTrigger.from_dict(data)
 
-        assert trigger.trigger_id == "T-001"
-        assert trigger.severity == "advisory"
+        assert trigger.trigger_id == "T-001", "Expected trigger.trigger_id to equal 'T-001'"
+        assert trigger.severity == "advisory", "Expected trigger.severity to equal 'advisory'"
 
 
 class TestQualityGate:
@@ -126,8 +126,8 @@ class TestQualityGate:
             failure_action="escalate",
         )
 
-        assert gate.gate_id == "G-001"
-        assert len(gate.checks) == 2
+        assert gate.gate_id == "G-001", "Expected gate.gate_id to equal 'G-001'"
+        assert len(gate.checks) == 2, "Expected len(gate.checks) to equal 2"
 
     def test_gate_to_dict(self):
         """Serialize gate."""
@@ -139,7 +139,7 @@ class TestQualityGate:
 
         data = gate.to_dict()
 
-        assert data["stage"] == "analyze"
+        assert data["stage"] == "analyze", "Expected data['stage'] to equal 'analyze'"
 
 
 class TestStageContract:
@@ -168,9 +168,9 @@ class TestStageContract:
             rationale="Intake stage captures initial request analysis",
         )
 
-        assert contract.stage_name == "intake"
-        assert len(contract.validation_rules) == 1
-        assert "request_id" in contract.output_requirements
+        assert contract.stage_name == "intake", "Expected contract.stage_name to equal 'intake'"
+        assert len(contract.validation_rules) == 1, "Expected len(contract.validation_rules) to equal 1"
+        assert "request_id" in contract.output_requirements, "Expected 'request_id' in contract.output_requirements"
 
     def test_stage_contract_to_dict(self):
         """Serialize stage contract."""
@@ -181,8 +181,8 @@ class TestStageContract:
 
         data = contract.to_dict()
 
-        assert data["stage_name"] == "clarify"
-        assert "clarified_requirements" in data["output_requirements"]
+        assert data["stage_name"] == "clarify", "Expected data['stage_name'] to equal 'clarify'"
+        assert "clarified_requirements" in data["output_requirements"], "Expected 'clarified_requirements' in data['output_requirements']"
 
     def test_stage_contract_from_dict(self):
         """Deserialize stage contract."""
@@ -203,8 +203,8 @@ class TestStageContract:
 
         contract = StageContract.from_dict(data)
 
-        assert contract.stage_name == "analyze"
-        assert len(contract.validation_rules) == 1
+        assert contract.stage_name == "analyze", "Expected contract.stage_name to equal 'analyze'"
+        assert len(contract.validation_rules) == 1, "Expected len(contract.validation_rules) to equal 1"
 
 
 class TestContractDraft:
@@ -230,9 +230,9 @@ class TestContractDraft:
             confidence=0.85,
         )
 
-        assert draft.draft_id == "DRAFT-20240103-120000"
-        assert len(draft.stage_contracts) == 2
-        assert draft.confidence == 0.85
+        assert draft.draft_id == "DRAFT-20240103-120000", "Expected draft.draft_id to equal 'DRAFT-20240103-120000'"
+        assert len(draft.stage_contracts) == 2, "Expected len(draft.stage_contracts) to equal 2"
+        assert draft.confidence == 0.85, "Expected draft.confidence to equal 0.85"
 
     def test_draft_to_yaml(self):
         """Serialize draft to YAML."""
@@ -244,8 +244,8 @@ class TestContractDraft:
 
         yaml_str = draft.to_yaml()
 
-        assert "draft_id: DRAFT-001" in yaml_str
-        assert "detected_scope: bugfix" in yaml_str
+        assert "draft_id: DRAFT-001" in yaml_str, "Expected 'draft_id: DRAFT-001' in yaml_str"
+        assert "detected_scope: bugfix" in yaml_str, "Expected 'detected_scope: bugfix' in yaml_str"
 
     def test_draft_from_yaml(self):
         """Deserialize draft from YAML."""
@@ -269,9 +269,9 @@ quality_gates: []
 
         draft = ContractDraft.from_yaml(yaml_str)
 
-        assert draft.draft_id == "DRAFT-001"
-        assert draft.confidence == 0.9
-        assert len(draft.stage_contracts) == 1
+        assert draft.draft_id == "DRAFT-001", "Expected draft.draft_id to equal 'DRAFT-001'"
+        assert draft.confidence == 0.9, "Expected draft.confidence to equal 0.9"
+        assert len(draft.stage_contracts) == 1, "Expected len(draft.stage_contracts) to equal 1"
 
     def test_draft_get_stage_contract(self):
         """Get stage contract by name."""
@@ -289,10 +289,10 @@ quality_gates: []
         clarify = draft.get_stage_contract("clarify")
         nonexistent = draft.get_stage_contract("nonexistent")
 
-        assert intake is not None
-        assert intake.stage_name == "intake"
-        assert clarify is not None
-        assert nonexistent is None
+        assert intake is not None, "Expected intake is not None"
+        assert intake.stage_name == "intake", "Expected intake.stage_name to equal 'intake'"
+        assert clarify is not None, "Expected clarify is not None"
+        assert nonexistent is None, "Expected nonexistent is None"
 
     def test_draft_add_revision(self):
         """Add revision to draft."""
@@ -307,9 +307,9 @@ quality_gates: []
             reason="User requested explicit auth method tracking",
         )
 
-        assert len(draft.revision_history) == 1
-        assert draft.revision_history[0].revision_id == "REV-001"
-        assert "auth_method" in draft.revision_history[0].changes[0]
+        assert len(draft.revision_history) == 1, "Expected len(draft.revision_history) to equal 1"
+        assert draft.revision_history[0].revision_id == "REV-001", "Expected draft.revision_history[0].r... to equal 'REV-001'"
+        assert "auth_method" in draft.revision_history[0].changes[0], "Expected 'auth_method' in draft.revision_history[0].c..."
 
     def test_draft_with_questions_and_assumptions(self):
         """Draft with open questions and assumptions."""
@@ -334,9 +334,9 @@ quality_gates: []
             ],
         )
 
-        assert len(draft.open_questions) == 1
-        assert len(draft.assumptions) == 1
-        assert draft.assumptions[0].confidence == 0.7
+        assert len(draft.open_questions) == 1, "Expected len(draft.open_questions) to equal 1"
+        assert len(draft.assumptions) == 1, "Expected len(draft.assumptions) to equal 1"
+        assert draft.assumptions[0].confidence == 0.7, "Expected draft.assumptions[0].confid... to equal 0.7"
 
 
 class TestApprovedContracts:
@@ -353,9 +353,9 @@ class TestApprovedContracts:
             ],
         )
 
-        assert approved.contract_set_id == "CONTRACT-20240103-120000"
-        assert approved.approved_by == "human"
-        assert approved.version == "1.0"
+        assert approved.contract_set_id == "CONTRACT-20240103-120000", "Expected approved.contract_set_id to equal 'CONTRACT-20240103-120000'"
+        assert approved.approved_by == "human", "Expected approved.approved_by to equal 'human'"
+        assert approved.version == "1.0", "Expected approved.version to equal '1.0'"
 
     def test_approved_from_draft(self):
         """Create approved from draft."""
@@ -381,9 +381,9 @@ class TestApprovedContracts:
             request_id="REQ-001",
         )
 
-        assert approved.draft_id == "DRAFT-001"
-        assert len(approved.stage_contracts) == 2
-        assert len(approved.escalation_triggers) == 1
+        assert approved.draft_id == "DRAFT-001", "Expected approved.draft_id to equal 'DRAFT-001'"
+        assert len(approved.stage_contracts) == 2, "Expected len(approved.stage_contracts) to equal 2"
+        assert len(approved.escalation_triggers) == 1, "Expected len(approved.escalation_tri... to equal 1"
 
     def test_approved_to_yaml(self):
         """Serialize approved contracts to YAML."""
@@ -395,7 +395,7 @@ class TestApprovedContracts:
 
         yaml_str = approved.to_yaml()
 
-        assert "contract_set_id: CONTRACT-001" in yaml_str
+        assert "contract_set_id: CONTRACT-001" in yaml_str, "Expected 'contract_set_id: CONTRACT-... in yaml_str"
 
     def test_approved_from_yaml(self):
         """Deserialize approved contracts from YAML."""
@@ -422,8 +422,8 @@ version: "1.0"
 
         approved = ApprovedContracts.from_yaml(yaml_str)
 
-        assert approved.contract_set_id == "CONTRACT-001"
-        assert len(approved.stage_contracts) == 1
+        assert approved.contract_set_id == "CONTRACT-001", "Expected approved.contract_set_id to equal 'CONTRACT-001'"
+        assert len(approved.stage_contracts) == 1, "Expected len(approved.stage_contracts) to equal 1"
 
     def test_approved_get_stage_contract(self):
         """Get stage contract from approved."""
@@ -440,6 +440,6 @@ version: "1.0"
         intake = approved.get_stage_contract("intake")
         spec = approved.get_stage_contract("spec")
 
-        assert intake is not None
-        assert spec is not None
-        assert intake.stage_name == "intake"
+        assert intake is not None, "Expected intake is not None"
+        assert spec is not None, "Expected spec is not None"
+        assert intake.stage_name == "intake", "Expected intake.stage_name to equal 'intake'"

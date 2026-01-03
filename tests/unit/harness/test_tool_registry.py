@@ -26,8 +26,8 @@ class TestToolRegistry:
         """Test that registry initializes empty without config."""
         registry = ToolRegistry()
 
-        assert registry.list_tools() == []
-        assert registry.list_profiles() == []
+        assert registry.list_tools() == [], "Expected registry.list_tools() to equal []"
+        assert registry.list_profiles() == [], "Expected registry.list_profiles() to equal []"
 
     def test_init_with_config_path_loads_config(self):
         """Test that registry loads config when path provided."""
@@ -50,8 +50,8 @@ class TestToolRegistry:
 
         registry.register_tool(tool)
 
-        assert "test_tool" in registry.list_tools()
-        assert registry.get_tool("test_tool") == tool
+        assert "test_tool" in registry.list_tools(), "Expected 'test_tool' in registry.list_tools()"
+        assert registry.get_tool("test_tool") == tool, "Expected registry.get_tool('test_tool') to equal tool"
 
     def test_register_tool_with_duplicate_name_raises_error(self):
         """Test that registering duplicate tool raises DuplicateToolError."""
@@ -86,7 +86,7 @@ class TestToolRegistry:
         registry.register_profile(profile)
 
         result = registry.get_profile("test_workflow", "test_phase")
-        assert result == profile
+        assert result == profile, "Expected result to equal profile"
 
     def test_register_domain_tools_adds_domain_tools(self):
         """Test that register_domain_tools adds domain-specific tools."""
@@ -96,7 +96,7 @@ class TestToolRegistry:
 
         # This should be accessible through some method (implementation detail)
         # For now, we'll test that it doesn't raise an error
-        assert True  # Will be updated when implementation exists
+        assert True, "Assertion failed"# Will be updated when implementation exists
 
     def test_get_tool_returns_tool_when_exists(self):
         """Test that get_tool returns tool definition when it exists."""
@@ -111,7 +111,7 @@ class TestToolRegistry:
 
         result = registry.get_tool("test_tool")
 
-        assert result == tool
+        assert result == tool, "Expected result to equal tool"
 
     def test_get_tool_returns_none_when_not_exists(self):
         """Test that get_tool returns None when tool doesn't exist."""
@@ -119,7 +119,7 @@ class TestToolRegistry:
 
         result = registry.get_tool("nonexistent_tool")
 
-        assert result is None
+        assert result is None, "Expected result is None"
 
     def test_get_profile_returns_profile_when_exists(self):
         """Test that get_profile returns profile when it exists."""
@@ -133,7 +133,7 @@ class TestToolRegistry:
 
         result = registry.get_profile("test_workflow", "test_phase")
 
-        assert result == profile
+        assert result == profile, "Expected result to equal profile"
 
     def test_get_profile_returns_none_when_not_exists(self):
         """Test that get_profile returns None when profile doesn't exist."""
@@ -141,7 +141,7 @@ class TestToolRegistry:
 
         result = registry.get_profile("nonexistent_workflow", "nonexistent_phase")
 
-        assert result is None
+        assert result is None, "Expected result is None"
 
     def test_list_tools_returns_all_tool_names(self):
         """Test that list_tools returns all registered tool names."""
@@ -154,7 +154,7 @@ class TestToolRegistry:
 
         result = registry.list_tools()
 
-        assert set(result) == {"tool1", "tool2"}
+        assert set(result) == {"tool1", "tool2"}, "Expected set(result) to equal {'tool1', 'tool2'}"
 
     def test_list_profiles_returns_all_profiles(self):
         """Test that list_profiles returns all registered profiles."""
@@ -167,9 +167,9 @@ class TestToolRegistry:
 
         result = registry.list_profiles()
 
-        assert len(result) == 2
-        assert profile1 in result
-        assert profile2 in result
+        assert len(result) == 2, "Expected len(result) to equal 2"
+        assert profile1 in result, "Expected profile1 in result"
+        assert profile2 in result, "Expected profile2 in result"
 
     def test_load_from_yaml_loads_configuration(self):
         """Test that load_from_yaml loads tools and profiles from YAML."""
@@ -204,8 +204,8 @@ class TestToolRegistry:
 
                 registry.load_from_yaml(Path("test.yaml"))
 
-                assert "test_tool" in registry.list_tools()
-                assert registry.get_profile("test_workflow", "test_phase") is not None
+                assert "test_tool" in registry.list_tools(), "Expected 'test_tool' in registry.list_tools()"
+                assert registry.get_profile("test_workflow", "test_phase") is not None, "Expected registry.get_profile('test_... is not None"
 
     def test_save_to_yaml_saves_configuration(self):
         """Test that save_to_yaml saves current registry to YAML."""

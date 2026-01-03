@@ -21,7 +21,7 @@ class TestMappingRegistry:
         from agentforge.core.bridge.mappings import architecture, conventions, cqrs  # noqa: F401
 
         mappings = MappingRegistry._mappings
-        assert len(mappings) > 0
+        assert len(mappings) > 0, "Expected len(mappings) > 0"
 
     def test_get_mapping_info(self):
         """Can get info about registered mappings."""
@@ -29,15 +29,15 @@ class TestMappingRegistry:
 
         info = MappingRegistry.get_mapping_info()
 
-        assert isinstance(info, list)
-        assert len(info) > 0
+        assert isinstance(info, list), "Expected isinstance() to be truthy"
+        assert len(info) > 0, "Expected len(info) > 0"
 
         # Check structure of info items
         for item in info:
-            assert "pattern_key" in item
-            assert "languages" in item
-            assert "min_confidence" in item
-            assert "version" in item
+            assert "pattern_key" in item, "Expected 'pattern_key' in item"
+            assert "languages" in item, "Expected 'languages' in item"
+            assert "min_confidence" in item, "Expected 'min_confidence' in item"
+            assert "version" in item, "Expected 'version' in item"
 
     def test_get_mappings_for_language(self):
         """Mappings are filtered by language."""
@@ -51,9 +51,9 @@ class TestMappingRegistry:
         python_keys = {m.pattern_key for m in python_mappings}
 
         # CQRS mapping is C# only
-        assert "cqrs" in csharp_keys
+        assert "cqrs" in csharp_keys, "Expected 'cqrs' in csharp_keys"
         # pytest mapping is Python only
-        assert "framework_pytest" in python_keys
+        assert "framework_pytest" in python_keys, "Expected 'framework_pytest' in python_keys"
 
     def test_generate_checks_from_context(self):
         """Can generate checks from a context."""
@@ -71,9 +71,9 @@ class TestMappingRegistry:
 
         checks = MappingRegistry.generate_checks(context)
 
-        assert isinstance(checks, list)
+        assert isinstance(checks, list), "Expected isinstance() to be truthy"
         # Should have at least the pytest markers check
-        assert len(checks) > 0
+        assert len(checks) > 0, "Expected len(checks) > 0"
 
     def test_generate_checks_with_pattern_filter(self):
         """Can filter by pattern."""
@@ -95,7 +95,7 @@ class TestMappingRegistry:
 
         # All checks should be from framework_pytest pattern
         for check in checks:
-            assert check.source_pattern == "framework_pytest"
+            assert check.source_pattern == "framework_pytest", "Expected check.source_pattern to equal 'framework_pytest'"
 
 
 class TestCustomMapping:
@@ -129,7 +129,7 @@ class TestCustomMapping:
                     ]
 
             # Mapping should be registered
-            assert any("test_pattern" in k for k in MappingRegistry._mappings)
+            assert any("test_pattern" in k for k in MappingRegistry._mappings), "Expected any() to be truthy"
 
         finally:
             # Restore original mappings

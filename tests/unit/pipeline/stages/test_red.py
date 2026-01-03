@@ -17,26 +17,26 @@ class TestRedPhaseExecutor:
     def test_stage_name_is_red(self):
         """RedPhaseExecutor has stage_name 'red'."""
         executor = RedPhaseExecutor()
-        assert executor.stage_name == "red"
+        assert executor.stage_name == "red", "Expected executor.stage_name to equal 'red'"
 
     def test_artifact_type_is_test_suite(self):
         """RedPhaseExecutor has artifact_type 'test_suite'."""
         executor = RedPhaseExecutor()
-        assert executor.artifact_type == "test_suite"
+        assert executor.artifact_type == "test_suite", "Expected executor.artifact_type to equal 'test_suite'"
 
     def test_required_input_fields(self):
         """RedPhaseExecutor requires spec_id, components, test_cases."""
         executor = RedPhaseExecutor()
-        assert "spec_id" in executor.required_input_fields
-        assert "components" in executor.required_input_fields
-        assert "test_cases" in executor.required_input_fields
+        assert "spec_id" in executor.required_input_fields, "Expected 'spec_id' in executor.required_input_fields"
+        assert "components" in executor.required_input_fields, "Expected 'components' in executor.required_input_fields"
+        assert "test_cases" in executor.required_input_fields, "Expected 'test_cases' in executor.required_input_fields"
 
     def test_output_fields(self):
         """RedPhaseExecutor outputs spec_id, test_files, test_results."""
         executor = RedPhaseExecutor()
-        assert "spec_id" in executor.output_fields
-        assert "test_files" in executor.output_fields
-        assert "test_results" in executor.output_fields
+        assert "spec_id" in executor.output_fields, "Expected 'spec_id' in executor.output_fields"
+        assert "test_files" in executor.output_fields, "Expected 'test_files' in executor.output_fields"
+        assert "test_results" in executor.output_fields, "Expected 'test_results' in executor.output_fields"
 
     def test_generates_test_files_from_spec(
         self,
@@ -70,8 +70,8 @@ class TestRedPhaseExecutor:
                 result = executor.execute(context)
 
         # Should have generated test files
-        assert result.artifacts is not None
-        assert "test_files" in result.artifacts
+        assert result.artifacts is not None, "Expected result.artifacts is not None"
+        assert "test_files" in result.artifacts, "Expected 'test_files' in result.artifacts"
 
     def test_writes_test_files_to_disk(
         self,
@@ -98,9 +98,9 @@ class TestRedPhaseExecutor:
 
         written = executor._write_test_files(context, test_files)
 
-        assert len(written) == 1
-        assert "tests/unit/auth/test_example.py" in written[0]
-        assert (temp_project_path / "tests" / "unit" / "auth" / "test_example.py").exists()
+        assert len(written) == 1, "Expected len(written) to equal 1"
+        assert "tests/unit/auth/test_example.py" in written[0], "Expected 'tests/unit/auth/test_examp... in written[0]"
+        assert (temp_project_path / "tests" / "unit" / "auth" / "test_example.py").exists(), "Expected (temp_project_path / 'tests...() to be truthy"
 
     def test_runs_pytest_on_generated_tests(
         self,
@@ -131,8 +131,8 @@ class TestRedPhaseExecutor:
                 ["tests/unit/auth/test_oauth_provider.py"]
             )
 
-        assert results["failed"] == 3
-        assert results["passed"] == 0
+        assert results["failed"] == 3, "Expected results['failed'] to equal 3"
+        assert results["passed"] == 0, "Expected results['passed'] to equal 0"
 
     def test_reports_failing_tests(
         self,
@@ -163,8 +163,8 @@ class TestRedPhaseExecutor:
 
         validation = executor._validate_red_results(test_results)
 
-        assert len(validation["failing_tests"]) == 3
-        assert "test_one" in validation["failing_tests"]
+        assert len(validation["failing_tests"]) == 3, "Expected len(validation['failing_tes... to equal 3"
+        assert "test_one" in validation["failing_tests"], "Expected 'test_one' in validation['failing_tests']"
 
     def test_warns_on_unexpected_passes(self):
         """Warns when tests pass unexpectedly."""
@@ -183,8 +183,8 @@ class TestRedPhaseExecutor:
 
         validation = executor._validate_red_results(test_results)
 
-        assert len(validation["unexpected_passes"]) == 2
-        assert len(validation["warnings"]) > 0
+        assert len(validation["unexpected_passes"]) == 2, "Expected len(validation['unexpected_... to equal 2"
+        assert len(validation["warnings"]) > 0, "Expected len(validation['warnings']) > 0"
 
 
 class TestFileBlockExtraction:
@@ -205,9 +205,9 @@ def test_example():
 
         files = executor._extract_file_blocks(response_text)
 
-        assert len(files) == 1
-        assert files[0]["path"] == "tests/test_example.py"
-        assert "def test_example" in files[0]["content"]
+        assert len(files) == 1, "Expected len(files) to equal 1"
+        assert files[0]["path"] == "tests/test_example.py", "Expected files[0]['path'] to equal 'tests/test_example.py'"
+        assert "def test_example" in files[0]["content"], "Expected 'def test_example' in files[0]['content']"
 
     def test_extracts_multiple_file_blocks(self):
         """Extracts multiple files from response."""
@@ -230,9 +230,9 @@ def test_two():
 
         files = executor._extract_file_blocks(response_text)
 
-        assert len(files) == 2
-        assert files[0]["path"] == "tests/test_one.py"
-        assert files[1]["path"] == "tests/test_two.py"
+        assert len(files) == 2, "Expected len(files) to equal 2"
+        assert files[0]["path"] == "tests/test_one.py", "Expected files[0]['path'] to equal 'tests/test_one.py'"
+        assert files[1]["path"] == "tests/test_two.py", "Expected files[1]['path'] to equal 'tests/test_two.py'"
 
     def test_handles_missing_file_marker(self):
         """Handles response without file markers."""
@@ -248,7 +248,7 @@ def test_example():
 
         files = executor._extract_file_blocks(response_text)
 
-        assert len(files) == 0
+        assert len(files) == 0, "Expected len(files) to equal 0"
 
     def test_handles_malformed_code_block(self):
         """Handles malformed code block."""
@@ -261,7 +261,7 @@ This is not a proper code block
 
         files = executor._extract_file_blocks(response_text)
 
-        assert len(files) == 0
+        assert len(files) == 0, "Expected len(files) to equal 0"
 
 
 class TestPytestOutputParsing:
@@ -281,8 +281,8 @@ class TestPytestOutputParsing:
 
         executor._parse_pytest_output(mock_pytest_passing_output, results)
 
-        assert results["passed"] == 3
-        assert results["failed"] == 0
+        assert results["passed"] == 3, "Expected results['passed'] to equal 3"
+        assert results["failed"] == 0, "Expected results['failed'] to equal 0"
 
     def test_parses_pytest_failed_count(self, mock_pytest_failing_output):
         """Correctly parses failed test count."""
@@ -298,8 +298,8 @@ class TestPytestOutputParsing:
 
         executor._parse_pytest_output(mock_pytest_failing_output, results)
 
-        assert results["failed"] == 3
-        assert results["passed"] == 0
+        assert results["failed"] == 3, "Expected results['failed'] to equal 3"
+        assert results["passed"] == 0, "Expected results['passed'] to equal 0"
 
     def test_handles_pytest_timeout(self, sample_spec_artifact, temp_project_path):
         """Handles test execution timeout."""
@@ -320,7 +320,7 @@ class TestPytestOutputParsing:
 
             results = executor._run_tests(context, ["tests/test.py"])
 
-        assert "error" in results
+        assert "error" in results, "Expected 'error' in results"
 
     def test_handles_pytest_error(self, sample_spec_artifact, temp_project_path):
         """Handles pytest execution error."""
@@ -339,7 +339,7 @@ class TestPytestOutputParsing:
 
             results = executor._run_tests(context, ["tests/test.py"])
 
-        assert "error" in results
+        assert "error" in results, "Expected 'error' in results"
 
 
 class TestRedPhaseValidation:
@@ -357,8 +357,8 @@ class TestRedPhaseValidation:
 
         validation = executor.validate_output(artifact)
 
-        assert not validation.valid
-        assert any("test files" in e.lower() for e in validation.errors)
+        assert not validation.valid, "Assertion failed"
+        assert any("test files" in e.lower() for e in validation.errors), "Expected any() to be truthy"
 
     def test_validates_red_expects_failures(self):
         """Validates that RED phase expects test failures."""
@@ -373,7 +373,7 @@ class TestRedPhaseValidation:
 
         validation = executor.validate_output(artifact)
 
-        assert validation.valid
+        assert validation.valid, "Expected validation.valid to be truthy"
 
     def test_warns_all_tests_passed(self):
         """Warns when all tests pass in RED phase."""
@@ -392,8 +392,8 @@ class TestRedPhaseValidation:
 
         validation = executor._validate_red_results(test_results)
 
-        assert len(validation["warnings"]) > 0
-        assert any("passed" in w.lower() for w in validation["warnings"])
+        assert len(validation["warnings"]) > 0, "Expected len(validation['warnings']) > 0"
+        assert any("passed" in w.lower() for w in validation["warnings"]), "Expected any() to be truthy"
 
 
 class TestRedPhaseEdgeCases:
@@ -420,7 +420,7 @@ class TestRedPhaseEdgeCases:
         user_message = executor.get_user_message(context)
 
         # Should still work, just with empty test cases
-        assert "SPEC-123" in user_message
+        assert "SPEC-123" in user_message, "Expected 'SPEC-123' in user_message"
 
     def test_handles_no_components(self, temp_project_path):
         """Handles spec with no components."""
@@ -442,7 +442,7 @@ class TestRedPhaseEdgeCases:
 
         user_message = executor.get_user_message(context)
 
-        assert "SPEC-123" in user_message
+        assert "SPEC-123" in user_message, "Expected 'SPEC-123' in user_message"
 
     def test_creates_parent_directories(self, temp_project_path):
         """Creates parent directories when writing test files."""
@@ -465,8 +465,8 @@ class TestRedPhaseEdgeCases:
 
         written = executor._write_test_files(context, test_files)
 
-        assert len(written) == 1
-        assert (temp_project_path / "tests" / "new" / "nested" / "directory" / "test_file.py").exists()
+        assert len(written) == 1, "Expected len(written) to equal 1"
+        assert (temp_project_path / "tests" / "new" / "nested" / "directory" / "test_file.py").exists(), "Expected (temp_project_path / 'tests...() to be truthy"
 
 
 class TestRedPhasePrompts:
@@ -480,8 +480,8 @@ class TestRedPhasePrompts:
 
         prompt = executor.get_system_prompt(context)
 
-        assert "test" in prompt.lower()
-        assert "tdd" in prompt.lower() or "fail" in prompt.lower()
+        assert "test" in prompt.lower(), "Expected 'test' in prompt.lower()"
+        assert "tdd" in prompt.lower() or "fail" in prompt.lower(), "Assertion failed"
 
     def test_user_message_includes_spec_details(self, sample_spec_artifact, temp_project_path):
         """User message includes spec details."""
@@ -497,9 +497,9 @@ class TestRedPhasePrompts:
 
         message = executor.get_user_message(context)
 
-        assert "SPEC-20260101120000-0001" in message
-        assert "OAuthProvider" in message
-        assert "TC001" in message
+        assert "SPEC-20260101120000-0001" in message, "Expected 'SPEC-20260101120000-0001' in message"
+        assert "OAuthProvider" in message, "Expected 'OAuthProvider' in message"
+        assert "TC001" in message, "Expected 'TC001' in message"
 
     def test_user_message_includes_test_cases(self, sample_spec_artifact, temp_project_path):
         """User message includes test case details."""
@@ -516,9 +516,9 @@ class TestRedPhasePrompts:
         message = executor.get_user_message(context)
 
         # Check Given/When/Then
-        assert "Given" in message or "given" in message
-        assert "When" in message or "when" in message
-        assert "Then" in message or "then" in message
+        assert "Given" in message or "given" in message, "Assertion failed"
+        assert "When" in message or "when" in message, "Assertion failed"
+        assert "Then" in message or "then" in message, "Assertion failed"
 
 
 class TestCreateRedExecutor:
@@ -528,7 +528,7 @@ class TestCreateRedExecutor:
         """Factory creates RedPhaseExecutor instance."""
         executor = create_red_executor()
 
-        assert isinstance(executor, RedPhaseExecutor)
+        assert isinstance(executor, RedPhaseExecutor), "Expected isinstance() to be truthy"
 
     def test_passes_config(self):
         """Factory passes config to executor."""
@@ -536,4 +536,4 @@ class TestCreateRedExecutor:
 
         executor = create_red_executor(config)
 
-        assert executor.test_runner == "pytest"
+        assert executor.test_runner == "pytest", "Expected executor.test_runner to equal 'pytest'"

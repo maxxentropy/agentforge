@@ -39,7 +39,7 @@ class TestPipelineIdGeneration:
         pipeline_id = generate_pipeline_id()
         date_part = pipeline_id.split("-")[1]
         today = datetime.now().strftime("%Y%m%d")
-        assert date_part == today
+        assert date_part == today, "Expected date_part to equal today"
 
 
 class TestStageState:
@@ -49,21 +49,21 @@ class TestStageState:
         """StageState can be created with defaults."""
         stage = StageState(stage_name="intake")
 
-        assert stage.stage_name == "intake"
-        assert stage.status == StageStatus.PENDING
-        assert stage.started_at is None
-        assert stage.completed_at is None
-        assert stage.artifacts == {}
-        assert stage.error is None
+        assert stage.stage_name == "intake", "Expected stage.stage_name to equal 'intake'"
+        assert stage.status == StageStatus.PENDING, "Expected stage.status to equal StageStatus.PENDING"
+        assert stage.started_at is None, "Expected stage.started_at is None"
+        assert stage.completed_at is None, "Expected stage.completed_at is None"
+        assert stage.artifacts == {}, "Expected stage.artifacts to equal {}"
+        assert stage.error is None, "Expected stage.error is None"
 
     def test_mark_running(self):
         """mark_running() updates status and started_at."""
         stage = StageState(stage_name="intake")
         stage.mark_running()
 
-        assert stage.status == StageStatus.RUNNING
-        assert stage.started_at is not None
-        assert stage.completed_at is None
+        assert stage.status == StageStatus.RUNNING, "Expected stage.status to equal StageStatus.RUNNING"
+        assert stage.started_at is not None, "Expected stage.started_at is not None"
+        assert stage.completed_at is None, "Expected stage.completed_at is None"
 
     def test_mark_completed(self):
         """mark_completed() updates status and timestamps."""
@@ -71,9 +71,9 @@ class TestStageState:
         stage.mark_running()
         stage.mark_completed({"output": "result"})
 
-        assert stage.status == StageStatus.COMPLETED
-        assert stage.completed_at is not None
-        assert stage.artifacts == {"output": "result"}
+        assert stage.status == StageStatus.COMPLETED, "Expected stage.status to equal StageStatus.COMPLETED"
+        assert stage.completed_at is not None, "Expected stage.completed_at is not None"
+        assert stage.artifacts == {"output": "result"}, "Expected stage.artifacts to equal {'output': 'result'}"
 
     def test_mark_failed(self):
         """mark_failed() updates status with error."""
@@ -81,17 +81,17 @@ class TestStageState:
         stage.mark_running()
         stage.mark_failed("Something went wrong")
 
-        assert stage.status == StageStatus.FAILED
-        assert stage.error == "Something went wrong"
-        assert stage.completed_at is not None
+        assert stage.status == StageStatus.FAILED, "Expected stage.status to equal StageStatus.FAILED"
+        assert stage.error == "Something went wrong", "Expected stage.error to equal 'Something went wrong'"
+        assert stage.completed_at is not None, "Expected stage.completed_at is not None"
 
     def test_mark_skipped(self):
         """mark_skipped() updates status with reason."""
         stage = StageState(stage_name="intake")
         stage.mark_skipped("Not needed")
 
-        assert stage.status == StageStatus.SKIPPED
-        assert stage.artifacts.get("skip_reason") == "Not needed"
+        assert stage.status == StageStatus.SKIPPED, "Expected stage.status to equal StageStatus.SKIPPED"
+        assert stage.artifacts.get("skip_reason") == "Not needed", "Expected stage.artifacts.get('skip_r... to equal 'Not needed'"
 
     def test_stage_state_serialization(self):
         """StageState serializes to/from dict correctly."""
@@ -102,9 +102,9 @@ class TestStageState:
         data = stage.to_dict()
         restored = StageState.from_dict(data)
 
-        assert restored.stage_name == stage.stage_name
-        assert restored.status == stage.status
-        assert restored.artifacts == stage.artifacts
+        assert restored.stage_name == stage.stage_name, "Expected restored.stage_name to equal stage.stage_name"
+        assert restored.status == stage.status, "Expected restored.status to equal stage.status"
+        assert restored.artifacts == stage.artifacts, "Expected restored.artifacts to equal stage.artifacts"
 
 
 class TestPipelineState:
@@ -118,19 +118,19 @@ class TestPipelineState:
             template="implement",
         )
 
-        assert state.pipeline_id.startswith("PL-")
-        assert state.template == "implement"
-        assert state.status == PipelineStatus.PENDING
-        assert state.request == "Add a button"
-        assert state.project_path == temp_project
-        assert state.stage_order == PIPELINE_TEMPLATES["implement"]
+        assert state.pipeline_id.startswith("PL-"), "Expected state.pipeline_id.startswith() to be truthy"
+        assert state.template == "implement", "Expected state.template to equal 'implement'"
+        assert state.status == PipelineStatus.PENDING, "Expected state.status to equal PipelineStatus.PENDING"
+        assert state.request == "Add a button", "Expected state.request to equal 'Add a button'"
+        assert state.project_path == temp_project, "Expected state.project_path to equal temp_project"
+        assert state.stage_order == PIPELINE_TEMPLATES["implement"], "Expected state.stage_order to equal PIPELINE_TEMPLATES['impleme..."
 
     def test_pipeline_templates(self):
         """Pipeline templates define stage order."""
-        assert "design" in PIPELINE_TEMPLATES
-        assert "implement" in PIPELINE_TEMPLATES
-        assert "test" in PIPELINE_TEMPLATES
-        assert "fix" in PIPELINE_TEMPLATES
+        assert "design" in PIPELINE_TEMPLATES, "Expected 'design' in PIPELINE_TEMPLATES"
+        assert "implement" in PIPELINE_TEMPLATES, "Expected 'implement' in PIPELINE_TEMPLATES"
+        assert "test" in PIPELINE_TEMPLATES, "Expected 'test' in PIPELINE_TEMPLATES"
+        assert "fix" in PIPELINE_TEMPLATES, "Expected 'fix' in PIPELINE_TEMPLATES"
 
         # Implement template has all stages
         assert PIPELINE_TEMPLATES["implement"] == [
@@ -143,24 +143,24 @@ class TestPipelineState:
         state = create_pipeline_state("request", temp_project, "implement")
         state.current_stage = None
 
-        assert state.get_next_stage() == "intake"
+        assert state.get_next_stage() == "intake", "Expected state.get_next_stage() to equal 'intake'"
 
     def test_get_next_stage_progression(self, temp_project):
         """get_next_stage() returns correct next stage."""
         state = create_pipeline_state("request", temp_project, "implement")
         state.current_stage = "intake"
 
-        assert state.get_next_stage() == "clarify"
+        assert state.get_next_stage() == "clarify", "Expected state.get_next_stage() to equal 'clarify'"
 
         state.current_stage = "clarify"
-        assert state.get_next_stage() == "analyze"
+        assert state.get_next_stage() == "analyze", "Expected state.get_next_stage() to equal 'analyze'"
 
     def test_get_next_stage_at_end(self, temp_project):
         """get_next_stage() returns None at last stage."""
         state = create_pipeline_state("request", temp_project, "implement")
         state.current_stage = "deliver"
 
-        assert state.get_next_stage() is None
+        assert state.get_next_stage() is None, "Expected state.get_next_stage() is None"
 
     def test_collect_artifacts(self, temp_project):
         """collect_artifacts() gathers all completed stage artifacts."""
@@ -173,44 +173,44 @@ class TestPipelineState:
 
         artifacts = state.collect_artifacts()
 
-        assert artifacts["requirements"] == "data"
-        assert artifacts["questions"] == ["q1"]
-        assert "analyze_output" not in artifacts
+        assert artifacts["requirements"] == "data", "Expected artifacts['requirements'] to equal 'data'"
+        assert artifacts["questions"] == ["q1"], "Expected artifacts['questions'] to equal ['q1']"
+        assert "analyze_output" not in artifacts, "Expected 'analyze_output' not in artifacts"
 
     def test_is_terminal(self, temp_project):
         """is_terminal() identifies terminal states correctly."""
         state = create_pipeline_state("request", temp_project)
 
         state.status = PipelineStatus.PENDING
-        assert not state.is_terminal()
+        assert not state.is_terminal(), "Assertion failed"
 
         state.status = PipelineStatus.RUNNING
-        assert not state.is_terminal()
+        assert not state.is_terminal(), "Assertion failed"
 
         state.status = PipelineStatus.COMPLETED
-        assert state.is_terminal()
+        assert state.is_terminal(), "Expected state.is_terminal() to be truthy"
 
         state.status = PipelineStatus.FAILED
-        assert state.is_terminal()
+        assert state.is_terminal(), "Expected state.is_terminal() to be truthy"
 
         state.status = PipelineStatus.ABORTED
-        assert state.is_terminal()
+        assert state.is_terminal(), "Expected state.is_terminal() to be truthy"
 
     def test_can_resume(self, temp_project):
         """can_resume() identifies resumable states."""
         state = create_pipeline_state("request", temp_project)
 
         state.status = PipelineStatus.RUNNING
-        assert not state.can_resume()
+        assert not state.can_resume(), "Assertion failed"
 
         state.status = PipelineStatus.PAUSED
-        assert state.can_resume()
+        assert state.can_resume(), "Expected state.can_resume() to be truthy"
 
         state.status = PipelineStatus.WAITING_APPROVAL
-        assert state.can_resume()
+        assert state.can_resume(), "Expected state.can_resume() to be truthy"
 
         state.status = PipelineStatus.COMPLETED
-        assert not state.can_resume()
+        assert not state.can_resume(), "Assertion failed"
 
     def test_pipeline_state_serialization(self, temp_project):
         """PipelineState serializes to/from dict correctly."""
@@ -226,13 +226,13 @@ class TestPipelineState:
         data = state.to_dict()
         restored = PipelineState.from_dict(data)
 
-        assert restored.pipeline_id == state.pipeline_id
-        assert restored.template == state.template
-        assert restored.status == state.status
-        assert restored.request == state.request
-        assert restored.current_stage == state.current_stage
-        assert restored.config == state.config
-        assert restored.stage_order == state.stage_order
+        assert restored.pipeline_id == state.pipeline_id, "Expected restored.pipeline_id to equal state.pipeline_id"
+        assert restored.template == state.template, "Expected restored.template to equal state.template"
+        assert restored.status == state.status, "Expected restored.status to equal state.status"
+        assert restored.request == state.request, "Expected restored.request to equal state.request"
+        assert restored.current_stage == state.current_stage, "Expected restored.current_stage to equal state.current_stage"
+        assert restored.config == state.config, "Expected restored.config to equal state.config"
+        assert restored.stage_order == state.stage_order, "Expected restored.stage_order to equal state.stage_order"
 
     def test_touch_updates_timestamp(self, temp_project):
         """touch() updates the updated_at timestamp."""
@@ -244,4 +244,4 @@ class TestPipelineState:
         time.sleep(0.01)
 
         state.touch()
-        assert state.updated_at > original
+        assert state.updated_at > original, "Expected state.updated_at > original"

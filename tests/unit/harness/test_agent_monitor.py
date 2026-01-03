@@ -27,11 +27,11 @@ class TestAgentMonitorInit:
         monitor = AgentMonitor()
 
         # Should have default config values
-        assert monitor.config.history_window == 100
-        assert monitor.config.loop_threshold == 3
-        assert monitor.config.drift_threshold == 0.5
-        assert monitor.config.thrash_threshold == 3
-        assert monitor.config.stall_threshold == 5
+        assert monitor.config.history_window == 100, "Expected monitor.config.history_window to equal 100"
+        assert monitor.config.loop_threshold == 3, "Expected monitor.config.loop_threshold to equal 3"
+        assert monitor.config.drift_threshold == 0.5, "Expected monitor.config.drift_threshold to equal 0.5"
+        assert monitor.config.thrash_threshold == 3, "Expected monitor.config.thrash_thres... to equal 3"
+        assert monitor.config.stall_threshold == 5, "Expected monitor.config.stall_threshold to equal 5"
 
     def test_init_with_custom_config(self):
         """Test initialization with custom config."""
@@ -45,11 +45,11 @@ class TestAgentMonitorInit:
 
         monitor = AgentMonitor(config=config)
 
-        assert monitor.config.history_window == 50
-        assert monitor.config.loop_threshold == 2
-        assert monitor.config.drift_threshold == 0.3
-        assert monitor.config.thrash_threshold == 2
-        assert monitor.config.stall_threshold == 3
+        assert monitor.config.history_window == 50, "Expected monitor.config.history_window to equal 50"
+        assert monitor.config.loop_threshold == 2, "Expected monitor.config.loop_threshold to equal 2"
+        assert monitor.config.drift_threshold == 0.3, "Expected monitor.config.drift_threshold to equal 0.3"
+        assert monitor.config.thrash_threshold == 2, "Expected monitor.config.thrash_thres... to equal 2"
+        assert monitor.config.stall_threshold == 3, "Expected monitor.config.stall_threshold to equal 3"
 
 
 class TestAgentMonitorObservations:
@@ -62,10 +62,10 @@ class TestAgentMonitorObservations:
         monitor.observe_action("create_file", {"filename": "test.py"})
 
         observations = monitor.get_recent_observations(count=1)
-        assert len(observations) == 1
-        assert observations[0].type == ObservationType.ACTION
-        assert observations[0].data["action"] == "create_file"
-        assert observations[0].data["details"]["filename"] == "test.py"
+        assert len(observations) == 1, "Expected len(observations) to equal 1"
+        assert observations[0].type == ObservationType.ACTION, "Expected observations[0].type to equal ObservationType.ACTION"
+        assert observations[0].data["action"] == "create_file", "Expected observations[0].data['action'] to equal 'create_file'"
+        assert observations[0].data["details"]["filename"] == "test.py", "Expected observations[0].data['detai... to equal 'test.py'"
 
     def test_observe_action_without_details(self):
         """Test observing action without details."""
@@ -74,9 +74,9 @@ class TestAgentMonitorObservations:
         monitor.observe_action("simple_action")
 
         observations = monitor.get_recent_observations(count=1)
-        assert len(observations) == 1
-        assert observations[0].data["action"] == "simple_action"
-        assert observations[0].data.get("details") is None
+        assert len(observations) == 1, "Expected len(observations) to equal 1"
+        assert observations[0].data["action"] == "simple_action", "Expected observations[0].data['action'] to equal 'simple_action'"
+        assert observations[0].data.get("details") is None, "Expected observations[0].data.get('d... is None"
 
     def test_observe_output(self):
         """Test observing agent output."""
@@ -85,10 +85,10 @@ class TestAgentMonitorObservations:
         monitor.observe_output("print('hello')", "console")
 
         observations = monitor.get_recent_observations(count=1)
-        assert len(observations) == 1
-        assert observations[0].type == ObservationType.OUTPUT
-        assert observations[0].data["output"] == "print('hello')"
-        assert observations[0].data["output_type"] == "console"
+        assert len(observations) == 1, "Expected len(observations) to equal 1"
+        assert observations[0].type == ObservationType.OUTPUT, "Expected observations[0].type to equal ObservationType.OUTPUT"
+        assert observations[0].data["output"] == "print('hello')", "Expected observations[0].data['output'] to equal \"print('hello')\""
+        assert observations[0].data["output_type"] == "console", "Expected observations[0].data['outpu... to equal 'console'"
 
     def test_observe_verification_passed(self):
         """Test observing successful verification."""
@@ -97,10 +97,10 @@ class TestAgentMonitorObservations:
         monitor.observe_verification(True, {"test": "unit_test_1"})
 
         observations = monitor.get_recent_observations(count=1)
-        assert len(observations) == 1
-        assert observations[0].type == ObservationType.VERIFICATION
-        assert observations[0].data["passed"] is True
-        assert observations[0].data["details"]["test"] == "unit_test_1"
+        assert len(observations) == 1, "Expected len(observations) to equal 1"
+        assert observations[0].type == ObservationType.VERIFICATION, "Expected observations[0].type to equal ObservationType.VERIFICATION"
+        assert observations[0].data["passed"] is True, "Expected observations[0].data['passed'] is True"
+        assert observations[0].data["details"]["test"] == "unit_test_1", "Expected observations[0].data['detai... to equal 'unit_test_1'"
 
     def test_observe_verification_failed(self):
         """Test observing failed verification."""
@@ -109,9 +109,9 @@ class TestAgentMonitorObservations:
         monitor.observe_verification(False)
 
         observations = monitor.get_recent_observations(count=1)
-        assert len(observations) == 1
-        assert observations[0].data["passed"] is False
-        assert observations[0].data.get("details") is None
+        assert len(observations) == 1, "Expected len(observations) to equal 1"
+        assert observations[0].data["passed"] is False, "Expected observations[0].data['passed'] is False"
+        assert observations[0].data.get("details") is None, "Expected observations[0].data.get('d... is None"
 
     def test_observe_state_change(self):
         """Test observing state change."""
@@ -120,10 +120,10 @@ class TestAgentMonitorObservations:
         monitor.observe_state_change("planning", "implementation")
 
         observations = monitor.get_recent_observations(count=1)
-        assert len(observations) == 1
-        assert observations[0].type == ObservationType.STATE_CHANGE
-        assert observations[0].data["old_state"] == "planning"
-        assert observations[0].data["new_state"] == "implementation"
+        assert len(observations) == 1, "Expected len(observations) to equal 1"
+        assert observations[0].type == ObservationType.STATE_CHANGE, "Expected observations[0].type to equal ObservationType.STATE_CHANGE"
+        assert observations[0].data["old_state"] == "planning", "Expected observations[0].data['old_s... to equal 'planning'"
+        assert observations[0].data["new_state"] == "implementation", "Expected observations[0].data['new_s... to equal 'implementation'"
 
     def test_observe_error(self):
         """Test observing error."""
@@ -132,11 +132,11 @@ class TestAgentMonitorObservations:
         monitor.observe_error("SyntaxError", "Invalid syntax", {"line": 42})
 
         observations = monitor.get_recent_observations(count=1)
-        assert len(observations) == 1
-        assert observations[0].type == ObservationType.ERROR
-        assert observations[0].data["error_type"] == "SyntaxError"
-        assert observations[0].data["message"] == "Invalid syntax"
-        assert observations[0].data["details"]["line"] == 42
+        assert len(observations) == 1, "Expected len(observations) to equal 1"
+        assert observations[0].type == ObservationType.ERROR, "Expected observations[0].type to equal ObservationType.ERROR"
+        assert observations[0].data["error_type"] == "SyntaxError", "Expected observations[0].data['error... to equal 'SyntaxError'"
+        assert observations[0].data["message"] == "Invalid syntax", "Expected observations[0].data['messa... to equal 'Invalid syntax'"
+        assert observations[0].data["details"]["line"] == 42, "Expected observations[0].data['detai... to equal 42"
 
 
 class TestAgentMonitorLoopDetection:
@@ -153,7 +153,7 @@ class TestAgentMonitorLoopDetection:
 
         result = monitor.detect_loop()
 
-        assert result is None or result.detected is False
+        assert result is None or result.detected is False, "Assertion failed"
 
     def test_detect_loop_action_repetition(self):
         """Test loop detection for repeated actions."""
@@ -165,10 +165,10 @@ class TestAgentMonitorLoopDetection:
 
         result = monitor.detect_loop()
 
-        assert result is not None
-        assert result.detected is True
-        assert result.count >= 3
-        assert "repeated_action" in result.pattern
+        assert result is not None, "Expected result is not None"
+        assert result.detected is True, "Expected result.detected is True"
+        assert result.count >= 3, "Expected result.count >= 3"
+        assert "repeated_action" in result.pattern, "Expected 'repeated_action' in result.pattern"
 
     def test_detect_loop_error_repetition(self):
         """Test loop detection for repeated errors."""
@@ -180,9 +180,9 @@ class TestAgentMonitorLoopDetection:
 
         result = monitor.detect_loop()
 
-        assert result is not None
-        assert result.detected is True
-        assert result.count >= 3
+        assert result is not None, "Expected result is not None"
+        assert result.detected is True, "Expected result.detected is True"
+        assert result.count >= 3, "Expected result.count >= 3"
 
     def test_detect_loop_state_cycle(self):
         """Test loop detection for state cycles."""
@@ -196,8 +196,8 @@ class TestAgentMonitorLoopDetection:
 
         result = monitor.detect_loop()
 
-        assert result is not None
-        assert result.detected is True
+        assert result is not None, "Expected result is not None"
+        assert result.detected is True, "Expected result.detected is True"
 
 
 class TestAgentMonitorDriftDetection:
@@ -215,8 +215,8 @@ class TestAgentMonitorDriftDetection:
 
         drift_score = monitor.detect_drift(original_task)
 
-        assert 0.0 <= drift_score <= 1.0
-        assert drift_score < 0.3  # Should be low drift with matching keywords
+        assert 0.0 <= drift_score <= 1.0, "Assertion failed"
+        assert drift_score < 0.3, "Expected drift_score < 0.3"# Should be low drift with matching keywords
 
     def test_detect_drift_high_drift(self):
         """Test drift detection when actions diverge from task."""
@@ -229,8 +229,8 @@ class TestAgentMonitorDriftDetection:
 
         drift_score = monitor.detect_drift(original_task)
 
-        assert 0.0 <= drift_score <= 1.0
-        assert drift_score > 0.5  # Should be high drift
+        assert 0.0 <= drift_score <= 1.0, "Assertion failed"
+        assert drift_score > 0.5, "Expected drift_score > 0.5"# Should be high drift
 
     def test_detect_drift_empty_history(self):
         """Test drift detection with no observations."""
@@ -239,7 +239,7 @@ class TestAgentMonitorDriftDetection:
 
         drift_score = monitor.detect_drift(original_task)
 
-        assert drift_score == 0.0  # No observations means no drift
+        assert drift_score == 0.0, "Expected drift_score to equal 0.0"# No observations means no drift
 
 
 class TestAgentMonitorThrashingDetection:
@@ -256,7 +256,7 @@ class TestAgentMonitorThrashingDetection:
 
         result = monitor.detect_thrashing()
 
-        assert result is None or result.detected is False
+        assert result is None or result.detected is False, "Assertion failed"
 
     def test_detect_thrashing_file_modifications(self):
         """Test thrashing detection for repeated file modifications."""
@@ -268,10 +268,10 @@ class TestAgentMonitorThrashingDetection:
 
         result = monitor.detect_thrashing()
 
-        assert result is not None
-        assert result.detected is True
-        assert "thrashed.py" in result.affected_files
-        assert result.alternation_count >= 3
+        assert result is not None, "Expected result is not None"
+        assert result.detected is True, "Expected result.detected is True"
+        assert "thrashed.py" in result.affected_files, "Expected 'thrashed.py' in result.affected_files"
+        assert result.alternation_count >= 3, "Expected result.alternation_count >= 3"
 
     def test_detect_thrashing_alternating_states(self):
         """Test thrashing detection for alternating states."""
@@ -284,8 +284,8 @@ class TestAgentMonitorThrashingDetection:
 
         result = monitor.detect_thrashing()
 
-        assert result is not None
-        assert result.detected is True
+        assert result is not None, "Expected result is not None"
+        assert result.detected is True, "Expected result.detected is True"
 
 
 class TestAgentMonitorContextAndProgress:
@@ -297,8 +297,8 @@ class TestAgentMonitorContextAndProgress:
 
         pressure = monitor.get_context_pressure(tokens_used=1000, token_budget=10000)
 
-        assert pressure == 0.1
-        assert 0.0 <= pressure <= 1.0
+        assert pressure == 0.1, "Expected pressure to equal 0.1"
+        assert 0.0 <= pressure <= 1.0, "Assertion failed"
 
     def test_get_context_pressure_high(self):
         """Test context pressure calculation for high usage."""
@@ -306,8 +306,8 @@ class TestAgentMonitorContextAndProgress:
 
         pressure = monitor.get_context_pressure(tokens_used=9500, token_budget=10000)
 
-        assert pressure == 0.95
-        assert 0.0 <= pressure <= 1.0
+        assert pressure == 0.95, "Expected pressure to equal 0.95"
+        assert 0.0 <= pressure <= 1.0, "Assertion failed"
 
     def test_get_context_pressure_over_budget(self):
         """Test context pressure when over budget."""
@@ -315,7 +315,7 @@ class TestAgentMonitorContextAndProgress:
 
         pressure = monitor.get_context_pressure(tokens_used=12000, token_budget=10000)
 
-        assert pressure >= 1.0
+        assert pressure >= 1.0, "Expected pressure >= 1.0"
 
     def test_get_progress_score_high_progress(self):
         """Test progress scoring with successful verifications."""
@@ -328,8 +328,8 @@ class TestAgentMonitorContextAndProgress:
 
         progress = monitor.get_progress_score()
 
-        assert 0.0 <= progress <= 1.0
-        assert progress > 0.5  # Should be high progress (3/4 = 0.75)
+        assert 0.0 <= progress <= 1.0, "Assertion failed"
+        assert progress > 0.5, "Expected progress > 0.5"# Should be high progress (3/4 = 0.75)
 
     def test_get_progress_score_low_progress(self):
         """Test progress scoring with failed verifications."""
@@ -342,8 +342,8 @@ class TestAgentMonitorContextAndProgress:
 
         progress = monitor.get_progress_score()
 
-        assert 0.0 <= progress <= 1.0
-        assert progress < 0.5  # Should be low progress (1/4 = 0.25)
+        assert 0.0 <= progress <= 1.0, "Assertion failed"
+        assert progress < 0.5, "Expected progress < 0.5"# Should be low progress (1/4 = 0.25)
 
     def test_get_progress_score_no_verifications(self):
         """Test progress scoring with no verifications."""
@@ -351,7 +351,7 @@ class TestAgentMonitorContextAndProgress:
 
         progress = monitor.get_progress_score()
 
-        assert progress == 0.5  # No verifications means neutral progress
+        assert progress == 0.5, "Expected progress to equal 0.5"# No verifications means neutral progress
 
 
 class TestAgentMonitorHealthAssessment:
@@ -371,13 +371,13 @@ class TestAgentMonitorHealthAssessment:
             token_budget=10000
         )
 
-        assert isinstance(health, AgentHealth)
-        assert health.status == HealthStatus.HEALTHY
-        assert health.recommendation == Recommendation.CONTINUE
-        assert len(health.issues) == 0
-        assert health.drift_score < 0.3
-        assert health.context_pressure < 0.8
-        assert health.progress_score >= 0.0
+        assert isinstance(health, AgentHealth), "Expected isinstance() to be truthy"
+        assert health.status == HealthStatus.HEALTHY, "Expected health.status to equal HealthStatus.HEALTHY"
+        assert health.recommendation == Recommendation.CONTINUE, "Expected health.recommendation to equal Recommendation.CONTINUE"
+        assert len(health.issues) == 0, "Expected len(health.issues) to equal 0"
+        assert health.drift_score < 0.3, "Expected health.drift_score < 0.3"
+        assert health.context_pressure < 0.8, "Expected health.context_pressure < 0.8"
+        assert health.progress_score >= 0.0, "Expected health.progress_score >= 0.0"
 
     def test_get_health_degraded_agent(self):
         """Test health assessment for degraded agent."""
@@ -392,9 +392,9 @@ class TestAgentMonitorHealthAssessment:
             token_budget=10000
         )
 
-        assert health.status in [HealthStatus.HEALTHY, HealthStatus.DEGRADED]
+        assert health.status in [HealthStatus.HEALTHY, HealthStatus.DEGRADED], "Expected health.status in [HealthStatus.HEALTHY, Heal..."
         if health.status == HealthStatus.DEGRADED:
-            assert health.recommendation == Recommendation.CHECKPOINT
+            assert health.recommendation == Recommendation.CHECKPOINT, "Expected health.recommendation to equal Recommendation.CHECKPOINT"
 
     def test_get_health_critical_agent(self):
         """Test health assessment for critical agent."""
@@ -409,9 +409,9 @@ class TestAgentMonitorHealthAssessment:
             token_budget=10000
         )
 
-        assert health.status == HealthStatus.CRITICAL
-        assert health.recommendation in [Recommendation.ESCALATE, Recommendation.ABORT]
-        assert len(health.issues) > 0
+        assert health.status == HealthStatus.CRITICAL, "Expected health.status to equal HealthStatus.CRITICAL"
+        assert health.recommendation in [Recommendation.ESCALATE, Recommendation.ABORT], "Expected health.recommendation in [Recommendation.ESCALATE, R..."
+        assert len(health.issues) > 0, "Expected len(health.issues) > 0"
 
     def test_get_health_with_loop_detection(self):
         """Test health assessment includes loop detection."""
@@ -424,8 +424,8 @@ class TestAgentMonitorHealthAssessment:
         health = monitor.get_health()
 
         if health.loop_detection:
-            assert health.loop_detection.detected is True
-            assert health.loop_detection.count >= 3
+            assert health.loop_detection.detected is True, "Expected health.loop_detection.detected is True"
+            assert health.loop_detection.count >= 3, "Expected health.loop_detection.count >= 3"
 
     def test_get_health_with_thrashing_detection(self):
         """Test health assessment includes thrashing detection."""
@@ -438,7 +438,7 @@ class TestAgentMonitorHealthAssessment:
         health = monitor.get_health()
 
         if health.thrashing_detection:
-            assert health.thrashing_detection.detected is True
+            assert health.thrashing_detection.detected is True, "Expected health.thrashing_detection.... is True"
 
 
 class TestAgentMonitorHistoryManagement:
@@ -452,11 +452,11 @@ class TestAgentMonitorHistoryManagement:
         monitor.observe_action("action1")
         monitor.observe_action("action2")
 
-        assert len(monitor.get_recent_observations()) == 2
+        assert len(monitor.get_recent_observations()) == 2, "Expected len(monitor.get_recent_obse... to equal 2"
 
         monitor.clear_history()
 
-        assert len(monitor.get_recent_observations()) == 0
+        assert len(monitor.get_recent_observations()) == 0, "Expected len(monitor.get_recent_obse... to equal 0"
 
     def test_get_recent_observations_count_limit(self):
         """Test getting recent observations with count limit."""
@@ -468,9 +468,9 @@ class TestAgentMonitorHistoryManagement:
 
         recent = monitor.get_recent_observations(count=3)
 
-        assert len(recent) == 3
+        assert len(recent) == 3, "Expected len(recent) to equal 3"
         # Should get most recent observations
-        assert recent[0].data["action"] == "action_4"  # Most recent first
+        assert recent[0].data["action"] == "action_4", "Expected recent[0].data['action'] to equal 'action_4'"# Most recent first
 
     def test_get_recent_observations_type_filter(self):
         """Test getting recent observations with type filter."""
@@ -487,9 +487,9 @@ class TestAgentMonitorHistoryManagement:
             type_filter=ObservationType.ACTION
         )
 
-        assert len(actions) == 1
-        assert actions[0].type == ObservationType.ACTION
-        assert actions[0].data["action"] == "test_action"
+        assert len(actions) == 1, "Expected len(actions) to equal 1"
+        assert actions[0].type == ObservationType.ACTION, "Expected actions[0].type to equal ObservationType.ACTION"
+        assert actions[0].data["action"] == "test_action", "Expected actions[0].data['action'] to equal 'test_action'"
 
     def test_history_window_bounded(self):
         """Test that history respects window size limit."""
@@ -503,9 +503,9 @@ class TestAgentMonitorHistoryManagement:
         all_observations = monitor.get_recent_observations(count=100)
 
         # Should only keep last 3 observations
-        assert len(all_observations) <= 3
+        assert len(all_observations) <= 3, "Expected len(all_observations) <= 3"
         # Should have most recent observations
-        assert all_observations[0].data["action"] == "action_4"
+        assert all_observations[0].data["action"] == "action_4", "Expected all_observations[0].data['a... to equal 'action_4'"
 
 
 class TestAgentMonitorIntegration:
@@ -521,8 +521,8 @@ class TestAgentMonitorIntegration:
 
         # The monitor should have detected the loop
         loop_detection = monitor.detect_loop()
-        assert loop_detection is not None
-        assert loop_detection.detected is True
+        assert loop_detection is not None, "Expected loop_detection is not None"
+        assert loop_detection.detected is True, "Expected loop_detection.detected is True"
 
     def test_multiple_detection_types_simultaneously(self):
         """Test handling multiple detection types at once."""
@@ -543,5 +543,5 @@ class TestAgentMonitorIntegration:
             token_budget=10000
         )
 
-        assert health.status == HealthStatus.CRITICAL
-        assert len(health.issues) > 1  # Multiple issues detected
+        assert health.status == HealthStatus.CRITICAL, "Expected health.status to equal HealthStatus.CRITICAL"
+        assert len(health.issues) > 1, "Expected len(health.issues) > 1"# Multiple issues detected

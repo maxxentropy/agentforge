@@ -48,32 +48,32 @@ class TestPromptBuilder:
     def test_build_returns_string(self, builder, sample_spec):
         context = GenerationContext(spec=sample_spec, phase=GenerationPhase.RED)
         prompt = builder.build(context)
-        assert isinstance(prompt, str)
-        assert len(prompt) > 0
+        assert isinstance(prompt, str), "Expected isinstance() to be truthy"
+        assert len(prompt) > 0, "Expected len(prompt) > 0"
 
     def test_build_includes_system_section(self, builder, sample_spec):
         context = GenerationContext(spec=sample_spec, phase=GenerationPhase.RED)
         prompt = builder.build(context)
-        assert "<system>" in prompt
-        assert "</system>" in prompt
+        assert "<system>" in prompt, "Expected '<system>' in prompt"
+        assert "</system>" in prompt, "Expected '</system>' in prompt"
 
     def test_build_includes_context_section(self, builder, sample_spec):
         context = GenerationContext(spec=sample_spec, phase=GenerationPhase.RED)
         prompt = builder.build(context)
-        assert "<context>" in prompt
-        assert "</context>" in prompt
+        assert "<context>" in prompt, "Expected '<context>' in prompt"
+        assert "</context>" in prompt, "Expected '</context>' in prompt"
 
     def test_build_includes_specification(self, builder, sample_spec):
         context = GenerationContext(spec=sample_spec, phase=GenerationPhase.RED)
         prompt = builder.build(context)
-        assert "<specification>" in prompt
-        assert "SessionManager" in prompt
-        assert "Manages session lifecycle" in prompt
+        assert "<specification>" in prompt, "Expected '<specification>' in prompt"
+        assert "SessionManager" in prompt, "Expected 'SessionManager' in prompt"
+        assert "Manages session lifecycle" in prompt, "Expected 'Manages session lifecycle' in prompt"
 
     def test_build_includes_phase(self, builder, sample_spec):
         context = GenerationContext(spec=sample_spec, phase=GenerationPhase.RED)
         prompt = builder.build(context)
-        assert "<phase>red</phase>" in prompt
+        assert "<phase>red</phase>" in prompt, "Expected '<phase>red</phase>' in prompt"
 
     def test_build_includes_mode(self, builder, sample_spec):
         context = GenerationContext(
@@ -82,7 +82,7 @@ class TestPromptBuilder:
             mode=GenerationMode.FIX,
         )
         prompt = builder.build(context)
-        assert "<mode>fix</mode>" in prompt
+        assert "<mode>fix</mode>" in prompt, "Expected '<mode>fix</mode>' in prompt"
 
     def test_build_includes_component_name(self, builder, sample_spec):
         context = GenerationContext(
@@ -91,25 +91,25 @@ class TestPromptBuilder:
             component_name="SessionManager",
         )
         prompt = builder.build(context)
-        assert "<component>SessionManager</component>" in prompt
+        assert "<component>SessionManager</component>" in prompt, "Expected '<component>SessionManager<... in prompt"
 
     def test_build_includes_instructions(self, builder, sample_spec):
         context = GenerationContext(spec=sample_spec, phase=GenerationPhase.RED)
         prompt = builder.build(context)
-        assert "<instructions>" in prompt
-        assert "</instructions>" in prompt
+        assert "<instructions>" in prompt, "Expected '<instructions>' in prompt"
+        assert "</instructions>" in prompt, "Expected '</instructions>' in prompt"
 
     def test_build_includes_output_format(self, builder, sample_spec):
         context = GenerationContext(spec=sample_spec, phase=GenerationPhase.RED)
         prompt = builder.build(context)
-        assert "<output_format>" in prompt
-        assert "```python:path/to/file.py" in prompt
+        assert "<output_format>" in prompt, "Expected '<output_format>' in prompt"
+        assert "```python:path/to/file.py" in prompt, "Expected '```python:path/to/file.py' in prompt"
 
     def test_red_phase_instructions(self, builder, sample_spec):
         context = GenerationContext(spec=sample_spec, phase=GenerationPhase.RED)
         prompt = builder.build(context)
-        assert "failing tests" in prompt.lower()
-        assert "pytest" in prompt.lower()
+        assert "failing tests" in prompt.lower(), "Expected 'failing tests' in prompt.lower()"
+        assert "pytest" in prompt.lower(), "Expected 'pytest' in prompt.lower()"
 
     def test_green_phase_instructions(self, builder, sample_spec):
         context = GenerationContext(
@@ -118,8 +118,8 @@ class TestPromptBuilder:
             existing_tests="def test_example(): pass",
         )
         prompt = builder.build(context)
-        assert "pass the tests" in prompt.lower()
-        assert "minimal implementation" in prompt.lower()
+        assert "pass the tests" in prompt.lower(), "Expected 'pass the tests' in prompt.lower()"
+        assert "minimal implementation" in prompt.lower(), "Expected 'minimal implementation' in prompt.lower()"
 
     def test_refactor_phase_instructions(self, builder, sample_spec):
         context = GenerationContext(
@@ -128,8 +128,8 @@ class TestPromptBuilder:
             existing_impl="class Example: pass",
         )
         prompt = builder.build(context)
-        assert "refactor" in prompt.lower()
-        assert "tests must still pass" in prompt.lower()
+        assert "refactor" in prompt.lower(), "Expected 'refactor' in prompt.lower()"
+        assert "tests must still pass" in prompt.lower(), "Expected 'tests must still pass' in prompt.lower()"
 
     def test_fix_mode_instructions(self, builder, sample_spec):
         context = GenerationContext(
@@ -139,8 +139,8 @@ class TestPromptBuilder:
             error_context={"error_message": "AssertionError"},
         )
         prompt = builder.build(context)
-        assert "fix" in prompt.lower()
-        assert "error" in prompt.lower()
+        assert "fix" in prompt.lower(), "Expected 'fix' in prompt.lower()"
+        assert "error" in prompt.lower(), "Expected 'error' in prompt.lower()"
 
 
 class TestPromptBuilderExistingCode:
@@ -165,8 +165,8 @@ def test_example():
             existing_tests=test_code,
         )
         prompt = builder.build(context)
-        assert "<existing_tests" in prompt
-        assert "test_example" in prompt
+        assert "<existing_tests" in prompt, "Expected '<existing_tests' in prompt"
+        assert "test_example" in prompt, "Expected 'test_example' in prompt"
 
     def test_includes_existing_implementation(self, builder, sample_spec):
         impl_code = """
@@ -180,8 +180,8 @@ class Example:
             existing_impl=impl_code,
         )
         prompt = builder.build(context)
-        assert "<existing_implementation" in prompt
-        assert "class Example" in prompt
+        assert "<existing_implementation" in prompt, "Expected '<existing_implementation' in prompt"
+        assert "class Example" in prompt, "Expected 'class Example' in prompt"
 
 
 class TestPromptBuilderPatterns:
@@ -205,9 +205,9 @@ class TestPromptBuilderPatterns:
             },
         )
         prompt = builder.build(context)
-        assert "<patterns" in prompt
-        assert "pytest" in prompt
-        assert "snake_case" in prompt
+        assert "<patterns" in prompt, "Expected '<patterns' in prompt"
+        assert "pytest" in prompt, "Expected 'pytest' in prompt"
+        assert "snake_case" in prompt, "Expected 'snake_case' in prompt"
 
     def test_empty_patterns_not_included(self, builder, sample_spec):
         context = GenerationContext(
@@ -217,7 +217,7 @@ class TestPromptBuilderPatterns:
         )
         prompt = builder.build(context)
         # Empty patterns section should not be in prompt
-        assert "<patterns>" not in prompt or "<patterns" not in prompt
+        assert "<patterns>" not in prompt or "<patterns" not in prompt, "Assertion failed"
 
 
 class TestPromptBuilderExamples:
@@ -244,9 +244,9 @@ class TestPromptBuilderExamples:
             ],
         )
         prompt = builder.build(context)
-        assert "<examples" in prompt
-        assert "test_existing.py" in prompt
-        assert "def test_foo" in prompt
+        assert "<examples" in prompt, "Expected '<examples' in prompt"
+        assert "test_existing.py" in prompt, "Expected 'test_existing.py' in prompt"
+        assert "def test_foo" in prompt, "Expected 'def test_foo' in prompt"
 
     def test_empty_examples_not_included(self, builder, sample_spec):
         context = GenerationContext(
@@ -255,7 +255,7 @@ class TestPromptBuilderExamples:
             examples=[],
         )
         prompt = builder.build(context)
-        assert "<examples>" not in prompt
+        assert "<examples>" not in prompt, "Expected '<examples>' not in prompt"
 
 
 class TestPromptBuilderErrorContext:
@@ -280,8 +280,8 @@ class TestPromptBuilderErrorContext:
             },
         )
         prompt = builder.build(context)
-        assert "<error_context" in prompt
-        assert "AssertionError: expected True" in prompt
+        assert "<error_context" in prompt, "Expected '<error_context' in prompt"
+        assert "AssertionError: expected True" in prompt, "Expected 'AssertionError: expected T... in prompt"
 
     def test_includes_stack_trace(self, builder, sample_spec):
         context = GenerationContext(
@@ -294,8 +294,8 @@ class TestPromptBuilderErrorContext:
             },
         )
         prompt = builder.build(context)
-        assert "<stack_trace>" in prompt
-        assert "line 10" in prompt
+        assert "<stack_trace>" in prompt, "Expected '<stack_trace>' in prompt"
+        assert "line 10" in prompt, "Expected 'line 10' in prompt"
 
     def test_includes_failing_tests(self, builder, sample_spec):
         context = GenerationContext(
@@ -308,9 +308,9 @@ class TestPromptBuilderErrorContext:
             },
         )
         prompt = builder.build(context)
-        assert "<failing_tests>" in prompt
-        assert "test_one" in prompt
-        assert "test_two" in prompt
+        assert "<failing_tests>" in prompt, "Expected '<failing_tests>' in prompt"
+        assert "test_one" in prompt, "Expected 'test_one' in prompt"
+        assert "test_two" in prompt, "Expected 'test_two' in prompt"
 
 
 class TestPromptBuilderOutputPaths:
@@ -335,7 +335,7 @@ class TestPromptBuilderOutputPaths:
             component_name="MyComponent",
         )
         prompt = builder.build(context)
-        assert "tests/unit/test_my_component.py" in prompt
+        assert "tests/unit/test_my_component.py" in prompt, "Expected 'tests/unit/test_my_compone... in prompt"
 
     def test_green_phase_shows_impl_file_hint(self, builder):
         spec = {
@@ -352,7 +352,7 @@ class TestPromptBuilderOutputPaths:
             component_name="MyComponent",
         )
         prompt = builder.build(context)
-        assert "src/my_component.py" in prompt
+        assert "src/my_component.py" in prompt, "Expected 'src/my_component.py' in prompt"
 
 
 class TestPromptBuilderTokenEstimation:
@@ -366,10 +366,10 @@ class TestPromptBuilderTokenEstimation:
         # 400 chars should be ~100 tokens
         prompt = "a" * 400
         estimate = builder.estimate_tokens(prompt)
-        assert estimate == 100
+        assert estimate == 100, "Expected estimate to equal 100"
 
     def test_estimate_tokens_empty(self, builder):
-        assert builder.estimate_tokens("") == 0
+        assert builder.estimate_tokens("") == 0, "Expected builder.estimate_tokens('') to equal 0"
 
 
 # =============================================================================
@@ -389,11 +389,11 @@ class TestPromptTemplates:
             ],
             test_file="tests/test_calculator.py",
         )
-        assert "Calculator" in prompt
-        assert "add" in prompt
-        assert "subtract" in prompt
-        assert "tests/test_calculator.py" in prompt
-        assert "pytest" in prompt.lower()
+        assert "Calculator" in prompt, "Expected 'Calculator' in prompt"
+        assert "add" in prompt, "Expected 'add' in prompt"
+        assert "subtract" in prompt, "Expected 'subtract' in prompt"
+        assert "tests/test_calculator.py" in prompt, "Expected 'tests/test_calculator.py' in prompt"
+        assert "pytest" in prompt.lower(), "Expected 'pytest' in prompt.lower()"
 
     def test_simple_impl_prompt(self):
         prompt = PromptTemplates.simple_impl_prompt(
@@ -401,7 +401,7 @@ class TestPromptTemplates:
             test_code="def test_add(): assert Calculator().add(1, 2) == 3",
             impl_file="src/calculator.py",
         )
-        assert "Calculator" in prompt
-        assert "test_add" in prompt
-        assert "src/calculator.py" in prompt
-        assert "pass the tests" in prompt.lower()
+        assert "Calculator" in prompt, "Expected 'Calculator' in prompt"
+        assert "test_add" in prompt, "Expected 'test_add' in prompt"
+        assert "src/calculator.py" in prompt, "Expected 'src/calculator.py' in prompt"
+        assert "pass the tests" in prompt.lower(), "Expected 'pass the tests' in prompt.lower()"

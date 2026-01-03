@@ -36,11 +36,11 @@ I need to read the file to understand its contents.
 """
         action = parser.parse(response)
 
-        assert action.action_type == ActionType.TOOL_CALL
-        assert "read the file" in action.reasoning
-        assert len(action.tool_calls) == 1
-        assert action.tool_calls[0].name == "read_file"
-        assert action.tool_calls[0].parameters["path"] == "/src/main.py"
+        assert action.action_type == ActionType.TOOL_CALL, "Expected action.action_type to equal ActionType.TOOL_CALL"
+        assert "read the file" in action.reasoning, "Expected 'read the file' in action.reasoning"
+        assert len(action.tool_calls) == 1, "Expected len(action.tool_calls) to equal 1"
+        assert action.tool_calls[0].name == "read_file", "Expected action.tool_calls[0].name to equal 'read_file'"
+        assert action.tool_calls[0].parameters["path"] == "/src/main.py", "Expected action.tool_calls[0].parame... to equal '/src/main.py'"
 
     def test_parse_multiple_tool_calls(self, parser):
         """Parse multiple tools in one action."""
@@ -60,10 +60,10 @@ Need to read two files.
 """
         action = parser.parse(response)
 
-        assert action.action_type == ActionType.TOOL_CALL
-        assert len(action.tool_calls) == 2
-        assert action.tool_calls[0].parameters["path"] == "/src/a.py"
-        assert action.tool_calls[1].parameters["path"] == "/src/b.py"
+        assert action.action_type == ActionType.TOOL_CALL, "Expected action.action_type to equal ActionType.TOOL_CALL"
+        assert len(action.tool_calls) == 2, "Expected len(action.tool_calls) to equal 2"
+        assert action.tool_calls[0].parameters["path"] == "/src/a.py", "Expected action.tool_calls[0].parame... to equal '/src/a.py'"
+        assert action.tool_calls[1].parameters["path"] == "/src/b.py", "Expected action.tool_calls[1].parame... to equal '/src/b.py'"
 
     def test_parse_complete_action(self, parser):
         """Parse a completion action."""
@@ -78,9 +78,9 @@ All tests are passing, the task is done.
 """
         action = parser.parse(response)
 
-        assert action.action_type == ActionType.COMPLETE
-        assert "tests are passing" in action.reasoning
-        assert "Successfully implemented" in action.response
+        assert action.action_type == ActionType.COMPLETE, "Expected action.action_type to equal ActionType.COMPLETE"
+        assert "tests are passing" in action.reasoning, "Expected 'tests are passing' in action.reasoning"
+        assert "Successfully implemented" in action.response, "Expected 'Successfully implemented' in action.response"
 
     def test_parse_ask_user_action(self, parser):
         """Parse an ask user action."""
@@ -95,8 +95,8 @@ I need clarification on the requirements.
 """
         action = parser.parse(response)
 
-        assert action.action_type == ActionType.ASK_USER
-        assert "JSON and XML" in action.response
+        assert action.action_type == ActionType.ASK_USER, "Expected action.action_type to equal ActionType.ASK_USER"
+        assert "JSON and XML" in action.response, "Expected 'JSON and XML' in action.response"
 
     def test_parse_escalate_action(self, parser):
         """Parse an escalation action."""
@@ -111,8 +111,8 @@ I've tried multiple approaches but keep hitting a dead end.
 """
         action = parser.parse(response)
 
-        assert action.action_type == ActionType.ESCALATE
-        assert "circular dependency" in action.reasoning
+        assert action.action_type == ActionType.ESCALATE, "Expected action.action_type to equal ActionType.ESCALATE"
+        assert "circular dependency" in action.reasoning, "Expected 'circular dependency' in action.reasoning"
 
     def test_parse_respond_action(self, parser):
         """Parse a response action."""
@@ -127,8 +127,8 @@ Here is my detailed answer to your question.
 """
         action = parser.parse(response)
 
-        assert action.action_type == ActionType.RESPOND
-        assert "detailed answer" in action.response
+        assert action.action_type == ActionType.RESPOND, "Expected action.action_type to equal ActionType.RESPOND"
+        assert "detailed answer" in action.response, "Expected 'detailed answer' in action.response"
 
 
 class TestActionParserEdgeCases:
@@ -142,7 +142,7 @@ class TestActionParserEdgeCases:
         """Empty response should raise error."""
         with pytest.raises(ActionParseError) as exc_info:
             parser.parse("")
-        assert "Empty response" in str(exc_info.value)
+        assert "Empty response" in str(exc_info.value), "Expected 'Empty response' in str(exc_info.value)"
 
     def test_whitespace_only_raises(self, parser):
         """Whitespace-only response should raise error."""
@@ -157,8 +157,8 @@ Just thinking here, no action.
 </thinking>
 """
         action = parser.parse(response)
-        assert action.action_type == ActionType.THINK
-        assert "Just thinking here" in action.reasoning
+        assert action.action_type == ActionType.THINK, "Expected action.action_type to equal ActionType.THINK"
+        assert "Just thinking here" in action.reasoning, "Expected 'Just thinking here' in action.reasoning"
 
     def test_no_structure_raises(self, parser):
         """Response with no recognizable structure should raise error."""
@@ -175,7 +175,7 @@ content
 """
         with pytest.raises(ActionParseError) as exc_info:
             parser.parse(response)
-        assert "Invalid action type" in str(exc_info.value)
+        assert "Invalid action type" in str(exc_info.value), "Expected 'Invalid action type' in str(exc_info.value)"
 
     def test_tool_call_without_tools_raises(self, parser):
         """tool_call action without tools should raise error."""
@@ -190,7 +190,7 @@ No tools here.
 """
         with pytest.raises(ActionParseError) as exc_info:
             parser.parse(response)
-        assert "no tools defined" in str(exc_info.value)
+        assert "no tools defined" in str(exc_info.value), "Expected 'no tools defined' in str(exc_info.value)"
 
     def test_missing_thinking_section(self, parser):
         """Response without thinking section should still parse."""
@@ -200,8 +200,8 @@ No tools here.
 </action>
 """
         action = parser.parse(response)
-        assert action.action_type == ActionType.COMPLETE
-        assert action.reasoning == ""
+        assert action.action_type == ActionType.COMPLETE, "Expected action.action_type to equal ActionType.COMPLETE"
+        assert action.reasoning == "", "Expected action.reasoning to equal ''"
 
     def test_case_insensitive_tags(self, parser):
         """Tags should be case insensitive."""
@@ -215,7 +215,7 @@ Case test.
 </ACTION>
 """
         action = parser.parse(response)
-        assert action.action_type == ActionType.COMPLETE
+        assert action.action_type == ActionType.COMPLETE, "Expected action.action_type to equal ActionType.COMPLETE"
 
     def test_tool_parameters_empty(self, parser):
         """Tool with no parameters should work."""
@@ -227,9 +227,9 @@ Case test.
 </action>
 """
         action = parser.parse(response)
-        assert len(action.tool_calls) == 1
-        assert action.tool_calls[0].name == "run_tests"
-        assert action.tool_calls[0].parameters == {}
+        assert len(action.tool_calls) == 1, "Expected len(action.tool_calls) to equal 1"
+        assert action.tool_calls[0].name == "run_tests", "Expected action.tool_calls[0].name to equal 'run_tests'"
+        assert action.tool_calls[0].parameters == {}, "Expected action.tool_calls[0].parame... to equal {}"
 
     def test_multiline_parameter_values(self, parser):
         """Parameters can contain multiline values."""
@@ -245,8 +245,8 @@ Case test.
 </action>
 """
         action = parser.parse(response)
-        assert "def hello():" in action.tool_calls[0].parameters["content"]
-        assert 'print("hello")' in action.tool_calls[0].parameters["content"]
+        assert "def hello():" in action.tool_calls[0].parameters["content"], "Expected 'def hello():' in action.tool_calls[0].parame..."
+        assert 'print("hello")' in action.tool_calls[0].parameters["content"], "Expected 'print(\"hello\")' in action.tool_calls[0].parame..."
 
 
 class TestActionParserLenient:
@@ -265,7 +265,7 @@ class TestActionParserLenient:
 </action>
 """
         action = parser.parse_lenient(response)
-        assert action.action_type == ActionType.COMPLETE
+        assert action.action_type == ActionType.COMPLETE, "Expected action.action_type to equal ActionType.COMPLETE"
 
     def test_lenient_handles_missing_action_tag(self, parser):
         """Lenient mode handles missing action tag."""
@@ -276,7 +276,7 @@ Just some thinking with nothing else.
 """
         action = parser.parse_lenient(response)
         # Should fall back to THINK action
-        assert action.action_type == ActionType.THINK
+        assert action.action_type == ActionType.THINK, "Expected action.action_type to equal ActionType.THINK"
 
     def test_lenient_detects_tool_calls_without_action_tag(self, parser):
         """Lenient mode detects tool calls without action tag."""
@@ -287,7 +287,7 @@ Just some thinking with nothing else.
 </tool>
 """
         action = parser.parse_lenient(response)
-        assert action.action_type == ActionType.TOOL_CALL
+        assert action.action_type == ActionType.TOOL_CALL, "Expected action.action_type to equal ActionType.TOOL_CALL"
 
     def test_lenient_detects_completion_phrases(self, parser):
         """Lenient mode detects completion from phrases."""
@@ -295,7 +295,7 @@ Just some thinking with nothing else.
 I have successfully completed the task. All tests pass.
 """
         action = parser.parse_lenient(response)
-        assert action.action_type == ActionType.COMPLETE
+        assert action.action_type == ActionType.COMPLETE, "Expected action.action_type to equal ActionType.COMPLETE"
 
     def test_lenient_fallback_to_thinking(self, parser):
         """Lenient mode falls back to thinking for ambiguous input."""
@@ -306,8 +306,8 @@ Maybe I should approach it differently.
 </thinking>
 """
         action = parser.parse_lenient(response)
-        assert action.action_type == ActionType.THINK
-        assert "Analyzing the problem" in action.reasoning
+        assert action.action_type == ActionType.THINK, "Expected action.action_type to equal ActionType.THINK"
+        assert "Analyzing the problem" in action.reasoning, "Expected 'Analyzing the problem' in action.reasoning"
 
 
 class TestExtractElement:
@@ -321,22 +321,22 @@ class TestExtractElement:
         """Extract summary element."""
         content = "<summary>This is the summary</summary>"
         result = parser._extract_element(content, "summary")
-        assert result == "This is the summary"
+        assert result == "This is the summary", "Expected result to equal 'This is the summary'"
 
     def test_extract_question(self, parser):
         """Extract question element."""
         content = "<question>What should I do?</question>"
         result = parser._extract_element(content, "question")
-        assert result == "What should I do?"
+        assert result == "What should I do?", "Expected result to equal 'What should I do?'"
 
     def test_extract_missing_element(self, parser):
         """Missing element returns None."""
         content = "<other>content</other>"
         result = parser._extract_element(content, "summary")
-        assert result is None
+        assert result is None, "Expected result is None"
 
     def test_extract_element_with_whitespace(self, parser):
         """Whitespace is trimmed."""
         content = "<summary>  \n  Trimmed content  \n  </summary>"
         result = parser._extract_element(content, "summary")
-        assert result == "Trimmed content"
+        assert result == "Trimmed content", "Expected result to equal 'Trimmed content'"

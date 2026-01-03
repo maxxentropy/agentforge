@@ -32,10 +32,10 @@ class TestDesignPipelineFlow:
         register_design_stages(registry)
 
         # Verify all stages are registered
-        assert registry.has_stage("intake")
-        assert registry.has_stage("clarify")
-        assert registry.has_stage("analyze")
-        assert registry.has_stage("spec")
+        assert registry.has_stage("intake"), "Expected registry.has_stage() to be truthy"
+        assert registry.has_stage("clarify"), "Expected registry.has_stage() to be truthy"
+        assert registry.has_stage("analyze"), "Expected registry.has_stage() to be truthy"
+        assert registry.has_stage("spec"), "Expected registry.has_stage() to be truthy"
 
         # Create executors
         intake = registry.get("intake")
@@ -44,10 +44,10 @@ class TestDesignPipelineFlow:
         spec = registry.get("spec")
 
         # Verify executor types
-        assert isinstance(intake, IntakeExecutor)
-        assert isinstance(clarify, ClarifyExecutor)
-        assert isinstance(analyze, AnalyzeExecutor)
-        assert isinstance(spec, SpecExecutor)
+        assert isinstance(intake, IntakeExecutor), "Expected isinstance() to be truthy"
+        assert isinstance(clarify, ClarifyExecutor), "Expected isinstance() to be truthy"
+        assert isinstance(analyze, AnalyzeExecutor), "Expected isinstance() to be truthy"
+        assert isinstance(spec, SpecExecutor), "Expected isinstance() to be truthy"
 
     def test_intake_artifact_flows_to_clarify(self, temp_project_with_code):
         """Intake artifact flows correctly to Clarify stage."""
@@ -86,9 +86,9 @@ estimated_complexity: "medium"
             mock_llm.return_value = intake_response
             intake_result = intake.execute(context)
 
-        assert intake_result.status == StageStatus.COMPLETED
-        assert intake_result.artifacts["request_id"] == "REQ-20260101120000-0001"
-        assert intake_result.artifacts["detected_scope"] == "feature_addition"
+        assert intake_result.status == StageStatus.COMPLETED, "Expected intake_result.status to equal StageStatus.COMPLETED"
+        assert intake_result.artifacts["request_id"] == "REQ-20260101120000-0001", "Expected intake_result.artifacts['re... to equal 'REQ-20260101120000-0001'"
+        assert intake_result.artifacts["detected_scope"] == "feature_addition", "Expected intake_result.artifacts['de... to equal 'feature_addition'"
 
         # Now pass to clarify
         clarify = ClarifyExecutor()
@@ -103,9 +103,9 @@ estimated_complexity: "medium"
         # No blocking questions, should pass through
         clarify_result = clarify.execute(clarify_context)
 
-        assert clarify_result.status == StageStatus.COMPLETED
-        assert clarify_result.artifacts["request_id"] == "REQ-20260101120000-0001"
-        assert clarify_result.artifacts["ready_for_analysis"] is True
+        assert clarify_result.status == StageStatus.COMPLETED, "Expected clarify_result.status to equal StageStatus.COMPLETED"
+        assert clarify_result.artifacts["request_id"] == "REQ-20260101120000-0001", "Expected clarify_result.artifacts['r... to equal 'REQ-20260101120000-0001'"
+        assert clarify_result.artifacts["ready_for_analysis"] is True, "Expected clarify_result.artifacts['r... is True"
 
     def test_design_pipeline_with_clarification(self, temp_project_with_code):
         """Design pipeline handles clarification with blocking questions."""
@@ -151,8 +151,8 @@ initial_questions:
         clarify_result = clarify.execute(clarify_context)
 
         # Should escalate for answers
-        assert clarify_result.needs_escalation()
-        assert "blocking" in clarify_result.escalation.get("message", "").lower()
+        assert clarify_result.needs_escalation(), "Expected clarify_result.needs_escala...() to be truthy"
+        assert "blocking" in clarify_result.escalation.get("message", "").lower(), "Expected 'blocking' in clarify_result.escalation.g..."
 
     def test_analyze_produces_component_list(self, temp_project_with_code):
         """Analyze stage produces component and file list."""
@@ -206,10 +206,10 @@ initial_questions:
             mock_llm.return_value = analyze_response
             result = analyze.execute(context)
 
-        assert result.status == StageStatus.COMPLETED
-        assert len(result.artifacts["affected_files"]) > 0
-        assert len(result.artifacts["components"]) > 0
-        assert result.artifacts["affected_files"][0]["path"] == "src/auth.py"
+        assert result.status == StageStatus.COMPLETED, "Expected result.status to equal StageStatus.COMPLETED"
+        assert len(result.artifacts["affected_files"]) > 0, "Expected len(result.artifacts['affec... > 0"
+        assert len(result.artifacts["components"]) > 0, "Expected len(result.artifacts['compo... > 0"
+        assert result.artifacts["affected_files"][0]["path"] == "src/auth.py", "Expected result.artifacts['affected_... to equal 'src/auth.py'"
 
     def test_spec_generates_test_cases(self, temp_project_with_code):
         """Spec stage generates component and test specifications."""
@@ -272,10 +272,10 @@ acceptance_criteria:
             mock_llm.return_value = spec_response
             result = spec.execute(context)
 
-        assert result.status == StageStatus.COMPLETED
-        assert result.artifacts["spec_id"].startswith("SPEC-")
-        assert len(result.artifacts["components"]) > 0
-        assert len(result.artifacts["test_cases"]) > 0
+        assert result.status == StageStatus.COMPLETED, "Expected result.status to equal StageStatus.COMPLETED"
+        assert result.artifacts["spec_id"].startswith("SPEC-"), "Expected result.artifacts['spec_id']...() to be truthy"
+        assert len(result.artifacts["components"]) > 0, "Expected len(result.artifacts['compo... > 0"
+        assert len(result.artifacts["test_cases"]) > 0, "Expected len(result.artifacts['test_... > 0"
 
     def test_full_design_pipeline_with_mocked_llm(self, temp_project_with_code):
         """Full design pipeline flow with mocked LLM responses."""
@@ -307,7 +307,7 @@ keywords: ["logout", "user", "session"]
         with patch.object(intake, "_run_with_llm", return_value=intake_resp):
             intake_result = intake.execute(intake_ctx)
 
-        assert intake_result.status == StageStatus.COMPLETED
+        assert intake_result.status == StageStatus.COMPLETED, "Expected intake_result.status to equal StageStatus.COMPLETED"
 
         # Stage 2: Clarify (passthrough - no blocking questions)
         clarify = ClarifyExecutor()
@@ -320,8 +320,8 @@ keywords: ["logout", "user", "session"]
         )
 
         clarify_result = clarify.execute(clarify_ctx)
-        assert clarify_result.status == StageStatus.COMPLETED
-        assert clarify_result.artifacts["ready_for_analysis"]
+        assert clarify_result.status == StageStatus.COMPLETED, "Expected clarify_result.status to equal StageStatus.COMPLETED"
+        assert clarify_result.artifacts["ready_for_analysis"], "Assertion failed"
 
         # Stage 3: Analyze
         analyze = AnalyzeExecutor()
@@ -355,7 +355,7 @@ keywords: ["logout", "user", "session"]
         with patch.object(analyze, "_run_with_llm", return_value=analyze_resp):
             analyze_result = analyze.execute(analyze_ctx)
 
-        assert analyze_result.status == StageStatus.COMPLETED
+        assert analyze_result.status == StageStatus.COMPLETED, "Expected analyze_result.status to equal StageStatus.COMPLETED"
 
         # Stage 4: Spec
         spec = SpecExecutor()
@@ -388,11 +388,11 @@ acceptance_criteria:
         with patch.object(spec, "_run_with_llm", return_value=spec_resp):
             spec_result = spec.execute(spec_ctx)
 
-        assert spec_result.status == StageStatus.COMPLETED
-        assert spec_result.artifacts["spec_id"] == "SPEC-FULL-001"
+        assert spec_result.status == StageStatus.COMPLETED, "Expected spec_result.status to equal StageStatus.COMPLETED"
+        assert spec_result.artifacts["spec_id"] == "SPEC-FULL-001", "Expected spec_result.artifacts['spec... to equal 'SPEC-FULL-001'"
 
         # Verify pipeline completed all stages
-        assert intake_result.is_success()
-        assert clarify_result.is_success()
-        assert analyze_result.is_success()
-        assert spec_result.is_success()
+        assert intake_result.is_success(), "Expected intake_result.is_success() to be truthy"
+        assert clarify_result.is_success(), "Expected clarify_result.is_success() to be truthy"
+        assert analyze_result.is_success(), "Expected analyze_result.is_success() to be truthy"
+        assert spec_result.is_success(), "Expected spec_result.is_success() to be truthy"

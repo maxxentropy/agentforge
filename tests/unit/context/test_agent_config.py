@@ -27,9 +27,9 @@ class TestAgentPreferences:
         """AgentPreferences should have sensible defaults."""
         prefs = AgentPreferences()
 
-        assert prefs.communication_style == "technical"
-        assert prefs.risk_tolerance == "conservative"
-        assert prefs.verbosity == "normal"
+        assert prefs.communication_style == "technical", "Expected prefs.communication_style to equal 'technical'"
+        assert prefs.risk_tolerance == "conservative", "Expected prefs.risk_tolerance to equal 'conservative'"
+        assert prefs.verbosity == "normal", "Expected prefs.verbosity to equal 'normal'"
 
     def test_valid_values(self):
         """AgentPreferences should accept valid enum values."""
@@ -39,9 +39,9 @@ class TestAgentPreferences:
             verbosity="minimal",
         )
 
-        assert prefs.communication_style == "concise"
-        assert prefs.risk_tolerance == "aggressive"
-        assert prefs.verbosity == "minimal"
+        assert prefs.communication_style == "concise", "Expected prefs.communication_style to equal 'concise'"
+        assert prefs.risk_tolerance == "aggressive", "Expected prefs.risk_tolerance to equal 'aggressive'"
+        assert prefs.verbosity == "minimal", "Expected prefs.verbosity to equal 'minimal'"
 
     def test_invalid_style_raises(self):
         """AgentPreferences should reject invalid communication_style."""
@@ -66,11 +66,11 @@ class TestTaskDefaults:
         """TaskDefaults should have sensible defaults."""
         defaults = TaskDefaults()
 
-        assert defaults.max_steps == 20
-        assert defaults.require_tests is True
-        assert defaults.auto_commit is False
-        assert defaults.thinking_enabled is True
-        assert defaults.thinking_budget == 8000
+        assert defaults.max_steps == 20, "Expected defaults.max_steps to equal 20"
+        assert defaults.require_tests is True, "Expected defaults.require_tests is True"
+        assert defaults.auto_commit is False, "Expected defaults.auto_commit is False"
+        assert defaults.thinking_enabled is True, "Expected defaults.thinking_enabled is True"
+        assert defaults.thinking_budget == 8000, "Expected defaults.thinking_budget to equal 8000"
 
     def test_custom_values(self):
         """TaskDefaults should accept custom values."""
@@ -80,9 +80,9 @@ class TestTaskDefaults:
             thinking_budget=15000,
         )
 
-        assert defaults.max_steps == 50
-        assert defaults.require_tests is False
-        assert defaults.thinking_budget == 15000
+        assert defaults.max_steps == 50, "Expected defaults.max_steps to equal 50"
+        assert defaults.require_tests is False, "Expected defaults.require_tests is False"
+        assert defaults.thinking_budget == 15000, "Expected defaults.thinking_budget to equal 15000"
 
     def test_max_steps_bounds(self):
         """TaskDefaults should enforce max_steps bounds."""
@@ -100,9 +100,9 @@ class TestProjectConfig:
         """ProjectConfig requires name and language."""
         config = ProjectConfig(name="test-project", language="python")
 
-        assert config.name == "test-project"
-        assert config.language == "python"
-        assert config.test_command == "pytest"
+        assert config.name == "test-project", "Expected config.name to equal 'test-project'"
+        assert config.language == "python", "Expected config.language to equal 'python'"
+        assert config.test_command == "pytest", "Expected config.test_command to equal 'pytest'"
 
     def test_optional_fields(self):
         """ProjectConfig has optional fields."""
@@ -113,8 +113,8 @@ class TestProjectConfig:
             lint_command="ruff check",
         )
 
-        assert config.build_command == "python -m build"
-        assert config.lint_command == "ruff check"
+        assert config.build_command == "python -m build", "Expected config.build_command to equal 'python -m build'"
+        assert config.lint_command == "ruff check", "Expected config.lint_command to equal 'ruff check'"
 
 
 class TestAgentConfig:
@@ -124,10 +124,10 @@ class TestAgentConfig:
         """AgentConfig should have sensible defaults."""
         config = AgentConfig()
 
-        assert config.preferences.communication_style == "technical"
-        assert config.defaults.max_steps == 20
-        assert config.constraints == []
-        assert config.project is None
+        assert config.preferences.communication_style == "technical", "Expected config.preferences.communic... to equal 'technical'"
+        assert config.defaults.max_steps == 20, "Expected config.defaults.max_steps to equal 20"
+        assert config.constraints == [], "Expected config.constraints to equal []"
+        assert config.project is None, "Expected config.project is None"
 
     def test_with_constraints(self):
         """AgentConfig should store constraints."""
@@ -135,8 +135,8 @@ class TestAgentConfig:
             constraints=["Always run tests", "No vendor changes"],
         )
 
-        assert len(config.constraints) == 2
-        assert "Always run tests" in config.constraints
+        assert len(config.constraints) == 2, "Expected len(config.constraints) to equal 2"
+        assert "Always run tests" in config.constraints, "Expected 'Always run tests' in config.constraints"
 
     def test_get_constraint_text(self):
         """get_constraint_text should format constraints."""
@@ -145,8 +145,8 @@ class TestAgentConfig:
         )
 
         text = config.get_constraint_text()
-        assert "- Rule 1" in text
-        assert "- Rule 2" in text
+        assert "- Rule 1" in text, "Expected '- Rule 1' in text"
+        assert "- Rule 2" in text, "Expected '- Rule 2' in text"
 
     def test_to_context_dict(self):
         """to_context_dict should produce structured output."""
@@ -157,11 +157,11 @@ class TestAgentConfig:
 
         ctx = config.to_context_dict()
 
-        assert "preferences" in ctx
-        assert "defaults" in ctx
-        assert "constraints" in ctx
-        assert len(ctx["constraints"]) == 2
-        assert "patterns" in ctx
+        assert "preferences" in ctx, "Expected 'preferences' in ctx"
+        assert "defaults" in ctx, "Expected 'defaults' in ctx"
+        assert "constraints" in ctx, "Expected 'constraints' in ctx"
+        assert len(ctx["constraints"]) == 2, "Expected len(ctx['constraints']) to equal 2"
+        assert "patterns" in ctx, "Expected 'patterns' in ctx"
 
     def test_to_context_dict_with_project(self):
         """to_context_dict should include project if set."""
@@ -171,8 +171,8 @@ class TestAgentConfig:
 
         ctx = config.to_context_dict()
 
-        assert "project" in ctx
-        assert ctx["project"]["name"] == "my-project"
+        assert "project" in ctx, "Expected 'project' in ctx"
+        assert ctx["project"]["name"] == "my-project", "Expected ctx['project']['name'] to equal 'my-project'"
 
 
 class TestAgentConfigLoader:
@@ -208,8 +208,8 @@ class TestAgentConfigLoader:
         loader = AgentConfigLoader(temp_project)
         config = loader.load()
 
-        assert config.preferences.communication_style == "technical"
-        assert config.sources == []
+        assert config.preferences.communication_style == "technical", "Expected config.preferences.communic... to equal 'technical'"
+        assert config.sources == [], "Expected config.sources to equal []"
 
     def test_load_global_config(self, temp_project, temp_global):
         """Load global config only."""
@@ -228,10 +228,10 @@ Global instructions here.
         loader = AgentConfigLoader(temp_project)
         config = loader.load()
 
-        assert config.preferences.communication_style == "concise"
-        assert "Global constraint" in config.constraints
-        assert "Global instructions" in config.instructions
-        assert str(temp_global) in config.sources
+        assert config.preferences.communication_style == "concise", "Expected config.preferences.communic... to equal 'concise'"
+        assert "Global constraint" in config.constraints, "Expected 'Global constraint' in config.constraints"
+        assert "Global instructions" in config.instructions, "Expected 'Global instructions' in config.instructions"
+        assert str(temp_global) in config.sources, "Expected str(temp_global) in config.sources"
 
     def test_project_overrides_global(self, temp_project, temp_global):
         """Project config overrides global."""
@@ -260,11 +260,11 @@ project:
         config = loader.load()
 
         # Overridden
-        assert config.preferences.communication_style == "concise"
+        assert config.preferences.communication_style == "concise", "Expected config.preferences.communic... to equal 'concise'"
         # Preserved from global
-        assert config.preferences.risk_tolerance == "aggressive"
+        assert config.preferences.risk_tolerance == "aggressive", "Expected config.preferences.risk_tol... to equal 'aggressive'"
         # New from project
-        assert config.project.name == "test-project"
+        assert config.project.name == "test-project", "Expected config.project.name to equal 'test-project'"
 
     def test_constraints_accumulate(self, temp_project, temp_global):
         """Constraints from all levels accumulate."""
@@ -288,9 +288,9 @@ constraints:
         loader = AgentConfigLoader(temp_project)
         config = loader.load()
 
-        assert len(config.constraints) == 2
-        assert "Global: always test" in config.constraints
-        assert "Project: no vendor changes" in config.constraints
+        assert len(config.constraints) == 2, "Expected len(config.constraints) to equal 2"
+        assert "Global: always test" in config.constraints, "Expected 'Global: always test' in config.constraints"
+        assert "Project: no vendor changes" in config.constraints, "Expected 'Project: no vendor changes' in config.constraints"
 
     def test_task_type_override(self, temp_project):
         """Task-type specific config is applied."""
@@ -318,13 +318,13 @@ constraints:
 
         # Without task type
         config_default = loader.load()
-        assert config_default.defaults.max_steps == 20
+        assert config_default.defaults.max_steps == 20, "Expected config_default.defaults.max... to equal 20"
 
         # With task type
         loader.invalidate_cache()
         config_fix = loader.load(task_type="fix_violation")
-        assert config_fix.defaults.max_steps == 30
-        assert "Fix violations carefully" in config_fix.constraints
+        assert config_fix.defaults.max_steps == 30, "Expected config_fix.defaults.max_steps to equal 30"
+        assert "Fix violations carefully" in config_fix.constraints, "Expected 'Fix violations carefully' in config_fix.constraints"
 
     def test_caching(self, temp_project):
         """Config is cached after first load."""
@@ -342,7 +342,7 @@ defaults:
         config2 = loader.load()
 
         # Same object returned
-        assert config1 is config2
+        assert config1 is config2, "Expected config1 is config2"
 
         # Modify file
         project_config.write_text(
@@ -355,12 +355,12 @@ defaults:
 
         # Still cached
         config3 = loader.load()
-        assert config3.defaults.max_steps == 25
+        assert config3.defaults.max_steps == 25, "Expected config3.defaults.max_steps to equal 25"
 
         # Invalidate and reload
         loader.invalidate_cache()
         config4 = loader.load()
-        assert config4.defaults.max_steps == 50
+        assert config4.defaults.max_steps == 50, "Expected config4.defaults.max_steps to equal 50"
 
     def test_pure_yaml_file(self, temp_project):
         """Load pure YAML file without frontmatter."""
@@ -377,8 +377,8 @@ defaults:
         loader = AgentConfigLoader(temp_project)
         config = loader.load()
 
-        assert config.preferences.communication_style == "concise"
-        assert config.defaults.max_steps == 15
+        assert config.preferences.communication_style == "concise", "Expected config.preferences.communic... to equal 'concise'"
+        assert config.defaults.max_steps == 15, "Expected config.defaults.max_steps to equal 15"
 
     def test_pure_markdown_becomes_instructions(self, temp_project):
         """Pure markdown file becomes instructions."""
@@ -395,8 +395,8 @@ Check for null values.
         loader = AgentConfigLoader(temp_project)
         config = loader.load()
 
-        assert "database operations" in config.instructions
-        assert "null values" in config.instructions
+        assert "database operations" in config.instructions, "Expected 'database operations' in config.instructions"
+        assert "null values" in config.instructions, "Expected 'null values' in config.instructions"
 
     def test_get_cached_configs(self, temp_project):
         """get_cached_configs returns cached keys."""
@@ -405,4 +405,4 @@ Check for null values.
         loader.load(task_type="fix_violation")
 
         cached = loader.get_cached_configs()
-        assert len(cached) == 2
+        assert len(cached) == 2, "Expected len(cached) to equal 2"

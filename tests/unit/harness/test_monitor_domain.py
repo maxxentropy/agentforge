@@ -28,11 +28,11 @@ class TestObservationType:
 
     def test_observation_type_has_all_required_values(self):
         """Test that ObservationType enum has all required values."""
-        assert ObservationType.ACTION
-        assert ObservationType.OUTPUT
-        assert ObservationType.VERIFICATION
-        assert ObservationType.STATE_CHANGE
-        assert ObservationType.ERROR
+        assert ObservationType.ACTION, "Expected ObservationType.ACTION to be truthy"
+        assert ObservationType.OUTPUT, "Expected ObservationType.OUTPUT to be truthy"
+        assert ObservationType.VERIFICATION, "Expected ObservationType.VERIFICATION to be truthy"
+        assert ObservationType.STATE_CHANGE, "Expected ObservationType.STATE_CHANGE to be truthy"
+        assert ObservationType.ERROR, "Expected ObservationType.ERROR to be truthy"
 
 
 class TestObservation:
@@ -49,10 +49,10 @@ class TestObservation:
             data=data
         )
 
-        assert obs.type == ObservationType.ACTION
-        assert obs.timestamp == timestamp
-        assert obs.data == data
-        assert obs.context is None
+        assert obs.type == ObservationType.ACTION, "Expected obs.type to equal ObservationType.ACTION"
+        assert obs.timestamp == timestamp, "Expected obs.timestamp to equal timestamp"
+        assert obs.data == data, "Expected obs.data to equal data"
+        assert obs.context is None, "Expected obs.context is None"
 
     def test_observation_creation_with_context(self):
         """Test creating observation with optional context."""
@@ -63,7 +63,7 @@ class TestObservation:
             context="During file processing"
         )
 
-        assert obs.context == "During file processing"
+        assert obs.context == "During file processing", "Expected obs.context to equal 'During file processing'"
 
 
 class TestHealthStatus:
@@ -71,9 +71,9 @@ class TestHealthStatus:
 
     def test_health_status_has_all_required_values(self):
         """Test that HealthStatus enum has all required values."""
-        assert HealthStatus.HEALTHY
-        assert HealthStatus.DEGRADED
-        assert HealthStatus.CRITICAL
+        assert HealthStatus.HEALTHY, "Expected HealthStatus.HEALTHY to be truthy"
+        assert HealthStatus.DEGRADED, "Expected HealthStatus.DEGRADED to be truthy"
+        assert HealthStatus.CRITICAL, "Expected HealthStatus.CRITICAL to be truthy"
 
 
 class TestRecommendation:
@@ -81,10 +81,10 @@ class TestRecommendation:
 
     def test_recommendation_has_all_required_values(self):
         """Test that Recommendation enum has all required values."""
-        assert Recommendation.CONTINUE
-        assert Recommendation.CHECKPOINT
-        assert Recommendation.ESCALATE
-        assert Recommendation.ABORT
+        assert Recommendation.CONTINUE, "Expected Recommendation.CONTINUE to be truthy"
+        assert Recommendation.CHECKPOINT, "Expected Recommendation.CHECKPOINT to be truthy"
+        assert Recommendation.ESCALATE, "Expected Recommendation.ESCALATE to be truthy"
+        assert Recommendation.ABORT, "Expected Recommendation.ABORT to be truthy"
 
 
 class TestLoopDetection:
@@ -99,10 +99,10 @@ class TestLoopDetection:
             observations=[]
         )
 
-        assert detection.detected is False
-        assert detection.pattern is None
-        assert detection.count == 0
-        assert detection.observations == []
+        assert detection.detected is False, "Expected detection.detected is False"
+        assert detection.pattern is None, "Expected detection.pattern is None"
+        assert detection.count == 0, "Expected detection.count to equal 0"
+        assert detection.observations == [], "Expected detection.observations to equal []"
 
     def test_loop_detection_creation_detected(self):
         """Test creating LoopDetection when loop detected."""
@@ -119,10 +119,10 @@ class TestLoopDetection:
             observations=[obs, obs, obs]
         )
 
-        assert detection.detected is True
-        assert detection.pattern == "Repeated action: repeat"
-        assert detection.count == 3
-        assert len(detection.observations) == 3
+        assert detection.detected is True, "Expected detection.detected is True"
+        assert detection.pattern == "Repeated action: repeat", "Expected detection.pattern to equal 'Repeated action: repeat'"
+        assert detection.count == 3, "Expected detection.count to equal 3"
+        assert len(detection.observations) == 3, "Expected len(detection.observations) to equal 3"
 
 
 class TestThrashingDetection:
@@ -137,10 +137,10 @@ class TestThrashingDetection:
             alternation_count=0
         )
 
-        assert detection.detected is False
-        assert detection.pattern is None
-        assert detection.affected_files == []
-        assert detection.alternation_count == 0
+        assert detection.detected is False, "Expected detection.detected is False"
+        assert detection.pattern is None, "Expected detection.pattern is None"
+        assert detection.affected_files == [], "Expected detection.affected_files to equal []"
+        assert detection.alternation_count == 0, "Expected detection.alternation_count to equal 0"
 
     def test_thrashing_detection_creation_detected(self):
         """Test creating ThrashingDetection when thrashing detected."""
@@ -151,10 +151,10 @@ class TestThrashingDetection:
             alternation_count=4
         )
 
-        assert detection.detected is True
-        assert detection.pattern == "File modification thrashing"
-        assert detection.affected_files == ["test.py", "config.json"]
-        assert detection.alternation_count == 4
+        assert detection.detected is True, "Expected detection.detected is True"
+        assert detection.pattern == "File modification thrashing", "Expected detection.pattern to equal 'File modification thrashing'"
+        assert detection.affected_files == ["test.py", "config.json"], "Expected detection.affected_files to equal ['test.py', 'config.json']"
+        assert detection.alternation_count == 4, "Expected detection.alternation_count to equal 4"
 
 
 class TestAgentHealth:
@@ -173,14 +173,14 @@ class TestAgentHealth:
             progress_score=0.8
         )
 
-        assert health.status == HealthStatus.HEALTHY
-        assert health.issues == []
-        assert health.recommendation == Recommendation.CONTINUE
-        assert health.loop_detection is None
-        assert health.thrashing_detection is None
-        assert health.drift_score == 0.1
-        assert health.context_pressure == 0.3
-        assert health.progress_score == 0.8
+        assert health.status == HealthStatus.HEALTHY, "Expected health.status to equal HealthStatus.HEALTHY"
+        assert health.issues == [], "Expected health.issues to equal []"
+        assert health.recommendation == Recommendation.CONTINUE, "Expected health.recommendation to equal Recommendation.CONTINUE"
+        assert health.loop_detection is None, "Expected health.loop_detection is None"
+        assert health.thrashing_detection is None, "Expected health.thrashing_detection is None"
+        assert health.drift_score == 0.1, "Expected health.drift_score to equal 0.1"
+        assert health.context_pressure == 0.3, "Expected health.context_pressure to equal 0.3"
+        assert health.progress_score == 0.8, "Expected health.progress_score to equal 0.8"
 
     def test_agent_health_creation_critical_with_detections(self):
         """Test creating AgentHealth for critical agent with detections."""
@@ -209,11 +209,11 @@ class TestAgentHealth:
             progress_score=0.05
         )
 
-        assert health.status == HealthStatus.CRITICAL
-        assert len(health.issues) == 3
-        assert health.recommendation == Recommendation.ABORT
-        assert health.loop_detection.detected is True
-        assert health.thrashing_detection.detected is True
-        assert health.drift_score == 0.8
-        assert health.context_pressure == 0.95
-        assert health.progress_score == 0.05
+        assert health.status == HealthStatus.CRITICAL, "Expected health.status to equal HealthStatus.CRITICAL"
+        assert len(health.issues) == 3, "Expected len(health.issues) to equal 3"
+        assert health.recommendation == Recommendation.ABORT, "Expected health.recommendation to equal Recommendation.ABORT"
+        assert health.loop_detection.detected is True, "Expected health.loop_detection.detected is True"
+        assert health.thrashing_detection.detected is True, "Expected health.thrashing_detection.... is True"
+        assert health.drift_score == 0.8, "Expected health.drift_score to equal 0.8"
+        assert health.context_pressure == 0.95, "Expected health.context_pressure to equal 0.95"
+        assert health.progress_score == 0.05, "Expected health.progress_score to equal 0.05"

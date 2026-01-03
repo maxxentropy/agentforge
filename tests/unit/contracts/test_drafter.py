@@ -23,7 +23,7 @@ class TestCodebaseContext:
         ctx = CodebaseContext()
         result = ctx.to_prompt_context()
 
-        assert result == "No codebase context provided."
+        assert result == "No codebase context provided.", "Expected result to equal 'No codebase context provid..."
 
     def test_full_context(self):
         """Full context formats properly."""
@@ -37,11 +37,11 @@ class TestCodebaseContext:
 
         result = ctx.to_prompt_context()
 
-        assert "Project: MyProject" in result
-        assert "Language: Python" in result
-        assert "Framework: FastAPI" in result
-        assert "Repository" in result
-        assert "Use type hints" in result
+        assert "Project: MyProject" in result, "Expected 'Project: MyProject' in result"
+        assert "Language: Python" in result, "Expected 'Language: Python' in result"
+        assert "Framework: FastAPI" in result, "Expected 'Framework: FastAPI' in result"
+        assert "Repository" in result, "Expected 'Repository' in result"
+        assert "Use type hints" in result, "Expected 'Use type hints' in result"
 
 
 class TestDrafterConfig:
@@ -51,10 +51,10 @@ class TestDrafterConfig:
         """Default config has reasonable values."""
         config = DrafterConfig()
 
-        assert config.use_thinking is True
-        assert config.thinking_budget > 0
-        assert config.max_tokens > 0
-        assert len(config.default_stages) > 0
+        assert config.use_thinking is True, "Expected config.use_thinking is True"
+        assert config.thinking_budget > 0, "Expected config.thinking_budget > 0"
+        assert config.max_tokens > 0, "Expected config.max_tokens > 0"
+        assert len(config.default_stages) > 0, "Expected len(config.default_stages) > 0"
 
     def test_custom_config(self):
         """Custom config overrides defaults."""
@@ -64,9 +64,9 @@ class TestDrafterConfig:
             default_stages=["intake", "implement"],
         )
 
-        assert config.use_thinking is False
-        assert config.max_tokens == 4096
-        assert len(config.default_stages) == 2
+        assert config.use_thinking is False, "Expected config.use_thinking is False"
+        assert config.max_tokens == 4096, "Expected config.max_tokens to equal 4096"
+        assert len(config.default_stages) == 2, "Expected len(config.default_stages) to equal 2"
 
 
 class TestContractDrafter:
@@ -148,16 +148,16 @@ assumptions:
         """Create a contract drafter."""
         drafter = ContractDrafter(mock_llm_client)
 
-        assert drafter.llm_client is mock_llm_client
-        assert drafter.config is not None
-        assert len(drafter.system_prompt) > 0
+        assert drafter.llm_client is mock_llm_client, "Expected drafter.llm_client is mock_llm_client"
+        assert drafter.config is not None, "Expected drafter.config is not None"
+        assert len(drafter.system_prompt) > 0, "Expected len(drafter.system_prompt) > 0"
 
     def test_drafter_with_config(self, mock_llm_client):
         """Drafter accepts custom config."""
         config = DrafterConfig(use_thinking=False)
         drafter = ContractDrafter(mock_llm_client, config=config)
 
-        assert drafter.config.use_thinking is False
+        assert drafter.config.use_thinking is False, "Expected drafter.config.use_thinking is False"
 
     def test_draft_basic_request(self, mock_llm_client):
         """Draft contracts from basic request."""
@@ -165,10 +165,10 @@ assumptions:
 
         draft = drafter.draft("Add user authentication with JWT")
 
-        assert isinstance(draft, ContractDraft)
-        assert draft.draft_id == "DRAFT-20240103-120000"
-        assert draft.detected_scope == "feature"
-        assert draft.confidence == 0.85
+        assert isinstance(draft, ContractDraft), "Expected isinstance() to be truthy"
+        assert draft.draft_id == "DRAFT-20240103-120000", "Expected draft.draft_id to equal 'DRAFT-20240103-120000'"
+        assert draft.detected_scope == "feature", "Expected draft.detected_scope to equal 'feature'"
+        assert draft.confidence == 0.85, "Expected draft.confidence to equal 0.85"
 
     def test_draft_includes_stages(self, mock_llm_client):
         """Draft includes stage contracts."""
@@ -176,9 +176,9 @@ assumptions:
 
         draft = drafter.draft("Add user authentication")
 
-        assert len(draft.stage_contracts) >= 2
-        assert draft.get_stage_contract("intake") is not None
-        assert draft.get_stage_contract("clarify") is not None
+        assert len(draft.stage_contracts) >= 2, "Expected len(draft.stage_contracts) >= 2"
+        assert draft.get_stage_contract("intake") is not None, "Expected draft.get_stage_contract('i... is not None"
+        assert draft.get_stage_contract("clarify") is not None, "Expected draft.get_stage_contract('c... is not None"
 
     def test_draft_includes_validation_rules(self, mock_llm_client):
         """Stage contracts include validation rules."""
@@ -187,9 +187,9 @@ assumptions:
         draft = drafter.draft("Add auth")
         intake = draft.get_stage_contract("intake")
 
-        assert intake is not None
-        assert len(intake.validation_rules) > 0
-        assert intake.validation_rules[0].rule_id == "R-001"
+        assert intake is not None, "Expected intake is not None"
+        assert len(intake.validation_rules) > 0, "Expected len(intake.validation_rules) > 0"
+        assert intake.validation_rules[0].rule_id == "R-001", "Expected intake.validation_rules[0].... to equal 'R-001'"
 
     def test_draft_includes_triggers(self, mock_llm_client):
         """Draft includes escalation triggers."""
@@ -197,8 +197,8 @@ assumptions:
 
         draft = drafter.draft("Add auth")
 
-        assert len(draft.escalation_triggers) > 0
-        assert draft.escalation_triggers[0].trigger_id == "T-001"
+        assert len(draft.escalation_triggers) > 0, "Expected len(draft.escalation_triggers) > 0"
+        assert draft.escalation_triggers[0].trigger_id == "T-001", "Expected draft.escalation_triggers[0... to equal 'T-001'"
 
     def test_draft_includes_gates(self, mock_llm_client):
         """Draft includes quality gates."""
@@ -206,8 +206,8 @@ assumptions:
 
         draft = drafter.draft("Add auth")
 
-        assert len(draft.quality_gates) > 0
-        assert draft.quality_gates[0].gate_id == "G-001"
+        assert len(draft.quality_gates) > 0, "Expected len(draft.quality_gates) > 0"
+        assert draft.quality_gates[0].gate_id == "G-001", "Expected draft.quality_gates[0].gate_id to equal 'G-001'"
 
     def test_draft_includes_questions(self, mock_llm_client):
         """Draft surfaces open questions."""
@@ -215,8 +215,8 @@ assumptions:
 
         draft = drafter.draft("Add auth")
 
-        assert len(draft.open_questions) > 0
-        assert "refresh tokens" in draft.open_questions[0].question
+        assert len(draft.open_questions) > 0, "Expected len(draft.open_questions) > 0"
+        assert "refresh tokens" in draft.open_questions[0].question, "Expected 'refresh tokens' in draft.open_questions[0].que..."
 
     def test_draft_includes_assumptions(self, mock_llm_client):
         """Draft surfaces assumptions."""
@@ -224,8 +224,8 @@ assumptions:
 
         draft = drafter.draft("Add auth")
 
-        assert len(draft.assumptions) > 0
-        assert draft.assumptions[0].confidence == 0.7
+        assert len(draft.assumptions) > 0, "Expected len(draft.assumptions) > 0"
+        assert draft.assumptions[0].confidence == 0.7, "Expected draft.assumptions[0].confid... to equal 0.7"
 
     def test_draft_with_codebase_context(self, mock_llm_client):
         """Draft uses codebase context."""
@@ -238,7 +238,7 @@ assumptions:
 
         draft = drafter.draft("Add auth", codebase_context=ctx)
 
-        assert draft is not None
+        assert draft is not None, "Expected draft is not None"
 
     def test_draft_handles_yaml_without_codeblock(self):
         """Parser handles YAML without code block."""
@@ -259,8 +259,8 @@ assumptions: []
 
         draft = drafter.draft("Fix bug")
 
-        assert draft.draft_id == "DRAFT-001"
-        assert draft.detected_scope == "bugfix"
+        assert draft.draft_id == "DRAFT-001", "Expected draft.draft_id to equal 'DRAFT-001'"
+        assert draft.detected_scope == "bugfix", "Expected draft.detected_scope to equal 'bugfix'"
 
     def test_draft_handles_invalid_yaml(self):
         """Parser handles invalid YAML gracefully."""
@@ -272,10 +272,10 @@ assumptions: []
         draft = drafter.draft("Some request")
 
         # Should return error draft, not crash
-        assert draft is not None
-        assert draft.confidence == 0.0
-        assert len(draft.open_questions) > 0
-        assert "failed" in draft.open_questions[0].question.lower()
+        assert draft is not None, "Expected draft is not None"
+        assert draft.confidence == 0.0, "Expected draft.confidence to equal 0.0"
+        assert len(draft.open_questions) > 0, "Expected len(draft.open_questions) > 0"
+        assert "failed" in draft.open_questions[0].question.lower(), "Expected 'failed' in draft.open_questions[0].que..."
 
     def test_draft_handles_empty_response(self):
         """Parser handles empty response."""
@@ -287,8 +287,8 @@ assumptions: []
         draft = drafter.draft("Some request")
 
         # Should return error draft
-        assert draft is not None
-        assert draft.confidence == 0.0
+        assert draft is not None, "Expected draft is not None"
+        assert draft.confidence == 0.0, "Expected draft.confidence to equal 0.0"
 
 
 class TestContractDrafterRefine:
@@ -334,9 +334,9 @@ assumptions: []
 
         refined = drafter.refine(initial_draft, "Add auth_method to outputs")
 
-        assert len(refined.revision_history) == 1
-        assert "auth_method" in refined.revision_history[0].reason.lower()
-        assert "Refined based on human feedback" in refined.revision_history[0].changes[0]
+        assert len(refined.revision_history) == 1, "Expected len(refined.revision_history) to equal 1"
+        assert "auth_method" in refined.revision_history[0].reason.lower(), "Expected 'auth_method' in refined.revision_history[0]..."
+        assert "Refined based on human feedback" in refined.revision_history[0].changes[0], "Expected 'Refined based on human fee... in refined.revision_history[0]..."
 
 
 class TestDrafterSystemPrompt:
@@ -349,8 +349,8 @@ class TestDrafterSystemPrompt:
         )
         drafter = ContractDrafter(client)
 
-        assert len(drafter.system_prompt) > 100
-        assert "Contract" in drafter.system_prompt
+        assert len(drafter.system_prompt) > 100, "Expected len(drafter.system_prompt) > 100"
+        assert "Contract" in drafter.system_prompt, "Expected 'Contract' in drafter.system_prompt"
 
     def test_prompt_includes_role(self):
         """System prompt includes role definition."""
@@ -359,7 +359,7 @@ class TestDrafterSystemPrompt:
         )
         drafter = ContractDrafter(client)
 
-        assert "Role" in drafter.system_prompt or "role" in drafter.system_prompt.lower()
+        assert "Role" in drafter.system_prompt or "role" in drafter.system_prompt.lower(), "Assertion failed"
 
     def test_prompt_includes_output_format(self):
         """System prompt includes output format."""
@@ -368,4 +368,4 @@ class TestDrafterSystemPrompt:
         )
         drafter = ContractDrafter(client)
 
-        assert "yaml" in drafter.system_prompt.lower()
+        assert "yaml" in drafter.system_prompt.lower(), "Expected 'yaml' in drafter.system_prompt.lower()"

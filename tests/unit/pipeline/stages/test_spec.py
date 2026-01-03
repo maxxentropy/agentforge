@@ -46,8 +46,8 @@ acceptance_criteria:
             mock_llm.return_value = mock_llm_response(yaml_response)
             result = executor.execute(context)
 
-        assert result.status == StageStatus.COMPLETED
-        assert result.artifacts.get("spec_id", "").startswith("SPEC-")
+        assert result.status == StageStatus.COMPLETED, "Expected result.status to equal StageStatus.COMPLETED"
+        assert result.artifacts.get("spec_id", "").startswith("SPEC-"), "Expected result.artifacts.get('spec_...() to be truthy"
 
     def test_generates_component_specs(
         self, tmp_path, sample_analyze_artifact, mock_llm_response
@@ -86,10 +86,10 @@ components:
             mock_llm.return_value = mock_llm_response(yaml_response)
             result = executor.execute(context)
 
-        assert len(result.artifacts["components"]) > 0
+        assert len(result.artifacts["components"]) > 0, "Expected len(result.artifacts['compo... > 0"
         comp = result.artifacts["components"][0]
-        assert comp["name"] == "AuthManager"
-        assert comp["type"] == "class"
+        assert comp["name"] == "AuthManager", "Expected comp['name'] to equal 'AuthManager'"
+        assert comp["type"] == "class", "Expected comp['type'] to equal 'class'"
 
     def test_generates_test_cases(
         self, tmp_path, sample_analyze_artifact, mock_llm_response
@@ -135,10 +135,10 @@ test_cases:
             mock_llm.return_value = mock_llm_response(yaml_response)
             result = executor.execute(context)
 
-        assert len(result.artifacts["test_cases"]) > 0
+        assert len(result.artifacts["test_cases"]) > 0, "Expected len(result.artifacts['test_... > 0"
         tc = result.artifacts["test_cases"][0]
-        assert "id" in tc
-        assert "description" in tc
+        assert "id" in tc, "Expected 'id' in tc"
+        assert "description" in tc, "Expected 'description' in tc"
 
     def test_includes_acceptance_criteria(
         self, tmp_path, sample_analyze_artifact, mock_llm_response
@@ -174,7 +174,7 @@ acceptance_criteria:
             mock_llm.return_value = mock_llm_response(yaml_response)
             result = executor.execute(context)
 
-        assert len(result.artifacts["acceptance_criteria"]) > 0
+        assert len(result.artifacts["acceptance_criteria"]) > 0, "Expected len(result.artifacts['accep... > 0"
 
     def test_saves_to_specs_directory(
         self, tmp_path, sample_analyze_artifact, mock_llm_response
@@ -215,7 +215,7 @@ components:
             list(specs_dir.glob("*.yaml"))
             # May or may not exist depending on finalize implementation
             # This is a weak assertion - stronger test in integration
-            assert result.status == StageStatus.COMPLETED
+            assert result.status == StageStatus.COMPLETED, "Expected result.status to equal StageStatus.COMPLETED"
 
     def test_validates_component_has_name(self, tmp_path):
         """Validates components have required name field."""
@@ -232,8 +232,8 @@ components:
         }
 
         validation = executor.validate_output(artifact)
-        assert not validation.valid
-        assert any("name" in e.lower() for e in validation.errors)
+        assert not validation.valid, "Assertion failed"
+        assert any("name" in e.lower() for e in validation.errors), "Expected any() to be truthy"
 
     def test_validates_at_least_one_component(self, tmp_path):
         """Validates specification has at least one component."""
@@ -248,8 +248,8 @@ components:
         }
 
         validation = executor.validate_output(artifact)
-        assert not validation.valid
-        assert any("component" in e.lower() for e in validation.errors)
+        assert not validation.valid, "Assertion failed"
+        assert any("component" in e.lower() for e in validation.errors), "Expected any() to be truthy"
 
     def test_warns_missing_test_cases(self, tmp_path):
         """Warns if no test cases are defined."""
@@ -266,7 +266,7 @@ components:
 
         validation = executor.validate_output(artifact)
         # Missing test cases is a warning, not an error
-        assert len(validation.warnings) >= 1
+        assert len(validation.warnings) >= 1, "Expected len(validation.warnings) >= 1"
 
     def test_warns_missing_acceptance_criteria(self, tmp_path):
         """Warns if no acceptance criteria are defined."""
@@ -284,7 +284,7 @@ components:
 
         validation = executor.validate_output(artifact)
         # Missing acceptance criteria is a warning
-        assert len(validation.warnings) >= 1
+        assert len(validation.warnings) >= 1, "Expected len(validation.warnings) >= 1"
 
 
 class TestCreateSpecExecutor:
@@ -298,7 +298,7 @@ class TestCreateSpecExecutor:
         )
 
         executor = create_spec_executor()
-        assert isinstance(executor, SpecExecutor)
+        assert isinstance(executor, SpecExecutor), "Expected isinstance() to be truthy"
 
     def test_accepts_config(self):
         """Factory accepts config parameter."""
@@ -306,4 +306,4 @@ class TestCreateSpecExecutor:
 
         config = {"include_tests": True}
         executor = create_spec_executor(config)
-        assert executor.config.get("include_tests") is True
+        assert executor.config.get("include_tests") is True, "Expected executor.config.get('includ... is True"

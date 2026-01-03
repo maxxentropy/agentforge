@@ -30,17 +30,17 @@ class TestOrchestratorState:
             'WAITING_FOR_HUMAN', 'COMPLETED', 'FAILED'
         }
         actual_values = {s.name for s in OrchestratorState}
-        assert actual_values == expected_values
+        assert actual_values == expected_values, "Expected actual_values to equal expected_values"
 
     def test_orchestrator_state_values_are_accessible(self):
         """Test that individual OrchestratorState values can be accessed."""
-        assert OrchestratorState.IDLE
-        assert OrchestratorState.RUNNING
-        assert OrchestratorState.PAUSED
-        assert OrchestratorState.RECOVERING
-        assert OrchestratorState.WAITING_FOR_HUMAN
-        assert OrchestratorState.COMPLETED
-        assert OrchestratorState.FAILED
+        assert OrchestratorState.IDLE, "Expected OrchestratorState.IDLE to be truthy"
+        assert OrchestratorState.RUNNING, "Expected OrchestratorState.RUNNING to be truthy"
+        assert OrchestratorState.PAUSED, "Expected OrchestratorState.PAUSED to be truthy"
+        assert OrchestratorState.RECOVERING, "Expected OrchestratorState.RECOVERING to be truthy"
+        assert OrchestratorState.WAITING_FOR_HUMAN, "Expected OrchestratorState.WAITING_F... to be truthy"
+        assert OrchestratorState.COMPLETED, "Expected OrchestratorState.COMPLETED to be truthy"
+        assert OrchestratorState.FAILED, "Expected OrchestratorState.FAILED to be truthy"
 
 
 class TestExecutionMode:
@@ -50,13 +50,13 @@ class TestExecutionMode:
         """Test that ExecutionMode enum contains all specified values."""
         expected_values = {'AUTONOMOUS', 'SUPERVISED', 'INTERACTIVE'}
         actual_values = {m.name for m in ExecutionMode}
-        assert actual_values == expected_values
+        assert actual_values == expected_values, "Expected actual_values to equal expected_values"
 
     def test_execution_mode_values_are_accessible(self):
         """Test that individual ExecutionMode values can be accessed."""
-        assert ExecutionMode.AUTONOMOUS
-        assert ExecutionMode.SUPERVISED
-        assert ExecutionMode.INTERACTIVE
+        assert ExecutionMode.AUTONOMOUS, "Expected ExecutionMode.AUTONOMOUS to be truthy"
+        assert ExecutionMode.SUPERVISED, "Expected ExecutionMode.SUPERVISED to be truthy"
+        assert ExecutionMode.INTERACTIVE, "Expected ExecutionMode.INTERACTIVE to be truthy"
 
 
 class TestAgentTask:
@@ -72,14 +72,14 @@ class TestAgentTask:
             created_at=created_at
         )
 
-        assert task.id == "task-001"
-        assert task.description == "Implement feature X"
-        assert task.context == {"file": "main.py"}
-        assert task.created_at == created_at
-        assert task.priority == 0  # default
-        assert task.status == "pending"  # default
-        assert task.started_at is None
-        assert task.completed_at is None
+        assert task.id == "task-001", "Expected task.id to equal 'task-001'"
+        assert task.description == "Implement feature X", "Expected task.description to equal 'Implement feature X'"
+        assert task.context == {"file": "main.py"}, "Expected task.context to equal {'file': 'main.py'}"
+        assert task.created_at == created_at, "Expected task.created_at to equal created_at"
+        assert task.priority == 0, "Expected task.priority to equal 0"# default
+        assert task.status == "pending", "Expected task.status to equal 'pending'"# default
+        assert task.started_at is None, "Expected task.started_at is None"
+        assert task.completed_at is None, "Expected task.completed_at is None"
 
     def test_agent_task_creation_with_all_fields(self):
         """Test creating an AgentTask with all fields."""
@@ -98,10 +98,10 @@ class TestAgentTask:
             status="completed"
         )
 
-        assert task.priority == 5
-        assert task.started_at == started_at
-        assert task.completed_at == completed_at
-        assert task.status == "completed"
+        assert task.priority == 5, "Expected task.priority to equal 5"
+        assert task.started_at == started_at, "Expected task.started_at to equal started_at"
+        assert task.completed_at == completed_at, "Expected task.completed_at to equal completed_at"
+        assert task.status == "completed", "Expected task.status to equal 'completed'"
 
     def test_agent_task_context_can_be_complex(self):
         """Test that AgentTask context can hold complex data."""
@@ -118,14 +118,14 @@ class TestAgentTask:
             created_at=datetime.now()
         )
 
-        assert task.context == complex_context
+        assert task.context == complex_context, "Expected task.context to equal complex_context"
 
     def test_agent_task_priority_ordering(self):
         """Test that tasks can be ordered by priority."""
         task1 = AgentTask(id="t1", description="Low", context={}, priority=1, created_at=datetime.now())
         task2 = AgentTask(id="t2", description="High", context={}, priority=10, created_at=datetime.now())
 
-        assert task1.priority < task2.priority
+        assert task1.priority < task2.priority, "Expected task1.priority < task2.priority"
 
 
 class TestExecutionResult:
@@ -142,13 +142,13 @@ class TestExecutionResult:
             tools_used=["read_file", "write_file"]
         )
 
-        assert result.task_id == "task-001"
-        assert result.success is True
-        assert result.output == "Task completed successfully"
-        assert result.error is None
-        assert result.duration_seconds == 5.5
-        assert result.tools_used == ["read_file", "write_file"]
-        assert result.tokens_consumed == 0  # default
+        assert result.task_id == "task-001", "Expected result.task_id to equal 'task-001'"
+        assert result.success is True, "Expected result.success is True"
+        assert result.output == "Task completed successfully", "Expected result.output to equal 'Task completed successfully'"
+        assert result.error is None, "Expected result.error is None"
+        assert result.duration_seconds == 5.5, "Expected result.duration_seconds to equal 5.5"
+        assert result.tools_used == ["read_file", "write_file"], "Expected result.tools_used to equal ['read_file', 'write_file']"
+        assert result.tokens_consumed == 0, "Expected result.tokens_consumed to equal 0"# default
 
     def test_execution_result_creation_failure(self):
         """Test creating a failed ExecutionResult."""
@@ -162,9 +162,9 @@ class TestExecutionResult:
             tokens_consumed=150
         )
 
-        assert result.success is False
-        assert result.error == "Connection timeout"
-        assert result.tokens_consumed == 150
+        assert result.success is False, "Expected result.success is False"
+        assert result.error == "Connection timeout", "Expected result.error to equal 'Connection timeout'"
+        assert result.tokens_consumed == 150, "Expected result.tokens_consumed to equal 150"
 
     def test_execution_result_empty_tools_list(self):
         """Test ExecutionResult with no tools used."""
@@ -177,7 +177,7 @@ class TestExecutionResult:
             tools_used=[]
         )
 
-        assert result.tools_used == []
+        assert result.tools_used == [], "Expected result.tools_used to equal []"
 
     def test_execution_result_multiple_tools(self):
         """Test ExecutionResult tracking multiple tools."""
@@ -192,8 +192,8 @@ class TestExecutionResult:
             tokens_consumed=5000
         )
 
-        assert len(result.tools_used) == 5
-        assert result.tools_used == tools
+        assert len(result.tools_used) == 5, "Expected len(result.tools_used) to equal 5"
+        assert result.tools_used == tools, "Expected result.tools_used to equal tools"
 
 
 class TestOrchestratorConfig:
@@ -203,13 +203,13 @@ class TestOrchestratorConfig:
         """Test OrchestratorConfig with default values."""
         config = OrchestratorConfig()
 
-        assert config.execution_mode == ExecutionMode.AUTONOMOUS
-        assert config.max_iterations == 100
-        assert config.health_check_interval == 10
-        assert config.auto_checkpoint is True
-        assert config.checkpoint_interval == 20
-        assert config.recovery_enabled is True
-        assert config.escalation_enabled is True
+        assert config.execution_mode == ExecutionMode.AUTONOMOUS, "Expected config.execution_mode to equal ExecutionMode.AUTONOMOUS"
+        assert config.max_iterations == 100, "Expected config.max_iterations to equal 100"
+        assert config.health_check_interval == 10, "Expected config.health_check_interval to equal 10"
+        assert config.auto_checkpoint is True, "Expected config.auto_checkpoint is True"
+        assert config.checkpoint_interval == 20, "Expected config.checkpoint_interval to equal 20"
+        assert config.recovery_enabled is True, "Expected config.recovery_enabled is True"
+        assert config.escalation_enabled is True, "Expected config.escalation_enabled is True"
 
     def test_orchestrator_config_custom_values(self):
         """Test OrchestratorConfig with custom values."""
@@ -223,13 +223,13 @@ class TestOrchestratorConfig:
             escalation_enabled=False
         )
 
-        assert config.execution_mode == ExecutionMode.SUPERVISED
-        assert config.max_iterations == 50
-        assert config.health_check_interval == 5
-        assert config.auto_checkpoint is False
-        assert config.checkpoint_interval == 10
-        assert config.recovery_enabled is False
-        assert config.escalation_enabled is False
+        assert config.execution_mode == ExecutionMode.SUPERVISED, "Expected config.execution_mode to equal ExecutionMode.SUPERVISED"
+        assert config.max_iterations == 50, "Expected config.max_iterations to equal 50"
+        assert config.health_check_interval == 5, "Expected config.health_check_interval to equal 5"
+        assert config.auto_checkpoint is False, "Expected config.auto_checkpoint is False"
+        assert config.checkpoint_interval == 10, "Expected config.checkpoint_interval to equal 10"
+        assert config.recovery_enabled is False, "Expected config.recovery_enabled is False"
+        assert config.escalation_enabled is False, "Expected config.escalation_enabled is False"
 
     def test_orchestrator_config_interactive_mode(self):
         """Test OrchestratorConfig with interactive mode."""
@@ -238,10 +238,10 @@ class TestOrchestratorConfig:
             max_iterations=10
         )
 
-        assert config.execution_mode == ExecutionMode.INTERACTIVE
+        assert config.execution_mode == ExecutionMode.INTERACTIVE, "Expected config.execution_mode to equal ExecutionMode.INTERACTIVE"
 
     def test_orchestrator_config_all_modes_supported(self):
         """Test that all execution modes are supported in config."""
         for mode in ExecutionMode:
             config = OrchestratorConfig(execution_mode=mode)
-            assert config.execution_mode == mode
+            assert config.execution_mode == mode, "Expected config.execution_mode to equal mode"

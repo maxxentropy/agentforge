@@ -28,17 +28,17 @@ class TestToolCall:
             input={"path": "/src/main.py"},
         )
 
-        assert tc.id == "call_123"
-        assert tc.name == "read_file"
-        assert tc.input == {"path": "/src/main.py"}
+        assert tc.id == "call_123", "Expected tc.id to equal 'call_123'"
+        assert tc.name == "read_file", "Expected tc.name to equal 'read_file'"
+        assert tc.input == {"path": "/src/main.py"}, "Expected tc.input to equal {'path': '/src/main.py'}"
 
     def test_repr(self):
         """ToolCall should have informative repr."""
         tc = ToolCall(id="x", name="test", input={})
         repr_str = repr(tc)
 
-        assert "ToolCall" in repr_str
-        assert "test" in repr_str
+        assert "ToolCall" in repr_str, "Expected 'ToolCall' in repr_str"
+        assert "test" in repr_str, "Expected 'test' in repr_str"
 
 
 class TestToolResult:
@@ -52,9 +52,9 @@ class TestToolResult:
             is_error=False,
         )
 
-        assert result.tool_use_id == "call_123"
-        assert result.content == "File contents here"
-        assert result.is_error is False
+        assert result.tool_use_id == "call_123", "Expected result.tool_use_id to equal 'call_123'"
+        assert result.content == "File contents here", "Expected result.content to equal 'File contents here'"
+        assert result.is_error is False, "Expected result.is_error is False"
 
     def test_error_result(self):
         """ToolResult should capture error state."""
@@ -64,7 +64,7 @@ class TestToolResult:
             is_error=True,
         )
 
-        assert result.is_error is True
+        assert result.is_error is True, "Expected result.is_error is True"
 
     def test_to_message_content(self):
         """to_message_content should produce Anthropic API format."""
@@ -76,10 +76,10 @@ class TestToolResult:
 
         msg = result.to_message_content()
 
-        assert msg["type"] == "tool_result"
-        assert msg["tool_use_id"] == "call_789"
-        assert msg["content"] == "Success"
-        assert msg["is_error"] is False
+        assert msg["type"] == "tool_result", "Expected msg['type'] to equal 'tool_result'"
+        assert msg["tool_use_id"] == "call_789", "Expected msg['tool_use_id'] to equal 'call_789'"
+        assert msg["content"] == "Success", "Expected msg['content'] to equal 'Success'"
+        assert msg["is_error"] is False, "Expected msg['is_error'] is False"
 
 
 class TestLLMResponse:
@@ -93,9 +93,9 @@ class TestLLMResponse:
             stop_reason=StopReason.END_TURN,
         )
 
-        assert response.content == "Hello, world!"
-        assert response.tool_calls == []
-        assert response.stop_reason == StopReason.END_TURN
+        assert response.content == "Hello, world!", "Expected response.content to equal 'Hello, world!'"
+        assert response.tool_calls == [], "Expected response.tool_calls to equal []"
+        assert response.stop_reason == StopReason.END_TURN, "Expected response.stop_reason to equal StopReason.END_TURN"
 
     def test_has_tool_calls_true(self):
         """has_tool_calls should return True when tools present."""
@@ -106,13 +106,13 @@ class TestLLMResponse:
             ],
         )
 
-        assert response.has_tool_calls is True
+        assert response.has_tool_calls is True, "Expected response.has_tool_calls is True"
 
     def test_has_tool_calls_false(self):
         """has_tool_calls should return False when no tools."""
         response = LLMResponse(content="Done", tool_calls=[])
 
-        assert response.has_tool_calls is False
+        assert response.has_tool_calls is False, "Expected response.has_tool_calls is False"
 
     def test_get_first_tool_call(self):
         """get_first_tool_call should return first tool or None."""
@@ -122,8 +122,8 @@ class TestLLMResponse:
         with_tools = LLMResponse(content="", tool_calls=[tc1, tc2])
         without_tools = LLMResponse(content="", tool_calls=[])
 
-        assert with_tools.get_first_tool_call() == tc1
-        assert without_tools.get_first_tool_call() is None
+        assert with_tools.get_first_tool_call() == tc1, "Expected with_tools.get_first_tool_c... to equal tc1"
+        assert without_tools.get_first_tool_call() is None, "Expected without_tools.get_first_too... is None"
 
     def test_total_tokens(self):
         """total_tokens should sum input and output tokens."""
@@ -136,7 +136,7 @@ class TestLLMResponse:
             },
         )
 
-        assert response.total_tokens == 150
+        assert response.total_tokens == 150, "Expected response.total_tokens to equal 150"
 
     def test_thinking_storage(self):
         """LLMResponse should store thinking content."""
@@ -145,7 +145,7 @@ class TestLLMResponse:
             thinking="Let me think about this...",
         )
 
-        assert response.thinking == "Let me think about this..."
+        assert response.thinking == "Let me think about this...", "Expected response.thinking to equal 'Let me think about this...'"
 
 
 class TestToolDefinition:
@@ -165,9 +165,9 @@ class TestToolDefinition:
             },
         )
 
-        assert tool.name == "read_file"
-        assert tool.description == "Read contents of a file"
-        assert "path" in tool.input_schema["properties"]
+        assert tool.name == "read_file", "Expected tool.name to equal 'read_file'"
+        assert tool.description == "Read contents of a file", "Expected tool.description to equal 'Read contents of a file'"
+        assert "path" in tool.input_schema["properties"], "Expected 'path' in tool.input_schema['properti..."
 
     def test_to_api_format(self):
         """to_api_format should produce Anthropic API format."""
@@ -179,9 +179,9 @@ class TestToolDefinition:
 
         api_format = tool.to_api_format()
 
-        assert api_format["name"] == "test_tool"
-        assert api_format["description"] == "A test tool"
-        assert api_format["input_schema"] == {"type": "object"}
+        assert api_format["name"] == "test_tool", "Expected api_format['name'] to equal 'test_tool'"
+        assert api_format["description"] == "A test tool", "Expected api_format['description'] to equal 'A test tool'"
+        assert api_format["input_schema"] == {"type": "object"}, "Expected api_format['input_schema'] to equal {'type': 'object'}"
 
 
 class TestThinkingConfig:
@@ -191,21 +191,21 @@ class TestThinkingConfig:
         """ThinkingConfig should have sensible defaults."""
         config = ThinkingConfig()
 
-        assert config.enabled is False
-        assert config.budget_tokens == 8000
+        assert config.enabled is False, "Expected config.enabled is False"
+        assert config.budget_tokens == 8000, "Expected config.budget_tokens to equal 8000"
 
     def test_enabled_config(self):
         """ThinkingConfig should store enabled state and budget."""
         config = ThinkingConfig(enabled=True, budget_tokens=10000)
 
-        assert config.enabled is True
-        assert config.budget_tokens == 10000
+        assert config.enabled is True, "Expected config.enabled is True"
+        assert config.budget_tokens == 10000, "Expected config.budget_tokens to equal 10000"
 
     def test_to_api_format_disabled(self):
         """to_api_format should return None when disabled."""
         config = ThinkingConfig(enabled=False)
 
-        assert config.to_api_format() is None
+        assert config.to_api_format() is None, "Expected config.to_api_format() is None"
 
     def test_to_api_format_enabled(self):
         """to_api_format should produce API format when enabled."""
@@ -213,8 +213,8 @@ class TestThinkingConfig:
 
         api_format = config.to_api_format()
 
-        assert api_format["type"] == "enabled"
-        assert api_format["budget_tokens"] == 12000
+        assert api_format["type"] == "enabled", "Expected api_format['type'] to equal 'enabled'"
+        assert api_format["budget_tokens"] == 12000, "Expected api_format['budget_tokens'] to equal 12000"
 
 
 class TestStopReason:
@@ -222,16 +222,16 @@ class TestStopReason:
 
     def test_enum_values(self):
         """StopReason should have expected values."""
-        assert StopReason.END_TURN.value == "end_turn"
-        assert StopReason.TOOL_USE.value == "tool_use"
-        assert StopReason.MAX_TOKENS.value == "max_tokens"
-        assert StopReason.STOP_SEQUENCE.value == "stop_sequence"
+        assert StopReason.END_TURN.value == "end_turn", "Expected StopReason.END_TURN.value to equal 'end_turn'"
+        assert StopReason.TOOL_USE.value == "tool_use", "Expected StopReason.TOOL_USE.value to equal 'tool_use'"
+        assert StopReason.MAX_TOKENS.value == "max_tokens", "Expected StopReason.MAX_TOKENS.value to equal 'max_tokens'"
+        assert StopReason.STOP_SEQUENCE.value == "stop_sequence", "Expected StopReason.STOP_SEQUENCE.value to equal 'stop_sequence'"
 
     def test_string_subclass(self):
         """StopReason should be usable as string comparison."""
         reason = StopReason.TOOL_USE
 
         # Can compare directly to string
-        assert reason == "tool_use"
+        assert reason == "tool_use", "Expected reason to equal 'tool_use'"
         # Value is accessible
-        assert reason.value == "tool_use"
+        assert reason.value == "tool_use", "Expected reason.value to equal 'tool_use'"

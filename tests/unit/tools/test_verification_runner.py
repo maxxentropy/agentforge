@@ -22,9 +22,9 @@ class TestVerificationRunnerInit:
         """Test initialization with default config path."""
         runner = VerificationRunner(project_root=tmp_path)
 
-        assert runner.project_root == tmp_path
-        assert runner.config_path == tmp_path / "config" / "correctness.yaml"
-        assert runner.config == {"checks": [], "profiles": {}, "settings": {}}
+        assert runner.project_root == tmp_path, "Expected runner.project_root to equal tmp_path"
+        assert runner.config_path == tmp_path / "config" / "correctness.yaml", "Expected runner.config_path to equal tmp_path / 'config' / 'corr..."
+        assert runner.config == {"checks": [], "profiles": {}, "settings": {}}, "Expected runner.config to equal {'checks': [], 'profiles': ..."
 
     def test_init_with_custom_config(self, tmp_path: Path, correctness_config: dict):
         """Test initialization with custom config file."""
@@ -33,9 +33,9 @@ class TestVerificationRunnerInit:
 
         runner = VerificationRunner(config_path=config_path, project_root=tmp_path)
 
-        assert runner.config_path == config_path
-        assert runner.config == correctness_config
-        assert len(runner.config["checks"]) == 4
+        assert runner.config_path == config_path, "Expected runner.config_path to equal config_path"
+        assert runner.config == correctness_config, "Expected runner.config to equal correctness_config"
+        assert len(runner.config["checks"]) == 4, "Expected len(runner.config['checks']) to equal 4"
 
     def test_init_missing_config_returns_empty(self, tmp_path: Path):
         """Test initialization with missing config returns empty structure."""
@@ -44,40 +44,40 @@ class TestVerificationRunnerInit:
             project_root=tmp_path
         )
 
-        assert runner.config == {"checks": [], "profiles": {}, "settings": {}}
+        assert runner.config == {"checks": [], "profiles": {}, "settings": {}}, "Expected runner.config to equal {'checks': [], 'profiles': ..."
 
     def test_lazy_load_pyright_runner(self, tmp_path: Path):
         """Test pyright runner is lazily loaded."""
         runner = VerificationRunner(project_root=tmp_path)
 
         # Not loaded initially
-        assert runner._pyright_runner is None
+        assert runner._pyright_runner is None, "Expected runner._pyright_runner is None"
 
         # Loaded on first access
         pyright = runner.pyright_runner
-        assert pyright is not None
-        assert runner._pyright_runner is not None
+        assert pyright is not None, "Expected pyright is not None"
+        assert runner._pyright_runner is not None, "Expected runner._pyright_runner is not None"
 
         # Same instance returned
-        assert runner.pyright_runner is pyright
+        assert runner.pyright_runner is pyright, "Expected runner.pyright_runner is pyright"
 
     def test_lazy_load_command_runner(self, tmp_path: Path):
         """Test command runner is lazily loaded."""
         runner = VerificationRunner(project_root=tmp_path)
 
-        assert runner._command_runner is None
+        assert runner._command_runner is None, "Expected runner._command_runner is None"
         command = runner.command_runner
-        assert command is not None
-        assert runner.command_runner is command
+        assert command is not None, "Expected command is not None"
+        assert runner.command_runner is command, "Expected runner.command_runner is command"
 
     def test_lazy_load_ast_checker(self, tmp_path: Path):
         """Test AST checker is lazily loaded."""
         runner = VerificationRunner(project_root=tmp_path)
 
-        assert runner._ast_checker is None
+        assert runner._ast_checker is None, "Expected runner._ast_checker is None"
         ast = runner.ast_checker
-        assert ast is not None
-        assert runner.ast_checker is ast
+        assert ast is not None, "Expected ast is not None"
+        assert runner.ast_checker is ast, "Expected runner.ast_checker is ast"
 
 
 class TestVariableSubstitution:
@@ -89,7 +89,7 @@ class TestVariableSubstitution:
         runner.set_context(project_path="/path/to/project")
 
         result = runner._substitute_variables("Build {project_path}")
-        assert result == "Build /path/to/project"
+        assert result == "Build /path/to/project", "Expected result to equal 'Build /path/to/project'"
 
     def test_substitute_multiple_variables(self, tmp_path: Path):
         """Test substitution of multiple variables."""
@@ -97,35 +97,35 @@ class TestVariableSubstitution:
         runner.set_context(name="test", version="1.0")
 
         result = runner._substitute_variables("{name} v{version}")
-        assert result == "test v1.0"
+        assert result == "test v1.0", "Expected result to equal 'test v1.0'"
 
     def test_substitute_no_variables(self, tmp_path: Path):
         """Test string without variables is unchanged."""
         runner = VerificationRunner(project_root=tmp_path)
 
         result = runner._substitute_variables("plain text")
-        assert result == "plain text"
+        assert result == "plain text", "Expected result to equal 'plain text'"
 
     def test_substitute_missing_variable_unchanged(self, tmp_path: Path):
         """Test missing variables are left as placeholders."""
         runner = VerificationRunner(project_root=tmp_path)
 
         result = runner._substitute_variables("Hello {missing}")
-        assert result == "Hello {missing}"
+        assert result == "Hello {missing}", "Expected result to equal 'Hello {missing}'"
 
     def test_substitute_none_returns_none(self, tmp_path: Path):
         """Test None input returns None."""
         runner = VerificationRunner(project_root=tmp_path)
 
         result = runner._substitute_variables(None)
-        assert result is None
+        assert result is None, "Expected result is None"
 
     def test_substitute_empty_string(self, tmp_path: Path):
         """Test empty string returns empty string."""
         runner = VerificationRunner(project_root=tmp_path)
 
         result = runner._substitute_variables("")
-        assert result == ""
+        assert result == "", "Expected result to equal ''"
 
 
 class TestProfileManagement:
@@ -135,41 +135,41 @@ class TestProfileManagement:
         """Test getting checks for 'quick' profile."""
         checks = verification_runner.get_checks_for_profile("quick")
 
-        assert len(checks) == 1
-        assert checks[0]["id"] == "test_command_success"
+        assert len(checks) == 1, "Expected len(checks) to equal 1"
+        assert checks[0]["id"] == "test_command_success", "Expected checks[0]['id'] to equal 'test_command_success'"
 
     def test_get_checks_for_profile_full(self, verification_runner):
         """Test getting checks for 'full' profile."""
         checks = verification_runner.get_checks_for_profile("full")
 
-        assert len(checks) == 3
+        assert len(checks) == 3, "Expected len(checks) to equal 3"
         check_ids = [c["id"] for c in checks]
-        assert "test_command_success" in check_ids
-        assert "test_regex_match" in check_ids
-        assert "test_file_exists" in check_ids
+        assert "test_command_success" in check_ids, "Expected 'test_command_success' in check_ids"
+        assert "test_regex_match" in check_ids, "Expected 'test_regex_match' in check_ids"
+        assert "test_file_exists" in check_ids, "Expected 'test_file_exists' in check_ids"
 
     def test_get_checks_for_unknown_profile_raises(self, verification_runner):
         """Test unknown profile raises ValueError."""
         with pytest.raises(ValueError) as exc_info:
             verification_runner.get_checks_for_profile("nonexistent")
 
-        assert "Unknown profile" in str(exc_info.value)
+        assert "Unknown profile" in str(exc_info.value), "Expected 'Unknown profile' in str(exc_info.value)"
 
     def test_get_checks_by_ids(self, verification_runner):
         """Test getting specific checks by ID."""
         checks = verification_runner.get_checks_by_ids(["test_command_success", "test_file_exists"])
 
-        assert len(checks) == 2
+        assert len(checks) == 2, "Expected len(checks) to equal 2"
         check_ids = [c["id"] for c in checks]
-        assert "test_command_success" in check_ids
-        assert "test_file_exists" in check_ids
+        assert "test_command_success" in check_ids, "Expected 'test_command_success' in check_ids"
+        assert "test_file_exists" in check_ids, "Expected 'test_file_exists' in check_ids"
 
     def test_get_checks_by_ids_missing_ignored(self, verification_runner):
         """Test missing check IDs are silently ignored."""
         checks = verification_runner.get_checks_by_ids(["test_command_success", "nonexistent"])
 
-        assert len(checks) == 1
-        assert checks[0]["id"] == "test_command_success"
+        assert len(checks) == 1, "Expected len(checks) to equal 1"
+        assert checks[0]["id"] == "test_command_success", "Expected checks[0]['id'] to equal 'test_command_success'"
 
 
 class TestRunProfile:
@@ -184,9 +184,9 @@ class TestRunProfile:
             )
             report = verification_runner.run_profile("quick")
 
-        assert isinstance(report, VerificationReport)
-        assert report.profile == "quick"
-        assert report.total_checks == 1
+        assert isinstance(report, VerificationReport), "Expected isinstance() to be truthy"
+        assert report.profile == "quick", "Expected report.profile to equal 'quick'"
+        assert report.total_checks == 1, "Expected report.total_checks to equal 1"
 
     def test_run_profile_sets_timing(self, verification_runner):
         """Test run_profile sets duration_ms."""
@@ -197,8 +197,8 @@ class TestRunProfile:
             )
             report = verification_runner.run_profile("quick")
 
-        assert report.duration_ms >= 0
-        assert report.timestamp is not None
+        assert report.duration_ms >= 0, "Expected report.duration_ms >= 0"
+        assert report.timestamp is not None, "Expected report.timestamp is not None"
 
 
 class TestRunChecks:
@@ -213,7 +213,7 @@ class TestRunChecks:
             )
             report = verification_runner.run_checks(all_checks=True)
 
-        assert report.total_checks == 4  # All checks from fixture
+        assert report.total_checks == 4, "Expected report.total_checks to equal 4"# All checks from fixture
 
     def test_run_specific_checks(self, verification_runner):
         """Test run_checks with specific check IDs."""
@@ -224,7 +224,7 @@ class TestRunChecks:
             )
             report = verification_runner.run_checks(check_ids=["test_command_success"])
 
-        assert report.total_checks == 1
+        assert report.total_checks == 1, "Expected report.total_checks to equal 1"
 
 
 class TestDependencyOrdering:
@@ -242,8 +242,8 @@ class TestDependencyOrdering:
             )
 
         # Both checks should have run
-        assert len(report.results) == 2
-        assert report.passed == 2
+        assert len(report.results) == 2, "Expected len(report.results) to equal 2"
+        assert report.passed == 2, "Expected report.passed to equal 2"
 
     def test_depends_on_failure_skips_dependent(self, tmp_path: Path):
         """Test dependent check is skipped when dependency fails."""
@@ -267,10 +267,10 @@ class TestDependencyOrdering:
             )
             report = runner.run_checks(all_checks=True)
 
-        assert report.skipped >= 1
+        assert report.skipped >= 1, "Expected report.skipped >= 1"
         skipped_result = [r for r in report.results if r.check_id == "child"][0]
-        assert skipped_result.status == CheckStatus.SKIPPED
-        assert "dependencies" in skipped_result.message.lower()
+        assert skipped_result.status == CheckStatus.SKIPPED, "Expected skipped_result.status to equal CheckStatus.SKIPPED"
+        assert "dependencies" in skipped_result.message.lower(), "Expected 'dependencies' in skipped_result.message.lower()"
 
 
 class TestFailFast:
@@ -298,9 +298,9 @@ class TestFailFast:
             )
             report = runner.run_checks(all_checks=True)
 
-        assert report.failed == 1
-        assert report.skipped >= 1
-        assert not report.is_valid
+        assert report.failed == 1, "Expected report.failed to equal 1"
+        assert report.skipped >= 1, "Expected report.skipped >= 1"
+        assert not report.is_valid, "Assertion failed"
 
     def test_no_fail_fast_continues_after_failure(self, tmp_path: Path):
         """Test execution continues when fail_fast is disabled."""
@@ -329,7 +329,7 @@ class TestFailFast:
         with patch.object(runner, '_run_command_check', side_effect=mock_run_check):
             runner.run_checks(all_checks=True)
 
-        assert call_count[0] == 2  # Both checks ran
+        assert call_count[0] == 2, "Expected call_count[0] to equal 2"# Both checks ran
 
 
 class TestRunCheck:
@@ -347,7 +347,7 @@ class TestRunCheck:
             result = verification_runner.run_check(check, {})
 
         mock_cmd.assert_called_once()
-        assert result.check_id == "test"
+        assert result.check_id == "test", "Expected result.check_id to equal 'test'"
 
     def test_run_check_unknown_type_returns_error(self, verification_runner):
         """Test unknown check type returns ERROR status."""
@@ -355,8 +355,8 @@ class TestRunCheck:
 
         result = verification_runner.run_check(check, {})
 
-        assert result.status == CheckStatus.ERROR
-        assert "Unknown check type" in result.message
+        assert result.status == CheckStatus.ERROR, "Expected result.status to equal CheckStatus.ERROR"
+        assert "Unknown check type" in result.message, "Expected 'Unknown check type' in result.message"
 
     def test_run_check_exception_returns_error(self, verification_runner):
         """Test exception in handler returns ERROR status."""
@@ -366,8 +366,8 @@ class TestRunCheck:
             mock_cmd.side_effect = RuntimeError("Test exception")
             result = verification_runner.run_check(check, {})
 
-        assert result.status == CheckStatus.ERROR
-        assert "exception" in result.message.lower()
+        assert result.status == CheckStatus.ERROR, "Expected result.status to equal CheckStatus.ERROR"
+        assert "exception" in result.message.lower(), "Expected 'exception' in result.message.lower()"
 
     def test_run_check_sets_duration(self, verification_runner):
         """Test run_check sets duration_ms."""
@@ -380,7 +380,7 @@ class TestRunCheck:
             )
             result = verification_runner.run_check(check, {})
 
-        assert result.duration_ms >= 0
+        assert result.duration_ms >= 0, "Expected result.duration_ms >= 0"
 
     def test_run_check_sets_fix_suggestion(self, verification_runner):
         """Test run_check sets fix_suggestion from check config."""
@@ -396,7 +396,7 @@ class TestRunCheck:
             )
             result = verification_runner.run_check(check, {})
 
-        assert result.fix_suggestion == "Run the build"
+        assert result.fix_suggestion == "Run the build", "Expected result.fix_suggestion to equal 'Run the build'"
 
 
 class TestReportGeneration:
@@ -420,10 +420,10 @@ class TestReportGeneration:
         for r in results:
             report.add_result(r)
 
-        assert report.passed == 1
-        assert report.failed == 1
-        assert report.skipped == 1
-        assert report.errors == 1
+        assert report.passed == 1, "Expected report.passed to equal 1"
+        assert report.failed == 1, "Expected report.failed to equal 1"
+        assert report.skipped == 1, "Expected report.skipped to equal 1"
+        assert report.errors == 1, "Expected report.errors to equal 1"
 
     def test_report_blocking_failure_invalidates(self, verification_runner):
         """Test blocking failure sets is_valid to False."""
@@ -438,8 +438,8 @@ class TestReportGeneration:
             "c1", "C1", CheckStatus.FAILED, Severity.BLOCKING, "Fail"
         ))
 
-        assert not report.is_valid
-        assert report.blocking_failures == 1
+        assert not report.is_valid, "Assertion failed"
+        assert report.blocking_failures == 1, "Expected report.blocking_failures to equal 1"
 
     def test_report_advisory_does_not_invalidate(self, verification_runner):
         """Test advisory failure does not invalidate report."""
@@ -454,8 +454,8 @@ class TestReportGeneration:
             "c1", "C1", CheckStatus.FAILED, Severity.ADVISORY, "Fail"
         ))
 
-        assert report.is_valid
-        assert report.advisory_warnings == 1
+        assert report.is_valid, "Expected report.is_valid to be truthy"
+        assert report.advisory_warnings == 1, "Expected report.advisory_warnings to equal 1"
 
 
 class TestCheckHandlerDispatch:

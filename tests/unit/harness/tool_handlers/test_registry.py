@@ -32,38 +32,38 @@ class TestCreateStandardHandlers:
         """Returns a dictionary of handlers."""
         handlers = create_standard_handlers(temp_project)
 
-        assert isinstance(handlers, dict)
-        assert len(handlers) > 0
+        assert isinstance(handlers, dict), "Expected isinstance() to be truthy"
+        assert len(handlers) > 0, "Expected len(handlers) > 0"
 
     def test_includes_file_handlers(self, temp_project):
         """Includes file operation handlers."""
         handlers = create_standard_handlers(temp_project)
 
-        assert "read_file" in handlers
-        assert "write_file" in handlers
-        assert "edit_file" in handlers
+        assert "read_file" in handlers, "Expected 'read_file' in handlers"
+        assert "write_file" in handlers, "Expected 'write_file' in handlers"
+        assert "edit_file" in handlers, "Expected 'edit_file' in handlers"
 
     def test_includes_search_handlers(self, temp_project):
         """Includes search handlers."""
         handlers = create_standard_handlers(temp_project)
 
-        assert "search_code" in handlers
-        assert "load_context" in handlers
+        assert "search_code" in handlers, "Expected 'search_code' in handlers"
+        assert "load_context" in handlers, "Expected 'load_context' in handlers"
 
     def test_includes_verify_handlers(self, temp_project):
         """Includes verification handlers."""
         handlers = create_standard_handlers(temp_project)
 
-        assert "run_check" in handlers
-        assert "run_tests" in handlers
+        assert "run_check" in handlers, "Expected 'run_check' in handlers"
+        assert "run_tests" in handlers, "Expected 'run_tests' in handlers"
 
     def test_includes_terminal_handlers(self, temp_project):
         """Includes terminal action handlers."""
         handlers = create_standard_handlers(temp_project)
 
-        assert "complete" in handlers
-        assert "escalate" in handlers
-        assert "cannot_fix" in handlers
+        assert "complete" in handlers, "Expected 'complete' in handlers"
+        assert "escalate" in handlers, "Expected 'escalate' in handlers"
+        assert "cannot_fix" in handlers, "Expected 'cannot_fix' in handlers"
 
     def test_handlers_are_callable(self, temp_project):
         """All handlers are callable."""
@@ -80,7 +80,7 @@ class TestCreateStandardHandlers:
         complete = handlers["complete"]
         result = complete({"summary": "Test"})
 
-        assert isinstance(result, str)
+        assert isinstance(result, str), "Expected isinstance() to be truthy"
 
 
 class TestCreateFixViolationHandlers:
@@ -90,20 +90,20 @@ class TestCreateFixViolationHandlers:
         """Returns a dictionary of handlers."""
         handlers = create_fix_violation_handlers(temp_project)
 
-        assert isinstance(handlers, dict)
-        assert len(handlers) > 0
+        assert isinstance(handlers, dict), "Expected isinstance() to be truthy"
+        assert len(handlers) > 0, "Expected len(handlers) > 0"
 
     def test_includes_cannot_fix(self, temp_project):
         """Includes cannot_fix handler for violation workflow."""
         handlers = create_fix_violation_handlers(temp_project)
 
-        assert "cannot_fix" in handlers
+        assert "cannot_fix" in handlers, "Expected 'cannot_fix' in handlers"
 
     def test_includes_run_check(self, temp_project):
         """Includes run_check handler for verification."""
         handlers = create_fix_violation_handlers(temp_project)
 
-        assert "run_check" in handlers
+        assert "run_check" in handlers, "Expected 'run_check' in handlers"
 
 
 class TestCreateMinimalHandlers:
@@ -113,30 +113,30 @@ class TestCreateMinimalHandlers:
         """Returns a dictionary of handlers."""
         handlers = create_minimal_handlers(temp_project)
 
-        assert isinstance(handlers, dict)
-        assert len(handlers) > 0
+        assert isinstance(handlers, dict), "Expected isinstance() to be truthy"
+        assert len(handlers) > 0, "Expected len(handlers) > 0"
 
     def test_includes_basic_file_ops(self, temp_project):
         """Includes basic file operations."""
         handlers = create_minimal_handlers(temp_project)
 
-        assert "read_file" in handlers
-        assert "write_file" in handlers
-        assert "edit_file" in handlers
+        assert "read_file" in handlers, "Expected 'read_file' in handlers"
+        assert "write_file" in handlers, "Expected 'write_file' in handlers"
+        assert "edit_file" in handlers, "Expected 'edit_file' in handlers"
 
     def test_includes_terminal_actions(self, temp_project):
         """Includes terminal actions."""
         handlers = create_minimal_handlers(temp_project)
 
-        assert "complete" in handlers
-        assert "escalate" in handlers
+        assert "complete" in handlers, "Expected 'complete' in handlers"
+        assert "escalate" in handlers, "Expected 'escalate' in handlers"
 
     def test_excludes_advanced_handlers(self, temp_project):
         """Does not include advanced handlers."""
         handlers = create_minimal_handlers(temp_project)
 
         # Minimal set should be smaller
-        assert len(handlers) < len(create_standard_handlers(temp_project))
+        assert len(handlers) < len(create_standard_handlers(temp_project)), "Expected len(handlers) < len(create_standard_handler..."
 
 
 class TestToolHandlerRegistry:
@@ -148,7 +148,7 @@ class TestToolHandlerRegistry:
 
         handlers = registry.get_handlers()
 
-        assert len(handlers) == 0
+        assert len(handlers) == 0, "Expected len(handlers) to equal 0"
 
     def test_register_single_handler(self, temp_project):
         """Register a single handler."""
@@ -160,8 +160,8 @@ class TestToolHandlerRegistry:
         registry.register("my_tool", my_handler)
         handlers = registry.get_handlers()
 
-        assert "my_tool" in handlers
-        assert handlers["my_tool"]({}) == "result"
+        assert "my_tool" in handlers, "Expected 'my_tool' in handlers"
+        assert handlers["my_tool"]({}) == "result", "Expected handlers['my_tool']({}) to equal 'result'"
 
     def test_register_multiple_handlers(self, temp_project):
         """Register multiple handlers at once."""
@@ -176,8 +176,8 @@ class TestToolHandlerRegistry:
         registry.register_all({"a": handler_a, "b": handler_b})
         handlers = registry.get_handlers()
 
-        assert "a" in handlers
-        assert "b" in handlers
+        assert "a" in handlers, "Expected 'a' in handlers"
+        assert "b" in handlers, "Expected 'b' in handlers"
 
     def test_add_file_handlers(self, temp_project):
         """Add file handlers group."""
@@ -186,9 +186,9 @@ class TestToolHandlerRegistry:
         registry.add_file_handlers()
         handlers = registry.get_handlers()
 
-        assert "read_file" in handlers
-        assert "write_file" in handlers
-        assert "edit_file" in handlers
+        assert "read_file" in handlers, "Expected 'read_file' in handlers"
+        assert "write_file" in handlers, "Expected 'write_file' in handlers"
+        assert "edit_file" in handlers, "Expected 'edit_file' in handlers"
 
     def test_add_search_handlers(self, temp_project):
         """Add search handlers group."""
@@ -197,8 +197,8 @@ class TestToolHandlerRegistry:
         registry.add_search_handlers()
         handlers = registry.get_handlers()
 
-        assert "search_code" in handlers
-        assert "load_context" in handlers
+        assert "search_code" in handlers, "Expected 'search_code' in handlers"
+        assert "load_context" in handlers, "Expected 'load_context' in handlers"
 
     def test_add_verify_handlers(self, temp_project):
         """Add verify handlers group."""
@@ -207,8 +207,8 @@ class TestToolHandlerRegistry:
         registry.add_verify_handlers()
         handlers = registry.get_handlers()
 
-        assert "run_check" in handlers
-        assert "run_tests" in handlers
+        assert "run_check" in handlers, "Expected 'run_check' in handlers"
+        assert "run_tests" in handlers, "Expected 'run_tests' in handlers"
 
     def test_add_terminal_handlers(self, temp_project):
         """Add terminal handlers group."""
@@ -217,9 +217,9 @@ class TestToolHandlerRegistry:
         registry.add_terminal_handlers()
         handlers = registry.get_handlers()
 
-        assert "complete" in handlers
-        assert "escalate" in handlers
-        assert "cannot_fix" in handlers
+        assert "complete" in handlers, "Expected 'complete' in handlers"
+        assert "escalate" in handlers, "Expected 'escalate' in handlers"
+        assert "cannot_fix" in handlers, "Expected 'cannot_fix' in handlers"
 
     def test_add_all(self, temp_project):
         """Add all handler groups."""
@@ -229,10 +229,10 @@ class TestToolHandlerRegistry:
         handlers = registry.get_handlers()
 
         # Should have all handlers
-        assert "read_file" in handlers
-        assert "search_code" in handlers
-        assert "run_check" in handlers
-        assert "complete" in handlers
+        assert "read_file" in handlers, "Expected 'read_file' in handlers"
+        assert "search_code" in handlers, "Expected 'search_code' in handlers"
+        assert "run_check" in handlers, "Expected 'run_check' in handlers"
+        assert "complete" in handlers, "Expected 'complete' in handlers"
 
     def test_fluent_interface(self, temp_project):
         """Registry supports fluent interface."""
@@ -245,17 +245,17 @@ class TestToolHandlerRegistry:
             .get_handlers()
         )
 
-        assert "read_file" in handlers
-        assert "complete" in handlers
-        assert "search_code" not in handlers
+        assert "read_file" in handlers, "Expected 'read_file' in handlers"
+        assert "complete" in handlers, "Expected 'complete' in handlers"
+        assert "search_code" not in handlers, "Expected 'search_code' not in handlers"
 
     def test_has_handler(self, temp_project):
         """Check if handler is registered."""
         registry = ToolHandlerRegistry(temp_project)
         registry.add_file_handlers()
 
-        assert registry.has_handler("read_file")
-        assert not registry.has_handler("nonexistent")
+        assert registry.has_handler("read_file"), "Expected registry.has_handler() to be truthy"
+        assert not registry.has_handler("nonexistent"), "Assertion failed"
 
     def test_list_handlers(self, temp_project):
         """List all registered handler names."""
@@ -264,9 +264,9 @@ class TestToolHandlerRegistry:
 
         names = registry.list_handlers()
 
-        assert isinstance(names, list)
-        assert "read_file" in names
-        assert names == sorted(names)  # Should be sorted
+        assert isinstance(names, list), "Expected isinstance() to be truthy"
+        assert "read_file" in names, "Expected 'read_file' in names"
+        assert names == sorted(names), "Expected names to equal sorted(names)"# Should be sorted
 
     def test_custom_handler_overrides(self, temp_project):
         """Custom handler can override built-in."""
@@ -279,7 +279,7 @@ class TestToolHandlerRegistry:
         registry.register("read_file", custom_read)
         handlers = registry.get_handlers()
 
-        assert handlers["read_file"]({}) == "custom result"
+        assert handlers["read_file"]({}) == "custom result", "Expected handlers['read_file']({}) to equal 'custom result'"
 
 
 class TestHandlerIntegration:
@@ -294,12 +294,12 @@ class TestHandlerIntegration:
             "path": "test.txt",
             "content": "Hello World",
         })
-        assert "SUCCESS" in write_result
+        assert "SUCCESS" in write_result, "Expected 'SUCCESS' in write_result"
 
         # Read it back
         read_result = handlers["read_file"]({"path": "test.txt"})
-        assert "SUCCESS" in read_result
-        assert "Hello World" in read_result
+        assert "SUCCESS" in read_result, "Expected 'SUCCESS' in read_result"
+        assert "Hello World" in read_result, "Expected 'Hello World' in read_result"
 
     def test_write_edit_read(self, temp_project):
         """Write, edit, then read a file."""
@@ -318,13 +318,13 @@ class TestHandlerIntegration:
             "end_line": 2,
             "new_content": "modified",
         })
-        assert "SUCCESS" in edit_result
+        assert "SUCCESS" in edit_result, "Expected 'SUCCESS' in edit_result"
 
         # Read and verify
         read_result = handlers["read_file"]({"path": "lines.txt"})
-        assert "line1" in read_result
-        assert "modified" in read_result
-        assert "line3" in read_result
+        assert "line1" in read_result, "Expected 'line1' in read_result"
+        assert "modified" in read_result, "Expected 'modified' in read_result"
+        assert "line3" in read_result, "Expected 'line3' in read_result"
 
     def test_search_after_write(self, temp_project):
         """Search finds newly written content."""
@@ -339,5 +339,5 @@ class TestHandlerIntegration:
         search_result = handlers["search_code"]({
             "pattern": "unique_function_name",
         })
-        assert "module.py" in search_result
-        assert "Found" in search_result
+        assert "module.py" in search_result, "Expected 'module.py' in search_result"
+        assert "Found" in search_result, "Expected 'Found' in search_result"

@@ -21,24 +21,24 @@ class TestMemoryTier:
 
     def test_memory_tier_has_session_value(self):
         """Test that MemoryTier enum has SESSION value."""
-        assert MemoryTier.SESSION is not None
+        assert MemoryTier.SESSION is not None, "Expected MemoryTier.SESSION is not None"
 
     def test_memory_tier_has_task_value(self):
         """Test that MemoryTier enum has TASK value."""
-        assert MemoryTier.TASK is not None
+        assert MemoryTier.TASK is not None, "Expected MemoryTier.TASK is not None"
 
     def test_memory_tier_has_project_value(self):
         """Test that MemoryTier enum has PROJECT value."""
-        assert MemoryTier.PROJECT is not None
+        assert MemoryTier.PROJECT is not None, "Expected MemoryTier.PROJECT is not None"
 
     def test_memory_tier_has_organization_value(self):
         """Test that MemoryTier enum has ORGANIZATION value."""
-        assert MemoryTier.ORGANIZATION is not None
+        assert MemoryTier.ORGANIZATION is not None, "Expected MemoryTier.ORGANIZATION is not None"
 
     def test_memory_tier_values_are_distinct(self):
         """Test that all MemoryTier values are distinct."""
         values = [MemoryTier.SESSION, MemoryTier.TASK, MemoryTier.PROJECT, MemoryTier.ORGANIZATION]
-        assert len(set(values)) == 4
+        assert len(set(values)) == 4, "Expected len(set(values)) to equal 4"
 
 
 class TestMemoryEntryCreate:
@@ -48,24 +48,24 @@ class TestMemoryEntryCreate:
         """Test that create method returns MemoryEntry with minimal parameters."""
         entry = MemoryEntry.create(key="test_key", value="test_value")
 
-        assert entry is not None
-        assert entry.key == "test_key"
-        assert entry.value == "test_value"
+        assert entry is not None, "Expected entry is not None"
+        assert entry.key == "test_key", "Expected entry.key to equal 'test_key'"
+        assert entry.value == "test_value", "Expected entry.value to equal 'test_value'"
 
     def test_create_with_ttl_sets_expiration(self):
         """Test that create method sets expiration when TTL provided."""
         ttl_seconds = 3600
         entry = MemoryEntry.create(key="test_key", value="test_value", ttl=ttl_seconds)
 
-        assert entry.ttl == ttl_seconds
-        assert entry.expires_at is not None
+        assert entry.ttl == ttl_seconds, "Expected entry.ttl to equal ttl_seconds"
+        assert entry.expires_at is not None, "Expected entry.expires_at is not None"
 
     def test_create_with_metadata_stores_metadata(self):
         """Test that create method stores provided metadata."""
         metadata = {"source": "test", "priority": "high"}
         entry = MemoryEntry.create(key="test_key", value="test_value", metadata=metadata)
 
-        assert entry.metadata == metadata
+        assert entry.metadata == metadata, "Expected entry.metadata to equal metadata"
 
     def test_create_sets_timestamp(self):
         """Test that create method sets creation timestamp."""
@@ -75,14 +75,14 @@ class TestMemoryEntryCreate:
 
             entry = MemoryEntry.create(key="test_key", value="test_value")
 
-            assert entry.created_at == mock_now
+            assert entry.created_at == mock_now, "Expected entry.created_at to equal mock_now"
 
     def test_create_without_ttl_has_no_expiration(self):
         """Test that create method without TTL has no expiration."""
         entry = MemoryEntry.create(key="test_key", value="test_value")
 
-        assert entry.ttl is None
-        assert entry.expires_at is None
+        assert entry.ttl is None, "Expected entry.ttl is None"
+        assert entry.expires_at is None, "Expected entry.expires_at is None"
 
 
 class TestMemoryEntryIsExpired:
@@ -92,13 +92,13 @@ class TestMemoryEntryIsExpired:
         """Test that is_expired returns False when entry has no TTL."""
         entry = MemoryEntry.create(key="test_key", value="test_value")
 
-        assert entry.is_expired() is False
+        assert entry.is_expired() is False, "Expected entry.is_expired() is False"
 
     def test_is_expired_with_future_expiration_returns_false(self):
         """Test that is_expired returns False when expiration is in future."""
         entry = MemoryEntry.create(key="test_key", value="test_value", ttl=3600)
 
-        assert entry.is_expired() is False
+        assert entry.is_expired() is False, "Expected entry.is_expired() is False"
 
     def test_is_expired_with_past_expiration_returns_true(self):
         """Test that is_expired returns True when expiration is in past."""
@@ -113,7 +113,7 @@ class TestMemoryEntryIsExpired:
             future_time = datetime(2023, 1, 1, 14, 0, 0)  # 2 hours later
             mock_datetime.now.return_value = future_time
 
-            assert entry.is_expired() is True
+            assert entry.is_expired() is True, "Expected entry.is_expired() is True"
 
     def test_is_expired_at_exact_expiration_returns_true(self):
         """Test that is_expired returns True at exact expiration time."""
@@ -127,7 +127,7 @@ class TestMemoryEntryIsExpired:
             expiration_time = creation_time + timedelta(seconds=3600)
             mock_datetime.now.return_value = expiration_time
 
-            assert entry.is_expired() is True
+            assert entry.is_expired() is True, "Expected entry.is_expired() is True"
 
 
 class TestMemoryEntryToDict:
@@ -139,7 +139,7 @@ class TestMemoryEntryToDict:
 
         result = entry.to_dict()
 
-        assert isinstance(result, dict)
+        assert isinstance(result, dict), "Expected isinstance() to be truthy"
 
     def test_to_dict_includes_key_and_value(self):
         """Test that to_dict includes key and value."""
@@ -147,8 +147,8 @@ class TestMemoryEntryToDict:
 
         result = entry.to_dict()
 
-        assert result["key"] == "test_key"
-        assert result["value"] == "test_value"
+        assert result["key"] == "test_key", "Expected result['key'] to equal 'test_key'"
+        assert result["value"] == "test_value", "Expected result['value'] to equal 'test_value'"
 
     def test_to_dict_includes_timestamp(self):
         """Test that to_dict includes creation timestamp."""
@@ -156,8 +156,8 @@ class TestMemoryEntryToDict:
 
         result = entry.to_dict()
 
-        assert "created_at" in result
-        assert result["created_at"] == entry.created_at
+        assert "created_at" in result, "Expected 'created_at' in result"
+        assert result["created_at"] == entry.created_at, "Expected result['created_at'] to equal entry.created_at"
 
     def test_to_dict_includes_ttl_when_present(self):
         """Test that to_dict includes TTL when present."""
@@ -165,7 +165,7 @@ class TestMemoryEntryToDict:
 
         result = entry.to_dict()
 
-        assert result["ttl"] == 3600
+        assert result["ttl"] == 3600, "Expected result['ttl'] to equal 3600"
 
     def test_to_dict_includes_metadata_when_present(self):
         """Test that to_dict includes metadata when present."""
@@ -174,7 +174,7 @@ class TestMemoryEntryToDict:
 
         result = entry.to_dict()
 
-        assert result["metadata"] == metadata
+        assert result["metadata"] == metadata, "Expected result['metadata'] to equal metadata"
 
     def test_to_dict_excludes_none_values(self):
         """Test that to_dict excludes None values."""
@@ -182,8 +182,8 @@ class TestMemoryEntryToDict:
 
         result = entry.to_dict()
 
-        assert "ttl" not in result or result["ttl"] is not None
-        assert "metadata" not in result or result["metadata"] is not None
+        assert "ttl" not in result or result["ttl"] is not None, "Assertion failed"
+        assert "metadata" not in result or result["metadata"] is not None, "Assertion failed"
 
 
 class TestMemoryEntryFromDict:
@@ -199,9 +199,9 @@ class TestMemoryEntryFromDict:
 
         entry = MemoryEntry.from_dict(data)
 
-        assert entry.key == "test_key"
-        assert entry.value == "test_value"
-        assert entry.created_at == datetime(2023, 1, 1, 12, 0, 0)
+        assert entry.key == "test_key", "Expected entry.key to equal 'test_key'"
+        assert entry.value == "test_value", "Expected entry.value to equal 'test_value'"
+        assert entry.created_at == datetime(2023, 1, 1, 12, 0, 0), "Expected entry.created_at to equal datetime(2023, 1, 1, 12, 0, 0)"
 
     def test_from_dict_creates_entry_with_ttl(self):
         """Test that from_dict creates MemoryEntry with TTL."""
@@ -214,8 +214,8 @@ class TestMemoryEntryFromDict:
 
         entry = MemoryEntry.from_dict(data)
 
-        assert entry.ttl == 3600
-        assert entry.expires_at is not None
+        assert entry.ttl == 3600, "Expected entry.ttl to equal 3600"
+        assert entry.expires_at is not None, "Expected entry.expires_at is not None"
 
     def test_from_dict_creates_entry_with_metadata(self):
         """Test that from_dict creates MemoryEntry with metadata."""
@@ -229,7 +229,7 @@ class TestMemoryEntryFromDict:
 
         entry = MemoryEntry.from_dict(data)
 
-        assert entry.metadata == metadata
+        assert entry.metadata == metadata, "Expected entry.metadata to equal metadata"
 
     def test_from_dict_handles_missing_optional_fields(self):
         """Test that from_dict handles missing optional fields gracefully."""
@@ -241,9 +241,9 @@ class TestMemoryEntryFromDict:
 
         entry = MemoryEntry.from_dict(data)
 
-        assert entry.ttl is None
-        assert entry.metadata is None
-        assert entry.expires_at is None
+        assert entry.ttl is None, "Expected entry.ttl is None"
+        assert entry.metadata is None, "Expected entry.metadata is None"
+        assert entry.expires_at is None, "Expected entry.expires_at is None"
 
     def test_from_dict_roundtrip_preserves_data(self):
         """Test that from_dict and to_dict roundtrip preserves data."""
@@ -257,7 +257,7 @@ class TestMemoryEntryFromDict:
         data = original_entry.to_dict()
         restored_entry = MemoryEntry.from_dict(data)
 
-        assert restored_entry.key == original_entry.key
-        assert restored_entry.value == original_entry.value
-        assert restored_entry.ttl == original_entry.ttl
-        assert restored_entry.metadata == original_entry.metadata
+        assert restored_entry.key == original_entry.key, "Expected restored_entry.key to equal original_entry.key"
+        assert restored_entry.value == original_entry.value, "Expected restored_entry.value to equal original_entry.value"
+        assert restored_entry.ttl == original_entry.ttl, "Expected restored_entry.ttl to equal original_entry.ttl"
+        assert restored_entry.metadata == original_entry.metadata, "Expected restored_entry.metadata to equal original_entry.metadata"

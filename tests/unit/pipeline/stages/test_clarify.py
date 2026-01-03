@@ -35,8 +35,8 @@ class TestClarifyExecutor:
 
         result = executor.execute(context)
 
-        assert result.status == StageStatus.COMPLETED
-        assert result.artifacts["ready_for_analysis"] is True
+        assert result.status == StageStatus.COMPLETED, "Expected result.status to equal StageStatus.COMPLETED"
+        assert result.artifacts["ready_for_analysis"] is True, "Expected result.artifacts['ready_for... is True"
 
     def test_escalates_when_blocking_unanswered(self, tmp_path, sample_intake_artifact):
         """Escalates when blocking questions have no answers."""
@@ -61,9 +61,9 @@ class TestClarifyExecutor:
         result = executor.execute(context)
 
         # Should escalate for answers
-        assert result.needs_escalation() or result.status == StageStatus.COMPLETED
+        assert result.needs_escalation() or result.status == StageStatus.COMPLETED, "Assertion failed"
         if result.needs_escalation():
-            assert "blocking" in result.escalation.get("message", "").lower()
+            assert "blocking" in result.escalation.get("message", "").lower(), "Expected 'blocking' in result.escalation.get('mess..."
 
     def test_incorporates_answers_into_requirements(
         self, tmp_path, sample_intake_artifact, mock_llm_response
@@ -102,8 +102,8 @@ ready_for_analysis: true
             mock_llm.return_value = mock_llm_response(yaml_response)
             result = executor.execute(context)
 
-        assert result.status == StageStatus.COMPLETED
-        assert "Google" in result.artifacts["clarified_requirements"]
+        assert result.status == StageStatus.COMPLETED, "Expected result.status to equal StageStatus.COMPLETED"
+        assert "Google" in result.artifacts["clarified_requirements"], "Expected 'Google' in result.artifacts['clarified..."
 
     def test_handles_feedback_as_answers(
         self, tmp_path, sample_intake_artifact, mock_llm_response
@@ -172,7 +172,7 @@ ready_for_analysis: true
             mock_llm.return_value = mock_llm_response(yaml_response)
             result = executor.execute(context)
 
-        assert result.artifacts.get("ready_for_analysis") is True
+        assert result.artifacts.get("ready_for_analysis") is True, "Expected result.artifacts.get('ready... is True"
 
     def test_creates_passthrough_artifact(self, tmp_path, sample_intake_artifact):
         """Passthrough artifact created when no clarification needed."""
@@ -192,10 +192,10 @@ ready_for_analysis: true
 
         result = executor.execute(context)
 
-        assert result.status == StageStatus.COMPLETED
+        assert result.status == StageStatus.COMPLETED, "Expected result.status to equal StageStatus.COMPLETED"
         # Passthrough should carry forward key fields
-        assert result.artifacts["request_id"] == sample_intake_artifact["request_id"]
-        assert "clarified_requirements" in result.artifacts
+        assert result.artifacts["request_id"] == sample_intake_artifact["request_id"], "Expected result.artifacts['request_id'] to equal sample_intake_artifact['req..."
+        assert "clarified_requirements" in result.artifacts, "Expected 'clarified_requirements' in result.artifacts"
 
     def test_validates_output_requirements(self, tmp_path):
         """Output validation checks for clarified_requirements."""
@@ -210,8 +210,8 @@ ready_for_analysis: true
         }
 
         validation = executor.validate_output(artifact)
-        assert not validation.valid
-        assert any("clarified_requirements" in e for e in validation.errors)
+        assert not validation.valid, "Assertion failed"
+        assert any("clarified_requirements" in e for e in validation.errors), "Expected any() to be truthy"
 
     def test_carries_forward_request_id(
         self, tmp_path, sample_intake_artifact, mock_llm_response
@@ -252,7 +252,7 @@ ready_for_analysis: true
 
         validation = executor.validate_output(artifact)
         # Should warn about inconsistency
-        assert len(validation.warnings) >= 1 or not validation.valid
+        assert len(validation.warnings) >= 1 or not validation.valid, "Assertion failed"
 
 
 class TestCreateClarifyExecutor:
@@ -266,7 +266,7 @@ class TestCreateClarifyExecutor:
         )
 
         executor = create_clarify_executor()
-        assert isinstance(executor, ClarifyExecutor)
+        assert isinstance(executor, ClarifyExecutor), "Expected isinstance() to be truthy"
 
     def test_accepts_config_with_max_rounds(self):
         """Factory accepts config with max_rounds parameter."""
@@ -274,4 +274,4 @@ class TestCreateClarifyExecutor:
 
         config = {"max_rounds": 5}
         executor = create_clarify_executor(config)
-        assert executor.max_clarification_rounds == 5
+        assert executor.max_clarification_rounds == 5, "Expected executor.max_clarification_... to equal 5"

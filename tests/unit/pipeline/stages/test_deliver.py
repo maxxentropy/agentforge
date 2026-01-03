@@ -18,25 +18,25 @@ class TestDeliveryMode:
         """DeliveryMode.COMMIT has correct value."""
         from agentforge.core.pipeline.stages.deliver import DeliveryMode
 
-        assert DeliveryMode.COMMIT == "commit"
+        assert DeliveryMode.COMMIT == "commit", "Expected DeliveryMode.COMMIT to equal 'commit'"
 
     def test_delivery_mode_pr_value(self):
         """DeliveryMode.PR has correct value."""
         from agentforge.core.pipeline.stages.deliver import DeliveryMode
 
-        assert DeliveryMode.PR == "pr"
+        assert DeliveryMode.PR == "pr", "Expected DeliveryMode.PR to equal 'pr'"
 
     def test_delivery_mode_files_value(self):
         """DeliveryMode.FILES has correct value."""
         from agentforge.core.pipeline.stages.deliver import DeliveryMode
 
-        assert DeliveryMode.FILES == "files"
+        assert DeliveryMode.FILES == "files", "Expected DeliveryMode.FILES to equal 'files'"
 
     def test_delivery_mode_patch_value(self):
         """DeliveryMode.PATCH has correct value."""
         from agentforge.core.pipeline.stages.deliver import DeliveryMode
 
-        assert DeliveryMode.PATCH == "patch"
+        assert DeliveryMode.PATCH == "patch", "Expected DeliveryMode.PATCH to equal 'patch'"
 
 
 class TestDeliverPhaseExecutor:
@@ -47,30 +47,30 @@ class TestDeliverPhaseExecutor:
         from agentforge.core.pipeline.stages.deliver import DeliverPhaseExecutor
 
         executor = DeliverPhaseExecutor()
-        assert executor.stage_name == "deliver"
+        assert executor.stage_name == "deliver", "Expected executor.stage_name to equal 'deliver'"
 
     def test_artifact_type_is_deliverable(self):
         """DeliverPhaseExecutor has artifact_type 'deliverable'."""
         from agentforge.core.pipeline.stages.deliver import DeliverPhaseExecutor
 
         executor = DeliverPhaseExecutor()
-        assert executor.artifact_type == "deliverable"
+        assert executor.artifact_type == "deliverable", "Expected executor.artifact_type to equal 'deliverable'"
 
     def test_required_input_fields(self):
         """DeliverPhaseExecutor requires spec_id, final_files."""
         from agentforge.core.pipeline.stages.deliver import DeliverPhaseExecutor
 
         executor = DeliverPhaseExecutor()
-        assert "spec_id" in executor.required_input_fields
-        assert "final_files" in executor.required_input_fields
+        assert "spec_id" in executor.required_input_fields, "Expected 'spec_id' in executor.required_input_fields"
+        assert "final_files" in executor.required_input_fields, "Expected 'final_files' in executor.required_input_fields"
 
     def test_output_fields(self):
         """DeliverPhaseExecutor outputs expected fields."""
         from agentforge.core.pipeline.stages.deliver import DeliverPhaseExecutor
 
         executor = DeliverPhaseExecutor()
-        assert "spec_id" in executor.output_fields
-        assert "deliverable_type" in executor.output_fields
+        assert "spec_id" in executor.output_fields, "Expected 'spec_id' in executor.output_fields"
+        assert "deliverable_type" in executor.output_fields, "Expected 'deliverable_type' in executor.output_fields"
 
 
 class TestDeliverPhaseConfiguration:
@@ -81,35 +81,35 @@ class TestDeliverPhaseConfiguration:
         from agentforge.core.pipeline.stages.deliver import DeliverPhaseExecutor, DeliveryMode
 
         executor = DeliverPhaseExecutor()
-        assert executor.delivery_mode == DeliveryMode.COMMIT
+        assert executor.delivery_mode == DeliveryMode.COMMIT, "Expected executor.delivery_mode to equal DeliveryMode.COMMIT"
 
     def test_delivery_mode_from_config(self):
         """Delivery mode can be set from config."""
         from agentforge.core.pipeline.stages.deliver import DeliverPhaseExecutor, DeliveryMode
 
         executor = DeliverPhaseExecutor({"delivery_mode": DeliveryMode.PR})
-        assert executor.delivery_mode == DeliveryMode.PR
+        assert executor.delivery_mode == DeliveryMode.PR, "Expected executor.delivery_mode to equal DeliveryMode.PR"
 
     def test_auto_commit_default_false(self):
         """Auto commit defaults to False."""
         from agentforge.core.pipeline.stages.deliver import DeliverPhaseExecutor
 
         executor = DeliverPhaseExecutor()
-        assert executor.auto_commit is False
+        assert executor.auto_commit is False, "Expected executor.auto_commit is False"
 
     def test_auto_commit_from_config(self):
         """Auto commit can be set from config."""
         from agentforge.core.pipeline.stages.deliver import DeliverPhaseExecutor
 
         executor = DeliverPhaseExecutor({"auto_commit": True})
-        assert executor.auto_commit is True
+        assert executor.auto_commit is True, "Expected executor.auto_commit is True"
 
     def test_branch_prefix_from_config(self):
         """Branch prefix can be set from config."""
         from agentforge.core.pipeline.stages.deliver import DeliverPhaseExecutor
 
         executor = DeliverPhaseExecutor({"branch_prefix": "fix/"})
-        assert executor.branch_prefix == "fix/"
+        assert executor.branch_prefix == "fix/", "Expected executor.branch_prefix to equal 'fix/'"
 
 
 class TestDeliverPhaseDeliveryModes:
@@ -137,8 +137,8 @@ class TestDeliverPhaseDeliveryModes:
 
                 result = executor.execute(context)
 
-        assert result.status == StageStatus.COMPLETED
-        assert result.artifacts["deliverable_type"] == "commit"
+        assert result.status == StageStatus.COMPLETED, "Expected result.status to equal StageStatus.COMPLETED"
+        assert result.artifacts["deliverable_type"] == "commit", "Expected result.artifacts['deliverab... to equal 'commit'"
 
     def test_delivers_as_pr(self, sample_refactor_artifact, temp_git_project):
         """Delivers as pull request."""
@@ -168,9 +168,9 @@ class TestDeliverPhaseDeliveryModes:
 
                         result = executor.execute(context)
 
-        assert result.status == StageStatus.COMPLETED
-        assert result.artifacts["deliverable_type"] == "pr"
-        assert result.artifacts["pr_url"] == "https://github.com/test/pr/1"
+        assert result.status == StageStatus.COMPLETED, "Expected result.status to equal StageStatus.COMPLETED"
+        assert result.artifacts["deliverable_type"] == "pr", "Expected result.artifacts['deliverab... to equal 'pr'"
+        assert result.artifacts["pr_url"] == "https://github.com/test/pr/1", "Expected result.artifacts['pr_url'] to equal 'https://github.com/test/pr/1'"
 
     def test_delivers_as_files(self, sample_refactor_artifact, temp_git_project):
         """Delivers as files only."""
@@ -188,8 +188,8 @@ class TestDeliverPhaseDeliveryModes:
 
         result = executor.execute(context)
 
-        assert result.status == StageStatus.COMPLETED
-        assert result.artifacts["deliverable_type"] == "files"
+        assert result.status == StageStatus.COMPLETED, "Expected result.status to equal StageStatus.COMPLETED"
+        assert result.artifacts["deliverable_type"] == "files", "Expected result.artifacts['deliverab... to equal 'files'"
 
     def test_delivers_as_patch(self, sample_refactor_artifact, temp_git_project):
         """Delivers as patch file."""
@@ -210,9 +210,9 @@ class TestDeliverPhaseDeliveryModes:
 
             result = executor.execute(context)
 
-        assert result.status == StageStatus.COMPLETED
-        assert result.artifacts["deliverable_type"] == "patch"
-        assert "patch_file" in result.artifacts
+        assert result.status == StageStatus.COMPLETED, "Expected result.status to equal StageStatus.COMPLETED"
+        assert result.artifacts["deliverable_type"] == "patch", "Expected result.artifacts['deliverab... to equal 'patch'"
+        assert "patch_file" in result.artifacts, "Expected 'patch_file' in result.artifacts"
 
     def test_fails_on_unknown_delivery_mode(self, sample_refactor_artifact, temp_git_project):
         """Fails on unknown delivery mode."""
@@ -231,8 +231,8 @@ class TestDeliverPhaseDeliveryModes:
 
         result = executor.execute(context)
 
-        assert result.status == StageStatus.FAILED
-        assert "unknown" in result.error.lower()
+        assert result.status == StageStatus.FAILED, "Expected result.status to equal StageStatus.FAILED"
+        assert "unknown" in result.error.lower(), "Expected 'unknown' in result.error.lower()"
 
 
 class TestDeliverPhaseCommitDelivery:
@@ -246,8 +246,8 @@ class TestDeliverPhaseCommitDelivery:
 
         message = executor._generate_commit_message(sample_refactor_artifact)
 
-        assert "feat:" in message
-        assert sample_refactor_artifact["spec_id"] in message
+        assert "feat:" in message, "Expected 'feat:' in message"
+        assert sample_refactor_artifact["spec_id"] in message, "Expected sample_refactor_artifact['s... in message"
 
     def test_commit_message_includes_spec_id(self, sample_refactor_artifact):
         """Commit message includes spec ID."""
@@ -257,7 +257,7 @@ class TestDeliverPhaseCommitDelivery:
 
         message = executor._generate_commit_message(sample_refactor_artifact)
 
-        assert "SPEC-" in message
+        assert "SPEC-" in message, "Expected 'SPEC-' in message"
 
     def test_commit_message_includes_files(self, sample_refactor_artifact):
         """Commit message includes modified files."""
@@ -267,7 +267,7 @@ class TestDeliverPhaseCommitDelivery:
 
         message = executor._generate_commit_message(sample_refactor_artifact)
 
-        assert "Files modified" in message or "file" in message.lower()
+        assert "Files modified" in message or "file" in message.lower(), "Assertion failed"
 
     def test_commit_message_truncates_long_title(self):
         """Commit message truncates long title."""
@@ -285,7 +285,7 @@ class TestDeliverPhaseCommitDelivery:
 
         # Title line should be reasonable length
         first_line = message.split("\n")[0]
-        assert len(first_line) < 60
+        assert len(first_line) < 60, "Expected len(first_line) < 60"
 
     def test_stages_files_for_commit(self, sample_refactor_artifact, temp_git_project):
         """Stages files for commit."""
@@ -309,7 +309,7 @@ class TestDeliverPhaseCommitDelivery:
 
             staged = executor._stage_files(context, ["src/auth/oauth_provider.py"])
 
-        assert len(staged) == 1
+        assert len(staged) == 1, "Expected len(staged) to equal 1"
 
     def test_creates_commit_when_auto_commit(self, sample_refactor_artifact, temp_git_project):
         """Creates commit when auto_commit is enabled."""
@@ -336,8 +336,8 @@ class TestDeliverPhaseCommitDelivery:
 
                 result = executor.execute(context)
 
-        assert mock_commit.called
-        assert result.artifacts["commit_sha"] == "abc123"
+        assert mock_commit.called, "Expected mock_commit.called to be truthy"
+        assert result.artifacts["commit_sha"] == "abc123", "Expected result.artifacts['commit_sha'] to equal 'abc123'"
 
     def test_skips_commit_when_no_auto_commit(self, sample_refactor_artifact, temp_git_project):
         """Skips commit when auto_commit is disabled."""
@@ -361,8 +361,8 @@ class TestDeliverPhaseCommitDelivery:
 
             result = executor.execute(context)
 
-        assert result.artifacts["commit_sha"] is None
-        assert result.artifacts["status"] == "staged"
+        assert result.artifacts["commit_sha"] is None, "Expected result.artifacts['commit_sha'] is None"
+        assert result.artifacts["status"] == "staged", "Expected result.artifacts['status'] to equal 'staged'"
 
     def test_handles_no_changes_to_commit(self, sample_refactor_artifact, temp_git_project):
         """Handles case with no changes to commit."""
@@ -383,8 +383,8 @@ class TestDeliverPhaseCommitDelivery:
 
             result = executor.execute(context)
 
-        assert result.status == StageStatus.COMPLETED
-        assert result.artifacts["status"] == "no_changes"
+        assert result.status == StageStatus.COMPLETED, "Expected result.status to equal StageStatus.COMPLETED"
+        assert result.artifacts["status"] == "no_changes", "Expected result.artifacts['status'] to equal 'no_changes'"
 
 
 class TestDeliverPhasePRDelivery:
@@ -409,7 +409,7 @@ class TestDeliverPhasePRDelivery:
 
             result = executor._create_branch(context, "feature/test-branch")
 
-        assert result is True
+        assert result is True, "Expected result is True"
 
     def test_pushes_branch_to_remote(self, sample_refactor_artifact, temp_git_project):
         """Pushes branch to remote in _create_pull_request."""
@@ -435,7 +435,7 @@ class TestDeliverPhasePRDelivery:
 
         # Should have called git push
         push_calls = [c for c in mock_subprocess.call_args_list if "push" in str(c)]
-        assert len(push_calls) >= 1
+        assert len(push_calls) >= 1, "Expected len(push_calls) >= 1"
 
     def test_creates_pull_request(self, sample_refactor_artifact, temp_git_project):
         """Creates pull request via gh CLI."""
@@ -459,7 +459,7 @@ class TestDeliverPhasePRDelivery:
 
             pr_url = executor._create_pull_request(context, "feature/test", sample_refactor_artifact)
 
-        assert pr_url == "https://github.com/test/pr/1"
+        assert pr_url == "https://github.com/test/pr/1", "Expected pr_url to equal 'https://github.com/test/pr/1'"
 
     def test_handles_pr_creation_failure(self, sample_refactor_artifact, temp_git_project):
         """Handles PR creation failure gracefully."""
@@ -480,7 +480,7 @@ class TestDeliverPhasePRDelivery:
 
             pr_url = executor._create_pull_request(context, "feature/test", sample_refactor_artifact)
 
-        assert pr_url is None
+        assert pr_url is None, "Expected pr_url is None"
 
 
 class TestDeliverPhasePatchDelivery:
@@ -507,7 +507,7 @@ class TestDeliverPhasePatchDelivery:
 
             patch_content = executor._generate_patch(context)
 
-        assert "diff" in patch_content
+        assert "diff" in patch_content, "Expected 'diff' in patch_content"
 
     def test_saves_patch_file(self, sample_refactor_artifact, temp_git_project):
         """Saves patch to file."""
@@ -528,8 +528,8 @@ class TestDeliverPhasePatchDelivery:
 
             result = executor.execute(context)
 
-        assert "patch_file" in result.artifacts
-        assert Path(result.artifacts["patch_file"]).exists()
+        assert "patch_file" in result.artifacts, "Expected 'patch_file' in result.artifacts"
+        assert Path(result.artifacts["patch_file"]).exists(), "Expected Path(result.artifacts['patc...() to be truthy"
 
     def test_patch_file_uses_spec_id(self, sample_refactor_artifact, temp_git_project):
         """Patch file name uses spec ID."""
@@ -551,7 +551,7 @@ class TestDeliverPhasePatchDelivery:
             result = executor.execute(context)
 
         patch_file = result.artifacts["patch_file"]
-        assert "SPEC-" in patch_file.upper() or "spec" in patch_file.lower()
+        assert "SPEC-" in patch_file.upper() or "spec" in patch_file.lower(), "Assertion failed"
 
 
 class TestDeliverPhaseFilesDelivery:
@@ -576,7 +576,7 @@ class TestDeliverPhaseFilesDelivery:
 
         # Should not call any subprocess (git) commands
         mock_subprocess.assert_not_called()
-        assert result.status == StageStatus.COMPLETED
+        assert result.status == StageStatus.COMPLETED, "Expected result.status to equal StageStatus.COMPLETED"
 
     def test_files_mode_returns_file_list(self, sample_refactor_artifact, temp_git_project):
         """Files mode returns file list."""
@@ -594,8 +594,8 @@ class TestDeliverPhaseFilesDelivery:
 
         result = executor.execute(context)
 
-        assert "files_modified" in result.artifacts
-        assert len(result.artifacts["files_modified"]) > 0
+        assert "files_modified" in result.artifacts, "Expected 'files_modified' in result.artifacts"
+        assert len(result.artifacts["files_modified"]) > 0, "Expected len(result.artifacts['files... > 0"
 
 
 class TestDeliverPhaseSummaryGeneration:
@@ -609,7 +609,7 @@ class TestDeliverPhaseSummaryGeneration:
 
         summary = executor._generate_summary(sample_refactor_artifact)
 
-        assert "Delivery Summary" in summary or "##" in summary
+        assert "Delivery Summary" in summary or "##" in summary, "Assertion failed"
 
     def test_summary_includes_spec_id(self, sample_refactor_artifact):
         """Summary includes spec ID."""
@@ -619,7 +619,7 @@ class TestDeliverPhaseSummaryGeneration:
 
         summary = executor._generate_summary(sample_refactor_artifact)
 
-        assert sample_refactor_artifact["spec_id"] in summary
+        assert sample_refactor_artifact["spec_id"] in summary, "Expected sample_refactor_artifact['s... in summary"
 
     def test_summary_includes_file_count(self, sample_refactor_artifact):
         """Summary includes file count."""
@@ -629,7 +629,7 @@ class TestDeliverPhaseSummaryGeneration:
 
         summary = executor._generate_summary(sample_refactor_artifact)
 
-        assert "Files" in summary or "file" in summary.lower()
+        assert "Files" in summary or "file" in summary.lower(), "Assertion failed"
 
     def test_summary_includes_test_results(self, sample_refactor_artifact):
         """Summary includes test results."""
@@ -639,7 +639,7 @@ class TestDeliverPhaseSummaryGeneration:
 
         summary = executor._generate_summary(sample_refactor_artifact)
 
-        assert "Test" in summary or "passed" in summary.lower()
+        assert "Test" in summary or "passed" in summary.lower(), "Assertion failed"
 
 
 class TestDeliverPhaseGitOperations:
@@ -672,7 +672,7 @@ class TestDeliverPhaseGitOperations:
             ]
             staged = executor._stage_files(context, files)
 
-        assert len(staged) == 2
+        assert len(staged) == 2, "Expected len(staged) to equal 2"
 
     def test_handles_staging_failure(self, sample_refactor_artifact, temp_git_project):
         """Handles file staging failure."""
@@ -696,7 +696,7 @@ class TestDeliverPhaseGitOperations:
             staged = executor._stage_files(context, ["nonexistent.py"])
 
         # Should handle gracefully and return empty list
-        assert staged == []
+        assert staged == [], "Expected staged to equal []"
 
     def test_gets_commit_sha(self, sample_refactor_artifact, temp_git_project):
         """Gets commit SHA after creating commit."""
@@ -720,7 +720,7 @@ class TestDeliverPhaseGitOperations:
 
             sha = executor._create_commit(context, "Test commit")
 
-        assert sha == "abc123def456"
+        assert sha == "abc123def456", "Expected sha to equal 'abc123def456'"
 
 
 class TestDeliverPhaseValidation:
@@ -741,7 +741,7 @@ class TestDeliverPhaseValidation:
 
         validation = executor.validate_output(artifact)
 
-        assert not validation.valid
+        assert not validation.valid, "Assertion failed"
 
     def test_validates_files_modified_present(self):
         """Validates that files_modified is present."""
@@ -759,7 +759,7 @@ class TestDeliverPhaseValidation:
         validation = executor.validate_output(artifact)
 
         # Should fail or warn
-        assert not validation.valid or len(validation.warnings) > 0
+        assert not validation.valid or len(validation.warnings) > 0, "Assertion failed"
 
 
 class TestDeliverPhaseEdgeCases:
@@ -787,7 +787,7 @@ class TestDeliverPhaseEdgeCases:
         result = executor.execute(context)
 
         # Should handle gracefully
-        assert result.status == StageStatus.COMPLETED
+        assert result.status == StageStatus.COMPLETED, "Expected result.status to equal StageStatus.COMPLETED"
 
     def test_handles_dict_file_entries(self, sample_refactor_artifact, temp_git_project):
         """Handles file entries that are dicts with 'path' key."""
@@ -814,7 +814,7 @@ class TestDeliverPhaseEdgeCases:
         summary = executor._generate_summary(artifact)
 
         # Should handle dict entries
-        assert "file1.py" in summary or "Files" in summary
+        assert "file1.py" in summary or "Files" in summary, "Assertion failed"
 
     def test_handles_git_not_available(self, sample_refactor_artifact, temp_project_path):
         """Handles case where git is not available."""
@@ -836,7 +836,7 @@ class TestDeliverPhaseEdgeCases:
             staged = executor._stage_files(context, ["file.py"])
 
         # Should handle gracefully
-        assert staged == []
+        assert staged == [], "Expected staged to equal []"
 
 
 class TestCreateDeliverExecutor:
@@ -851,7 +851,7 @@ class TestCreateDeliverExecutor:
 
         executor = create_deliver_executor()
 
-        assert isinstance(executor, DeliverPhaseExecutor)
+        assert isinstance(executor, DeliverPhaseExecutor), "Expected isinstance() to be truthy"
 
     def test_passes_config(self):
         """Factory passes config to executor."""
@@ -864,5 +864,5 @@ class TestCreateDeliverExecutor:
 
         executor = create_deliver_executor(config)
 
-        assert executor.delivery_mode == DeliveryMode.PR
-        assert executor.auto_commit is True
+        assert executor.delivery_mode == DeliveryMode.PR, "Expected executor.delivery_mode to equal DeliveryMode.PR"
+        assert executor.auto_commit is True, "Expected executor.auto_commit is True"

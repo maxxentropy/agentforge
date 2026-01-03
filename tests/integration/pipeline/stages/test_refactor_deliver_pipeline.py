@@ -32,9 +32,9 @@ class TestRefactorIntegration:
         )
 
         # Verify context receives GREEN artifact correctly
-        assert context.input_artifacts["spec_id"] == "SPEC-20260102-0001"
-        assert len(context.input_artifacts["implementation_files"]) == 1
-        assert context.input_artifacts["all_tests_pass"] is True
+        assert context.input_artifacts["spec_id"] == "SPEC-20260102-0001", "Expected context.input_artifacts['sp... to equal 'SPEC-20260102-0001'"
+        assert len(context.input_artifacts["implementation_files"]) == 1, "Expected len(context.input_artifacts... to equal 1"
+        assert context.input_artifacts["all_tests_pass"] is True, "Expected context.input_artifacts['al... is True"
 
     def test_refactor_maintains_passing_tests(
         self,
@@ -64,9 +64,9 @@ class TestRefactorIntegration:
 
                 result = executor.execute(context)
 
-        assert result.status == StageStatus.COMPLETED
+        assert result.status == StageStatus.COMPLETED, "Expected result.status to equal StageStatus.COMPLETED"
         # Final tests should still pass
-        assert result.artifacts["test_results"]["failed"] == 0
+        assert result.artifacts["test_results"]["failed"] == 0, "Expected result.artifacts['test_resu... to equal 0"
 
     def test_refactor_applies_improvements(
         self,
@@ -106,7 +106,7 @@ class TestRefactorIntegration:
 
                     result = executor.execute(context)
 
-        assert result.status == StageStatus.COMPLETED
+        assert result.status == StageStatus.COMPLETED, "Expected result.status to equal StageStatus.COMPLETED"
 
     def test_refactor_skips_when_clean(
         self,
@@ -134,9 +134,9 @@ class TestRefactorIntegration:
 
                 result = executor.execute(context)
 
-        assert result.status == StageStatus.COMPLETED
+        assert result.status == StageStatus.COMPLETED, "Expected result.status to equal StageStatus.COMPLETED"
         # No refactoring was needed
-        assert result.artifacts.get("refactored_files", []) == []
+        assert result.artifacts.get("refactored_files", []) == [], "Expected result.artifacts.get('refac... to equal []"
 
 
 class TestDeliverIntegration:
@@ -161,9 +161,9 @@ class TestDeliverIntegration:
         )
 
         # Verify context receives REFACTOR artifact correctly
-        assert context.input_artifacts["spec_id"] == "SPEC-20260102-0001"
-        assert len(context.input_artifacts["final_files"]) == 2
-        assert context.input_artifacts["conformance_passed"] is True
+        assert context.input_artifacts["spec_id"] == "SPEC-20260102-0001", "Expected context.input_artifacts['sp... to equal 'SPEC-20260102-0001'"
+        assert len(context.input_artifacts["final_files"]) == 2, "Expected len(context.input_artifacts... to equal 2"
+        assert context.input_artifacts["conformance_passed"] is True, "Expected context.input_artifacts['co... is True"
 
     def test_deliver_stages_files(
         self,
@@ -188,8 +188,8 @@ class TestDeliverIntegration:
 
             result = executor.execute(context)
 
-        assert result.status == StageStatus.COMPLETED
-        assert len(result.artifacts.get("files_staged", [])) == 2
+        assert result.status == StageStatus.COMPLETED, "Expected result.status to equal StageStatus.COMPLETED"
+        assert len(result.artifacts.get("files_staged", [])) == 2, "Expected len(result.artifacts.get('f... to equal 2"
 
     def test_deliver_generates_summary(
         self,
@@ -211,9 +211,9 @@ class TestDeliverIntegration:
 
         result = executor.execute(context)
 
-        assert result.status == StageStatus.COMPLETED
-        assert "summary" in result.artifacts
-        assert len(result.artifacts["summary"]) > 0
+        assert result.status == StageStatus.COMPLETED, "Expected result.status to equal StageStatus.COMPLETED"
+        assert "summary" in result.artifacts, "Expected 'summary' in result.artifacts"
+        assert len(result.artifacts["summary"]) > 0, "Expected len(result.artifacts['summa... > 0"
 
 
 class TestFullPipelineIntegration:
@@ -247,7 +247,7 @@ class TestFullPipelineIntegration:
 
                 refactor_result = refactor_executor.execute(refactor_context)
 
-        assert refactor_result.status == StageStatus.COMPLETED
+        assert refactor_result.status == StageStatus.COMPLETED, "Expected refactor_result.status to equal StageStatus.COMPLETED"
 
         # DELIVER Phase (using REFACTOR artifact)
         deliver_executor = DeliverPhaseExecutor({"delivery_mode": DeliveryMode.FILES})
@@ -262,8 +262,8 @@ class TestFullPipelineIntegration:
 
         deliver_result = deliver_executor.execute(deliver_context)
 
-        assert deliver_result.status == StageStatus.COMPLETED
-        assert deliver_result.artifacts["spec_id"] == sample_green_artifact_for_refactor["spec_id"]
+        assert deliver_result.status == StageStatus.COMPLETED, "Expected deliver_result.status to equal StageStatus.COMPLETED"
+        assert deliver_result.artifacts["spec_id"] == sample_green_artifact_for_refactor["spec_id"], "Expected deliver_result.artifacts['s... to equal sample_green_artifact_for_r..."
 
     def test_full_pipeline_completes(
         self,
@@ -313,9 +313,9 @@ class TestFullPipelineIntegration:
             deliver_result = deliver_executor.execute(deliver_context)
 
         # Verify full pipeline completed
-        assert refactor_result.status == StageStatus.COMPLETED
-        assert deliver_result.status == StageStatus.COMPLETED
-        assert deliver_result.artifacts["deliverable_type"] == "commit"
+        assert refactor_result.status == StageStatus.COMPLETED, "Expected refactor_result.status to equal StageStatus.COMPLETED"
+        assert deliver_result.status == StageStatus.COMPLETED, "Expected deliver_result.status to equal StageStatus.COMPLETED"
+        assert deliver_result.artifacts["deliverable_type"] == "commit", "Expected deliver_result.artifacts['d... to equal 'commit'"
 
     def test_full_pipeline_handles_errors(
         self,
@@ -349,7 +349,7 @@ class TestFullPipelineIntegration:
             refactor_result = refactor_executor.execute(refactor_context)
 
         # Should fail because tests don't pass
-        assert refactor_result.status == StageStatus.FAILED
+        assert refactor_result.status == StageStatus.FAILED, "Expected refactor_result.status to equal StageStatus.FAILED"
 
 
 class TestStageRegistration:
@@ -364,8 +364,8 @@ class TestStageRegistration:
         registry.register("refactor", create_refactor_executor)
 
         executor = registry.get("refactor")
-        assert executor is not None
-        assert executor.stage_name == "refactor"
+        assert executor is not None, "Expected executor is not None"
+        assert executor.stage_name == "refactor", "Expected executor.stage_name to equal 'refactor'"
 
     def test_deliver_executor_registers(self):
         """DELIVER executor can be registered in registry."""
@@ -376,8 +376,8 @@ class TestStageRegistration:
         registry.register("deliver", create_deliver_executor)
 
         executor = registry.get("deliver")
-        assert executor is not None
-        assert executor.stage_name == "deliver"
+        assert executor is not None, "Expected executor is not None"
+        assert executor.stage_name == "deliver", "Expected executor.stage_name to equal 'deliver'"
 
     def test_register_delivery_stages(self):
         """register_delivery_stages registers both stages."""
@@ -390,7 +390,7 @@ class TestStageRegistration:
         refactor = registry.get("refactor")
         deliver = registry.get("deliver")
 
-        assert refactor is not None
-        assert deliver is not None
-        assert refactor.stage_name == "refactor"
-        assert deliver.stage_name == "deliver"
+        assert refactor is not None, "Expected refactor is not None"
+        assert deliver is not None, "Expected deliver is not None"
+        assert refactor.stage_name == "refactor", "Expected refactor.stage_name to equal 'refactor'"
+        assert deliver.stage_name == "deliver", "Expected deliver.stage_name to equal 'deliver'"

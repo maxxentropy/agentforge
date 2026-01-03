@@ -42,10 +42,10 @@ class TestSessionManagerCreation:
 
         session = manager.create()
 
-        assert session is not None
-        assert session.session_id.startswith("session_")
-        assert session.state == SessionState.ACTIVE
-        assert session.token_budget.total_budget == 100000
+        assert session is not None, "Expected session is not None"
+        assert session.session_id.startswith("session_"), "Expected session.session_id.startswith() to be truthy"
+        assert session.state == SessionState.ACTIVE, "Expected session.state to equal SessionState.ACTIVE"
+        assert session.token_budget.total_budget == 100000, "Expected session.token_budget.total_... to equal 100000"
 
     def test_create_with_workflow_and_budget(self, manager):
         """AC-002: create() accepts workflow_type and token_budget."""
@@ -54,8 +54,8 @@ class TestSessionManagerCreation:
             token_budget=50000
         )
 
-        assert session.workflow_type == "spec"
-        assert session.token_budget.total_budget == 50000
+        assert session.workflow_type == "spec", "Expected session.workflow_type to equal 'spec'"
+        assert session.token_budget.total_budget == 50000, "Expected session.token_budget.total_... to equal 50000"
 
     def test_create_persists_immediately(self, manager):
         """Session should be persisted immediately on creation."""
@@ -63,8 +63,8 @@ class TestSessionManagerCreation:
 
         # Should be loadable immediately
         loaded = manager.load(session.session_id)
-        assert loaded is not None
-        assert loaded.session_id == session.session_id
+        assert loaded is not None, "Expected loaded is not None"
+        assert loaded.session_id == session.session_id, "Expected loaded.session_id to equal session.session_id"
 
     def test_create_when_session_active_returns_error(self, manager):
         """SessionAlreadyActive error when create() called with active session."""
@@ -98,7 +98,7 @@ class TestSessionManagerStateTransitions:
         manager.create()
         session = manager.pause()
 
-        assert session.state == SessionState.PAUSED
+        assert session.state == SessionState.PAUSED, "Expected session.state to equal SessionState.PAUSED"
 
     def test_pause_records_history(self, manager):
         """AC-004: pause() records history entry."""
@@ -107,7 +107,7 @@ class TestSessionManagerStateTransitions:
 
         manager.pause()
 
-        assert len(manager.current_session.history) > initial_history_len
+        assert len(manager.current_session.history) > initial_history_len, "Expected len(manager.current_session... > initial_history_len"
 
     def test_resume_transitions_to_active(self, manager):
         """AC-005: resume() transitions PAUSED to ACTIVE."""
@@ -117,7 +117,7 @@ class TestSessionManagerStateTransitions:
         manager.pause()
         session = manager.resume()
 
-        assert session.state == SessionState.ACTIVE
+        assert session.state == SessionState.ACTIVE, "Expected session.state to equal SessionState.ACTIVE"
 
     def test_resume_records_history(self, manager):
         """AC-005: resume() records history entry."""
@@ -127,7 +127,7 @@ class TestSessionManagerStateTransitions:
 
         manager.resume()
 
-        assert len(manager.current_session.history) > history_before_resume
+        assert len(manager.current_session.history) > history_before_resume, "Expected len(manager.current_session... > history_before_resume"
 
     def test_complete_transitions_to_completed(self, manager):
         """complete() transitions to COMPLETED (terminal)."""
@@ -136,8 +136,8 @@ class TestSessionManagerStateTransitions:
         manager.create()
         session = manager.complete()
 
-        assert session.state == SessionState.COMPLETED
-        assert session.completed_at is not None
+        assert session.state == SessionState.COMPLETED, "Expected session.state to equal SessionState.COMPLETED"
+        assert session.completed_at is not None, "Expected session.completed_at is not None"
 
     def test_abort_transitions_to_aborted(self, manager):
         """abort() transitions to ABORTED (terminal)."""
@@ -146,8 +146,8 @@ class TestSessionManagerStateTransitions:
         manager.create()
         session = manager.abort(reason="Test abort")
 
-        assert session.state == SessionState.ABORTED
-        assert session.completed_at is not None
+        assert session.state == SessionState.ABORTED, "Expected session.state to equal SessionState.ABORTED"
+        assert session.completed_at is not None, "Expected session.completed_at is not None"
 
     def test_pause_from_completed_fails(self, manager):
         """AC-006: Cannot transition from COMPLETED state."""
@@ -192,7 +192,7 @@ class TestSessionManagerPhaseAdvancement:
         manager.create(initial_phase="analyze")
         session = manager.advance_phase("implement")
 
-        assert session.current_phase == "implement"
+        assert session.current_phase == "implement", "Expected session.current_phase to equal 'implement'"
 
     def test_advance_phase_triggers_checkpoint(self, manager):
         """AC-017: advance_phase() triggers auto-checkpoint."""
@@ -201,7 +201,7 @@ class TestSessionManagerPhaseAdvancement:
 
         # Should be persisted
         loaded = manager.load(manager.current_session.session_id)
-        assert loaded.current_phase == "implement"
+        assert loaded.current_phase == "implement", "Expected loaded.current_phase to equal 'implement'"
 
     def test_advance_phase_records_history(self, manager):
         """AC-017: advance_phase() records history."""
@@ -210,7 +210,7 @@ class TestSessionManagerPhaseAdvancement:
 
         manager.advance_phase("implement")
 
-        assert len(manager.current_session.history) > history_before
+        assert len(manager.current_session.history) > history_before, "Expected len(manager.current_session... > history_before"
 
     def test_tdflow_phase_transitions(self, manager):
         """AC-018: TDFLOW phase transitions trigger checkpoints."""
@@ -220,7 +220,7 @@ class TestSessionManagerPhaseAdvancement:
         manager.advance_phase("refactor")
 
         loaded = manager.load(manager.current_session.session_id)
-        assert loaded.current_phase == "refactor"
+        assert loaded.current_phase == "refactor", "Expected loaded.current_phase to equal 'refactor'"
 
 
 class TestSessionManagerTokenBudget:
@@ -244,8 +244,8 @@ class TestSessionManagerTokenBudget:
         manager.create()
         manager.record_tokens(50000)
 
-        assert manager.current_session.token_budget.tokens_used == 50000
-        assert manager.current_session.token_budget.tokens_remaining == 50000
+        assert manager.current_session.token_budget.tokens_used == 50000, "Expected manager.current_session.tok... to equal 50000"
+        assert manager.current_session.token_budget.tokens_remaining == 50000, "Expected manager.current_session.tok... to equal 50000"
 
     def test_record_tokens_returns_warning_at_80_percent(self, manager):
         """AC-014: Warning returned at 80% utilization."""
@@ -253,7 +253,7 @@ class TestSessionManagerTokenBudget:
         manager.record_tokens(80000)
 
         # Should indicate warning
-        assert manager.current_session.token_budget.is_warning is True
+        assert manager.current_session.token_budget.is_warning is True, "Expected manager.current_session.tok... is True"
 
     def test_extend_budget_increases_total(self, manager):
         """AC-016: extend_budget() increases total."""
@@ -262,8 +262,8 @@ class TestSessionManagerTokenBudget:
 
         manager.extend_budget(50000)
 
-        assert manager.current_session.token_budget.total_budget == 150000
-        assert manager.current_session.token_budget.can_continue(40000) is True
+        assert manager.current_session.token_budget.total_budget == 150000, "Expected manager.current_session.tok... to equal 150000"
+        assert manager.current_session.token_budget.can_continue(40000) is True, "Expected manager.current_session.tok... is True"
 
 
 class TestSessionManagerArtifacts:
@@ -288,10 +288,10 @@ class TestSessionManagerArtifacts:
         manager.add_artifact("src/foo.py", "created")
 
         artifacts = manager.current_session.artifacts
-        assert len(artifacts) == 1
-        assert artifacts[0].path == "src/foo.py"
-        assert artifacts[0].artifact_type == "created"
-        assert artifacts[0].phase == "implement"
+        assert len(artifacts) == 1, "Expected len(artifacts) to equal 1"
+        assert artifacts[0].path == "src/foo.py", "Expected artifacts[0].path to equal 'src/foo.py'"
+        assert artifacts[0].artifact_type == "created", "Expected artifacts[0].artifact_type to equal 'created'"
+        assert artifacts[0].phase == "implement", "Expected artifacts[0].phase to equal 'implement'"
 
 
 class TestSessionManagerCheckpointing:
@@ -317,10 +317,10 @@ class TestSessionManagerCheckpointing:
 
         path = manager.checkpoint_session()
 
-        assert path.exists()
+        assert path.exists(), "Expected path.exists() to be truthy"
         loaded = manager.load(manager.current_session.session_id)
-        assert loaded.token_budget.tokens_used == 5000
-        assert loaded.current_phase == "analyze"
+        assert loaded.token_budget.tokens_used == 5000, "Expected loaded.token_budget.tokens_... to equal 5000"
+        assert loaded.current_phase == "analyze", "Expected loaded.current_phase to equal 'analyze'"
 
     def test_advance_phase_auto_checkpoints(self, manager):
         """AC-021: advance_phase() automatically checkpoints."""
@@ -329,7 +329,7 @@ class TestSessionManagerCheckpointing:
 
         # State should be persisted
         loaded = manager.load(manager.current_session.session_id)
-        assert loaded.current_phase == "implement"
+        assert loaded.current_phase == "implement", "Expected loaded.current_phase to equal 'implement'"
 
 
 class TestSessionManagerCleanup:
@@ -361,8 +361,8 @@ class TestSessionManagerCleanup:
         # Cleanup with 0 days (remove all completed)
         deleted = manager.cleanup_old_sessions(days=0)
 
-        assert session_id in deleted
-        assert not manager.store.exists(session_id)
+        assert session_id in deleted, "Expected session_id in deleted"
+        assert not manager.store.exists(session_id), "Assertion failed"
 
     def test_cleanup_preserves_paused_sessions(self, manager):
         """AC-026: cleanup preserves PAUSED sessions regardless of age."""
@@ -374,8 +374,8 @@ class TestSessionManagerCleanup:
 
         deleted = manager.cleanup_old_sessions(days=0)
 
-        assert session_id not in deleted
-        assert manager.store.exists(session_id)
+        assert session_id not in deleted, "Expected session_id not in deleted"
+        assert manager.store.exists(session_id), "Expected manager.store.exists() to be truthy"
 
     def test_cleanup_preserves_active_sessions(self, manager):
         """Active sessions never deleted by cleanup."""
@@ -386,8 +386,8 @@ class TestSessionManagerCleanup:
 
         deleted = manager.cleanup_old_sessions(days=0)
 
-        assert session_id not in deleted
-        assert manager.store.exists(session_id)
+        assert session_id not in deleted, "Expected session_id not in deleted"
+        assert manager.store.exists(session_id), "Expected manager.store.exists() to be truthy"
 
     def test_cleanup_dry_run_returns_but_does_not_delete(self, manager):
         """AC-027: dry_run=True previews without deleting."""
@@ -400,8 +400,8 @@ class TestSessionManagerCleanup:
         # Dry run
         would_delete = manager.cleanup_old_sessions(days=0, dry_run=True)
 
-        assert session_id in would_delete
-        assert manager.store.exists(session_id)  # Still exists
+        assert session_id in would_delete, "Expected session_id in would_delete"
+        assert manager.store.exists(session_id), "Expected manager.store.exists() to be truthy"# Still exists
 
 
 class TestSessionManagerTestability:
@@ -420,7 +420,7 @@ class TestSessionManagerTestability:
             manager = SessionManager(store=store)
 
             session = manager.create()
-            assert session is not None
+            assert session is not None, "Expected session is not None"
 
             loaded = manager.load(session.session_id)
-            assert loaded is not None
+            assert loaded is not None, "Expected loaded is not None"

@@ -358,19 +358,20 @@ rules: []
         """Load built-in operation contracts."""
         contracts = load_all_operation_contracts()
 
-        # We now have 9 operation contracts
-        assert len(contracts) >= 9
+        # We now have 10 operation contracts
+        assert len(contracts) >= 10
         # Original 3
         assert "operation.tool-usage.v1" in contracts
         assert "operation.git.v1" in contracts
         assert "operation.safety.v1" in contracts
-        # New 6 design/architecture contracts
+        # New 7 design/architecture contracts
         assert "operation.code-generation.v1" in contracts
         assert "operation.testing-patterns.v1" in contracts
         assert "operation.error-handling.v1" in contracts
         assert "operation.api-design.v1" in contracts
         assert "operation.async-patterns.v1" in contracts
         assert "operation.observability.v1" in contracts
+        assert "operation.design-patterns.v1" in contracts
 
     def test_load_skips_invalid_contracts(self, tmp_path):
         """Invalid contracts are skipped with warning."""
@@ -603,6 +604,47 @@ class TestBuiltinContracts:
         # Tracing
         assert contract.get_rule("trace-all-requests") is not None
         assert contract.get_rule("span-naming") is not None
+
+    def test_design_patterns_contract(self, manager):
+        """Design patterns contract covers GoF and architectural patterns."""
+        contract = manager.contracts.get("operation.design-patterns.v1")
+
+        assert contract is not None
+        # Creational patterns
+        assert contract.get_rule("factory-method") is not None
+        assert contract.get_rule("abstract-factory") is not None
+        assert contract.get_rule("builder-pattern") is not None
+        assert contract.get_rule("singleton-pattern") is not None
+        assert contract.get_rule("prototype-pattern") is not None
+        # Structural patterns
+        assert contract.get_rule("adapter-pattern") is not None
+        assert contract.get_rule("decorator-pattern") is not None
+        assert contract.get_rule("facade-pattern") is not None
+        assert contract.get_rule("proxy-pattern") is not None
+        assert contract.get_rule("composite-pattern") is not None
+        assert contract.get_rule("bridge-pattern") is not None
+        assert contract.get_rule("flyweight-pattern") is not None
+        # Behavioral patterns
+        assert contract.get_rule("strategy-pattern") is not None
+        assert contract.get_rule("observer-pattern") is not None
+        assert contract.get_rule("command-pattern") is not None
+        assert contract.get_rule("template-method-pattern") is not None
+        assert contract.get_rule("state-pattern") is not None
+        assert contract.get_rule("chain-of-responsibility") is not None
+        assert contract.get_rule("mediator-pattern") is not None
+        assert contract.get_rule("iterator-pattern") is not None
+        assert contract.get_rule("visitor-pattern") is not None
+        assert contract.get_rule("memento-pattern") is not None
+        # Architectural patterns
+        assert contract.get_rule("repository-pattern") is not None
+        assert contract.get_rule("unit-of-work-pattern") is not None
+        assert contract.get_rule("cqrs-pattern") is not None
+        assert contract.get_rule("event-sourcing-pattern") is not None
+        # Modern patterns
+        assert contract.get_rule("dependency-injection-container") is not None
+        assert contract.get_rule("circuit-breaker-pattern") is not None
+        assert contract.get_rule("saga-pattern") is not None
+        assert contract.get_rule("specification-pattern") is not None
 
     def test_all_contracts_have_rationales(self, manager):
         """All rules have rationales for human understanding."""

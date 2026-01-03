@@ -254,78 +254,94 @@ class ConformanceTools:
         Returns:
             ToolResult with pass/fail and any violations found
         """
-        check_id = params.get("check_id")
-        file_path = params.get("file_path")
+        # Validate parameters
+        validation_error = self._validate_check_params(params)
+        if validation_error:
+            return validation_error
 
-        if not check_id:
+        check_id = params["check_id"]
+        file_path = params["file_path"]
+
+        # Resolve resources
+        check, target_path, error = self._resolve_check_resources(check_id, file_path)
+        if error:
+            return error
+
+        try:
+            results: list[CheckResult] = execute_check(check, self.project_path, [target_path])
+            return self._format_check_results(results, check_id, file_path)
+        except Exception as e:
+            return ToolResult.failure_result("run_conformance_check", f"Error executing check: {e}")
+
+    def _validate_check_params(self, params: dict[str, Any]) -> ToolResult | None:
+        """Validate check parameters. Returns error ToolResult or None if valid."""
+        if not params.get("check_id"):
             return ToolResult.failure_result(
                 "run_conformance_check", "Missing required parameter: check_id"
             )
-
-        if not file_path:
+        if not params.get("file_path"):
             return ToolResult.failure_result(
                 "run_conformance_check", "Missing required parameter: file_path"
             )
+        return None
 
-        # Find the check definition
+    def _resolve_check_resources(
+        self, check_id: str, file_path: str
+    ) -> tuple[dict | None, Path | None, ToolResult | None]:
+        """Resolve check definition and target path. Returns (check, path, error)."""
         check = self._find_check_by_id(check_id)
         if not check:
-            return ToolResult.failure_result(
+            return None, None, ToolResult.failure_result(
                 "run_conformance_check",
                 f"Check not found: '{check_id}'. Ensure it's defined in a contract."
             )
 
-        # Resolve file path
         target_path = self.project_path / file_path
         if not target_path.exists():
-            return ToolResult.failure_result(
+            return None, None, ToolResult.failure_result(
                 "run_conformance_check", f"File not found: {file_path}"
             )
 
-        try:
-            # Execute the check directly
-            results: list[CheckResult] = execute_check(
-                check, self.project_path, [target_path]
+        return check, target_path, None
+
+    def _format_check_results(
+        self, results: list[CheckResult], check_id: str, file_path: str
+    ) -> ToolResult:
+        """Format check results into ToolResult."""
+        if not results:
+            return ToolResult.success_result(
+                "run_conformance_check",
+                f"✓ Check '{check_id}' PASSED for {file_path}\nNo violations found."
             )
 
-            # Format results
-            if not results:
-                return ToolResult.success_result(
-                    "run_conformance_check",
-                    f"✓ Check '{check_id}' PASSED for {file_path}\n"
-                    "No violations found."
-                )
+        violations = self._extract_violations(results)
 
-            # Check has violations
-            violations = []
-            for r in results:
-                if not r.passed:
-                    v_str = f"- Line {r.line_number or '?'}: {r.message}"
-                    if r.fix_hint:
-                        v_str += f"\n  Hint: {r.fix_hint}"
-                    violations.append(v_str)
-
-            if violations:
-                output_msg = (
-                    f"✗ Check '{check_id}' FAILED for {file_path}\n"
-                    f"Violations ({len(violations)}):\n" + "\n".join(violations)
-                )
-                return ToolResult(
-                    tool_name="run_conformance_check",
-                    success=False,
-                    output=output_msg,
-                    error=f"Check failed with {len(violations)} violation(s)",
-                )
-            else:
-                return ToolResult.success_result(
-                    "run_conformance_check",
-                    f"✓ Check '{check_id}' PASSED for {file_path}"
-                )
-
-        except Exception as e:
-            return ToolResult.failure_result(
-                "run_conformance_check", f"Error executing check: {e}"
+        if violations:
+            output_msg = (
+                f"✗ Check '{check_id}' FAILED for {file_path}\n"
+                f"Violations ({len(violations)}):\n" + "\n".join(violations)
             )
+            return ToolResult(
+                tool_name="run_conformance_check",
+                success=False,
+                output=output_msg,
+                error=f"Check failed with {len(violations)} violation(s)",
+            )
+
+        return ToolResult.success_result(
+            "run_conformance_check", f"✓ Check '{check_id}' PASSED for {file_path}"
+        )
+
+    def _extract_violations(self, results: list[CheckResult]) -> list[str]:
+        """Extract violation strings from check results."""
+        violations = []
+        for r in results:
+            if not r.passed:
+                v_str = f"- Line {r.line_number or '?'}: {r.message}"
+                if r.fix_hint:
+                    v_str += f"\n  Hint: {r.fix_hint}"
+                violations.append(v_str)
+        return violations
 
     def get_check_definition(self, name: str, params: dict[str, Any]) -> ToolResult:
         """
@@ -348,24 +364,39 @@ class ConformanceTools:
 
         check = self._find_check_by_id(check_id)
         if not check:
-            # List available checks to help
-            registry = self._get_registry()
-            contracts = registry.get_enabled_contracts()
-            available_ids = set()
-            for contract in contracts:
-                for c in contract.all_checks():
-                    if c.get("enabled", True):
-                        available_ids.add(c.get("id", "unknown"))
+            return self._check_not_found_error(check_id)
 
-            return ToolResult.failure_result(
-                "get_check_definition",
-                f"Check not found: '{check_id}'\n"
-                f"Available checks: {', '.join(sorted(available_ids)[:10])}"
-                + ("..." if len(available_ids) > 10 else "")
-            )
+        definition = self._build_check_definition(check)
+        output = yaml.dump(definition, default_flow_style=False, sort_keys=False)
 
-        # Format the check definition
-        definition = {
+        return ToolResult.success_result(
+            "get_check_definition", f"Check Definition for '{check_id}':\n{output}"
+        )
+
+    def _check_not_found_error(self, check_id: str) -> ToolResult:
+        """Build error result with available check IDs."""
+        available_ids = self._get_available_check_ids()
+        ids_display = ', '.join(sorted(available_ids)[:10])
+        suffix = "..." if len(available_ids) > 10 else ""
+
+        return ToolResult.failure_result(
+            "get_check_definition",
+            f"Check not found: '{check_id}'\nAvailable checks: {ids_display}{suffix}"
+        )
+
+    def _get_available_check_ids(self) -> set[str]:
+        """Get all available check IDs from enabled contracts."""
+        registry = self._get_registry()
+        available_ids: set[str] = set()
+        for contract in registry.get_enabled_contracts():
+            for c in contract.all_checks():
+                if c.get("enabled", True):
+                    available_ids.add(c.get("id", "unknown"))
+        return available_ids
+
+    def _build_check_definition(self, check: dict) -> dict[str, Any]:
+        """Build check definition dictionary."""
+        definition: dict[str, Any] = {
             "id": check.get("id"),
             "name": check.get("name", check.get("id")),
             "type": check.get("type"),
@@ -373,25 +404,12 @@ class ConformanceTools:
             "enabled": check.get("enabled", True),
         }
 
-        if check.get("description"):
-            definition["description"] = check["description"]
+        # Add optional fields
+        for field in ["description", "config", "fix_hint", "applies_to"]:
+            if check.get(field):
+                definition[field] = check[field]
 
-        if check.get("config"):
-            definition["config"] = check["config"]
-
-        if check.get("fix_hint"):
-            definition["fix_hint"] = check["fix_hint"]
-
-        if check.get("applies_to"):
-            definition["applies_to"] = check["applies_to"]
-
-        # Format as YAML for readability
-        output = yaml.dump(definition, default_flow_style=False, sort_keys=False)
-
-        return ToolResult.success_result(
-            "get_check_definition",
-            f"Check Definition for '{check_id}':\n{output}"
-        )
+        return definition
 
     def get_tool_executors(self) -> dict[str, Any]:
         """Get dict of tool executors for registration."""

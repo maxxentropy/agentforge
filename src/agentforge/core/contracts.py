@@ -62,39 +62,63 @@ def run_contract(contract: Contract, repo_root: Path,
     Returns:
         ContractResult with all check results
     """
-    all_results = []
-
-    for check in contract.all_checks():
-        if not check.get("enabled", True):
-            continue
-
-        effective_check = dict(check)
-        if "applies_to" not in effective_check:
-            effective_check["applies_to"] = contract.applies_to
-
-        check_results = execute_check(effective_check, repo_root, file_paths)
-
-        for result in check_results:
-            if not result.passed:
-                exemption = registry.find_exemption(
-                    contract.name, result.check_id, result.file_path, result.line_number
-                )
-                if exemption:
-                    result.exempted = True
-                    result.exemption_id = exemption.id
-
-        all_results.extend(check_results)
-
-    passed = not any(
-        r for r in all_results
-        if not r.passed and r.severity == "error" and not r.exempted
-    )
+    all_results = _run_all_checks(contract, repo_root, file_paths, registry)
+    passed = _calculate_passed(all_results)
 
     return ContractResult(
         contract_name=contract.name,
         contract_type=contract.type,
         passed=passed,
         check_results=all_results
+    )
+
+
+def _run_all_checks(
+    contract: Contract, repo_root: Path, file_paths: list[Path] | None, registry: ContractRegistry
+) -> list[CheckResult]:
+    """Run all enabled checks and apply exemptions."""
+    all_results: list[CheckResult] = []
+
+    for check in contract.all_checks():
+        if not check.get("enabled", True):
+            continue
+
+        check_results = _execute_single_check(check, contract, repo_root, file_paths)
+        _apply_exemptions(check_results, contract.name, registry)
+        all_results.extend(check_results)
+
+    return all_results
+
+
+def _execute_single_check(
+    check: dict, contract: Contract, repo_root: Path, file_paths: list[Path] | None
+) -> list[CheckResult]:
+    """Execute a single check with proper applies_to handling."""
+    effective_check = dict(check)
+    if "applies_to" not in effective_check:
+        effective_check["applies_to"] = contract.applies_to
+    return execute_check(effective_check, repo_root, file_paths)
+
+
+def _apply_exemptions(
+    check_results: list[CheckResult], contract_name: str, registry: ContractRegistry
+) -> None:
+    """Apply exemptions to failed check results."""
+    for result in check_results:
+        if not result.passed:
+            exemption = registry.find_exemption(
+                contract_name, result.check_id, result.file_path, result.line_number
+            )
+            if exemption:
+                result.exempted = True
+                result.exemption_id = exemption.id
+
+
+def _calculate_passed(all_results: list[CheckResult]) -> bool:
+    """Determine if contract passed based on results."""
+    return not any(
+        r for r in all_results
+        if not r.passed and r.severity == "error" and not r.exempted
     )
 
 

@@ -124,52 +124,19 @@ class DotNetProvider(LanguageProvider):
             if root.tag.startswith("{"):
                 ns = root.tag.split("}")[0] + "}"
 
-            # Target framework
-            for tf in root.iter(f"{ns}TargetFramework"):
-                result["target_framework"] = tf.text
-                break
-            for tf in root.iter(f"{ns}TargetFrameworks"):
-                result["target_framework"] = tf.text.split(";")[0] if tf.text else None
-                break
+            result["target_framework"] = self._extract_target_framework(root, ns)
+            result["output_type"] = self._extract_output_type(root, ns)
 
-            # Output type
-            for ot in root.iter(f"{ns}OutputType"):
-                result["output_type"] = ot.text
-                break
+            packages, frameworks = self._extract_packages_from_csproj(root, ns)
+            result["packages"] = packages
+            result["frameworks"] = list(set(frameworks))
 
-            # Package references
-            for pkg in root.iter(f"{ns}PackageReference"):
-                pkg_name = pkg.get("Include") or pkg.get("include")
-                pkg_version = pkg.get("Version") or pkg.get("version")
-                if pkg_name:
-                    result["packages"].append({
-                        "name": pkg_name,
-                        "version": pkg_version,
-                    })
+            result["project_references"] = self._extract_project_references(root, ns)
 
-                    # Detect frameworks from packages
-                    frameworks = self._detect_frameworks_from_package(pkg_name)
-                    result["frameworks"].extend(frameworks)
+            is_test, is_web = self._detect_project_type(packages, csproj_path)
+            result["is_test"] = is_test
+            result["is_web"] = is_web
 
-            # Project references
-            for ref in root.iter(f"{ns}ProjectReference"):
-                ref_path = ref.get("Include") or ref.get("include")
-                if ref_path:
-                    result["project_references"].append(ref_path.replace("\\", "/"))
-
-            # Detect test project
-            result["is_test"] = any(
-                pkg["name"].lower() in ("xunit", "nunit", "mstest.testframework", "microsoft.net.test.sdk")
-                for pkg in result["packages"]
-            )
-
-            # Detect web project
-            result["is_web"] = any(
-                pkg["name"].startswith("Microsoft.AspNetCore")
-                for pkg in result["packages"]
-            ) or "Microsoft.NET.Sdk.Web" in (csproj_path.read_text() if csproj_path.exists() else "")
-
-            result["frameworks"] = list(set(result["frameworks"]))
             if result["frameworks"]:
                 result["framework"] = result["frameworks"][0]
 
@@ -213,6 +180,60 @@ class DotNetProvider(LanguageProvider):
                 frameworks.append(name)
 
         return frameworks
+
+    def _extract_target_framework(self, root, ns: str) -> str | None:
+        """Extract target framework from csproj root."""
+        for tf in root.iter(f"{ns}TargetFramework"):
+            return tf.text
+        for tf in root.iter(f"{ns}TargetFrameworks"):
+            if tf.text:
+                return tf.text.split(";")[0]
+        return None
+
+    def _extract_output_type(self, root, ns: str) -> str | None:
+        """Extract output type from csproj root."""
+        for ot in root.iter(f"{ns}OutputType"):
+            return ot.text
+        return None
+
+    def _extract_packages_from_csproj(
+        self, root, ns: str
+    ) -> tuple[list[dict], list[str]]:
+        """Extract package references and frameworks from csproj."""
+        packages = []
+        frameworks = []
+        for pkg in root.iter(f"{ns}PackageReference"):
+            pkg_name = pkg.get("Include") or pkg.get("include")
+            pkg_version = pkg.get("Version") or pkg.get("version")
+            if pkg_name:
+                packages.append({"name": pkg_name, "version": pkg_version})
+                frameworks.extend(self._detect_frameworks_from_package(pkg_name))
+        return packages, frameworks
+
+    def _extract_project_references(self, root, ns: str) -> list[str]:
+        """Extract project references from csproj."""
+        refs = []
+        for ref in root.iter(f"{ns}ProjectReference"):
+            ref_path = ref.get("Include") or ref.get("include")
+            if ref_path:
+                refs.append(ref_path.replace("\\", "/"))
+        return refs
+
+    def _detect_project_type(
+        self, packages: list[dict], csproj_path: Path
+    ) -> tuple[bool, bool]:
+        """Detect if project is test or web project."""
+        is_test = any(
+            pkg["name"].lower()
+            in ("xunit", "nunit", "mstest.testframework", "microsoft.net.test.sdk")
+            for pkg in packages
+        )
+        is_web = any(
+            pkg["name"].startswith("Microsoft.AspNetCore") for pkg in packages
+        ) or "Microsoft.NET.Sdk.Web" in (
+            csproj_path.read_text() if csproj_path.exists() else ""
+        )
+        return is_test, is_web
 
     def parse_file(self, path: Path) -> Any | None:
         """Parse C# file - returns content for regex analysis."""
@@ -301,6 +322,63 @@ class DotNetProvider(LanguageProvider):
 
         return symbols
 
+    def _parse_type_symbol(
+        self, match, path: Path, line_num: int, parent: str | None
+    ) -> tuple[Symbol, str]:
+        """Parse a type symbol (class/interface/etc) from regex match."""
+        visibility = match.group(1) or "internal"
+        type_kind = match.group(6)
+        name = match.group(7)
+        bases = match.group(8)
+        base_classes = [b.strip() for b in bases.split(",")] if bases else []
+        symbol = Symbol(
+            name=name,
+            kind=type_kind,
+            file_path=path,
+            line_number=line_num,
+            parent=parent,
+            visibility=visibility,
+            base_classes=base_classes,
+        )
+        return symbol, name
+
+    def _parse_method_symbol(
+        self, match, path: Path, line_num: int, parent: str
+    ) -> Symbol | None:
+        """Parse a method symbol from regex match."""
+        name = match.group(8)
+        # Skip if it looks like a control flow statement
+        if name in ('if', 'while', 'for', 'foreach', 'switch', 'catch', 'using'):
+            return None
+        visibility = match.group(1) or "private"
+        return_type = match.group(7).strip()
+        return Symbol(
+            name=name,
+            kind="method",
+            file_path=path,
+            line_number=line_num,
+            parent=parent,
+            visibility=visibility,
+            return_type=return_type,
+        )
+
+    def _parse_property_symbol(
+        self, match, path: Path, line_num: int, parent: str
+    ) -> Symbol:
+        """Parse a property symbol from regex match."""
+        visibility = match.group(1) or "private"
+        prop_type = match.group(6).strip()
+        name = match.group(7)
+        return Symbol(
+            name=name,
+            kind="property",
+            file_path=path,
+            line_number=line_num,
+            parent=parent,
+            visibility=visibility,
+            return_type=prop_type,
+        )
+
     def _extract_symbols_regex(self, path: Path) -> list[Symbol]:
         """Extract symbols using regex patterns (fallback)."""
         content = self.parse_file(path)
@@ -308,98 +386,52 @@ class DotNetProvider(LanguageProvider):
             return []
 
         symbols = []
-        lines = content.split('\n')
-
-        # Track current namespace and class
         current_namespace = None
         current_class = None
 
-        for line_num, line in enumerate(lines, 1):
+        type_pattern = re.compile(
+            r'(public|private|protected|internal)?\s*(static\s+)?(abstract\s+)?(sealed\s+)?'
+            r'(partial\s+)?(class|interface|record|struct)\s+(\w+)(?:<[^>]+>)?'
+            r'(?:\s*:\s*(.+?))?(?:\s*{|\s*$)'
+        )
+        method_pattern = re.compile(
+            r'(public|private|protected|internal)?\s*(static\s+)?(async\s+)?'
+            r'(virtual\s+)?(override\s+)?(abstract\s+)?'
+            r'([\w<>\[\],\s]+?)\s+(\w+)\s*\([^)]*\)'
+        )
+        prop_pattern = re.compile(
+            r'(public|private|protected|internal)?\s*(static\s+)?(virtual\s+)?'
+            r'(override\s+)?(required\s+)?'
+            r'([\w<>\[\],\s?]+?)\s+(\w+)\s*{\s*(get|set|init)'
+        )
+
+        for line_num, line in enumerate(content.split('\n'), 1):
             stripped = line.strip()
 
-            # Namespace
             ns_match = re.match(r'namespace\s+([\w.]+)', stripped)
             if ns_match:
                 current_namespace = ns_match.group(1)
                 continue
 
-            # Class/Interface/Record/Struct
-            type_match = re.match(
-                r'(public|private|protected|internal)?\s*(static\s+)?(abstract\s+)?(sealed\s+)?'
-                r'(partial\s+)?(class|interface|record|struct)\s+(\w+)(?:<[^>]+>)?'
-                r'(?:\s*:\s*(.+?))?(?:\s*{|\s*$)',
-                stripped
-            )
+            type_match = type_pattern.match(stripped)
             if type_match:
-                visibility = type_match.group(1) or "internal"
-                type_kind = type_match.group(6)
-                name = type_match.group(7)
-                bases = type_match.group(8)
-
-                base_classes = []
-                if bases:
-                    base_classes = [b.strip() for b in bases.split(",")]
-
-                symbols.append(Symbol(
-                    name=name,
-                    kind=type_kind,
-                    file_path=path,
-                    line_number=line_num,
-                    parent=current_namespace,
-                    visibility=visibility,
-                    base_classes=base_classes,
-                ))
-                current_class = name
+                symbol, current_class = self._parse_type_symbol(
+                    type_match, path, line_num, current_namespace
+                )
+                symbols.append(symbol)
                 continue
 
-            # Method
-            method_match = re.match(
-                r'(public|private|protected|internal)?\s*(static\s+)?(async\s+)?'
-                r'(virtual\s+)?(override\s+)?(abstract\s+)?'
-                r'([\w<>\[\],\s]+?)\s+(\w+)\s*\([^)]*\)',
-                stripped
-            )
-            if method_match and current_class:
-                visibility = method_match.group(1) or "private"
-                return_type = method_match.group(7).strip()
-                name = method_match.group(8)
-
-                # Skip if it looks like a control flow statement
-                if name in ('if', 'while', 'for', 'foreach', 'switch', 'catch', 'using'):
+            if current_class:
+                method_match = method_pattern.match(stripped)
+                if method_match:
+                    symbol = self._parse_method_symbol(method_match, path, line_num, current_class)
+                    if symbol:
+                        symbols.append(symbol)
                     continue
 
-                symbols.append(Symbol(
-                    name=name,
-                    kind="method",
-                    file_path=path,
-                    line_number=line_num,
-                    parent=current_class,
-                    visibility=visibility,
-                    return_type=return_type,
-                ))
-                continue
-
-            # Property
-            prop_match = re.match(
-                r'(public|private|protected|internal)?\s*(static\s+)?(virtual\s+)?'
-                r'(override\s+)?(required\s+)?'
-                r'([\w<>\[\],\s?]+?)\s+(\w+)\s*{\s*(get|set|init)',
-                stripped
-            )
-            if prop_match and current_class:
-                visibility = prop_match.group(1) or "private"
-                prop_type = prop_match.group(6).strip()
-                name = prop_match.group(7)
-
-                symbols.append(Symbol(
-                    name=name,
-                    kind="property",
-                    file_path=path,
-                    line_number=line_num,
-                    parent=current_class,
-                    visibility=visibility,
-                    return_type=prop_type,
-                ))
+                prop_match = prop_pattern.match(stripped)
+                if prop_match:
+                    symbols.append(self._parse_property_symbol(prop_match, path, line_num, current_class))
 
         return symbols
 
@@ -490,6 +522,15 @@ class DotNetProvider(LanguageProvider):
         proj_info = self._parse_csproj(csproj_path)
         return proj_info.get("project_references", [])
 
+    # Layer detection mapping for Clean Architecture naming conventions
+    _LAYER_INDICATORS: dict[str, list[str]] = {
+        "domain": [".domain", ".core", ".entities", ".model"],
+        "application": [".application", ".usecases", ".services"],
+        "infrastructure": [".infrastructure", ".persistence", ".data", ".repository"],
+        "presentation": [".api", ".web", ".presentation", ".ui", ".mvc", ".blazor"],
+        "tests": [".test", ".tests", ".unittests", ".integrationtests"],
+    }
+
     def detect_layer_from_project_name(self, project_name: str) -> str | None:
         """
         Detect architectural layer from project name.
@@ -501,27 +542,9 @@ class DotNetProvider(LanguageProvider):
         - *.Api, *.Web, *.Presentation → presentation
         """
         name_lower = project_name.lower()
-
-        # Domain layer indicators
-        if any(ind in name_lower for ind in [".domain", ".core", ".entities", ".model"]):
-            return "domain"
-
-        # Application layer indicators
-        if any(ind in name_lower for ind in [".application", ".usecases", ".services"]):
-            return "application"
-
-        # Infrastructure layer indicators
-        if any(ind in name_lower for ind in [".infrastructure", ".persistence", ".data", ".repository"]):
-            return "infrastructure"
-
-        # Presentation layer indicators
-        if any(ind in name_lower for ind in [".api", ".web", ".presentation", ".ui", ".mvc", ".blazor"]):
-            return "presentation"
-
-        # Test indicators (not a layer, but useful)
-        if any(ind in name_lower for ind in [".test", ".tests", ".unittests", ".integrationtests"]):
-            return "tests"
-
+        for layer, indicators in self._LAYER_INDICATORS.items():
+            if any(ind in name_lower for ind in indicators):
+                return layer
         return None
 
     def get_source_files(self, root: Path, exclude_patterns: list[str] = None) -> list[Path]:

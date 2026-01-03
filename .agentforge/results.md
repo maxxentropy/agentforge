@@ -7,15 +7,15 @@
 | Mode | full |
 | Files Checked | 0 |
 | Checks Run | 158 |
-| Total Violations | 4711 |
+| Total Violations | 4714 |
 | Errors | 0 |
-| Warnings | 387 |
-| Duration | 18.75s |
+| Warnings | 382 |
+| Duration | 18.83s |
 
 ### All Violations
 
 <details>
-<summary>View all 4711 violations in 414 files</summary>
+<summary>View all 4714 violations in 414 files</summary>
 
 **`<unknown>`** (4 violations)
 
@@ -413,12 +413,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-function-length** at `L331`
   - Function 'status' has 59 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-parameter-count** at `L154`
-  - Function 'start' has 7 parameters (max: 5)
-  - 💡 *Group related parameters into a dataclass or use **kwargs*
 - 🟡 **max-nesting-depth** at `L73`
   - Function '_display_result' has nesting depth 7 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
+- 🟡 **max-parameter-count** at `L154`
+  - Function 'start' has 7 parameters (max: 5)
+  - 💡 *Group related parameters into a dataclass or use **kwargs*
 - 🟡 **max-file-lines** at `file`
   - File exceeds line limit (682 lines > 500)
   - 💡 *Consider splitting into smaller files*
@@ -5468,18 +5468,18 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-function-length** at `L484`
   - Function '_check_signal' has 88 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-parameter-count** at `L484`
-  - Function '_check_signal' has 8 parameters (max: 5)
-  - 💡 *Group related parameters into a dataclass or use **kwargs*
-- 🟡 **max-parameter-count** at `L583`
-  - Function '_add_match' has 6 parameters (max: 5)
-  - 💡 *Group related parameters into a dataclass or use **kwargs*
 - 🟡 **max-nesting-depth** at `L484`
   - Function '_check_signal' has nesting depth 11 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🟡 **max-nesting-depth** at `L654`
   - Function '_detect_frameworks' has nesting depth 5 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
+- 🟡 **max-parameter-count** at `L484`
+  - Function '_check_signal' has 8 parameters (max: 5)
+  - 💡 *Group related parameters into a dataclass or use **kwargs*
+- 🟡 **max-parameter-count** at `L583`
+  - Function '_add_match' has 6 parameters (max: 5)
+  - 💡 *Group related parameters into a dataclass or use **kwargs*
 - 🟡 **max-file-lines** at `file`
   - File exceeds line limit (715 lines > 500)
   - 💡 *Consider splitting into smaller files*
@@ -5961,40 +5961,25 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 
-**`src/agentforge/core/discovery/providers/dotnet_provider.py`** (33 violations)
+**`src/agentforge/core/discovery/providers/dotnet_provider.py`** (36 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L104`
-  - Function '_parse_csproj' has complexity 19 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L304`
-  - Function '_extract_symbols_regex' has complexity 15 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L493`
-  - Function 'detect_layer_from_project_name' has complexity 11 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L549`
+- 🟡 **max-cyclomatic-complexity** at `L572`
   - Function 'count_lines' has complexity 11 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-function-length** at `L104`
-  - Function '_parse_csproj' has 57 lines (max: 50)
-  - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-function-length** at `L304`
-  - Function '_extract_symbols_regex' has 82 lines (max: 50)
-  - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-nesting-depth** at `L549`
+- 🟡 **max-nesting-depth** at `L572`
   - Function 'count_lines' has nesting depth 7 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🟡 **max-class-size** at `L19`
-  - Class 'DotNetProvider' has 21 methods (max: 20)
+  - Class 'DotNetProvider' has 29 methods (max: 20)
   - 💡 *Consider splitting into multiple classes with single responsibilities*
 - 🟡 **max-file-lines** at `file`
-  - File exceeds line limit (585 lines > 500)
+  - File exceeds line limit (608 lines > 500)
   - 💡 *Consider splitting into smaller files*
 - 🟡 **no-god-classes** at `L19`
-  - Class 'DotNetProvider' has 21 methods (max: 15)
+  - Class 'DotNetProvider' has 29 methods (max: 15)
   - 💡 *Split large classes using composition or inheritance*
 - 🔵 **single-responsibility-modules** at `L19`
-  - Class 'DotNetProvider' has 21 methods (max: 3)
+  - Class 'DotNetProvider' has 29 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -6016,33 +6001,49 @@ Or regenerate file through TDFLOW to get proper lineage.*
   - Method '_parse_solution' returns 'dict[str, Any]', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **default-result-return-types** at `L104`
   - Method '_parse_csproj' returns 'dict[str, Any]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L183`
+- 🔵 **default-result-return-types** at `L150`
   - Method '_detect_frameworks_from_package' returns 'list[str]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L217`
+- 🔵 **default-result-return-types** at `L184`
+  - Method '_extract_target_framework' returns 'str | None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L193`
+  - Method '_extract_output_type' returns 'str | None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L199`
+  - Method '_extract_packages_from_csproj' returns 'tuple[list[dict], list[str]]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L213`
+  - Method '_extract_project_references' returns 'list[str]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L222`
+  - Method '_detect_project_type' returns 'tuple[bool, bool]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L238`
   - Method 'parse_file' returns 'Any | None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L224`
-  - Method 'extract_symbols' returns 'list[Symbol]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L234`
-  - Method '_extract_symbols_lsp' returns 'list[Symbol]', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **default-result-return-types** at `L245`
-  - Method '_ensure_lsp' returns 'bool', expected pattern 'Result|Either|Success|Failure'
+  - Method 'extract_symbols' returns 'list[Symbol]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L255`
+  - Method '_extract_symbols_lsp' returns 'list[Symbol]', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **default-result-return-types** at `L266`
+  - Method '_ensure_lsp' returns 'bool', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L287`
   - Method '_convert_lsp_symbols' returns 'list[Symbol]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L304`
+- 🔵 **default-result-return-types** at `L325`
+  - Method '_parse_type_symbol' returns 'tuple[Symbol, str]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L345`
+  - Method '_parse_method_symbol' returns 'Symbol | None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L365`
+  - Method '_parse_property_symbol' returns 'Symbol', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L382`
   - Method '_extract_symbols_regex' returns 'list[Symbol]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L406`
+- 🔵 **default-result-return-types** at `L438`
   - Method '_infer_visibility' returns 'str', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L412`
+- 🔵 **default-result-return-types** at `L444`
   - Method 'get_imports' returns 'list[Import]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L458`
+- 🔵 **default-result-return-types** at `L490`
   - Method 'get_dependencies' returns 'list[Dependency]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L485`
+- 🔵 **default-result-return-types** at `L517`
   - Method 'get_project_references' returns 'list[str]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L493`
+- 🔵 **default-result-return-types** at `L534`
   - Method 'detect_layer_from_project_name' returns 'str | None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L527`
+- 🔵 **default-result-return-types** at `L550`
   - Method 'get_source_files' returns 'list[Path]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L549`
+- 🔵 **default-result-return-types** at `L572`
   - Method 'count_lines' returns 'int', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -9269,15 +9270,15 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/llm/client.py`** (12 violations)
 
+- 🟡 **max-nesting-depth** at `L136`
+  - Function '_build_request_params' has nesting depth 5 (max: 4)
+  - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🟡 **max-parameter-count** at `L95`
   - Function 'complete' has 6 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
 - 🟡 **max-parameter-count** at `L136`
   - Function '_build_request_params' has 6 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
-- 🟡 **max-nesting-depth** at `L136`
-  - Function '_build_request_params' has nesting depth 5 (max: 4)
-  - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🔵 **single-responsibility-modules** at `L46`
   - Class 'AnthropicLLMClient' has 7 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -17053,5 +17054,5 @@ Or regenerate file through TDFLOW to get proper lineage.*
 </details>
 
 ---
-*Generated at 2026-01-03 20:31:24 UTC*
-*Commit: `57335c04`*
+*Generated at 2026-01-03 20:34:24 UTC*
+*Commit: `7d56989e`*

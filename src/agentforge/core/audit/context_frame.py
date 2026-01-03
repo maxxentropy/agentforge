@@ -310,6 +310,30 @@ class ContextFrame:
     previous_frame_hash: str | None = None
     content_hash: str | None = None
 
+    # Optional fields: (attr_name, output_key, needs_to_dict)
+    _OPTIONAL_FIELDS = [
+        ("stage_name", "stage_name", False),
+        ("pipeline_id", "pipeline_id", False),
+        ("input_schema_ref", "input_schema", True),
+        ("output_schema_ref", "output_schema", True),
+        ("input_context", "input_context", True),
+        ("output_context", "output_context", True),
+        ("llm_interaction", "llm_interaction", True),
+        ("parsed_artifact", "parsed_artifact", True),
+        ("context_delta", "context_delta", False),
+        ("previous_frame_hash", "previous_frame_hash", False),
+        ("content_hash", "content_hash", False),
+    ]
+
+    def _collect_optional_fields(self) -> dict[str, Any]:
+        """Collect optional fields that are set."""
+        result = {}
+        for attr, key, needs_to_dict in self._OPTIONAL_FIELDS:
+            value = getattr(self, attr)
+            if value is not None:
+                result[key] = value.to_dict() if needs_to_dict else value
+        return result
+
     def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary."""
         data = {
@@ -320,42 +344,7 @@ class ContextFrame:
             "timestamp": self.timestamp,
             "duration_ms": self.duration_ms,
         }
-
-        if self.stage_name:
-            data["stage_name"] = self.stage_name
-        if self.pipeline_id:
-            data["pipeline_id"] = self.pipeline_id
-
-        # Schema references
-        if self.input_schema_ref:
-            data["input_schema"] = self.input_schema_ref.to_dict()
-        if self.output_schema_ref:
-            data["output_schema"] = self.output_schema_ref.to_dict()
-
-        # Validated contexts
-        if self.input_context:
-            data["input_context"] = self.input_context.to_dict()
-        if self.output_context:
-            data["output_context"] = self.output_context.to_dict()
-
-        # LLM interaction (metadata only, content in separate files)
-        if self.llm_interaction:
-            data["llm_interaction"] = self.llm_interaction.to_dict()
-
-        # Parsed artifact
-        if self.parsed_artifact:
-            data["parsed_artifact"] = self.parsed_artifact.to_dict()
-
-        # Delta
-        if self.context_delta:
-            data["context_delta"] = self.context_delta
-
-        # Integrity
-        if self.previous_frame_hash:
-            data["previous_frame_hash"] = self.previous_frame_hash
-        if self.content_hash:
-            data["content_hash"] = self.content_hash
-
+        data.update(self._collect_optional_fields())
         return data
 
     @property

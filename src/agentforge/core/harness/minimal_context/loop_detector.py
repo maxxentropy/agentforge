@@ -209,6 +209,15 @@ class LoopDetector:
             return "test_regression"
         return "other"
 
+    def _are_actions_identical(self, recent: list[ActionRecord]) -> bool:
+        """Check if all actions have same params or same error as first."""
+        first_params = recent[0].parameters
+        first_error = recent[0].error
+        return all(
+            a.parameters == first_params or a.error == first_error
+            for a in recent[1:]
+        )
+
     def _check_identical(self, actions: list[ActionRecord]) -> LoopDetection:
         """Check for identical repeated actions."""
         if len(actions) < self.identical_threshold:
@@ -216,24 +225,10 @@ class LoopDetector:
 
         recent = actions[-self.identical_threshold :]
 
-        # All same action name
-        if len({a.action for a in recent}) != 1:
-            return LoopDetection(detected=False)
-
-        # All failures
-        if not all(a.result == ActionResult.FAILURE for a in recent):
-            return LoopDetection(detected=False)
-
-        # Same parameters (or same error)
-        first_params = recent[0].parameters
-        first_error = recent[0].error
-        all_same = True
-        for a in recent[1:]:
-            if a.parameters != first_params and a.error != first_error:
-                all_same = False
-                break
-
-        if not all_same:
+        # Check preconditions: same action name and all failures
+        is_same_action = len({a.action for a in recent}) == 1
+        all_failures = all(a.result == ActionResult.FAILURE for a in recent)
+        if not (is_same_action and all_failures and self._are_actions_identical(recent)):
             return LoopDetection(detected=False)
 
         return LoopDetection(
@@ -354,6 +349,50 @@ class LoopDetector:
 
         return LoopDetection(detected=False)
 
+    # Non-mutating actions that don't indicate progress
+    _NON_MUTATING_ACTIONS = frozenset(["read_file", "load_context", "run_check", "run_tests"])
+
+    def _check_non_mutating_loop(self, recent: list[ActionRecord]) -> LoopDetection | None:
+        """Check if all recent actions are non-mutating (read/check only)."""
+        if not all(a.action in self._NON_MUTATING_ACTIONS for a in recent):
+            return None
+
+        return LoopDetection(
+            detected=True,
+            loop_type=LoopType.NO_PROGRESS,
+            confidence=0.75,
+            description=f"Last {len(recent)} actions were read/check operations with no modifications",
+            suggestions=[
+                "Analysis phase appears complete",
+                "Make an actual code modification",
+                "Use extract_function or edit_file to fix the violation",
+            ],
+            evidence=[f"Step {a.step}: {a.action}" for a in recent],
+        )
+
+    def _check_unchanged_verification(self, facts: list[Fact]) -> LoopDetection | None:
+        """Check if verification state hasn't changed despite actions."""
+        verification_facts = [
+            f for f in facts
+            if f.category == FactCategory.VERIFICATION and "check" in f.statement.lower()
+        ]
+
+        if len(verification_facts) < 3:
+            return None
+
+        statements = [f.statement for f in verification_facts[-3:]]
+        if len(set(statements)) != 1:
+            return None
+
+        return LoopDetection(
+            detected=True,
+            loop_type=LoopType.NO_PROGRESS,
+            confidence=0.7,
+            description="Verification status unchanged despite actions",
+            suggestions=["Actions are not affecting the violation"],
+            evidence=statements,
+        )
+
     def _check_no_progress(
         self,
         actions: list[ActionRecord],
@@ -365,42 +404,16 @@ class LoopDetector:
 
         recent = actions[-self.no_progress_threshold :]
 
-        # Actions succeeded but all are just reading/checking
-        non_mutating = {"read_file", "load_context", "run_check", "run_tests"}
-        if all(a.action in non_mutating for a in recent):
-            return LoopDetection(
-                detected=True,
-                loop_type=LoopType.NO_PROGRESS,
-                confidence=0.75,
-                description=f"Last {len(recent)} actions were read/check operations with no modifications",
-                suggestions=[
-                    "Analysis phase appears complete",
-                    "Make an actual code modification",
-                    "Use extract_function or edit_file to fix the violation",
-                ],
-                evidence=[f"Step {a.step}: {a.action}" for a in recent],
-            )
+        # Check non-mutating loop
+        result = self._check_non_mutating_loop(recent)
+        if result:
+            return result
 
-        # Check if verification state hasn't changed
+        # Check unchanged verification state
         if facts:
-            verification_facts = [
-                f
-                for f in facts
-                if f.category == FactCategory.VERIFICATION
-                and "check" in f.statement.lower()
-            ]
-            if len(verification_facts) >= 3:
-                # Same check result repeated
-                statements = [f.statement for f in verification_facts[-3:]]
-                if len(set(statements)) == 1:
-                    return LoopDetection(
-                        detected=True,
-                        loop_type=LoopType.NO_PROGRESS,
-                        confidence=0.7,
-                        description="Verification status unchanged despite actions",
-                        suggestions=["Actions are not affecting the violation"],
-                        evidence=statements,
-                    )
+            result = self._check_unchanged_verification(facts)
+            if result:
+                return result
 
         return LoopDetection(detected=False)
 

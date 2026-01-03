@@ -7,15 +7,15 @@
 | Mode | full |
 | Files Checked | 0 |
 | Checks Run | 158 |
-| Total Violations | 4809 |
+| Total Violations | 4818 |
 | Errors | 0 |
-| Warnings | 344 |
-| Duration | 19.16s |
+| Warnings | 327 |
+| Duration | 19.15s |
 
 ### All Violations
 
 <details>
-<summary>View all 4809 violations in 414 files</summary>
+<summary>View all 4818 violations in 414 files</summary>
 
 **`<unknown>`** (4 violations)
 
@@ -372,15 +372,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 
-**`src/agentforge/cli/click_commands/generate.py`** (7 violations)
+**`src/agentforge/cli/click_commands/generate.py`** (5 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L63`
-  - Function 'code' has complexity 15 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-function-length** at `L63`
-  - Function 'code' has 73 lines (max: 50)
-  - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-parameter-count** at `L63`
+- 🟡 **max-parameter-count** at `L118`
   - Function 'code' has 6 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
 - 🔵 **cli-proper-exit-codes** at `file`
@@ -394,7 +388,7 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
-- 🔵 **default-result-return-types** at `L335`
+- 🔵 **default-result-return-types** at `L322`
   - Method '_load_existing_code' returns 'str | None', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -407,20 +401,14 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/cli/click_commands/pipeline.py`** (13 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L331`
-  - Function 'status' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-function-length** at `L331`
-  - Function 'status' has 59 lines (max: 50)
-  - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-parameter-count** at `L154`
-  - Function 'start' has 7 parameters (max: 5)
-  - 💡 *Group related parameters into a dataclass or use **kwargs*
 - 🟡 **max-nesting-depth** at `L73`
   - Function '_display_result' has nesting depth 7 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
+- 🟡 **max-parameter-count** at `L154`
+  - Function 'start' has 7 parameters (max: 5)
+  - 💡 *Group related parameters into a dataclass or use **kwargs*
 - 🟡 **max-file-lines** at `file`
-  - File exceeds line limit (682 lines > 500)
+  - File exceeds line limit (678 lines > 500)
   - 💡 *Consider splitting into smaller files*
 - 🔵 **single-responsibility-modules** at `L34`
   - Class 'PipelineProgressDisplay' has 4 methods (max: 3)
@@ -443,6 +431,10 @@ Or regenerate file through TDFLOW to get proper lineage.*
   - Method 'display_escalation' returns 'None', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **default-result-return-types** at `L73`
   - Method '_display_result' returns 'None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L337`
+  - Method '_display_pipeline_status' returns 'None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L364`
+  - Method '_display_status_actions' returns 'None', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
   - 💡 *Add lineage header to file:
@@ -570,19 +562,16 @@ Or regenerate file through TDFLOW to get proper lineage.*
   - Required pattern not found: 'sys\.exit\s*\(\s*[012]\s*\)|raise\s+(SystemExit|click\.Abort|typer\.Abort)'
   - 💡 *Use sys.exit(0) for success, sys.exit(1) for errors*
 
-**`src/agentforge/cli/commands/agent.py`** (23 violations)
+**`src/agentforge/cli/commands/agent.py`** (24 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L116`
-  - Function 'run_status' has complexity 14 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-function-length** at `L374`
+- 🟡 **max-function-length** at `L389`
   - Function 'run_fix_violation' has 87 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-function-length** at `L491`
+- 🟡 **max-function-length** at `L506`
   - Function 'run_fix_violations_batch' has 71 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
 - 🟡 **max-file-lines** at `file`
-  - File exceeds line limit (627 lines > 500)
+  - File exceeds line limit (642 lines > 500)
   - 💡 *Consider splitting into smaller files*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -600,31 +589,35 @@ Or regenerate file through TDFLOW to get proper lineage.*
   - Method '_clear_current_session' returns 'None', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **default-result-return-types** at `L78`
   - Method 'run_start' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L116`
+- 🔵 **default-result-return-types** at `L122`
+  - Method '_resolve_session_or_warn' returns 'str | None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L132`
+  - Method '_output_health_status' returns 'None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L146`
   - Method 'run_status' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L154`
+- 🔵 **default-result-return-types** at `L169`
   - Method 'run_resume' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L173`
+- 🔵 **default-result-return-types** at `L188`
   - Method 'run_pause' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L191`
+- 🔵 **default-result-return-types** at `L206`
   - Method 'run_stop' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L213`
+- 🔵 **default-result-return-types** at `L228`
   - Method 'run_step' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L240`
+- 🔵 **default-result-return-types** at `L255`
   - Method 'run_until_complete' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L267`
+- 🔵 **default-result-return-types** at `L282`
   - Method 'run_list' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L326`
+- 🔵 **default-result-return-types** at `L341`
   - Method 'run_history' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L355`
+- 🔵 **default-result-return-types** at `L370`
   - Method 'run_cleanup' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L374`
+- 🔵 **default-result-return-types** at `L389`
   - Method 'run_fix_violation' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L491`
+- 🔵 **default-result-return-types** at `L506`
   - Method 'run_fix_violations_batch' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L583`
+- 🔵 **default-result-return-types** at `L598`
   - Method 'run_approve_commit' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L610`
+- 🔵 **default-result-return-types** at `L625`
   - Method 'run_list_violations' returns 'None', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -635,18 +628,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 
-**`src/agentforge/cli/commands/bridge.py`** (6 violations)
+**`src/agentforge/cli/commands/bridge.py`** (4 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L17`
-  - Function 'run_bridge_generate' has complexity 13 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L145`
-  - Function 'run_bridge_mappings' has complexity 11 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-function-length** at `L17`
-  - Function 'run_bridge_generate' has 65 lines (max: 50)
-  - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-parameter-count** at `L17`
+- 🟡 **max-parameter-count** at `L33`
+  - Function '_create_and_run_orchestrator' has 8 parameters (max: 5)
+  - 💡 *Group related parameters into a dataclass or use **kwargs*
+- 🟡 **max-parameter-count** at `L80`
   - Function 'run_bridge_generate' has 8 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
 - 🔵 **require-lineage-metadata-python** at `L1`
@@ -668,17 +655,11 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/cli/commands/ci.py`** (229 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L187`
-  - Function 'run_baseline_compare' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L30`
   - Function 'run_ci_check' has 53 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-function-length** at `L187`
-  - Function 'run_baseline_compare' has 51 lines (max: 50)
-  - 💡 *Extract logic into helper functions or use composition*
 - 🟡 **max-file-lines** at `file`
-  - File exceeds line limit (530 lines > 500)
+  - File exceeds line limit (536 lines > 500)
   - 💡 *Consider splitting into smaller files*
 - 🔵 **use-click-echo** at `L75`
   - Forbidden pattern found: 'print('
@@ -782,76 +763,64 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **use-click-echo** at `L184`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L194`
+- 🔵 **use-click-echo** at `L197`
+  - Forbidden pattern found: 'print('
+  - 💡 *Use click.echo() or rich.print() for CLI output*
+- 🔵 **use-click-echo** at `L202`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
 - 🔵 **use-click-echo** at `L203`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L214`
+- 🔵 **use-click-echo** at `L204`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L226`
+- 🔵 **use-click-echo** at `L205`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L228`
+- 🔵 **use-click-echo** at `L206`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L229`
+- 🔵 **use-click-echo** at `L207`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L230`
+- 🔵 **use-click-echo** at `L208`
+  - Forbidden pattern found: 'print('
+  - 💡 *Use click.echo() or rich.print() for CLI output*
+- 🔵 **use-click-echo** at `L211`
+  - Forbidden pattern found: 'print('
+  - 💡 *Use click.echo() or rich.print() for CLI output*
+- 🔵 **use-click-echo** at `L213`
+  - Forbidden pattern found: 'print('
+  - 💡 *Use click.echo() or rich.print() for CLI output*
+- 🔵 **use-click-echo** at `L215`
+  - Forbidden pattern found: 'print('
+  - 💡 *Use click.echo() or rich.print() for CLI output*
+- 🔵 **use-click-echo** at `L218`
+  - Forbidden pattern found: 'print('
+  - 💡 *Use click.echo() or rich.print() for CLI output*
+- 🔵 **use-click-echo** at `L220`
+  - Forbidden pattern found: 'print('
+  - 💡 *Use click.echo() or rich.print() for CLI output*
+- 🔵 **use-click-echo** at `L222`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
 - 🔵 **use-click-echo** at `L231`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L232`
-  - Forbidden pattern found: 'print('
-  - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L233`
-  - Forbidden pattern found: 'print('
-  - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L234`
-  - Forbidden pattern found: 'print('
-  - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L237`
-  - Forbidden pattern found: 'print('
-  - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L239`
-  - Forbidden pattern found: 'print('
-  - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L241`
-  - Forbidden pattern found: 'print('
-  - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L244`
-  - Forbidden pattern found: 'print('
-  - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L246`
+- 🔵 **use-click-echo** at `L238`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
 - 🔵 **use-click-echo** at `L248`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L259`
-  - Forbidden pattern found: 'print('
-  - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L262`
-  - Forbidden pattern found: 'print('
-  - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L263`
-  - Forbidden pattern found: 'print('
-  - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L264`
-  - Forbidden pattern found: 'print('
-  - 💡 *Use click.echo() or rich.print() for CLI output*
 - 🔵 **use-click-echo** at `L265`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L266`
+- 🔵 **use-click-echo** at `L268`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L268`
+- 🔵 **use-click-echo** at `L269`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
 - 🔵 **use-click-echo** at `L270`
@@ -860,103 +829,112 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **use-click-echo** at `L271`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L273`
+- 🔵 **use-click-echo** at `L272`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L275`
+- 🔵 **use-click-echo** at `L274`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
 - 🔵 **use-click-echo** at `L276`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
+- 🔵 **use-click-echo** at `L277`
+  - Forbidden pattern found: 'print('
+  - 💡 *Use click.echo() or rich.print() for CLI output*
 - 🔵 **use-click-echo** at `L279`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L298`
+- 🔵 **use-click-echo** at `L281`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L299`
+- 🔵 **use-click-echo** at `L282`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L308`
+- 🔵 **use-click-echo** at `L285`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L309`
+- 🔵 **use-click-echo** at `L304`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L310`
+- 🔵 **use-click-echo** at `L305`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L311`
+- 🔵 **use-click-echo** at `L314`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L312`
+- 🔵 **use-click-echo** at `L315`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L313`
+- 🔵 **use-click-echo** at `L316`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L321`
+- 🔵 **use-click-echo** at `L317`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L322`
+- 🔵 **use-click-echo** at `L318`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L331`
+- 🔵 **use-click-echo** at `L319`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L332`
+- 🔵 **use-click-echo** at `L327`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L333`
+- 🔵 **use-click-echo** at `L328`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L334`
+- 🔵 **use-click-echo** at `L337`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L335`
+- 🔵 **use-click-echo** at `L338`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L336`
+- 🔵 **use-click-echo** at `L339`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L386`
+- 🔵 **use-click-echo** at `L340`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L398`
+- 🔵 **use-click-echo** at `L341`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L399`
+- 🔵 **use-click-echo** at `L342`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L401`
+- 🔵 **use-click-echo** at `L392`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L402`
+- 🔵 **use-click-echo** at `L404`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L424`
+- 🔵 **use-click-echo** at `L405`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L425`
+- 🔵 **use-click-echo** at `L407`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L426`
+- 🔵 **use-click-echo** at `L408`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L427`
-  - Forbidden pattern found: 'print('
-  - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L428`
-  - Forbidden pattern found: 'print('
-  - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L429`
+- 🔵 **use-click-echo** at `L430`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
 - 🔵 **use-click-echo** at `L431`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L439`
+- 🔵 **use-click-echo** at `L432`
+  - Forbidden pattern found: 'print('
+  - 💡 *Use click.echo() or rich.print() for CLI output*
+- 🔵 **use-click-echo** at `L433`
+  - Forbidden pattern found: 'print('
+  - 💡 *Use click.echo() or rich.print() for CLI output*
+- 🔵 **use-click-echo** at `L434`
+  - Forbidden pattern found: 'print('
+  - 💡 *Use click.echo() or rich.print() for CLI output*
+- 🔵 **use-click-echo** at `L435`
+  - Forbidden pattern found: 'print('
+  - 💡 *Use click.echo() or rich.print() for CLI output*
+- 🔵 **use-click-echo** at `L437`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
 - 🔵 **use-click-echo** at `L445`
@@ -965,19 +943,19 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **use-click-echo** at `L451`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L452`
+- 🔵 **use-click-echo** at `L457`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L456`
+- 🔵 **use-click-echo** at `L458`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L493`
+- 🔵 **use-click-echo** at `L462`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L494`
+- 🔵 **use-click-echo** at `L499`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L496`
+- 🔵 **use-click-echo** at `L500`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
 - 🔵 **use-click-echo** at `L502`
@@ -986,13 +964,16 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **use-click-echo** at `L508`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L510`
+- 🔵 **use-click-echo** at `L514`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L517`
+- 🔵 **use-click-echo** at `L516`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L518`
+- 🔵 **use-click-echo** at `L523`
+  - Forbidden pattern found: 'print('
+  - 💡 *Use click.echo() or rich.print() for CLI output*
+- 🔵 **use-click-echo** at `L524`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
 - 🔵 **use-click-echo** at `L75`
@@ -1097,76 +1078,64 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **use-click-echo** at `L184`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L194`
+- 🔵 **use-click-echo** at `L197`
+  - Forbidden pattern found: 'print('
+  - 💡 *Use click.echo() or rich.print() for CLI output*
+- 🔵 **use-click-echo** at `L202`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
 - 🔵 **use-click-echo** at `L203`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L214`
+- 🔵 **use-click-echo** at `L204`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L226`
+- 🔵 **use-click-echo** at `L205`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L228`
+- 🔵 **use-click-echo** at `L206`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L229`
+- 🔵 **use-click-echo** at `L207`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L230`
+- 🔵 **use-click-echo** at `L208`
+  - Forbidden pattern found: 'print('
+  - 💡 *Use click.echo() or rich.print() for CLI output*
+- 🔵 **use-click-echo** at `L211`
+  - Forbidden pattern found: 'print('
+  - 💡 *Use click.echo() or rich.print() for CLI output*
+- 🔵 **use-click-echo** at `L213`
+  - Forbidden pattern found: 'print('
+  - 💡 *Use click.echo() or rich.print() for CLI output*
+- 🔵 **use-click-echo** at `L215`
+  - Forbidden pattern found: 'print('
+  - 💡 *Use click.echo() or rich.print() for CLI output*
+- 🔵 **use-click-echo** at `L218`
+  - Forbidden pattern found: 'print('
+  - 💡 *Use click.echo() or rich.print() for CLI output*
+- 🔵 **use-click-echo** at `L220`
+  - Forbidden pattern found: 'print('
+  - 💡 *Use click.echo() or rich.print() for CLI output*
+- 🔵 **use-click-echo** at `L222`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
 - 🔵 **use-click-echo** at `L231`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L232`
-  - Forbidden pattern found: 'print('
-  - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L233`
-  - Forbidden pattern found: 'print('
-  - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L234`
-  - Forbidden pattern found: 'print('
-  - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L237`
-  - Forbidden pattern found: 'print('
-  - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L239`
-  - Forbidden pattern found: 'print('
-  - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L241`
-  - Forbidden pattern found: 'print('
-  - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L244`
-  - Forbidden pattern found: 'print('
-  - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L246`
+- 🔵 **use-click-echo** at `L238`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
 - 🔵 **use-click-echo** at `L248`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L259`
-  - Forbidden pattern found: 'print('
-  - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L262`
-  - Forbidden pattern found: 'print('
-  - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L263`
-  - Forbidden pattern found: 'print('
-  - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L264`
-  - Forbidden pattern found: 'print('
-  - 💡 *Use click.echo() or rich.print() for CLI output*
 - 🔵 **use-click-echo** at `L265`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L266`
+- 🔵 **use-click-echo** at `L268`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L268`
+- 🔵 **use-click-echo** at `L269`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
 - 🔵 **use-click-echo** at `L270`
@@ -1175,103 +1144,112 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **use-click-echo** at `L271`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L273`
+- 🔵 **use-click-echo** at `L272`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L275`
+- 🔵 **use-click-echo** at `L274`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
 - 🔵 **use-click-echo** at `L276`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
+- 🔵 **use-click-echo** at `L277`
+  - Forbidden pattern found: 'print('
+  - 💡 *Use click.echo() or rich.print() for CLI output*
 - 🔵 **use-click-echo** at `L279`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L298`
+- 🔵 **use-click-echo** at `L281`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L299`
+- 🔵 **use-click-echo** at `L282`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L308`
+- 🔵 **use-click-echo** at `L285`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L309`
+- 🔵 **use-click-echo** at `L304`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L310`
+- 🔵 **use-click-echo** at `L305`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L311`
+- 🔵 **use-click-echo** at `L314`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L312`
+- 🔵 **use-click-echo** at `L315`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L313`
+- 🔵 **use-click-echo** at `L316`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L321`
+- 🔵 **use-click-echo** at `L317`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L322`
+- 🔵 **use-click-echo** at `L318`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L331`
+- 🔵 **use-click-echo** at `L319`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L332`
+- 🔵 **use-click-echo** at `L327`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L333`
+- 🔵 **use-click-echo** at `L328`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L334`
+- 🔵 **use-click-echo** at `L337`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L335`
+- 🔵 **use-click-echo** at `L338`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L336`
+- 🔵 **use-click-echo** at `L339`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L386`
+- 🔵 **use-click-echo** at `L340`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L398`
+- 🔵 **use-click-echo** at `L341`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L399`
+- 🔵 **use-click-echo** at `L342`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L401`
+- 🔵 **use-click-echo** at `L392`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L402`
+- 🔵 **use-click-echo** at `L404`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L424`
+- 🔵 **use-click-echo** at `L405`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L425`
+- 🔵 **use-click-echo** at `L407`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L426`
+- 🔵 **use-click-echo** at `L408`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L427`
-  - Forbidden pattern found: 'print('
-  - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L428`
-  - Forbidden pattern found: 'print('
-  - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L429`
+- 🔵 **use-click-echo** at `L430`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
 - 🔵 **use-click-echo** at `L431`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L439`
+- 🔵 **use-click-echo** at `L432`
+  - Forbidden pattern found: 'print('
+  - 💡 *Use click.echo() or rich.print() for CLI output*
+- 🔵 **use-click-echo** at `L433`
+  - Forbidden pattern found: 'print('
+  - 💡 *Use click.echo() or rich.print() for CLI output*
+- 🔵 **use-click-echo** at `L434`
+  - Forbidden pattern found: 'print('
+  - 💡 *Use click.echo() or rich.print() for CLI output*
+- 🔵 **use-click-echo** at `L435`
+  - Forbidden pattern found: 'print('
+  - 💡 *Use click.echo() or rich.print() for CLI output*
+- 🔵 **use-click-echo** at `L437`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
 - 🔵 **use-click-echo** at `L445`
@@ -1280,19 +1258,19 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **use-click-echo** at `L451`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L452`
+- 🔵 **use-click-echo** at `L457`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L456`
+- 🔵 **use-click-echo** at `L458`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L493`
+- 🔵 **use-click-echo** at `L462`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L494`
+- 🔵 **use-click-echo** at `L499`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L496`
+- 🔵 **use-click-echo** at `L500`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
 - 🔵 **use-click-echo** at `L502`
@@ -1301,13 +1279,16 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **use-click-echo** at `L508`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L510`
+- 🔵 **use-click-echo** at `L514`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L517`
+- 🔵 **use-click-echo** at `L516`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L518`
+- 🔵 **use-click-echo** at `L523`
+  - Forbidden pattern found: 'print('
+  - 💡 *Use click.echo() or rich.print() for CLI output*
+- 🔵 **use-click-echo** at `L524`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
 - 🔵 **require-lineage-metadata-python** at `L1`
@@ -1323,26 +1304,30 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **default-result-return-types** at `L150`
   - Method 'run_baseline_save' returns 'None', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **default-result-return-types** at `L187`
+  - Method '_output_comparison_json' returns 'None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L200`
+  - Method '_output_comparison_text' returns 'None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L225`
   - Method 'run_baseline_compare' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L251`
+- 🔵 **default-result-return-types** at `L257`
   - Method 'run_baseline_stats' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L282`
+- 🔵 **default-result-return-types** at `L288`
   - Method 'run_ci_init' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L292`
+- 🔵 **default-result-return-types** at `L298`
   - Method '_init_github_workflow' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L316`
+- 🔵 **default-result-return-types** at `L322`
   - Method '_init_azure_pipeline' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L380`
+- 🔵 **default-result-return-types** at `L386`
   - Method 'run_hooks_install' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L434`
+- 🔵 **default-result-return-types** at `L440`
   - Method 'run_hooks_uninstall' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L459`
+- 🔵 **default-result-return-types** at `L465`
   - Method '_collect_sarif_warnings' returns 'list[dict]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L489`
+- 🔵 **default-result-return-types** at `L495`
   - Method '_print_warnings_summary' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L499`
+- 🔵 **default-result-return-types** at `L505`
   - Method '_print_warnings_detailed' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L513`
+- 🔵 **default-result-return-types** at `L519`
   - Method 'run_warnings_list' returns 'None', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -1490,7 +1475,7 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 
-**`src/agentforge/cli/commands/revision.py`** (10 violations)
+**`src/agentforge/cli/commands/revision.py`** (11 violations)
 
 - 🔵 **cli-proper-exit-codes** at `file`
   - Required pattern not found: 'sys\.exit\s*\(\s*[012]\s*\)|raise\s+(SystemExit|click\.Abort|typer\.Abort)'
@@ -1514,9 +1499,11 @@ Or regenerate file through TDFLOW to get proper lineage.*
   - Method '_build_issue_entry' returns 'dict', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **default-result-return-types** at `L157`
   - Method '_generate_options' returns 'list', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L213`
+- 🔵 **default-result-return-types** at `L232`
+  - Method '_build_decision' returns 'dict', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L246`
   - Method '_handle_issue_interactive' returns 'bool', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L316`
+- 🔵 **default-result-return-types** at `L324`
   - Method '_evaluate_autonomously' returns 'dict', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -1562,17 +1549,11 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 
-**`src/agentforge/cli/commands/spec.py`** (12 violations)
+**`src/agentforge/cli/commands/spec.py`** (11 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L251`
-  - Function '_extract_locations_from_analysis' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-function-length** at `L334`
+- 🟡 **max-function-length** at `L343`
   - Function 'run_draft' has 62 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-nesting-depth** at `L251`
-  - Function '_extract_locations_from_analysis' has nesting depth 7 (max: 4)
-  - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
   - 💡 *Add lineage header to file:
@@ -1589,11 +1570,13 @@ Or regenerate file through TDFLOW to get proper lineage.*
   - Method '_load_optional_file' returns 'str', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **default-result-return-types** at `L167`
   - Method '_get_code_context' returns 'str', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L251`
+- 🔵 **default-result-return-types** at `L255`
+  - Method '_extract_path_from_item' returns 'str | None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L267`
   - Method '_extract_locations_from_analysis' returns 'list', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L301`
+- 🔵 **default-result-return-types** at `L310`
   - Method '_handle_draft_escalation' returns 'str', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L417`
+- 🔵 **default-result-return-types** at `L426`
   - Method '_load_spec_content' returns 'tuple', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -1604,14 +1587,8 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 
-**`src/agentforge/cli/commands/spec_adapt.py`** (12 violations)
+**`src/agentforge/cli/commands/spec_adapt.py`** (13 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L234`
-  - Function 'run_adapt' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-function-length** at `L234`
-  - Function 'run_adapt' has 99 lines (max: 50)
-  - 💡 *Extract logic into helper functions or use composition*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
   - 💡 *Add lineage header to file:
@@ -1636,6 +1613,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
   - Method '_analyze_placement' returns 'PlacementDecision', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **default-result-return-types** at `L173`
   - Method '_handle_escalation' returns 'str | None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L234`
+  - Method '_handle_placement_decision' returns 'str | None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L258`
+  - Method '_build_inputs_with_options' returns 'None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L276`
+  - Method '_output_success' returns 'None', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
   - 💡 *Add lineage header to file:
@@ -2281,27 +2264,27 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 
-**`src/agentforge/core/audit/thread_correlator.py`** (29 violations)
+**`src/agentforge/core/audit/thread_correlator.py`** (34 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L136`
-  - Function 'to_dict' has complexity 11 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-function-length** at `L210`
+- 🟡 **max-function-length** at `L232`
   - Function 'create_thread' has 61 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-parameter-count** at `L210`
+- 🟡 **max-parameter-count** at `L232`
   - Function 'create_thread' has 9 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
-- 🟡 **max-parameter-count** at `L290`
+- 🟡 **max-parameter-count** at `L312`
   - Function 'complete_thread' has 6 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
 - 🟡 **max-file-lines** at `file`
-  - File exceeds line limit (562 lines > 500)
+  - File exceeds line limit (584 lines > 500)
   - 💡 *Consider splitting into smaller files*
-- 🟡 **no-god-classes** at `L181`
+- 🟡 **no-god-classes** at `L203`
   - Class 'ThreadCorrelator' has 19 methods (max: 15)
   - 💡 *Split large classes using composition or inheritance*
-- 🔵 **single-responsibility-modules** at `L181`
+- 🔵 **single-responsibility-modules** at `L100`
+  - Class 'ThreadInfo' has 6 methods (max: 3)
+  - 💡 *Split modules with too many classes into focused single-class modules*
+- 🔵 **single-responsibility-modules** at `L203`
   - Class 'ThreadCorrelator' has 19 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
 - 🔵 **require-lineage-metadata-python** at `L1`
@@ -2316,41 +2299,51 @@ Or regenerate file through TDFLOW to get proper lineage.*
   - Method 'to_dict' returns 'dict[str, Any]', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **default-result-return-types** at `L136`
   - Method 'to_dict' returns 'dict[str, Any]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L210`
+- 🔵 **default-result-return-types** at `L154`
+  - Method '_identity_fields' returns 'dict[str, Any]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L169`
+  - Method '_timing_fields' returns 'dict[str, Any]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L178`
+  - Method '_spawn_fields' returns 'dict[str, Any]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L184`
+  - Method '_parallel_fields' returns 'dict[str, Any]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L190`
+  - Method '_outcome_fields' returns 'dict[str, Any]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L232`
   - Method 'create_thread' returns 'ThreadInfo', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L282`
+- 🔵 **default-result-return-types** at `L304`
   - Method 'start_thread' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L290`
+- 🔵 **default-result-return-types** at `L312`
   - Method 'complete_thread' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L326`
-  - Method 'get_thread' returns 'ThreadInfo | None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L335`
-  - Method 'get_children' returns 'list[ThreadInfo]', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **default-result-return-types** at `L348`
+  - Method 'get_thread' returns 'ThreadInfo | None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L357`
+  - Method 'get_children' returns 'list[ThreadInfo]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L370`
   - Method 'get_thread_tree' returns 'dict[str, Any]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L360`
+- 🔵 **default-result-return-types** at `L382`
   - Method 'get_parallel_group' returns 'list[ThreadInfo]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L375`
+- 🔵 **default-result-return-types** at `L397`
   - Method 'create_parallel_group' returns 'list[ThreadInfo]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L418`
+- 🔵 **default-result-return-types** at `L440`
   - Method 'get_ancestry' returns 'list[ThreadInfo]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L436`
+- 🔵 **default-result-return-types** at `L458`
   - Method '_save_thread_manifest' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L447`
+- 🔵 **default-result-return-types** at `L469`
   - Method '_add_child_to_parent' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L455`
+- 🔵 **default-result-return-types** at `L477`
   - Method '_log_spawn' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L467`
+- 🔵 **default-result-return-types** at `L489`
   - Method '_build_tree' returns 'dict[str, Any]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L478`
+- 🔵 **default-result-return-types** at `L500`
   - Method '_update_index' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L502`
+- 🔵 **default-result-return-types** at `L524`
   - Method '_update_lineage_tree' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L514`
+- 🔵 **default-result-return-types** at `L536`
   - Method '_load_index' returns 'dict[str, Any]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L526`
+- 🔵 **default-result-return-types** at `L548`
   - Method '_save_index' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L534`
+- 🔵 **default-result-return-types** at `L556`
   - Method '_dict_to_thread_info' returns 'ThreadInfo', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -4571,7 +4564,7 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 
-**`src/agentforge/core/contracts.py`** (2 violations)
+**`src/agentforge/core/contracts.py`** (4 violations)
 
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -4581,6 +4574,10 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🔵 **default-result-return-types** at `L103`
+  - Method '_apply_exemptions' returns 'None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L117`
+  - Method '_calculate_passed' returns 'bool', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
   - 💡 *Add lineage header to file:
@@ -5500,6 +5497,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/discovery/analyzers/patterns.py`** (36 violations)
 
+- 🟡 **max-nesting-depth** at `L514`
+  - Function '_check_base_class_signal' has nesting depth 5 (max: 4)
+  - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🟡 **max-parameter-count** at `L484`
   - Function '_check_class_name_signal' has 6 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
@@ -5527,9 +5527,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-parameter-count** at `L645`
   - Function '_add_match' has 6 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
-- 🟡 **max-nesting-depth** at `L514`
-  - Function '_check_base_class_signal' has nesting depth 5 (max: 4)
-  - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🟡 **max-class-size** at `L398`
   - Class 'PatternAnalyzer' has 22 methods (max: 20)
   - 💡 *Consider splitting into multiple classes with single responsibilities*
@@ -7049,19 +7046,13 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 
-**`src/agentforge/core/harness/conformance_tools.py`** (9 violations)
+**`src/agentforge/core/harness/conformance_tools.py`** (10 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L243`
-  - Function 'run_conformance_check' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L330`
-  - Function 'get_check_definition' has complexity 11 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-function-length** at `L243`
-  - Function 'run_conformance_check' has 69 lines (max: 50)
-  - 💡 *Extract logic into helper functions or use composition*
+- 🟡 **no-god-classes** at `L37`
+  - Class 'ConformanceTools' has 16 methods (max: 15)
+  - 💡 *Split large classes using composition or inheritance*
 - 🔵 **single-responsibility-modules** at `L37`
-  - Class 'ConformanceTools' has 9 methods (max: 3)
+  - Class 'ConformanceTools' has 16 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -7075,7 +7066,13 @@ Or regenerate file through TDFLOW to get proper lineage.*
   - Method '_get_registry' returns 'ContractRegistry', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **default-result-return-types** at `L63`
   - Method '_find_check_by_id' returns 'dict[str, Any] | None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L396`
+- 🔵 **default-result-return-types** at `L335`
+  - Method '_extract_violations' returns 'list[str]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L387`
+  - Method '_get_available_check_ids' returns 'set[str]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L397`
+  - Method '_build_check_definition' returns 'dict[str, Any]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L414`
   - Method 'get_tool_executors' returns 'dict[str, Any]', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -9340,12 +9337,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 
-**`src/agentforge/core/lineage/metadata.py`** (8 violations)
+**`src/agentforge/core/lineage/metadata.py`** (11 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L99`
-  - Function 'parse_lineage_from_file' has complexity 11 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-parameter-count** at `L164`
+- 🟡 **max-parameter-count** at `L173`
   - Function 'generate_lineage_header' has 9 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
 - 🔵 **require-lineage-metadata-python** at `L1`
@@ -9359,10 +9353,18 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **default-result-return-types** at `L46`
   - Method 'to_header_comments' returns 'str', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **default-result-return-types** at `L99`
+  - Method '_read_header_content' returns 'str | None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L111`
+  - Method '_extract_lineage_values' returns 'dict[str, str]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L121`
+  - Method '_parse_generated_at' returns 'datetime', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L129`
+  - Method '_parse_method_ids' returns 'list[str]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L139`
   - Method 'parse_lineage_from_file' returns 'LineageMetadata | None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L164`
+- 🔵 **default-result-return-types** at `L173`
   - Method 'generate_lineage_header' returns 'str', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L206`
+- 🔵 **default-result-return-types** at `L215`
   - Method 'get_test_path_from_lineage' returns 'str | None', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -9390,15 +9392,15 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/llm/client.py`** (12 violations)
 
+- 🟡 **max-nesting-depth** at `L136`
+  - Function '_build_request_params' has nesting depth 5 (max: 4)
+  - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🟡 **max-parameter-count** at `L95`
   - Function 'complete' has 6 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
 - 🟡 **max-parameter-count** at `L136`
   - Function '_build_request_params' has 6 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
-- 🟡 **max-nesting-depth** at `L136`
-  - Function '_build_request_params' has nesting depth 5 (max: 4)
-  - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🔵 **single-responsibility-modules** at `L46`
   - Class 'AnthropicLLMClient' has 7 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -15761,12 +15763,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **single-responsibility-modules** at `L224`
   - Class 'TestStateStoreList' has 6 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
-- 🟡 **no-sleep-in-tests** at `L203`
-  - Forbidden pattern found: 'time.sleep('
-  - 💡 *Use pytest-timeout, mocking, or async waiting instead*
-- 🟡 **no-sleep-in-tests** at `L281`
-  - Forbidden pattern found: 'time.sleep('
-  - 💡 *Use pytest-timeout, mocking, or async waiting instead*
 - 🔵 **prefer-pytest-raises** at `L197`
   - Forbidden pattern found: 'try:
                 # Retry load if we hit a race condition with concurrent write
@@ -15877,6 +15873,12 @@ class TestStateStoreList:
         for s in running:
             assert'
   - 💡 *Use: with pytest.raises(ExceptionType):*
+- 🟡 **no-sleep-in-tests** at `L203`
+  - Forbidden pattern found: 'time.sleep('
+  - 💡 *Use pytest-timeout, mocking, or async waiting instead*
+- 🟡 **no-sleep-in-tests** at `L281`
+  - Forbidden pattern found: 'time.sleep('
+  - 💡 *Use pytest-timeout, mocking, or async waiting instead*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
   - 💡 *Add lineage header to file:
@@ -16898,6 +16900,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **single-responsibility-modules** at `L769`
   - Class 'TestEdgeCases' has 5 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
+- 🟡 **no-real-network-calls** at `L475`
+  - Forbidden pattern found: 'requests.get('
+  - 💡 *Use responses, httpretty, or pytest-mock to mock network calls*
+- 🟡 **no-real-network-calls** at `L896`
+  - Forbidden pattern found: 'requests.get('
+  - 💡 *Use responses, httpretty, or pytest-mock to mock network calls*
 - 🟡 **unit-tests-isolated** at `L487`
   - Forbidden pattern found: 'sqlite3'
   - 💡 *Mock database connections in unit tests*
@@ -16907,15 +16915,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **unit-tests-isolated** at `L504`
   - Forbidden pattern found: 'sqlite3'
   - 💡 *Mock database connections in unit tests*
-- 🟡 **no-real-network-calls** at `L475`
-  - Forbidden pattern found: 'requests.get('
-  - 💡 *Use responses, httpretty, or pytest-mock to mock network calls*
-- 🟡 **no-real-network-calls** at `L896`
-  - Forbidden pattern found: 'requests.get('
-  - 💡 *Use responses, httpretty, or pytest-mock to mock network calls*
-- 🔵 **no-hardcoded-test-data-paths** at `L897`
-  - Forbidden pattern found: 'open("'
-  - 💡 *Use tmp_path fixture or Path(__file__).parent for test data*
 - 🔵 **fixtures-in-conftest** at `L37`
   - Forbidden pattern found: '@pytest.fixture'
   - 💡 *Move shared fixtures to conftest.py*
@@ -16928,6 +16927,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **fixtures-in-conftest** at `L298`
   - Forbidden pattern found: '@pytest.fixture'
   - 💡 *Move shared fixtures to conftest.py*
+- 🔵 **no-hardcoded-test-data-paths** at `L897`
+  - Forbidden pattern found: 'open("'
+  - 💡 *Use tmp_path fixture or Path(__file__).parent for test data*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
   - 💡 *Add lineage header to file:
@@ -17207,5 +17209,5 @@ Or regenerate file through TDFLOW to get proper lineage.*
 </details>
 
 ---
-*Generated at 2026-01-03 22:36:08 UTC*
-*Commit: `c2f7ab0e`*
+*Generated at 2026-01-03 22:56:19 UTC*
+*Commit: `aeb35a98`*

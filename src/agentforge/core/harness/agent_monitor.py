@@ -339,6 +339,43 @@ class AgentMonitor:
 
         return base_score
 
+    def _build_critical_checks(
+        self,
+        loop_detection: LoopDetection,
+        thrashing_detection: ThrashingDetection,
+        drift_score: float,
+        context_pressure: float,
+        progress_score: float,
+    ) -> list[tuple[bool, Recommendation, str]]:
+        """Build list of critical condition checks: (is_triggered, rec, message)."""
+        return [
+            (
+                loop_detection.detected and loop_detection.count >= 5,
+                Recommendation.ABORT,
+                f"Severe loop detected: {loop_detection.pattern}",
+            ),
+            (
+                drift_score > 0.5,
+                Recommendation.ESCALATE,
+                f"High drift from original task (score: {drift_score:.2f})",
+            ),
+            (
+                thrashing_detection.detected and thrashing_detection.alternation_count >= 5,
+                Recommendation.ESCALATE,
+                f"Severe thrashing detected: {thrashing_detection.pattern}",
+            ),
+            (
+                context_pressure > 0.95,
+                Recommendation.ESCALATE,
+                f"Critical context pressure: {context_pressure:.2f}",
+            ),
+            (
+                progress_score < 0.1,
+                Recommendation.ESCALATE,
+                f"Very low progress score: {progress_score:.2f}",
+            ),
+        ]
+
     def _check_critical_conditions(
         self,
         loop_detection: LoopDetection,
@@ -351,29 +388,15 @@ class AgentMonitor:
         issues: list[str] = []
         recommendation: Recommendation | None = None
 
-        if loop_detection.detected and loop_detection.count >= 5:
-            recommendation = Recommendation.ABORT
-            issues.append(f"Severe loop detected: {loop_detection.pattern}")
+        checks = self._build_critical_checks(
+            loop_detection, thrashing_detection, drift_score, context_pressure, progress_score
+        )
 
-        if drift_score > 0.5:
-            if recommendation is None:
-                recommendation = Recommendation.ESCALATE
-            issues.append(f"High drift from original task (score: {drift_score:.2f})")
-
-        if thrashing_detection.detected and thrashing_detection.alternation_count >= 5:
-            if recommendation is None:
-                recommendation = Recommendation.ESCALATE
-            issues.append(f"Severe thrashing detected: {thrashing_detection.pattern}")
-
-        if context_pressure > 0.95:
-            if recommendation is None:
-                recommendation = Recommendation.ESCALATE
-            issues.append(f"Critical context pressure: {context_pressure:.2f}")
-
-        if progress_score < 0.1:
-            if recommendation is None:
-                recommendation = Recommendation.ESCALATE
-            issues.append(f"Very low progress score: {progress_score:.2f}")
+        for is_triggered, rec, message in checks:
+            if is_triggered:
+                if recommendation is None:
+                    recommendation = rec
+                issues.append(message)
 
         return issues, recommendation
 

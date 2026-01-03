@@ -27,6 +27,13 @@ from .context_models import ActionRecord, ActionResult
 from .loop_detector import LoopDetection, LoopDetector
 
 
+# Progress action sets for data-driven checks
+_FILE_MODIFICATION_ACTIONS = frozenset([
+    "write_file", "edit_file", "replace_lines", "insert_lines", "extract_function"
+])
+_READ_ACTIONS = frozenset(["read_file", "load_context"])
+
+
 class AdaptiveBudget:
     """
     Adaptive step budget that prevents runaway while allowing complex tasks.
@@ -188,6 +195,48 @@ class AdaptiveBudget:
             return self._last_loop_detection.suggestions
         return []
 
+    def _check_file_modification_progress(
+        self, result: str, action: str, summary: str
+    ) -> tuple[bool, int]:
+        """Check if action is a file modification. Returns (is_progress, points)."""
+        if result == "success" and action in _FILE_MODIFICATION_ACTIONS:
+            return True, 1
+        return False, 0
+
+    def _check_passing_checks_progress(
+        self, result: str, action: str, summary: str
+    ) -> tuple[bool, int]:
+        """Check if action indicates passing checks. Returns (is_progress, points)."""
+        if "Check PASSED" in summary or "✓" in summary:
+            return True, 3
+        return False, 0
+
+    def _check_read_progress(
+        self, result: str, action: str, summary: str
+    ) -> tuple[bool, int]:
+        """Check if action is a successful read. Returns (is_progress, points)."""
+        if result == "success" and action in _READ_ACTIONS:
+            return True, 0  # Minor progress, no points
+        return False, 0
+
+    def _check_violation_reduction_progress(
+        self, result: str, action: str, summary: str
+    ) -> tuple[bool, int]:
+        """Check if violations were reduced. Returns (is_progress, points)."""
+        if action != "run_check" or "Violations" not in summary:
+            return False, 0
+
+        current_count = self._parse_violation_count(summary)
+        if current_count is None:
+            return False, 0
+
+        is_reduction = (
+            self._last_violation_count is not None
+            and current_count < self._last_violation_count
+        )
+        self._last_violation_count = current_count
+        return (True, 2) if is_reduction else (False, 0)
+
     def _update_progress(self, recent_actions: list[dict[str, Any]]) -> bool:
         """Check if the most recent action made progress."""
         if not recent_actions:
@@ -198,32 +247,19 @@ class AdaptiveBudget:
         action = latest.get("action", "")
         summary = latest.get("summary", "")
 
-        # File modifications count as progress
-        if result == "success" and action in [
-            "write_file", "edit_file", "replace_lines", "insert_lines", "extract_function"
-        ]:
-            self._progress_count += 1
-            return True
+        # Check each progress type in order
+        progress_checks = [
+            self._check_file_modification_progress,
+            self._check_passing_checks_progress,
+            self._check_read_progress,
+            self._check_violation_reduction_progress,
+        ]
 
-        # Passing checks count as major progress
-        if "Check PASSED" in summary or "✓" in summary:
-            self._progress_count += 3
-            return True
-
-        # Successful reads count as minor progress
-        if result == "success" and action in ["read_file", "load_context"]:
-            return True
-
-        # Reducing violations counts as progress
-        if action == "run_check" and "Violations" in summary:
-            current_count = self._parse_violation_count(summary)
-            if current_count is not None:
-                if self._last_violation_count is not None:
-                    if current_count < self._last_violation_count:
-                        self._progress_count += 2
-                        self._last_violation_count = current_count
-                        return True
-                self._last_violation_count = current_count
+        for check in progress_checks:
+            is_progress, points = check(result, action, summary)
+            if is_progress:
+                self._progress_count += points
+                return True
 
         return False
 

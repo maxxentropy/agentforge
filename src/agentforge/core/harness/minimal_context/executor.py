@@ -713,6 +713,20 @@ class MinimalContextExecutor:
             logger.warning(f"YAML parsing failed: {e}")
             return None
 
+    def _validate_path_parameter(self, parameters: dict[str, Any]) -> str | None:
+        """Validate path/file_path parameter if present. Returns error or None."""
+        path = parameters.get("path") or parameters.get("file_path")
+        if path and not isinstance(path, str):
+            return "Path parameter must be a string"
+        return None
+
+    def _validate_content_parameter(self, parameters: dict[str, Any]) -> str | None:
+        """Validate content parameter if present. Returns error or None."""
+        content = parameters.get("content")
+        if content is not None and not isinstance(content, str):
+            return "Content parameter must be a string"
+        return None
+
     def _validate_response_parameters(
         self,
         action_name: str,
@@ -737,16 +751,12 @@ class MinimalContextExecutor:
         if not isinstance(parameters, dict):
             return False, "Parameters must be a dictionary"
 
-        # Validate common parameter patterns
-        if "path" in parameters or "file_path" in parameters:
-            path = parameters.get("path") or parameters.get("file_path")
-            if path and not isinstance(path, str):
-                return False, "Path parameter must be a string"
-
-        if "content" in parameters:
-            content = parameters.get("content")
-            if content is not None and not isinstance(content, str):
-                return False, "Content parameter must be a string"
+        # Run parameter validators
+        validators = [self._validate_path_parameter, self._validate_content_parameter]
+        for validator in validators:
+            error = validator(parameters)
+            if error:
+                return False, error
 
         return True, None
 
@@ -859,85 +869,52 @@ class MinimalContextExecutor:
         if facts:
             memory_manager.add_facts_from_list(facts, step=step)
 
-    def run_until_complete(
-        self,
-        task_id: str,
-        max_iterations: int = 50,
-        on_step: Callable[[StepOutcome], None] | None = None,
-        adaptive_budget: AdaptiveBudget | None = None,
-    ) -> list[StepOutcome]:
-        """
-        Run task until completion or budget exhausted.
-
-        Args:
-            task_id: Task identifier
-            max_iterations: Hard ceiling (safety limit)
-            on_step: Optional callback after each step
-            adaptive_budget: Optional adaptive budget for dynamic step limits
-
-        Returns:
-            List of all step outcomes
-        """
-        # Initialize audit logger
+    def _initialize_run(self, task_id: str) -> None:
+        """Initialize audit logger and reset tracking for a run."""
         if self.audit_enabled:
             self.current_audit_logger = ContextAuditLogger(
                 project_path=self.project_path,
                 task_id=task_id,
             )
-
-        # Reset compaction tracking
         self._compaction_events = 0
         self._tokens_saved = 0
 
-        outcomes = []
-        budget = adaptive_budget or AdaptiveBudget(
-            base_budget=15,
-            max_budget=max_iterations,
-        )
+    def _get_loop_detection_facts(self, task_id: str, budget: AdaptiveBudget):
+        """Get facts for loop detection if enhanced detection is enabled."""
+        if not budget.use_enhanced_loop_detection:
+            return None
+        task_dir = self.state_store._task_dir(task_id)
+        memory_manager = WorkingMemoryManager(task_dir)
+        state = self.state_store.load(task_id)
+        if state:
+            return _load_facts_for_loop_detection(memory_manager, state.current_step)
+        return None
 
-        for i in range(max_iterations):
-            outcome = self.execute_step(task_id)
-            outcomes.append(outcome)
+    def _check_loop_continuation(
+        self, task_id: str, outcome: StepOutcome, step: int, budget: AdaptiveBudget
+    ) -> tuple[bool, str | None]:
+        """Check if execution should continue based on budget and loop detection."""
+        recent = self.state_store.get_recent_actions(task_id, limit=5)
+        recent_dicts = _convert_actions_to_dicts(recent, fallback_step=step)
+        facts = self._get_loop_detection_facts(task_id, budget)
 
-            # Log step
-            self._log_step(outcome, task_id)
+        should_continue, reason, loop_detection = budget.check_continue(step, recent_dicts, facts)
 
-            if on_step:
-                on_step(outcome)
+        # Allow phase transition even if loop detected
+        if not should_continue and loop_detection and loop_detection.detected:
+            can_recover, recovery_reason = self._check_phase_recovery_from_loop(task_id, outcome)
+            if can_recover:
+                print(f"  (Loop detected but {recovery_reason.lower()})")
+                return True, None
 
-            if not outcome.should_continue:
-                break
+        if not should_continue:
+            self._handle_loop_stop([], loop_detection)
+            return False, reason
 
-            # Check adaptive budget with enhanced loop detection
-            recent = self.state_store.get_recent_actions(task_id, limit=5)
-            recent_dicts = _convert_actions_to_dicts(recent, fallback_step=i + 1)
+        return True, None
 
-            facts = None
-            if budget.use_enhanced_loop_detection:
-                task_dir = self.state_store._task_dir(task_id)
-                memory_manager = WorkingMemoryManager(task_dir)
-                state = self.state_store.load(task_id)
-                if state:
-                    facts = _load_facts_for_loop_detection(memory_manager, state.current_step)
-
-            should_continue, reason, loop_detection = budget.check_continue(
-                i + 1, recent_dicts, facts
-            )
-
-            # Allow phase transition even if loop detected
-            if not should_continue and loop_detection and loop_detection.detected:
-                can_recover, recovery_reason = self._check_phase_recovery_from_loop(task_id, outcome)
-                if can_recover:
-                    should_continue = True
-                    reason = recovery_reason
-                    print(f"  (Loop detected but {recovery_reason.lower()})")
-
-            if not should_continue:
-                print(f"  {reason}")
-                self._handle_loop_stop(outcomes, loop_detection)
-                break
-
-        # Log task summary
+    def _log_run_summary(self, outcomes: list[StepOutcome]) -> None:
+        """Log task summary if audit is enabled."""
         if self.current_audit_logger and outcomes:
             final_status = _determine_final_status(outcomes)
             total_tokens = sum(o.tokens_used for o in outcomes)
@@ -950,52 +927,43 @@ class MinimalContextExecutor:
                 tokens_saved=self._tokens_saved,
             )
 
-        return outcomes
-
-    def run_task_native(
+    def run_until_complete(
         self,
         task_id: str,
-        domain_context: dict[str, Any] | None = None,
-        llm_client: LLMClient | None = None,
-        max_steps: int | None = None,
+        max_iterations: int = 50,
         on_step: Callable[[StepOutcome], None] | None = None,
-    ) -> dict[str, Any]:
-        """
-        Run a complete task using native Anthropic tool calls.
+        adaptive_budget: AdaptiveBudget | None = None,
+    ) -> list[StepOutcome]:
+        """Run task until completion or budget exhausted."""
+        self._initialize_run(task_id)
 
-        This method uses the Anthropic API's native tool_use feature
-        instead of parsing YAML from text responses.
+        outcomes = []
+        budget = adaptive_budget or AdaptiveBudget(base_budget=15, max_budget=max_iterations)
 
-        Args:
-            task_id: Task identifier
-            domain_context: Domain-specific context (violation info, etc.)
-            llm_client: Optional LLM client (creates one if not provided)
-            max_steps: Override max steps (uses config if not provided)
-            on_step: Optional callback after each step
+        for i in range(max_iterations):
+            outcome = self.execute_step(task_id)
+            outcomes.append(outcome)
+            self._log_step(outcome, task_id)
 
-        Returns:
-            Dict with task results and audit info
-        """
-        # Initialize audit logger
-        if self.audit_enabled:
-            self.current_audit_logger = ContextAuditLogger(
-                project_path=self.project_path,
-                task_id=task_id,
-            )
+            if on_step:
+                on_step(outcome)
 
-        # Reset compaction tracking
-        self._compaction_events = 0
-        self._tokens_saved = 0
+            if not outcome.should_continue:
+                break
 
-        effective_max_steps = max_steps or self.config.defaults.max_steps
+            should_continue, reason = self._check_loop_continuation(task_id, outcome, i + 1, budget)
+            if not should_continue:
+                print(f"  {reason}")
+                break
 
-        tools = get_tools_for_task(self.task_type)
-        client = llm_client or LLMClientFactory.create()
+        self._log_run_summary(outcomes)
+        return outcomes
 
-        # Initialize state
+    def _initialize_task_state(self, task_id: str, domain_context: dict[str, Any] | None):
+        """Initialize or update task state with domain context."""
         state = self.state_store.load(task_id)
         if state is None:
-            state = self.state_store.create_task(
+            self.state_store.create_task(
                 task_type=self.task_type,
                 goal="Execute task with native tools",
                 success_criteria=["Task completes successfully"],
@@ -1006,66 +974,25 @@ class MinimalContextExecutor:
             for key, value in domain_context.items():
                 self.state_store.update_context_data(task_id, key, value)
 
-        # Configure thinking if enabled
-        thinking_config = None
+    def _get_thinking_config(self) -> ThinkingConfig | None:
+        """Get thinking configuration if enabled."""
         if self.config.defaults.thinking_enabled:
-            thinking_config = ThinkingConfig(
+            return ThinkingConfig(
                 enabled=True,
                 budget_tokens=self.config.defaults.thinking_budget,
             )
+        return None
 
-        outcomes: list[StepOutcome] = []
-        step_num = 0
+    def _should_stop_native(self, outcome: StepOutcome) -> bool:
+        """Check if native execution should stop."""
+        if outcome.action_name in ("complete", "escalate", "cannot_fix"):
+            return True
+        return bool(outcome.error)
 
-        while step_num < effective_max_steps:
-            step_num += 1
-
-            context = self.context_builder.build(task_id=task_id)
-            system_prompt = context.system_prompt
-            messages = [{"role": "user", "content": context.user_message}]
-
-            response = client.complete(
-                system=system_prompt,
-                messages=messages,
-                tools=tools,
-                thinking=thinking_config,
-            )
-
-            outcome = self._process_native_response(
-                response=response,
-                task_id=task_id,
-                step=step_num,
-            )
-            outcomes.append(outcome)
-
-            self._log_step(outcome, task_id)
-
-            if on_step:
-                on_step(outcome)
-
-            if outcome.action_name in ("complete", "escalate", "cannot_fix"):
-                break
-
-            if outcome.error:
-                break
-
-            self._update_phase_from_action(task_id, outcome.action_name)
-
-        # Determine final status
+    def _build_native_result(self, task_id: str, outcomes: list[StepOutcome]) -> dict[str, Any]:
+        """Build result dictionary for native task execution."""
         final_status = _determine_final_status(outcomes)
-
-        # Log task summary
-        if self.current_audit_logger:
-            total_tokens = sum(o.tokens_used for o in outcomes)
-            self.current_audit_logger.log_task_summary(
-                total_steps=len(outcomes),
-                final_status=final_status,
-                total_tokens=total_tokens,
-                cached_tokens=0,
-                compaction_events=self._compaction_events,
-                tokens_saved=self._tokens_saved,
-            )
-
+        self._log_run_summary(outcomes)
         return {
             "task_id": task_id,
             "status": final_status,
@@ -1075,6 +1002,54 @@ class MinimalContextExecutor:
             "tokens_saved": self._tokens_saved,
             "native_tools": True,
         }
+
+    def run_task_native(
+        self,
+        task_id: str,
+        domain_context: dict[str, Any] | None = None,
+        llm_client: LLMClient | None = None,
+        max_steps: int | None = None,
+        on_step: Callable[[StepOutcome], None] | None = None,
+    ) -> dict[str, Any]:
+        """Run a complete task using native Anthropic tool calls."""
+        self._initialize_run(task_id)
+
+        effective_max_steps = max_steps or self.config.defaults.max_steps
+        tools = get_tools_for_task(self.task_type)
+        client = llm_client or LLMClientFactory.create()
+
+        self._initialize_task_state(task_id, domain_context)
+        thinking_config = self._get_thinking_config()
+
+        outcomes: list[StepOutcome] = []
+        step_num = 0
+
+        while step_num < effective_max_steps:
+            step_num += 1
+
+            context = self.context_builder.build(task_id=task_id)
+            messages = [{"role": "user", "content": context.user_message}]
+
+            response = client.complete(
+                system=context.system_prompt,
+                messages=messages,
+                tools=tools,
+                thinking=thinking_config,
+            )
+
+            outcome = self._process_native_response(response=response, task_id=task_id, step=step_num)
+            outcomes.append(outcome)
+            self._log_step(outcome, task_id)
+
+            if on_step:
+                on_step(outcome)
+
+            if self._should_stop_native(outcome):
+                break
+
+            self._update_phase_from_action(task_id, outcome.action_name)
+
+        return self._build_native_result(task_id, outcomes)
 
     def _process_native_response(
         self,

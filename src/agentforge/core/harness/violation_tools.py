@@ -132,6 +132,27 @@ class ViolationTools:
                 "read_violation", f"Error reading violation: {e}"
             )
 
+    def _matches_filters(
+        self, data: dict, status_filter: str, severity_filter: str | None, file_pattern: str | None
+    ) -> bool:
+        """Check if violation data matches all filters."""
+        if status_filter != "all" and data.get("status") != status_filter:
+            return False
+        if severity_filter and data.get("severity") != severity_filter:
+            return False
+        if file_pattern and not fnmatch.fnmatch(data.get("file_path", ""), file_pattern):
+            return False
+        return True
+
+    def _format_violations_table(self, violations: list[dict]) -> str:
+        """Format violations as a table."""
+        lines = [f"Found {len(violations)} violations:", ""]
+        lines.append(f"{'ID':<18} {'Severity':<10} {'File':<40} {'Message'}")
+        lines.append("-" * 100)
+        for v in violations:
+            lines.append(f"{v['id']:<18} {v['severity']:<10} {v['file']:<40} {v['message']}")
+        return "\n".join(lines)
+
     def list_violations(self, name: str, params: dict[str, Any]) -> ToolResult:
         """
         List violations with optional filtering.
@@ -141,9 +162,6 @@ class ViolationTools:
             severity: Filter by severity ("blocker", "critical", "major", "minor")
             file_pattern: Filter by file path pattern (glob)
             limit: Maximum number to return. Default: 20
-
-        Returns:
-            ToolResult with list of violation summaries
         """
         status_filter = params.get("status", "open")
         severity_filter = params.get("severity")
@@ -151,9 +169,7 @@ class ViolationTools:
         limit = params.get("limit", 20)
 
         if not self.violations_dir.exists():
-            return ToolResult.success_result(
-                "list_violations", "No violations directory found"
-            )
+            return ToolResult.success_result("list_violations", "No violations directory found")
 
         try:
             violations: list[dict[str, Any]] = []
@@ -165,50 +181,26 @@ class ViolationTools:
                 with open(vfile) as f:
                     data = yaml.safe_load(f)
 
-                # Apply filters
-                if status_filter != "all" and data.get("status") != status_filter:
+                if not self._matches_filters(data, status_filter, severity_filter, file_pattern):
                     continue
 
-                if severity_filter and data.get("severity") != severity_filter:
-                    continue
-
-                if file_pattern:
-                    if not fnmatch.fnmatch(data.get("file_path", ""), file_pattern):
-                        continue
-
-                violations.append(
-                    {
-                        "id": data.get("violation_id", vfile.stem),
-                        "severity": data.get("severity", "unknown"),
-                        "file": data.get("file_path", "unknown"),
-                        "check": data.get("check_id", "unknown"),
-                        "message": data.get("message", "")[:80],  # Truncate
-                    }
-                )
+                violations.append({
+                    "id": data.get("violation_id", vfile.stem),
+                    "severity": data.get("severity", "unknown"),
+                    "file": data.get("file_path", "unknown"),
+                    "check": data.get("check_id", "unknown"),
+                    "message": data.get("message", "")[:80],
+                })
 
             if not violations:
                 return ToolResult.success_result(
-                    "list_violations",
-                    f"No violations found matching filters (status={status_filter})",
+                    "list_violations", f"No violations found matching filters (status={status_filter})"
                 )
 
-            # Format as table
-            lines = [f"Found {len(violations)} violations:"]
-            lines.append("")
-            lines.append(f"{'ID':<18} {'Severity':<10} {'File':<40} {'Message'}")
-            lines.append("-" * 100)
-
-            for v in violations:
-                lines.append(
-                    f"{v['id']:<18} {v['severity']:<10} {v['file']:<40} {v['message']}"
-                )
-
-            return ToolResult.success_result("list_violations", "\n".join(lines))
+            return ToolResult.success_result("list_violations", self._format_violations_table(violations))
 
         except Exception as e:
-            return ToolResult.failure_result(
-                "list_violations", f"Error listing violations: {e}"
-            )
+            return ToolResult.failure_result("list_violations", f"Error listing violations: {e}")
 
     def get_violation_context(self, name: str, params: dict[str, Any]) -> ToolResult:
         """

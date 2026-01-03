@@ -515,6 +515,19 @@ _CLASS_WITH_INHERITANCE = {
 }
 
 
+def _build_bases_string(match: re.Match, file_suffix: str) -> str:
+    """Build inheritance string from regex match based on language."""
+    if file_suffix == ".ts":
+        # TypeScript has separate extends and implements groups
+        bases = []
+        if match.lastindex >= 2 and match.group(2):
+            bases.append(match.group(2))
+        if match.lastindex >= 3 and match.group(3):
+            bases.append(match.group(3))
+        return ", ".join(bases) if bases else ""
+    return match.group(2) if match.lastindex >= 2 else ""
+
+
 def _extract_class_with_bases(content: str, file_suffix: str) -> list[tuple]:
     """
     Extract classes with their base classes/interfaces.
@@ -531,19 +544,7 @@ def _extract_class_with_bases(content: str, file_suffix: str) -> list[tuple]:
         for match in pattern.finditer(content):
             line_num = content[:match.start()].count("\n") + 1
             class_name = match.group(1)
-
-            # Build inheritance string based on language
-            if file_suffix == ".ts":
-                # TypeScript has separate extends and implements groups
-                bases = []
-                if match.lastindex >= 2 and match.group(2):
-                    bases.append(match.group(2))
-                if match.lastindex >= 3 and match.group(3):
-                    bases.append(match.group(3))
-                bases_str = ", ".join(bases) if bases else ""
-            else:
-                bases_str = match.group(2) if match.lastindex >= 2 else ""
-
+            bases_str = _build_bases_string(match, file_suffix)
             classes.append((class_name, bases_str or "", line_num))
     except re.error:
         pass
@@ -801,6 +802,57 @@ def _execute_code_metric_check(ctx: CheckContext) -> list[CheckResult]:
     return execute_ast_check(ctx)
 
 
+_BOOL_PREFIXES = ("is_", "has_", "can_", "should_", "will_", "did_", "was_")
+_BAD_NAMES = {"data", "info", "temp", "tmp", "val", "value", "item", "obj", "result", "res"}
+_ALLOWED_SHORT = {"i", "j", "k", "x", "y", "z", "e", "f", "n", "_", "id", "db"}
+
+
+def _check_boolean_naming(node, ctx: CheckContext, rel_path: str) -> CheckResult | None:
+    """Check if boolean function follows naming convention."""
+    import ast
+    if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+        return None
+    if not (node.returns and isinstance(node.returns, ast.Name) and node.returns.id == "bool"):
+        return None
+    name = node.name.lstrip("_")
+    if name.startswith(_BOOL_PREFIXES):
+        return None
+    return CheckResult(
+        check_id=ctx.check_id, check_name=ctx.check_name,
+        passed=False, severity=ctx.severity,
+        message=f"Boolean function '{node.name}' should start with is_/has_/can_/should_",
+        file_path=rel_path, line_number=node.lineno,
+        fix_hint="Rename to express a yes/no question"
+    )
+
+
+def _check_descriptive_naming(node, ctx: CheckContext, rel_path: str) -> list[CheckResult]:
+    """Check if function/variable names are descriptive."""
+    import ast
+    results = []
+    if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+        name = node.name
+        if not name.startswith("_") and len(name) <= 2 and name not in _ALLOWED_SHORT:
+            results.append(CheckResult(
+                check_id=ctx.check_id, check_name=ctx.check_name,
+                passed=False, severity=ctx.severity,
+                message=f"Function name '{name}' is too short to be descriptive",
+                file_path=rel_path, line_number=node.lineno,
+                fix_hint="Use descriptive names that reveal intent"
+            ))
+    if isinstance(node, ast.Assign):
+        for target in node.targets:
+            if isinstance(target, ast.Name) and target.id.lower() in _BAD_NAMES:
+                results.append(CheckResult(
+                    check_id=ctx.check_id, check_name=ctx.check_name,
+                    passed=False, severity="info",
+                    message=f"Variable name '{target.id}' is generic",
+                    file_path=rel_path, line_number=node.lineno,
+                    fix_hint="Name should describe what the variable contains"
+                ))
+    return results
+
+
 def _execute_naming_convention_check(ctx: CheckContext) -> list[CheckResult]:
     """
     Execute naming convention checks (boolean naming, descriptive names, etc.).
@@ -811,13 +863,7 @@ def _execute_naming_convention_check(ctx: CheckContext) -> list[CheckResult]:
 
     results = []
     check_id = ctx.check_id
-
-    # Boolean naming prefixes
-    bool_prefixes = ("is_", "has_", "can_", "should_", "will_", "did_", "was_")
-    # Generic names to avoid
-    bad_names = {"data", "info", "temp", "tmp", "val", "value", "item", "obj", "result", "res"}
-    # Allowed short names
-    allowed_short = {"i", "j", "k", "x", "y", "z", "e", "f", "n", "_", "id", "db"}
+    checker = _check_boolean_naming if check_id == "boolean-naming" else None
 
     for file_path in ctx.file_paths:
         if file_path.suffix != ".py":
@@ -831,44 +877,11 @@ def _execute_naming_convention_check(ctx: CheckContext) -> list[CheckResult]:
         rel_path = str(file_path.relative_to(ctx.repo_root))
 
         for node in ast.walk(tree):
-            # Check boolean function naming
             if check_id == "boolean-naming":
-                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                    if node.returns and isinstance(node.returns, ast.Name):
-                        if node.returns.id == "bool":
-                            name = node.name.lstrip("_")
-                            if not name.startswith(bool_prefixes):
-                                results.append(CheckResult(
-                                    check_id=ctx.check_id, check_name=ctx.check_name,
-                                    passed=False, severity=ctx.severity,
-                                    message=f"Boolean function '{node.name}' should start with is_/has_/can_/should_",
-                                    file_path=rel_path, line_number=node.lineno,
-                                    fix_hint="Rename to express a yes/no question"
-                                ))
-
-            # Check descriptive naming
+                if result := _check_boolean_naming(node, ctx, rel_path):
+                    results.append(result)
             elif check_id == "descriptive-naming":
-                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                    name = node.name
-                    if not name.startswith("_") and len(name) <= 2 and name not in allowed_short:
-                        results.append(CheckResult(
-                            check_id=ctx.check_id, check_name=ctx.check_name,
-                            passed=False, severity=ctx.severity,
-                            message=f"Function name '{name}' is too short to be descriptive",
-                            file_path=rel_path, line_number=node.lineno,
-                            fix_hint="Use descriptive names that reveal intent"
-                        ))
-
-                if isinstance(node, ast.Assign):
-                    for target in node.targets:
-                        if isinstance(target, ast.Name) and target.id.lower() in bad_names:
-                            results.append(CheckResult(
-                                check_id=ctx.check_id, check_name=ctx.check_name,
-                                passed=False, severity="info",
-                                message=f"Variable name '{target.id}' is generic",
-                                file_path=rel_path, line_number=node.lineno,
-                                fix_hint="Name should describe what the variable contains"
-                            ))
+                results.extend(_check_descriptive_naming(node, ctx, rel_path))
 
     return results
 

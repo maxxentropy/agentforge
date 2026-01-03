@@ -83,6 +83,40 @@ def apply_fix(check_id: str, file_path: Path, dry_run: bool = False) -> FixResul
 # ============================================================================
 
 
+def _make_error_result(file_path: Path, dry_run: bool, error: str, original: str = "") -> FixResult:
+    """Create a FixResult for error cases."""
+    return FixResult(
+        file_path=str(file_path), fixes_applied=0, original_content=original,
+        fixed_content=original, dry_run=dry_run, errors=[error],
+    )
+
+
+def _find_bare_asserts(tree: ast.AST) -> list[tuple[int, int, str]]:
+    """Find all assert statements without messages."""
+    asserts = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assert) and node.msg is None:
+            message = _generate_assert_message(node.test)
+            asserts.append((node.lineno, node.col_offset, message))
+    return asserts
+
+
+def _apply_assert_fixes(lines: list[str], asserts_to_fix: list[tuple[int, int, str]]) -> int:
+    """Apply assert message fixes, return count of fixes applied."""
+    fixed_count = 0
+    for lineno, col_offset, message in sorted(asserts_to_fix, reverse=True):
+        line_idx = lineno - 1
+        if line_idx >= len(lines):
+            continue
+        line = lines[line_idx]
+        if _is_single_line_assert(line, col_offset):
+            fixed_line = _add_message_to_assert(line, message)
+            if fixed_line != line:
+                lines[line_idx] = fixed_line
+                fixed_count += 1
+    return fixed_count
+
+
 @register_fixer("no-bare-assert")
 def fix_bare_assert(file_path: Path, dry_run: bool = False) -> FixResult:
     """
@@ -94,76 +128,32 @@ def fix_bare_assert(file_path: Path, dry_run: bool = False) -> FixResult:
         assert x       ->  assert x, "Expected x to be truthy"
     """
     if not file_path.exists():
-        return FixResult(
-            file_path=str(file_path),
-            fixes_applied=0,
-            original_content="",
-            fixed_content="",
-            dry_run=dry_run,
-            errors=["File not found"],
-        )
+        return _make_error_result(file_path, dry_run, "File not found")
 
     original = file_path.read_text(encoding="utf-8", errors="ignore")
 
     try:
         tree = ast.parse(original, filename=str(file_path))
     except SyntaxError as e:
-        return FixResult(
-            file_path=str(file_path),
-            fixes_applied=0,
-            original_content=original,
-            fixed_content=original,
-            dry_run=dry_run,
-            errors=[f"Syntax error: {e}"],
-        )
+        return _make_error_result(file_path, dry_run, f"Syntax error: {e}", original)
 
-    # Find all assert statements without messages
-    asserts_to_fix: list[tuple[int, int, str]] = []  # (line, col, message)
-
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Assert) and node.msg is None:
-            message = _generate_assert_message(node.test)
-            asserts_to_fix.append((node.lineno, node.col_offset, message))
-
+    asserts_to_fix = _find_bare_asserts(tree)
     if not asserts_to_fix:
         return FixResult(
-            file_path=str(file_path),
-            fixes_applied=0,
-            original_content=original,
-            fixed_content=original,
-            dry_run=dry_run,
+            file_path=str(file_path), fixes_applied=0,
+            original_content=original, fixed_content=original, dry_run=dry_run,
         )
 
-    # Apply fixes from bottom to top to preserve line numbers
     lines = original.split("\n")
-    fixed_count = 0
-
-    for lineno, col_offset, message in sorted(asserts_to_fix, reverse=True):
-        line_idx = lineno - 1
-        if line_idx >= len(lines):
-            continue
-
-        line = lines[line_idx]
-
-        # Find the end of the assert statement (might span multiple lines)
-        # Simple case: single-line assert
-        if _is_single_line_assert(line, col_offset):
-            fixed_line = _add_message_to_assert(line, message)
-            if fixed_line != line:
-                lines[line_idx] = fixed_line
-                fixed_count += 1
-
+    fixed_count = _apply_assert_fixes(lines, asserts_to_fix)
     fixed_content = "\n".join(lines)
 
     if not dry_run and fixed_count > 0:
         file_path.write_text(fixed_content, encoding="utf-8")
 
     return FixResult(
-        file_path=str(file_path),
-        fixes_applied=fixed_count,
-        original_content=original,
-        fixed_content=fixed_content,
-        dry_run=dry_run,
+        file_path=str(file_path), fixes_applied=fixed_count,
+        original_content=original, fixed_content=fixed_content, dry_run=dry_run,
     )
 
 
@@ -335,6 +325,55 @@ def _has_message_already(test_expr: str) -> bool:
     return False
 
 
+def _check_logging_setup(lines: list[str]) -> tuple[bool, bool]:
+    """Check for existing logging import and logger declaration."""
+    has_import = any("import logging" in ln or "from logging import" in ln for ln in lines)
+    has_logger = any("logger = " in ln or "logger=" in ln for ln in lines)
+    return has_import, has_logger
+
+
+def _convert_prints_to_logger(lines: list[str]) -> tuple[list[str], int]:
+    """Convert print statements to logger.info calls."""
+    fixed_lines = []
+    fixed_count = 0
+    for line in lines:
+        match = re.match(r"^(\s*)print\((.+)\)(\s*(?:#.*)?)$", line)
+        if match:
+            indent, args, trailing = match.group(1), match.group(2), match.group(3)
+            fixed_lines.append(f"{indent}logger.info({args}){trailing}")
+            fixed_count += 1
+        else:
+            fixed_lines.append(line)
+    return fixed_lines, fixed_count
+
+
+def _find_import_insert_position(lines: list[str]) -> int:
+    """Find position after imports to insert logging setup."""
+    insert_idx = 0
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped and not stripped.startswith("#") and not stripped.startswith('"'):
+            if stripped.startswith("import ") or stripped.startswith("from "):
+                insert_idx = i + 1
+            else:
+                break
+    return insert_idx
+
+
+def _add_logging_header(lines: list[str], has_import: bool, has_logger: bool) -> None:
+    """Add logging import and logger declaration if needed."""
+    additions = []
+    if not has_import:
+        additions.append("import logging")
+    if not has_logger:
+        additions.append("logger = logging.getLogger(__name__)")
+    if additions:
+        insert_idx = _find_import_insert_position(lines)
+        for addition in reversed(additions):
+            lines.insert(insert_idx, addition)
+        lines.insert(insert_idx + len(additions), "")
+
+
 @register_fixer("no-print-statements")
 def fix_print_statements(file_path: Path, dry_run: bool = False) -> FixResult:
     """
@@ -347,72 +386,18 @@ def fix_print_statements(file_path: Path, dry_run: bool = False) -> FixResult:
     """
     if not file_path.exists():
         return FixResult(
-            file_path=str(file_path),
-            fixes_applied=0,
-            original_content="",
-            fixed_content="",
-            dry_run=dry_run,
-            errors=["File not found"],
+            file_path=str(file_path), fixes_applied=0, original_content="",
+            fixed_content="", dry_run=dry_run, errors=["File not found"],
         )
 
     original = file_path.read_text(encoding="utf-8", errors="ignore")
-
-    # Simple regex-based replacement for now
-    # This is a basic implementation - a full solution would use AST
     lines = original.split("\n")
-    fixed_lines = []
-    fixed_count = 0
-    has_logging_import = False
-    has_logger = False
 
-    # Check for existing logging setup
-    for line in lines:
-        if "import logging" in line or "from logging import" in line:
-            has_logging_import = True
-        if "logger = " in line or "logger=" in line:
-            has_logger = True
+    has_import, has_logger = _check_logging_setup(lines)
+    fixed_lines, fixed_count = _convert_prints_to_logger(lines)
 
-    for line in lines:
-        # Simple pattern: print(...) at start of line or after indent
-        match = re.match(r"^(\s*)print\((.+)\)(\s*(?:#.*)?)$", line)
-        if match:
-            indent = match.group(1)
-            args = match.group(2)
-            trailing = match.group(3)
-
-            # Convert to logger.info()
-            # Simple case: just replace print with logger.info
-            fixed_line = f"{indent}logger.info({args}){trailing}"
-            fixed_lines.append(fixed_line)
-            fixed_count += 1
-        else:
-            fixed_lines.append(line)
-
-    # Add imports and logger if we made changes and they're missing
     if fixed_count > 0:
-        header_additions = []
-        if not has_logging_import:
-            header_additions.append("import logging")
-        if not has_logger:
-            header_additions.append("logger = logging.getLogger(__name__)")
-
-        if header_additions:
-            # Find first non-comment, non-blank, non-import line
-            insert_idx = 0
-            for i, line in enumerate(fixed_lines):
-                stripped = line.strip()
-                if stripped and not stripped.startswith("#") and not stripped.startswith('"'):
-                    # Check if it's an import
-                    if stripped.startswith("import ") or stripped.startswith("from "):
-                        insert_idx = i + 1
-                    else:
-                        break
-
-            # Insert after imports
-            for addition in reversed(header_additions):
-                fixed_lines.insert(insert_idx, addition)
-            # Add blank line after additions
-            fixed_lines.insert(insert_idx + len(header_additions), "")
+        _add_logging_header(fixed_lines, has_import, has_logger)
 
     fixed_content = "\n".join(fixed_lines)
 
@@ -420,11 +405,8 @@ def fix_print_statements(file_path: Path, dry_run: bool = False) -> FixResult:
         file_path.write_text(fixed_content, encoding="utf-8")
 
     return FixResult(
-        file_path=str(file_path),
-        fixes_applied=fixed_count,
-        original_content=original,
-        fixed_content=fixed_content,
-        dry_run=dry_run,
+        file_path=str(file_path), fixes_applied=fixed_count,
+        original_content=original, fixed_content=fixed_content, dry_run=dry_run,
     )
 
 

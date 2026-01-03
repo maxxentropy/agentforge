@@ -420,6 +420,29 @@ except Exception as e:
 
         return None  # All validations passed
 
+    def _format_focused_read(
+        self, lines: list[str], violation_line: int, path: str
+    ) -> tuple[str, str]:
+        """Format a focused read around violation line. Returns (content, summary)."""
+        start_line = max(0, violation_line - 30)
+        end_line = min(len(lines), violation_line + 70)
+        focused_lines = lines[start_line:end_line]
+        numbered = [f"{i + start_line + 1:4d}: {line}" for i, line in enumerate(focused_lines)]
+        content = "\n".join(numbered)
+        summary = f"Read {path} lines {start_line+1}-{end_line} (violation at line {violation_line})"
+        return content, summary
+
+    def _format_generic_read(
+        self, lines: list[str], total_chars: int, path: str
+    ) -> tuple[str, str]:
+        """Format a generic file read. Returns (content, summary)."""
+        numbered = [f"{i+1:4d}: {line}" for i, line in enumerate(lines[:100])]
+        content = "\n".join(numbered)
+        if len(lines) > 100:
+            content += f"\n... [{len(lines) - 100} more lines]"
+        summary = f"Read {total_chars} chars from {path}"
+        return content, summary
+
     def _action_read_file(
         self,
         action_name: str,
@@ -439,49 +462,23 @@ except Exception as e:
             content = full_path.read_text()
             lines = content.split("\n")
 
-            # Check if this is the violation file and we have a line number
             violation_line = state.context_data.get("line_number")
             violation_file = state.context_data.get("file_path")
+            is_violation_file = violation_line and violation_file and path == violation_file
 
-            output_content = content
-            if violation_line and violation_file and path == violation_file:
-                # Focus on the area around the violation
-                start_line = max(0, violation_line - 30)
-                end_line = min(len(lines), violation_line + 70)
-                focused_lines = lines[start_line:end_line]
-
-                # Add line numbers for clarity
-                numbered_lines = [
-                    f"{i + start_line + 1:4d}: {line}"
-                    for i, line in enumerate(focused_lines)
-                ]
-                output_content = "\n".join(numbered_lines)
-
-                # Highlight the violation line
-                summary = f"Read {path} lines {start_line+1}-{end_line} (violation at line {violation_line})"
+            if is_violation_file:
+                output_content, summary = self._format_focused_read(lines, violation_line, path)
             else:
-                # Generic read - show first portion with line numbers
-                numbered_lines = [f"{i+1:4d}: {line}" for i, line in enumerate(lines[:100])]
-                output_content = "\n".join(numbered_lines)
-                if len(lines) > 100:
-                    output_content += f"\n... [{len(lines) - 100} more lines]"
-                summary = f"Read {len(content)} chars from {path}"
+                output_content, summary = self._format_generic_read(lines, len(content), path)
 
-            # Store in working memory for context
+            # Store in working memory
             task_dir = self.state_store._task_dir(state.task_id)
             memory = WorkingMemoryManager(task_dir)
             memory.load_context(
-                f"full_file:{path}",
-                output_content[:5000],
-                state.current_step,
-                expires_after_steps=2,
+                f"full_file:{path}", output_content[:5000], state.current_step, expires_after_steps=2
             )
 
-            return {
-                "status": "success",
-                "summary": summary,
-                "output": output_content[:3000],
-            }
+            return {"status": "success", "summary": summary, "output": output_content[:3000]}
         except Exception as e:
             return {"status": "failure", "error": str(e)}
 

@@ -18,6 +18,7 @@ from .llm_executor_domain import (
     ActionType,
     ExecutionContext,
     StepResult,
+    ToolResult,
 )
 from .test_runner_tools import TEST_TOOL_DEFINITIONS, RunnerTools
 from .violation_tools import VIOLATION_TOOL_DEFINITIONS, ViolationTools
@@ -243,21 +244,27 @@ class FixViolationWorkflow:
 
         return False, None, None
 
+    _FILE_MODIFICATION_TOOLS = frozenset(["edit_file", "write_file"])
+
+    def _extract_modified_file(
+        self, tr: ToolResult, step_result: StepResult
+    ) -> str | None:
+        """Extract file path from a successful file modification tool result."""
+        if tr.tool_name not in self._FILE_MODIFICATION_TOOLS or not tr.success:
+            return None
+        if not (step_result.action and step_result.action.tool_calls):
+            return None
+        for tc in step_result.action.tool_calls:
+            if tc.name == tr.tool_name:
+                return tc.parameters.get("path") or tc.parameters.get("file_path")
+        return None
+
     def _track_modified_files(self, attempt: FixAttempt, step_result: StepResult) -> None:
         """Track files modified by edit/write tool calls."""
-        if not step_result.tool_results:
-            return
-
-        for tr in step_result.tool_results:
-            if tr.tool_name not in ("edit_file", "write_file") or not tr.success:
-                continue
-            if not (step_result.action and step_result.action.tool_calls):
-                continue
-            for tc in step_result.action.tool_calls:
-                if tc.name == tr.tool_name:
-                    file_path = tc.parameters.get("path", tc.parameters.get("file_path"))
-                    if file_path and file_path not in attempt.files_modified:
-                        attempt.files_modified.append(file_path)
+        for tr in step_result.tool_results or []:
+            file_path = self._extract_modified_file(tr, step_result)
+            if file_path and file_path not in attempt.files_modified:
+                attempt.files_modified.append(file_path)
 
     def fix_violation(
         self,

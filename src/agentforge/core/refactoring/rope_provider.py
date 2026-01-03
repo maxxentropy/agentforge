@@ -222,35 +222,26 @@ class RopeRefactoringProvider(RefactoringProvider):
             )
 
         except Exception as e:
-            error_msg = str(e)
+            return self._handle_extraction_error(str(e))
 
-            # Provide helpful error messages
-            if "return" in error_msg.lower():
-                return RefactoringResult.failure(
-                    f"Cannot extract: code contains early returns that would change control flow. "
-                    f"Try extracting a complete if/else block, or the code inside the if body. "
-                    f"Details: {error_msg}"
-                )
-            elif "break" in error_msg.lower() or "continue" in error_msg.lower():
-                return RefactoringResult.failure(
-                    f"Cannot extract: code contains break/continue that would break loop control. "
-                    f"Details: {error_msg}"
-                )
-            elif "bad region" in error_msg.lower():
-                return RefactoringResult.failure(
-                    f"Cannot extract: Invalid selection. Ensure you're selecting complete statements. "
-                    f"Details: {error_msg}"
-                )
-            elif "start of a block" in error_msg.lower():
-                return RefactoringResult.failure(
-                    f"Cannot extract: Selection includes the start of a block (if/for/while) "
-                    f"without including the entire block. Include all statements in the block. "
-                    f"Details: {error_msg}"
-                )
-            else:
-                return RefactoringResult.failure(
-                    f"Extraction failed: {error_msg}"
-                )
+    # Error patterns and user-friendly messages for extract_function
+    _EXTRACTION_ERROR_PATTERNS = [
+        ("return", "Cannot extract: code contains early returns that would change control flow. "
+                   "Try extracting a complete if/else block, or the code inside the if body."),
+        ("break", "Cannot extract: code contains break/continue that would break loop control."),
+        ("continue", "Cannot extract: code contains break/continue that would break loop control."),
+        ("bad region", "Cannot extract: Invalid selection. Ensure you're selecting complete statements."),
+        ("start of a block", "Cannot extract: Selection includes the start of a block (if/for/while) "
+                             "without including the entire block. Include all statements in the block."),
+    ]
+
+    def _handle_extraction_error(self, error_msg: str) -> RefactoringResult:
+        """Convert extraction error to user-friendly failure result."""
+        error_lower = error_msg.lower()
+        for pattern, message in self._EXTRACTION_ERROR_PATTERNS:
+            if pattern in error_lower:
+                return RefactoringResult.failure(f"{message} Details: {error_msg}")
+        return RefactoringResult.failure(f"Extraction failed: {error_msg}")
 
     def close(self):
         """Clean up rope project."""

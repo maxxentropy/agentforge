@@ -127,6 +127,60 @@ class RefactoringTools:
             f"  Refactoring validated by rope - semantics preserved"
         )
 
+    def _find_if_at_line(self, tree: ast.AST, line: int) -> ast.If | None:
+        """Find the if statement at the specified line number."""
+        for node in ast.walk(tree):
+            if isinstance(node, ast.If) and node.lineno == line:
+                return node
+        return None
+
+    def _validate_guard_pattern(self, target_if: ast.If) -> str | None:
+        """Validate if statement can be converted to guard clause. Returns error or None."""
+        if not target_if.orelse:
+            return "If statement has no else clause - cannot simplify to guard"
+        if len(target_if.orelse) != 1 or not isinstance(target_if.orelse[0], ast.Return):
+            return "Else clause is not a simple return - cannot simplify"
+        return None
+
+    def _build_guard_clause(
+        self, target_if: ast.If, lines: list[str], if_line: int
+    ) -> tuple[str, list[str], int, int]:
+        """Build guard clause code. Returns (guard, dedented_body, if_start, if_end)."""
+        # Get return value from else clause
+        return_node = target_if.orelse[0]
+        return_value = "None" if return_node.value is None else ast.unparse(return_node.value)
+
+        # Negate condition
+        negated_test = ast.UnaryOp(op=ast.Not(), operand=target_if.test)
+        negated_condition = ast.unparse(negated_test)
+
+        # Detect indentation
+        if_line_content = lines[if_line - 1]
+        base_indent = len(if_line_content) - len(if_line_content.lstrip())
+        indent_str = ' ' * base_indent
+
+        # Build guard clause
+        guard = f"{indent_str}if {negated_condition}:\n{indent_str}    return {return_value}"
+
+        # Get and dedent body
+        body_start = target_if.body[0].lineno - 1
+        body_end = target_if.body[-1].end_lineno
+        body_lines = lines[body_start:body_end]
+
+        dedented_body = []
+        for line in body_lines:
+            if line.strip():
+                if line.startswith(indent_str + '    '):
+                    dedented_body.append(line[4:])
+                else:
+                    dedented_body.append(line)
+            else:
+                dedented_body.append('')
+
+        if_start = if_line - 1
+        if_end = target_if.orelse[-1].end_lineno
+        return guard, dedented_body, if_start, if_end
+
     def simplify_conditional(self, name: str, params: dict[str, Any]) -> ToolResult:
         """
         Simplify a complex conditional using guard clause pattern.
@@ -141,11 +195,6 @@ class RefactoringTools:
             if not x:
                 return None
             ... lots of code (dedented) ...
-
-        Parameters:
-            file_path: Path to the Python file
-            function_name: Name of the function
-            if_line: Line number of the if statement to simplify
         """
         file_path = params.get("file_path")
         function_name = params.get("function_name")
@@ -168,77 +217,20 @@ class RefactoringTools:
             tree = ast.parse(source)
             lines = source.split('\n')
 
-            # Find the if statement at the specified line
-            target_if = None
-            for node in ast.walk(tree):
-                if isinstance(node, ast.If) and node.lineno == if_line:
-                    target_if = node
-                    break
-
+            target_if = self._find_if_at_line(tree, if_line)
             if not target_if:
                 return ToolResult.failure_result(
-                    "simplify_conditional",
-                    f"No if statement found at line {if_line}"
+                    "simplify_conditional", f"No if statement found at line {if_line}"
                 )
 
-            # Check if this is a guard clause pattern (else returns early)
-            if not target_if.orelse:
-                return ToolResult.failure_result(
-                    "simplify_conditional",
-                    "If statement has no else clause - cannot simplify to guard"
-                )
+            error = self._validate_guard_pattern(target_if)
+            if error:
+                return ToolResult.failure_result("simplify_conditional", error)
 
-            # Check if else is a simple return
-            if len(target_if.orelse) != 1 or not isinstance(target_if.orelse[0], ast.Return):
-                return ToolResult.failure_result(
-                    "simplify_conditional",
-                    "Else clause is not a simple return - cannot simplify"
-                )
-
-            # Get the return value
-            return_node = target_if.orelse[0]
-            return_value = "None" if return_node.value is None else ast.unparse(return_node.value)
-
-            # Negate the condition
-            negated_test = ast.UnaryOp(op=ast.Not(), operand=target_if.test)
-            negated_condition = ast.unparse(negated_test)
-
-            # Detect indentation
-            if_line_content = lines[if_line - 1]
-            base_indent = len(if_line_content) - len(if_line_content.lstrip())
-            indent_str = ' ' * base_indent
-
-            # Build the new code
-            # Guard clause first
-            guard = f"{indent_str}if {negated_condition}:\n{indent_str}    return {return_value}"
-
-            # Then the body (dedented one level from the original if body)
-            body_start = target_if.body[0].lineno - 1
-            body_end = target_if.body[-1].end_lineno
-            body_lines = lines[body_start:body_end]
-
-            # Dedent body by one level (4 spaces)
-            dedented_body = []
-            for line in body_lines:
-                if line.strip():
-                    if line.startswith(indent_str + '    '):
-                        dedented_body.append(line[4:])  # Remove 4 spaces
-                    else:
-                        dedented_body.append(line)
-                else:
-                    dedented_body.append('')
-
-            # Replace the original if/else with guard + body
-            if_start = if_line - 1
-            if_end = target_if.orelse[-1].end_lineno
-
-            new_lines = (
-                lines[:if_start] +
-                [guard] +
-                dedented_body +
-                lines[if_end:]
+            guard, dedented_body, if_start, if_end = self._build_guard_clause(
+                target_if, lines, if_line
             )
-
+            new_lines = lines[:if_start] + [guard] + dedented_body + lines[if_end:]
             new_source = '\n'.join(new_lines)
 
             # Validate
@@ -246,22 +238,17 @@ class RefactoringTools:
                 ast.parse(new_source)
             except SyntaxError as e:
                 return ToolResult.failure_result(
-                    "simplify_conditional",
-                    f"Simplification would produce invalid Python: {e}"
+                    "simplify_conditional", f"Simplification would produce invalid Python: {e}"
                 )
 
             full_path.write_text(new_source)
-
             return ToolResult.success_result(
                 "simplify_conditional",
-                f"✓ Simplified conditional at line {if_line}\n"
-                f"  Converted to guard clause pattern"
+                f"✓ Simplified conditional at line {if_line}\n  Converted to guard clause pattern"
             )
 
         except Exception as e:
-            return ToolResult.failure_result(
-                "simplify_conditional", f"Error: {e}"
-            )
+            return ToolResult.failure_result("simplify_conditional", f"Error: {e}")
 
     def get_tool_executors(self) -> dict[str, Any]:
         """Get dict of tool executors for registration."""

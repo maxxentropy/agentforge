@@ -456,10 +456,62 @@ def run_hooks_uninstall(args: Any) -> None:
     print("✅ Pre-commit hook removed.")
 
 
+def _collect_sarif_warnings(
+    sarif: dict, rule_pattern: str | None, file_pattern: str | None
+) -> list[dict]:
+    """Collect and filter warnings from SARIF data."""
+    warnings = []
+    for run in sarif.get("runs", []):
+        for result in run.get("results", []):
+            rule_id = result.get("ruleId", "")
+            level = result.get("level", "warning")
+
+            if rule_pattern and rule_pattern.lower() not in rule_id.lower():
+                continue
+
+            for loc in result.get("locations", []):
+                phys_loc = loc.get("physicalLocation", {})
+                path = phys_loc.get("artifactLocation", {}).get("uri", "")
+                region = phys_loc.get("region", {})
+                line = region.get("startLine", 0)
+                msg = result.get("message", {}).get("text", "")
+
+                if file_pattern and file_pattern.lower() not in path.lower():
+                    continue
+
+                warnings.append({
+                    "file": path, "line": line, "rule": rule_id,
+                    "level": level, "message": msg,
+                })
+    return warnings
+
+
+def _print_warnings_summary(warnings: list[dict]) -> None:
+    """Print warnings summary grouped by file."""
+    from collections import Counter
+    file_counts = Counter(w["file"] for w in warnings)
+    print(f"Total: {len(warnings)} warnings\n")
+    print("By file:")
+    for path, count in file_counts.most_common():
+        print(f"  {count:3d}: {path}")
+
+
+def _print_warnings_detailed(warnings: list[dict]) -> None:
+    """Print detailed warnings grouped by file."""
+    if not warnings:
+        print("No warnings found matching filters.")
+        return
+
+    from itertools import groupby
+    warnings.sort(key=lambda w: (w["file"], w["line"]))
+    for path, group in groupby(warnings, key=lambda w: w["file"]):
+        print(f"\n{path}:")
+        for w in group:
+            print(f"  Line {w['line']:4d}: {w['message']}")
+
+
 def run_warnings_list(args: Any) -> None:
     """List warnings from SARIF results with optional filtering."""
-    from collections import Counter
-
     sarif_path = Path.cwd() / args.sarif_path
     if not sarif_path.exists():
         print(f"SARIF file not found: {sarif_path}")
@@ -469,51 +521,9 @@ def run_warnings_list(args: Any) -> None:
     with open(sarif_path) as f:
         sarif = json.load(f)
 
-    warnings = []
-    for run in sarif.get("runs", []):
-        for result in run.get("results", []):
-            rule_id = result.get("ruleId", "")
-            level = result.get("level", "warning")
-
-            # Apply rule filter
-            if args.rule_pattern and args.rule_pattern.lower() not in rule_id.lower():
-                continue
-
-            for loc in result.get("locations", []):
-                path = loc.get("physicalLocation", {}).get("artifactLocation", {}).get("uri", "")
-                region = loc.get("physicalLocation", {}).get("region", {})
-                line = region.get("startLine", 0)
-                msg = result.get("message", {}).get("text", "")
-
-                # Apply file filter
-                if args.file_pattern and args.file_pattern.lower() not in path.lower():
-                    continue
-
-                warnings.append({
-                    "file": path,
-                    "line": line,
-                    "rule": rule_id,
-                    "level": level,
-                    "message": msg,
-                })
+    warnings = _collect_sarif_warnings(sarif, args.rule_pattern, args.file_pattern)
 
     if args.summary:
-        # Show summary by file
-        file_counts = Counter(w["file"] for w in warnings)
-        print(f"Total: {len(warnings)} warnings\n")
-        print("By file:")
-        for path, count in file_counts.most_common():
-            print(f"  {count:3d}: {path}")
+        _print_warnings_summary(warnings)
     else:
-        # Show individual warnings
-        if not warnings:
-            print("No warnings found matching filters.")
-            return
-
-        # Group by file
-        from itertools import groupby
-        warnings.sort(key=lambda w: (w["file"], w["line"]))
-        for path, group in groupby(warnings, key=lambda w: w["file"]):
-            print(f"\n{path}:")
-            for w in group:
-                print(f"  Line {w['line']:4d}: {w['message']}")
+        _print_warnings_detailed(warnings)

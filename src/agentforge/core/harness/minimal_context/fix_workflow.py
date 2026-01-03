@@ -184,106 +184,87 @@ class MinimalContextFixWorkflow:
                 state.task_id, "files_modified", state.context_data["files_modified"]
             )
 
+    def _save_file_for_revert(self, file_path: str | None) -> tuple[str | None, bool]:
+        """Save file content for potential revert. Returns (content, existed)."""
+        if not file_path:
+            return None, False
+        full_path = self.project_path / file_path
+        if full_path.exists():
+            return full_path.read_text(), True
+        return None, False
+
+    def _revert_file_changes(
+        self, file_path: str | None, original_content: str | None, file_existed: bool
+    ) -> None:
+        """Revert file to original state."""
+        if not file_path:
+            return
+        full_path = self.project_path / file_path
+        if original_content is not None:
+            full_path.write_text(original_content)
+        elif not file_existed and full_path.exists():
+            full_path.unlink()
+
+    def _build_test_revert_result(
+        self, test_path: str | None, baseline_failures: int,
+        after_failures: int, after_output: str
+    ) -> dict[str, Any]:
+        """Build failure result for reverted test failure."""
+        return {
+            "status": "failure",
+            "error": "Modification broke tests - REVERTED",
+            "summary": "✗ REVERTED - tests got worse",
+            "output": (
+                f"--- CORRECTNESS CHECK FAILED ---\n"
+                f"✗ Modification introduced new test failures - changes REVERTED\n\n"
+                f"Test path: {test_path or 'all tests'}\n"
+                f"Before: {baseline_failures} failures\n"
+                f"After: {after_failures} failures\n\n"
+                f"Test output:\n{after_output[:800] if after_output else 'No output'}\n\n"
+                f"The change was syntactically valid but broke behavior.\n"
+                f"Original file content has been restored.\n"
+                f"Try a different approach that preserves existing functionality."
+            ),
+        }
+
     def _with_test_verification(self, action_fn: Callable) -> Callable:
         """
         Wrap a file-modifying action with test verification and auto-revert.
 
         CORRECTNESS FIRST principle: We cannot go from "violation" to "broken".
-        After any file modification, tests must not get worse.
-
-        Pattern:
-        1. Run TARGETED tests BEFORE (establish baseline)
-        2. Save original file content
-        3. Execute the modification
-        4. Run TARGETED tests AFTER
-        5. If MORE failures than baseline: REVERT and return failure
-
-        This wrapper ensures the agent cannot break tests while trying to fix violations.
-        Test paths come from the violation's test_path field, which was computed at
-        detection time from lineage metadata or convention-based fallback.
         """
         def wrapper(action_name: str, params: dict[str, Any], state: TaskState) -> dict[str, Any]:
-            # Extract file path from params
-            file_path = (
-                params.get("path") or
-                params.get("file_path") or
-                state.context_data.get("file_path")
-            )
-
-            # Get test_path from violation context (computed at detection time)
-            # This uses lineage metadata if available, otherwise convention-based fallback
+            file_path = params.get("path") or params.get("file_path") or state.context_data.get("file_path")
             test_path = state.context_data.get("test_path")
 
-            # STEP 1: Establish baseline test state (TARGETED tests only)
+            # Run baseline tests
             baseline_result = self.test_tools.run_tests(
-                "run_tests",
-                {"test_path": test_path} if test_path else {}
+                "run_tests", {"test_path": test_path} if test_path else {}
             )
-            baseline_passed = baseline_result.success
             baseline_failures = self._count_test_failures(baseline_result.output)
 
-            # STEP 2: Save original content (for revert)
-            original_content = None
-            file_existed = False
-            if file_path:
-                full_path = self.project_path / file_path
-                if full_path.exists():
-                    file_existed = True
-                    original_content = full_path.read_text()
-
-            # STEP 3: Execute the modification
+            original_content, file_existed = self._save_file_for_revert(file_path)
             result = action_fn(action_name, params, state)
 
-            # If the action failed, no need for test verification
             if result.get("status") == "failure":
                 return result
 
-            # STEP 4: Run TARGETED tests AFTER modification
             after_result = self.test_tools.run_tests(
-                "run_tests",
-                {"test_path": test_path} if test_path else {}
+                "run_tests", {"test_path": test_path} if test_path else {}
             )
             after_failures = self._count_test_failures(after_result.output)
 
-            # STEP 5: Compare - did modification make things WORSE?
-            tests_got_worse = False
-            if baseline_passed and not after_result.success:
-                # Tests were passing, now failing
-                tests_got_worse = True
-            elif after_failures > baseline_failures:
-                # More failures than before
-                tests_got_worse = True
+            tests_got_worse = (
+                (baseline_result.success and not after_result.success) or
+                (after_failures > baseline_failures)
+            )
 
             if tests_got_worse:
-                # REVERT the change
-                if file_path:
-                    full_path = self.project_path / file_path
-                    if original_content is not None:
-                        # Restore original content
-                        full_path.write_text(original_content)
-                    elif not file_existed and full_path.exists():
-                        # File was created, delete it
-                        full_path.unlink()
+                self._revert_file_changes(file_path, original_content, file_existed)
+                return self._build_test_revert_result(
+                    test_path, baseline_failures, after_failures, after_result.output
+                )
 
-                # Return failure with detailed explanation
-                return {
-                    "status": "failure",
-                    "error": "Modification broke tests - REVERTED",
-                    "summary": "✗ REVERTED - tests got worse",
-                    "output": (
-                        f"--- CORRECTNESS CHECK FAILED ---\n"
-                        f"✗ Modification introduced new test failures - changes REVERTED\n\n"
-                        f"Test path: {test_path or 'all tests'}\n"
-                        f"Before: {baseline_failures} failures\n"
-                        f"After: {after_failures} failures\n\n"
-                        f"Test output:\n{after_result.output[:800] if after_result.output else 'No output'}\n\n"
-                        f"The change was syntactically valid but broke behavior.\n"
-                        f"Original file content has been restored.\n"
-                        f"Try a different approach that preserves existing functionality."
-                    ),
-                }
-
-            # Tests didn't get worse - append verification status to result
             test_status = "✓ Tests verified" if after_result.success else "○ No new failures"
             result["summary"] = f"{result.get('summary', '')} | {test_status}"
             result["output"] = (

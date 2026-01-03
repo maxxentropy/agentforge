@@ -47,6 +47,72 @@ from .state_store import Phase, TaskState, TaskStateStore
 from .working_memory import WorkingMemoryManager
 
 
+# Helper functions to reduce complexity in action methods
+def _detect_source_indent(content_lines: list[str]) -> int:
+    """Detect indentation of first non-empty line in content."""
+    for line in content_lines:
+        if line.strip():
+            return len(line) - len(line.lstrip())
+    return 0
+
+
+def _adjust_content_indentation(
+    content_lines: list[str], target_indent: int, source_indent: int
+) -> list[str]:
+    """Adjust content lines to match target indentation."""
+    indent_delta = target_indent - source_indent
+    result = []
+    for line in content_lines:
+        if line.strip():
+            current_indent = len(line) - len(line.lstrip())
+            new_indent = max(0, current_indent + indent_delta)
+            result.append(' ' * new_indent + line.lstrip())
+        else:
+            result.append('')
+    return result
+
+
+def _validate_replace_params(
+    file_path: str | None, start_line: int | None, end_line: int | None, new_content: str | None
+) -> str | None:
+    """Validate replace_lines parameters. Returns error message or None."""
+    if not file_path:
+        return "Missing file_path"
+    if start_line is None or end_line is None:
+        return "Missing start_line or end_line"
+    if new_content is None:
+        return "Missing new_content"
+    return None
+
+
+def _validate_insert_params(
+    file_path: str | None, line_number: int | None, new_content: str | None
+) -> str | None:
+    """Validate insert_lines parameters. Returns error message or None."""
+    if not file_path:
+        return "Missing file_path"
+    if line_number is None:
+        return "Missing line_number"
+    if new_content is None:
+        return "Missing new_content"
+    return None
+
+
+def _extract_function_name_from_output(output: str) -> str | None:
+    """Extract function name from check output using known patterns."""
+    import re
+    patterns = [
+        r"Function '([^']+)' has complexity \d+",
+        r"Function '([^']+)' has \d+ lines",
+        r"Function '([^']+)' has nesting depth \d+",
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, output)
+        if match:
+            return match.group(1)
+    return None
+
+
 class MinimalContextFixWorkflow:
     """
     Fix violation workflow using minimal context architecture v2.
@@ -567,12 +633,9 @@ except Exception as e:
         end_line = params.get("end_line")
         new_content = params.get("new_content")
 
-        if not file_path:
-            return {"status": "failure", "error": "Missing file_path"}
-        if start_line is None or end_line is None:
-            return {"status": "failure", "error": "Missing start_line or end_line"}
-        if new_content is None:
-            return {"status": "failure", "error": "Missing new_content"}
+        # Validate parameters using helper
+        if error := _validate_replace_params(file_path, start_line, end_line, new_content):
+            return {"status": "failure", "error": error}
 
         full_path = self.project_path / file_path
         if not full_path.exists():
@@ -589,30 +652,12 @@ except Exception as e:
                     "error": f"Invalid line range {start_line}-{end_line} (file has {len(lines)} lines)"
                 }
 
-            # Detect indentation from the first line being replaced
+            # Detect and adjust indentation using helpers
             original_line = lines[start_line - 1]
             target_indent = len(original_line) - len(original_line.lstrip())
-
-            # Detect indentation of the new content (first non-empty line)
             content_lines = new_content.split('\n')
-            source_indent = 0
-            for line in content_lines:
-                if line.strip():
-                    source_indent = len(line) - len(line.lstrip())
-                    break
-
-            # Calculate indent adjustment
-            indent_delta = target_indent - source_indent
-
-            # Process new content - adjust indentation while preserving relative nesting
-            new_lines = []
-            for line in content_lines:
-                if line.strip():
-                    current_indent = len(line) - len(line.lstrip())
-                    new_indent = max(0, current_indent + indent_delta)
-                    new_lines.append(' ' * new_indent + line.lstrip())
-                else:
-                    new_lines.append('')
+            source_indent = _detect_source_indent(content_lines)
+            new_lines = _adjust_content_indentation(content_lines, target_indent, source_indent)
 
             # Replace lines
             result_lines = lines[:start_line - 1] + new_lines + lines[end_line:]
@@ -678,12 +723,9 @@ except Exception as e:
         line_number = params.get("line_number") or params.get("before_line")
         new_content = params.get("new_content") or params.get("content")
 
-        if not file_path:
-            return {"status": "failure", "error": "Missing file_path"}
-        if line_number is None:
-            return {"status": "failure", "error": "Missing line_number"}
-        if not new_content:
-            return {"status": "failure", "error": "Missing new_content"}
+        # Validate parameters using helper
+        if error := _validate_insert_params(file_path, line_number, new_content):
+            return {"status": "failure", "error": error}
 
         full_path = self.project_path / file_path
         if not full_path.exists():
@@ -896,21 +938,11 @@ except Exception as e:
         state: TaskState,
     ) -> dict[str, Any]:
         """Run conformance check - uses targeted check when check_id available."""
-        import re
-
         file_path = params.get("file_path") or params.get("path") or state.context_data.get("file_path")
         check_id = params.get("check_id") or state.context_data.get("check_id")
 
-        # Use targeted check if we have both check_id and file_path (much faster)
-        if check_id and file_path:
-            result = self.conformance_tools.run_conformance_check(
-                "run_conformance_check",
-                {"check_id": check_id, "file_path": file_path}
-            )
-        elif file_path:
-            result = self.conformance_tools.check_file("check_file", {"file_path": file_path})
-        else:
-            result = self.conformance_tools.run_full_check("run_full_check", {})
+        # Run appropriate check based on available parameters
+        result = self._run_conformance_check(check_id, file_path)
 
         # Update verification status
         passing = result.success
@@ -922,43 +954,39 @@ except Exception as e:
             details={"last_check": result.output[:500]},
         )
 
-        # If check failed, ALWAYS refresh context - line numbers shift after extractions
-        # This ensures the agent has up-to-date extraction suggestions
+        # If check failed, refresh context with updated line numbers
         if not passing and result.output and file_path:
-            # Parse output for various violation types:
-            # - "Function 'name' has complexity N" (cyclomatic)
-            # - "Function 'name' has N lines" (function length)
-            # - "Function 'name' has nesting depth N" (nesting)
-            patterns = [
-                r"Function '([^']+)' has complexity (\d+)",
-                r"Function '([^']+)' has (\d+) lines",
-                r"Function '([^']+)' has nesting depth (\d+)",
-            ]
-
-            new_function_name = None
-            for pattern in patterns:
-                match = re.search(pattern, result.output)
-                if match:
-                    new_function_name = match.group(1)
-                    break
-
-            if new_function_name:
-                # Always refresh context to get updated line numbers and suggestions
-                new_context = self._refresh_precomputed_context(
-                    file_path, new_function_name, state
-                )
-                if new_context:
-                    # Update the precomputed context in state
-                    state.context_data["precomputed"] = new_context
-                    self.state_store.update_context_data(
-                        state.task_id, "precomputed", new_context
-                    )
+            self._maybe_refresh_context_for_new_function(result.output, file_path, state)
 
         return {
             "status": "success" if passing else "partial",
             "summary": result.output[:200],
             "output": result.output,
         }
+
+    def _run_conformance_check(self, check_id: str | None, file_path: str | None):
+        """Run appropriate conformance check based on available parameters."""
+        if check_id and file_path:
+            return self.conformance_tools.run_conformance_check(
+                "run_conformance_check",
+                {"check_id": check_id, "file_path": file_path}
+            )
+        if file_path:
+            return self.conformance_tools.check_file("check_file", {"file_path": file_path})
+        return self.conformance_tools.run_full_check("run_full_check", {})
+
+    def _maybe_refresh_context_for_new_function(
+        self, output: str, file_path: str, state: TaskState
+    ) -> None:
+        """Refresh context if output indicates a new function to fix."""
+        new_function_name = _extract_function_name_from_output(output)
+        if not new_function_name:
+            return
+
+        new_context = self._refresh_precomputed_context(file_path, new_function_name, state)
+        if new_context:
+            state.context_data["precomputed"] = new_context
+            self.state_store.update_context_data(state.task_id, "precomputed", new_context)
 
     def _refresh_precomputed_context(
         self,

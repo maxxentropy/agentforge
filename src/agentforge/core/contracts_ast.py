@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
 def execute_ast_check(ctx: "CheckContext") -> list:
     """Execute an AST-based structural/metrics check."""
-    from agentforge.core.contracts import CheckResult
+    from agentforge.core.contracts_types import CheckResult
 
     metric = ctx.config.get("metric", "cyclomatic_complexity")
     threshold = ctx.config.get("threshold", 10)

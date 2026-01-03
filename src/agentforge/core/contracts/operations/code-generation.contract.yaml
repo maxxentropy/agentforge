@@ -111,13 +111,9 @@ rules:
     description: Functions should be small and focused
     check_type: code_metric
     details:
-      metric: function_lines
-      max_lines: 30
-      recommended_lines: 15
-      exclude:
-        - switch_statements
-        - builders
-        - test_setup
+      metric: function_length  # Maps to AST check
+      threshold: 30
+      recommended: 15
     severity: warning
     rationale: |
       Small functions are easier to understand, test, and reuse.
@@ -127,13 +123,9 @@ rules:
     description: Limit function parameter count
     check_type: code_metric
     details:
-      metric: parameter_count
-      max_parameters: 5
-      recommended_max: 3
-      solutions:
-        - introduce_parameter_object
-        - use_builder_pattern
-        - split_function
+      metric: parameter_count  # Maps to AST check
+      threshold: 5
+      recommended: 3
     severity: warning
     rationale: |
       Too many parameters indicate the function is doing too much
@@ -143,13 +135,9 @@ rules:
     description: Limit nesting depth for readability
     check_type: code_metric
     details:
-      metric: nesting_depth
-      max_depth: 4
-      recommended_max: 3
-      solutions:
-        - extract_method
-        - early_return
-        - guard_clauses
+      metric: nesting_depth  # Maps to AST check
+      threshold: 4
+      recommended: 3
     severity: warning
     rationale: |
       Deep nesting makes code hard to follow. Use early returns
@@ -159,15 +147,9 @@ rules:
     description: Limit branch complexity
     check_type: code_metric
     details:
-      metric: cyclomatic_complexity
-      max_complexity: 10
-      recommended_max: 7
-      count:
-        - if_statements
-        - loops
-        - case_branches
-        - catch_blocks
-        - logical_operators
+      metric: cyclomatic_complexity  # Maps to AST check
+      threshold: 10
+      recommended: 7
     severity: warning
     rationale: |
       High complexity means more paths to test and more potential
@@ -177,11 +159,9 @@ rules:
     description: Classes should be focused and manageable
     check_type: code_metric
     details:
-      metric: class_lines
-      max_lines: 300
-      recommended_lines: 200
-      max_methods: 15
-      max_fields: 10
+      metric: class_size  # Maps to AST check (counts methods)
+      threshold: 15
+      recommended: 10
     severity: warning
     rationale: |
       Large classes often violate SRP. Consider splitting into

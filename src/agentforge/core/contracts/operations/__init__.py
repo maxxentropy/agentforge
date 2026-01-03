@@ -23,17 +23,31 @@ from .loader import (
     OperationRule,
     OperationTrigger,
     OperationGate,
+    OperationContractManager,
     load_operation_contract,
     load_all_operation_contracts,
     get_builtin_contracts_path,
 )
+from .verifier import (
+    OperationContractVerifier,
+    Violation,
+    VerificationReport,
+    verify_operations,
+)
 
 __all__ = [
+    # Loader
     "OperationContract",
     "OperationRule",
     "OperationTrigger",
     "OperationGate",
+    "OperationContractManager",
     "load_operation_contract",
     "load_all_operation_contracts",
     "get_builtin_contracts_path",
+    # Verifier
+    "OperationContractVerifier",
+    "Violation",
+    "VerificationReport",
+    "verify_operations",
 ]

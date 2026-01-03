@@ -1,0 +1,58 @@
+schema_version: "1.0"
+
+contract:
+  name: "agentforge-specs"
+  type: patterns
+  description: |
+    Spec integrity contract for AgentForge.
+
+    Ensures specification files are well-formed:
+    - Required fields present (spec_id, name, components)
+    - Each component has component_id, location, test_location
+    - YAML syntax is valid
+    - No duplicate spec_ids across files
+
+    Specs are the source of truth for the lineage chain.
+  version: "1.0.0"
+  enabled: true
+  tags:
+    - agentforge
+    - specs
+    - integrity
+
+checks:
+  # Spec file integrity
+  - id: spec-integrity
+    name: "Spec File Integrity"
+    description: "Spec files must have required fields and valid structure"
+    type: custom
+    severity: error
+    config:
+      module: builtin_checks
+      function: check_spec_integrity
+      params:
+        required_fields:
+          - spec_id
+          - name
+          - components
+    applies_to:
+      paths:
+        - ".agentforge/specs/**/*.yaml"
+      exclude_paths:
+        - ".agentforge/specs/templates/**"
+    fix_hint: |
+      Ensure spec has required structure:
+      spec_id: unique-id-v1
+      name: component_name
+      components:
+        - name: module
+          component_id: module-id
+          location: src/path/to/module.py
+          test_location: tests/path/to/test.py
+
+  # Valid YAML syntax for YAML spec files only
+  # NOTE: YAML syntax validation for general files should be done by linters
+  # This check is specifically for spec file structure
+  - id: valid-yaml-syntax
+    enabled: false  # Disabled - spec-integrity already checks specs, other YAMLs use linters
+

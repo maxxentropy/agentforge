@@ -126,6 +126,129 @@ def contracts_validate(ctx, contract_file):
     run_contracts_validate(args)
 
 
+@contracts.command('verify-ops', help='Verify code against operation contracts')
+@click.argument('path', type=click.Path(exists=True), default='.')
+@click.option('--contract', '-c', 'contract_ids', multiple=True,
+              help='Specific operation contract(s) to check')
+@click.option('--rule', '-r', 'rule_id', help='Specific rule ID to check')
+@click.option('--format', '-f', 'output_format',
+              type=click.Choice(['text', 'json', 'yaml']), default='text',
+              help='Output format')
+@click.option('--strict', is_flag=True, help='Fail on any violation')
+@click.option('--verbose', '-v', is_flag=True, help='Show all checked files')
+@click.pass_context
+def contracts_verify_ops(ctx, path, contract_ids, rule_id, output_format, strict, verbose):
+    """Verify code against operation contract rules."""
+    from pathlib import Path as PathLib
+    from agentforge.core.contracts.operations import OperationContractVerifier
+
+    path, repo_root = PathLib(path), PathLib.cwd()
+    _print_verify_header(path, rule_id, contract_ids)
+
+    verifier = OperationContractVerifier(repo_root=repo_root)
+    report = (verifier.verify_rule(rule_id, path) if rule_id
+              else verifier.verify(path, contract_ids=list(contract_ids) if contract_ids else None))
+
+    click.echo(f"\n  {report.summary()}\n")
+    click.echo("-" * 60)
+    _output_report(report, output_format, verbose)
+    click.echo("-" * 60)
+    _print_result(report)
+    click.echo("-" * 60)
+
+    if (strict and report.violations) or report.error_count > 0:
+        raise SystemExit(1)
+
+
+def _print_verify_header(path, rule_id, contract_ids):
+    """Print verification header."""
+    click.echo("\n" + "=" * 60 + "\nOPERATION CONTRACT VERIFICATION\n" + "=" * 60)
+    click.echo(f"\n  Path: {path}")
+    if rule_id:
+        click.echo(f"  Rule: {rule_id}")
+    elif contract_ids:
+        click.echo(f"  Contracts: {', '.join(contract_ids)}")
+
+
+def _output_report(report, output_format: str, verbose: bool):
+    """Output report in the specified format."""
+    if output_format == 'text':
+        _print_verification_results(report, verbose)
+    elif output_format == 'json':
+        import json
+        click.echo(json.dumps(_report_to_dict(report), indent=2))
+    elif output_format == 'yaml':
+        import yaml
+        click.echo(yaml.dump(_report_to_dict(report), default_flow_style=False))
+
+
+def _print_result(report):
+    """Print final result message."""
+    if not report.violations:
+        click.secho("RESULT: PASS", fg='green', bold=True)
+    elif report.error_count > 0:
+        click.secho(f"RESULT: FAIL ({report.error_count} errors)", fg='red', bold=True)
+    else:
+        click.secho(f"RESULT: PASS with warnings ({report.warning_count})", fg='yellow')
+
+
+def _print_verification_results(report, verbose: bool):
+    """Print verification results in text format."""
+    if not report.violations:
+        click.echo("No violations found.\n")
+        return
+
+    # Group by file
+    by_file = report.violations_by_file()
+
+    for file_path, violations in sorted(by_file.items()):
+        click.echo(f"\n{file_path}:")
+        for v in sorted(violations, key=lambda x: x.line_number or 0):
+            severity_color = {
+                'error': 'red',
+                'warning': 'yellow',
+                'info': 'blue',
+            }.get(v.severity, 'white')
+
+            line_info = f":{v.line_number}" if v.line_number else ""
+            click.echo(f"  {line_info} ", nl=False)
+            click.secho(f"[{v.severity.upper()}]", fg=severity_color, nl=False)
+            click.echo(f" {v.message}")
+
+            if verbose and v.fix_hint:
+                hint_preview = v.fix_hint.split('\n')[0][:60]
+                click.echo(f"         → {hint_preview}")
+
+    click.echo()
+
+
+def _report_to_dict(report) -> dict:
+    """Convert report to dictionary for JSON/YAML output."""
+    return {
+        'summary': {
+            'contracts_checked': report.contracts_checked,
+            'rules_checked': report.rules_checked,
+            'files_scanned': report.files_scanned,
+            'violations': len(report.violations),
+            'errors': report.error_count,
+            'warnings': report.warning_count,
+            'info': report.info_count,
+            'passed': report.is_passed,
+        },
+        'violations': [
+            {
+                'rule_id': v.rule_id,
+                'contract_id': v.contract_id,
+                'file': v.file_path,
+                'line': v.line_number,
+                'message': v.message,
+                'severity': v.severity,
+            }
+            for v in report.violations
+        ],
+    }
+
+
 # =============================================================================
 # EXEMPTIONS GROUP
 # =============================================================================

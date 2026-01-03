@@ -185,12 +185,24 @@ class OperationContract:
 
 
 def get_builtin_contracts_path() -> Path:
-    """Get path to built-in operation contracts."""
+    """Get path to built-in operation contracts.
+
+    First checks for unified contracts in contracts/builtin/operations/,
+    falls back to legacy location in src/.../operations/.
+    """
+    # Try unified location first (contracts/builtin/operations/)
+    unified_path = Path(__file__).parent.parent.parent.parent.parent.parent / "contracts" / "builtin" / "operations"
+    if unified_path.exists() and list(unified_path.glob("*.contract.yaml")):
+        return unified_path
+
+    # Fall back to legacy location (this directory)
     return Path(__file__).parent
 
 
 def load_operation_contract(path: Path) -> OperationContract:
     """Load a single operation contract from a YAML file.
+
+    Supports both legacy format (id, rules) and unified format (contract, checks).
 
     Args:
         path: Path to the contract YAML file
@@ -212,10 +224,56 @@ def load_operation_contract(path: Path) -> OperationContract:
     if not isinstance(data, dict):
         raise ValueError(f"Invalid contract structure in {path}: expected dict")
 
+    # Check for unified format (schema_version, contract, checks)
+    if "contract" in data and "checks" in data:
+        return _load_unified_format(data, path)
+
+    # Legacy format (id, rules)
     if "id" not in data:
         raise ValueError(f"Contract missing 'id' field: {path}")
 
     return OperationContract.from_dict(data, source_path=path)
+
+
+def _load_unified_format(data: dict, path: Path) -> OperationContract:
+    """Load contract from unified format (contract, checks)."""
+    contract_data = data.get("contract", {})
+    checks = data.get("checks", [])
+
+    # Convert unified checks to operation rules
+    rules = []
+    for check in checks:
+        rule = OperationRule(
+            rule_id=check.get("id", ""),
+            description=check.get("description", ""),
+            check_type=check.get("type", ""),
+            details=check.get("config", {}),
+            severity=check.get("severity", "warning"),
+            rationale=check.get("rationale", ""),
+        )
+        rules.append(rule)
+
+    # Convert escalation triggers
+    triggers = [
+        OperationTrigger.from_dict(t)
+        for t in data.get("escalation_triggers", [])
+    ]
+
+    # Convert quality gates
+    gates = [
+        OperationGate.from_dict(g)
+        for g in data.get("quality_gates", [])
+    ]
+
+    return OperationContract(
+        contract_id=f"operation.{contract_data.get('name', 'unknown')}.v1",
+        version=contract_data.get("version", "1.0.0"),
+        description=contract_data.get("description", ""),
+        rules=rules,
+        escalation_triggers=triggers,
+        quality_gates=gates,
+        source_path=path,
+    )
 
 
 def load_all_operation_contracts(

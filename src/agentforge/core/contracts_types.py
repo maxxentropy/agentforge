@@ -5,7 +5,20 @@ Contract Type Definitions
 
 Data classes for contracts, exemptions, and check results.
 
-Extracted from contracts.py for modularity.
+Unified schema supporting both user-defined contracts and
+built-in operation contracts (code generation rules).
+
+Check Schema (dict fields):
+    id: str - Unique identifier
+    name: str - Human-readable name
+    description: str - What the check does
+    type: str - Check type (ast, custom, lint, code_metric, naming_convention, etc.)
+    severity: str - error, warning, info
+    enabled: bool - Whether check is active
+    config: dict - Type-specific configuration
+    applies_to: dict - Path patterns for scoping
+    fix_hint: str - How to fix violations
+    rationale: str - Why this rule matters (educational)
 """
 
 import fnmatch
@@ -14,6 +27,74 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
+
+# =============================================================================
+# Escalation and Quality Gates (for AI agent governance)
+# =============================================================================
+
+@dataclass
+class EscalationTrigger:
+    """
+    Condition that should trigger human escalation.
+
+    Used by AI agents to know when to pause and ask for guidance.
+    """
+    trigger_id: str
+    condition: str  # Human-readable condition description
+    severity: str = "advisory"  # blocking, advisory
+    prompt: str = ""  # What to ask the human
+    rationale: str = ""  # Why this trigger matters
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "trigger_id": self.trigger_id,
+            "condition": self.condition,
+            "severity": self.severity,
+            "prompt": self.prompt,
+            "rationale": self.rationale,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "EscalationTrigger":
+        return cls(
+            trigger_id=data.get("trigger_id", ""),
+            condition=data.get("condition", ""),
+            severity=data.get("severity", "advisory"),
+            prompt=data.get("prompt", ""),
+            rationale=data.get("rationale", ""),
+        )
+
+
+@dataclass
+class QualityGate:
+    """
+    Quality checkpoint before proceeding to next stage.
+
+    Used to ensure code meets standards before continuing.
+    """
+    gate_id: str
+    checks: list[str] = field(default_factory=list)  # Check IDs to verify
+    failure_action: str = "escalate"  # escalate, abort, warn
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "gate_id": self.gate_id,
+            "checks": self.checks,
+            "failure_action": self.failure_action,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "QualityGate":
+        return cls(
+            gate_id=data.get("gate_id", ""),
+            checks=data.get("checks", []),
+            failure_action=data.get("failure_action", "escalate"),
+        )
+
+
+# =============================================================================
+# Check Results
+# =============================================================================
 
 @dataclass
 class CheckResult:
@@ -101,9 +182,14 @@ class Exemption:
 
 @dataclass
 class Contract:
-    """Loaded contract with resolved inheritance."""
+    """
+    Loaded contract with resolved inheritance.
+
+    Unified contract type supporting both user-defined project contracts
+    and built-in operation contracts (code generation rules).
+    """
     name: str
-    type: str
+    type: str  # patterns, security, testing, operations, etc.
     description: str | None = None
     version: str = "1.0.0"
     enabled: bool = True
@@ -113,6 +199,10 @@ class Contract:
     checks: list[dict[str, Any]] = field(default_factory=list)
     source_path: Path | None = None
     tier: str = "repo"  # global, workspace, repo, builtin
+
+    # AI agent governance features (from operation contracts)
+    escalation_triggers: list[EscalationTrigger] = field(default_factory=list)
+    quality_gates: list[QualityGate] = field(default_factory=list)
 
     # Resolved parent contracts (populated by resolve_inheritance)
     _resolved: bool = False

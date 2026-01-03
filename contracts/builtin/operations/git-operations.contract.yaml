@@ -1,0 +1,254 @@
+schema_version: '2.0'
+contract:
+  name: git
+  type: operations
+  description: Governs git operations for safety and traceability
+  version: 1.0.0
+  enabled: true
+  tags:
+  - builtin
+  - operations
+  - code-quality
+checks:
+- id: no-force-push
+  name: Never force push without explicit approval
+  description: Never force push without explicit approval
+  type: command_constraint
+  severity: error
+  enabled: true
+  config:
+    command: git push
+    forbidden_flags:
+    - --force
+    - -f
+    - --force-with-lease
+    unless: explicitly_approved
+  rationale: 'Force push can destroy commit history and disrupt collaborators.
+
+    Must have explicit human approval for any force push.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: no-main-direct
+  name: Don't commit directly to main/master branches
+  description: Don't commit directly to main/master branches
+  type: branch_constraint
+  severity: error
+  enabled: true
+  config:
+    protected_branches:
+    - main
+    - master
+    - release/*
+    - prod
+    allowed_actions:
+    - merge
+    - rebase
+    forbidden_actions:
+    - direct_commit
+  rationale: 'Protected branches require review. Direct commits bypass
+
+    code review and can introduce untested changes.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: commit-message-format
+  name: Commit messages must be descriptive
+  description: Commit messages must be descriptive
+  type: message_constraint
+  severity: warning
+  enabled: true
+  config:
+    max_subject_length: 72
+    require_body_for:
+    - feature
+    - refactor
+    - breaking
+    forbidden_prefixes:
+    - WIP
+    - fixup
+    - squash
+  rationale: 'Good commit messages explain WHY changes were made,
+
+    not just WHAT changed. This aids future maintenance.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: no-merge-conflicts
+  name: Must resolve merge conflicts before proceeding
+  description: Must resolve merge conflicts before proceeding
+  type: state_constraint
+  severity: error
+  enabled: true
+  config:
+    forbidden_states:
+    - MERGING
+    - CHERRY-PICKING
+    - REBASING
+    action: escalate
+  rationale: 'Unresolved conflicts indicate complex situations requiring
+
+    human judgment to resolve correctly.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: clean-working-tree
+  name: Working tree should be clean before major operatio
+  description: Working tree should be clean before major operations
+  type: state_constraint
+  severity: warning
+  enabled: true
+  config:
+    operations:
+    - checkout
+    - rebase
+    - merge
+    require: no_uncommitted_changes
+    allow: stash_first
+  rationale: 'Uncommitted changes can be lost during branch operations.
+
+    Either commit, stash, or discard before proceeding.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: no-rewrite-pushed
+  name: Don't rewrite history that's been pushed
+  description: Don't rewrite history that's been pushed
+  type: history_constraint
+  severity: error
+  enabled: true
+  config:
+    forbidden_on_pushed:
+    - rebase -i
+    - commit --amend
+    - reset --hard
+    check: origin tracking
+  rationale: 'Rewriting pushed history requires force push and can
+
+    cause significant issues for other collaborators.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: preserve-hooks
+  name: Don't bypass git hooks without explicit approval
+  description: Don't bypass git hooks without explicit approval
+  type: command_constraint
+  severity: warning
+  enabled: true
+  config:
+    forbidden_flags:
+    - --no-verify
+    - -n
+    unless: explicitly_approved
+  rationale: 'Git hooks enforce project standards. Bypassing them may
+
+    introduce code that doesn''t meet quality requirements.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+escalation_triggers:
+- trigger_id: force-push-requested
+  condition: Force push is needed to complete operation
+  severity: blocking
+  prompt: 'Force push required. This will overwrite remote history.
+
+    - Target branch: {branch}
+
+    - Commits affected: {count}
+
+    Please confirm this is intentional and collaborators are aware.
+
+    '
+  rationale: Force push is irreversible and affects collaborators
+- trigger_id: protected-branch-access
+  condition: Operation targets protected branch
+  severity: blocking
+  prompt: 'Attempting to modify protected branch: {branch}
+
+    This branch typically requires PR review. Should we:
+
+    - Create a feature branch instead?
+
+    - Proceed with explicit approval?
+
+    '
+  rationale: Protected branches exist for safety
+- trigger_id: merge-conflict-detected
+  condition: Git operation results in merge conflicts
+  severity: blocking
+  prompt: 'Merge conflicts detected in {count} file(s):
+
+    {files}
+
+    Human review required to resolve conflicts correctly.
+
+    '
+  rationale: Automatic conflict resolution may lose important changes
+- trigger_id: large-diff
+  condition: Commit contains more than 500 lines changed
+  severity: advisory
+  prompt: 'Large commit detected: {lines} lines changed across {files} files.
+
+    Consider:
+
+    - Breaking into smaller, focused commits
+
+    - Reviewing changes for completeness
+
+    '
+  rationale: Large commits are harder to review and may hide issues
+quality_gates:
+- gate_id: pre-commit-check
+  checks:
+  - No uncommitted changes (or explicitly stashed)
+  - Not on protected branch
+  - Commit message follows format
+  failure_action: escalate
+- gate_id: pre-push-check
+  checks:
+  - All commits have valid messages
+  - No force push flags unless approved
+  - Remote tracking is current
+  failure_action: escalate

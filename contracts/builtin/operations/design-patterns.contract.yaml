@@ -1,0 +1,1593 @@
+schema_version: '2.0'
+contract:
+  name: design-patterns
+  type: operations
+  description: 'Comprehensive guide to software design patterns including GoF patterns,
+
+    architectural patterns, and modern patterns. Emphasizes when to use
+
+    each pattern and common implementation pitfalls.
+
+    '
+  version: 1.0.0
+  enabled: true
+  tags:
+  - builtin
+  - operations
+  - code-quality
+checks:
+- id: factory-method
+  name: Define interface for creating objects, let subclas
+  description: Define interface for creating objects, let subclasses decide which class
+  type: design_pattern
+  severity: info
+  enabled: true
+  config:
+    intent: 'Defer instantiation to subclasses. Useful when a class can''t
+
+      anticipate the class of objects it must create.
+
+      '
+    use_when:
+    - class_doesnt_know_object_types_ahead
+    - subclasses_should_specify_objects
+    - want_to_localize_creation_logic
+    structure:
+      creator: Declares factory method returning Product
+      concrete_creator: Overrides factory method to return ConcreteProduct
+      product: Interface for objects factory method creates
+      concrete_product: Implements Product interface
+    examples:
+      python: "class DocumentFactory(ABC):\n    @abstractmethod\n    def create_document(self) -> Document:\n\
+        \        pass\n\nclass PDFFactory(DocumentFactory):\n    def create_document(self) -> Document:\n\
+        \        return PDFDocument()\n"
+      typescript: "interface DocumentFactory {\n  createDocument(): Document;\n}\n\nclass PDFFactory implements\
+        \ DocumentFactory {\n  createDocument(): Document {\n    return new PDFDocument();\n  }\n}\n"
+    anti_patterns:
+    - factory_returning_concrete_types
+    - factory_with_type_switches
+    - factory_in_tight_loop
+    prefer_over:
+    - direct_constructor_calls_when_type_varies
+  rationale: 'Factory method decouples client code from specific classes.
+
+    Changes to product creation don''t require client changes.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: abstract-factory
+  name: Create families of related objects without specify
+  description: Create families of related objects without specifying concrete classes
+  type: design_pattern
+  severity: info
+  enabled: true
+  config:
+    intent: 'Provide interface for creating families of related or dependent
+
+      objects without specifying their concrete classes.
+
+      '
+    use_when:
+    - system_should_be_independent_of_product_creation
+    - system_uses_multiple_product_families
+    - products_in_family_used_together
+    - want_to_provide_library_of_products
+    structure:
+      abstract_factory: Declares creation methods for each product
+      concrete_factory: Implements creation for specific family
+      abstract_product: Interface for a type of product
+      concrete_product: Implements product for specific family
+    examples:
+      python: "class UIFactory(ABC):\n    @abstractmethod\n    def create_button(self) -> Button: pass\n\
+        \    @abstractmethod\n    def create_checkbox(self) -> Checkbox: pass\n\nclass DarkThemeFactory(UIFactory):\n\
+        \    def create_button(self) -> Button:\n        return DarkButton()\n    def create_checkbox(self)\
+        \ -> Checkbox:\n        return DarkCheckbox()\n"
+    anti_patterns:
+    - adding_products_requires_interface_change
+    - factories_with_unrelated_products
+    when_not_to_use:
+    - single_product_type
+    - products_not_actually_related
+  rationale: 'Abstract factory ensures products from same family work together.
+
+    Switching families requires only changing factory instance.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: builder-pattern
+  name: Construct complex objects step by step
+  description: Construct complex objects step by step
+  type: design_pattern
+  severity: info
+  enabled: true
+  config:
+    intent: 'Separate the construction of a complex object from its
+
+      representation so the same construction process can create
+
+      different representations.
+
+      '
+    use_when:
+    - object_has_many_constructor_parameters
+    - want_immutable_object_with_optional_fields
+    - construction_steps_should_be_reusable
+    - object_has_complex_initialization
+    structure:
+      builder: Specifies abstract interface for creating parts
+      concrete_builder: Constructs and assembles parts
+      director: Constructs using Builder interface (optional)
+      product: The complex object being built
+    examples:
+      python: "@dataclass\nclass EmailBuilder:\n    _to: str = \"\"\n    _subject: str = \"\"\n    _body:\
+        \ str = \"\"\n    _attachments: list[str] = field(default_factory=list)\n\n    def to(self, recipient:\
+        \ str) -> \"EmailBuilder\":\n        self._to = recipient\n        return self\n\n    def subject(self,\
+        \ subject: str) -> \"EmailBuilder\":\n        self._subject = subject\n        return self\n\n\
+        \    def build(self) -> Email:\n        return Email(self._to, self._subject, self._body, self._attachments)\n\
+        \n# Usage\nemail = EmailBuilder().to(\"user@example.com\").subject(\"Hello\").build()\n"
+      typescript: "class QueryBuilder {\n  private query: Partial<Query> = {};\n\n  select(...fields:\
+        \ string[]): this {\n    this.query.fields = fields;\n    return this;\n  }\n\n  where(condition:\
+        \ Condition): this {\n    this.query.conditions = [...(this.query.conditions ?? []), condition];\n\
+        \    return this;\n  }\n\n  build(): Query {\n    return this.query as Query;\n  }\n}\n"
+    threshold:
+      use_when_parameters_exceed: 4
+    anti_patterns:
+    - builder_for_simple_objects
+    - mutable_product_after_build
+    - builder_without_validation
+  rationale: 'Builders make complex object construction readable and prevent
+
+    telescoping constructors. Enable fluent, self-documenting APIs.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: singleton-pattern
+  name: Ensure class has only one instance with global acc
+  description: Ensure class has only one instance with global access point
+  type: design_pattern
+  severity: warning
+  enabled: true
+  config:
+    intent: 'Ensure a class has only one instance and provide a global
+
+      point of access to it.
+
+      '
+    use_when:
+    - exactly_one_instance_needed
+    - instance_should_be_extensible
+    - clients_shouldnt_change_instance
+    legitimate_uses:
+    - logging_configuration
+    - thread_pools
+    - connection_pools
+    - configuration_objects
+    - hardware_interface_access
+    avoid_because:
+    - makes_testing_difficult
+    - hides_dependencies
+    - violates_single_responsibility
+    - creates_global_state
+    prefer_instead:
+    - dependency_injection
+    - module_level_instance
+    - factory_with_caching
+    examples:
+      python: "# Prefer module-level singleton in Python\n# _config.py\n_instance: Config | None = None\n\
+        \ndef get_config() -> Config:\n    global _instance\n    if _instance is None:\n        _instance\
+        \ = Config.from_environment()\n    return _instance\n\n# Better: Use dependency injection\nclass\
+        \ Service:\n    def __init__(self, config: Config):\n        self.config = config\n"
+    anti_patterns:
+    - singleton_with_mutable_state
+    - singleton_for_testable_services
+    - lazy_singleton_without_thread_safety
+  rationale: 'Singletons are often overused. Prefer dependency injection which
+
+    makes dependencies explicit and testing easier.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: prototype-pattern
+  name: Create objects by cloning existing instances
+  description: Create objects by cloning existing instances
+  type: design_pattern
+  severity: info
+  enabled: true
+  config:
+    intent: 'Specify kinds of objects to create using a prototypical instance,
+
+      and create new objects by copying this prototype.
+
+      '
+    use_when:
+    - classes_instantiated_at_runtime
+    - avoid_factory_hierarchy_paralleling_products
+    - instances_have_few_state_combinations
+    - cloning_cheaper_than_creation
+    structure:
+      prototype: Declares interface for cloning itself
+      concrete_prototype: Implements cloning operation
+      client: Creates new objects by asking prototype to clone
+    examples:
+      python: "import copy\n\n@dataclass\nclass GameUnit:\n    health: int\n    attack: int\n    defense:\
+        \ int\n    position: tuple[int, int]\n\n    def clone(self) -> \"GameUnit\":\n        return copy.deepcopy(self)\n\
+        \n# Usage: Create variations from prototype\nbase_soldier = GameUnit(100, 10, 5, (0, 0))\nsoldier1\
+        \ = base_soldier.clone()\nsoldier1.position = (10, 20)\n"
+    considerations:
+    - deep_vs_shallow_copy
+    - circular_references
+    - private_fields
+  rationale: 'Prototype avoids the cost of creating objects from scratch when
+
+    similar objects already exist. Useful for configuration objects.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: adapter-pattern
+  name: Convert interface of a class into another interfac
+  description: Convert interface of a class into another interface clients expect
+  type: design_pattern
+  severity: info
+  enabled: true
+  config:
+    intent: 'Convert the interface of a class into another interface clients
+
+      expect. Adapter lets classes work together that couldn''t otherwise
+
+      because of incompatible interfaces.
+
+      '
+    use_when:
+    - want_to_use_existing_class_with_incompatible_interface
+    - want_to_create_reusable_class_for_unrelated_classes
+    - need_to_use_several_existing_subclasses
+    types:
+      object_adapter: Uses composition (preferred)
+      class_adapter: Uses multiple inheritance
+    examples:
+      python: "# Adapt third-party logger to our interface\nclass Logger(Protocol):\n    def log(self,\
+        \ level: str, message: str) -> None: ...\n\nclass ThirdPartyLoggerAdapter:\n    def __init__(self,\
+        \ third_party: ThirdPartyLogger):\n        self._logger = third_party\n\n    def log(self, level:\
+        \ str, message: str) -> None:\n        # Adapt to third-party's different method signature\n \
+        \       self._logger.write_log(level.upper(), message, timestamp=True)\n"
+      typescript: "interface PaymentProcessor {\n  process(amount: number): Promise<void>;\n}\n\nclass\
+        \ StripeAdapter implements PaymentProcessor {\n  constructor(private stripe: StripeClient) {}\n\
+        \n  async process(amount: number): Promise<void> {\n    // Adapt to Stripe's API\n    await this.stripe.charges.create({\n\
+        \      amount: amount * 100, // Stripe uses cents\n      currency: 'usd',\n    });\n  }\n}\n"
+    anti_patterns:
+    - adapter_with_business_logic
+    - bidirectional_adapters
+  rationale: 'Adapters enable integration with external libraries and legacy
+
+    code without modifying source. Essential for clean boundaries.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: decorator-pattern
+  name: Attach additional responsibilities to object dynam
+  description: Attach additional responsibilities to object dynamically
+  type: design_pattern
+  severity: info
+  enabled: true
+  config:
+    intent: 'Attach additional responsibilities to an object dynamically.
+
+      Decorators provide a flexible alternative to subclassing.
+
+      '
+    use_when:
+    - add_responsibilities_dynamically
+    - responsibilities_can_be_withdrawn
+    - extension_by_subclassing_impractical
+    - want_to_combine_behaviors
+    structure:
+      component: Interface for objects that can have responsibilities
+      concrete_component: The object being decorated
+      decorator: Maintains reference to component, conforms to interface
+      concrete_decorator: Adds responsibilities to component
+    examples:
+      python: "class DataSource(Protocol):\n    def read(self) -> str: ...\n    def write(self, data:\
+        \ str) -> None: ...\n\nclass EncryptionDecorator:\n    def __init__(self, source: DataSource,\
+        \ cipher: Cipher):\n        self._source = source\n        self._cipher = cipher\n\n    def read(self)\
+        \ -> str:\n        return self._cipher.decrypt(self._source.read())\n\n    def write(self, data:\
+        \ str) -> None:\n        self._source.write(self._cipher.encrypt(data))\n\n# Stack decorators\n\
+        source = CompressionDecorator(\n    EncryptionDecorator(\n        FileDataSource(\"data.txt\"\
+        ),\n        cipher\n    )\n)\n"
+      typescript: "// Function decorator pattern\nfunction withLogging<T extends (...args: any[]) => any>(fn:\
+        \ T): T {\n  return ((...args) => {\n    console.log(`Calling ${fn.name} with`, args);\n    const\
+        \ result = fn(...args);\n    console.log(`Result:`, result);\n    return result;\n  }) as T;\n\
+        }\n"
+    vs_inheritance:
+      decorator: Responsibilities added at runtime, can be combined
+      inheritance: Responsibilities fixed at compile time
+    anti_patterns:
+    - too_many_small_decorators
+    - decorator_order_dependencies_unclear
+  rationale: 'Decorators allow behavior composition without class explosion.
+
+    Each decorator has single responsibility, easily testable.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: facade-pattern
+  name: 'Provide unified interface to set of interfaces in '
+  description: Provide unified interface to set of interfaces in subsystem
+  type: design_pattern
+  severity: info
+  enabled: true
+  config:
+    intent: 'Provide a unified interface to a set of interfaces in a
+
+      subsystem. Facade defines a higher-level interface that
+
+      makes the subsystem easier to use.
+
+      '
+    use_when:
+    - want_simple_interface_to_complex_subsystem
+    - many_dependencies_between_clients_and_implementation
+    - want_to_layer_subsystems
+    structure:
+      facade: Knows which subsystem classes handle requests
+      subsystem_classes: Implement subsystem functionality
+    examples:
+      python: "class VideoConverter:\n    \"\"\"Facade for complex video conversion subsystem.\"\"\"\n\
+        \n    def convert(self, filename: str, format: str) -> str:\n        # Hide complexity of subsystem\n\
+        \        file = VideoFile(filename)\n        codec = CodecFactory.extract(file)\n        if format\
+        \ == \"mp4\":\n            return MPEG4Compression().compress(codec, file)\n        elif format\
+        \ == \"webm\":\n            return WebMCompression().compress(codec, file)\n\n# Client uses simple\
+        \ interface\nconverter = VideoConverter()\nconverter.convert(\"video.avi\", \"mp4\")\n"
+    benefits:
+    - isolates_clients_from_subsystem
+    - promotes_weak_coupling
+    - doesnt_prevent_using_subsystem_directly
+    anti_patterns:
+    - facade_becoming_god_object
+    - facade_exposing_subsystem_types
+  rationale: 'Facades simplify complex subsystems for common use cases while
+
+    still allowing direct subsystem access when needed.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: proxy-pattern
+  name: Provide surrogate or placeholder for another objec
+  description: Provide surrogate or placeholder for another object
+  type: design_pattern
+  severity: info
+  enabled: true
+  config:
+    intent: 'Provide a surrogate or placeholder for another object to control
+
+      access to it.
+
+      '
+    use_when:
+    - lazy_initialization_needed
+    - access_control_required
+    - local_execution_of_remote_service
+    - logging_needed_for_object_access
+    - caching_results_of_expensive_operations
+    types:
+      virtual_proxy: Lazy initialization
+      protection_proxy: Access control
+      remote_proxy: Local representation of remote object
+      logging_proxy: Logging access to subject
+      caching_proxy: Cache results
+    examples:
+      python: "class Image(Protocol):\n    def display(self) -> None: ...\n\nclass LazyImageProxy:\n \
+        \   \"\"\"Virtual proxy - loads image only when needed.\"\"\"\n\n    def __init__(self, filename:\
+        \ str):\n        self._filename = filename\n        self._image: RealImage | None = None\n\n \
+        \   def display(self) -> None:\n        if self._image is None:\n            self._image = RealImage(self._filename)\
+        \  # Expensive load\n        self._image.display()\n\nclass AccessControlProxy:\n    \"\"\"Protection\
+        \ proxy - checks permissions.\"\"\"\n\n    def __init__(self, document: Document, user: User):\n\
+        \        self._document = document\n        self._user = user\n\n    def read(self) -> str:\n\
+        \        if not self._user.can_read(self._document):\n            raise PermissionError(\"Access\
+        \ denied\")\n        return self._document.read()\n"
+    anti_patterns:
+    - proxy_with_different_interface
+    - heavyweight_proxy_creation
+  rationale: 'Proxies control object access transparently. Essential for lazy
+
+    loading, access control, and remote service integration.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: composite-pattern
+  name: 'Compose objects into tree structures representing '
+  description: Compose objects into tree structures representing part-whole hierarchies
+  type: design_pattern
+  severity: info
+  enabled: true
+  config:
+    intent: 'Compose objects into tree structures to represent part-whole
+
+      hierarchies. Composite lets clients treat individual objects
+
+      and compositions uniformly.
+
+      '
+    use_when:
+    - want_to_represent_part_whole_hierarchies
+    - clients_should_ignore_composite_vs_individual
+    - structure_can_have_any_level_of_complexity
+    structure:
+      component: Declares interface for objects in composition
+      leaf: Represents leaf objects with no children
+      composite: Stores child components, implements child-related operations
+    examples:
+      python: "class FileSystemItem(ABC):\n    @abstractmethod\n    def get_size(self) -> int: pass\n\n\
+        class File(FileSystemItem):\n    def __init__(self, name: str, size: int):\n        self.name\
+        \ = name\n        self.size = size\n\n    def get_size(self) -> int:\n        return self.size\n\
+        \nclass Directory(FileSystemItem):\n    def __init__(self, name: str):\n        self.name = name\n\
+        \        self.children: list[FileSystemItem] = []\n\n    def add(self, item: FileSystemItem) ->\
+        \ None:\n        self.children.append(item)\n\n    def get_size(self) -> int:\n        return\
+        \ sum(child.get_size() for child in self.children)\n\n# Client code treats files and directories\
+        \ uniformly\ndef print_size(item: FileSystemItem) -> None:\n    print(f\"Size: {item.get_size()}\"\
+        )\n"
+    use_cases:
+    - file_systems
+    - ui_component_hierarchies
+    - organization_structures
+    - expression_trees
+    anti_patterns:
+    - composite_with_type_checks
+    - leaf_operations_on_composite_interface
+  rationale: 'Composite enables uniform treatment of individual objects and
+
+    compositions, simplifying client code for hierarchical structures.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: bridge-pattern
+  name: Decouple abstraction from implementation so both c
+  description: Decouple abstraction from implementation so both can vary independently
+  type: design_pattern
+  severity: info
+  enabled: true
+  config:
+    intent: 'Decouple an abstraction from its implementation so that the
+
+      two can vary independently.
+
+      '
+    use_when:
+    - want_runtime_binding_of_implementation
+    - both_abstractions_and_implementations_should_be_extensible
+    - changes_in_implementation_shouldnt_impact_clients
+    - want_to_share_implementation_among_objects
+    structure:
+      abstraction: Defines abstraction's interface, maintains implementor ref
+      refined_abstraction: Extends interface defined by Abstraction
+      implementor: Defines interface for implementation classes
+      concrete_implementor: Implements Implementor interface
+    examples:
+      python: "# Abstraction\nclass RemoteControl:\n    def __init__(self, device: Device):\n        self._device\
+        \ = device\n\n    def toggle_power(self) -> None:\n        if self._device.is_enabled():\n   \
+        \         self._device.disable()\n        else:\n            self._device.enable()\n\n# Refined\
+        \ abstraction\nclass AdvancedRemoteControl(RemoteControl):\n    def mute(self) -> None:\n    \
+        \    self._device.set_volume(0)\n\n# Implementor\nclass Device(Protocol):\n    def is_enabled(self)\
+        \ -> bool: ...\n    def enable(self) -> None: ...\n    def disable(self) -> None: ...\n    def\
+        \ set_volume(self, volume: int) -> None: ...\n\n# Concrete implementors\nclass TV:\n    # TV-specific\
+        \ implementation\n\nclass Radio:\n    # Radio-specific implementation\n\n# Can combine any abstraction\
+        \ with any implementor\nremote = AdvancedRemoteControl(TV())\n"
+    vs_adapter:
+      bridge: Designed up-front, both hierarchies evolve
+      adapter: Applied after-the-fact to existing classes
+  rationale: 'Bridge prevents class explosion when extending abstractions and
+
+    implementations independently. Platform abstraction is a common use.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: flyweight-pattern
+  name: Use sharing to support large numbers of fine-grain
+  description: Use sharing to support large numbers of fine-grained objects efficiently
+  type: design_pattern
+  severity: info
+  enabled: true
+  config:
+    intent: 'Use sharing to support large numbers of fine-grained objects
+
+      efficiently.
+
+      '
+    use_when:
+    - application_uses_large_number_of_objects
+    - storage_costs_high_due_to_object_quantity
+    - most_object_state_can_be_extrinsic
+    - many_objects_can_be_replaced_by_few_shared
+    - application_doesnt_depend_on_object_identity
+    structure:
+      flyweight: Interface through which flyweights receive extrinsic state
+      concrete_flyweight: Stores intrinsic state, must be shareable
+      flyweight_factory: Creates and manages flyweight objects
+      client: Maintains reference to flyweights, computes extrinsic state
+    terminology:
+      intrinsic_state: Stored in flyweight, shared, context-independent
+      extrinsic_state: Passed to flyweight methods, context-dependent
+    examples:
+      python: "class TreeType:\n    \"\"\"Flyweight: stores intrinsic state (type data).\"\"\"\n    def\
+        \ __init__(self, name: str, color: str, texture: bytes):\n        self.name = name\n        self.color\
+        \ = color\n        self.texture = texture  # Large, but shared\n\n    def draw(self, x: int, y:\
+        \ int, canvas: Canvas) -> None:\n        # x, y are extrinsic state\n        canvas.draw_bitmap(self.texture,\
+        \ x, y, self.color)\n\nclass TreeFactory:\n    _cache: dict[str, TreeType] = {}\n\n    @classmethod\n\
+        \    def get_tree_type(cls, name: str, color: str, texture: bytes) -> TreeType:\n        key =\
+        \ f\"{name}_{color}\"\n        if key not in cls._cache:\n            cls._cache[key] = TreeType(name,\
+        \ color, texture)\n        return cls._cache[key]\n\nclass Tree:\n    \"\"\"Uses flyweight with\
+        \ extrinsic state.\"\"\"\n    def __init__(self, x: int, y: int, tree_type: TreeType):\n     \
+        \   self.x = x\n        self.y = y\n        self.type = tree_type\n\n    def draw(self, canvas:\
+        \ Canvas) -> None:\n        self.type.draw(self.x, self.y, canvas)\n"
+    use_cases:
+    - text_editors_character_objects
+    - game_particles
+    - ui_icon_rendering
+    - caching_immutable_objects
+    anti_patterns:
+    - flyweight_with_mutable_intrinsic_state
+    - storing_extrinsic_state_in_flyweight
+  rationale: 'Flyweight dramatically reduces memory when many similar objects exist.
+
+    The key is separating shared (intrinsic) from unique (extrinsic) state.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: strategy-pattern
+  name: Define family of algorithms, encapsulate each, mak
+  description: Define family of algorithms, encapsulate each, make them interchangeable
+  type: design_pattern
+  severity: info
+  enabled: true
+  config:
+    intent: 'Define a family of algorithms, encapsulate each one, and make
+
+      them interchangeable. Strategy lets the algorithm vary
+
+      independently from clients that use it.
+
+      '
+    use_when:
+    - many_related_classes_differ_only_in_behavior
+    - need_different_variants_of_algorithm
+    - algorithm_uses_data_clients_shouldnt_know
+    - class_defines_many_behaviors_via_conditionals
+    structure:
+      strategy: Declares interface common to all algorithms
+      concrete_strategy: Implements algorithm using Strategy interface
+      context: Configured with ConcreteStrategy, maintains reference
+    examples:
+      python: "class CompressionStrategy(Protocol):\n    def compress(self, data: bytes) -> bytes: ...\n\
+        \nclass ZipCompression:\n    def compress(self, data: bytes) -> bytes:\n        return zlib.compress(data)\n\
+        \nclass GzipCompression:\n    def compress(self, data: bytes) -> bytes:\n        return gzip.compress(data)\n\
+        \nclass FileCompressor:\n    def __init__(self, strategy: CompressionStrategy):\n        self._strategy\
+        \ = strategy\n\n    def compress_file(self, path: Path) -> bytes:\n        data = path.read_bytes()\n\
+        \        return self._strategy.compress(data)\n\n# Usage: swap strategies at runtime\ncompressor\
+        \ = FileCompressor(ZipCompression())\ncompressor = FileCompressor(GzipCompression())\n"
+      typescript: "type SortStrategy<T> = (items: T[]) => T[];\n\nconst quickSort: SortStrategy<number>\
+        \ = (items) => { /* ... */ };\nconst mergeSort: SortStrategy<number> = (items) => { /* ... */\
+        \ };\n\nclass Sorter<T> {\n  constructor(private strategy: SortStrategy<T>) {}\n\n  sort(items:\
+        \ T[]): T[] {\n    return this.strategy(items);\n  }\n}\n"
+    replaces: Switch statements on type
+    anti_patterns:
+    - strategy_with_shared_state
+    - too_granular_strategies
+  rationale: 'Strategy eliminates conditional statements for selecting algorithms.
+
+    New strategies can be added without modifying existing code.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: observer-pattern
+  name: Define one-to-many dependency so dependents are no
+  description: Define one-to-many dependency so dependents are notified of state changes
+  type: design_pattern
+  severity: info
+  enabled: true
+  config:
+    intent: 'Define a one-to-many dependency between objects so that when
+
+      one object changes state, all its dependents are notified
+
+      and updated automatically.
+
+      '
+    use_when:
+    - abstraction_has_two_aspects_one_dependent_on_other
+    - change_to_one_object_requires_changing_others
+    - object_should_notify_others_without_assumptions
+    structure:
+      subject: Knows its observers, provides attach/detach interface
+      observer: Defines update interface for notification
+      concrete_subject: Stores state, sends notification on change
+      concrete_observer: Maintains reference to subject, implements update
+    variants:
+      push_model: Subject sends detailed change info
+      pull_model: Subject sends minimal notification, observer queries
+    examples:
+      python: "from typing import Callable\n\nclass EventEmitter:\n    def __init__(self):\n        self._listeners:\
+        \ dict[str, list[Callable]] = {}\n\n    def on(self, event: str, callback: Callable) -> None:\n\
+        \        if event not in self._listeners:\n            self._listeners[event] = []\n        self._listeners[event].append(callback)\n\
+        \n    def emit(self, event: str, *args, **kwargs) -> None:\n        for callback in self._listeners.get(event,\
+        \ []):\n            callback(*args, **kwargs)\n\n# Usage\nclass StockTicker(EventEmitter):\n \
+        \   def update_price(self, symbol: str, price: float) -> None:\n        self._prices[symbol] =\
+        \ price\n        self.emit(\"price_change\", symbol, price)\n\nticker = StockTicker()\nticker.on(\"\
+        price_change\", lambda s, p: print(f\"{s}: ${p}\"))\n"
+    considerations:
+    - memory_leaks_from_unremoved_observers
+    - notification_order_not_guaranteed
+    - cascading_updates
+  rationale: 'Observer decouples subjects from their observers. Subjects broadcast
+
+    without knowing who''s listening, enabling loose coupling.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: command-pattern
+  name: Encapsulate request as object to parameterize clie
+  description: Encapsulate request as object to parameterize clients
+  type: design_pattern
+  severity: info
+  enabled: true
+  config:
+    intent: 'Encapsulate a request as an object, thereby letting you
+
+      parameterize clients with different requests, queue requests,
+
+      and support undoable operations.
+
+      '
+    use_when:
+    - parameterize_objects_with_action_to_perform
+    - specify_queue_and_execute_requests_at_different_times
+    - support_undo
+    - support_logging_changes_for_recovery
+    - structure_system_around_high_level_operations
+    structure:
+      command: Declares interface for executing operation
+      concrete_command: Binds receiver to action, implements execute
+      client: Creates ConcreteCommand and sets its receiver
+      invoker: Asks command to carry out request
+      receiver: Knows how to perform operation
+    examples:
+      python: "class Command(Protocol):\n    def execute(self) -> None: ...\n    def undo(self) -> None:\
+        \ ...\n\n@dataclass\nclass InsertTextCommand:\n    document: Document\n    position: int\n   \
+        \ text: str\n\n    def execute(self) -> None:\n        self.document.insert(self.position, self.text)\n\
+        \n    def undo(self) -> None:\n        self.document.delete(self.position, len(self.text))\n\n\
+        class CommandHistory:\n    def __init__(self):\n        self._history: list[Command] = []\n\n\
+        \    def execute(self, command: Command) -> None:\n        command.execute()\n        self._history.append(command)\n\
+        \n    def undo(self) -> None:\n        if self._history:\n            command = self._history.pop()\n\
+        \            command.undo()\n"
+    use_cases:
+    - undo_redo_functionality
+    - transaction_systems
+    - macro_recording
+    - task_queues
+    - wizard_dialogs
+  rationale: 'Command decouples invoker from receiver. Enables undo/redo,
+
+    transactional behavior, and operation queuing.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: template-method-pattern
+  name: Define skeleton of algorithm, defer steps to subcl
+  description: Define skeleton of algorithm, defer steps to subclasses
+  type: design_pattern
+  severity: info
+  enabled: true
+  config:
+    intent: 'Define the skeleton of an algorithm in an operation, deferring
+
+      some steps to subclasses. Template Method lets subclasses redefine
+
+      certain steps without changing algorithm''s structure.
+
+      '
+    use_when:
+    - implement_invariant_parts_of_algorithm_once
+    - common_behavior_should_be_localized
+    - control_subclass_extensions
+    structure:
+      abstract_class: Defines template method and abstract primitives
+      concrete_class: Implements primitive operations
+    examples:
+      python: "class DataMiner(ABC):\n    def mine(self, path: str) -> dict:\n        \"\"\"Template method\
+        \ - defines algorithm skeleton.\"\"\"\n        file = self.open_file(path)\n        raw_data =\
+        \ self.extract_data(file)\n        data = self.parse_data(raw_data)\n        analysis = self.analyze_data(data)\n\
+        \        self.send_report(analysis)\n        return analysis\n\n    @abstractmethod\n    def open_file(self,\
+        \ path: str) -> File: pass\n\n    @abstractmethod\n    def extract_data(self, file: File) -> str:\
+        \ pass\n\n    @abstractmethod\n    def parse_data(self, raw_data: str) -> dict: pass\n\n    def\
+        \ analyze_data(self, data: dict) -> dict:\n        # Default implementation, can be overridden\n\
+        \        return {\"summary\": data}\n\n    def send_report(self, analysis: dict) -> None:\n  \
+        \      # Hook - optional override\n        pass\n\nclass PDFMiner(DataMiner):\n    def open_file(self,\
+        \ path: str) -> File:\n        return PDFFile(path)\n    # ... other implementations\n"
+    hooks:
+      description: Optional methods with default (often empty) implementation
+      purpose: Allow subclasses to hook into algorithm at specific points
+    anti_patterns:
+    - too_many_abstract_methods
+    - calling_abstract_methods_from_constructor
+  rationale: 'Template method implements invariant algorithm structure while allowing
+
+    variation in specific steps. "Don''t call us, we''ll call you."
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: state-pattern
+  name: Allow object to alter behavior when internal state
+  description: Allow object to alter behavior when internal state changes
+  type: design_pattern
+  severity: info
+  enabled: true
+  config:
+    intent: 'Allow an object to alter its behavior when its internal state
+
+      changes. The object will appear to change its class.
+
+      '
+    use_when:
+    - behavior_depends_on_state
+    - operations_have_large_multipart_conditionals_on_state
+    structure:
+      context: Defines interface, maintains current state
+      state: Defines interface for encapsulating state behavior
+      concrete_states: Implement behavior associated with state
+    examples:
+      python: "class OrderState(Protocol):\n    def confirm(self, order: \"Order\") -> None: ...\n   \
+        \ def ship(self, order: \"Order\") -> None: ...\n    def cancel(self, order: \"Order\") -> None:\
+        \ ...\n\nclass PendingState:\n    def confirm(self, order: \"Order\") -> None:\n        order.state\
+        \ = ConfirmedState()\n\n    def ship(self, order: \"Order\") -> None:\n        raise InvalidOperationError(\"\
+        Cannot ship pending order\")\n\n    def cancel(self, order: \"Order\") -> None:\n        order.state\
+        \ = CancelledState()\n\nclass ConfirmedState:\n    def confirm(self, order: \"Order\") -> None:\n\
+        \        raise InvalidOperationError(\"Already confirmed\")\n\n    def ship(self, order: \"Order\"\
+        ) -> None:\n        order.state = ShippedState()\n\n    def cancel(self, order: \"Order\") ->\
+        \ None:\n        order.state = CancelledState()\n\nclass Order:\n    def __init__(self):\n   \
+        \     self.state: OrderState = PendingState()\n\n    def confirm(self) -> None:\n        self.state.confirm(self)\n\
+        \n    def ship(self) -> None:\n        self.state.ship(self)\n"
+    replaces: Large if/switch statements on state enum
+    vs_strategy:
+      state: States know about each other and trigger transitions
+      strategy: Strategies are independent, client chooses
+  rationale: 'State pattern localizes state-specific behavior. New states can be
+
+    added without modifying existing state classes or context.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: chain-of-responsibility
+  name: Pass request along chain of handlers until one han
+  description: Pass request along chain of handlers until one handles it
+  type: design_pattern
+  severity: info
+  enabled: true
+  config:
+    intent: 'Avoid coupling sender to receiver by giving more than one object
+
+      a chance to handle request. Chain the receiving objects and pass
+
+      the request along the chain until an object handles it.
+
+      '
+    use_when:
+    - more_than_one_object_may_handle_request
+    - handler_not_known_a_priori
+    - want_to_issue_request_without_specifying_receiver
+    - handlers_should_be_dynamic
+    structure:
+      handler: Defines interface for handling requests, optional successor link
+      concrete_handler: Handles requests it's responsible for
+      client: Initiates request to handler on chain
+    examples:
+      python: "class Handler(ABC):\n    def __init__(self, next_handler: \"Handler | None\" = None):\n\
+        \        self._next = next_handler\n\n    def handle(self, request: Request) -> Response | None:\n\
+        \        result = self._handle(request)\n        if result is not None:\n            return result\n\
+        \        if self._next:\n            return self._next.handle(request)\n        return None\n\n\
+        \    @abstractmethod\n    def _handle(self, request: Request) -> Response | None: pass\n\nclass\
+        \ AuthenticationHandler(Handler):\n    def _handle(self, request: Request) -> Response | None:\n\
+        \        if not request.is_authenticated():\n            return Response(401, \"Unauthorized\"\
+        )\n        return None  # Pass to next handler\n\nclass ValidationHandler(Handler):\n    def _handle(self,\
+        \ request: Request) -> Response | None:\n        if not request.is_valid():\n            return\
+        \ Response(400, \"Bad Request\")\n        return None\n\n# Build chain\nchain = AuthenticationHandler(\n\
+        \    ValidationHandler(\n        BusinessLogicHandler()\n    )\n)\n"
+    use_cases:
+    - middleware_pipelines
+    - event_handling
+    - logging_levels
+    - approval_workflows
+  rationale: 'Chain of responsibility decouples sender from receivers. Handlers
+
+    can be added, removed, or reordered without affecting client.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: mediator-pattern
+  name: Define object that encapsulates how objects intera
+  description: Define object that encapsulates how objects interact
+  type: design_pattern
+  severity: info
+  enabled: true
+  config:
+    intent: 'Define an object that encapsulates how a set of objects interact.
+
+      Mediator promotes loose coupling by keeping objects from referring
+
+      to each other explicitly.
+
+      '
+    use_when:
+    - objects_communicate_in_complex_ways
+    - reusing_object_is_difficult_due_to_dependencies
+    - behavior_distributed_between_classes_should_be_customizable
+    structure:
+      mediator: Defines interface for colleague communication
+      concrete_mediator: Implements coordination, knows colleagues
+      colleague: Knows its mediator, communicates through it
+    examples:
+      python: "class ChatMediator:\n    def __init__(self):\n        self._users: dict[str, User] = {}\n\
+        \n    def register(self, user: \"User\") -> None:\n        self._users[user.name] = user\n\n \
+        \   def send(self, message: str, sender: \"User\", recipient: str) -> None:\n        if recipient\
+        \ in self._users:\n            self._users[recipient].receive(message, sender.name)\n\nclass User:\n\
+        \    def __init__(self, name: str, mediator: ChatMediator):\n        self.name = name\n      \
+        \  self._mediator = mediator\n        mediator.register(self)\n\n    def send(self, message: str,\
+        \ to: str) -> None:\n        self._mediator.send(message, self, to)\n\n    def receive(self, message:\
+        \ str, from_user: str) -> None:\n        print(f\"{self.name} received from {from_user}: {message}\"\
+        )\n"
+    use_cases:
+    - ui_dialogs
+    - chat_systems
+    - air_traffic_control
+    - event_orchestration
+    vs_observer:
+      mediator: Centralizes communication logic
+      observer: Distributes communication
+  rationale: 'Mediator centralizes complex communication logic. Objects only know
+
+    the mediator, not each other, reducing dependencies.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: iterator-pattern
+  name: 'Access elements of aggregate sequentially without '
+  description: Access elements of aggregate sequentially without exposing representation
+  type: design_pattern
+  severity: info
+  enabled: true
+  config:
+    intent: 'Provide a way to access elements of an aggregate object sequentially
+
+      without exposing its underlying representation.
+
+      '
+    use_when:
+    - access_aggregate_contents_without_exposing_internals
+    - support_multiple_traversals_of_aggregates
+    - provide_uniform_interface_for_traversing_different_structures
+    structure:
+      iterator: Defines interface for accessing and traversing
+      concrete_iterator: Implements Iterator, tracks traversal position
+      aggregate: Defines interface for creating Iterator
+      concrete_aggregate: Returns instance of ConcreteIterator
+    examples:
+      python: "from typing import Iterator, Iterable\n\nclass TreeNode:\n    def __init__(self, value:\
+        \ int):\n        self.value = value\n        self.left: TreeNode | None = None\n        self.right:\
+        \ TreeNode | None = None\n\n    def __iter__(self) -> Iterator[int]:\n        \"\"\"In-order traversal\
+        \ iterator.\"\"\"\n        if self.left:\n            yield from self.left\n        yield self.value\n\
+        \        if self.right:\n            yield from self.right\n\n# Different traversal strategies\n\
+        def preorder(node: TreeNode | None) -> Iterator[int]:\n    if node:\n        yield node.value\n\
+        \        yield from preorder(node.left)\n        yield from preorder(node.right)\n\ndef bfs(root:\
+        \ TreeNode) -> Iterator[int]:\n    queue = [root]\n    while queue:\n        node = queue.pop(0)\n\
+        \        yield node.value\n        if node.left: queue.append(node.left)\n        if node.right:\
+        \ queue.append(node.right)\n"
+    note: 'Most languages have built-in iterator support (Python''s __iter__,
+
+      Java''s Iterator, C#''s IEnumerable). Use language features first.
+
+      '
+  rationale: 'Iterator simplifies aggregate interface and supports multiple
+
+    simultaneous traversals. Language support often makes explicit
+
+    implementation unnecessary.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: visitor-pattern
+  name: Define new operation without changing classes of e
+  description: Define new operation without changing classes of elements it operates on
+  type: design_pattern
+  severity: info
+  enabled: true
+  config:
+    intent: 'Represent an operation to be performed on elements of an object
+
+      structure. Visitor lets you define a new operation without
+
+      changing the classes of the elements on which it operates.
+
+      '
+    use_when:
+    - object_structure_contains_many_classes_with_differing_interfaces
+    - many_distinct_operations_needed_on_structure
+    - classes_of_structure_rarely_change_but_operations_often_change
+    structure:
+      visitor: Declares visit operation for each ConcreteElement class
+      concrete_visitor: Implements operations for each element type
+      element: Defines accept operation taking visitor
+      concrete_element: Implements accept to call visitor's corresponding method
+    examples:
+      python: "class ASTVisitor(Protocol):\n    def visit_literal(self, node: \"Literal\") -> Any: ...\n\
+        \    def visit_binary(self, node: \"Binary\") -> Any: ...\n    def visit_unary(self, node: \"\
+        Unary\") -> Any: ...\n\nclass ASTNode(ABC):\n    @abstractmethod\n    def accept(self, visitor:\
+        \ ASTVisitor) -> Any: pass\n\nclass Literal(ASTNode):\n    def __init__(self, value: Any):\n \
+        \       self.value = value\n\n    def accept(self, visitor: ASTVisitor) -> Any:\n        return\
+        \ visitor.visit_literal(self)\n\nclass Binary(ASTNode):\n    def __init__(self, left: ASTNode,\
+        \ op: str, right: ASTNode):\n        self.left, self.op, self.right = left, op, right\n\n    def\
+        \ accept(self, visitor: ASTVisitor) -> Any:\n        return visitor.visit_binary(self)\n\n# Different\
+        \ operations as visitors\nclass Evaluator:\n    def visit_literal(self, node: Literal) -> int:\n\
+        \        return node.value\n\n    def visit_binary(self, node: Binary) -> int:\n        left =\
+        \ node.left.accept(self)\n        right = node.right.accept(self)\n        if node.op == \"+\"\
+        : return left + right\n        if node.op == \"*\": return left * right\n\nclass PrettyPrinter:\n\
+        \    def visit_literal(self, node: Literal) -> str:\n        return str(node.value)\n\n    def\
+        \ visit_binary(self, node: Binary) -> str:\n        return f\"({node.left.accept(self)} {node.op}\
+        \ {node.right.accept(self)})\"\n"
+    use_cases:
+    - compiler_ast_operations
+    - document_export_formats
+    - report_generation
+    - validation_rules
+    anti_patterns:
+    - visitor_for_frequently_changing_element_types
+  rationale: 'Visitor gathers related operations together. Adding new operations
+
+    is easy - just add new visitor. But adding new element types requires
+
+    changing all visitors.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: memento-pattern
+  name: Capture and restore object's internal state
+  description: Capture and restore object's internal state
+  type: design_pattern
+  severity: info
+  enabled: true
+  config:
+    intent: 'Without violating encapsulation, capture and externalize an object''s
+
+      internal state so that the object can be restored to this state later.
+
+      '
+    use_when:
+    - need_to_save_and_restore_state
+    - direct_state_access_violates_encapsulation
+    - implementing_undo_functionality
+    structure:
+      memento: Stores internal state of Originator
+      originator: Creates memento containing snapshot of current state
+      caretaker: Responsible for memento's safekeeping
+    examples:
+      python: "@dataclass(frozen=True)\nclass EditorMemento:\n    \"\"\"Immutable snapshot of editor state.\"\
+        \"\"\n    text: str\n    cursor_position: int\n\nclass TextEditor:\n    def __init__(self):\n\
+        \        self._text = \"\"\n        self._cursor = 0\n\n    def type(self, text: str) -> None:\n\
+        \        self._text = self._text[:self._cursor] + text + self._text[self._cursor:]\n        self._cursor\
+        \ += len(text)\n\n    def save(self) -> EditorMemento:\n        return EditorMemento(self._text,\
+        \ self._cursor)\n\n    def restore(self, memento: EditorMemento) -> None:\n        self._text\
+        \ = memento.text\n        self._cursor = memento.cursor_position\n\nclass History:\n    def __init__(self,\
+        \ editor: TextEditor):\n        self._editor = editor\n        self._history: list[EditorMemento]\
+        \ = []\n\n    def backup(self) -> None:\n        self._history.append(self._editor.save())\n\n\
+        \    def undo(self) -> None:\n        if self._history:\n            self._editor.restore(self._history.pop())\n"
+    vs_command:
+      memento: Stores complete state snapshot
+      command: Stores operation that can be reversed
+  rationale: 'Memento preserves encapsulation boundaries. Only the originator
+
+    can store and retrieve state from memento.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: repository-pattern
+  name: Mediate between domain and data mapping layers
+  description: Mediate between domain and data mapping layers
+  type: architectural_pattern
+  severity: info
+  enabled: true
+  config:
+    intent: 'Mediates between the domain and data mapping layers using a
+
+      collection-like interface for accessing domain objects.
+
+      '
+    use_when:
+    - want_to_abstract_data_access
+    - need_testable_data_layer
+    - domain_should_be_persistence_ignorant
+    structure:
+      repository_interface: Defines collection-like operations
+      concrete_repository: Implements using specific data store
+      domain_entity: Objects being stored and retrieved
+    examples:
+      python: "class UserRepository(Protocol):\n    def get(self, user_id: str) -> User | None: ...\n\
+        \    def get_by_email(self, email: str) -> User | None: ...\n    def save(self, user: User) ->\
+        \ None: ...\n    def delete(self, user_id: str) -> None: ...\n    def find_active(self) -> list[User]:\
+        \ ...\n\nclass PostgresUserRepository:\n    def __init__(self, session: Session):\n        self._session\
+        \ = session\n\n    def get(self, user_id: str) -> User | None:\n        return self._session.query(User).get(user_id)\n\
+        \n    def save(self, user: User) -> None:\n        self._session.add(user)\n\nclass InMemoryUserRepository:\n\
+        \    \"\"\"For testing.\"\"\"\n    def __init__(self):\n        self._users: dict[str, User] =\
+        \ {}\n\n    def get(self, user_id: str) -> User | None:\n        return self._users.get(user_id)\n"
+    guidelines:
+    - one_repository_per_aggregate_root
+    - return_domain_objects_not_dtos
+    - encapsulate_query_logic
+    anti_patterns:
+    - generic_repository_for_everything
+    - repository_with_business_logic
+    - exposing_query_builder
+  rationale: 'Repository abstracts data access, making domain layer testable
+
+    and persistence-ignorant. Centralizes query logic.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: unit-of-work-pattern
+  name: Maintain list of objects affected by business tran
+  description: Maintain list of objects affected by business transaction
+  type: architectural_pattern
+  severity: info
+  enabled: true
+  config:
+    intent: 'Maintain a list of objects affected by a business transaction
+
+      and coordinate the writing out of changes and resolution of
+
+      concurrency problems.
+
+      '
+    use_when:
+    - multiple_objects_change_in_one_transaction
+    - need_to_track_changes_for_persistence
+    - want_to_batch_database_operations
+    structure:
+      unit_of_work: Tracks changes, commits as single transaction
+      repositories: Access objects within unit of work scope
+    examples:
+      python: "class UnitOfWork:\n    def __init__(self, session_factory: Callable[[], Session]):\n  \
+        \      self._session_factory = session_factory\n        self._session: Session | None = None\n\
+        \n    def __enter__(self) -> \"UnitOfWork\":\n        self._session = self._session_factory()\n\
+        \        self.users = UserRepository(self._session)\n        self.orders = OrderRepository(self._session)\n\
+        \        return self\n\n    def __exit__(self, exc_type, exc_val, exc_tb) -> None:\n        if\
+        \ exc_type is None:\n            self.commit()\n        else:\n            self.rollback()\n \
+        \       self._session.close()\n\n    def commit(self) -> None:\n        self._session.commit()\n\
+        \n    def rollback(self) -> None:\n        self._session.rollback()\n\n# Usage\nwith UnitOfWork(session_factory)\
+        \ as uow:\n    user = uow.users.get(user_id)\n    user.deactivate()\n    order = uow.orders.get(order_id)\n\
+        \    order.cancel()\n    # Changes committed together or rolled back\n"
+    benefits:
+    - atomic_operations
+    - change_tracking
+    - batched_writes
+  rationale: 'Unit of work ensures data integrity by treating multiple operations
+
+    as single atomic transaction. Common with Repository pattern.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: cqrs-pattern
+  name: Separate read and write models
+  description: Separate read and write models
+  type: architectural_pattern
+  severity: info
+  enabled: true
+  config:
+    intent: 'Command Query Responsibility Segregation - separate models for
+
+      reading and writing data.
+
+      '
+    use_when:
+    - read_and_write_workloads_differ_significantly
+    - complex_domain_model_for_writes
+    - need_optimized_read_models
+    - different_scaling_requirements_for_reads_vs_writes
+    structure:
+      command_model: Handles writes, domain logic, validation
+      query_model: Optimized for reads, potentially denormalized
+      commands: Represent intent to change state
+      queries: Represent intent to read state
+    examples:
+      python: "# Command side\n@dataclass\nclass CreateOrderCommand:\n    customer_id: str\n    items:\
+        \ list[OrderItem]\n\nclass CreateOrderHandler:\n    def __init__(self, uow: UnitOfWork):\n   \
+        \     self._uow = uow\n\n    def handle(self, cmd: CreateOrderCommand) -> str:\n        with self._uow:\n\
+        \            order = Order.create(cmd.customer_id, cmd.items)\n            self._uow.orders.save(order)\n\
+        \            return order.id\n\n# Query side\n@dataclass\nclass OrderSummary:\n    id: str\n \
+        \   customer_name: str\n    total: Decimal\n    status: str\n\nclass OrderQueryService:\n    def\
+        \ __init__(self, read_db: ReadDatabase):\n        self._db = read_db\n\n    def get_order_summary(self,\
+        \ order_id: str) -> OrderSummary:\n        # Direct query against read-optimized store\n     \
+        \   return self._db.query(\"\"\"\n            SELECT o.id, c.name, o.total, o.status\n       \
+        \     FROM orders_view o\n            JOIN customers c ON o.customer_id = c.id\n            WHERE\
+        \ o.id = ?\n        \"\"\", order_id)\n"
+    complexity_warning: 'CQRS adds significant complexity. Only use when benefits
+
+      clearly outweigh costs. Most applications don''t need it.
+
+      '
+  rationale: 'CQRS enables optimized read and write paths. Especially useful
+
+    with Event Sourcing. But adds complexity - use judiciously.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: event-sourcing-pattern
+  name: Store state as sequence of events
+  description: Store state as sequence of events
+  type: architectural_pattern
+  severity: info
+  enabled: true
+  config:
+    intent: 'Store the state of an entity as a sequence of state-changing events.
+
+      Reconstruct state by replaying events.
+
+      '
+    use_when:
+    - need_complete_audit_trail
+    - business_requires_temporal_queries
+    - need_to_understand_how_state_changed
+    - domain_events_are_first_class_concept
+    structure:
+      event: Immutable record of something that happened
+      event_store: Append-only store of events
+      aggregate: Applies events to change state
+      projection: Read model built from events
+    examples:
+      python: "@dataclass(frozen=True)\nclass AccountCreated:\n    account_id: str\n    owner: str\n \
+        \   timestamp: datetime\n\n@dataclass(frozen=True)\nclass MoneyDeposited:\n    account_id: str\n\
+        \    amount: Decimal\n    timestamp: datetime\n\n@dataclass(frozen=True)\nclass MoneyWithdrawn:\n\
+        \    account_id: str\n    amount: Decimal\n    timestamp: datetime\n\nclass BankAccount:\n   \
+        \ def __init__(self, account_id: str):\n        self.id = account_id\n        self.balance = Decimal(0)\n\
+        \        self._events: list[Event] = []\n\n    def apply(self, event: Event) -> None:\n      \
+        \  match event:\n            case AccountCreated():\n                pass  # Account initialized\n\
+        \            case MoneyDeposited(amount=amount):\n                self.balance += amount\n   \
+        \         case MoneyWithdrawn(amount=amount):\n                self.balance -= amount\n      \
+        \  self._events.append(event)\n\n    def deposit(self, amount: Decimal) -> None:\n        if amount\
+        \ <= 0:\n            raise ValueError(\"Amount must be positive\")\n        self.apply(MoneyDeposited(self.id,\
+        \ amount, datetime.now()))\n\n    @classmethod\n    def from_events(cls, account_id: str, events:\
+        \ list[Event]) -> \"BankAccount\":\n        account = cls(account_id)\n        for event in events:\n\
+        \            account.apply(event)\n        return account\n"
+    complexity_warning: 'Event Sourcing is complex. Requires careful event schema design,
+
+      event versioning, and snapshot strategies. Use only when audit
+
+      trail or temporal queries are critical requirements.
+
+      '
+  rationale: 'Event sourcing provides complete history and enables temporal queries.
+
+    Natural fit for domains where "what happened" is as important as
+
+    "what is the current state."
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: dependency-injection-container
+  name: Centralized dependency management and lifetime con
+  description: Centralized dependency management and lifetime control
+  type: architectural_pattern
+  severity: info
+  enabled: true
+  config:
+    intent: 'Centralize object creation and dependency resolution.
+
+      Manage object lifetimes (singleton, scoped, transient).
+
+      '
+    use_when:
+    - complex_dependency_graphs
+    - need_different_lifetimes_for_different_services
+    - want_configuration_based_wiring
+    lifetimes:
+      singleton: One instance for application lifetime
+      scoped: One instance per scope (e.g., HTTP request)
+      transient: New instance every time
+    examples:
+      python: "from dependency_injector import containers, providers\n\nclass Container(containers.DeclarativeContainer):\n\
+        \    config = providers.Configuration()\n\n    db_session = providers.Singleton(\n        create_session,\n\
+        \        connection_string=config.db_url\n    )\n\n    user_repository = providers.Factory(\n\
+        \        UserRepository,\n        session=db_session\n    )\n\n    user_service = providers.Factory(\n\
+        \        UserService,\n        repo=user_repository\n    )\n\n# Usage\ncontainer = Container()\n\
+        container.config.from_yaml(\"config.yaml\")\nservice = container.user_service()\n"
+    anti_patterns:
+    - service_locator_instead_of_injection
+    - injecting_container_itself
+    - over_using_singletons
+  rationale: 'DI containers manage complex object graphs and lifetimes.
+
+    Make dependencies explicit while reducing boilerplate.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: circuit-breaker-pattern
+  name: Prevent cascading failures by failing fast
+  description: Prevent cascading failures by failing fast
+  type: resilience_pattern
+  severity: info
+  enabled: true
+  config:
+    intent: 'Prevent an application from repeatedly trying to execute an
+
+      operation that''s likely to fail, allowing it to continue without
+
+      waiting for the fault to be fixed.
+
+      '
+    states:
+      closed: Normal operation, requests pass through
+      open: Failures exceeded threshold, requests fail immediately
+      half_open: Testing if service recovered
+    use_when:
+    - calling_external_services
+    - preventing_cascade_failures
+    - giving_failed_services_time_to_recover
+    examples:
+      python: "class CircuitBreaker:\n    def __init__(\n        self,\n        failure_threshold: int\
+        \ = 5,\n        recovery_timeout: float = 30.0\n    ):\n        self._failure_count = 0\n    \
+        \    self._failure_threshold = failure_threshold\n        self._recovery_timeout = recovery_timeout\n\
+        \        self._state = \"closed\"\n        self._last_failure_time: float | None = None\n\n  \
+        \  async def call(self, func: Callable[[], T]) -> T:\n        if self._state == \"open\":\n  \
+        \          if self._should_attempt_reset():\n                self._state = \"half_open\"\n   \
+        \         else:\n                raise CircuitOpenError()\n\n        try:\n            result\
+        \ = await func()\n            self._on_success()\n            return result\n        except Exception\
+        \ as e:\n            self._on_failure()\n            raise\n\n    def _on_success(self) -> None:\n\
+        \        self._failure_count = 0\n        self._state = \"closed\"\n\n    def _on_failure(self)\
+        \ -> None:\n        self._failure_count += 1\n        self._last_failure_time = time.time()\n\
+        \        if self._failure_count >= self._failure_threshold:\n            self._state = \"open\"\
+        \n"
+    related_patterns:
+    - retry_pattern
+    - bulkhead_pattern
+    - timeout_pattern
+  rationale: 'Circuit breaker prevents wasting resources on likely-to-fail calls
+
+    and gives failed services time to recover.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: saga-pattern
+  name: Manage distributed transactions through compensati
+  description: Manage distributed transactions through compensating actions
+  type: architectural_pattern
+  severity: info
+  enabled: true
+  config:
+    intent: 'Manage data consistency across microservices in distributed
+
+      transactions using a sequence of local transactions with
+
+      compensating transactions for rollback.
+
+      '
+    types:
+      choreography: Services publish events, others react
+      orchestration: Central coordinator directs participants
+    use_when:
+    - distributed_transactions_across_services
+    - eventual_consistency_acceptable
+    - need_to_maintain_data_consistency
+    structure:
+      saga_step: Local transaction with compensating action
+      compensating_action: Undo action if saga fails
+    examples:
+      python: "@dataclass\nclass SagaStep:\n    action: Callable[[], Awaitable[None]]\n    compensation:\
+        \ Callable[[], Awaitable[None]]\n\nclass CreateOrderSaga:\n    def __init__(\n        self,\n\
+        \        order_service: OrderService,\n        payment_service: PaymentService,\n        inventory_service:\
+        \ InventoryService\n    ):\n        self._order = order_service\n        self._payment = payment_service\n\
+        \        self._inventory = inventory_service\n\n    async def execute(self, order: OrderRequest)\
+        \ -> str:\n        steps: list[SagaStep] = []\n        try:\n            # Step 1: Reserve inventory\n\
+        \            await self._inventory.reserve(order.items)\n            steps.append(SagaStep(\n\
+        \                action=lambda: None,  # Already done\n                compensation=lambda: self._inventory.release(order.items)\n\
+        \            ))\n\n            # Step 2: Process payment\n            payment_id = await self._payment.charge(order.total)\n\
+        \            steps.append(SagaStep(\n                action=lambda: None,\n                compensation=lambda:\
+        \ self._payment.refund(payment_id)\n            ))\n\n            # Step 3: Create order\n   \
+        \         order_id = await self._order.create(order)\n            return order_id\n\n        except\
+        \ Exception:\n            # Compensate in reverse order\n            for step in reversed(steps):\n\
+        \                await step.compensation()\n            raise\n"
+    complexity_warning: 'Sagas are complex. Consider if you really need distributed
+
+      transactions or if you can redesign to avoid them.
+
+      '
+  rationale: 'Sagas maintain consistency in distributed systems without
+
+    distributed transactions. Essential for microservices.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: specification-pattern
+  name: Encapsulate business rules as combinable, reusable
+  description: Encapsulate business rules as combinable, reusable objects
+  type: design_pattern
+  severity: info
+  enabled: true
+  config:
+    intent: 'Encapsulate a business rule in a reusable, combinable object.
+
+      Specifications can be combined with AND, OR, NOT operations.
+
+      '
+    use_when:
+    - business_rules_need_to_be_reusable
+    - rules_need_to_be_combined
+    - selection_criteria_is_complex
+    - same_rule_used_for_validation_and_querying
+    structure:
+      specification: Defines is_satisfied_by method
+      composite_specification: Combines specifications
+    examples:
+      python: "class Specification(ABC, Generic[T]):\n    @abstractmethod\n    def is_satisfied_by(self,\
+        \ candidate: T) -> bool: pass\n\n    def and_(self, other: \"Specification[T]\") -> \"Specification[T]\"\
+        :\n        return AndSpecification(self, other)\n\n    def or_(self, other: \"Specification[T]\"\
+        ) -> \"Specification[T]\":\n        return OrSpecification(self, other)\n\n    def not_(self)\
+        \ -> \"Specification[T]\":\n        return NotSpecification(self)\n\nclass AndSpecification(Specification[T]):\n\
+        \    def __init__(self, left: Specification[T], right: Specification[T]):\n        self._left\
+        \ = left\n        self._right = right\n\n    def is_satisfied_by(self, candidate: T) -> bool:\n\
+        \        return (\n            self._left.is_satisfied_by(candidate) and\n            self._right.is_satisfied_by(candidate)\n\
+        \        )\n\n# Business rules as specifications\nclass IsAdult(Specification[User]):\n    def\
+        \ is_satisfied_by(self, user: User) -> bool:\n        return user.age >= 18\n\nclass HasValidEmail(Specification[User]):\n\
+        \    def is_satisfied_by(self, user: User) -> bool:\n        return \"@\" in user.email\n\n# Combine\
+        \ specifications\ncan_register = IsAdult().and_(HasValidEmail())\n\n# Use for validation\nif can_register.is_satisfied_by(user):\n\
+        \    register(user)\n\n# Use for querying\neligible_users = [u for u in users if can_register.is_satisfied_by(u)]\n"
+    benefits:
+    - reusable_business_rules
+    - composable
+    - testable_in_isolation
+  rationale: 'Specification pattern makes business rules explicit, reusable,
+
+    and composable. Same specification works for validation and filtering.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+escalation_triggers:
+- trigger_id: pattern-overuse
+  condition: Multiple design patterns applied where simpler solution exists
+  severity: advisory
+  prompt: 'Multiple design patterns detected. Consider:
+
+    - Is the complexity justified?
+
+    - Could a simpler solution work?
+
+    - Are you solving actual vs. anticipated problems?
+
+    '
+  rationale: 'Patterns add complexity. Only use when benefits outweigh costs.
+
+    "The simplest thing that could possibly work."
+
+    '
+- trigger_id: pattern-misapplication
+  condition: Pattern applied in inappropriate context
+  severity: advisory
+  prompt: 'Pattern may not fit this context:
+
+    - Review pattern''s intended use cases
+
+    - Consider if problem matches pattern''s problem
+
+    - Evaluate alternative approaches
+
+    '
+  rationale: 'Patterns solve specific problems. Misapplication adds
+
+    complexity without benefits.
+
+    '
+- trigger_id: missing-pattern
+  condition: Code smell that could be addressed with known pattern
+  severity: info
+  prompt: 'Code structure suggests a pattern might help:
+
+    - Consider if a design pattern applies
+
+    - Evaluate if refactoring would improve design
+
+    - Balance improvement vs. change scope
+
+    '
+  rationale: 'Patterns encode proven solutions. Recognizing when they
+
+    apply improves design.
+
+    '
+quality_gates:
+- gate_id: pattern-review
+  checks:
+  - Patterns applied appropriately
+  - Pattern implementation is correct
+  - Not over-engineered
+  - Consistent with codebase patterns
+  failure_action: advisory
+- gate_id: architectural-pattern-review
+  checks:
+  - Architectural patterns justified
+  - Complexity warranted by requirements
+  - Team familiar with chosen patterns
+  - Patterns documented
+  failure_action: escalate

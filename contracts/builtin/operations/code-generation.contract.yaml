@@ -1,0 +1,688 @@
+schema_version: '2.0'
+contract:
+  name: code-generation
+  type: operations
+  description: 'Rules for AI-generated code to ensure quality, consistency,
+
+    and maintainability. These patterns apply across all languages
+
+    with language-specific adaptations where noted.
+
+    '
+  version: 1.0.0
+  enabled: true
+  tags:
+  - builtin
+  - operations
+  - code-quality
+checks:
+- id: single-responsibility
+  name: Each class/module should have one reason to change
+  description: Each class/module should have one reason to change
+  type: design_principle
+  severity: warning
+  enabled: true
+  config:
+    principle: single_responsibility
+    indicators:
+    - class_has_multiple_unrelated_methods
+    - module_mixes_concerns
+    - name_contains_and_or
+    max_responsibilities: 1
+    exceptions:
+    - utility_classes
+    - facade_patterns
+  rationale: 'Classes with multiple responsibilities are harder to test,
+
+    understand, and modify. When one responsibility changes,
+
+    unrelated code might break.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: open-closed
+  name: Open for extension, closed for modification
+  description: Open for extension, closed for modification
+  type: design_principle
+  severity: warning
+  enabled: true
+  config:
+    principle: open_closed
+    prefer:
+    - interfaces_over_concrete
+    - composition_over_modification
+    - strategy_pattern
+    - template_method
+    avoid:
+    - modifying_existing_switch_statements
+    - adding_conditionals_for_new_types
+  rationale: 'New features should be addable without modifying existing
+
+    code. Use interfaces and polymorphism instead of conditionals.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: liskov-substitution
+  name: Subtypes must be substitutable for base types
+  description: Subtypes must be substitutable for base types
+  type: design_principle
+  severity: error
+  enabled: true
+  config:
+    principle: liskov_substitution
+    violations:
+    - override_throws_unexpected_exception
+    - override_returns_narrower_type
+    - override_accepts_broader_preconditions
+    - empty_override_implementation
+  rationale: 'If code works with a base type, it must work with any
+
+    subtype without knowing the difference.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: interface-segregation
+  name: Clients should not depend on unused interfaces
+  description: Clients should not depend on unused interfaces
+  type: design_principle
+  severity: warning
+  enabled: true
+  config:
+    principle: interface_segregation
+    max_interface_methods: 5
+    indicators:
+    - interface_has_many_unrelated_methods
+    - implementer_has_empty_methods
+    - not_implemented_exceptions
+  rationale: 'Large interfaces force clients to depend on methods they
+
+    don''t use. Prefer many small, focused interfaces.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: dependency-inversion
+  name: Depend on abstractions, not concretions
+  description: Depend on abstractions, not concretions
+  type: design_principle
+  severity: warning
+  enabled: true
+  config:
+    principle: dependency_inversion
+    require:
+    - constructor_injection
+    - interface_dependencies
+    avoid:
+    - new_keyword_for_services
+    - static_service_calls
+    - service_locator_pattern
+  rationale: 'High-level modules should not depend on low-level modules.
+
+    Both should depend on abstractions (interfaces).
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: function-size-limit
+  name: Functions should be small and focused
+  description: Functions should be small and focused
+  type: code_metric
+  severity: warning
+  enabled: true
+  config:
+    metric: function_length
+    threshold: 30
+    recommended: 15
+  rationale: 'Small functions are easier to understand, test, and reuse.
+
+    If a function is too long, it''s likely doing too much.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: parameter-count-limit
+  name: Limit function parameter count
+  description: Limit function parameter count
+  type: code_metric
+  severity: warning
+  enabled: true
+  config:
+    metric: parameter_count
+    threshold: 5
+    recommended: 3
+  rationale: 'Too many parameters indicate the function is doing too much
+
+    or needs better abstraction. Consider grouping related params.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: nesting-depth-limit
+  name: Limit nesting depth for readability
+  description: Limit nesting depth for readability
+  type: code_metric
+  severity: warning
+  enabled: true
+  config:
+    metric: nesting_depth
+    threshold: 4
+    recommended: 3
+  rationale: 'Deep nesting makes code hard to follow. Use early returns
+
+    and extract nested logic into separate functions.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: cyclomatic-complexity-limit
+  name: Limit branch complexity
+  description: Limit branch complexity
+  type: code_metric
+  severity: warning
+  enabled: true
+  config:
+    metric: cyclomatic_complexity
+    threshold: 10
+    recommended: 7
+  rationale: 'High complexity means more paths to test and more potential
+
+    for bugs. Simplify or extract complex logic.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: class-size-limit
+  name: Classes should be focused and manageable
+  description: Classes should be focused and manageable
+  type: code_metric
+  severity: warning
+  enabled: true
+  config:
+    metric: class_size
+    threshold: 15
+    recommended: 10
+  rationale: 'Large classes often violate SRP. Consider splitting into
+
+    smaller, focused classes with clear responsibilities.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: descriptive-naming
+  name: Names should reveal intent
+  description: Names should reveal intent
+  type: naming_convention
+  severity: warning
+  enabled: true
+  config:
+    rules:
+    - names_reveal_intent
+    - avoid_abbreviations
+    - avoid_single_letters
+    - avoid_noise_words
+    allowed_single_letters:
+    - i, j, k for loop indices
+    - x, y, z for coordinates
+    - e for exceptions
+    - _ for unused variables
+    noise_words_to_avoid:
+    - data
+    - info
+    - manager
+    - processor
+    - handler
+  rationale: 'Good names make code self-documenting. If you need a comment
+
+    to explain what something is, the name could be better.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: boolean-naming
+  name: Boolean variables/methods should be questions
+  description: Boolean variables/methods should be questions
+  type: naming_convention
+  severity: warning
+  enabled: true
+  config:
+    prefixes:
+    - is
+    - has
+    - can
+    - should
+    - will
+    - did
+    examples:
+      good:
+      - is_valid
+      - has_permission
+      - can_execute
+      - should_retry
+      bad:
+      - valid
+      - permission
+      - check
+  rationale: 'Boolean names as questions make conditionals read naturally:
+
+    `if is_valid` reads better than `if valid`.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: function-naming
+  name: Functions should be verbs describing action
+  description: Functions should be verbs describing action
+  type: naming_convention
+  severity: warning
+  enabled: true
+  config:
+    patterns:
+    - verb_noun:
+      - get
+      - set
+      - create
+      - delete
+      - update
+    - verb_adjective:
+      - is
+      - has
+      - can
+      - should
+    - verb_preposition:
+      - convert_to
+      - format_as
+      - map_to
+    avoid:
+    - noun_only:
+      - user
+      - data
+      - result
+    - generic_verbs:
+      - do
+      - handle
+      - process
+      - manage
+  rationale: 'Functions perform actions - their names should say what
+
+    action they perform, not just what they relate to.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: prefer-composition
+  name: Favor composition over inheritance
+  description: Favor composition over inheritance
+  type: design_pattern
+  severity: warning
+  enabled: true
+  config:
+    prefer:
+    - interface_implementation
+    - delegate_pattern
+    - strategy_injection
+    limit:
+    - inheritance_depth: 3
+    - abstract_classes: when_sharing_code
+    avoid:
+    - deep_inheritance_hierarchies
+    - inheritance_for_code_reuse_only
+  rationale: 'Composition is more flexible than inheritance. Changes to
+
+    base classes don''t ripple through the hierarchy.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: immutability-preference
+  name: Prefer immutable data structures
+  description: Prefer immutable data structures
+  type: design_pattern
+  severity: warning
+  enabled: true
+  config:
+    prefer:
+    - readonly_fields
+    - init_only_properties
+    - record_types
+    - frozen_dataclasses
+    require_for:
+    - value_objects
+    - configuration
+    - messages
+    - events
+    exceptions:
+    - entities_with_identity
+    - builders
+    - accumulators
+  rationale: 'Immutable objects are thread-safe, easier to reason about,
+
+    and prevent accidental state modification bugs.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: null-safety
+  name: Handle null/None explicitly
+  description: Handle null/None explicitly
+  type: safety_pattern
+  severity: warning
+  enabled: true
+  config:
+    prefer:
+    - optional_types
+    - null_object_pattern
+    - early_validation
+    - default_values
+    avoid:
+    - returning_null_from_collections
+    - null_checks_deep_in_code
+    - null_as_error_indicator
+    languages:
+      python: Use Optional[T] or | None
+      typescript: Enable strictNullChecks
+      csharp: Enable nullable reference types
+  rationale: 'Null reference errors are common bugs. Make nullability
+
+    explicit in types and handle it at boundaries.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: magic-values
+  name: No magic numbers or strings
+  description: No magic numbers or strings
+  type: code_smell
+  severity: warning
+  enabled: true
+  config:
+    require:
+    - named_constants
+    - enums_for_options
+    - configuration_for_tunables
+    allowed_magic_values:
+    - 0, 1, -1 for common operations
+    - empty string for initialization
+    - true, false
+    examples:
+      bad: if status == 2
+      good: if status == OrderStatus.SHIPPED
+  rationale: 'Magic values hide meaning and scatter knowledge. Named
+
+    constants document intent and enable safe refactoring.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: dry-principle
+  name: Don't Repeat Yourself
+  description: Don't Repeat Yourself
+  type: code_smell
+  severity: warning
+  enabled: true
+  config:
+    threshold:
+      duplicate_lines: 6
+      similar_structures: 3
+    solutions:
+    - extract_function
+    - extract_base_class
+    - use_template_method
+    - create_utility
+    exceptions:
+    - test_setup_code
+    - generated_code
+  rationale: 'Duplication means multiple places to update when logic
+
+    changes. Extract common code into reusable units.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: match-existing-patterns
+  name: Follow patterns already established in codebase
+  description: Follow patterns already established in codebase
+  type: consistency
+  severity: warning
+  enabled: true
+  config:
+    analyze:
+    - existing_file_structure
+    - naming_patterns
+    - error_handling_style
+    - logging_approach
+    - test_organization
+    priority:
+      1: match_immediate_context
+      2: match_module_patterns
+      3: match_project_patterns
+      4: use_industry_standard
+  rationale: 'Consistency within a codebase is more important than
+
+    following external standards. Match what''s already there.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: minimal-change-principle
+  name: Make smallest possible change to achieve goal
+  description: Make smallest possible change to achieve goal
+  type: change_scope
+  severity: warning
+  enabled: true
+  config:
+    avoid:
+    - reformatting_unrelated_code
+    - renaming_unrelated_variables
+    - refactoring_during_feature_work
+    - adding_unused_features
+    require:
+    - change_justification
+    - scope_limitation
+    - review_before_expansion
+  rationale: 'Minimal changes are easier to review, less likely to
+
+    introduce bugs, and easier to revert if needed.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: backward-compatibility
+  name: Preserve backward compatibility when possible
+  description: Preserve backward compatibility when possible
+  type: api_stability
+  severity: warning
+  enabled: true
+  config:
+    for_public_apis:
+    - add_dont_remove
+    - deprecate_before_remove
+    - version_breaking_changes
+    breaking_changes_require:
+    - explicit_approval
+    - migration_guide
+    - version_bump
+  rationale: 'Breaking changes affect all callers. Prefer additive
+
+    changes and deprecation over removal.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+escalation_triggers:
+- trigger_id: solid-violation-detected
+  condition: Multiple SOLID principle violations in generated code
+  severity: advisory
+  prompt: 'Generated code may violate design principles:
+
+    - Review class responsibilities
+
+    - Check for proper abstraction
+
+    - Consider refactoring before proceeding
+
+    '
+  rationale: 'SOLID violations compound over time. Better to address
+
+    early than let technical debt accumulate.
+
+    '
+- trigger_id: complexity-threshold-exceeded
+  condition: Code complexity exceeds thresholds
+  severity: advisory
+  prompt: 'Generated code is complex. Consider:
+
+    - Breaking into smaller functions
+
+    - Extracting helper classes
+
+    - Simplifying conditional logic
+
+    '
+  rationale: 'Complex code is hard to test and maintain. Simpler
+
+    is almost always better.
+
+    '
+- trigger_id: pattern-mismatch
+  condition: Generated code doesn't match existing patterns
+  severity: blocking
+  prompt: 'Generated code uses different patterns than existing code.
+
+    Options:
+
+    - Adapt to match existing patterns
+
+    - Propose migration of existing code
+
+    - Get approval for mixed patterns
+
+    '
+  rationale: 'Consistency reduces cognitive load. Deviations should
+
+    be intentional and justified.
+
+    '
+quality_gates:
+- gate_id: code-generation-review
+  checks:
+  - SOLID principles followed
+  - Complexity within limits
+  - Naming conventions followed
+  - No magic values
+  - Matches existing patterns
+  failure_action: advisory
+- gate_id: integration-check
+  checks:
+  - Minimal change scope
+  - Backward compatible
+  - Tests added/updated
+  - Documentation updated
+  failure_action: escalate

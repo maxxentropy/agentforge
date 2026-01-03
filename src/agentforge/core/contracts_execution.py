@@ -63,10 +63,22 @@ def _get_check_handlers() -> dict:
         from contracts_ast import execute_ast_check
         from contracts_lsp import execute_lsp_query_check
     return {
+        # Original check types
         "regex": _execute_regex_check, "lsp_query": execute_lsp_query_check,
         "ast_check": execute_ast_check, "command": _execute_command_check,
         "file_exists": _execute_file_exists_check, "custom": _execute_custom_check,
         "naming": _execute_naming_check, "ast": _execute_ast_interface_check,
+        # Operation contract check types (unified)
+        "code_metric": _execute_code_metric_check,
+        "naming_convention": _execute_naming_convention_check,
+        "safety_pattern": _execute_safety_pattern_check,
+        # Advisory-only types (not automatable, always pass)
+        "design_principle": _execute_advisory_check,
+        "design_pattern": _execute_advisory_check,
+        "code_smell": _execute_advisory_check,
+        "consistency": _execute_advisory_check,
+        "change_scope": _execute_advisory_check,
+        "api_stability": _execute_advisory_check,
     }
 
 
@@ -740,3 +752,136 @@ def _execute_return_type_check(ctx: CheckContext) -> list[CheckResult]:
             if violation:
                 results.append(violation)
     return results
+
+
+# =============================================================================
+# Operation Contract Check Types (Unified)
+# =============================================================================
+
+def _execute_code_metric_check(ctx: CheckContext) -> list[CheckResult]:
+    """
+    Execute code metric checks (function length, complexity, etc.).
+
+    Delegates to the AST check infrastructure with metric-specific config.
+    """
+    try:
+        from .contracts_ast import execute_ast_check
+    except ImportError:
+        from contracts_ast import execute_ast_check
+
+    return execute_ast_check(ctx)
+
+
+def _execute_naming_convention_check(ctx: CheckContext) -> list[CheckResult]:
+    """
+    Execute naming convention checks (boolean naming, descriptive names, etc.).
+
+    Uses AST to find functions/variables and check naming patterns.
+    """
+    import ast
+
+    results = []
+    check_id = ctx.check_id
+
+    # Boolean naming prefixes
+    bool_prefixes = ("is_", "has_", "can_", "should_", "will_", "did_", "was_")
+    # Generic names to avoid
+    bad_names = {"data", "info", "temp", "tmp", "val", "value", "item", "obj", "result", "res"}
+    # Allowed short names
+    allowed_short = {"i", "j", "k", "x", "y", "z", "e", "f", "n", "_", "id", "db"}
+
+    for file_path in ctx.file_paths:
+        if file_path.suffix != ".py":
+            continue
+        try:
+            content = file_path.read_text(encoding="utf-8", errors="ignore")
+            tree = ast.parse(content, filename=str(file_path))
+        except (SyntaxError, Exception):
+            continue
+
+        rel_path = str(file_path.relative_to(ctx.repo_root))
+
+        for node in ast.walk(tree):
+            # Check boolean function naming
+            if check_id == "boolean-naming":
+                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    if node.returns and isinstance(node.returns, ast.Name):
+                        if node.returns.id == "bool":
+                            name = node.name.lstrip("_")
+                            if not name.startswith(bool_prefixes):
+                                results.append(CheckResult(
+                                    check_id=ctx.check_id, check_name=ctx.check_name,
+                                    passed=False, severity=ctx.severity,
+                                    message=f"Boolean function '{node.name}' should start with is_/has_/can_/should_",
+                                    file_path=rel_path, line_number=node.lineno,
+                                    fix_hint="Rename to express a yes/no question"
+                                ))
+
+            # Check descriptive naming
+            elif check_id == "descriptive-naming":
+                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    name = node.name
+                    if not name.startswith("_") and len(name) <= 2 and name not in allowed_short:
+                        results.append(CheckResult(
+                            check_id=ctx.check_id, check_name=ctx.check_name,
+                            passed=False, severity=ctx.severity,
+                            message=f"Function name '{name}' is too short to be descriptive",
+                            file_path=rel_path, line_number=node.lineno,
+                            fix_hint="Use descriptive names that reveal intent"
+                        ))
+
+                if isinstance(node, ast.Assign):
+                    for target in node.targets:
+                        if isinstance(target, ast.Name) and target.id.lower() in bad_names:
+                            results.append(CheckResult(
+                                check_id=ctx.check_id, check_name=ctx.check_name,
+                                passed=False, severity="info",
+                                message=f"Variable name '{target.id}' is generic",
+                                file_path=rel_path, line_number=node.lineno,
+                                fix_hint="Name should describe what the variable contains"
+                            ))
+
+    return results
+
+
+def _execute_safety_pattern_check(ctx: CheckContext) -> list[CheckResult]:
+    """
+    Execute safety pattern checks (hardcoded secrets, etc.).
+
+    Delegates to builtin safety checks.
+    """
+    check_id = ctx.check_id
+
+    if check_id == "no-secrets-in-code":
+        try:
+            from .builtin_checks import check_hardcoded_secrets
+        except ImportError:
+            from builtin_checks import check_hardcoded_secrets
+
+        raw_results = check_hardcoded_secrets(ctx.repo_root, ctx.file_paths)
+        return [
+            CheckResult(
+                check_id=ctx.check_id, check_name=ctx.check_name,
+                passed=False, severity=r.get("severity", ctx.severity),
+                message=r.get("message", ""),
+                file_path=r.get("file", ""),
+                line_number=r.get("line"),
+                fix_hint=r.get("fix_hint")
+            )
+            for r in raw_results
+        ]
+
+    # For other safety patterns, return empty (not yet implemented)
+    return []
+
+
+def _execute_advisory_check(ctx: CheckContext) -> list[CheckResult]:
+    """
+    Execute advisory-only checks (design principles, patterns, etc.).
+
+    These checks are not automatable but provide guidance.
+    They always pass - the rationale is shown in documentation.
+    """
+    # Advisory checks don't produce violations programmatically
+    # They serve as documentation and guidance for AI agents
+    return []

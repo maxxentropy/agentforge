@@ -1,0 +1,602 @@
+schema_version: '2.0'
+contract:
+  name: testing-patterns
+  type: operations
+  description: 'Rules for writing effective, maintainable tests across all layers.
+
+    Covers unit tests, integration tests, and test organization.
+
+    '
+  version: 1.0.0
+  enabled: true
+  tags:
+  - builtin
+  - operations
+  - code-quality
+checks:
+- id: arrange-act-assert
+  name: Tests should follow Arrange-Act-Assert structure
+  description: Tests should follow Arrange-Act-Assert structure
+  type: test_structure
+  severity: warning
+  enabled: true
+  config:
+    sections:
+      arrange:
+        purpose: Set up test fixtures and preconditions
+        location: first
+        markers:
+        - '# Arrange'
+        - '# Given'
+        - '# Setup'
+      act:
+        purpose: Execute the behavior being tested
+        location: middle
+        markers:
+        - '# Act'
+        - '# When'
+        - '# Execute'
+        max_statements: 3
+      assert:
+        purpose: Verify the expected outcome
+        location: last
+        markers:
+        - '# Assert'
+        - '# Then'
+        - '# Verify'
+    anti_patterns:
+    - multiple_acts_per_test
+    - assertions_before_act
+    - arrange_after_act
+  rationale: 'AAA pattern makes tests readable and predictable.
+
+    Each test should verify one specific behavior.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: one-assertion-concept
+  name: Each test should verify one logical concept
+  description: Each test should verify one logical concept
+  type: test_structure
+  severity: warning
+  enabled: true
+  config:
+    allow:
+    - multiple_assertions_same_concept
+    - soft_assertions_grouped
+    avoid:
+    - unrelated_assertions
+    - testing_multiple_behaviors
+    examples:
+      good: '# Multiple assertions verifying user creation
+
+        assert user.id is not None
+
+        assert user.created_at is not None
+
+        assert user.status == "active"
+
+        '
+      bad: '# Testing both creation and update
+
+        assert user.id is not None
+
+        user.update(name="New")
+
+        assert user.name == "New"
+
+        '
+  rationale: 'When tests fail, you should immediately know what''s broken.
+
+    Multiple unrelated assertions obscure the failure cause.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: test-naming-pattern
+  name: Test names should describe behavior and expectatio
+  description: Test names should describe behavior and expectation
+  type: naming_convention
+  severity: warning
+  enabled: true
+  config:
+    patterns:
+      method_scenario_expected:
+        format: '{method_name}_{scenario}_{expected_result}'
+        example: calculate_total_with_discount_returns_reduced_price
+      should_when:
+        format: should_{expected}_when_{scenario}
+        example: should_return_error_when_input_invalid
+      given_when_then:
+        format: given_{context}_when_{action}_then_{outcome}
+        example: given_empty_cart_when_checkout_then_fails
+    avoid:
+    - test1, test2
+    - test_method_name_only
+    - abbreviated_names
+    - generic_names
+  rationale: 'Good test names document behavior. When tests fail,
+
+    the name should explain what was expected.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: test-class-organization
+  name: Organize test classes by unit under test
+  description: Organize test classes by unit under test
+  type: test_organization
+  severity: warning
+  enabled: true
+  config:
+    patterns:
+      one_class_per_unit:
+        format: Test{ClassName}
+        example: TestUserService
+      nested_by_method:
+        format: class TestMethodName
+        example: "class TestUserService:\n    class TestCreate:\n        def test_success(self): ...\n\
+          \        def test_validation_error(self): ...\n"
+    file_naming:
+      prefix: test_
+      suffix: _test
+      match_source: user_service.py -> test_user_service.py
+  rationale: 'Organized tests are easier to navigate. Finding tests
+
+    for a given class should be trivial.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: test-isolation
+  name: Tests must be independent and isolated
+  description: Tests must be independent and isolated
+  type: test_quality
+  severity: error
+  enabled: true
+  config:
+    require:
+    - no_shared_mutable_state
+    - no_test_order_dependency
+    - no_external_service_calls
+    - fresh_fixtures_per_test
+    violations:
+    - class_level_mutable_state
+    - test_calling_other_test
+    - relying_on_previous_test_output
+    - sharing_database_state
+  rationale: 'Isolated tests can run in any order, in parallel,
+
+    and failures are clearly attributable.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: no-flaky-tests
+  name: Tests must be deterministic
+  description: Tests must be deterministic
+  type: test_quality
+  severity: error
+  enabled: true
+  config:
+    avoid:
+    - random_without_seed
+    - sleep_for_timing
+    - time_dependent_assertions
+    - network_calls_without_mocks
+    - filesystem_race_conditions
+    solutions:
+      random: use_fixed_seed_or_mock
+      timing: use_explicit_waits_or_events
+      time: inject_clock_dependency
+      network: mock_or_use_test_server
+  rationale: 'Flaky tests erode trust in the test suite. When tests
+
+    randomly fail, developers ignore real failures.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: mock-at-boundaries
+  name: Mock external dependencies, not internal code
+  description: Mock external dependencies, not internal code
+  type: test_quality
+  severity: warning
+  enabled: true
+  config:
+    should_mock:
+    - external_apis
+    - databases
+    - file_system
+    - clocks_and_timers
+    - random_generators
+    - network_calls
+    should_not_mock:
+    - internal_classes
+    - value_objects
+    - pure_functions
+    - data_structures
+    prefer:
+    - fakes_over_mocks
+    - in_memory_implementations
+    - test_doubles
+  rationale: 'Over-mocking leads to tests that pass but don''t verify
+
+    real behavior. Mock only what you can''t control.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: test-pyramid
+  name: Follow the testing pyramid
+  description: Follow the testing pyramid
+  type: test_strategy
+  severity: warning
+  enabled: true
+  config:
+    pyramid:
+      unit_tests:
+        proportion: 70%
+        characteristics:
+        - fast_milliseconds
+        - isolated
+        - focused
+        - many
+      integration_tests:
+        proportion: 20%
+        characteristics:
+        - test_component_interaction
+        - may_use_real_dependencies
+        - slower_acceptable
+      e2e_tests:
+        proportion: 10%
+        characteristics:
+        - test_full_workflows
+        - expensive
+        - few_critical_paths
+    anti_pattern:
+      ice_cream_cone:
+        description: Too many E2E, too few unit tests
+        problem: Slow, flaky, hard to debug
+  rationale: 'Unit tests provide fast feedback; E2E tests provide
+
+    confidence. Balance gives best of both.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: coverage-requirements
+  name: Minimum test coverage by layer
+  description: Minimum test coverage by layer
+  type: coverage
+  severity: warning
+  enabled: true
+  config:
+    targets:
+      domain_logic: 90%
+      application_services: 80%
+      infrastructure: 60%
+      presentation: 50%
+      generated_code: 70%
+    measure:
+    - line_coverage
+    - branch_coverage
+    exclude:
+    - trivial_getters_setters
+    - dependency_injection_config
+    - auto_generated_code
+  rationale: 'Coverage ensures code is exercised by tests. Higher
+
+    coverage for core logic, lower for plumbing.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: test-edge-cases
+  name: Explicitly test edge cases and boundaries
+  description: Explicitly test edge cases and boundaries
+  type: test_completeness
+  severity: warning
+  enabled: true
+  config:
+    always_test:
+    - empty_collections
+    - null_inputs
+    - boundary_values
+    - error_conditions
+    - concurrent_access
+    boundary_examples:
+      numeric:
+      - 0
+      - 1
+      - -1
+      - max_int
+      - min_int
+      string:
+      - ''
+      - ' '
+      - very_long
+      - unicode
+      - newlines
+      collection:
+      - empty
+      - single
+      - many
+      - duplicates
+      date:
+      - epoch
+      - far_future
+      - leap_year
+      - timezone
+  rationale: 'Most bugs occur at boundaries. Explicit edge case
+
+    tests catch issues before production.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: meaningful-test-data
+  name: Use realistic, meaningful test data
+  description: Use realistic, meaningful test data
+  type: test_data
+  severity: warning
+  enabled: true
+  config:
+    prefer:
+    - realistic_values
+    - descriptive_names
+    - domain_appropriate
+    avoid:
+    - foo_bar_baz
+    - test123
+    - placeholder_values
+    - production_data
+    examples:
+      good: "user = User(\n    name=\"Alice Johnson\",\n    email=\"alice@example.com\",\n    role=\"\
+        admin\"\n)\n"
+      bad: "user = User(\n    name=\"test\",\n    email=\"a@b.c\",\n    role=\"x\"\n)\n"
+  rationale: 'Meaningful test data makes tests readable and helps
+
+    identify bugs that relate to real-world values.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: test-builders-factories
+  name: Use builders or factories for complex test data
+  description: Use builders or factories for complex test data
+  type: test_data
+  severity: warning
+  enabled: true
+  config:
+    when_to_use:
+    - object_has_many_fields
+    - multiple_tests_need_similar_objects
+    - default_values_are_common
+    patterns:
+      builder:
+        example: UserBuilder().with_name('Alice').with_role('admin').build()
+      factory:
+        example: create_user(name='Alice', role='admin')
+      fixtures:
+        example: '@pytest.fixture def admin_user(): ...'
+  rationale: 'Builders reduce test setup noise and make it clear
+
+    which values are relevant to each test.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: specific-assertions
+  name: Use specific assertion methods
+  description: Use specific assertion methods
+  type: assertion_quality
+  severity: warning
+  enabled: true
+  config:
+    prefer:
+    - assertEqual_over_assertTrue
+    - assertIn_over_assertTrue
+    - assertRaises_over_try_catch
+    - assertIsNone_over_assertEqual_None
+    examples:
+      bad: assertTrue(item in collection)
+      good: assertIn(item, collection)
+  rationale: 'Specific assertions give better error messages when
+
+    tests fail, making debugging faster.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: assertion-messages
+  name: Include context in assertion messages
+  description: Include context in assertion messages
+  type: assertion_quality
+  severity: info
+  enabled: true
+  config:
+    when_required:
+    - complex_assertions
+    - non_obvious_failures
+    - loop_based_assertions
+    format: Explain what was expected and why
+    examples:
+      good: "assert result.status == \"active\", \\\n    f\"Expected user {user.id} to be active after\
+        \ verification\"\n"
+  rationale: 'Good assertion messages speed up debugging by
+
+    explaining the test''s intent when it fails.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: no-assertions-in-loops
+  name: Avoid assertions in loops when possible
+  description: Avoid assertions in loops when possible
+  type: assertion_quality
+  severity: warning
+  enabled: true
+  config:
+    prefer:
+    - all_any_comprehensions
+    - single_collection_assertion
+    - parameterized_tests
+    examples:
+      bad: "for item in items:\n    assert item.valid\n"
+      good: 'assert all(item.valid for item in items)
+
+        '
+      better: "@pytest.mark.parametrize(\"item\", items)\ndef test_item_valid(item):\n    assert item.valid\n"
+  rationale: 'Loop assertions hide which iteration failed.
+
+    Parameterized tests give individual failures.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+escalation_triggers:
+- trigger_id: low-coverage
+  condition: Test coverage below minimum threshold
+  severity: blocking
+  prompt: 'Test coverage is below required threshold:
+
+    - Add tests for uncovered code paths
+
+    - Ensure edge cases are tested
+
+    - Check branch coverage, not just line coverage
+
+    '
+  rationale: 'Untested code is a liability. Coverage gaps
+
+    indicate potential bugs.
+
+    '
+- trigger_id: test-isolation-violation
+  condition: Tests are not isolated
+  severity: blocking
+  prompt: 'Tests may not be isolated:
+
+    - Check for shared mutable state
+
+    - Verify tests pass when run individually
+
+    - Check for test order dependencies
+
+    '
+  rationale: 'Non-isolated tests are unreliable and block
+
+    parallel execution.
+
+    '
+- trigger_id: missing-edge-case-tests
+  condition: Boundary conditions not tested
+  severity: advisory
+  prompt: 'Consider adding edge case tests for:
+
+    - Empty inputs
+
+    - Null/None handling
+
+    - Boundary values
+
+    - Error conditions
+
+    '
+  rationale: 'Edge cases are where bugs hide. Explicit tests
+
+    prevent regression.
+
+    '
+quality_gates:
+- gate_id: test-quality-review
+  checks:
+  - AAA structure followed
+  - Descriptive test names
+  - No flaky patterns
+  - Proper mocking
+  - Edge cases covered
+  failure_action: advisory
+- gate_id: coverage-check
+  checks:
+  - Minimum coverage met
+  - All new code covered
+  - Branch coverage adequate
+  failure_action: escalate

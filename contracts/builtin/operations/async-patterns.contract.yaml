@@ -1,0 +1,588 @@
+schema_version: '2.0'
+contract:
+  name: async-patterns
+  type: operations
+  description: 'Patterns for asynchronous programming, concurrency control,
+
+    and parallel execution across languages and frameworks.
+
+    '
+  version: 1.0.0
+  enabled: true
+  tags:
+  - builtin
+  - operations
+  - code-quality
+checks:
+- id: async-all-the-way
+  name: Async should propagate through the call stack
+  description: Async should propagate through the call stack
+  type: async_pattern
+  severity: error
+  enabled: true
+  config:
+    principle: 'Once you go async, stay async. Don''t block on async
+
+      code from synchronous code.
+
+      '
+    violations:
+      python:
+      - asyncio.get_event_loop().run_until_complete()
+      - loop.run_until_complete() in async context
+      typescript:
+      - .then() mixed with await
+      - Blocking on Promise in sync function
+      csharp:
+      - .Result or .Wait() on Task
+      - Task.Run().Result
+    correct_patterns:
+      python: await coroutine()
+      typescript: await promise
+      csharp: await Task
+  rationale: 'Blocking on async code causes deadlocks, thread pool
+
+    starvation, and defeats the purpose of async.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: no-fire-and-forget
+  name: Don't start tasks without awaiting or tracking
+  description: Don't start tasks without awaiting or tracking
+  type: async_pattern
+  severity: warning
+  enabled: true
+  config:
+    violations:
+    - calling_async_without_await
+    - creating_task_without_storing
+    - ignoring_returned_promise
+    exceptions:
+    - background_services_with_error_handling
+    - event_handlers_with_catch
+    correct_patterns:
+      track_task: 'task = asyncio.create_task(operation())
+
+        pending_tasks.add(task)
+
+        '
+      await_in_finally: "try:\n    await operation()\nfinally:\n    cleanup()\n"
+  rationale: 'Untracked async operations can fail silently and prevent
+
+    graceful shutdown. Always track or await.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: structured-concurrency
+  name: Use structured concurrency patterns
+  description: Use structured concurrency patterns
+  type: async_pattern
+  severity: warning
+  enabled: true
+  config:
+    principle: 'Child tasks should not outlive their parent scope.
+
+      Use task groups or similar constructs.
+
+      '
+    patterns:
+      python: "async with asyncio.TaskGroup() as tg:\n    tg.create_task(operation1())\n    tg.create_task(operation2())\n\
+        # All tasks complete or cancel here\n"
+      typescript: "await Promise.all([\n    operation1(),\n    operation2()\n]);\n"
+      csharp: "await Task.WhenAll(\n    Operation1Async(),\n    Operation2Async()\n);\n"
+    benefits:
+    - automatic_cancellation_propagation
+    - clear_task_lifetime
+    - predictable_error_handling
+  rationale: 'Structured concurrency prevents resource leaks and makes
+
+    concurrent code easier to reason about.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: cancellation-support
+  name: Async operations should support cancellation
+  description: Async operations should support cancellation
+  type: async_pattern
+  severity: warning
+  enabled: true
+  config:
+    require:
+    - accept_cancellation_token
+    - check_cancellation_periodically
+    - propagate_to_child_operations
+    languages:
+      python:
+        mechanism: asyncio.CancelledError
+        pattern: "async def operation():\n    try:\n        await long_running()\n    except asyncio.CancelledError:\n\
+          \        cleanup()\n        raise\n"
+      csharp:
+        mechanism: CancellationToken
+        pattern: "async Task OperationAsync(CancellationToken ct)\n{\n    ct.ThrowIfCancellationRequested();\n\
+          \    await LongRunningAsync(ct);\n}\n"
+      typescript:
+        mechanism: AbortController
+        pattern: "async function operation(signal: AbortSignal) {\n    if (signal.aborted) throw new AbortError();\n\
+          \    await fetch(url, { signal });\n}\n"
+  rationale: 'Operations without cancellation support can''t be stopped
+
+    gracefully, leading to resource waste and poor UX.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: cancellation-cleanup
+  name: Clean up resources when cancelled
+  description: Clean up resources when cancelled
+  type: async_pattern
+  severity: warning
+  enabled: true
+  config:
+    principle: 'Cancellation is not an error to swallow. Clean up
+
+      and re-raise to propagate cancellation.
+
+      '
+    pattern: "try:\n    resource = await acquire()\n    await use(resource)\nexcept CancelledError:\n\
+      \    logger.info(\"Operation cancelled\")\n    raise  # Re-raise after cleanup\nfinally:\n    await\
+      \ release(resource)\n"
+    anti_patterns:
+    - catching_cancelled_without_reraise
+    - ignoring_cancellation_in_loops
+  rationale: 'Swallowing cancellation prevents parent scope from
+
+    knowing the operation was cancelled.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: timeout-all-io
+  name: All I/O operations should have timeouts
+  description: All I/O operations should have timeouts
+  type: async_pattern
+  severity: error
+  enabled: true
+  config:
+    require_timeout_for:
+    - network_requests
+    - database_queries
+    - file_operations
+    - external_service_calls
+    patterns:
+      python: "async with asyncio.timeout(30):\n    result = await http_client.get(url)\n"
+      typescript: 'const controller = new AbortController();
+
+        setTimeout(() => controller.abort(), 30000);
+
+        await fetch(url, { signal: controller.signal });
+
+        '
+      csharp: 'using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+
+        await client.GetAsync(url, cts.Token);
+
+        '
+    default_timeouts:
+      http_request: 30s
+      database_query: 60s
+      file_read: 10s
+  rationale: 'Without timeouts, operations can hang forever, consuming
+
+    resources and blocking progress.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: timeout-configuration
+  name: Timeouts should be configurable
+  description: Timeouts should be configurable
+  type: async_pattern
+  severity: warning
+  enabled: true
+  config:
+    principle: 'Don''t hardcode timeouts. Make them configurable
+
+      for different environments.
+
+      '
+    pattern: "config = Config(\n    http_timeout=int(os.getenv(\"HTTP_TIMEOUT\", \"30\")),\n    db_timeout=int(os.getenv(\"\
+      DB_TIMEOUT\", \"60\")),\n)\n"
+    layers:
+      default: Sensible code defaults
+      config: Configuration file overrides
+      environment: Environment variables for deployment
+  rationale: 'Different environments have different latency characteristics.
+
+    Configurable timeouts allow tuning.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: limit-concurrency
+  name: Limit concurrent operations to prevent overload
+  description: Limit concurrent operations to prevent overload
+  type: async_pattern
+  severity: warning
+  enabled: true
+  config:
+    mechanisms:
+      semaphore: "semaphore = asyncio.Semaphore(10)\nasync with semaphore:\n    await operation()\n"
+      connection_pool: "pool = ConnectionPool(max_size=10)\nasync with pool.acquire() as conn:\n    await\
+        \ conn.execute(query)\n"
+      rate_limiter: "limiter = RateLimiter(rate=100, per=1.0)\nasync with limiter:\n    await api_call()\n"
+    guidelines:
+      http_connections: 10-100 per host
+      database_connections: pool size = cpu_count * 2
+      parallel_file_ops: limit based on disk IOPS
+  rationale: 'Unbounded concurrency can overwhelm resources, cause
+
+    timeouts, and degrade overall performance.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: avoid-locks-prefer-queues
+  name: Prefer message queues over shared state locks
+  description: Prefer message queues over shared state locks
+  type: async_pattern
+  severity: warning
+  enabled: true
+  config:
+    principle: 'Instead of locking shared state, use message passing
+
+      or actor patterns where possible.
+
+      '
+    prefer:
+    - message_queues
+    - actor_model
+    - immutable_data
+    - single_writer_pattern
+    when_locks_needed:
+      use: asyncio.Lock not threading.Lock
+      hold_briefly: Minimize critical section
+      avoid: Holding locks across await
+    anti_pattern: "# BAD: Lock held across await\nasync with lock:\n    data = await fetch()  # Other\
+      \ tasks blocked!\n    await process(data)\n"
+    correct_pattern: "# GOOD: Fetch outside lock\ndata = await fetch()\nasync with lock:\n    process_sync(data)\
+      \  # Brief, no await\n"
+  rationale: 'Locks held across await points block other tasks and
+
+    defeat the purpose of async.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: async-error-propagation
+  name: Errors should propagate correctly in async code
+  description: Errors should propagate correctly in async code
+  type: async_pattern
+  severity: error
+  enabled: true
+  config:
+    principle: 'Async errors must be caught at await point or
+
+      they may be lost.
+
+      '
+    patterns:
+      single_task: "try:\n    result = await operation()\nexcept OperationError as e:\n    handle_error(e)\n"
+      multiple_tasks: "results = await asyncio.gather(\n    op1(), op2(),\n    return_exceptions=True\n\
+        )\nfor result in results:\n    if isinstance(result, Exception):\n        handle_error(result)\n"
+    avoid:
+    - exception_in_callback_lost
+    - gather_without_return_exceptions
+    - fire_and_forget_with_errors
+  rationale: 'Lost exceptions make debugging impossible and allow
+
+    silent failures.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: async-context-preservation
+  name: Preserve context across async boundaries
+  description: Preserve context across async boundaries
+  type: async_pattern
+  severity: warning
+  enabled: true
+  config:
+    context_to_preserve:
+    - request_id
+    - trace_id
+    - user_identity
+    - correlation_id
+    mechanisms:
+      python: contextvars.ContextVar
+      typescript: AsyncLocalStorage
+      csharp: AsyncLocal<T>
+    pattern: "request_id = ContextVar('request_id')\n\nasync def middleware(request, handler):\n    token\
+      \ = request_id.set(request.id)\n    try:\n        return await handler(request)\n    finally:\n\
+      \        request_id.reset(token)\n"
+  rationale: 'Context loss across async calls breaks tracing,
+
+    logging, and request correlation.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: parallel-independent-operations
+  name: Run independent operations in parallel
+  description: Run independent operations in parallel
+  type: async_pattern
+  severity: warning
+  enabled: true
+  config:
+    recognize:
+    - no_data_dependency
+    - no_ordering_requirement
+    - independent_resources
+    patterns:
+      python: '# Sequential (slow)
+
+        a = await fetch_a()
+
+        b = await fetch_b()
+
+
+        # Parallel (fast)
+
+        a, b = await asyncio.gather(fetch_a(), fetch_b())
+
+        '
+      typescript: '// Parallel
+
+        const [a, b] = await Promise.all([fetchA(), fetchB()]);
+
+        '
+    anti_patterns:
+    - sequential_independent_awaits
+    - serial_api_calls
+  rationale: 'Sequential awaits for independent operations waste time.
+
+    Parallel execution improves throughput.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: batch-operations
+  name: Batch multiple operations when possible
+  description: Batch multiple operations when possible
+  type: async_pattern
+  severity: warning
+  enabled: true
+  config:
+    scenarios:
+      database: Use bulk insert instead of loop
+      api: Use batch endpoints if available
+      io: Buffer and flush periodically
+    patterns:
+      instead_of: "for item in items:\n    await db.insert(item)  # N round trips\n"
+      use: 'await db.insert_many(items)  # 1 round trip
+
+        '
+    batching_strategies:
+    - size_based: Batch every N items
+    - time_based: Flush every N seconds
+    - hybrid: Whichever comes first
+  rationale: 'Individual operations have per-call overhead. Batching
+
+    amortizes this overhead across multiple items.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: async-context-managers
+  name: Use async context managers for resources
+  description: Use async context managers for resources
+  type: async_pattern
+  severity: warning
+  enabled: true
+  config:
+    pattern: "async with aiohttp.ClientSession() as session:\n    async with session.get(url) as response:\n\
+      \        return await response.json()\n"
+    ensure:
+    - resources_released_on_error
+    - resources_released_on_cancel
+    - no_resource_leaks
+    anti_patterns:
+    - manual_acquire_release
+    - forgetting_to_close
+  rationale: 'Context managers ensure cleanup even on exceptions
+
+    or cancellation.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: connection-pooling
+  name: Use connection pools for reusable connections
+  description: Use connection pools for reusable connections
+  type: async_pattern
+  severity: warning
+  enabled: true
+  config:
+    use_pools_for:
+    - database_connections
+    - http_sessions
+    - websocket_connections
+    - grpc_channels
+    pool_configuration:
+      min_size: Keep warm connections ready
+      max_size: Prevent resource exhaustion
+      max_idle_time: Release unused connections
+      health_check: Validate before reuse
+    pattern: "pool = await create_pool(\n    min_size=5,\n    max_size=20,\n    max_idle_time=300\n)\n"
+  rationale: 'Connection establishment is expensive. Pools amortize
+
+    this cost and manage connection lifecycle.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+escalation_triggers:
+- trigger_id: potential-deadlock
+  condition: Lock held across await or blocking in async
+  severity: blocking
+  prompt: 'Potential deadlock detected:
+
+    - Review lock usage across await points
+
+    - Consider restructuring to avoid locks
+
+    - Use async-safe synchronization primitives
+
+    '
+  rationale: 'Deadlocks in async code are subtle and cause
+
+    complete system hangs.
+
+    '
+- trigger_id: unbounded-concurrency
+  condition: No concurrency limits on parallel operations
+  severity: advisory
+  prompt: 'Unbounded concurrent operations detected:
+
+    - Add semaphore or connection pool limits
+
+    - Consider rate limiting for external calls
+
+    - Monitor resource utilization
+
+    '
+  rationale: 'Unbounded concurrency can overwhelm resources
+
+    and cause cascading failures.
+
+    '
+- trigger_id: missing-timeout
+  condition: I/O operation without timeout
+  severity: advisory
+  prompt: 'I/O operation lacks timeout:
+
+    - Add appropriate timeout wrapper
+
+    - Make timeout configurable
+
+    - Handle timeout as expected error
+
+    '
+  rationale: 'Missing timeouts can cause operations to hang
+
+    indefinitely.
+
+    '
+quality_gates:
+- gate_id: async-code-review
+  checks:
+  - No blocking calls in async context
+  - Cancellation properly handled
+  - Timeouts on all I/O
+  - Concurrency limits in place
+  - Resources properly cleaned up
+  failure_action: escalate
+- gate_id: async-error-handling-review
+  checks:
+  - Errors propagate correctly
+  - Context preserved across boundaries
+  - No silent failures
+  - Proper logging of async errors
+  failure_action: advisory

@@ -1,0 +1,445 @@
+schema_version: '2.0'
+contract:
+  name: tool-usage
+  type: operations
+  description: Governs when and how tools should be used
+  version: 1.0.0
+  enabled: true
+  tags:
+  - builtin
+  - operations
+  - code-quality
+checks:
+- id: read-before-edit
+  name: Must read a file before editing it
+  description: Must read a file before editing it
+  type: sequence_constraint
+  severity: error
+  enabled: true
+  config:
+    for_tool: Edit
+    requires_prior: Read
+    same_field: file_path
+  rationale: 'Editing without reading leads to incorrect assumptions about
+
+    file content, indentation, and context. Always read first.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: glob-for-discovery
+  name: Use Glob for file discovery by pattern
+  description: Use Glob for file discovery by pattern
+  type: tool_preference
+  severity: warning
+  enabled: true
+  config:
+    preferred: Glob
+    discouraged_bash:
+    - find
+    - ls -R
+    for_operation: file_discovery
+  rationale: 'Glob is optimized for pattern matching and returns structured
+
+    results. Shell commands are harder to parse and less reliable.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: grep-for-content
+  name: Use Grep for content search, not shell grep
+  description: Use Grep for content search, not shell grep
+  type: tool_preference
+  severity: warning
+  enabled: true
+  config:
+    preferred: Grep
+    discouraged_bash:
+    - grep
+    - rg
+    - ag
+    for_operation: content_search
+  rationale: 'The Grep tool handles permissions, encoding, and output formatting
+
+    consistently. Shell grep can have unexpected behaviors.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: read-not-cat
+  name: Use Read tool, not cat/head/tail commands
+  description: Use Read tool, not cat/head/tail commands
+  type: tool_preference
+  severity: warning
+  enabled: true
+  config:
+    preferred: Read
+    discouraged_bash:
+    - cat
+    - head
+    - tail
+    - less
+    - more
+    for_operation: file_reading
+  rationale: 'Read tool provides proper line numbers, handles encoding,
+
+    and truncates appropriately. Shell commands may misbehave.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: write-not-echo
+  name: Use Write tool, not echo redirection
+  description: Use Write tool, not echo redirection
+  type: tool_preference
+  severity: warning
+  enabled: true
+  config:
+    preferred: Write
+    discouraged_bash:
+    - echo >
+    - cat >
+    - printf >
+    for_operation: file_creation
+  rationale: 'Write tool handles encoding and permissions consistently.
+
+    Shell redirection can corrupt files or fail silently.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: edit-not-sed
+  name: Use Edit tool, not sed/awk for modifications
+  description: Use Edit tool, not sed/awk for modifications
+  type: tool_preference
+  severity: warning
+  enabled: true
+  config:
+    preferred: Edit
+    discouraged_bash:
+    - sed -i
+    - awk
+    - perl -i
+    for_operation: file_modification
+  rationale: 'Edit tool provides atomic, reversible changes with proper
+
+    context matching. Sed can corrupt files on partial matches.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: lsp-for-definitions
+  name: Use LSP go-to-definition for finding symbol defini
+  description: Use LSP go-to-definition for finding symbol definitions
+  type: tool_preference
+  severity: warning
+  enabled: true
+  config:
+    preferred: lsp_get_definition
+    preferred_tools:
+    - LSP.goToDefinition
+    - lsp_adapter.get_definition
+    discouraged_patterns:
+    - grep_for_class_definition
+    - regex_find_function
+    - ast_only_definition_search
+    for_operation: find_definition
+    languages:
+    - python
+    - typescript
+    - csharp
+    - javascript
+  rationale: 'LSP provides compiler-accurate definition locations, handling:
+
+    - Overloaded methods and polymorphism
+
+    - Type inference and generic instantiation
+
+    - Cross-module imports and re-exports
+
+    Grep/regex may find false positives or miss definitions entirely.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: lsp-for-references
+  name: Use LSP find-references for tracing symbol usage
+  description: Use LSP find-references for tracing symbol usage
+  type: tool_preference
+  severity: warning
+  enabled: true
+  config:
+    preferred: lsp_get_references
+    preferred_tools:
+    - LSP.findReferences
+    - lsp_adapter.get_references
+    discouraged_patterns:
+    - grep_symbol_name
+    - text_search_for_usages
+    for_operation: find_references
+    languages:
+    - python
+    - typescript
+    - csharp
+    - javascript
+  rationale: 'LSP find-references understands semantic context:
+
+    - Distinguishes variable ''foo'' from method ''foo'' from type ''Foo''
+
+    - Handles renamed imports and aliased symbols
+
+    - Excludes false positives like comments and strings
+
+    Text search may include irrelevant matches or miss renamed references.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: lsp-for-symbols
+  name: Use LSP for document/workspace symbol queries
+  description: Use LSP for document/workspace symbol queries
+  type: tool_preference
+  severity: warning
+  enabled: true
+  config:
+    preferred: lsp_get_symbols
+    preferred_tools:
+    - LSP.documentSymbol
+    - LSP.workspaceSymbol
+    - lsp_adapter.get_symbols
+    - lsp_adapter.get_workspace_symbols
+    discouraged_patterns:
+    - grep_class_or_function
+    - regex_extract_symbols
+    - ast_only_symbol_extraction
+    for_operation: list_symbols
+    languages:
+    - python
+    - typescript
+    - csharp
+    - javascript
+  rationale: 'LSP provides structured symbol information including:
+
+    - Symbol kind (class, method, property, enum, etc.)
+
+    - Visibility modifiers and access levels
+
+    - Container hierarchy and nesting
+
+    - Accurate position ranges
+
+    Regex extraction misses nuances and can''t handle all syntax variations.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: lsp-for-hover
+  name: Use LSP hover for type and documentation info
+  description: Use LSP hover for type and documentation info
+  type: tool_preference
+  severity: warning
+  enabled: true
+  config:
+    preferred: lsp_get_hover
+    preferred_tools:
+    - LSP.hover
+    - lsp_adapter.get_hover
+    discouraged_patterns:
+    - grep_for_docstring
+    - parse_comments_manually
+    for_operation: get_type_info
+    languages:
+    - python
+    - typescript
+    - csharp
+    - javascript
+  rationale: 'LSP hover provides compiler-resolved type information:
+
+    - Inferred types for variables and expressions
+
+    - Full signature with parameter types
+
+    - Documentation from docstrings/JSDoc/XML comments
+
+    - Resolved generic type parameters
+
+    Manual parsing cannot infer types or resolve generics.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: lsp-for-diagnostics
+  name: Use LSP diagnostics for error detection
+  description: Use LSP diagnostics for error detection
+  type: tool_preference
+  severity: warning
+  enabled: true
+  config:
+    preferred: lsp_get_diagnostics
+    preferred_tools:
+    - LSP.diagnostics
+    - lsp_adapter.get_diagnostics
+    discouraged_patterns:
+    - grep_for_error_patterns
+    - manual_syntax_check
+    for_operation: check_errors
+    languages:
+    - python
+    - typescript
+    - csharp
+    - javascript
+  rationale: 'LSP diagnostics come from the actual compiler/type checker:
+
+    - Real type errors, not pattern guesses
+
+    - Accurate error locations and messages
+
+    - Includes warnings and hints
+
+    Manual error detection can''t match compiler accuracy.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: lsp-availability-check
+  name: Check LSP availability before falling back to alte
+  description: Check LSP availability before falling back to alternatives
+  type: conditional_preference
+  severity: info
+  enabled: true
+  config:
+    check_first: lsp_is_available
+    if_available: prefer_lsp_methods
+    if_unavailable: allow_fallback_methods
+    fallback_order:
+    - ast_parsing
+    - grep_patterns
+    - regex_extraction
+  rationale: 'LSP may not be available for all languages or projects.
+
+    When unavailable, gracefully fall back to alternatives in order
+
+    of accuracy: AST parsing > grep patterns > regex.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+escalation_triggers:
+- trigger_id: tool-repeated-failure
+  condition: Same tool call fails 3 times consecutively
+  severity: blocking
+  prompt: 'Tool is repeatedly failing. Please review:
+
+    - Is this the right tool for this task?
+
+    - Are the parameters correct?
+
+    - Is there a permissions or access issue?
+
+    '
+  rationale: Repeated failures indicate systemic issue requiring human judgment
+- trigger_id: tool-unknown-error
+  condition: Tool returns an unexpected error type
+  severity: advisory
+  prompt: 'Tool returned an unexpected error. Should we:
+
+    - Retry with different parameters?
+
+    - Try an alternative approach?
+
+    - Escalate for investigation?
+
+    '
+  rationale: Unknown errors may indicate edge cases not handled by automation
+- trigger_id: lsp-unavailable-for-analysis
+  condition: LSP unavailable for language requiring semantic analysis
+  severity: advisory
+  prompt: 'LSP services are not available for this language, but semantic
+
+    analysis is needed. Options:
+
+    - Continue with AST/grep-based analysis (reduced accuracy)
+
+    - Install the appropriate language server
+
+    - Proceed with caution noting analysis limitations
+
+    '
+  rationale: 'When LSP is unavailable, code analysis accuracy is reduced.
+
+    Human should decide if the fallback accuracy is acceptable.
+
+    '
+quality_gates:
+- gate_id: tool-usage-review
+  checks:
+  - All file reads completed before edits
+  - No discouraged shell commands used
+  - Tool errors have been addressed
+  failure_action: escalate
+- gate_id: lsp-analysis-quality
+  checks:
+  - LSP used for definition lookups when available
+  - LSP used for reference finding when available
+  - Fallback methods documented when LSP unavailable
+  failure_action: advisory

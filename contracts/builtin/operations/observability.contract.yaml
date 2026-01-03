@@ -1,0 +1,758 @@
+schema_version: '2.0'
+contract:
+  name: observability
+  type: operations
+  description: 'Patterns for logging, metrics collection, and distributed tracing
+
+    to enable effective monitoring and debugging of production systems.
+
+    '
+  version: 1.0.0
+  enabled: true
+  tags:
+  - builtin
+  - operations
+  - code-quality
+checks:
+- id: structured-logging
+  name: Use structured logging, not string formatting
+  description: Use structured logging, not string formatting
+  type: logging_pattern
+  severity: warning
+  enabled: true
+  config:
+    prefer:
+      structured:
+        format: JSON or key-value pairs
+        example: "logger.info(\"User logged in\", extra={\n    \"user_id\": user.id,\n    \"ip_address\"\
+          : request.ip,\n    \"method\": \"oauth\"\n})\n"
+    avoid:
+      string_interpolation:
+        example: 'logger.info(f"User {user.id} logged in from {request.ip}")
+
+          '
+    benefits:
+    - machine_parseable
+    - queryable
+    - consistent_format
+    - enables_aggregation
+  rationale: 'Structured logs are searchable and aggregatable.
+
+    String logs require regex parsing and are error-prone.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: log-levels
+  name: Use appropriate log levels consistently
+  description: Use appropriate log levels consistently
+  type: logging_pattern
+  severity: warning
+  enabled: true
+  config:
+    levels:
+      DEBUG:
+        purpose: Detailed diagnostic information
+        examples:
+        - Variable values
+        - Loop iterations
+        - Cache hits
+        production: Usually disabled
+      INFO:
+        purpose: Normal operation events
+        examples:
+        - Request started
+        - User action
+        - Job completed
+        production: Always enabled
+      WARNING:
+        purpose: Something unexpected but handled
+        examples:
+        - Retry needed
+        - Fallback used
+        - Deprecated API
+        production: Always enabled
+      ERROR:
+        purpose: Operation failed
+        examples:
+        - Request failed
+        - Exception caught
+        - Data invalid
+        production: Always enabled, may alert
+      CRITICAL:
+        purpose: System is unusable
+        examples:
+        - Database down
+        - Out of memory
+        - Security breach
+        production: Always alert
+    anti_patterns:
+    - ERROR_for_expected_conditions
+    - DEBUG_for_important_events
+    - INFO_spam
+  rationale: 'Correct log levels enable filtering, alerting, and
+
+    focus attention on what matters.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: log-context
+  name: Include correlation context in all logs
+  description: Include correlation context in all logs
+  type: logging_pattern
+  severity: warning
+  enabled: true
+  config:
+    always_include:
+    - request_id
+    - trace_id
+    - user_id_if_authenticated
+    - service_name
+    - environment
+    per_operation:
+    - operation_name
+    - relevant_entity_ids
+    - duration_for_completion_logs
+    pattern: "# Set context at entry point\nwith log_context(request_id=req.id, user_id=user.id):\n  \
+      \  logger.info(\"Processing request\")\n    # All logs in scope include context\n"
+  rationale: 'Context enables log correlation. Without request_id,
+
+    logs from concurrent requests are impossible to separate.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: sensitive-data-logging
+  name: Never log sensitive data
+  description: Never log sensitive data
+  type: security_pattern
+  severity: error
+  enabled: true
+  config:
+    never_log:
+    - passwords
+    - api_keys
+    - tokens
+    - credit_card_numbers
+    - social_security_numbers
+    - personal_health_info
+    - encryption_keys
+    redaction_patterns:
+      mask: Log only last 4 characters
+      hash: Log hash for correlation
+      omit: Don't log at all
+    example: "# BAD\nlogger.info(f\"Auth token: {token}\")\n\n# GOOD\nlogger.info(\"Auth token received\"\
+      , extra={\n    \"token_suffix\": token[-4:],\n    \"token_hash\": hashlib.sha256(token).hexdigest()[:8]\n\
+      })\n"
+  rationale: 'Logged sensitive data is a security breach. Logs are
+
+    often less protected than primary data stores.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: error-logging
+  name: Log errors with full context
+  description: Log errors with full context
+  type: logging_pattern
+  severity: error
+  enabled: true
+  config:
+    include:
+    - exception_type
+    - exception_message
+    - stack_trace
+    - input_that_caused_error
+    - operation_context
+    pattern: "try:\n    process(data)\nexcept ProcessingError as e:\n    logger.exception(\n        \"\
+      Processing failed\",\n        extra={\n            \"input_id\": data.id,\n            \"operation\"\
+      : \"process\",\n            \"error_code\": e.code,\n        }\n    )\n    raise\n"
+    use_exception_method: true
+  rationale: 'Full error context is essential for debugging.
+
+    Without stack traces, root cause analysis is guesswork.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: metrics-naming
+  name: Use consistent metric naming conventions
+  description: Use consistent metric naming conventions
+  type: metrics_pattern
+  severity: warning
+  enabled: true
+  config:
+    format:
+      pattern: '{namespace}_{subsystem}_{name}_{unit}'
+      examples:
+      - http_requests_total
+      - http_request_duration_seconds
+      - db_connections_active
+      - cache_hits_total
+    naming_rules:
+    - lowercase_with_underscores
+    - include_unit_suffix
+    - use_total_for_counters
+    - avoid_abbreviations
+    units:
+      time: _seconds
+      bytes: _bytes
+      counts: _total
+      ratios: _ratio
+  rationale: 'Consistent naming enables automated tooling and
+
+    makes dashboards more intuitive.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: four-golden-signals
+  name: Track the four golden signals for all services
+  description: Track the four golden signals for all services
+  type: metrics_pattern
+  severity: warning
+  enabled: true
+  config:
+    signals:
+      latency:
+        description: Time to serve requests
+        metrics:
+        - request_duration_seconds (histogram)
+        - p50, p95, p99 percentiles
+        separate: Successful vs. failed request latency
+      traffic:
+        description: Request rate
+        metrics:
+        - requests_total (counter)
+        - requests_per_second (rate)
+        dimensions:
+        - endpoint
+        - method
+        - status
+      errors:
+        description: Failure rate
+        metrics:
+        - errors_total (counter)
+        - error_rate (ratio)
+        dimensions:
+        - error_type
+        - endpoint
+      saturation:
+        description: Resource utilization
+        metrics:
+        - connection_pool_size (gauge)
+        - queue_depth (gauge)
+        - cpu_usage_ratio (gauge)
+  rationale: 'The four golden signals provide comprehensive service
+
+    health visibility with minimal metric overhead.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: histogram-over-average
+  name: Use histograms for latency, not averages
+  description: Use histograms for latency, not averages
+  type: metrics_pattern
+  severity: warning
+  enabled: true
+  config:
+    problem_with_averages: 'Averages hide distribution. A 100ms average could mean
+
+      all requests take 100ms, or 99% take 10ms and 1% take 9s.
+
+      '
+    use_histograms:
+      buckets:
+        http:
+        - 0.005
+        - 0.01
+        - 0.025
+        - 0.05
+        - 0.1
+        - 0.25
+        - 0.5
+        - 1
+        - 2.5
+        - 5
+        - 10
+        database:
+        - 0.001
+        - 0.005
+        - 0.01
+        - 0.025
+        - 0.05
+        - 0.1
+        - 0.25
+        - 0.5
+        - 1
+      derive:
+      - p50: Median latency
+      - p95: Tail latency
+      - p99: Worst case latency
+  rationale: 'Percentiles reveal user experience. Most users experience
+
+    p95+, not the average.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: metric-cardinality
+  name: Control metric label cardinality
+  description: Control metric label cardinality
+  type: metrics_pattern
+  severity: error
+  enabled: true
+  config:
+    cardinality_limits:
+      safe: < 100 unique label combinations
+      caution: 100-1000 combinations
+      danger: '> 1000 combinations'
+    avoid_high_cardinality:
+    - user_id_as_label
+    - request_id_as_label
+    - unbounded_strings
+    - ip_addresses
+    allow:
+    - http_method
+    - status_code_class
+    - endpoint_pattern
+    solution: '# BAD: High cardinality
+
+      request_count.labels(user_id=user.id).inc()
+
+
+      # GOOD: Bounded cardinality
+
+      request_count.labels(user_tier=user.tier).inc()
+
+      '
+  rationale: 'High cardinality metrics cause memory exhaustion and
+
+    slow queries. Each unique label set is a time series.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: trace-all-requests
+  name: Generate traces for all incoming requests
+  description: Generate traces for all incoming requests
+  type: tracing_pattern
+  severity: warning
+  enabled: true
+  config:
+    at_entry_points:
+    - http_requests
+    - grpc_calls
+    - message_consumers
+    - scheduled_jobs
+    trace_context:
+    - trace_id: Unique across entire request path
+    - span_id: Unique to this operation
+    - parent_span_id: Links to caller
+    propagation:
+      http: W3C Trace Context headers
+      grpc: Metadata
+      messaging: Message headers
+  rationale: 'Traces enable following a request across services.
+
+    Without traces, distributed debugging is nearly impossible.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: span-naming
+  name: Name spans descriptively and consistently
+  description: Name spans descriptively and consistently
+  type: tracing_pattern
+  severity: warning
+  enabled: true
+  config:
+    format:
+      http: HTTP {method} {route}
+      database: DB {operation} {table}
+      cache: Cache {operation}
+      rpc: RPC {service}/{method}
+    examples:
+    - HTTP GET /users/:id
+    - DB SELECT users
+    - Cache GET user:123
+    - RPC UserService/GetUser
+    avoid:
+    - generic_names
+    - high_cardinality
+    bad_examples:
+    - span1
+    - operation
+    - GET /users/12345
+  rationale: 'Good span names enable filtering and aggregation.
+
+    Use route patterns, not actual values.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: span-attributes
+  name: Add meaningful attributes to spans
+  description: Add meaningful attributes to spans
+  type: tracing_pattern
+  severity: warning
+  enabled: true
+  config:
+    standard_attributes:
+      http:
+      - http.method
+      - http.status_code
+      - http.url
+      - http.route
+      database:
+      - db.system
+      - db.statement
+      - db.operation
+      error:
+      - exception.type
+      - exception.message
+      - error
+    custom_attributes:
+    - business_relevant_ids
+    - decision_outcomes
+    - cache_hit_status
+    avoid:
+    - sensitive_data
+    - high_cardinality_values
+    - large_payloads
+  rationale: 'Attributes provide context for debugging. Standard
+
+    attributes enable cross-service correlation.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: error-spans
+  name: Mark error spans correctly
+  description: Mark error spans correctly
+  type: tracing_pattern
+  severity: warning
+  enabled: true
+  config:
+    on_error:
+      set_status: ERROR
+      record_exception: true
+      add_attributes:
+      - exception.type
+      - exception.message
+      - exception.stacktrace
+    pattern: "with tracer.start_span(\"operation\") as span:\n    try:\n        result = do_operation()\n\
+      \    except Exception as e:\n        span.set_status(Status(StatusCode.ERROR))\n        span.record_exception(e)\n\
+      \        raise\n"
+  rationale: 'Error marking enables filtering for failed traces.
+
+    Exception details help diagnose root cause.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: trace-sampling
+  name: Configure appropriate trace sampling
+  description: Configure appropriate trace sampling
+  type: tracing_pattern
+  severity: info
+  enabled: true
+  config:
+    strategies:
+      always_on:
+        use_for: Development, low-traffic
+        rate: 100%
+      probabilistic:
+        use_for: Production, high-traffic
+        rate: 1-10%
+      rate_limiting:
+        use_for: Cost control
+        rate: N traces per second
+      tail_based:
+        use_for: Error-focused
+        rule: Sample 100% of errors, 1% of success
+    ensure:
+    - error_traces_always_sampled
+    - slow_traces_always_sampled
+    - sample_decision_at_root
+  rationale: '100% sampling is expensive. Strategic sampling provides
+
+    visibility while controlling costs.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: log-trace-correlation
+  name: Include trace IDs in all log messages
+  description: Include trace IDs in all log messages
+  type: observability_pattern
+  severity: warning
+  enabled: true
+  config:
+    pattern: '# Automatically include trace context in logs
+
+      logger = logging.getLogger()
+
+      logger.addFilter(TraceContextFilter())
+
+
+      # Logs now include trace_id and span_id
+
+      logger.info("Processing order")
+
+      # Output: {"message": "Processing order", "trace_id": "abc123", ...}
+
+      '
+    benefits:
+    - jump_from_log_to_trace
+    - correlate_logs_in_trace
+    - debug_without_reproducing
+  rationale: 'Trace-log correlation enables jumping between views.
+
+    Logs provide detail, traces provide context.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: request-id-propagation
+  name: Propagate request IDs across all calls
+  description: Propagate request IDs across all calls
+  type: observability_pattern
+  severity: warning
+  enabled: true
+  config:
+    at_entry:
+      generate: If not present in incoming request
+      extract: From X-Request-ID or traceparent header
+    throughout:
+      include_in_logs: true
+      include_in_traces: true
+      include_in_error_responses: true
+      propagate_to_downstream: true
+    pattern: "@app.middleware\nasync def request_context(request, call_next):\n    request_id = request.headers.get(\"\
+      X-Request-ID\") or str(uuid4())\n    with request_context(request_id=request_id):\n        response\
+      \ = await call_next(request)\n        response.headers[\"X-Request-ID\"] = request_id\n        return\
+      \ response\n"
+  rationale: 'Request IDs are the primary correlation key. They tie
+
+    together logs, traces, and support tickets.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: actionable-alerts
+  name: Alerts should be actionable
+  description: Alerts should be actionable
+  type: alerting_pattern
+  severity: warning
+  enabled: true
+  config:
+    good_alert_properties:
+    - clear_condition
+    - specific_service
+    - runbook_link
+    - escalation_path
+    avoid:
+    - alerting_on_causes: Alert on symptoms users see
+    - too_many_alerts: Alert fatigue is dangerous
+    - no_runbook: Alert without action is noise
+    structure: "alert: HighErrorRate\nexpr: error_rate > 0.01\nfor: 5m\nlabels:\n  severity: critical\n\
+      annotations:\n  summary: \"High error rate in {{ $labels.service }}\"\n  runbook: \"https://runbooks.internal/high-error-rate\"\
+      \n"
+  rationale: 'Non-actionable alerts cause fatigue and get ignored.
+
+    Every alert should have a response playbook.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+- id: slo-based-alerting
+  name: Alert based on SLO burn rate
+  description: Alert based on SLO burn rate
+  type: alerting_pattern
+  severity: info
+  enabled: true
+  config:
+    concept: 'Instead of alerting on every error, alert when you''re
+
+      burning through your error budget too fast.
+
+      '
+    example:
+      slo: 99.9% of requests succeed
+      error_budget: 0.1% = 43 minutes/month
+      fast_burn:
+        window: 5m
+        threshold: 14x normal burn
+        meaning: Exhausts monthly budget in ~3 hours
+      slow_burn:
+        window: 1h
+        threshold: 2x normal burn
+        meaning: Exhausts monthly budget in 2 weeks
+  rationale: 'SLO-based alerting pages only when customer impact
+
+    threatens the service level objective.
+
+    '
+  applies_to:
+    paths:
+    - '**/*.py'
+    exclude_paths:
+    - '**/node_modules/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+escalation_triggers:
+- trigger_id: sensitive-data-in-logs
+  condition: PII or secrets detected in log output
+  severity: blocking
+  prompt: 'Potential sensitive data in logs:
+
+    - Review logged fields for PII
+
+    - Implement redaction if needed
+
+    - Check log aggregation for exposure
+
+    '
+  rationale: 'Logged sensitive data is a compliance violation
+
+    and security risk.
+
+    '
+- trigger_id: missing-observability
+  condition: New service endpoint without logging/metrics/tracing
+  severity: advisory
+  prompt: 'Observability gaps detected:
+
+    - Add request logging with context
+
+    - Add latency and error metrics
+
+    - Ensure trace propagation
+
+    '
+  rationale: 'Unobservable code is undebuggable in production.
+
+    Add observability before deployment.
+
+    '
+- trigger_id: high-cardinality-metric
+  condition: Metric label with unbounded values
+  severity: advisory
+  prompt: 'High cardinality metric detected:
+
+    - Use bounded label values
+
+    - Consider sampling or aggregation
+
+    - Move high-cardinality data to logs
+
+    '
+  rationale: 'High cardinality causes metric storage to explode
+
+    and queries to slow down.
+
+    '
+quality_gates:
+- gate_id: observability-review
+  checks:
+  - Structured logging implemented
+  - Four golden signals tracked
+  - Traces generated and propagated
+  - No sensitive data in logs
+  - Alerts have runbooks
+  failure_action: escalate
+- gate_id: production-readiness
+  checks:
+  - Log levels appropriate
+  - Metric cardinality controlled
+  - Error spans marked correctly
+  - Request ID propagated
+  failure_action: advisory

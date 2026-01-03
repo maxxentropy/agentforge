@@ -22,9 +22,9 @@ from typing import Any
 import yaml
 
 try:
-    from .contracts_types import Contract, Exemption
+    from .contracts_types import Contract, EscalationTrigger, Exemption, QualityGate
 except ImportError:
-    from contracts_types import Contract, Exemption
+    from contracts_types import Contract, EscalationTrigger, Exemption, QualityGate
 
 # Builtin contracts directory (relative to this file)
 BUILTIN_CONTRACTS_DIR = Path(__file__).parent.parent / "contracts" / "builtin"
@@ -103,6 +103,18 @@ class ContractRegistry:
         if isinstance(extends, str):
             extends = [extends]
 
+        # Load escalation triggers (for AI agent governance)
+        triggers = [
+            EscalationTrigger.from_dict(t)
+            for t in data.get("escalation_triggers", [])
+        ]
+
+        # Load quality gates (for AI agent governance)
+        gates = [
+            QualityGate.from_dict(g)
+            for g in data.get("quality_gates", [])
+        ]
+
         return Contract(
             name=contract_data["name"],
             type=contract_data["type"],
@@ -114,7 +126,9 @@ class ContractRegistry:
             tags=contract_data.get("tags", []),
             checks=checks_data,
             source_path=path,
-            tier=tier
+            tier=tier,
+            escalation_triggers=triggers,
+            quality_gates=gates,
         )
 
     def resolve_inheritance(self, contract: Contract) -> Contract:

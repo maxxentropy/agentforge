@@ -54,4 +54,18 @@ credentials.json
 .agentforge/local.yaml
 .agentforge/local_overrides.yaml
 .agentforge/vector_index/
+
+# AgentForge auto-generated files (high churn, not tracked)
+# These update on every compliance scan - summary in conformance_report.yaml
+.agentforge/violations/
+.agentforge/cache/
+.agentforge/history/
+.agentforge/backups/
+.agentforge/fix_attempts/
+.agentforge/project_memory.yaml
+.agentforge/baseline.json
+.agentforge/generation.yaml
+.agentforge/generation_prompt.txt
+
+# Hypothesis testing
 .hypothesis/

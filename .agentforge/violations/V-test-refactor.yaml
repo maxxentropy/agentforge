@@ -1,8 +1,0 @@
-violation_id: V-test-refactor
-check_id: max-function-length
-contract_id: agentforge
-severity: warning
-file_path: tools/tdflow/phases/refactor.py
-line_number: 47
-message: "Function 'execute' has 98 lines (max: 50)"
-fix_hint: Extract logic into helper functions or use composition

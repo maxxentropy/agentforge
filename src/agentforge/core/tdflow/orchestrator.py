@@ -265,81 +265,83 @@ class TDFlowOrchestrator:
             VerificationReport
         """
         if not self.session:
-            return VerificationReport(
-                component="",
-                tests_passing=0,
-                tests_total=0,
-                coverage=0.0,
-                conformance_violations=0,
-                verified=False,
-            )
+            return self._empty_report("")
 
         executor = VerifyPhaseExecutor(self.session, self.runner)
 
         if component_name:
-            # Verify specific component
-            component = self.session.get_component(component_name)
-            if not component:
-                return VerificationReport(
-                    component=component_name,
-                    tests_passing=0,
-                    tests_total=0,
-                    coverage=0.0,
-                    conformance_violations=0,
-                    verified=False,
-                )
+            return self._verify_single_component(component_name, executor)
+        return self._verify_all_components(executor)
 
-            result = executor.execute(component)
+    def _empty_report(self, component: str) -> VerificationReport:
+        """Create empty verification report."""
+        return VerificationReport(
+            component=component,
+            tests_passing=0,
+            tests_total=0,
+            coverage=0.0,
+            conformance_violations=0,
+            verified=False,
+        )
 
-            # Update session
-            self.session.current_phase = TDFlowPhase.VERIFY
-            self.session.add_history(
-                action="verify_phase",
-                phase=TDFlowPhase.VERIFY,
-                component=component.name,
-                details="verified" if result.success else f"failed: {result.errors}",
-            )
-            self.session_manager.save(self.session)
+    def _verify_single_component(
+        self, component_name: str, executor: VerifyPhaseExecutor
+    ) -> VerificationReport:
+        """Verify a single component and update session."""
+        assert self.session is not None
 
-            return executor._load_report(component)
-        else:
-            # Verify all components
-            reports = executor.verify_all()
+        component = self.session.get_component(component_name)
+        if not component:
+            return self._empty_report(component_name)
 
-            # Update session
-            self.session.current_phase = TDFlowPhase.VERIFY
-            self.session.add_history(
-                action="verify_all",
-                phase=TDFlowPhase.VERIFY,
-                details=f"verified {len(reports)} components",
-            )
+        result = executor.execute(component)
 
-            if self.session.all_verified():
-                self.session.current_phase = TDFlowPhase.DONE
-                self.session.add_history(action="session_complete")
+        self.session.current_phase = TDFlowPhase.VERIFY
+        self.session.add_history(
+            action="verify_phase",
+            phase=TDFlowPhase.VERIFY,
+            component=component.name,
+            details="verified" if result.success else f"failed: {result.errors}",
+        )
+        self.session_manager.save(self.session)
 
-            self.session_manager.save(self.session)
+        return executor._load_report(component)
 
-            # Return summary report
-            if reports:
-                return VerificationReport(
-                    component="all",
-                    tests_passing=sum(r.tests_passing for r in reports),
-                    tests_total=sum(r.tests_total for r in reports),
-                    coverage=sum(r.coverage for r in reports) / len(reports),
-                    conformance_violations=sum(r.conformance_violations for r in reports),
-                    traceability=[t for r in reports for t in r.traceability],
-                    verified=all(r.verified for r in reports),
-                )
+    def _verify_all_components(self, executor: VerifyPhaseExecutor) -> VerificationReport:
+        """Verify all components and update session."""
+        assert self.session is not None
 
-            return VerificationReport(
-                component="all",
-                tests_passing=0,
-                tests_total=0,
-                coverage=0.0,
-                conformance_violations=0,
-                verified=False,
-            )
+        reports = executor.verify_all()
+
+        self.session.current_phase = TDFlowPhase.VERIFY
+        self.session.add_history(
+            action="verify_all",
+            phase=TDFlowPhase.VERIFY,
+            details=f"verified {len(reports)} components",
+        )
+
+        if self.session.all_verified():
+            self.session.current_phase = TDFlowPhase.DONE
+            self.session.add_history(action="session_complete")
+
+        self.session_manager.save(self.session)
+
+        return self._aggregate_reports(reports)
+
+    def _aggregate_reports(self, reports: list[VerificationReport]) -> VerificationReport:
+        """Aggregate multiple reports into a summary report."""
+        if not reports:
+            return self._empty_report("all")
+
+        return VerificationReport(
+            component="all",
+            tests_passing=sum(r.tests_passing for r in reports),
+            tests_total=sum(r.tests_total for r in reports),
+            coverage=sum(r.coverage for r in reports) / len(reports),
+            conformance_violations=sum(r.conformance_violations for r in reports),
+            traceability=[t for r in reports for t in r.traceability],
+            verified=all(r.verified for r in reports),
+        )
 
     def resume(self) -> None:
         """

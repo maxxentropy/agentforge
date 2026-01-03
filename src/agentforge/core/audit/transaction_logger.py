@@ -125,18 +125,37 @@ class TransactionRecord:
         if self.stage_name:
             data["stage_name"] = self.stage_name
 
-        # LLM interaction
-        if self.llm_request:
-            data["llm_request"] = self.llm_request
-        if self.llm_response:
-            data["llm_response_length"] = len(self.llm_response)
-            # Store reference, not full content (that goes in separate file)
-        if self.thinking:
-            data["thinking_length"] = len(self.thinking)
+        # Merge optional sections
+        for partial in [
+            self._llm_fields(),
+            self._tool_calls_fields(),
+            self._action_fields(),
+            self._token_fields(),
+            self._integrity_fields(),
+            self._spawn_fields(),
+            self._human_fields(),
+        ]:
+            data.update(partial)
 
-        # Tool calls
-        if self.tool_calls:
-            data["tool_calls"] = [
+        return data
+
+    def _llm_fields(self) -> dict[str, Any]:
+        """Serialize LLM interaction fields."""
+        fields: dict[str, Any] = {}
+        if self.llm_request:
+            fields["llm_request"] = self.llm_request
+        if self.llm_response:
+            fields["llm_response_length"] = len(self.llm_response)
+        if self.thinking:
+            fields["thinking_length"] = len(self.thinking)
+        return fields
+
+    def _tool_calls_fields(self) -> dict[str, Any]:
+        """Serialize tool call records."""
+        if not self.tool_calls:
+            return {}
+        return {
+            "tool_calls": [
                 {
                     "tool_name": tc.tool_name,
                     "input_params": tc.input_params,
@@ -147,51 +166,67 @@ class TransactionRecord:
                 }
                 for tc in self.tool_calls
             ]
+        }
 
-        # Decision
-        if self.action_name:
-            data["action"] = {
+    def _action_fields(self) -> dict[str, Any]:
+        """Serialize parsed action/decision fields."""
+        if not self.action_name:
+            return {}
+        return {
+            "action": {
                 "name": self.action_name,
                 "params": self.action_params,
                 "result": self.action_result,
             }
+        }
 
-        # Tokens
-        if self.tokens_input or self.tokens_output:
-            data["tokens"] = {
+    def _token_fields(self) -> dict[str, Any]:
+        """Serialize token usage fields."""
+        if not (self.tokens_input or self.tokens_output):
+            return {}
+        return {
+            "tokens": {
                 "input": self.tokens_input,
                 "output": self.tokens_output,
                 "thinking": self.tokens_thinking,
                 "cached": self.tokens_cached,
                 "total": self.tokens_input + self.tokens_output + self.tokens_thinking,
             }
+        }
 
-        # Artifacts
+    def _integrity_fields(self) -> dict[str, Any]:
+        """Serialize integrity chain and artifact fields."""
+        fields: dict[str, Any] = {}
         if self.artifacts_delta:
-            data["artifacts_delta"] = self.artifacts_delta
-
-        # Integrity chain
+            fields["artifacts_delta"] = self.artifacts_delta
         if self.previous_hash:
-            data["previous_hash"] = self.previous_hash
+            fields["previous_hash"] = self.previous_hash
         if self.content_hash:
-            data["content_hash"] = self.content_hash
+            fields["content_hash"] = self.content_hash
+        return fields
 
-        # Spawn
-        if self.spawned_thread_id:
-            data["spawn"] = {
+    def _spawn_fields(self) -> dict[str, Any]:
+        """Serialize spawn/delegation fields."""
+        if not self.spawned_thread_id:
+            return {}
+        return {
+            "spawn": {
                 "spawned_thread_id": self.spawned_thread_id,
                 "reason": self.spawn_reason,
             }
+        }
 
-        # Human interaction
-        if self.human_prompt:
-            data["human_interaction"] = {
+    def _human_fields(self) -> dict[str, Any]:
+        """Serialize human interaction fields."""
+        if not self.human_prompt:
+            return {}
+        return {
+            "human_interaction": {
                 "prompt": self.human_prompt,
                 "response": self.human_response,
                 "context": self.human_context,
             }
-
-        return data
+        }
 
 
 class TransactionLogger:

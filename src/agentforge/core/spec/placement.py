@@ -260,100 +260,111 @@ class SpecPlacementAnalyzer:
 
         # If explicit spec provided, validate and use it
         if explicit_spec_id:
-            if explicit_spec_id in self._specs:
-                spec = self._specs[explicit_spec_id]
-                return PlacementDecision(
-                    action=PlacementAction.EXTEND,
-                    reason="Explicitly specified spec",
-                    spec_id=explicit_spec_id,
-                    spec_file=spec.file_path,
-                )
-            else:
-                # Spec doesn't exist - could be intentional new spec
-                return PlacementDecision(
-                    action=PlacementAction.CREATE,
-                    reason=f"Specified spec '{explicit_spec_id}' does not exist",
-                    suggested_spec_id=explicit_spec_id,
-                )
+            return self._decide_explicit_spec(explicit_spec_id)
 
         # No specs loaded - must create new
         if not self._specs:
-            module, suggested_id = self._extract_module_from_location(
-                target_locations[0] if target_locations else ''
-            )
-            return PlacementDecision(
-                action=PlacementAction.CREATE,
-                reason="No existing specs found",
-                suggested_spec_id=suggested_id,
-            )
+            return self._decide_create_new(target_locations, "No existing specs found")
 
         # Find covering specs for all target locations
-        all_covering: dict[str, int] = {}  # spec_id -> count of locations covered
-
-        for location in target_locations:
-            covering = self.find_covering_specs(location)
-            for spec in covering:
-                all_covering[spec.spec_id] = all_covering.get(spec.spec_id, 0) + 1
+        all_covering = self._compute_coverage(target_locations)
 
         # No covering specs - need to create new
         if not all_covering:
-            module, suggested_id = self._extract_module_from_location(
-                target_locations[0] if target_locations else ''
-            )
-            return PlacementDecision(
-                action=PlacementAction.CREATE,
-                reason="No existing spec covers these locations",
-                suggested_spec_id=suggested_id,
-                suggested_location=str(self.specs_dir / f"{suggested_id}.yaml"),
+            return self._decide_create_new(
+                target_locations, "No existing spec covers these locations"
             )
 
-        # Sort by coverage count
-        sorted_specs = sorted(
-            all_covering.items(),
-            key=lambda x: x[1],
-            reverse=True
+        return self._decide_from_coverage(all_covering, len(target_locations))
+
+    def _decide_explicit_spec(self, explicit_spec_id: str) -> PlacementDecision:
+        """Handle explicitly specified spec ID."""
+        if explicit_spec_id in self._specs:
+            spec = self._specs[explicit_spec_id]
+            return PlacementDecision(
+                action=PlacementAction.EXTEND,
+                reason="Explicitly specified spec",
+                spec_id=explicit_spec_id,
+                spec_file=spec.file_path,
+            )
+        return PlacementDecision(
+            action=PlacementAction.CREATE,
+            reason=f"Specified spec '{explicit_spec_id}' does not exist",
+            suggested_spec_id=explicit_spec_id,
         )
+
+    def _decide_create_new(
+        self, target_locations: list[str], reason: str
+    ) -> PlacementDecision:
+        """Create decision to create a new spec."""
+        _, suggested_id = self._extract_module_from_location(
+            target_locations[0] if target_locations else ''
+        )
+        return PlacementDecision(
+            action=PlacementAction.CREATE,
+            reason=reason,
+            suggested_spec_id=suggested_id,
+            suggested_location=str(self.specs_dir / f"{suggested_id}.yaml"),
+        )
+
+    def _compute_coverage(self, target_locations: list[str]) -> dict[str, int]:
+        """Compute spec coverage for all target locations."""
+        all_covering: dict[str, int] = {}
+        for location in target_locations:
+            for spec in self.find_covering_specs(location):
+                all_covering[spec.spec_id] = all_covering.get(spec.spec_id, 0) + 1
+        return all_covering
+
+    def _decide_from_coverage(
+        self, all_covering: dict[str, int], location_count: int
+    ) -> PlacementDecision:
+        """Make placement decision based on coverage analysis."""
+        sorted_specs = sorted(all_covering.items(), key=lambda x: x[1], reverse=True)
 
         # Single clear winner
         if len(sorted_specs) == 1:
-            spec_id = sorted_specs[0][0]
-            spec = self._specs[spec_id]
-            return PlacementDecision(
-                action=PlacementAction.EXTEND,
-                reason="Location covered by existing spec",
-                spec_id=spec_id,
-                spec_file=spec.file_path,
-            )
+            return self._extend_spec(sorted_specs[0][0], "Location covered by existing spec")
 
-        # Multiple options with same coverage - escalate
+        # Check for ties at top coverage
         top_count = sorted_specs[0][1]
         tied_specs = [s for s in sorted_specs if s[1] == top_count]
 
         if len(tied_specs) > 1:
-            options = []
-            for spec_id, count in tied_specs:
-                spec = self._specs[spec_id]
-                options.append({
-                    'spec_id': spec_id,
-                    'description': spec.description,
-                    'coverage_count': count,
-                    'file_path': str(spec.file_path),
-                })
-
-            return PlacementDecision(
-                action=PlacementAction.ESCALATE,
-                reason="Multiple specs could cover these locations",
-                options=options,
-            )
+            return self._escalate_tied_specs(tied_specs)
 
         # Clear winner
-        spec_id = sorted_specs[0][0]
+        return self._extend_spec(
+            sorted_specs[0][0],
+            f"Best coverage match ({sorted_specs[0][1]}/{location_count} locations)",
+        )
+
+    def _extend_spec(self, spec_id: str, reason: str) -> PlacementDecision:
+        """Create decision to extend an existing spec."""
         spec = self._specs[spec_id]
         return PlacementDecision(
             action=PlacementAction.EXTEND,
-            reason=f"Best coverage match ({sorted_specs[0][1]}/{len(target_locations)} locations)",
+            reason=reason,
             spec_id=spec_id,
             spec_file=spec.file_path,
+        )
+
+    def _escalate_tied_specs(
+        self, tied_specs: list[tuple[str, int]]
+    ) -> PlacementDecision:
+        """Create escalation decision for tied coverage."""
+        options = []
+        for spec_id, count in tied_specs:
+            spec = self._specs[spec_id]
+            options.append({
+                'spec_id': spec_id,
+                'description': spec.description,
+                'coverage_count': count,
+                'file_path': str(spec.file_path),
+            })
+        return PlacementDecision(
+            action=PlacementAction.ESCALATE,
+            reason="Multiple specs could cover these locations",
+            options=options,
         )
 
     def suggest_component_id(

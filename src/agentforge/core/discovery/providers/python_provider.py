@@ -606,6 +606,26 @@ class PythonProvider(LanguageProvider):
     # Violation-Type-Specific Context
     # ========================================================================
 
+    # Violation type to (suggestion_getter, strategy) mapping
+    _VIOLATION_STRATEGIES: dict[str, tuple[str, str]] = {
+        "max-cyclomatic-complexity": (
+            "_get_complexity_suggestions",
+            "Extract loops and conditional blocks into helper functions",
+        ),
+        "max-function-length": (
+            "_get_length_suggestions",
+            "Extract logical sections into helper functions",
+        ),
+        "max-nesting-depth": (
+            "_get_nesting_suggestions",
+            "Use early returns (guard clauses) and extract deeply nested blocks",
+        ),
+        "max-parameter-count": (
+            "_get_parameter_suggestions",
+            "Group related parameters into dataclasses or dicts",
+        ),
+    }
+
     def get_violation_context(
         self, path: Path, function_name: str, violation_type: str
     ) -> dict[str, Any]:
@@ -627,41 +647,45 @@ class PythonProvider(LanguageProvider):
         if node is None:
             return {"error": f"Function '{function_name}' not found"}
 
+        context = self._build_base_context(path, function_name)
+        self._add_violation_strategy(context, node, violation_type)
+        return context
+
+    def _build_base_context(self, path: Path, function_name: str) -> dict[str, Any]:
+        """Build base context with metrics and location."""
         metrics = self.analyze_complexity(path, function_name)
         location = self.get_function_location(path, function_name)
 
-        context = {
+        return {
             "function_name": function_name,
             "location": {"start": location[0], "end": location[1]} if location else None,
-            "metrics": {
-                "cyclomatic_complexity": metrics.cyclomatic_complexity if metrics else 0,
-                "cognitive_complexity": metrics.cognitive_complexity if metrics else 0,
-                "nesting_depth": metrics.nesting_depth if metrics else 0,
-                "line_count": metrics.line_count if metrics else 0,
-                "branch_count": metrics.branch_count if metrics else 0,
-                "loop_count": metrics.loop_count if metrics else 0,
-            } if metrics else {},
+            "metrics": self._format_metrics(metrics),
         }
 
-        # Get violation-specific suggestions
-        if violation_type == "max-cyclomatic-complexity":
-            context["suggestions"] = self._get_complexity_suggestions(node)
-            context["strategy"] = "Extract loops and conditional blocks into helper functions"
-        elif violation_type == "max-function-length":
-            context["suggestions"] = self._get_length_suggestions(node)
-            context["strategy"] = "Extract logical sections into helper functions"
-        elif violation_type == "max-nesting-depth":
-            context["suggestions"] = self._get_nesting_suggestions(node)
-            context["strategy"] = "Use early returns (guard clauses) and extract deeply nested blocks"
-        elif violation_type == "max-parameter-count":
-            context["suggestions"] = self._get_parameter_suggestions(node)
-            context["strategy"] = "Group related parameters into dataclasses or dicts"
-        else:
-            # Fallback to complexity-based suggestions
-            context["suggestions"] = self._get_complexity_suggestions(node)
-            context["strategy"] = "Extract code blocks into helper functions"
+    def _format_metrics(self, metrics: Any) -> dict[str, int]:
+        """Format complexity metrics into dict."""
+        if not metrics:
+            return {}
+        return {
+            "cyclomatic_complexity": metrics.cyclomatic_complexity,
+            "cognitive_complexity": metrics.cognitive_complexity,
+            "nesting_depth": metrics.nesting_depth,
+            "line_count": metrics.line_count,
+            "branch_count": metrics.branch_count,
+            "loop_count": metrics.loop_count,
+        }
 
-        return context
+    def _add_violation_strategy(
+        self, context: dict[str, Any], node: ast.AST, violation_type: str
+    ) -> None:
+        """Add violation-specific suggestions and strategy to context."""
+        method_name, strategy = self._VIOLATION_STRATEGIES.get(
+            violation_type,
+            ("_get_complexity_suggestions", "Extract code blocks into helper functions"),
+        )
+        suggestion_getter = getattr(self, method_name)
+        context["suggestions"] = suggestion_getter(node)
+        context["strategy"] = strategy
 
     def _get_complexity_suggestions(self, node: ast.AST) -> list[dict[str, Any]]:
         """Get extraction suggestions focused on reducing complexity."""

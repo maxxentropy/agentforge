@@ -240,15 +240,27 @@ class AgentMonitor:
         return max(0.0, min(1.0, 1.0 - (intersection / len(original_keywords))))
 
     def detect_thrashing(self) -> ThrashingDetection | None:
-        """Check for back-and-forth patterns"""
-        # Check file modification thrashing
+        """Check for back-and-forth patterns."""
+        # Check file modification thrashing first
+        file_result = self._detect_file_thrashing()
+        if file_result.detected:
+            return file_result
+
+        # Check for alternating states
+        state_result = self._detect_state_thrashing()
+        if state_result.detected:
+            return state_result
+
+        return ThrashingDetection(detected=False)
+
+    def _detect_file_thrashing(self) -> ThrashingDetection:
+        """Check for file modification thrashing patterns."""
         thrashing_files = []
         max_alternations = 0
 
         for file_path, modifications in self.file_modifications.items():
             if len(modifications) >= self.config.thrash_threshold:
                 thrashing_files.append(file_path)
-                # Simple alternation count based on modification frequency
                 max_alternations = max(max_alternations, len(modifications))
 
         if thrashing_files:
@@ -256,33 +268,43 @@ class AgentMonitor:
                 detected=True,
                 pattern=f"Files modified repeatedly: {', '.join(thrashing_files[:3])}",
                 affected_files=thrashing_files,
-                alternation_count=max_alternations
+                alternation_count=max_alternations,
             )
-
-        # Check for alternating states
-        recent_states = [obs for obs in list(self.observations)[-10:]
-                        if obs.type == ObservationType.STATE_CHANGE]
-
-        if len(recent_states) >= self.config.thrash_threshold:
-            state_sequence = [obs.data.get("new_state", "") for obs in recent_states]
-
-            # Look for A-B-A-B pattern
-            alternation_count = 0
-            for i in range(len(state_sequence) - 3):
-                if (state_sequence[i] == state_sequence[i+2] and
-                    state_sequence[i+1] == state_sequence[i+3] and
-                    state_sequence[i] != state_sequence[i+1]):
-                    alternation_count += 1
-
-            if alternation_count >= 1:  # Even one complete alternation is concerning
-                return ThrashingDetection(
-                    detected=True,
-                    pattern="State alternation detected",
-                    affected_files=[],
-                    alternation_count=alternation_count + 1  # Count includes the base pattern
-                )
-
         return ThrashingDetection(detected=False)
+
+    def _detect_state_thrashing(self) -> ThrashingDetection:
+        """Check for state alternation patterns (A-B-A-B)."""
+        recent_states = [
+            obs for obs in list(self.observations)[-10:]
+            if obs.type == ObservationType.STATE_CHANGE
+        ]
+
+        if len(recent_states) < self.config.thrash_threshold:
+            return ThrashingDetection(detected=False)
+
+        state_sequence = [obs.data.get("new_state", "") for obs in recent_states]
+        alternation_count = self._count_alternations(state_sequence)
+
+        if alternation_count >= 1:
+            return ThrashingDetection(
+                detected=True,
+                pattern="State alternation detected",
+                affected_files=[],
+                alternation_count=alternation_count + 1,
+            )
+        return ThrashingDetection(detected=False)
+
+    def _count_alternations(self, state_sequence: list[str]) -> int:
+        """Count A-B-A-B alternation patterns in state sequence."""
+        count = 0
+        for i in range(len(state_sequence) - 3):
+            if (
+                state_sequence[i] == state_sequence[i + 2]
+                and state_sequence[i + 1] == state_sequence[i + 3]
+                and state_sequence[i] != state_sequence[i + 1]
+            ):
+                count += 1
+        return count
 
     def get_context_pressure(self, tokens_used: int, token_budget: int) -> float:
         """Calculate context window pressure"""

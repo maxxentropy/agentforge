@@ -229,72 +229,101 @@ Start by reading the test files.
         artifact = context.input_artifacts
 
         # Initialize tracking
-        implementation_files = []
-        iterations = 0
-        all_tests_pass = False
+        implementation_files: list[str] = []
+        test_file_paths = self._extract_test_paths(artifact)
+        test_results = self._run_all_tests(context, test_file_paths)
 
-        # Get test files from input
+        # Set up executor with tools
+        executor = self._get_executor(context)
+        self._register_implementation_tools(executor, context)
+        user_message = self._build_user_message(context)
+
+        # Iterative implementation loop
+        iterations, all_tests_pass = self._implementation_loop(
+            context, executor, user_message, test_file_paths,
+            test_results, implementation_files
+        )
+
+        return self._build_result(
+            artifact, implementation_files, test_results, iterations, all_tests_pass
+        )
+
+    def _extract_test_paths(self, artifact: ArtifactDict) -> list[str]:
+        """Extract test file paths from input artifact."""
         test_file_paths = []
         for tf in artifact.get("test_files", []):
             if isinstance(tf, dict):
                 test_file_paths.append(tf.get("path", ""))
             else:
                 test_file_paths.append(str(tf))
+        return test_file_paths
 
-        # Get initial test state
-        test_results = self._run_all_tests(context, test_file_paths)
+    def _implementation_loop(
+        self,
+        context: StageContext,
+        executor: Any,
+        user_message: str,
+        test_file_paths: list[str],
+        test_results: TestResultsDict,
+        implementation_files: list[str],
+    ) -> tuple[int, bool]:
+        """Run the iterative implementation loop."""
+        iterations = 0
+        all_tests_pass = False
 
-        # Set up executor with tools
-        executor = self._get_executor(context)
-        self._register_implementation_tools(executor, context)
-
-        # Build initial message
-        system_prompt = self.SYSTEM_PROMPT
-        user_message = self._build_user_message(context)
-
-        # Iterative implementation loop
         while iterations < self.max_iterations and not all_tests_pass:
             iterations += 1
             logger.info(f"GREEN phase iteration {iterations}/{self.max_iterations}")
 
-            # Execute LLM step
             result = executor.execute_task(
                 task_description=user_message,
-                system_prompt=system_prompt,
+                system_prompt=self.SYSTEM_PROMPT,
                 context={
                     "iteration": iterations,
                     "test_results": test_results,
                     "implementation_files": implementation_files,
                 },
                 tools=self.tools,
-                max_iterations=10,  # Tool calls per LLM iteration
+                max_iterations=10,
             )
 
-            # Check for completion signal
             if self._check_completion(result):
                 completion_data = self._extract_completion_data(result)
-                implementation_files = completion_data.get("implementation_files", implementation_files)
+                implementation_files[:] = completion_data.get("implementation_files", implementation_files)
                 break
 
-            # Update implementation files from tool calls
-            new_files = self._extract_written_files(result)
-            for f in new_files:
-                if f not in implementation_files:
-                    implementation_files.append(f)
-
-            # Run tests
+            self._update_implementation_files(result, implementation_files)
             test_results = self._run_all_tests(context, test_file_paths)
+            all_tests_pass = self._check_tests_passing(test_results)
 
-            # Check if all pass
-            if test_results.get("failed", 1) == 0 and test_results.get("passed", 0) > 0:
-                all_tests_pass = True
-                logger.info("All tests passing!")
-            else:
-                # Update message with current status
+            if not all_tests_pass:
                 user_message = self._build_iteration_message(test_results, iterations)
 
-        # Build final artifact
-        final_artifact = {
+        return iterations, all_tests_pass
+
+    def _update_implementation_files(self, result: Any, implementation_files: list[str]) -> None:
+        """Update implementation files list from tool call results."""
+        for f in self._extract_written_files(result):
+            if f not in implementation_files:
+                implementation_files.append(f)
+
+    def _check_tests_passing(self, test_results: TestResultsDict) -> bool:
+        """Check if all tests are passing."""
+        if test_results.get("failed", 1) == 0 and test_results.get("passed", 0) > 0:
+            logger.info("All tests passing!")
+            return True
+        return False
+
+    def _build_result(
+        self,
+        artifact: ArtifactDict,
+        implementation_files: list[str],
+        test_results: TestResultsDict,
+        iterations: int,
+        all_tests_pass: bool,
+    ) -> StageResult:
+        """Build the final stage result."""
+        final_artifact: ArtifactDict = {
             "spec_id": artifact.get("spec_id"),
             "implementation_files": implementation_files,
             "test_results": test_results,
@@ -303,24 +332,18 @@ Start by reading the test files.
             "all_tests_pass": all_tests_pass,
         }
 
-        # Determine status
         if all_tests_pass:
-            status = StageStatus.COMPLETED
-        elif iterations >= self.max_iterations:
-            status = StageStatus.FAILED
-            final_artifact["error"] = f"Max iterations ({self.max_iterations}) reached"
-        else:
-            status = StageStatus.FAILED
-            final_artifact["error"] = "Implementation incomplete"
-
-        if status == StageStatus.COMPLETED:
             return StageResult.success(artifacts=final_artifact)
-        else:
-            return StageResult(
-                status=status,
-                artifacts=final_artifact,
-                error=final_artifact.get("error"),
-            )
+
+        error = self._determine_error(iterations)
+        final_artifact["error"] = error
+        return StageResult(status=StageStatus.FAILED, artifacts=final_artifact, error=error)
+
+    def _determine_error(self, iterations: int) -> str:
+        """Determine error message based on state."""
+        if iterations >= self.max_iterations:
+            return f"Max iterations ({self.max_iterations}) reached"
+        return "Implementation incomplete"
 
     def _get_executor(self, context: StageContext):
         """Get the LLM executor for this stage."""

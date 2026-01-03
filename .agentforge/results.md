@@ -7,15 +7,15 @@
 | Mode | full |
 | Files Checked | 0 |
 | Checks Run | 158 |
-| Total Violations | 4733 |
+| Total Violations | 4788 |
 | Errors | 0 |
-| Warnings | 374 |
-| Duration | 18.87s |
+| Warnings | 349 |
+| Duration | 19.57s |
 
 ### All Violations
 
 <details>
-<summary>View all 4733 violations in 414 files</summary>
+<summary>View all 4788 violations in 414 files</summary>
 
 **`<unknown>`** (4 violations)
 
@@ -413,12 +413,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-function-length** at `L331`
   - Function 'status' has 59 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-parameter-count** at `L154`
-  - Function 'start' has 7 parameters (max: 5)
-  - 💡 *Group related parameters into a dataclass or use **kwargs*
 - 🟡 **max-nesting-depth** at `L73`
   - Function '_display_result' has nesting depth 7 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
+- 🟡 **max-parameter-count** at `L154`
+  - Function 'start' has 7 parameters (max: 5)
+  - 💡 *Group related parameters into a dataclass or use **kwargs*
 - 🟡 **max-file-lines** at `file`
   - File exceeds line limit (682 lines > 500)
   - 💡 *Consider splitting into smaller files*
@@ -666,13 +666,10 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 
-**`src/agentforge/cli/commands/ci.py`** (227 violations)
+**`src/agentforge/cli/commands/ci.py`** (229 violations)
 
 - 🟡 **max-cyclomatic-complexity** at `L187`
   - Function 'run_baseline_compare' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L459`
-  - Function 'run_warnings_list' has complexity 16 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L30`
   - Function 'run_ci_check' has 53 lines (max: 50)
@@ -681,7 +678,7 @@ Or regenerate file through TDFLOW to get proper lineage.*
   - Function 'run_baseline_compare' has 51 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
 - 🟡 **max-file-lines** at `file`
-  - File exceeds line limit (520 lines > 500)
+  - File exceeds line limit (530 lines > 500)
   - 💡 *Consider splitting into smaller files*
 - 🔵 **use-click-echo** at `L75`
   - Forbidden pattern found: 'print('
@@ -974,19 +971,19 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **use-click-echo** at `L456`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L465`
+- 🔵 **use-click-echo** at `L493`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L466`
+- 🔵 **use-click-echo** at `L494`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L503`
+- 🔵 **use-click-echo** at `L496`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L504`
+- 🔵 **use-click-echo** at `L502`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L506`
+- 🔵 **use-click-echo** at `L508`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
 - 🔵 **use-click-echo** at `L510`
@@ -995,7 +992,7 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **use-click-echo** at `L517`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L519`
+- 🔵 **use-click-echo** at `L518`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
 - 🔵 **use-click-echo** at `L75`
@@ -1289,19 +1286,19 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **use-click-echo** at `L456`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L465`
+- 🔵 **use-click-echo** at `L493`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L466`
+- 🔵 **use-click-echo** at `L494`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L503`
+- 🔵 **use-click-echo** at `L496`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L504`
+- 🔵 **use-click-echo** at `L502`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L506`
+- 🔵 **use-click-echo** at `L508`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
 - 🔵 **use-click-echo** at `L510`
@@ -1310,7 +1307,7 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **use-click-echo** at `L517`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
-- 🔵 **use-click-echo** at `L519`
+- 🔵 **use-click-echo** at `L518`
   - Forbidden pattern found: 'print('
   - 💡 *Use click.echo() or rich.print() for CLI output*
 - 🔵 **require-lineage-metadata-python** at `L1`
@@ -1340,6 +1337,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **default-result-return-types** at `L434`
   - Method 'run_hooks_uninstall' returns 'None', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **default-result-return-types** at `L459`
+  - Method '_collect_sarif_warnings' returns 'list[dict]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L489`
+  - Method '_print_warnings_summary' returns 'None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L499`
+  - Method '_print_warnings_detailed' returns 'None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L513`
   - Method 'run_warnings_list' returns 'None', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -1443,14 +1446,8 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 
-**`src/agentforge/cli/commands/contracts.py`** (4 violations)
+**`src/agentforge/cli/commands/contracts.py`** (5 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L58`
-  - Function 'run_contracts_fix' has complexity 18 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-function-length** at `L58`
-  - Function 'run_contracts_fix' has 58 lines (max: 50)
-  - 💡 *Extract logic into helper functions or use composition*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
   - 💡 *Add lineage header to file:
@@ -1459,6 +1456,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🔵 **default-result-return-types** at `L58`
+  - Method '_collect_python_files' returns 'list[Path]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L73`
+  - Method '_filter_excluded_paths' returns 'list[Path]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L79`
+  - Method '_apply_fixes_to_files' returns 'tuple[int, int]', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
   - 💡 *Add lineage header to file:
@@ -2358,24 +2361,21 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 
-**`src/agentforge/core/audit/transaction_logger.py`** (19 violations)
+**`src/agentforge/core/audit/transaction_logger.py`** (25 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L114`
-  - Function 'to_dict' has complexity 16 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-function-length** at `L114`
-  - Function 'to_dict' has 62 lines (max: 50)
-  - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-function-length** at `L279`
+- 🟡 **max-function-length** at `L314`
   - Function 'log_llm_call' has 53 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-parameter-count** at `L279`
+- 🟡 **max-parameter-count** at `L314`
   - Function 'log_llm_call' has 13 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
 - 🟡 **max-file-lines** at `file`
-  - File exceeds line limit (524 lines > 500)
+  - File exceeds line limit (559 lines > 500)
   - 💡 *Consider splitting into smaller files*
-- 🔵 **single-responsibility-modules** at `L197`
+- 🔵 **single-responsibility-modules** at `L57`
+  - Class 'TransactionRecord' has 8 methods (max: 3)
+  - 💡 *Split modules with too many classes into focused single-class modules*
+- 🔵 **single-responsibility-modules** at `L232`
   - Class 'TransactionLogger' has 11 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
 - 🔵 **require-lineage-metadata-python** at `L1`
@@ -2388,25 +2388,39 @@ Or regenerate file through TDFLOW to get proper lineage.*
 Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **default-result-return-types** at `L114`
   - Method 'to_dict' returns 'dict[str, Any]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L228`
+- 🔵 **default-result-return-types** at `L142`
+  - Method '_llm_fields' returns 'dict[str, Any]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L153`
+  - Method '_tool_calls_fields' returns 'dict[str, Any]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L171`
+  - Method '_action_fields' returns 'dict[str, Any]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L183`
+  - Method '_token_fields' returns 'dict[str, Any]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L197`
+  - Method '_integrity_fields' returns 'dict[str, Any]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L208`
+  - Method '_spawn_fields' returns 'dict[str, Any]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L219`
+  - Method '_human_fields' returns 'dict[str, Any]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L263`
   - Method 'log_transaction' returns 'Path', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L279`
+- 🔵 **default-result-return-types** at `L314`
   - Method 'log_llm_call' returns 'TransactionRecord', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L336`
+- 🔵 **default-result-return-types** at `L371`
   - Method 'log_spawn' returns 'TransactionRecord', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L366`
+- 🔵 **default-result-return-types** at `L401`
   - Method 'log_human_interaction' returns 'TransactionRecord', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L399`
+- 🔵 **default-result-return-types** at `L434`
   - Method 'get_transaction' returns 'TransactionRecord | None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L408`
+- 🔵 **default-result-return-types** at `L443`
   - Method 'list_transactions' returns 'list[str]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L416`
+- 🔵 **default-result-return-types** at `L451`
   - Method 'get_full_llm_content' returns 'str | None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L423`
+- 🔵 **default-result-return-types** at `L458`
   - Method '_get_next_sequence' returns 'int', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L438`
+- 🔵 **default-result-return-types** at `L473`
   - Method '_format_llm_content' returns 'str', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L472`
+- 🔵 **default-result-return-types** at `L507`
   - Method '_dict_to_record' returns 'TransactionRecord', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -3345,18 +3359,21 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 
-**`src/agentforge/core/cicd/runner.py`** (19 violations)
+**`src/agentforge/core/cicd/runner.py`** (24 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L382`
-  - Function '_determine_exit_code' has complexity 19 (max: 10)
+- 🟡 **max-cyclomatic-complexity** at `L407`
+  - Function '_check_violations_by_severity' has complexity 11 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-file-lines** at `file`
-  - File exceeds line limit (583 lines > 500)
+  - File exceeds line limit (610 lines > 500)
   - 💡 *Consider splitting into smaller files*
+- 🟡 **no-god-classes** at `L38`
+  - Class 'CIRunner' has 18 methods (max: 15)
+  - 💡 *Split large classes using composition or inheritance*
 - 🔵 **single-responsibility-modules** at `L38`
-  - Class 'CIRunner' has 14 methods (max: 3)
+  - Class 'CIRunner' has 18 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
-- 🔵 **single-responsibility-modules** at `L456`
+- 🔵 **single-responsibility-modules** at `L483`
   - Class 'CheckCache' has 5 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
 - 🔵 **require-lineage-metadata-python** at `L1`
@@ -3386,12 +3403,20 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **default-result-return-types** at `L378`
   - Method '_compare_baseline' returns 'BaselineComparison', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **default-result-return-types** at `L382`
+  - Method '_check_error_threshold' returns 'ExitCode | None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L391`
+  - Method '_check_ratchet_mode' returns 'ExitCode | None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L399`
+  - Method '_check_comparison_mode' returns 'ExitCode | None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L407`
+  - Method '_check_violations_by_severity' returns 'ExitCode | None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L426`
   - Method '_determine_exit_code' returns 'ExitCode', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L427`
+- 🔵 **default-result-return-types** at `L454`
   - Method '_get_commit_sha' returns 'str | None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L542`
+- 🔵 **default-result-return-types** at `L569`
   - Method 'clear' returns 'int', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L558`
+- 🔵 **default-result-return-types** at `L585`
   - Method 'prune_expired' returns 'int', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -5398,16 +5423,13 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 
-**`src/agentforge/core/discovery/analyzers/interactions.py`** (18 violations)
+**`src/agentforge/core/discovery/analyzers/interactions.py`** (20 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L52`
-  - Function '_detect_docker_compose' has complexity 13 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-nesting-depth** at `L52`
-  - Function '_detect_docker_compose' has nesting depth 5 (max: 4)
-  - 💡 *Use early returns, guard clauses, or extract nested logic*
+- 🟡 **no-god-classes** at `L24`
+  - Class 'InteractionDetector' has 16 methods (max: 15)
+  - 💡 *Split large classes using composition or inheritance*
 - 🔵 **single-responsibility-modules** at `L24`
-  - Class 'InteractionDetector' has 13 methods (max: 3)
+  - Class 'InteractionDetector' has 16 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -5420,28 +5442,34 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **default-result-return-types** at `L37`
   - Method 'detect_all' returns 'list[Interaction]', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **default-result-return-types** at `L52`
+  - Method '_find_compose_files' returns 'set[Path]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L64`
+  - Method '_extract_service_dependencies' returns 'list[str]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L71`
+  - Method '_parse_compose_file' returns 'list[Interaction]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L105`
   - Method '_detect_docker_compose' returns 'list[Interaction]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L117`
+- 🔵 **default-result-return-types** at `L119`
   - Method '_map_services_to_zones' returns 'dict[str, str]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L154`
+- 🔵 **default-result-return-types** at `L156`
   - Method '_detect_shared_schemas' returns 'list[Interaction]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L183`
+- 🔵 **default-result-return-types** at `L185`
   - Method '_find_zones_referencing' returns 'list[str]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L212`
+- 🔵 **default-result-return-types** at `L214`
   - Method '_get_zone_files' returns 'list[Path]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L231`
+- 🔵 **default-result-return-types** at `L233`
   - Method '_detect_schema_format' returns 'str | None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L241`
+- 🔵 **default-result-return-types** at `L243`
   - Method '_find_referenced_zone' returns 'tuple[Path, str] | None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L250`
+- 🔵 **default-result-return-types** at `L252`
   - Method '_get_zone_path' returns 'Path', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L254`
+- 🔵 **default-result-return-types** at `L256`
   - Method '_detect_shared_packages' returns 'list[Interaction]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L285`
+- 🔵 **default-result-return-types** at `L287`
   - Method '_map_projects_to_zones' returns 'dict[Path, str]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L299`
+- 🔵 **default-result-return-types** at `L301`
   - Method '_get_project_references' returns 'list[str]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L315`
+- 🔵 **default-result-return-types** at `L317`
   - Method 'detect_interactions' returns 'list[Interaction]', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -5454,6 +5482,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/discovery/analyzers/patterns.py`** (31 violations)
 
+- 🟡 **max-nesting-depth** at `L514`
+  - Function '_check_base_class_signal' has nesting depth 5 (max: 4)
+  - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🟡 **max-parameter-count** at `L484`
   - Function '_check_class_name_signal' has 6 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
@@ -5481,9 +5512,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-parameter-count** at `L645`
   - Function '_add_match' has 6 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
-- 🟡 **max-nesting-depth** at `L514`
-  - Function '_check_base_class_signal' has nesting depth 5 (max: 4)
-  - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🟡 **max-file-lines** at `file`
   - File exceeds line limit (789 lines > 500)
   - 💡 *Consider splitting into smaller files*
@@ -5542,19 +5570,16 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 
-**`src/agentforge/core/discovery/analyzers/structure.py`** (19 violations)
+**`src/agentforge/core/discovery/analyzers/structure.py`** (20 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L183`
-  - Function '_detect_layer' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-nesting-depth** at `L183`
-  - Function '_detect_layer' has nesting depth 5 (max: 4)
-  - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🟡 **max-file-lines** at `file`
-  - File exceeds line limit (540 lines > 500)
+  - File exceeds line limit (560 lines > 500)
   - 💡 *Consider splitting into smaller files*
+- 🟡 **no-god-classes** at `L89`
+  - Class 'StructureAnalyzer' has 17 methods (max: 15)
+  - 💡 *Split large classes using composition or inheritance*
 - 🔵 **single-responsibility-modules** at `L89`
-  - Class 'StructureAnalyzer' has 15 methods (max: 3)
+  - Class 'StructureAnalyzer' has 17 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -5567,28 +5592,32 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **default-result-return-types** at `L150`
   - Method '_scan_directories' returns 'list[DirectoryInfo]', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **default-result-return-types** at `L183`
+  - Method '_score_directory_patterns' returns 'tuple[float, list[str]]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L200`
+  - Method '_score_file_patterns' returns 'tuple[float, list[str]]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L217`
   - Method '_detect_layer' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L226`
+- 🔵 **default-result-return-types** at `L246`
   - Method '_aggregate_layers' returns 'dict[str, LayerInfo]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L268`
+- 🔵 **default-result-return-types** at `L288`
   - Method '_calculate_style_score' returns 'tuple[float, list[str]]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L298`
+- 🔵 **default-result-return-types** at `L318`
   - Method '_detect_architecture_style' returns 'tuple[str, float, list[str]]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L321`
+- 🔵 **default-result-return-types** at `L341`
   - Method '_find_entry_points' returns 'list[Path]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L342`
+- 🔵 **default-result-return-types** at `L362`
   - Method '_find_pyproject_scripts' returns 'list[Path]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L372`
+- 🔵 **default-result-return-types** at `L392`
   - Method '_find_test_directories' returns 'list[Path]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L391`
+- 🔵 **default-result-return-types** at `L411`
   - Method '_detect_source_root' returns 'Path | None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L419`
+- 🔵 **default-result-return-types** at `L439`
   - Method 'get_layer_for_path' returns 'str | None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L431`
+- 🔵 **default-result-return-types** at `L451`
   - Method '_detect_dotnet_layers' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L490`
+- 🔵 **default-result-return-types** at `L510`
   - Method '_find_dotnet_entry_points' returns 'list[Path]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L518`
+- 🔵 **default-result-return-types** at `L538`
   - Method '_find_dotnet_test_directories' returns 'list[Path]', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -5759,10 +5788,10 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 
-**`src/agentforge/core/discovery/generators/lineage_embedder.py`** (13 violations)
+**`src/agentforge/core/discovery/generators/lineage_embedder.py`** (17 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L300`
-  - Function '_insert_lineage_block' has complexity 18 (max: 10)
+- 🟡 **max-cyclomatic-complexity** at `L304`
+  - Function '_should_skip_python_line' has complexity 11 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L122`
   - Function 'embed_file' has 68 lines (max: 50)
@@ -5771,7 +5800,7 @@ Or regenerate file through TDFLOW to get proper lineage.*
   - Function '_find_existing_lineage' has nesting depth 5 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🔵 **single-responsibility-modules** at `L50`
-  - Class 'LineageEmbedder' has 11 methods (max: 3)
+  - Class 'LineageEmbedder' has 15 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -5792,8 +5821,16 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **default-result-return-types** at `L281`
   - Method '_replace_lineage_block' returns 'str', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **default-result-return-types** at `L300`
+  - Method '_is_standard_header_comment' returns 'bool', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L304`
+  - Method '_should_skip_python_line' returns 'tuple[bool, bool]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L330`
+  - Method '_find_python_insert_position' returns 'int', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L342`
+  - Method '_add_spacing' returns 'str', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L350`
   - Method '_insert_lineage_block' returns 'str', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L358`
+- 🔵 **default-result-return-types** at `L374`
   - Method 'summary' returns 'dict[str, int]', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -5847,49 +5884,43 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 
-**`src/agentforge/core/discovery/manager.py`** (35 violations)
+**`src/agentforge/core/discovery/manager.py`** (38 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L622`
-  - Function 'discover' has complexity 13 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L741`
+- 🟡 **max-cyclomatic-complexity** at `L756`
   - Function '_analyze_zone' has complexity 12 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L864`
-  - Function '_generate_multi_zone_profile' has complexity 13 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-function-length** at `L622`
-  - Function 'discover' has 80 lines (max: 50)
+- 🟡 **max-function-length** at `L658`
+  - Function 'discover' has 61 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-function-length** at `L741`
+- 🟡 **max-function-length** at `L756`
   - Function '_analyze_zone' has 85 lines (max: 50)
-  - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-function-length** at `L864`
-  - Function '_generate_multi_zone_profile' has 55 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
 - 🟡 **max-nesting-depth** at `L231`
   - Function '_run_phase' has nesting depth 6 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🟡 **max-file-lines** at `file`
-  - File exceeds line limit (973 lines > 500)
+  - File exceeds line limit (988 lines > 500)
   - 💡 *Consider splitting into smaller files*
-- 🔵 **max-imports** at `L1`
-  - File has 36 imports (max: 30)
-  - 💡 *Consider splitting module or consolidating imports*
+- 🟡 **no-god-classes** at `L568`
+  - Class 'MultiZoneDiscoveryManager' has 17 methods (max: 15)
+  - 💡 *Split large classes using composition or inheritance*
 - 🔵 **single-responsibility-modules** at `L108`
   - Class 'DiscoveryManager' has 14 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
 - 🔵 **single-responsibility-modules** at `L568`
-  - Class 'MultiZoneDiscoveryManager' has 11 methods (max: 3)
+  - Class 'MultiZoneDiscoveryManager' has 17 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
 - 🔵 **max-imports** at `L1`
-  - File has 36 imports (max: 30)
+  - File has 37 imports (max: 30)
   - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **max-imports** at `L1`
-  - File has 36 imports (max: 30)
+  - File has 37 imports (max: 30)
   - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **max-imports** at `L1`
-  - File has 36 imports (max: 30)
+  - File has 37 imports (max: 30)
+  - 💡 *Consider splitting module or consolidating imports*
+- 🔵 **max-imports** at `L1`
+  - File has 37 imports (max: 30)
   - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -5923,19 +5954,29 @@ Or regenerate file through TDFLOW to get proper lineage.*
   - Method '_report_progress' returns 'None', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **default-result-return-types** at `L612`
   - Method '_load_config' returns 'dict[str, Any]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L722`
+- 🔵 **default-result-return-types** at `L622`
+  - Method '_filter_zones' returns 'tuple[list, str | None]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L631`
+  - Method '_analyze_zones' returns 'None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L737`
   - Method 'list_zones' returns 'list[Zone]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L731`
+- 🔵 **default-result-return-types** at `L746`
   - Method '_detect_zones' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L741`
+- 🔵 **default-result-return-types** at `L756`
   - Method '_analyze_zone' returns 'ZoneProfile', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L848`
+- 🔵 **default-result-return-types** at `L863`
   - Method '_detect_interactions' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L864`
+- 🔵 **default-result-return-types** at `L879`
+  - Method '_build_discovery_metadata' returns 'dict', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L891`
+  - Method '_build_languages_list' returns 'list', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L902`
+  - Method '_build_dependencies_list' returns 'list', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L915`
   - Method '_generate_multi_zone_profile' returns 'Path', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L937`
+- 🔵 **default-result-return-types** at `L952`
   - Method '_get_detection_mode' returns 'str', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L967`
+- 🔵 **default-result-return-types** at `L982`
   - Method '_report_progress' returns 'None', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -6081,37 +6122,34 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 
-**`src/agentforge/core/discovery/providers/python_provider.py`** (53 violations)
+**`src/agentforge/core/discovery/providers/python_provider.py`** (55 violations)
 
 - 🟡 **max-cyclomatic-complexity** at `L477`
   - Function 'suggest_extractions' has complexity 11 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L609`
-  - Function 'get_violation_context' has complexity 14 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-nesting-depth** at `L477`
   - Function 'suggest_extractions' has nesting depth 6 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
-- 🟡 **max-nesting-depth** at `L666`
+- 🟡 **max-nesting-depth** at `L690`
   - Function '_get_complexity_suggestions' has nesting depth 5 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
-- 🟡 **max-nesting-depth** at `L718`
+- 🟡 **max-nesting-depth** at `L742`
   - Function '_get_length_suggestions' has nesting depth 5 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🟡 **max-class-size** at `L111`
-  - Class 'PythonProvider' has 41 methods (max: 20)
+  - Class 'PythonProvider' has 44 methods (max: 20)
   - 💡 *Consider splitting into multiple classes with single responsibilities*
 - 🟡 **max-file-lines** at `file`
-  - File exceeds line limit (973 lines > 500)
+  - File exceeds line limit (997 lines > 500)
   - 💡 *Consider splitting into smaller files*
 - 🟡 **no-god-classes** at `L111`
-  - Class 'PythonProvider' has 41 methods (max: 15)
+  - Class 'PythonProvider' has 44 methods (max: 15)
   - 💡 *Split large classes using composition or inheritance*
 - 🔵 **single-responsibility-modules** at `L41`
   - Class 'ComplexityVisitor' has 10 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
 - 🔵 **single-responsibility-modules** at `L111`
-  - Class 'PythonProvider' has 41 methods (max: 3)
+  - Class 'PythonProvider' has 44 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -6177,31 +6215,37 @@ Or regenerate file through TDFLOW to get proper lineage.*
   - Method '_analyze_try_extraction' returns 'ExtractionSuggestion | None', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **default-result-return-types** at `L582`
   - Method 'get_extractable_ranges' returns 'list[dict[str, Any]]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L609`
+- 🔵 **default-result-return-types** at `L629`
   - Method 'get_violation_context' returns 'dict[str, Any]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L666`
+- 🔵 **default-result-return-types** at `L654`
+  - Method '_build_base_context' returns 'dict[str, Any]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L665`
+  - Method '_format_metrics' returns 'dict[str, int]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L678`
+  - Method '_add_violation_strategy' returns 'None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L690`
   - Method '_get_complexity_suggestions' returns 'list[dict[str, Any]]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L718`
+- 🔵 **default-result-return-types** at `L742`
   - Method '_get_length_suggestions' returns 'list[dict[str, Any]]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L750`
+- 🔵 **default-result-return-types** at `L774`
   - Method '_get_nesting_suggestions' returns 'list[dict[str, Any]]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L786`
+- 🔵 **default-result-return-types** at `L810`
   - Method '_collect_function_params' returns 'list[dict]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L802`
+- 🔵 **default-result-return-types** at `L826`
   - Method '_group_params_by_type' returns 'list[dict]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L822`
+- 🔵 **default-result-return-types** at `L846`
   - Method '_group_params_by_prefix' returns 'list[dict]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L843`
+- 🔵 **default-result-return-types** at `L867`
   - Method '_get_parameter_suggestions' returns 'list[dict[str, Any]]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L860`
+- 🔵 **default-result-return-types** at `L884`
   - Method 'get_imports' returns 'list[Import]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L893`
+- 🔵 **default-result-return-types** at `L917`
   - Method 'get_dependencies' returns 'list[Dependency]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L916`
+- 🔵 **default-result-return-types** at `L940`
   - Method '_parse_pyproject_deps' returns 'list[Dependency]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L947`
+- 🔵 **default-result-return-types** at `L971`
   - Method '_parse_requirements_txt' returns 'list[Dependency]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L961`
+- 🔵 **default-result-return-types** at `L985`
   - Method '_parse_dep_string' returns 'Dependency | None', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -6664,19 +6708,13 @@ Or regenerate file through TDFLOW to get proper lineage.*
   - File has 102 imports (max: 30)
   - 💡 *Consider splitting module or consolidating imports*
 
-**`src/agentforge/core/harness/action_parser.py`** (14 violations)
+**`src/agentforge/core/harness/action_parser.py`** (18 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L45`
-  - Function 'parse' has complexity 13 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-nesting-depth** at `L45`
-  - Function 'parse' has nesting depth 6 (max: 4)
-  - 💡 *Use early returns, guard clauses, or extract nested logic*
-- 🟡 **max-nesting-depth** at `L221`
+- 🟡 **max-nesting-depth** at `L234`
   - Function 'parse_lenient' has nesting depth 5 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🔵 **single-responsibility-modules** at `L24`
-  - Class 'ActionParser' has 8 methods (max: 3)
+  - Class 'ActionParser' has 14 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -6687,20 +6725,32 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **default-result-return-types** at `L45`
+  - Method '_handle_tool_call' returns 'AgentAction', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L52`
+  - Method '_handle_complete' returns 'AgentAction', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L59`
+  - Method '_handle_ask_user' returns 'AgentAction', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L70`
+  - Method '_handle_escalate' returns 'AgentAction', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L77`
+  - Method '_handle_think' returns 'AgentAction', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L83`
+  - Method '_handle_respond' returns 'AgentAction', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L89`
   - Method 'parse' returns 'AgentAction', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L99`
+- 🔵 **default-result-return-types** at `L112`
   - Method '_extract_thinking' returns 'str', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L104`
+- 🔵 **default-result-return-types** at `L117`
   - Method '_extract_action' returns 'tuple[ActionType, str]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L131`
+- 🔵 **default-result-return-types** at `L144`
   - Method '_infer_action' returns 'tuple[ActionType, str]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L167`
+- 🔵 **default-result-return-types** at `L180`
   - Method '_parse_tool_calls' returns 'list[ToolCall]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L193`
+- 🔵 **default-result-return-types** at `L206`
   - Method '_parse_parameters' returns 'dict[str, str]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L204`
+- 🔵 **default-result-return-types** at `L217`
   - Method '_extract_element' returns 'str | None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L221`
+- 🔵 **default-result-return-types** at `L234`
   - Method 'parse_lenient' returns 'AgentAction', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -6711,28 +6761,19 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 
-**`src/agentforge/core/harness/agent_monitor.py`** (18 violations)
+**`src/agentforge/core/harness/agent_monitor.py`** (23 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L114`
-  - Function 'detect_loop' has complexity 20 (max: 10)
+- 🟡 **max-cyclomatic-complexity** at `L342`
+  - Function '_check_critical_conditions' has complexity 12 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L218`
-  - Function 'detect_thrashing' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L296`
-  - Function 'get_health' has complexity 23 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-function-length** at `L114`
-  - Function 'detect_loop' has 53 lines (max: 50)
-  - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-function-length** at `L296`
-  - Function 'get_health' has 76 lines (max: 50)
-  - 💡 *Extract logic into helper functions or use composition*
+- 🟡 **max-class-size** at `L42`
+  - Class 'AgentMonitor' has 24 methods (max: 20)
+  - 💡 *Consider splitting into multiple classes with single responsibilities*
 - 🟡 **no-god-classes** at `L42`
-  - Class 'AgentMonitor' has 16 methods (max: 15)
+  - Class 'AgentMonitor' has 24 methods (max: 15)
   - 💡 *Split large classes using composition or inheritance*
 - 🔵 **single-responsibility-modules** at `L42`
-  - Class 'AgentMonitor' has 16 methods (max: 3)
+  - Class 'AgentMonitor' has 24 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -6743,22 +6784,38 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **default-result-return-types** at `L114`
+  - Method '_detect_consecutive_actions' returns 'LoopDetection | None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L140`
+  - Method '_detect_repeated_errors' returns 'LoopDetection | None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L162`
+  - Method '_detect_state_cycles' returns 'LoopDetection | None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L179`
   - Method 'detect_loop' returns 'LoopDetection | None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L182`
+- 🔵 **default-result-return-types** at `L206`
   - Method '_extract_keywords' returns 'set[str]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L188`
+- 🔵 **default-result-return-types** at `L212`
   - Method '_get_recent_keywords' returns 'set[str]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L198`
+- 🔵 **default-result-return-types** at `L222`
   - Method 'detect_drift' returns 'float', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L218`
+- 🔵 **default-result-return-types** at `L242`
   - Method 'detect_thrashing' returns 'ThrashingDetection | None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L263`
+- 🔵 **default-result-return-types** at `L256`
+  - Method '_detect_file_thrashing' returns 'ThrashingDetection', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L275`
+  - Method '_detect_state_thrashing' returns 'ThrashingDetection', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L297`
+  - Method '_count_alternations' returns 'int', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L309`
   - Method 'get_context_pressure' returns 'float', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L269`
+- 🔵 **default-result-return-types** at `L315`
   - Method 'get_progress_score' returns 'float', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L296`
+- 🔵 **default-result-return-types** at `L342`
+  - Method '_check_critical_conditions' returns 'tuple[list[str], Recommendation | None]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L380`
+  - Method '_check_degraded_conditions' returns 'list[str]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L408`
   - Method 'get_health' returns 'AgentHealth', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L397`
+- 🔵 **default-result-return-types** at `L473`
   - Method 'get_recent_observations' returns 'list[Observation]', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -7140,25 +7197,16 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 
-**`src/agentforge/core/harness/fix_violation_workflow.py`** (15 violations)
+**`src/agentforge/core/harness/fix_violation_workflow.py`** (16 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L227`
-  - Function 'fix_violation' has complexity 19 (max: 10)
+- 🟡 **max-cyclomatic-complexity** at `L246`
+  - Function '_track_modified_files' has complexity 11 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L339`
-  - Function '_determine_phase' has complexity 16 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-function-length** at `L227`
-  - Function 'fix_violation' has 83 lines (max: 50)
+- 🟡 **max-function-length** at `L262`
+  - Function 'fix_violation' has 68 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-nesting-depth** at `L227`
-  - Function 'fix_violation' has nesting depth 8 (max: 4)
-  - 💡 *Use early returns, guard clauses, or extract nested logic*
-- 🟡 **max-nesting-depth** at `L339`
-  - Function '_determine_phase' has nesting depth 5 (max: 4)
-  - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🔵 **single-responsibility-modules** at `L150`
-  - Class 'FixViolationWorkflow' has 6 methods (max: 3)
+  - Class 'FixViolationWorkflow' has 10 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -7177,10 +7225,18 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **default-result-return-types** at `L213`
   - Method '_format_step_history' returns 'str', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **default-result-return-types** at `L227`
+  - Method '_check_step_termination' returns 'tuple[bool, FixPhase | None, str | None]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L246`
+  - Method '_track_modified_files' returns 'None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L262`
   - Method 'fix_violation' returns 'FixAttempt', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L339`
+- 🔵 **default-result-return-types** at `L357`
+  - Method '_update_attempt_from_verify' returns 'None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L365`
+  - Method '_update_attempt_from_commit' returns 'None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L371`
   - Method '_determine_phase' returns 'FixPhase', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L368`
+- 🔵 **default-result-return-types** at `L395`
   - Method 'create_fix_workflow' returns 'FixViolationWorkflow', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -7252,27 +7308,24 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 
-**`src/agentforge/core/harness/llm_executor_domain.py`** (36 violations)
+**`src/agentforge/core/harness/llm_executor_domain.py`** (35 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L56`
-  - Function '_infer_category' has complexity 15 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🔵 **single-responsibility-modules** at `L44`
+- 🔵 **single-responsibility-modules** at `L56`
   - Class 'ToolCall' has 4 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
-- 🔵 **single-responsibility-modules** at `L97`
+- 🔵 **single-responsibility-modules** at `L98`
   - Class 'ToolResult' has 4 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
-- 🔵 **single-responsibility-modules** at `L153`
+- 🔵 **single-responsibility-modules** at `L154`
   - Class 'AgentAction' has 7 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
-- 🔵 **single-responsibility-modules** at `L228`
+- 🔵 **single-responsibility-modules** at `L229`
   - Class 'ConversationMessage' has 5 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
-- 🔵 **single-responsibility-modules** at `L283`
+- 🔵 **single-responsibility-modules** at `L284`
   - Class 'ExecutionContext' has 7 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
-- 🔵 **single-responsibility-modules** at `L357`
+- 🔵 **single-responsibility-modules** at `L358`
   - Class 'StepResult' has 4 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
 - 🔵 **require-lineage-metadata-python** at `L1`
@@ -7283,59 +7336,59 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
-- 🔵 **default-result-return-types** at `L56`
+- 🔵 **default-result-return-types** at `L68`
   - Method '_infer_category' returns 'ToolCategory', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L77`
+- 🔵 **default-result-return-types** at `L78`
   - Method 'to_dict' returns 'dict[str, Any]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L86`
+- 🔵 **default-result-return-types** at `L87`
   - Method 'from_dict' returns '"ToolCall"', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L126`
+- 🔵 **default-result-return-types** at `L127`
   - Method 'to_dict' returns 'dict[str, Any]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L163`
+- 🔵 **default-result-return-types** at `L164`
   - Method 'tool_action' returns '"AgentAction"', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L172`
+- 🔵 **default-result-return-types** at `L173`
   - Method 'think_action' returns '"AgentAction"', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L180`
+- 🔵 **default-result-return-types** at `L181`
   - Method 'respond_action' returns '"AgentAction"', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L189`
+- 🔵 **default-result-return-types** at `L190`
   - Method 'complete_action' returns '"AgentAction"', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L198`
+- 🔵 **default-result-return-types** at `L199`
   - Method 'escalate_action' returns '"AgentAction"', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L205`
+- 🔵 **default-result-return-types** at `L206`
   - Method 'to_dict' returns 'dict[str, Any]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L216`
+- 🔵 **default-result-return-types** at `L217`
   - Method 'from_dict' returns '"AgentAction"', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L238`
+- 🔵 **default-result-return-types** at `L239`
   - Method 'user_message' returns '"ConversationMessage"', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L243`
+- 🔵 **default-result-return-types** at `L244`
   - Method 'assistant_message' returns '"ConversationMessage"', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L252`
+- 🔵 **default-result-return-types** at `L253`
   - Method 'tool_result_message' returns '"ConversationMessage"', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L260`
+- 🔵 **default-result-return-types** at `L261`
   - Method 'to_dict' returns 'dict[str, Any]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L271`
+- 🔵 **default-result-return-types** at `L272`
   - Method 'from_dict' returns '"ConversationMessage"', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L297`
+- 🔵 **default-result-return-types** at `L298`
   - Method 'tokens_remaining' returns 'int', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L302`
+- 🔵 **default-result-return-types** at `L303`
   - Method 'recent_messages' returns 'list[ConversationMessage]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L306`
+- 🔵 **default-result-return-types** at `L307`
   - Method 'add_user_message' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L310`
+- 🔵 **default-result-return-types** at `L311`
   - Method 'add_assistant_message' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L320`
+- 🔵 **default-result-return-types** at `L321`
   - Method 'add_tool_results' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L326`
+- 🔵 **default-result-return-types** at `L327`
   - Method 'to_dict' returns 'dict[str, Any]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L341`
+- 🔵 **default-result-return-types** at `L342`
   - Method 'from_dict' returns '"ExecutionContext"', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L403`
+- 🔵 **default-result-return-types** at `L404`
   - Method 'to_dict' returns 'dict[str, Any]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L437`
+- 🔵 **default-result-return-types** at `L438`
   - Method 'total_tokens' returns 'int', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L441`
+- 🔵 **default-result-return-types** at `L442`
   - Method 'to_dict' returns 'dict[str, Any]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L449`
+- 🔵 **default-result-return-types** at `L450`
   - Method 'from_dict' returns '"TokenUsage"', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -7579,12 +7632,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **no-god-classes** at `L155`
   - Class 'MinimalContextExecutor' has 25 methods (max: 15)
   - 💡 *Split large classes using composition or inheritance*
-- 🔵 **max-imports** at `L1`
-  - File has 40 imports (max: 30)
-  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **single-responsibility-modules** at `L155`
   - Class 'MinimalContextExecutor' has 25 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
+- 🔵 **max-imports** at `L1`
+  - File has 40 imports (max: 30)
+  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **max-imports** at `L1`
   - File has 40 imports (max: 30)
   - 💡 *Consider splitting module or consolidating imports*
@@ -7818,19 +7871,16 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 
-**`src/agentforge/core/harness/minimal_context/loop_detector.py`** (18 violations)
+**`src/agentforge/core/harness/minimal_context/loop_detector.py`** (19 violations)
 
 - 🟡 **max-cyclomatic-complexity** at `L212`
   - Function '_check_identical' has complexity 11 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L288`
-  - Function '_check_semantic_loop' has complexity 14 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L338`
+- 🟡 **max-cyclomatic-complexity** at `L357`
   - Function '_check_no_progress' has complexity 11 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
 - 🔵 **single-responsibility-modules** at `L79`
-  - Class 'LoopDetector' has 12 methods (max: 3)
+  - Class 'LoopDetector' has 14 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -7855,14 +7905,18 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **default-result-return-types** at `L248`
   - Method '_check_error_cycle' returns 'LoopDetection', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **default-result-return-types** at `L288`
+  - Method '_check_same_error_category' returns 'LoopDetection | None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L312`
+  - Method '_check_repeated_error_facts' returns 'LoopDetection | None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L328`
   - Method '_check_semantic_loop' returns 'LoopDetection', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L338`
+- 🔵 **default-result-return-types** at `L357`
   - Method '_check_no_progress' returns 'LoopDetection', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L388`
+- 🔵 **default-result-return-types** at `L407`
   - Method '_suggest_for_identical' returns 'list[str]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L442`
+- 🔵 **default-result-return-types** at `L461`
   - Method 'get_summary' returns 'dict[str, Any]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L464`
+- 🔵 **default-result-return-types** at `L483`
   - Method 'reset' returns 'None', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -8695,16 +8749,13 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 
-**`src/agentforge/core/harness/python_tools.py`** (6 violations)
+**`src/agentforge/core/harness/python_tools.py`** (7 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L70`
-  - Function 'analyze_function' has complexity 17 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-function-length** at `L70`
-  - Function 'analyze_function' has 65 lines (max: 50)
-  - 💡 *Extract logic into helper functions or use composition*
+- 🟡 **max-parameter-count** at `L112`
+  - Function '_format_analysis_output' has 6 parameters (max: 5)
+  - 💡 *Group related parameters into a dataclass or use **kwargs*
 - 🔵 **single-responsibility-modules** at `L37`
-  - Class 'PythonTools' has 5 methods (max: 3)
+  - Class 'PythonTools' has 8 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -8714,7 +8765,11 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
-- 🔵 **default-result-return-types** at `L266`
+- 🔵 **default-result-return-types** at `L98`
+  - Method '_format_suggestions' returns 'str', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L112`
+  - Method '_format_analysis_output' returns 'str', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L297`
   - Method 'get_tool_executors' returns 'dict[str, Any]', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -8794,19 +8849,16 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 
-**`src/agentforge/core/harness/refactoring_tools.py`** (7 violations)
+**`src/agentforge/core/harness/refactoring_tools.py`** (9 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L130`
-  - Function 'simplify_conditional' has complexity 16 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L50`
   - Function 'extract_function' has 63 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-function-length** at `L130`
-  - Function 'simplify_conditional' has 100 lines (max: 50)
+- 🟡 **max-function-length** at `L184`
+  - Function 'simplify_conditional' has 56 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
 - 🔵 **single-responsibility-modules** at `L23`
-  - Class 'RefactoringTools' has 5 methods (max: 3)
+  - Class 'RefactoringTools' has 8 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -8816,7 +8868,13 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
-- 🔵 **default-result-return-types** at `L266`
+- 🔵 **default-result-return-types** at `L130`
+  - Method '_find_if_at_line' returns 'ast.If | None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L137`
+  - Method '_validate_guard_pattern' returns 'str | None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L145`
+  - Method '_build_guard_clause' returns 'tuple[str, list[str], int, int]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L253`
   - Method 'get_tool_executors' returns 'dict[str, Any]', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -9141,19 +9199,16 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 
-**`src/agentforge/core/harness/tool_selector.py`** (10 violations)
+**`src/agentforge/core/harness/tool_selector.py`** (12 violations)
 
 - 🟡 **max-cyclomatic-complexity** at `L25`
   - Function 'get_tools' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L69`
-  - Function 'detect_domain' has complexity 16 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-nesting-depth** at `L25`
   - Function 'get_tools' has nesting depth 5 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🔵 **single-responsibility-modules** at `L17`
-  - Class 'ToolSelector' has 5 methods (max: 3)
+  - Class 'ToolSelector' has 8 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -9166,10 +9221,16 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **default-result-return-types** at `L25`
   - Method 'get_tools' returns 'list[ToolDefinition]', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **default-result-return-types** at `L69`
+  - Method '_detect_python' returns 'bool', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L80`
+  - Method '_detect_dotnet' returns 'bool', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L84`
+  - Method '_detect_typescript' returns 'bool', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L105`
   - Method 'detect_domain' returns 'str | None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L120`
+- 🔵 **default-result-return-types** at `L119`
   - Method 'get_tool_names' returns 'list[str]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L125`
+- 🔵 **default-result-return-types** at `L124`
   - Method 'validate_tool_access' returns 'bool', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -9182,14 +9243,8 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/harness/violation_tools.py`** (9 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L135`
-  - Function 'list_violations' has complexity 14 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-function-length** at `L135`
-  - Function 'list_violations' has 60 lines (max: 50)
-  - 💡 *Extract logic into helper functions or use composition*
 - 🔵 **single-responsibility-modules** at `L77`
-  - Class 'ViolationTools' has 5 methods (max: 3)
+  - Class 'ViolationTools' has 7 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -9205,7 +9260,11 @@ Or regenerate file through TDFLOW to get proper lineage.*
   - Method 'to_dict' returns 'dict[str, Any]', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **default-result-return-types** at `L62`
   - Method 'from_dict' returns '"ViolationInfo"', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L272`
+- 🔵 **default-result-return-types** at `L135`
+  - Method '_matches_filters' returns 'bool', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L147`
+  - Method '_format_violations_table' returns 'str', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L264`
   - Method 'get_tool_executors' returns 'dict[str, Any]', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -9297,15 +9356,15 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/llm/client.py`** (12 violations)
 
+- 🟡 **max-nesting-depth** at `L136`
+  - Function '_build_request_params' has nesting depth 5 (max: 4)
+  - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🟡 **max-parameter-count** at `L95`
   - Function 'complete' has 6 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
 - 🟡 **max-parameter-count** at `L136`
   - Function '_build_request_params' has 6 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
-- 🟡 **max-nesting-depth** at `L136`
-  - Function '_build_request_params' has nesting depth 5 (max: 4)
-  - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🔵 **single-responsibility-modules** at `L46`
   - Class 'AnthropicLLMClient' has 7 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -10324,22 +10383,25 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 
-**`src/agentforge/core/pipeline/stages/green.py`** (24 violations)
+**`src/agentforge/core/pipeline/stages/green.py`** (30 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L227`
-  - Function 'execute' has complexity 13 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-function-length** at `L227`
-  - Function 'execute' has 69 lines (max: 50)
-  - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-function-length** at `L409`
+- 🟡 **max-function-length** at `L432`
   - Function '_register_implementation_tools' has 65 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
+- 🟡 **max-parameter-count** at `L261`
+  - Function '_implementation_loop' has 6 parameters (max: 5)
+  - 💡 *Group related parameters into a dataclass or use **kwargs*
+- 🟡 **max-class-size** at `L34`
+  - Class 'GreenPhaseExecutor' has 21 methods (max: 20)
+  - 💡 *Consider splitting into multiple classes with single responsibilities*
 - 🟡 **max-file-lines** at `file`
-  - File exceeds line limit (620 lines > 500)
+  - File exceeds line limit (643 lines > 500)
   - 💡 *Consider splitting into smaller files*
+- 🟡 **no-god-classes** at `L34`
+  - Class 'GreenPhaseExecutor' has 21 methods (max: 15)
+  - 💡 *Split large classes using composition or inheritance*
 - 🔵 **single-responsibility-modules** at `L34`
-  - Class 'GreenPhaseExecutor' has 15 methods (max: 3)
+  - Class 'GreenPhaseExecutor' has 21 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -10351,37 +10413,47 @@ Or regenerate file through TDFLOW to get proper lineage.*
 Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **default-result-return-types** at `L200`
   - Method '_validate_path' returns '"Path"', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L334`
+- 🔵 **default-result-return-types** at `L251`
+  - Method '_extract_test_paths' returns 'list[str]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L261`
+  - Method '_implementation_loop' returns 'tuple[int, bool]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L304`
+  - Method '_update_implementation_files' returns 'None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L310`
+  - Method '_check_tests_passing' returns 'bool', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L342`
+  - Method '_determine_error' returns 'str', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L357`
   - Method '_format_test_files' returns 'str', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L344`
+- 🔵 **default-result-return-types** at `L367`
   - Method '_format_components' returns 'str', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L355`
+- 🔵 **default-result-return-types** at `L378`
   - Method '_build_user_message' returns 'str', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L377`
+- 🔵 **default-result-return-types** at `L400`
   - Method '_build_iteration_message' returns 'str', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L409`
+- 🔵 **default-result-return-types** at `L432`
   - Method '_register_implementation_tools' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L419`
+- 🔵 **default-result-return-types** at `L442`
   - Method 'read_file_handler' returns 'str', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L431`
+- 🔵 **default-result-return-types** at `L454`
   - Method 'write_file_handler' returns 'str', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L444`
+- 🔵 **default-result-return-types** at `L467`
   - Method 'edit_file_handler' returns 'str', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L465`
+- 🔵 **default-result-return-types** at `L488`
   - Method 'run_tests_handler' returns 'str', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L484`
+- 🔵 **default-result-return-types** at `L507`
   - Method 'complete_handler' returns 'str', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L535`
+- 🔵 **default-result-return-types** at `L558`
   - Method '_parse_pytest_output' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L562`
+- 🔵 **default-result-return-types** at `L585`
   - Method '_check_completion' returns 'bool', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L572`
+- 🔵 **default-result-return-types** at `L595`
   - Method '_extract_completion_data' returns 'dict[str, Any]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L580`
+- 🔵 **default-result-return-types** at `L603`
   - Method '_extract_written_files' returns 'list[str]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L593`
+- 🔵 **default-result-return-types** at `L616`
   - Method 'validate_output' returns 'OutputValidation', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L617`
+- 🔵 **default-result-return-types** at `L640`
   - Method 'create_green_executor' returns 'GreenPhaseExecutor', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -10886,16 +10958,13 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 
-**`src/agentforge/core/spec/placement.py`** (16 violations)
+**`src/agentforge/core/spec/placement.py`** (21 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L242`
-  - Function 'analyze' has complexity 13 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-function-length** at `L242`
-  - Function 'analyze' has 94 lines (max: 50)
-  - 💡 *Extract logic into helper functions or use composition*
+- 🟡 **no-god-classes** at `L111`
+  - Class 'SpecPlacementAnalyzer' has 16 methods (max: 15)
+  - 💡 *Split large classes using composition or inheritance*
 - 🔵 **single-responsibility-modules** at `L111`
-  - Class 'SpecPlacementAnalyzer' has 10 methods (max: 3)
+  - Class 'SpecPlacementAnalyzer' has 16 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -10923,9 +10992,21 @@ Or regenerate file through TDFLOW to get proper lineage.*
   - Method '_extract_module_from_location' returns 'tuple[str, str]', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **default-result-return-types** at `L242`
   - Method 'analyze' returns 'PlacementDecision', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L359`
+- 🔵 **default-result-return-types** at `L280`
+  - Method '_decide_explicit_spec' returns 'PlacementDecision', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L296`
+  - Method '_decide_create_new' returns 'PlacementDecision', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L310`
+  - Method '_compute_coverage' returns 'dict[str, int]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L318`
+  - Method '_decide_from_coverage' returns 'PlacementDecision', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L341`
+  - Method '_extend_spec' returns 'PlacementDecision', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L351`
+  - Method '_escalate_tied_specs' returns 'PlacementDecision', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L370`
   - Method 'suggest_component_id' returns 'str', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L382`
+- 🔵 **default-result-return-types** at `L393`
   - Method 'validate_unique_component_id' returns 'bool', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -10976,16 +11057,13 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 
-**`src/agentforge/core/tdflow/orchestrator.py`** (14 violations)
+**`src/agentforge/core/tdflow/orchestrator.py`** (17 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L257`
-  - Function 'verify' has complexity 14 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-function-length** at `L257`
-  - Function 'verify' has 69 lines (max: 50)
-  - 💡 *Extract logic into helper functions or use composition*
+- 🟡 **no-god-classes** at `L38`
+  - Class 'TDFlowOrchestrator' has 17 methods (max: 15)
+  - 💡 *Split large classes using composition or inheritance*
 - 🔵 **single-responsibility-modules** at `L38`
-  - Class 'TDFlowOrchestrator' has 13 methods (max: 3)
+  - Class 'TDFlowOrchestrator' has 17 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -11007,11 +11085,19 @@ Or regenerate file through TDFLOW to get proper lineage.*
   - Method 'start' returns 'TDFlowSession', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **default-result-return-types** at `L257`
   - Method 'verify' returns 'VerificationReport', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L344`
+- 🔵 **default-result-return-types** at `L276`
+  - Method '_empty_report' returns 'VerificationReport', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L287`
+  - Method '_verify_single_component' returns 'VerificationReport', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L310`
+  - Method '_verify_all_components' returns 'VerificationReport', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L331`
+  - Method '_aggregate_reports' returns 'VerificationReport', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L346`
   - Method 'resume' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L359`
+- 🔵 **default-result-return-types** at `L361`
   - Method 'get_status' returns 'dict', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L388`
+- 🔵 **default-result-return-types** at `L390`
   - Method '_get_component' returns 'ComponentProgress | None', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -11825,15 +11911,15 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-cyclomatic-complexity** at `L27`
   - Function 'test_cli_has_all_pipeline_commands' has complexity 12 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
-- 🔵 **max-imports** at `L1`
-  - File has 36 imports (max: 30)
-  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **single-responsibility-modules** at `L24`
   - Class 'TestCLICommandIntegration' has 7 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
 - 🔵 **single-responsibility-modules** at `L448`
   - Class 'TestCLIErrorHandling' has 4 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
+- 🔵 **max-imports** at `L1`
+  - File has 36 imports (max: 30)
+  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **max-imports** at `L1`
   - File has 36 imports (max: 30)
   - 💡 *Consider splitting module or consolidating imports*
@@ -11911,9 +11997,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`tests/integration/harness/test_harness_workflow.py`** (27 violations)
 
-- 🔵 **max-imports** at `L1`
-  - File has 34 imports (max: 30)
-  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **single-responsibility-modules** at `L55`
   - Class 'TestSessionLifecycle' has 4 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -11929,6 +12012,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **single-responsibility-modules** at `L419`
   - Class 'TestExecutionContextPersistence' has 4 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
+- 🔵 **max-imports** at `L1`
+  - File has 34 imports (max: 30)
+  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **max-imports** at `L1`
   - File has 34 imports (max: 30)
   - 💡 *Consider splitting module or consolidating imports*
@@ -13573,9 +13659,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-cyclomatic-complexity** at `L1760`
   - Function 'test_migrate_v1_to_v2' has complexity 11 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
-- 🔵 **max-imports** at `L1`
-  - File has 99 imports (max: 30)
-  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **single-responsibility-modules** at `L49`
   - Class 'TestFact' has 4 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -13612,6 +13695,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **single-responsibility-modules** at `L1891`
   - Class 'TestFactCompaction' has 4 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
+- 🔵 **max-imports** at `L1`
+  - File has 99 imports (max: 30)
+  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **max-imports** at `L1`
   - File has 99 imports (max: 30)
   - 💡 *Consider splitting module or consolidating imports*
@@ -15079,9 +15165,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`tests/unit/pipeline/stages/test_deliver.py`** (13 violations)
 
-- 🔵 **max-imports** at `L1`
-  - File has 71 imports (max: 30)
-  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **single-responsibility-modules** at `L14`
   - Class 'TestDeliveryMode' has 4 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -15103,6 +15186,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **single-responsibility-modules** at `L601`
   - Class 'TestDeliverPhaseSummaryGeneration' has 4 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
+- 🔵 **max-imports** at `L1`
+  - File has 71 imports (max: 30)
+  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **max-imports** at `L1`
   - File has 71 imports (max: 30)
   - 💡 *Consider splitting module or consolidating imports*
@@ -15221,15 +15307,15 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`tests/unit/pipeline/stages/test_refactor.py`** (8 violations)
 
-- 🔵 **max-imports** at `L1`
-  - File has 40 imports (max: 30)
-  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **single-responsibility-modules** at `L13`
   - Class 'TestRefactorPhaseExecutor' has 6 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
 - 🔵 **single-responsibility-modules** at `L127`
   - Class 'TestRefactorPhaseExecution' has 4 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
+- 🔵 **max-imports** at `L1`
+  - File has 40 imports (max: 30)
+  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **max-imports** at `L1`
   - File has 40 imports (max: 30)
   - 💡 *Consider splitting module or consolidating imports*
@@ -15327,9 +15413,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`tests/unit/pipeline/test_config.py`** (10 violations)
 
-- 🔵 **max-imports** at `L1`
-  - File has 37 imports (max: 30)
-  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **single-responsibility-modules** at `L125`
   - Class 'TestConfigurationLoader' has 12 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -15342,6 +15425,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **single-responsibility-modules** at `L438`
   - Class 'TestPipelineTemplateLoader' has 5 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
+- 🔵 **max-imports** at `L1`
+  - File has 37 imports (max: 30)
+  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **max-imports** at `L1`
   - File has 37 imports (max: 30)
   - 💡 *Consider splitting module or consolidating imports*
@@ -15370,15 +15456,15 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`tests/unit/pipeline/test_config_validator.py`** (8 violations)
 
-- 🔵 **max-imports** at `L1`
-  - File has 35 imports (max: 30)
-  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **single-responsibility-modules** at `L36`
   - Class 'TestConfigValidator' has 13 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
 - 🔵 **single-responsibility-modules** at `L263`
   - Class 'TestConfigValidatorIntegration' has 4 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
+- 🔵 **max-imports** at `L1`
+  - File has 35 imports (max: 30)
+  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **max-imports** at `L1`
   - File has 35 imports (max: 30)
   - 💡 *Consider splitting module or consolidating imports*
@@ -16790,6 +16876,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **unit-tests-isolated** at `L504`
   - Forbidden pattern found: 'sqlite3'
   - 💡 *Mock database connections in unit tests*
+- 🔵 **no-hardcoded-test-data-paths** at `L897`
+  - Forbidden pattern found: 'open("'
+  - 💡 *Use tmp_path fixture or Path(__file__).parent for test data*
 - 🔵 **fixtures-in-conftest** at `L37`
   - Forbidden pattern found: '@pytest.fixture'
   - 💡 *Move shared fixtures to conftest.py*
@@ -16802,9 +16891,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **fixtures-in-conftest** at `L298`
   - Forbidden pattern found: '@pytest.fixture'
   - 💡 *Move shared fixtures to conftest.py*
-- 🔵 **no-hardcoded-test-data-paths** at `L897`
-  - Forbidden pattern found: 'open("'
-  - 💡 *Use tmp_path fixture or Path(__file__).parent for test data*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
   - 💡 *Add lineage header to file:
@@ -17084,5 +17170,5 @@ Or regenerate file through TDFLOW to get proper lineage.*
 </details>
 
 ---
-*Generated at 2026-01-03 21:20:58 UTC*
-*Commit: `348d685b`*
+*Generated at 2026-01-03 22:27:20 UTC*
+*Commit: `03835904`*

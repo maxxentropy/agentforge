@@ -7,15 +7,15 @@
 | Mode | full |
 | Files Checked | 0 |
 | Checks Run | 158 |
-| Total Violations | 4665 |
+| Total Violations | 4670 |
 | Errors | 0 |
-| Warnings | 453 |
-| Duration | 15.36s |
+| Warnings | 451 |
+| Duration | 15.16s |
 
 ### All Violations
 
 <details>
-<summary>View all 4665 violations in 414 files</summary>
+<summary>View all 4670 violations in 414 files</summary>
 
 **`<unknown>`** (4 violations)
 
@@ -9806,28 +9806,31 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 
-**`src/agentforge/core/pipeline/controller.py`** (22 violations)
+**`src/agentforge/core/pipeline/controller.py`** (25 violations)
 
 - 🟡 **max-cyclomatic-complexity** at `L569`
   - Function '_run' has complexity 13 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L630`
-  - Function '_execute_stage' has complexity 25 (max: 10)
+- 🟡 **max-cyclomatic-complexity** at `L681`
+  - Function '_execute_stage' has complexity 12 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-function-length** at `L630`
-  - Function '_execute_stage' has 99 lines (max: 50)
+- 🟡 **max-function-length** at `L681`
+  - Function '_execute_stage' has 59 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
 - 🟡 **max-parameter-count** at `L139`
   - Function '__init__' has 6 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
+- 🟡 **max-class-size** at `L132`
+  - Class 'PipelineController' has 21 methods (max: 20)
+  - 💡 *Consider splitting into multiple classes with single responsibilities*
 - 🟡 **max-file-lines** at `file`
-  - File exceeds line limit (788 lines > 500)
+  - File exceeds line limit (789 lines > 500)
   - 💡 *Consider splitting into smaller files*
 - 🟡 **no-god-classes** at `L132`
-  - Class 'PipelineController' has 18 methods (max: 15)
+  - Class 'PipelineController' has 21 methods (max: 15)
   - 💡 *Split large classes using composition or inheritance*
 - 🔵 **single-responsibility-modules** at `L132`
-  - Class 'PipelineController' has 18 methods (max: 3)
+  - Class 'PipelineController' has 21 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -9859,9 +9862,13 @@ Or regenerate file through TDFLOW to get proper lineage.*
   - Method '_get_contract_enforcer' returns 'ContractEnforcer | None', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **default-result-return-types** at `L569`
   - Method '_run' returns 'PipelineState', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L753`
+- 🔵 **default-result-return-types** at `L630`
+  - Method '_validate_input_with_contracts' returns 'None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L645`
+  - Method '_validate_output_with_contracts' returns 'None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L754`
   - Method '_get_next_stage' returns 'str | None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L765`
+- 🔵 **default-result-return-types** at `L766`
   - Method '_handle_escalation' returns 'None', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -9872,17 +9879,8 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 
-**`src/agentforge/core/pipeline/discovery_integration.py`** (17 violations)
+**`src/agentforge/core/pipeline/discovery_integration.py`** (19 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L112`
-  - Function 'extract_context_from_profile' has complexity 19 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L352`
-  - Function 'resolve_test_path' has complexity 17 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-nesting-depth** at `L352`
-  - Function 'resolve_test_path' has nesting depth 5 (max: 4)
-  - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🔵 **single-responsibility-modules** at `L37`
   - Class 'DiscoveredContext' has 4 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -9903,18 +9901,28 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **default-result-return-types** at `L93`
   - Method 'to_dict' returns 'dict[str, Any]', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **default-result-return-types** at `L112`
+  - Method '_extract_languages' returns 'None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L124`
+  - Method '_extract_structure' returns 'None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L137`
+  - Method '_extract_test_info' returns 'None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L150`
+  - Method '_extract_dependencies' returns 'None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L159`
   - Method 'extract_context_from_profile' returns 'DiscoveredContext', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L173`
+- 🔵 **default-result-return-types** at `L179`
   - Method 'get_contracts_for_language' returns 'list[str]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L217`
+- 🔵 **default-result-return-types** at `L223`
   - Method 'create_pipeline_context_from_discovery' returns 'dict[str, Any]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L257`
+- 🔵 **default-result-return-types** at `L263`
   - Method 'validate_stage_output_for_language' returns 'list[str]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L288`
+- 🔵 **default-result-return-types** at `L294`
   - Method '_validate_red_output_for_language' returns 'list[str]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L318`
+- 🔵 **default-result-return-types** at `L324`
   - Method '_validate_green_output_for_language' returns 'list[str]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L352`
+- 🔵 **default-result-return-types** at `L368`
+  - Method '_find_test_in_dirs' returns 'str | None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L377`
   - Method 'resolve_test_path' returns 'str | None', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -16702,6 +16710,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **single-responsibility-modules** at `L769`
   - Class 'TestEdgeCases' has 5 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
+- 🟡 **no-real-network-calls** at `L475`
+  - Forbidden pattern found: 'requests.get('
+  - 💡 *Use responses, httpretty, or pytest-mock to mock network calls*
+- 🟡 **no-real-network-calls** at `L896`
+  - Forbidden pattern found: 'requests.get('
+  - 💡 *Use responses, httpretty, or pytest-mock to mock network calls*
 - 🟡 **unit-tests-isolated** at `L487`
   - Forbidden pattern found: 'sqlite3'
   - 💡 *Mock database connections in unit tests*
@@ -16711,12 +16725,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **unit-tests-isolated** at `L504`
   - Forbidden pattern found: 'sqlite3'
   - 💡 *Mock database connections in unit tests*
-- 🟡 **no-real-network-calls** at `L475`
-  - Forbidden pattern found: 'requests.get('
-  - 💡 *Use responses, httpretty, or pytest-mock to mock network calls*
-- 🟡 **no-real-network-calls** at `L896`
-  - Forbidden pattern found: 'requests.get('
-  - 💡 *Use responses, httpretty, or pytest-mock to mock network calls*
 - 🔵 **no-hardcoded-test-data-paths** at `L897`
   - Forbidden pattern found: 'open("'
   - 💡 *Use tmp_path fixture or Path(__file__).parent for test data*
@@ -17011,5 +17019,5 @@ Or regenerate file through TDFLOW to get proper lineage.*
 </details>
 
 ---
-*Generated at 2026-01-03 18:09:08 UTC*
-*Commit: `6538bba6`*
+*Generated at 2026-01-03 18:13:56 UTC*
+*Commit: `6e84a1eb`*

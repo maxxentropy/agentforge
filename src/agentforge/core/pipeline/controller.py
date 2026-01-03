@@ -627,6 +627,57 @@ class PipelineController:
         )
         return state
 
+    def _validate_input_with_contracts(
+        self, stage_name: str, errors: list[str], enforcer: ContractEnforcer | None,
+        input_artifacts: dict[str, Any], enforce_contracts: bool
+    ) -> None:
+        """Add contract validation errors to the error list."""
+        if not enforcer or not enforce_contracts:
+            return
+        contract_result = enforcer.validate_stage_input(stage_name, input_artifacts)
+        if not contract_result.valid:
+            for violation in contract_result.violations:
+                if violation.severity == ViolationSeverity.ERROR:
+                    errors.append(f"[{violation.rule_id}] {violation.message}")
+                else:
+                    logger.warning(f"Contract warning for {stage_name}: {violation.message}")
+
+    def _validate_output_with_contracts(
+        self, stage_name: str, enforcer: ContractEnforcer | None,
+        artifacts: dict[str, Any], enforce_contracts: bool
+    ) -> None:
+        """Log contract validation issues for output artifacts."""
+        if not enforcer or not enforce_contracts:
+            return
+        contract_result = enforcer.validate_stage_output(stage_name, artifacts)
+        if not contract_result.valid:
+            for violation in contract_result.violations:
+                if violation.severity == ViolationSeverity.ERROR:
+                    logger.error(f"Contract violation in {stage_name}: {violation.message}")
+                else:
+                    logger.warning(f"Contract warning for {stage_name}: {violation.message}")
+
+    def _check_contract_escalation_triggers(
+        self, stage_name: str, enforcer: ContractEnforcer | None,
+        artifacts: dict[str, Any], config: dict[str, Any]
+    ) -> StageResult | None:
+        """Check contract escalation triggers and return escalation result if triggered."""
+        if not enforcer:
+            return None
+        escalation_context = {"artifacts": artifacts, "stage_name": stage_name, **config}
+        for check in enforcer.check_escalation_triggers(stage_name, escalation_context):
+            if check.triggered and check.trigger and check.trigger.severity == "blocking":
+                logger.info(f"Contract escalation trigger fired: {check.trigger.trigger_id}")
+                return StageResult(
+                    status=StageStatus.PENDING, artifacts=artifacts,
+                    escalation={
+                        "type": "contract_escalation",
+                        "message": check.trigger.prompt or check.trigger.condition,
+                        "context": {"trigger_id": check.trigger.trigger_id, "rationale": check.trigger.rationale},
+                    },
+                )
+        return None
+
     def _execute_stage(self, state: PipelineState, stage_name: str) -> StageResult:
         """Execute a single stage."""
         logger.info(f"Executing stage '{stage_name}' for pipeline {state.pipeline_id}")
@@ -642,28 +693,16 @@ class PipelineController:
             return StageResult.failed(str(e))
 
         input_artifacts = state.collect_artifacts()
-
-        # Run executor's custom validation first
         errors = executor.validate_input(input_artifacts)
 
-        # Schema-based input validation (if enabled in config)
         if state.config.get("strict_schema_validation", False):
             errors.extend(self.validator.validate_stage_input(stage_name, input_artifacts))
 
-        # Contract-based input validation
         enforcer = self._get_contract_enforcer(state)
-        if enforcer and state.config.get("enforce_contracts", True):
-            contract_result = enforcer.validate_stage_input(stage_name, input_artifacts)
-            if not contract_result.valid:
-                for violation in contract_result.violations:
-                    if violation.severity == ViolationSeverity.ERROR:
-                        errors.append(
-                            f"[{violation.rule_id}] {violation.message}"
-                        )
-                    else:
-                        logger.warning(
-                            f"Contract warning for {stage_name}: {violation.message}"
-                        )
+        enforce_contracts = state.config.get("enforce_contracts", True)
+        self._validate_input_with_contracts(
+            stage_name, errors, enforcer, input_artifacts, enforce_contracts
+        )
 
         if errors:
             logger.error(f"Input validation failed for stage {stage_name}: {errors}")
@@ -687,10 +726,7 @@ class PipelineController:
 
         # Validate output artifacts against schema (if enabled)
         if result.is_success() and state.config.get("strict_schema_validation", False):
-            output_errors = self.validator.validate_stage_output(
-                stage_name, result.artifacts
-            )
-            # Add language-specific validation if available
+            output_errors = self.validator.validate_stage_output(stage_name, result.artifacts)
             language = state.config.get("primary_language")
             if language:
                 output_errors.extend(
@@ -699,53 +735,18 @@ class PipelineController:
                     )
                 )
             if output_errors:
-                logger.warning(
-                    f"Output validation warnings for stage {stage_name}: "
-                    f"{output_errors}"
-                )
-                # Note: We log warnings but don't fail - output validation is advisory
+                logger.warning(f"Output validation warnings for stage {stage_name}: {output_errors}")
 
-        # Contract-based output validation
-        if result.is_success() and enforcer and state.config.get("enforce_contracts", True):
-            contract_result = enforcer.validate_stage_output(stage_name, result.artifacts)
-            if not contract_result.valid:
-                for violation in contract_result.violations:
-                    if violation.severity == ViolationSeverity.ERROR:
-                        logger.error(
-                            f"Contract violation in {stage_name}: {violation.message}"
-                        )
-                        # For now, log errors but don't fail - can be made stricter
-                    else:
-                        logger.warning(
-                            f"Contract warning for {stage_name}: {violation.message}"
-                        )
-
-            # Check escalation triggers from contracts
-            escalation_context = {
-                "artifacts": result.artifacts,
-                "stage_name": stage_name,
-                **state.config,
-            }
-            triggers = enforcer.check_escalation_triggers(stage_name, escalation_context)
-            for check in triggers:
-                if check.triggered and check.trigger:
-                    logger.info(
-                        f"Contract escalation trigger fired: {check.trigger.trigger_id}"
-                    )
-                    if check.trigger.severity == "blocking":
-                        # Create escalation from contract trigger
-                        return StageResult(
-                            status=StageStatus.PENDING,
-                            artifacts=result.artifacts,
-                            escalation={
-                                "type": "contract_escalation",
-                                "message": check.trigger.prompt or check.trigger.condition,
-                                "context": {
-                                    "trigger_id": check.trigger.trigger_id,
-                                    "rationale": check.trigger.rationale,
-                                },
-                            },
-                        )
+        # Contract-based output validation and escalation checks
+        if result.is_success() and enforce_contracts:
+            self._validate_output_with_contracts(
+                stage_name, enforcer, result.artifacts, enforce_contracts
+            )
+            escalation_result = self._check_contract_escalation_triggers(
+                stage_name, enforcer, result.artifacts, state.config
+            )
+            if escalation_result:
+                return escalation_result
 
         logger.info(f"Stage '{stage_name}' completed with status: {result.status.value}")
         return result

@@ -109,6 +109,53 @@ class DiscoveredContext:
         }
 
 
+def _extract_languages(profile: "CodebaseProfile", context: DiscoveredContext) -> None:
+    """Extract language and framework information from profile."""
+    if not profile.languages:
+        return
+    for lang_info in profile.languages:
+        context.languages.append(lang_info.name.lower())
+        if lang_info.primary:
+            context.primary_language = lang_info.name.lower()
+        if lang_info.frameworks:
+            context.frameworks.extend(lang_info.frameworks)
+
+
+def _extract_structure(profile: "CodebaseProfile", context: DiscoveredContext) -> None:
+    """Extract source directory structure from profile."""
+    if profile.structure:
+        context.source_directories = profile.structure.get("source_dirs", [])
+        context.test_directories = profile.structure.get("test_dirs", [])
+        context.entry_points = profile.structure.get("entry_points", [])
+    if profile.patterns:
+        context.detected_patterns = profile.patterns
+    if hasattr(profile, "conventions") and profile.conventions:
+        for conv in profile.conventions:
+            context.naming_conventions[conv.name] = conv.pattern
+
+
+def _extract_test_info(profile: "CodebaseProfile", context: DiscoveredContext) -> None:
+    """Extract test framework and coverage information from profile."""
+    if not profile.test_analysis:
+        return
+    inventory = profile.test_analysis.inventory
+    if inventory and inventory.frameworks:
+        context.test_framework = inventory.frameworks[0]
+    context.estimated_coverage = profile.test_analysis.estimated_coverage or 0.0
+    if profile.test_analysis.linkages:
+        for linkage in profile.test_analysis.linkages:
+            context.source_to_test_mapping[linkage.source_path] = linkage.test_paths
+
+
+def _extract_dependencies(profile: "CodebaseProfile", context: DiscoveredContext) -> None:
+    """Extract dependency information from profile."""
+    if not profile.dependencies:
+        return
+    for dep in profile.dependencies:
+        target = context.dev_dependencies if dep.is_dev else context.dependencies
+        target.append(dep.name)
+
+
 def extract_context_from_profile(profile: "CodebaseProfile") -> DiscoveredContext:
     """
     Extract pipeline-relevant context from a CodebaseProfile.
@@ -122,51 +169,10 @@ def extract_context_from_profile(profile: "CodebaseProfile") -> DiscoveredContex
         DiscoveredContext with pipeline-relevant information
     """
     context = DiscoveredContext()
-
-    # Extract language information
-    if profile.languages:
-        for lang_info in profile.languages:
-            context.languages.append(lang_info.name.lower())
-            if lang_info.primary:
-                context.primary_language = lang_info.name.lower()
-            if lang_info.frameworks:
-                context.frameworks.extend(lang_info.frameworks)
-
-    # Extract structure information
-    if profile.structure:
-        context.source_directories = profile.structure.get("source_dirs", [])
-        context.test_directories = profile.structure.get("test_dirs", [])
-        context.entry_points = profile.structure.get("entry_points", [])
-
-    # Extract pattern information
-    if profile.patterns:
-        context.detected_patterns = profile.patterns
-
-    # Extract naming conventions
-    if hasattr(profile, "conventions") and profile.conventions:
-        for conv in profile.conventions:
-            context.naming_conventions[conv.name] = conv.pattern
-
-    # Extract test coverage information
-    if profile.test_analysis:
-        if profile.test_analysis.inventory:
-            if profile.test_analysis.inventory.frameworks:
-                context.test_framework = profile.test_analysis.inventory.frameworks[0]
-        context.estimated_coverage = profile.test_analysis.estimated_coverage or 0.0
-
-        # Build source-to-test mapping
-        if profile.test_analysis.linkages:
-            for linkage in profile.test_analysis.linkages:
-                context.source_to_test_mapping[linkage.source_path] = linkage.test_paths
-
-    # Extract dependency information
-    if profile.dependencies:
-        for dep in profile.dependencies:
-            if dep.is_dev:
-                context.dev_dependencies.append(dep.name)
-            else:
-                context.dependencies.append(dep.name)
-
+    _extract_languages(profile, context)
+    _extract_structure(profile, context)
+    _extract_test_info(profile, context)
+    _extract_dependencies(profile, context)
     return context
 
 
@@ -349,6 +355,25 @@ def _validate_green_output_for_language(
 # Test Path Resolution
 # =============================================================================
 
+# Language-specific test path conventions
+_TEST_CONVENTIONS: dict[str, tuple[str, list[str]]] = {
+    # language: (test_name_pattern, default_test_dirs)
+    "python": ("test_{stem}.py", ["tests"]),
+    "csharp": ("{stem}Tests.cs", ["Tests", "tests"]),
+    "typescript": ("{stem}.spec.ts", ["tests", "__tests__"]),
+    "javascript": ("{stem}.spec.js", ["tests", "__tests__"]),
+}
+
+
+def _find_test_in_dirs(test_name: str, test_dirs: list[str]) -> str | None:
+    """Search for test file in given directories."""
+    for test_dir in test_dirs:
+        test_path = Path(test_dir) / test_name
+        if test_path.exists():
+            return str(test_path)
+    return None
+
+
 def resolve_test_path(
     source_path: str,
     context: DiscoveredContext,
@@ -374,38 +399,12 @@ def resolve_test_path(
 
     # Fall back to conventions
     language = language or context.get_language_for_file(source_path)
-    if not language:
+    if not language or language not in _TEST_CONVENTIONS:
         return None
 
-    # Convention-based resolution
     source = Path(source_path)
+    pattern, default_dirs = _TEST_CONVENTIONS[language]
+    test_name = pattern.format(stem=source.stem)
+    test_dirs = context.test_directories or default_dirs
 
-    if language == "python":
-        # src/module.py → tests/test_module.py
-        test_name = f"test_{source.stem}.py"
-        test_dirs = context.test_directories or ["tests"]
-        for test_dir in test_dirs:
-            test_path = Path(test_dir) / test_name
-            if test_path.exists():
-                return str(test_path)
-
-    elif language == "csharp":
-        # Src/Module.cs → Tests/ModuleTests.cs
-        test_name = f"{source.stem}Tests.cs"
-        test_dirs = context.test_directories or ["Tests", "tests"]
-        for test_dir in test_dirs:
-            test_path = Path(test_dir) / test_name
-            if test_path.exists():
-                return str(test_path)
-
-    elif language in ("typescript", "javascript"):
-        # src/module.ts → tests/module.spec.ts
-        ext = ".ts" if language == "typescript" else ".js"
-        test_name = f"{source.stem}.spec{ext}"
-        test_dirs = context.test_directories or ["tests", "__tests__"]
-        for test_dir in test_dirs:
-            test_path = Path(test_dir) / test_name
-            if test_path.exists():
-                return str(test_path)
-
-    return None
+    return _find_test_in_dirs(test_name, test_dirs)

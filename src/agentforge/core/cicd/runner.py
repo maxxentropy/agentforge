@@ -379,6 +379,50 @@ class CIRunner:
         """Compare violations against baseline."""
         return self.baseline_manager.compare(violations)
 
+    def _check_error_threshold(self, violations: list[CIViolation]) -> ExitCode | None:
+        """Check if error count exceeds absolute threshold."""
+        if not self.config.total_errors_threshold:
+            return None
+        error_count = sum(1 for v in violations if v.severity == "error")
+        if error_count > self.config.total_errors_threshold:
+            return ExitCode.VIOLATIONS_FOUND
+        return None
+
+    def _check_ratchet_mode(self, comparison: BaselineComparison | None) -> ExitCode | None:
+        """Check ratchet mode - only fail if violations increased."""
+        if not (self.config.ratchet_enabled and comparison):
+            return None
+        if comparison.should_fail_ratchet():
+            return ExitCode.VIOLATIONS_FOUND
+        return ExitCode.SUCCESS
+
+    def _check_comparison_mode(self, comparison: BaselineComparison | None) -> ExitCode | None:
+        """Check PR mode with baseline comparison."""
+        if not comparison:
+            return None
+        if comparison.should_fail(self.config.fail_on_new_errors, self.config.fail_on_new_warnings):
+            return ExitCode.VIOLATIONS_FOUND
+        return ExitCode.SUCCESS
+
+    def _check_violations_by_severity(self, violations: list[CIViolation]) -> ExitCode | None:
+        """Check violations based on severity configuration for non-PR mode."""
+        # Check errors
+        if self.config.fail_on_new_errors:
+            if any(v.severity == "error" for v in violations):
+                return ExitCode.VIOLATIONS_FOUND
+
+        # Check warnings
+        if self.config.fail_on_new_warnings or self.config.min_severity in ("warning", "info"):
+            if any(v.severity == "warning" for v in violations):
+                return ExitCode.VIOLATIONS_FOUND
+
+        # Check info
+        if self.config.min_severity == "info":
+            if any(v.severity == "info" for v in violations):
+                return ExitCode.VIOLATIONS_FOUND
+
+        return None
+
     def _determine_exit_code(
         self,
         violations: list[CIViolation],
@@ -386,41 +430,24 @@ class CIRunner:
     ) -> ExitCode:
         """Determine exit code based on violations and config."""
         # Check absolute threshold
-        if self.config.total_errors_threshold:
-            error_count = sum(1 for v in violations if v.severity == "error")
-            if error_count > self.config.total_errors_threshold:
-                return ExitCode.VIOLATIONS_FOUND
+        result = self._check_error_threshold(violations)
+        if result is not None:
+            return result
 
-        # Ratchet mode: only fail if violations INCREASED from baseline
-        if self.config.ratchet_enabled and comparison:
-            if comparison.should_fail_ratchet():
-                return ExitCode.VIOLATIONS_FOUND
-            return ExitCode.SUCCESS
+        # Ratchet mode
+        result = self._check_ratchet_mode(comparison)
+        if result is not None:
+            return result
 
-        # For PR mode, use baseline comparison
-        if comparison:
-            if comparison.should_fail(
-                self.config.fail_on_new_errors,
-                self.config.fail_on_new_warnings
-            ):
-                return ExitCode.VIOLATIONS_FOUND
-            return ExitCode.SUCCESS
+        # PR mode comparison
+        result = self._check_comparison_mode(comparison)
+        if result is not None:
+            return result
 
-        # For non-PR mode, check violations based on configuration
-        # Check errors first (always checked if fail_on_new_errors is True)
-        if self.config.fail_on_new_errors:
-            if any(v.severity == "error" for v in violations):
-                return ExitCode.VIOLATIONS_FOUND
-
-        # Check warnings (if fail_on_new_warnings is True OR min_severity is warning or lower)
-        if self.config.fail_on_new_warnings or self.config.min_severity in ("warning", "info"):
-            if any(v.severity == "warning" for v in violations):
-                return ExitCode.VIOLATIONS_FOUND
-
-        # Check info (only if min_severity is info)
-        if self.config.min_severity == "info":
-            if any(v.severity == "info" for v in violations):
-                return ExitCode.VIOLATIONS_FOUND
+        # Non-PR mode severity checks
+        result = self._check_violations_by_severity(violations)
+        if result is not None:
+            return result
 
         return ExitCode.SUCCESS
 

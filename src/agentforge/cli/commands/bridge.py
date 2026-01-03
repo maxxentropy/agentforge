@@ -14,24 +14,14 @@ import click
 from agentforge.core.bridge import BridgeOrchestrator
 
 
-def run_bridge_generate(
-    root_path: Path,
-    profile_path: Path | None = None,
-    output_dir: str = "contracts",
-    zone_filter: str | None = None,
-    confidence_threshold: float = 0.6,
-    dry_run: bool = False,
-    force: bool = False,
-    verbose: bool = False,
+def _output_bridge_header(
+    root_path: Path, zone_filter: str | None, confidence_threshold: float, dry_run: bool
 ):
-    """
-    Generate contracts from codebase profile.
-    """
+    """Output bridge command header."""
     click.echo()
     click.echo("=" * 60)
     click.echo("PROFILE-TO-CONFORMANCE BRIDGE")
     click.echo("=" * 60)
-
     click.echo(f"\nRoot path: {root_path}")
     if zone_filter:
         click.echo(f"Zone filter: {zone_filter}")
@@ -39,6 +29,13 @@ def run_bridge_generate(
     if dry_run:
         click.echo(click.style("DRY RUN - no files will be written", fg="yellow"))
 
+
+def _create_and_run_orchestrator(
+    root_path: Path, profile_path: Path | None, output_dir: str,
+    confidence_threshold: float, verbose: bool,
+    zone_filter: str | None, dry_run: bool, force: bool
+):
+    """Create orchestrator and run generation. Returns (orchestrator, contracts, report) or exits."""
     try:
         orchestrator = BridgeOrchestrator(
             root_path=root_path,
@@ -47,12 +44,12 @@ def run_bridge_generate(
             confidence_threshold=confidence_threshold,
             verbose=verbose,
         )
-
         contracts, report = orchestrator.generate(
             zone_filter=zone_filter,
             dry_run=dry_run,
             force=force,
         )
+        return orchestrator, contracts, report
     except FileNotFoundError as e:
         click.echo(f"\nError: {e}")
         click.echo("Run 'agentforge discover' first to generate a codebase profile.")
@@ -64,10 +61,42 @@ def run_bridge_generate(
             traceback.print_exc()
         sys.exit(1)
 
-    # Output results
+
+def _output_final_status(contracts, report, dry_run: bool):
+    """Output final generation status."""
+    click.echo()
+    if contracts:
+        action = "Would generate" if dry_run else "Generated"
+        click.echo(click.style(f"✓ {action} {len(contracts)} contract(s)", fg='green'))
+    else:
+        click.echo(click.style("⚠ No contracts generated (no patterns matched)", fg='yellow'))
+
+    if report.checks_disabled > 0:
+        click.echo(click.style(f"  {report.checks_disabled} check(s) disabled - review required", fg='yellow'))
+    if report.conflicts_detected > 0:
+        click.echo(f"  {report.conflicts_detected} conflict(s) detected and resolved")
+
+
+def run_bridge_generate(
+    root_path: Path,
+    profile_path: Path | None = None,
+    output_dir: str = "contracts",
+    zone_filter: str | None = None,
+    confidence_threshold: float = 0.6,
+    dry_run: bool = False,
+    force: bool = False,
+    verbose: bool = False,
+):
+    """Generate contracts from codebase profile."""
+    _output_bridge_header(root_path, zone_filter, confidence_threshold, dry_run)
+
+    orchestrator, contracts, report = _create_and_run_orchestrator(
+        root_path, profile_path, output_dir, confidence_threshold, verbose,
+        zone_filter, dry_run, force
+    )
+
     _output_generate_results(contracts, report, dry_run, verbose)
 
-    # Write report if not dry run
     if not dry_run and contracts:
         try:
             report_path = orchestrator.write_report(report)
@@ -75,21 +104,7 @@ def run_bridge_generate(
         except Exception as e:
             click.echo(f"\nWarning: Could not write report: {e}")
 
-    # Final status
-    click.echo()
-    if contracts:
-        if dry_run:
-            click.echo(click.style(f"✓ Would generate {len(contracts)} contract(s)", fg='green'))
-        else:
-            click.echo(click.style(f"✓ Generated {len(contracts)} contract(s)", fg='green'))
-    else:
-        click.echo(click.style("⚠ No contracts generated (no patterns matched)", fg='yellow'))
-
-    if report.checks_disabled > 0:
-        click.echo(click.style(f"  {report.checks_disabled} check(s) disabled - review required", fg='yellow'))
-
-    if report.conflicts_detected > 0:
-        click.echo(f"  {report.conflicts_detected} conflict(s) detected and resolved")
+    _output_final_status(contracts, report, dry_run)
 
 
 def _output_generate_results(contracts, report, dry_run: bool, verbose: bool):
@@ -142,6 +157,33 @@ def run_bridge_preview(
     )
 
 
+def _load_mapping_registry():
+    """Load and return mapping info from registry, or exit on error."""
+    try:
+        from agentforge.core.bridge.mappings import (  # noqa: F401
+            architecture,
+            conventions,
+            cqrs,
+            repository,
+        )
+        from agentforge.core.bridge.mappings.registry import MappingRegistry
+        return MappingRegistry.get_mapping_info()
+    except ImportError as e:
+        click.echo(f"\nError: Could not import bridge module: {e}")
+        sys.exit(1)
+
+
+def _output_mappings_table(mapping_info):
+    """Output mappings in table format."""
+    click.echo()
+    click.echo(f"  {'Pattern Key':<20} {'Languages':<20} {'Min Conf.':<10} {'Version'}")
+    click.echo(f"  {'-'*20} {'-'*20} {'-'*10} {'-'*10}")
+    for m in mapping_info:
+        langs = ", ".join(m["languages"]) if m["languages"] else "all"
+        click.echo(f"  {m['pattern_key']:<20} {langs:<20} {m['min_confidence']:<10} {m['version']}")
+    click.echo(f"\n  Total: {len(mapping_info)} mapping(s)")
+
+
 def run_bridge_mappings(
     pattern_filter: str | None = None,
     output_format: str = "table",
@@ -152,20 +194,7 @@ def run_bridge_mappings(
     click.echo("PATTERN MAPPINGS")
     click.echo("=" * 60)
 
-    try:
-        # Import mapping modules to trigger registration via decorators
-        from agentforge.core.bridge.mappings import (  # noqa: F401
-            architecture,
-            conventions,
-            cqrs,
-            repository,
-        )
-        from agentforge.core.bridge.mappings.registry import MappingRegistry
-    except ImportError as e:
-        click.echo(f"\nError: Could not import bridge module: {e}")
-        sys.exit(1)
-
-    mapping_info = MappingRegistry.get_mapping_info()
+    mapping_info = _load_mapping_registry()
 
     if pattern_filter:
         mapping_info = [m for m in mapping_info if m["pattern_key"] == pattern_filter]
@@ -177,19 +206,10 @@ def run_bridge_mappings(
         return
 
     if output_format == "table":
-        click.echo()
-        click.echo(f"  {'Pattern Key':<20} {'Languages':<20} {'Min Conf.':<10} {'Version'}")
-        click.echo(f"  {'-'*20} {'-'*20} {'-'*10} {'-'*10}")
-        for m in mapping_info:
-            langs = ", ".join(m["languages"]) if m["languages"] else "all"
-            click.echo(f"  {m['pattern_key']:<20} {langs:<20} {m['min_confidence']:<10} {m['version']}")
-
-        click.echo(f"\n  Total: {len(mapping_info)} mapping(s)")
-
+        _output_mappings_table(mapping_info)
     elif output_format == "yaml":
         import yaml
         click.echo(yaml.dump(mapping_info, default_flow_style=False))
-
     elif output_format == "json":
         click.echo(json.dumps(mapping_info, indent=2))
 

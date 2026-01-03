@@ -141,41 +141,63 @@ class ThreadInfo:
             "status": self.status.value,
             "created_at": self.created_at,
         }
+        for partial in [
+            self._identity_fields(),
+            self._timing_fields(),
+            self._spawn_fields(),
+            self._parallel_fields(),
+            self._outcome_fields(),
+        ]:
+            data.update(partial)
+        return data
 
+    def _identity_fields(self) -> dict[str, Any]:
+        """Optional identity fields."""
+        fields: dict[str, Any] = {}
         if self.parent_thread_id:
-            data["parent_thread_id"] = self.parent_thread_id
+            fields["parent_thread_id"] = self.parent_thread_id
         if self.root_thread_id:
-            data["root_thread_id"] = self.root_thread_id
+            fields["root_thread_id"] = self.root_thread_id
         if self.name:
-            data["name"] = self.name
+            fields["name"] = self.name
         if self.description:
-            data["description"] = self.description
-        if self.started_at:
-            data["started_at"] = self.started_at
-        if self.completed_at:
-            data["completed_at"] = self.completed_at
-        if self.spawn_type:
-            data["spawn"] = {
-                "type": self.spawn_type.value,
-                "reason": self.spawn_reason,
-            }
-        if self.parallel_group_id:
-            data["parallel_group"] = {
-                "group_id": self.parallel_group_id,
-                "index": self.parallel_index,
-            }
+            fields["description"] = self.description
         if self.child_thread_ids:
-            data["child_thread_ids"] = self.child_thread_ids
+            fields["child_thread_ids"] = self.child_thread_ids
+        return fields
+
+    def _timing_fields(self) -> dict[str, Any]:
+        """Optional timing fields."""
+        fields: dict[str, Any] = {}
+        if self.started_at:
+            fields["started_at"] = self.started_at
+        if self.completed_at:
+            fields["completed_at"] = self.completed_at
+        return fields
+
+    def _spawn_fields(self) -> dict[str, Any]:
+        """Optional spawn metadata."""
+        if self.spawn_type:
+            return {"spawn": {"type": self.spawn_type.value, "reason": self.spawn_reason}}
+        return {}
+
+    def _parallel_fields(self) -> dict[str, Any]:
+        """Optional parallel group info."""
+        if self.parallel_group_id:
+            return {"parallel_group": {"group_id": self.parallel_group_id, "index": self.parallel_index}}
+        return {}
+
+    def _outcome_fields(self) -> dict[str, Any]:
+        """Optional outcome summary."""
         if self.outcome:
-            data["outcome"] = {
+            return {"outcome": {
                 "status": self.outcome,
                 "error": self.error,
                 "transaction_count": self.transaction_count,
                 "total_tokens": self.total_tokens,
                 "total_duration_ms": self.total_duration_ms,
-            }
-
-        return data
+            }}
+        return {}
 
 
 class ThreadCorrelator:

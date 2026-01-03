@@ -113,13 +113,41 @@ def run_start(task: str, workflow: str, phase: str, token_budget: int, mode: str
     click.echo("  agentforge agent status   # Check status")
 
 
+_HEALTH_COLORS = {
+    "HEALTHY": "green",
+    "DEGRADED": "yellow",
+}
+
+
+def _resolve_session_or_warn(session_id: str | None) -> str | None:
+    """Resolve session ID or show warning and return None."""
+    if session_id is not None:
+        return session_id
+    session_id = _get_current_session_id()
+    if session_id is None:
+        click.echo(click.style("No active session. Start one with: agentforge agent start <task>", fg="yellow"))
+    return session_id
+
+
+def _output_health_status(health, verbose: bool) -> None:
+    """Output health status with appropriate coloring."""
+    if not health:
+        return
+    health_status = getattr(health, 'status', health).name if hasattr(health, 'status') else str(health)
+    color = _HEALTH_COLORS.get(health_status, "red")
+    click.echo(click.style(f"  Health: {health_status}", fg=color))
+
+    if verbose and hasattr(health, 'issues') and health.issues:
+        click.echo("  Issues:")
+        for issue in health.issues:
+            click.echo(f"    - {issue}")
+
+
 def run_status(session_id: str | None, verbose: bool) -> None:
     """Show session status."""
+    session_id = _resolve_session_or_warn(session_id)
     if session_id is None:
-        session_id = _get_current_session_id()
-        if session_id is None:
-            click.echo(click.style("No active session. Start one with: agentforge agent start <task>", fg="yellow"))
-            return
+        return
 
     orchestrator = _create_orchestrator()
     status = orchestrator.get_status(session_id)
@@ -135,20 +163,7 @@ def run_status(session_id: str | None, verbose: bool) -> None:
     if status.get('pending_escalations', 0) > 0:
         click.echo(click.style(f"  ⚠ Pending escalations: {status['pending_escalations']}", fg="yellow"))
 
-    health = status.get('health_status')
-    if health:
-        health_status = getattr(health, 'status', health).name if hasattr(health, 'status') else str(health)
-        if health_status == "HEALTHY":
-            click.echo(click.style(f"  Health: {health_status}", fg="green"))
-        elif health_status == "DEGRADED":
-            click.echo(click.style(f"  Health: {health_status}", fg="yellow"))
-        else:
-            click.echo(click.style(f"  Health: {health_status}", fg="red"))
-
-    if verbose and health and hasattr(health, 'issues') and health.issues:
-        click.echo("  Issues:")
-        for issue in health.issues:
-            click.echo(f"    - {issue}")
+    _output_health_status(status.get('health_status'), verbose)
 
 
 def run_resume(session_id: str | None) -> None:

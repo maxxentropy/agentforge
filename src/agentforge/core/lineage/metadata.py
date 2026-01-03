@@ -96,6 +96,46 @@ _LINEAGE_PATTERNS = {
 }
 
 
+def _read_header_content(file_path: Path) -> str | None:
+    """Read first 50 lines of file for header parsing."""
+    if not file_path.exists():
+        return None
+    try:
+        content = file_path.read_text()
+        lines = content.split("\n")[:50]
+        return "\n".join(lines)
+    except Exception:
+        return None
+
+
+def _extract_lineage_values(header_text: str) -> dict[str, str]:
+    """Extract all pattern-matched values from header text."""
+    values = {}
+    for key, pattern in _LINEAGE_PATTERNS.items():
+        match = pattern.search(header_text)
+        if match:
+            values[key] = match.group(1).strip()
+    return values
+
+
+def _parse_generated_at(values: dict[str, str]) -> datetime:
+    """Parse generated_at datetime with fallback."""
+    try:
+        return datetime.fromisoformat(values["generated_at"])
+    except ValueError:
+        return datetime.utcnow()
+
+
+def _parse_method_ids(values: dict[str, str]) -> list[str]:
+    """Parse comma-separated method_ids."""
+    if "method_ids" in values:
+        return [m.strip() for m in values["method_ids"].split(",")]
+    return []
+
+
+_REQUIRED_LINEAGE_FIELDS = ["generated_at", "generator", "spec_file", "spec_id", "component_id"]
+
+
 def parse_lineage_from_file(file_path: Path) -> LineageMetadata | None:
     """
     Extract lineage metadata from a source file's header comments.
@@ -109,52 +149,21 @@ def parse_lineage_from_file(file_path: Path) -> LineageMetadata | None:
     Returns:
         LineageMetadata if found, None if no lineage block present
     """
-    if not file_path.exists():
+    header_text = _read_header_content(file_path)
+    if not header_text or "@spec_id:" not in header_text:
         return None
 
-    try:
-        content = file_path.read_text()
-    except Exception:
+    values = _extract_lineage_values(header_text)
+    if not all(key in values for key in _REQUIRED_LINEAGE_FIELDS):
         return None
-
-    # Only scan first 50 lines for performance
-    lines = content.split("\n")[:50]
-    header_text = "\n".join(lines)
-
-    # Check if this file has lineage metadata
-    if "@spec_id:" not in header_text:
-        return None
-
-    # Extract values
-    values = {}
-    for key, pattern in _LINEAGE_PATTERNS.items():
-        match = pattern.search(header_text)
-        if match:
-            values[key] = match.group(1).strip()
-
-    # Validate required fields
-    required = ["generated_at", "generator", "spec_file", "spec_id", "component_id"]
-    if not all(key in values for key in required):
-        return None
-
-    # Parse datetime
-    try:
-        generated_at = datetime.fromisoformat(values["generated_at"])
-    except ValueError:
-        generated_at = datetime.utcnow()
-
-    # Parse method_ids list
-    method_ids = []
-    if "method_ids" in values:
-        method_ids = [m.strip() for m in values["method_ids"].split(",")]
 
     return LineageMetadata(
-        generated_at=generated_at,
+        generated_at=_parse_generated_at(values),
         generator=values["generator"],
         spec_file=values["spec_file"],
         spec_id=values["spec_id"],
         component_id=values["component_id"],
-        method_ids=method_ids,
+        method_ids=_parse_method_ids(values),
         test_path=values.get("test_path"),
         impl_path=values.get("impl_path"),
         session_id=values.get("session_id"),

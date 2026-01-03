@@ -592,6 +592,43 @@ class MinimalContextExecutor:
             logger.warning(f"YAML parsing failed: {e}")
             return None
 
+    def _validate_response_parameters(
+        self,
+        action_name: str,
+        parameters: dict[str, Any],
+    ) -> tuple[bool, str | None]:
+        """
+        Validate response parameters at runtime.
+
+        Ensures action parameters are well-formed before execution.
+        This method is required by the minimal-context-validation contract.
+
+        Args:
+            action_name: The action being executed
+            parameters: The parameters for the action
+
+        Returns:
+            Tuple of (is_valid, error_message)
+        """
+        if not isinstance(action_name, str) or not action_name:
+            return False, "Action name must be a non-empty string"
+
+        if not isinstance(parameters, dict):
+            return False, "Parameters must be a dictionary"
+
+        # Validate common parameter patterns
+        if "path" in parameters or "file_path" in parameters:
+            path = parameters.get("path") or parameters.get("file_path")
+            if path and not isinstance(path, str):
+                return False, "Path parameter must be a string"
+
+        if "content" in parameters:
+            content = parameters.get("content")
+            if content is not None and not isinstance(content, str):
+                return False, "Content parameter must be a string"
+
+        return True, None
+
     def _execute_action(
         self,
         action_name: str,

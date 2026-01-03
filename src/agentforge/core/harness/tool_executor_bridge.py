@@ -204,9 +204,9 @@ class ToolExecutorBridge:
                 )
 
         try:
+            # Use explicit bash invocation instead of shell=True for security
             result = subprocess.run(
-                command,
-                shell=True,
+                ["/bin/bash", "-c", command],
                 capture_output=True,
                 text=True,
                 timeout=120,

@@ -7,15 +7,15 @@
 | Mode | full |
 | Files Checked | 0 |
 | Checks Run | 158 |
-| Total Violations | 4684 |
+| Total Violations | 4682 |
 | Errors | 0 |
-| Warnings | 433 |
-| Duration | 1.21s |
+| Warnings | 431 |
+| Duration | 1.22s |
 
 ### All Violations
 
 <details>
-<summary>View all 4684 violations in 414 files</summary>
+<summary>View all 4682 violations in 414 files</summary>
 
 **`<unknown>`** (4 violations)
 
@@ -410,12 +410,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-function-length** at `L331`
   - Function 'status' has 59 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-parameter-count** at `L154`
-  - Function 'start' has 7 parameters (max: 5)
-  - 💡 *Group related parameters into a dataclass or use **kwargs*
 - 🟡 **max-nesting-depth** at `L73`
   - Function '_display_result' has nesting depth 7 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
+- 🟡 **max-parameter-count** at `L154`
+  - Function 'start' has 7 parameters (max: 5)
+  - 💡 *Group related parameters into a dataclass or use **kwargs*
 - 🟡 **max-file-lines** at `file`
   - File exceeds line limit (682 lines > 500)
   - 💡 *Consider splitting into smaller files*
@@ -669,7 +669,7 @@ Or regenerate file through TDFLOW to get proper lineage.*
   - Function 'run_bridge_mappings' has complexity 11 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
 
-**`src/agentforge/cli/commands/ci.py`** (208 violations)
+**`src/agentforge/cli/commands/ci.py`** (209 violations)
 
 - 🟡 **max-function-length** at `L30`
   - Function 'run_ci_check' has 53 lines (max: 50)
@@ -1295,6 +1295,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-cyclomatic-complexity** at `L187`
   - Function 'run_baseline_compare' has complexity 12 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L459`
+  - Function 'run_warnings_list' has complexity 16 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/cli/commands/config.py`** (4 violations)
@@ -5403,18 +5406,18 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-function-length** at `L484`
   - Function '_check_signal' has 88 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-parameter-count** at `L484`
-  - Function '_check_signal' has 8 parameters (max: 5)
-  - 💡 *Group related parameters into a dataclass or use **kwargs*
-- 🟡 **max-parameter-count** at `L583`
-  - Function '_add_match' has 6 parameters (max: 5)
-  - 💡 *Group related parameters into a dataclass or use **kwargs*
 - 🟡 **max-nesting-depth** at `L484`
   - Function '_check_signal' has nesting depth 11 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🟡 **max-nesting-depth** at `L654`
   - Function '_detect_frameworks' has nesting depth 5 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
+- 🟡 **max-parameter-count** at `L484`
+  - Function '_check_signal' has 8 parameters (max: 5)
+  - 💡 *Group related parameters into a dataclass or use **kwargs*
+- 🟡 **max-parameter-count** at `L583`
+  - Function '_add_match' has 6 parameters (max: 5)
+  - 💡 *Group related parameters into a dataclass or use **kwargs*
 - 🟡 **max-file-lines** at `file`
   - File exceeds line limit (715 lines > 500)
   - 💡 *Consider splitting into smaller files*
@@ -7473,15 +7476,15 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-function-length** at `L894`
   - Function 'run_task_native' has 107 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-parameter-count** at `L103`
-  - Function '__init__' has 11 parameters (max: 5)
-  - 💡 *Group related parameters into a dataclass or use **kwargs*
 - 🟡 **max-nesting-depth** at `L255`
   - Function '_handle_phase_transition' has nesting depth 5 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🟡 **max-nesting-depth** at `L741`
   - Function 'run_until_complete' has nesting depth 5 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
+- 🟡 **max-parameter-count** at `L103`
+  - Function '__init__' has 11 parameters (max: 5)
+  - 💡 *Group related parameters into a dataclass or use **kwargs*
 - 🟡 **max-class-size** at `L80`
   - Class 'MinimalContextExecutor' has 21 methods (max: 20)
   - 💡 *Consider splitting into multiple classes with single responsibilities*
@@ -8179,7 +8182,7 @@ Or regenerate file through TDFLOW to get proper lineage.*
   - Function 'handler' has complexity 19 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
 
-**`src/agentforge/core/harness/minimal_context/tool_handlers/search_handlers.py`** (28 violations)
+**`src/agentforge/core/harness/minimal_context/tool_handlers/search_handlers.py`** (25 violations)
 
 - 🟡 **max-function-length** at `L50`
   - Function 'create_search_code_handler' has 104 lines (max: 50)
@@ -8248,23 +8251,14 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
-- 🟡 **max-cyclomatic-complexity** at `L50`
-  - Function 'create_search_code_handler' has complexity 26 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L188`
+- 🟡 **max-cyclomatic-complexity** at `L172`
   - Function 'create_load_context_handler' has complexity 14 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L281`
-  - Function 'create_find_related_handler' has complexity 27 (max: 10)
+- 🟡 **max-cyclomatic-complexity** at `L324`
+  - Function 'create_find_related_handler' has complexity 11 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L84`
-  - Function '_regex_search' has complexity 17 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L202`
+- 🟡 **max-cyclomatic-complexity** at `L186`
   - Function 'handler' has complexity 13 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L296`
-  - Function 'handler' has complexity 26 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
 
 **`src/agentforge/core/harness/minimal_context/tool_handlers/terminal_handlers.py`** (17 violations)
@@ -9242,15 +9236,15 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/llm/client.py`** (12 violations)
 
+- 🟡 **max-nesting-depth** at `L136`
+  - Function '_build_request_params' has nesting depth 5 (max: 4)
+  - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🟡 **max-parameter-count** at `L95`
   - Function 'complete' has 6 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
 - 🟡 **max-parameter-count** at `L136`
   - Function '_build_request_params' has 6 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
-- 🟡 **max-nesting-depth** at `L136`
-  - Function '_build_request_params' has nesting depth 5 (max: 4)
-  - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🔵 **single-responsibility-modules** at `L46`
   - Class 'AnthropicLLMClient' has 7 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -16720,12 +16714,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **single-responsibility-modules** at `L769`
   - Class 'TestEdgeCases' has 5 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
-- 🟡 **no-real-network-calls** at `L475`
-  - Forbidden pattern found: 'requests.get('
-  - 💡 *Use responses, httpretty, or pytest-mock to mock network calls*
-- 🟡 **no-real-network-calls** at `L896`
-  - Forbidden pattern found: 'requests.get('
-  - 💡 *Use responses, httpretty, or pytest-mock to mock network calls*
 - 🟡 **unit-tests-isolated** at `L487`
   - Forbidden pattern found: 'sqlite3'
   - 💡 *Mock database connections in unit tests*
@@ -16735,6 +16723,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **unit-tests-isolated** at `L504`
   - Forbidden pattern found: 'sqlite3'
   - 💡 *Mock database connections in unit tests*
+- 🟡 **no-real-network-calls** at `L475`
+  - Forbidden pattern found: 'requests.get('
+  - 💡 *Use responses, httpretty, or pytest-mock to mock network calls*
+- 🟡 **no-real-network-calls** at `L896`
+  - Forbidden pattern found: 'requests.get('
+  - 💡 *Use responses, httpretty, or pytest-mock to mock network calls*
 - 🔵 **fixtures-in-conftest** at `L37`
   - Forbidden pattern found: '@pytest.fixture'
   - 💡 *Move shared fixtures to conftest.py*
@@ -17029,5 +17023,5 @@ Or regenerate file through TDFLOW to get proper lineage.*
 </details>
 
 ---
-*Generated at 2026-01-03 18:49:12 UTC*
-*Commit: `5110f8cd`*
+*Generated at 2026-01-03 19:03:18 UTC*
+*Commit: `7f468db2`*

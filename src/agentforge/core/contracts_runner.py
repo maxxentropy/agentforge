@@ -23,6 +23,61 @@ For implementation details, see:
 from dataclasses import dataclass
 from pathlib import Path
 
+import yaml
+
+
+def _detect_project_languages(repo_root: Path) -> set[str]:
+    """Detect project languages from codebase profile or file extensions."""
+    languages = set()
+
+    # Try codebase profile first
+    profile_path = repo_root / ".agentforge" / "codebase_profile.yaml"
+    if profile_path.exists():
+        try:
+            with open(profile_path) as f:
+                profile = yaml.safe_load(f)
+            for lang_info in profile.get("languages", []):
+                if isinstance(lang_info, dict):
+                    languages.add(lang_info.get("name", "").lower())
+                elif isinstance(lang_info, str):
+                    languages.add(lang_info.lower())
+        except Exception:
+            pass  # Fall through to file-based detection
+
+    # Fallback: detect by file extensions (excluding generated/build dirs)
+    if not languages:
+        ext_map = {
+            ".py": "python", ".pyi": "python",
+            ".cs": "csharp",
+            ".ts": "typescript", ".tsx": "typescript",
+            ".js": "javascript", ".jsx": "javascript",
+            ".go": "go",
+            ".rs": "rust",
+            ".java": "java",
+        }
+        exclude_dirs = {"node_modules", "htmlcov", "dist", "build", ".git", "__pycache__", "venv", ".venv"}
+        for ext, lang in ext_map.items():
+            for f in repo_root.glob(f"**/*{ext}"):
+                # Skip files in excluded directories
+                if not any(part in exclude_dirs for part in f.parts):
+                    languages.add(lang)
+                    break  # Found one, move to next extension
+
+    return languages
+
+
+def _check_applies_to_languages(check: dict, project_languages: set[str]) -> bool:
+    """Check if a check applies based on language filters."""
+    applies_to = check.get("applies_to", {})
+    check_languages = applies_to.get("languages", [])
+
+    if not check_languages:
+        return True  # No language filter, applies to all
+
+    # Check if any project language matches
+    check_langs_lower = {lang.lower() for lang in check_languages}
+    return bool(project_languages & check_langs_lower)
+
 
 @dataclass
 class RegistryOptions:
@@ -79,8 +134,15 @@ def _run_all_checks(
     """Run all enabled checks and apply exemptions."""
     all_results: list[CheckResult] = []
 
+    # Detect project languages once for all checks
+    project_languages = _detect_project_languages(repo_root)
+
     for check in contract.all_checks():
         if not check.get("enabled", True):
+            continue
+
+        # Skip checks that don't apply to this project's languages
+        if not _check_applies_to_languages(check, project_languages):
             continue
 
         check_results = _execute_single_check(check, contract, repo_root, file_paths)

@@ -783,54 +783,44 @@ class PythonProvider(LanguageProvider):
         suggestions.sort(key=lambda s: len(s.get("nesting_path", "")), reverse=True)
         return suggestions[:5]
 
-    def _get_parameter_suggestions(self, node: ast.AST) -> list[dict[str, Any]]:
-        """Get suggestions for reducing parameter count."""
-        if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-            return []
-
-        args = node.args
+    def _collect_function_params(self, node) -> list[dict]:
+        """Collect all parameters from a function node."""
         all_params = []
+        args = node.args
 
-        # Collect all parameters
         for arg in args.args:
             if arg.arg != 'self':
-                param_type = None
-                if arg.annotation:
-                    param_type = self._get_annotation_str(arg.annotation)
+                param_type = self._get_annotation_str(arg.annotation) if arg.annotation else None
                 all_params.append({"name": arg.arg, "type": param_type})
 
         for arg in args.kwonlyargs:
-            param_type = None
-            if arg.annotation:
-                param_type = self._get_annotation_str(arg.annotation)
+            param_type = self._get_annotation_str(arg.annotation) if arg.annotation else None
             all_params.append({"name": arg.arg, "type": param_type})
 
-        suggestions = []
+        return all_params
 
-        if len(all_params) <= 5:
-            return []  # Not a problem
-
-        # Group by type similarity
+    def _group_params_by_type(self, all_params: list[dict]) -> list[dict]:
+        """Group parameters by type and suggest dataclass groupings."""
         typed_params = [p for p in all_params if p["type"]]
-        [p for p in all_params if not p["type"]]
-
-        # Suggest grouping by common type
         type_groups = {}
         for p in typed_params:
-            base_type = p["type"].split("[")[0]  # Remove generics
+            base_type = p["type"].split("[")[0]
             if base_type not in type_groups:
                 type_groups[base_type] = []
             type_groups[base_type].append(p["name"])
 
-        for type_name, params in type_groups.items():
-            if len(params) >= 2:
-                suggestions.append({
-                    "description": f"Group {len(params)} '{type_name}' params into dataclass",
-                    "params": params,
-                    "impact": f"Reduces parameter count by {len(params) - 1}",
-                })
+        return [
+            {
+                "description": f"Group {len(params)} '{type_name}' params into dataclass",
+                "params": params,
+                "impact": f"Reduces parameter count by {len(params) - 1}",
+            }
+            for type_name, params in type_groups.items()
+            if len(params) >= 2
+        ]
 
-        # Suggest grouping by name prefix
+    def _group_params_by_prefix(self, all_params: list[dict]) -> list[dict]:
+        """Group parameters by name prefix and suggest config groupings."""
         prefix_groups = {}
         for p in all_params:
             parts = p["name"].split("_")
@@ -840,14 +830,27 @@ class PythonProvider(LanguageProvider):
                     prefix_groups[prefix] = []
                 prefix_groups[prefix].append(p["name"])
 
-        for prefix, params in prefix_groups.items():
-            if len(params) >= 2:
-                suggestions.append({
-                    "description": f"Group {len(params)} '{prefix}_*' params into '{prefix}_config' dict",
-                    "params": params,
-                    "impact": f"Reduces parameter count by {len(params) - 1}",
-                })
+        return [
+            {
+                "description": f"Group {len(params)} '{prefix}_*' params into '{prefix}_config' dict",
+                "params": params,
+                "impact": f"Reduces parameter count by {len(params) - 1}",
+            }
+            for prefix, params in prefix_groups.items()
+            if len(params) >= 2
+        ]
 
+    def _get_parameter_suggestions(self, node: ast.AST) -> list[dict[str, Any]]:
+        """Get suggestions for reducing parameter count."""
+        if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            return []
+
+        all_params = self._collect_function_params(node)
+        if len(all_params) <= 5:
+            return []
+
+        suggestions = self._group_params_by_type(all_params)
+        suggestions.extend(self._group_params_by_prefix(all_params))
         return suggestions[:5]
 
     # ========================================================================

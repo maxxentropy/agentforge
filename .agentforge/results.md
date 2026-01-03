@@ -7,15 +7,15 @@
 | Mode | full |
 | Files Checked | 0 |
 | Checks Run | 158 |
-| Total Violations | 4724 |
+| Total Violations | 4725 |
 | Errors | 0 |
-| Warnings | 384 |
-| Duration | 19.32s |
+| Warnings | 382 |
+| Duration | 18.56s |
 
 ### All Violations
 
 <details>
-<summary>View all 4724 violations in 414 files</summary>
+<summary>View all 4725 violations in 414 files</summary>
 
 **`<unknown>`** (4 violations)
 
@@ -413,12 +413,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-function-length** at `L331`
   - Function 'status' has 59 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-nesting-depth** at `L73`
-  - Function '_display_result' has nesting depth 7 (max: 4)
-  - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🟡 **max-parameter-count** at `L154`
   - Function 'start' has 7 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
+- 🟡 **max-nesting-depth** at `L73`
+  - Function '_display_result' has nesting depth 7 (max: 4)
+  - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🟡 **max-file-lines** at `file`
   - File exceeds line limit (682 lines > 500)
   - 💡 *Consider splitting into smaller files*
@@ -4571,12 +4571,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-nesting-depth** at `L132`
   - Function 'review_command' has nesting depth 5 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
-- 🟡 **main-guard-pattern** at `file`
-  - Required pattern not found: 'if\s+__name__\s*==\s*['"]__main__['"]'
-  - 💡 *Add: if __name__ == '__main__': main()*
 - 🔵 **cli-has-version** at `file`
   - Required pattern not found: '@click\.version_option|--version|version_callback'
   - 💡 *Add @click.version_option() to main command*
+- 🟡 **main-guard-pattern** at `file`
+  - Required pattern not found: 'if\s+__name__\s*==\s*['"]__main__['"]'
+  - 💡 *Add: if __name__ == '__main__': main()*
 - 🔵 **cli-config-from-env** at `file`
   - Required pattern not found: '(envvar\s*=|os\.environ|getenv)'
   - 💡 *Add envvar parameter: @click.option('--api-key', envvar='API_KEY')*
@@ -5450,12 +5450,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-cyclomatic-complexity** at `L716`
   - Function '_detect_frameworks' has complexity 15 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-nesting-depth** at `L514`
-  - Function '_check_base_class_signal' has nesting depth 5 (max: 4)
-  - 💡 *Use early returns, guard clauses, or extract nested logic*
-- 🟡 **max-nesting-depth** at `L716`
-  - Function '_detect_frameworks' has nesting depth 5 (max: 4)
-  - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🟡 **max-parameter-count** at `L484`
   - Function '_check_class_name_signal' has 6 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
@@ -5483,6 +5477,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-parameter-count** at `L645`
   - Function '_add_match' has 6 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
+- 🟡 **max-nesting-depth** at `L514`
+  - Function '_check_base_class_signal' has nesting depth 5 (max: 4)
+  - 💡 *Use early returns, guard clauses, or extract nested logic*
+- 🟡 **max-nesting-depth** at `L716`
+  - Function '_detect_frameworks' has nesting depth 5 (max: 4)
+  - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🟡 **max-file-lines** at `file`
   - File exceeds line limit (777 lines > 500)
   - 💡 *Consider splitting into smaller files*
@@ -6076,7 +6076,7 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 
-**`src/agentforge/core/discovery/providers/python_provider.py`** (52 violations)
+**`src/agentforge/core/discovery/providers/python_provider.py`** (53 violations)
 
 - 🟡 **max-cyclomatic-complexity** at `L477`
   - Function 'suggest_extractions' has complexity 11 (max: 10)
@@ -6084,12 +6084,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-cyclomatic-complexity** at `L609`
   - Function 'get_violation_context' has complexity 14 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L786`
-  - Function '_get_parameter_suggestions' has complexity 19 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-function-length** at `L786`
-  - Function '_get_parameter_suggestions' has 51 lines (max: 50)
-  - 💡 *Extract logic into helper functions or use composition*
 - 🟡 **max-nesting-depth** at `L477`
   - Function 'suggest_extractions' has nesting depth 6 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
@@ -6100,19 +6094,19 @@ Or regenerate file through TDFLOW to get proper lineage.*
   - Function '_get_length_suggestions' has nesting depth 5 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🟡 **max-class-size** at `L111`
-  - Class 'PythonProvider' has 38 methods (max: 20)
+  - Class 'PythonProvider' has 41 methods (max: 20)
   - 💡 *Consider splitting into multiple classes with single responsibilities*
 - 🟡 **max-file-lines** at `file`
-  - File exceeds line limit (970 lines > 500)
+  - File exceeds line limit (973 lines > 500)
   - 💡 *Consider splitting into smaller files*
 - 🟡 **no-god-classes** at `L111`
-  - Class 'PythonProvider' has 38 methods (max: 15)
+  - Class 'PythonProvider' has 41 methods (max: 15)
   - 💡 *Split large classes using composition or inheritance*
 - 🔵 **single-responsibility-modules** at `L41`
   - Class 'ComplexityVisitor' has 10 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
 - 🔵 **single-responsibility-modules** at `L111`
-  - Class 'PythonProvider' has 38 methods (max: 3)
+  - Class 'PythonProvider' has 41 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -6187,16 +6181,22 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **default-result-return-types** at `L750`
   - Method '_get_nesting_suggestions' returns 'list[dict[str, Any]]', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **default-result-return-types** at `L786`
+  - Method '_collect_function_params' returns 'list[dict]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L802`
+  - Method '_group_params_by_type' returns 'list[dict]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L822`
+  - Method '_group_params_by_prefix' returns 'list[dict]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L843`
   - Method '_get_parameter_suggestions' returns 'list[dict[str, Any]]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L857`
+- 🔵 **default-result-return-types** at `L860`
   - Method 'get_imports' returns 'list[Import]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L890`
+- 🔵 **default-result-return-types** at `L893`
   - Method 'get_dependencies' returns 'list[Dependency]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L913`
+- 🔵 **default-result-return-types** at `L916`
   - Method '_parse_pyproject_deps' returns 'list[Dependency]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L944`
+- 🔵 **default-result-return-types** at `L947`
   - Method '_parse_requirements_txt' returns 'list[Dependency]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L958`
+- 🔵 **default-result-return-types** at `L961`
   - Method '_parse_dep_string' returns 'Dependency | None', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -9292,15 +9292,15 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/llm/client.py`** (12 violations)
 
-- 🟡 **max-nesting-depth** at `L136`
-  - Function '_build_request_params' has nesting depth 5 (max: 4)
-  - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🟡 **max-parameter-count** at `L95`
   - Function 'complete' has 6 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
 - 🟡 **max-parameter-count** at `L136`
   - Function '_build_request_params' has 6 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
+- 🟡 **max-nesting-depth** at `L136`
+  - Function '_build_request_params' has nesting depth 5 (max: 4)
+  - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🔵 **single-responsibility-modules** at `L46`
   - Class 'AnthropicLLMClient' has 7 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -16782,9 +16782,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **unit-tests-isolated** at `L504`
   - Forbidden pattern found: 'sqlite3'
   - 💡 *Mock database connections in unit tests*
-- 🔵 **no-hardcoded-test-data-paths** at `L897`
-  - Forbidden pattern found: 'open("'
-  - 💡 *Use tmp_path fixture or Path(__file__).parent for test data*
 - 🔵 **fixtures-in-conftest** at `L37`
   - Forbidden pattern found: '@pytest.fixture'
   - 💡 *Move shared fixtures to conftest.py*
@@ -16797,6 +16794,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **fixtures-in-conftest** at `L298`
   - Forbidden pattern found: '@pytest.fixture'
   - 💡 *Move shared fixtures to conftest.py*
+- 🔵 **no-hardcoded-test-data-paths** at `L897`
+  - Forbidden pattern found: 'open("'
+  - 💡 *Use tmp_path fixture or Path(__file__).parent for test data*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
   - 💡 *Add lineage header to file:
@@ -17076,5 +17076,5 @@ Or regenerate file through TDFLOW to get proper lineage.*
 </details>
 
 ---
-*Generated at 2026-01-03 20:39:40 UTC*
-*Commit: `b00bb348`*
+*Generated at 2026-01-03 21:02:33 UTC*
+*Commit: `7202f983`*

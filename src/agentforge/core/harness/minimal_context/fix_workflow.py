@@ -174,6 +174,16 @@ class MinimalContextFixWorkflow:
 
         return executors
 
+    def _track_modified_file(self, state: TaskState, file_path: str) -> None:
+        """Track a modified file in state context."""
+        if "files_modified" not in state.context_data:
+            state.context_data["files_modified"] = []
+        if file_path not in state.context_data["files_modified"]:
+            state.context_data["files_modified"].append(file_path)
+            self.state_store.update_context_data(
+                state.task_id, "files_modified", state.context_data["files_modified"]
+            )
+
     def _with_test_verification(self, action_fn: Callable) -> Callable:
         """
         Wrap a file-modifying action with test verification and auto-revert.
@@ -468,12 +478,7 @@ except Exception as e:
                 new_content = match_result
                 full_path.write_text(new_content)
 
-            # Track modified file
-            if "files_modified" not in state.context_data:
-                state.context_data["files_modified"] = []
-            if path not in state.context_data["files_modified"]:
-                state.context_data["files_modified"].append(path)
-                self.state_store.update_context_data(state.task_id, "files_modified", state.context_data["files_modified"])
+            self._track_modified_file(state, path)
 
             return {
                 "status": "success",
@@ -645,14 +650,7 @@ except Exception as e:
                     "summary": "✗ REVERTED - code validation failed",
                 }
 
-            # Track modified file
-            if "files_modified" not in state.context_data:
-                state.context_data["files_modified"] = []
-            if file_path not in state.context_data["files_modified"]:
-                state.context_data["files_modified"].append(file_path)
-                self.state_store.update_context_data(
-                    state.task_id, "files_modified", state.context_data["files_modified"]
-                )
+            self._track_modified_file(state, file_path)
 
             return {
                 "status": "success",
@@ -662,28 +660,42 @@ except Exception as e:
         except Exception as e:
             return {"status": "failure", "error": str(e)}
 
+    def _detect_insert_indentation(
+        self, lines: list[str], line_number: int, explicit_indent: int | None
+    ) -> int:
+        """Detect indentation level for insert operation."""
+        if explicit_indent is not None:
+            return explicit_indent
+        context_line = lines[line_number - 1] if line_number <= len(lines) else ""
+        if context_line.strip():
+            return len(context_line) - len(context_line.lstrip())
+        return 0
+
+    def _process_insert_content(self, content: str, indent_str: str) -> list[str]:
+        """Process and indent content for insertion."""
+        new_lines = []
+        for line in content.split('\n'):
+            if line.strip():
+                stripped = line.lstrip()
+                line_indent = len(line) - len(stripped)
+                indented = indent_str + ' ' * line_indent + stripped if line_indent else indent_str + stripped
+                new_lines.append(indented)
+            else:
+                new_lines.append('')
+        if new_lines and new_lines[-1].strip():
+            new_lines.append('')
+        return new_lines
+
     def _action_insert_lines(
         self,
         action_name: str,
         params: dict[str, Any],
         state: TaskState,
     ) -> dict[str, Any]:
-        """
-        Insert lines into a file at a specific line number.
-
-        This adds new lines WITHOUT removing existing lines.
-        Use this to add helper functions before a target function.
-
-        Parameters:
-            file_path: Path to the file
-            line_number: Line number to insert BEFORE (1-indexed)
-            new_content: Content to insert (will be auto-indented)
-            indent_level: Optional base indentation (spaces, default: detect from context)
-        """
+        """Insert lines into a file at a specific line number."""
         file_path = params.get("file_path") or params.get("path") or state.context_data.get("file_path")
         line_number = params.get("line_number") or params.get("before_line")
         new_content = params.get("new_content") or params.get("content")
-        indent_level = params.get("indent_level")
 
         if not file_path:
             return {"status": "failure", "error": "Missing file_path"}
@@ -699,59 +711,19 @@ except Exception as e:
         try:
             lines = full_path.read_text().split('\n')
 
-            # Validate line number
             if line_number < 1 or line_number > len(lines) + 1:
-                return {
-                    "status": "failure",
-                    "error": f"Invalid line number {line_number} (file has {len(lines)} lines)"
-                }
+                return {"status": "failure", "error": f"Invalid line number {line_number} (file has {len(lines)} lines)"}
 
-            # Detect indentation from context
-            if indent_level is None:
-                # Look at the line we're inserting before
-                context_line = lines[line_number - 1] if line_number <= len(lines) else ""
-                if context_line.strip():
-                    indent_level = len(context_line) - len(context_line.lstrip())
-                else:
-                    indent_level = 0
+            indent_level = self._detect_insert_indentation(lines, line_number, params.get("indent_level"))
+            new_lines = self._process_insert_content(new_content, ' ' * indent_level)
 
-            indent_str = ' ' * indent_level
-
-            # Process new content
-            new_lines = []
-            for line in new_content.split('\n'):
-                if line.strip():
-                    # Preserve relative indentation within the new content
-                    stripped = line.lstrip()
-                    line_indent = len(line) - len(stripped)
-                    new_lines.append(indent_str + ' ' * line_indent + stripped if line_indent else indent_str + stripped)
-                else:
-                    new_lines.append('')
-
-            # Add blank line after for separation
-            if new_lines and new_lines[-1].strip():
-                new_lines.append('')
-
-            # Insert lines
             insert_index = line_number - 1
             result_lines = lines[:insert_index] + new_lines + lines[insert_index:]
-            new_source = '\n'.join(result_lines)
+            full_path.write_text('\n'.join(result_lines))
 
-            full_path.write_text(new_source)
+            self._track_modified_file(state, file_path)
 
-            # Track modified file
-            if "files_modified" not in state.context_data:
-                state.context_data["files_modified"] = []
-            if file_path not in state.context_data["files_modified"]:
-                state.context_data["files_modified"].append(file_path)
-                self.state_store.update_context_data(
-                    state.task_id, "files_modified", state.context_data["files_modified"]
-                )
-
-            return {
-                "status": "success",
-                "summary": f"Inserted {len(new_lines)} lines before line {line_number}",
-            }
+            return {"status": "success", "summary": f"Inserted {len(new_lines)} lines before line {line_number}"}
 
         except Exception as e:
             return {"status": "failure", "error": str(e)}

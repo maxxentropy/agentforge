@@ -358,10 +358,19 @@ rules: []
         """Load built-in operation contracts."""
         contracts = load_all_operation_contracts()
 
-        assert len(contracts) >= 3  # tool-usage, git-operations, safety-rules
+        # We now have 9 operation contracts
+        assert len(contracts) >= 9
+        # Original 3
         assert "operation.tool-usage.v1" in contracts
         assert "operation.git.v1" in contracts
         assert "operation.safety.v1" in contracts
+        # New 6 design/architecture contracts
+        assert "operation.code-generation.v1" in contracts
+        assert "operation.testing-patterns.v1" in contracts
+        assert "operation.error-handling.v1" in contracts
+        assert "operation.api-design.v1" in contracts
+        assert "operation.async-patterns.v1" in contracts
+        assert "operation.observability.v1" in contracts
 
     def test_load_skips_invalid_contracts(self, tmp_path):
         """Invalid contracts are skipped with warning."""
@@ -498,6 +507,103 @@ class TestBuiltinContracts:
         assert contract.get_rule("no-destructive-system") is not None
         assert contract.get_rule("no-sudo-without-approval") is not None
 
+    def test_code_generation_contract(self, manager):
+        """Code generation contract covers SOLID and design patterns."""
+        contract = manager.contracts.get("operation.code-generation.v1")
+
+        assert contract is not None
+        # SOLID principles
+        assert contract.get_rule("single-responsibility") is not None
+        assert contract.get_rule("open-closed") is not None
+        assert contract.get_rule("liskov-substitution") is not None
+        assert contract.get_rule("interface-segregation") is not None
+        assert contract.get_rule("dependency-inversion") is not None
+        # Code structure rules
+        assert contract.get_rule("function-size-limit") is not None
+        assert contract.get_rule("cyclomatic-complexity-limit") is not None
+        # Naming conventions
+        assert contract.get_rule("descriptive-naming") is not None
+        assert contract.get_rule("boolean-naming") is not None
+
+    def test_testing_patterns_contract(self, manager):
+        """Testing patterns contract covers test structure and quality."""
+        contract = manager.contracts.get("operation.testing-patterns.v1")
+
+        assert contract is not None
+        # Test structure
+        assert contract.get_rule("arrange-act-assert") is not None
+        assert contract.get_rule("one-assertion-concept") is not None
+        # Test isolation
+        assert contract.get_rule("test-isolation") is not None
+        assert contract.get_rule("no-flaky-tests") is not None
+        assert contract.get_rule("mock-at-boundaries") is not None
+        # Test coverage
+        assert contract.get_rule("test-pyramid") is not None
+        assert contract.get_rule("coverage-requirements") is not None
+
+    def test_error_handling_contract(self, manager):
+        """Error handling contract covers exceptions and Result pattern."""
+        contract = manager.contracts.get("operation.error-handling.v1")
+
+        assert contract is not None
+        # Exception design
+        assert contract.get_rule("custom-exception-hierarchy") is not None
+        assert contract.get_rule("exception-information") is not None
+        # Exception handling
+        assert contract.get_rule("catch-specific-exceptions") is not None
+        assert contract.get_rule("no-swallowed-exceptions") is not None
+        # Result pattern
+        assert contract.get_rule("result-pattern") is not None
+        # Validation
+        assert contract.get_rule("fail-fast-validation") is not None
+
+    def test_api_design_contract(self, manager):
+        """API design contract covers REST conventions."""
+        contract = manager.contracts.get("operation.api-design.v1")
+
+        assert contract is not None
+        # Resource design
+        assert contract.get_rule("resource-naming") is not None
+        assert contract.get_rule("http-method-semantics") is not None
+        assert contract.get_rule("status-code-usage") is not None
+        # Request/response
+        assert contract.get_rule("request-validation") is not None
+        assert contract.get_rule("error-response-format") is not None
+        # Versioning
+        assert contract.get_rule("api-versioning") is not None
+
+    def test_async_patterns_contract(self, manager):
+        """Async patterns contract covers concurrency."""
+        contract = manager.contracts.get("operation.async-patterns.v1")
+
+        assert contract is not None
+        # Async basics
+        assert contract.get_rule("async-all-the-way") is not None
+        assert contract.get_rule("no-fire-and-forget") is not None
+        assert contract.get_rule("structured-concurrency") is not None
+        # Cancellation and timeouts
+        assert contract.get_rule("cancellation-support") is not None
+        assert contract.get_rule("timeout-all-io") is not None
+        # Concurrency control
+        assert contract.get_rule("limit-concurrency") is not None
+
+    def test_observability_contract(self, manager):
+        """Observability contract covers logging, metrics, tracing."""
+        contract = manager.contracts.get("operation.observability.v1")
+
+        assert contract is not None
+        # Logging
+        assert contract.get_rule("structured-logging") is not None
+        assert contract.get_rule("log-levels") is not None
+        assert contract.get_rule("sensitive-data-logging") is not None
+        # Metrics
+        assert contract.get_rule("metrics-naming") is not None
+        assert contract.get_rule("four-golden-signals") is not None
+        assert contract.get_rule("histogram-over-average") is not None
+        # Tracing
+        assert contract.get_rule("trace-all-requests") is not None
+        assert contract.get_rule("span-naming") is not None
+
     def test_all_contracts_have_rationales(self, manager):
         """All rules have rationales for human understanding."""
         for contract in manager.contracts.values():
@@ -508,3 +614,17 @@ class TestBuiltinContracts:
         """All blocking triggers have prompts for human."""
         for trigger in manager.get_blocking_triggers():
             assert trigger.prompt, f"Trigger {trigger.trigger_id} missing prompt"
+
+    def test_all_contracts_have_quality_gates(self, manager):
+        """All contracts should have quality gates defined."""
+        for contract_id, contract in manager.contracts.items():
+            assert len(contract.quality_gates) > 0, (
+                f"Contract {contract_id} missing quality gates"
+            )
+
+    def test_all_contracts_have_escalation_triggers(self, manager):
+        """All contracts should have escalation triggers defined."""
+        for contract_id, contract in manager.contracts.items():
+            assert len(contract.escalation_triggers) > 0, (
+                f"Contract {contract_id} missing escalation triggers"
+            )

@@ -1,0 +1,567 @@
+# Operation Contract: Observability
+# Governs logging, metrics, and distributed tracing patterns.
+#
+# These rules ensure systems are:
+# - Debuggable in production
+# - Measurable and alertable
+# - Traceable across services
+# - Compliant with privacy requirements
+
+id: operation.observability.v1
+version: "1.0"
+description: |
+  Patterns for logging, metrics collection, and distributed tracing
+  to enable effective monitoring and debugging of production systems.
+
+rules:
+  # ============================================================
+  # Logging Fundamentals
+  # ============================================================
+
+  - id: structured-logging
+    description: Use structured logging, not string formatting
+    check_type: logging_pattern
+    details:
+      prefer:
+        structured:
+          format: "JSON or key-value pairs"
+          example: |
+            logger.info("User logged in", extra={
+                "user_id": user.id,
+                "ip_address": request.ip,
+                "method": "oauth"
+            })
+      avoid:
+        string_interpolation:
+          example: |
+            logger.info(f"User {user.id} logged in from {request.ip}")
+      benefits:
+        - machine_parseable
+        - queryable
+        - consistent_format
+        - enables_aggregation
+    severity: warning
+    rationale: |
+      Structured logs are searchable and aggregatable.
+      String logs require regex parsing and are error-prone.
+
+  - id: log-levels
+    description: Use appropriate log levels consistently
+    check_type: logging_pattern
+    details:
+      levels:
+        DEBUG:
+          purpose: "Detailed diagnostic information"
+          examples: ["Variable values", "Loop iterations", "Cache hits"]
+          production: "Usually disabled"
+        INFO:
+          purpose: "Normal operation events"
+          examples: ["Request started", "User action", "Job completed"]
+          production: "Always enabled"
+        WARNING:
+          purpose: "Something unexpected but handled"
+          examples: ["Retry needed", "Fallback used", "Deprecated API"]
+          production: "Always enabled"
+        ERROR:
+          purpose: "Operation failed"
+          examples: ["Request failed", "Exception caught", "Data invalid"]
+          production: "Always enabled, may alert"
+        CRITICAL:
+          purpose: "System is unusable"
+          examples: ["Database down", "Out of memory", "Security breach"]
+          production: "Always alert"
+      anti_patterns:
+        - ERROR_for_expected_conditions
+        - DEBUG_for_important_events
+        - INFO_spam
+    severity: warning
+    rationale: |
+      Correct log levels enable filtering, alerting, and
+      focus attention on what matters.
+
+  - id: log-context
+    description: Include correlation context in all logs
+    check_type: logging_pattern
+    details:
+      always_include:
+        - request_id
+        - trace_id
+        - user_id_if_authenticated
+        - service_name
+        - environment
+      per_operation:
+        - operation_name
+        - relevant_entity_ids
+        - duration_for_completion_logs
+      pattern: |
+        # Set context at entry point
+        with log_context(request_id=req.id, user_id=user.id):
+            logger.info("Processing request")
+            # All logs in scope include context
+    severity: warning
+    rationale: |
+      Context enables log correlation. Without request_id,
+      logs from concurrent requests are impossible to separate.
+
+  - id: sensitive-data-logging
+    description: Never log sensitive data
+    check_type: security_pattern
+    details:
+      never_log:
+        - passwords
+        - api_keys
+        - tokens
+        - credit_card_numbers
+        - social_security_numbers
+        - personal_health_info
+        - encryption_keys
+      redaction_patterns:
+        mask: "Log only last 4 characters"
+        hash: "Log hash for correlation"
+        omit: "Don't log at all"
+      example: |
+        # BAD
+        logger.info(f"Auth token: {token}")
+
+        # GOOD
+        logger.info("Auth token received", extra={
+            "token_suffix": token[-4:],
+            "token_hash": hashlib.sha256(token).hexdigest()[:8]
+        })
+    severity: error
+    rationale: |
+      Logged sensitive data is a security breach. Logs are
+      often less protected than primary data stores.
+
+  - id: error-logging
+    description: Log errors with full context
+    check_type: logging_pattern
+    details:
+      include:
+        - exception_type
+        - exception_message
+        - stack_trace
+        - input_that_caused_error
+        - operation_context
+      pattern: |
+        try:
+            process(data)
+        except ProcessingError as e:
+            logger.exception(
+                "Processing failed",
+                extra={
+                    "input_id": data.id,
+                    "operation": "process",
+                    "error_code": e.code,
+                }
+            )
+            raise
+      use_exception_method: true
+    severity: error
+    rationale: |
+      Full error context is essential for debugging.
+      Without stack traces, root cause analysis is guesswork.
+
+  # ============================================================
+  # Metrics
+  # ============================================================
+
+  - id: metrics-naming
+    description: Use consistent metric naming conventions
+    check_type: metrics_pattern
+    details:
+      format:
+        pattern: "{namespace}_{subsystem}_{name}_{unit}"
+        examples:
+          - "http_requests_total"
+          - "http_request_duration_seconds"
+          - "db_connections_active"
+          - "cache_hits_total"
+      naming_rules:
+        - lowercase_with_underscores
+        - include_unit_suffix
+        - use_total_for_counters
+        - avoid_abbreviations
+      units:
+        time: "_seconds" # Not milliseconds
+        bytes: "_bytes"
+        counts: "_total"
+        ratios: "_ratio" # 0.0 to 1.0
+    severity: warning
+    rationale: |
+      Consistent naming enables automated tooling and
+      makes dashboards more intuitive.
+
+  - id: four-golden-signals
+    description: Track the four golden signals for all services
+    check_type: metrics_pattern
+    details:
+      signals:
+        latency:
+          description: "Time to serve requests"
+          metrics:
+            - "request_duration_seconds (histogram)"
+            - "p50, p95, p99 percentiles"
+          separate: "Successful vs. failed request latency"
+        traffic:
+          description: "Request rate"
+          metrics:
+            - "requests_total (counter)"
+            - "requests_per_second (rate)"
+          dimensions: ["endpoint", "method", "status"]
+        errors:
+          description: "Failure rate"
+          metrics:
+            - "errors_total (counter)"
+            - "error_rate (ratio)"
+          dimensions: ["error_type", "endpoint"]
+        saturation:
+          description: "Resource utilization"
+          metrics:
+            - "connection_pool_size (gauge)"
+            - "queue_depth (gauge)"
+            - "cpu_usage_ratio (gauge)"
+    severity: warning
+    rationale: |
+      The four golden signals provide comprehensive service
+      health visibility with minimal metric overhead.
+
+  - id: histogram-over-average
+    description: Use histograms for latency, not averages
+    check_type: metrics_pattern
+    details:
+      problem_with_averages: |
+        Averages hide distribution. A 100ms average could mean
+        all requests take 100ms, or 99% take 10ms and 1% take 9s.
+      use_histograms:
+        buckets:
+          http: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10]
+          database: [0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1]
+        derive:
+          - p50: "Median latency"
+          - p95: "Tail latency"
+          - p99: "Worst case latency"
+    severity: warning
+    rationale: |
+      Percentiles reveal user experience. Most users experience
+      p95+, not the average.
+
+  - id: metric-cardinality
+    description: Control metric label cardinality
+    check_type: metrics_pattern
+    details:
+      cardinality_limits:
+        safe: "< 100 unique label combinations"
+        caution: "100-1000 combinations"
+        danger: "> 1000 combinations"
+      avoid_high_cardinality:
+        - user_id_as_label
+        - request_id_as_label
+        - unbounded_strings
+        - ip_addresses
+      allow:
+        - http_method
+        - status_code_class # 2xx, 4xx, 5xx
+        - endpoint_pattern # /users/:id not /users/123
+      solution: |
+        # BAD: High cardinality
+        request_count.labels(user_id=user.id).inc()
+
+        # GOOD: Bounded cardinality
+        request_count.labels(user_tier=user.tier).inc()
+    severity: error
+    rationale: |
+      High cardinality metrics cause memory exhaustion and
+      slow queries. Each unique label set is a time series.
+
+  # ============================================================
+  # Distributed Tracing
+  # ============================================================
+
+  - id: trace-all-requests
+    description: Generate traces for all incoming requests
+    check_type: tracing_pattern
+    details:
+      at_entry_points:
+        - http_requests
+        - grpc_calls
+        - message_consumers
+        - scheduled_jobs
+      trace_context:
+        - trace_id: "Unique across entire request path"
+        - span_id: "Unique to this operation"
+        - parent_span_id: "Links to caller"
+      propagation:
+        http: "W3C Trace Context headers"
+        grpc: "Metadata"
+        messaging: "Message headers"
+    severity: warning
+    rationale: |
+      Traces enable following a request across services.
+      Without traces, distributed debugging is nearly impossible.
+
+  - id: span-naming
+    description: Name spans descriptively and consistently
+    check_type: tracing_pattern
+    details:
+      format:
+        http: "HTTP {method} {route}"
+        database: "DB {operation} {table}"
+        cache: "Cache {operation}"
+        rpc: "RPC {service}/{method}"
+      examples:
+        - "HTTP GET /users/:id"
+        - "DB SELECT users"
+        - "Cache GET user:123"
+        - "RPC UserService/GetUser"
+      avoid:
+        - generic_names
+        - high_cardinality
+      bad_examples:
+        - "span1"
+        - "operation"
+        - "GET /users/12345"
+    severity: warning
+    rationale: |
+      Good span names enable filtering and aggregation.
+      Use route patterns, not actual values.
+
+  - id: span-attributes
+    description: Add meaningful attributes to spans
+    check_type: tracing_pattern
+    details:
+      standard_attributes:
+        http:
+          - "http.method"
+          - "http.status_code"
+          - "http.url"
+          - "http.route"
+        database:
+          - "db.system"
+          - "db.statement" # Parameterized, no values
+          - "db.operation"
+        error:
+          - "exception.type"
+          - "exception.message"
+          - "error"
+      custom_attributes:
+        - business_relevant_ids
+        - decision_outcomes
+        - cache_hit_status
+      avoid:
+        - sensitive_data
+        - high_cardinality_values
+        - large_payloads
+    severity: warning
+    rationale: |
+      Attributes provide context for debugging. Standard
+      attributes enable cross-service correlation.
+
+  - id: error-spans
+    description: Mark error spans correctly
+    check_type: tracing_pattern
+    details:
+      on_error:
+        set_status: "ERROR"
+        record_exception: true
+        add_attributes:
+          - "exception.type"
+          - "exception.message"
+          - "exception.stacktrace"
+      pattern: |
+        with tracer.start_span("operation") as span:
+            try:
+                result = do_operation()
+            except Exception as e:
+                span.set_status(Status(StatusCode.ERROR))
+                span.record_exception(e)
+                raise
+    severity: warning
+    rationale: |
+      Error marking enables filtering for failed traces.
+      Exception details help diagnose root cause.
+
+  - id: trace-sampling
+    description: Configure appropriate trace sampling
+    check_type: tracing_pattern
+    details:
+      strategies:
+        always_on:
+          use_for: "Development, low-traffic"
+          rate: "100%"
+        probabilistic:
+          use_for: "Production, high-traffic"
+          rate: "1-10%"
+        rate_limiting:
+          use_for: "Cost control"
+          rate: "N traces per second"
+        tail_based:
+          use_for: "Error-focused"
+          rule: "Sample 100% of errors, 1% of success"
+      ensure:
+        - error_traces_always_sampled
+        - slow_traces_always_sampled
+        - sample_decision_at_root
+    severity: info
+    rationale: |
+      100% sampling is expensive. Strategic sampling provides
+      visibility while controlling costs.
+
+  # ============================================================
+  # Correlation
+  # ============================================================
+
+  - id: log-trace-correlation
+    description: Include trace IDs in all log messages
+    check_type: observability_pattern
+    details:
+      pattern: |
+        # Automatically include trace context in logs
+        logger = logging.getLogger()
+        logger.addFilter(TraceContextFilter())
+
+        # Logs now include trace_id and span_id
+        logger.info("Processing order")
+        # Output: {"message": "Processing order", "trace_id": "abc123", ...}
+      benefits:
+        - jump_from_log_to_trace
+        - correlate_logs_in_trace
+        - debug_without_reproducing
+    severity: warning
+    rationale: |
+      Trace-log correlation enables jumping between views.
+      Logs provide detail, traces provide context.
+
+  - id: request-id-propagation
+    description: Propagate request IDs across all calls
+    check_type: observability_pattern
+    details:
+      at_entry:
+        generate: "If not present in incoming request"
+        extract: "From X-Request-ID or traceparent header"
+      throughout:
+        include_in_logs: true
+        include_in_traces: true
+        include_in_error_responses: true
+        propagate_to_downstream: true
+      pattern: |
+        @app.middleware
+        async def request_context(request, call_next):
+            request_id = request.headers.get("X-Request-ID") or str(uuid4())
+            with request_context(request_id=request_id):
+                response = await call_next(request)
+                response.headers["X-Request-ID"] = request_id
+                return response
+    severity: warning
+    rationale: |
+      Request IDs are the primary correlation key. They tie
+      together logs, traces, and support tickets.
+
+  # ============================================================
+  # Alerting
+  # ============================================================
+
+  - id: actionable-alerts
+    description: Alerts should be actionable
+    check_type: alerting_pattern
+    details:
+      good_alert_properties:
+        - clear_condition
+        - specific_service
+        - runbook_link
+        - escalation_path
+      avoid:
+        - alerting_on_causes: "Alert on symptoms users see"
+        - too_many_alerts: "Alert fatigue is dangerous"
+        - no_runbook: "Alert without action is noise"
+      structure: |
+        alert: HighErrorRate
+        expr: error_rate > 0.01
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate in {{ $labels.service }}"
+          runbook: "https://runbooks.internal/high-error-rate"
+    severity: warning
+    rationale: |
+      Non-actionable alerts cause fatigue and get ignored.
+      Every alert should have a response playbook.
+
+  - id: slo-based-alerting
+    description: Alert based on SLO burn rate
+    check_type: alerting_pattern
+    details:
+      concept: |
+        Instead of alerting on every error, alert when you're
+        burning through your error budget too fast.
+      example:
+        slo: "99.9% of requests succeed"
+        error_budget: "0.1% = 43 minutes/month"
+        fast_burn:
+          window: "5m"
+          threshold: "14x normal burn"
+          meaning: "Exhausts monthly budget in ~3 hours"
+        slow_burn:
+          window: "1h"
+          threshold: "2x normal burn"
+          meaning: "Exhausts monthly budget in 2 weeks"
+    severity: info
+    rationale: |
+      SLO-based alerting pages only when customer impact
+      threatens the service level objective.
+
+escalation_triggers:
+  - trigger_id: sensitive-data-in-logs
+    condition: PII or secrets detected in log output
+    severity: blocking
+    prompt: |
+      Potential sensitive data in logs:
+      - Review logged fields for PII
+      - Implement redaction if needed
+      - Check log aggregation for exposure
+    rationale: |
+      Logged sensitive data is a compliance violation
+      and security risk.
+
+  - trigger_id: missing-observability
+    condition: New service endpoint without logging/metrics/tracing
+    severity: advisory
+    prompt: |
+      Observability gaps detected:
+      - Add request logging with context
+      - Add latency and error metrics
+      - Ensure trace propagation
+    rationale: |
+      Unobservable code is undebuggable in production.
+      Add observability before deployment.
+
+  - trigger_id: high-cardinality-metric
+    condition: Metric label with unbounded values
+    severity: advisory
+    prompt: |
+      High cardinality metric detected:
+      - Use bounded label values
+      - Consider sampling or aggregation
+      - Move high-cardinality data to logs
+    rationale: |
+      High cardinality causes metric storage to explode
+      and queries to slow down.
+
+quality_gates:
+  - gate_id: observability-review
+    checks:
+      - Structured logging implemented
+      - Four golden signals tracked
+      - Traces generated and propagated
+      - No sensitive data in logs
+      - Alerts have runbooks
+    failure_action: escalate
+
+  - gate_id: production-readiness
+    checks:
+      - Log levels appropriate
+      - Metric cardinality controlled
+      - Error spans marked correctly
+      - Request ID propagated
+    failure_action: advisory

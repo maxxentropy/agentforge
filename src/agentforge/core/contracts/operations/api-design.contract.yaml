@@ -1,0 +1,539 @@
+# Operation Contract: API Design
+# Governs API design patterns for REST, RPC, and internal APIs.
+#
+# These rules ensure APIs are:
+# - Consistent and predictable
+# - Easy to use correctly, hard to use incorrectly
+# - Well-documented and self-describing
+# - Evolvable without breaking clients
+
+id: operation.api-design.v1
+version: "1.0"
+description: |
+  Comprehensive API design patterns covering REST conventions,
+  request/response formats, versioning, and error handling.
+
+rules:
+  # ============================================================
+  # REST Resource Design
+  # ============================================================
+
+  - id: resource-naming
+    description: Use noun-based, plural resource names
+    check_type: naming_convention
+    details:
+      patterns:
+        resources: plural_nouns
+        collections:
+          - "/users"
+          - "/orders"
+          - "/products"
+        items:
+          - "/users/{id}"
+          - "/orders/{order_id}"
+        nested:
+          - "/users/{id}/orders"
+          - "/orders/{id}/items"
+      avoid:
+        - verbs_in_urls
+        - singular_collections
+        - action_endpoints
+      bad_examples:
+        - "/getUsers"
+        - "/createOrder"
+        - "/user"
+        - "/doSomething"
+      exceptions:
+        - controller_resources
+        - batch_operations
+    severity: warning
+    rationale: |
+      REST treats URLs as resource identifiers, not actions.
+      Nouns describe what you're working with, verbs go in HTTP methods.
+
+  - id: http-method-semantics
+    description: Use HTTP methods according to their semantics
+    check_type: api_pattern
+    details:
+      methods:
+        GET:
+          purpose: Retrieve resource(s)
+          safe: true
+          idempotent: true
+          body: never
+        POST:
+          purpose: Create resource or trigger action
+          safe: false
+          idempotent: false
+          body: required
+        PUT:
+          purpose: Replace entire resource
+          safe: false
+          idempotent: true
+          body: required
+        PATCH:
+          purpose: Partial update
+          safe: false
+          idempotent: false
+          body: required
+        DELETE:
+          purpose: Remove resource
+          safe: false
+          idempotent: true
+          body: rarely
+      anti_patterns:
+        - POST_for_retrieval
+        - GET_with_body
+        - DELETE_returning_deleted_resource
+    severity: error
+    rationale: |
+      HTTP methods have defined semantics. Violating them breaks
+      caching, proxies, and client expectations.
+
+  - id: status-code-usage
+    description: Use appropriate HTTP status codes
+    check_type: api_pattern
+    details:
+      categories:
+        2xx_success:
+          200: "OK - general success"
+          201: "Created - resource created"
+          202: "Accepted - async processing started"
+          204: "No Content - success with no body"
+        4xx_client_error:
+          400: "Bad Request - malformed request"
+          401: "Unauthorized - authentication required"
+          403: "Forbidden - insufficient permissions"
+          404: "Not Found - resource doesn't exist"
+          409: "Conflict - state conflict"
+          422: "Unprocessable Entity - validation failed"
+          429: "Too Many Requests - rate limited"
+        5xx_server_error:
+          500: "Internal Server Error - unexpected failure"
+          502: "Bad Gateway - upstream failure"
+          503: "Service Unavailable - temporarily down"
+          504: "Gateway Timeout - upstream timeout"
+      anti_patterns:
+        - 200_for_errors
+        - 500_for_validation
+        - 404_for_empty_list
+    severity: warning
+    rationale: |
+      Status codes are the first thing clients check. Incorrect
+      codes break error handling and monitoring.
+
+  # ============================================================
+  # Request Design
+  # ============================================================
+
+  - id: request-validation
+    description: Validate all request inputs
+    check_type: api_pattern
+    details:
+      validate:
+        - path_parameters
+        - query_parameters
+        - request_headers
+        - request_body
+      validation_order:
+        1: authentication
+        2: authorization
+        3: rate_limiting
+        4: input_validation
+        5: business_rules
+      reject_early: true
+      return_all_errors: true
+    severity: error
+    rationale: |
+      Validation at the edge prevents invalid data from
+      propagating through the system.
+
+  - id: query-parameters
+    description: Design query parameters for filtering and pagination
+    check_type: api_pattern
+    details:
+      filtering:
+        pattern: "?field=value&field2=value2"
+        operators: ["eq", "ne", "gt", "lt", "gte", "lte", "in", "contains"]
+        example: "?status=active&created_at_gte=2024-01-01"
+      pagination:
+        prefer: cursor_based
+        allow: offset_limit
+        parameters:
+          cursor: ["cursor", "after", "before"]
+          offset: ["offset", "skip"]
+          limit: ["limit", "page_size", "per_page"]
+        max_limit: 100
+        default_limit: 20
+      sorting:
+        parameter: "sort"
+        format: "field:asc,field2:desc"
+        example: "?sort=created_at:desc,name:asc"
+    severity: warning
+    rationale: |
+      Consistent query parameter conventions make APIs predictable.
+      Cursor pagination handles large datasets better.
+
+  - id: request-body-format
+    description: Request bodies should be consistent and typed
+    check_type: api_pattern
+    details:
+      format:
+        prefer: "application/json"
+        support: ["application/json", "multipart/form-data"]
+      structure:
+        flat_preferred: true
+        max_nesting: 3
+        snake_case: true
+      avoid:
+        - deeply_nested_objects
+        - mixed_case_conventions
+        - arrays_at_root
+    severity: warning
+    rationale: |
+      Consistent request formats reduce client implementation
+      complexity and documentation burden.
+
+  # ============================================================
+  # Response Design
+  # ============================================================
+
+  - id: response-envelope
+    description: Use consistent response structure
+    check_type: api_pattern
+    details:
+      success_response:
+        single_resource:
+          structure:
+            data: "The resource object"
+            meta: "Optional metadata"
+          example: |
+            {
+              "data": {"id": "123", "name": "Example"},
+              "meta": {"request_id": "abc-123"}
+            }
+        collection:
+          structure:
+            data: "Array of resources"
+            meta: "Pagination info"
+            links: "Navigation links"
+          example: |
+            {
+              "data": [{"id": "1"}, {"id": "2"}],
+              "meta": {"total": 100, "page": 1},
+              "links": {"next": "/users?cursor=abc"}
+            }
+      alternatives:
+        - direct_resource: "Return resource directly without envelope"
+        - jsonapi: "Follow JSON:API specification"
+    severity: warning
+    rationale: |
+      Consistent response structure makes client parsing predictable
+      and allows for metadata without changing resource schema.
+
+  - id: error-response-format
+    description: Error responses must be informative and consistent
+    check_type: api_pattern
+    details:
+      structure:
+        error:
+          code: "Machine-readable error code"
+          message: "Human-readable message"
+          details: "Optional additional context"
+          field_errors: "For validation errors"
+      example: |
+        {
+          "error": {
+            "code": "VALIDATION_ERROR",
+            "message": "Request validation failed",
+            "details": {
+              "field_errors": [
+                {"field": "email", "message": "Invalid email format"},
+                {"field": "age", "message": "Must be positive"}
+              ]
+            }
+          }
+        }
+      include:
+        - request_id_for_tracing
+        - documentation_link
+      avoid:
+        - stack_traces_in_production
+        - internal_error_details
+        - different_formats_per_error
+    severity: error
+    rationale: |
+      Consistent error formats enable systematic error handling.
+      Good errors help developers debug integration issues.
+
+  - id: hateoas-links
+    description: Include hypermedia links where appropriate
+    check_type: api_pattern
+    details:
+      when_to_use:
+        - pagination_navigation
+        - related_resource_discovery
+        - available_actions
+      link_format:
+        self: "Link to current resource"
+        next: "Link to next page"
+        prev: "Link to previous page"
+        related: "Links to related resources"
+      example: |
+        {
+          "data": {...},
+          "links": {
+            "self": "/users/123",
+            "orders": "/users/123/orders",
+            "next": "/users?cursor=xyz"
+          }
+        }
+    severity: info
+    rationale: |
+      Hypermedia links make APIs more discoverable and reduce
+      client-side URL construction.
+
+  # ============================================================
+  # Versioning
+  # ============================================================
+
+  - id: api-versioning
+    description: Version APIs to enable evolution
+    check_type: api_pattern
+    details:
+      strategies:
+        url_path:
+          format: "/v1/users"
+          examples:
+            - "/v1/users"
+            - "/v2/users"
+          pros:
+            - explicit
+            - easy to route
+          cons:
+            - breaks resource identity
+        header:
+          format: "Accept: application/vnd.api+json;version=1"
+          pros:
+            - clean URLs
+            - content negotiation
+          cons:
+            - harder to test
+            - less visible
+        query_param:
+          format: "?version=1"
+          pros:
+            - easy to switch
+          cons:
+            - pollutes query string
+      recommended: url_path
+      rules:
+        - never_break_existing_version
+        - deprecate_before_remove
+        - support_n_minus_1_version
+    severity: warning
+    rationale: |
+      Versioning enables API evolution while maintaining backward
+      compatibility for existing clients.
+
+  - id: breaking-change-policy
+    description: Define what constitutes breaking changes
+    check_type: api_pattern
+    details:
+      breaking_changes:
+        - removing_field
+        - renaming_field
+        - changing_field_type
+        - removing_endpoint
+        - changing_url_structure
+        - adding_required_field
+        - changing_error_format
+      non_breaking_changes:
+        - adding_optional_field
+        - adding_new_endpoint
+        - adding_new_enum_value
+        - relaxing_validation
+      migration_requirements:
+        - deprecation_notice
+        - migration_guide
+        - overlap_period
+    severity: error
+    rationale: |
+      Clear rules prevent accidental breaking changes and help
+      plan API evolution.
+
+  # ============================================================
+  # Authentication & Authorization
+  # ============================================================
+
+  - id: authentication-pattern
+    description: Implement standard authentication patterns
+    check_type: security_pattern
+    details:
+      methods:
+        bearer_token:
+          header: "Authorization: Bearer {token}"
+          use_for: ["api_clients", "mobile_apps", "spa"]
+        api_key:
+          header: "X-API-Key: {key}"
+          use_for: ["server_to_server", "simple_integrations"]
+        basic_auth:
+          header: "Authorization: Basic {base64}"
+          use_for: ["legacy_systems", "internal_tools"]
+      requirements:
+        - use_https_only
+        - validate_on_every_request
+        - rotate_credentials_periodically
+        - rate_limit_auth_failures
+    severity: error
+    rationale: |
+      Consistent authentication patterns are essential for security
+      and integration simplicity.
+
+  - id: authorization-response
+    description: Return appropriate authorization errors
+    check_type: security_pattern
+    details:
+      responses:
+        unauthenticated:
+          status: 401
+          code: "UNAUTHENTICATED"
+          message: "Authentication required"
+        unauthorized:
+          status: 403
+          code: "FORBIDDEN"
+          message: "Insufficient permissions"
+        not_found_or_forbidden:
+          prefer: 404
+          reason: "Don't reveal existence of resources"
+      include:
+        - required_permissions
+        - how_to_get_access
+    severity: error
+    rationale: |
+      Clear auth errors help developers debug access issues
+      while not leaking sensitive information.
+
+  # ============================================================
+  # Rate Limiting
+  # ============================================================
+
+  - id: rate-limiting-headers
+    description: Communicate rate limits clearly
+    check_type: api_pattern
+    details:
+      headers:
+        X-RateLimit-Limit: "Requests allowed per window"
+        X-RateLimit-Remaining: "Requests remaining in window"
+        X-RateLimit-Reset: "Unix timestamp when window resets"
+        Retry-After: "Seconds to wait (when 429)"
+      response_when_limited:
+        status: 429
+        body:
+          error:
+            code: "RATE_LIMITED"
+            message: "Too many requests"
+            retry_after: 60
+    severity: warning
+    rationale: |
+      Rate limit headers help clients implement proper backoff
+      and avoid unnecessary retries.
+
+  # ============================================================
+  # Documentation
+  # ============================================================
+
+  - id: openapi-documentation
+    description: Document APIs with OpenAPI/Swagger
+    check_type: documentation
+    details:
+      required:
+        - operation_summary
+        - request_body_schema
+        - response_schemas
+        - error_responses
+        - authentication_requirements
+      recommended:
+        - example_requests
+        - example_responses
+        - parameter_descriptions
+        - deprecation_notices
+      keep_in_sync: true
+    severity: warning
+    rationale: |
+      OpenAPI documentation enables automated client generation,
+      testing, and interactive exploration.
+
+  - id: api-changelog
+    description: Maintain API changelog
+    check_type: documentation
+    details:
+      include:
+        - version_number
+        - release_date
+        - breaking_changes
+        - new_features
+        - deprecations
+        - migration_instructions
+      format:
+        prefer: CHANGELOG.md
+        alternative: /api/changelog endpoint
+    severity: info
+    rationale: |
+      Changelogs help API consumers track changes and plan
+      for migrations.
+
+escalation_triggers:
+  - trigger_id: breaking-change-detected
+    condition: API change would break existing clients
+    severity: blocking
+    prompt: |
+      Breaking API change detected:
+      - Review impact on existing clients
+      - Consider versioning strategy
+      - Plan deprecation and migration
+    rationale: |
+      Breaking changes affect all consumers. Must be
+      intentional and well-communicated.
+
+  - trigger_id: inconsistent-api-pattern
+    condition: New endpoint deviates from existing patterns
+    severity: advisory
+    prompt: |
+      New API endpoint uses different patterns:
+      - Align with existing conventions
+      - Document why deviation is necessary
+      - Consider updating existing endpoints
+    rationale: |
+      API consistency is more important than local
+      optimization. Deviations add cognitive load.
+
+  - trigger_id: missing-error-handling
+    condition: Endpoint doesn't handle all error cases
+    severity: advisory
+    prompt: |
+      API endpoint may not handle all error cases:
+      - Add validation error responses
+      - Handle not found cases
+      - Consider authorization errors
+    rationale: |
+      Complete error handling prevents unexpected
+      client failures.
+
+quality_gates:
+  - gate_id: api-design-review
+    checks:
+      - RESTful conventions followed
+      - Consistent naming patterns
+      - Proper status codes
+      - Error responses documented
+      - Authentication implemented
+    failure_action: escalate
+
+  - gate_id: api-documentation-review
+    checks:
+      - OpenAPI spec complete
+      - Examples provided
+      - Error cases documented
+      - Authentication documented
+    failure_action: advisory

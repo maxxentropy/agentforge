@@ -1,0 +1,445 @@
+# Operation Contract: Testing Patterns
+# Governs test structure, naming, and best practices.
+#
+# These rules ensure tests are:
+# - Readable and self-documenting
+# - Reliable and not flaky
+# - Fast and isolated
+# - Comprehensive in coverage
+
+id: operation.testing-patterns.v1
+version: "1.0"
+description: |
+  Rules for writing effective, maintainable tests across all layers.
+  Covers unit tests, integration tests, and test organization.
+
+rules:
+  # ============================================================
+  # Test Structure (AAA Pattern)
+  # ============================================================
+
+  - id: arrange-act-assert
+    description: Tests should follow Arrange-Act-Assert structure
+    check_type: test_structure
+    details:
+      sections:
+        arrange:
+          purpose: Set up test fixtures and preconditions
+          location: first
+          markers: ["# Arrange", "# Given", "# Setup"]
+        act:
+          purpose: Execute the behavior being tested
+          location: middle
+          markers: ["# Act", "# When", "# Execute"]
+          max_statements: 3
+        assert:
+          purpose: Verify the expected outcome
+          location: last
+          markers: ["# Assert", "# Then", "# Verify"]
+      anti_patterns:
+        - multiple_acts_per_test
+        - assertions_before_act
+        - arrange_after_act
+    severity: warning
+    rationale: |
+      AAA pattern makes tests readable and predictable.
+      Each test should verify one specific behavior.
+
+  - id: one-assertion-concept
+    description: Each test should verify one logical concept
+    check_type: test_structure
+    details:
+      allow:
+        - multiple_assertions_same_concept
+        - soft_assertions_grouped
+      avoid:
+        - unrelated_assertions
+        - testing_multiple_behaviors
+      examples:
+        good: |
+          # Multiple assertions verifying user creation
+          assert user.id is not None
+          assert user.created_at is not None
+          assert user.status == "active"
+        bad: |
+          # Testing both creation and update
+          assert user.id is not None
+          user.update(name="New")
+          assert user.name == "New"
+    severity: warning
+    rationale: |
+      When tests fail, you should immediately know what's broken.
+      Multiple unrelated assertions obscure the failure cause.
+
+  # ============================================================
+  # Test Naming
+  # ============================================================
+
+  - id: test-naming-pattern
+    description: Test names should describe behavior and expectation
+    check_type: naming_convention
+    details:
+      patterns:
+        method_scenario_expected:
+          format: "{method_name}_{scenario}_{expected_result}"
+          example: "calculate_total_with_discount_returns_reduced_price"
+        should_when:
+          format: "should_{expected}_when_{scenario}"
+          example: "should_return_error_when_input_invalid"
+        given_when_then:
+          format: "given_{context}_when_{action}_then_{outcome}"
+          example: "given_empty_cart_when_checkout_then_fails"
+      avoid:
+        - test1, test2
+        - test_method_name_only
+        - abbreviated_names
+        - generic_names
+    severity: warning
+    rationale: |
+      Good test names document behavior. When tests fail,
+      the name should explain what was expected.
+
+  - id: test-class-organization
+    description: Organize test classes by unit under test
+    check_type: test_organization
+    details:
+      patterns:
+        one_class_per_unit:
+          format: "Test{ClassName}"
+          example: "TestUserService"
+        nested_by_method:
+          format: "class TestMethodName"
+          example: |
+            class TestUserService:
+                class TestCreate:
+                    def test_success(self): ...
+                    def test_validation_error(self): ...
+      file_naming:
+        prefix: "test_"
+        suffix: "_test"
+        match_source: "user_service.py -> test_user_service.py"
+    severity: warning
+    rationale: |
+      Organized tests are easier to navigate. Finding tests
+      for a given class should be trivial.
+
+  # ============================================================
+  # Test Isolation
+  # ============================================================
+
+  - id: test-isolation
+    description: Tests must be independent and isolated
+    check_type: test_quality
+    details:
+      require:
+        - no_shared_mutable_state
+        - no_test_order_dependency
+        - no_external_service_calls
+        - fresh_fixtures_per_test
+      violations:
+        - class_level_mutable_state
+        - test_calling_other_test
+        - relying_on_previous_test_output
+        - sharing_database_state
+    severity: error
+    rationale: |
+      Isolated tests can run in any order, in parallel,
+      and failures are clearly attributable.
+
+  - id: no-flaky-tests
+    description: Tests must be deterministic
+    check_type: test_quality
+    details:
+      avoid:
+        - random_without_seed
+        - sleep_for_timing
+        - time_dependent_assertions
+        - network_calls_without_mocks
+        - filesystem_race_conditions
+      solutions:
+        random: use_fixed_seed_or_mock
+        timing: use_explicit_waits_or_events
+        time: inject_clock_dependency
+        network: mock_or_use_test_server
+    severity: error
+    rationale: |
+      Flaky tests erode trust in the test suite. When tests
+      randomly fail, developers ignore real failures.
+
+  - id: mock-at-boundaries
+    description: Mock external dependencies, not internal code
+    check_type: test_quality
+    details:
+      should_mock:
+        - external_apis
+        - databases
+        - file_system
+        - clocks_and_timers
+        - random_generators
+        - network_calls
+      should_not_mock:
+        - internal_classes
+        - value_objects
+        - pure_functions
+        - data_structures
+      prefer:
+        - fakes_over_mocks
+        - in_memory_implementations
+        - test_doubles
+    severity: warning
+    rationale: |
+      Over-mocking leads to tests that pass but don't verify
+      real behavior. Mock only what you can't control.
+
+  # ============================================================
+  # Test Types and Coverage
+  # ============================================================
+
+  - id: test-pyramid
+    description: Follow the testing pyramid
+    check_type: test_strategy
+    details:
+      pyramid:
+        unit_tests:
+          proportion: "70%"
+          characteristics:
+            - fast_milliseconds
+            - isolated
+            - focused
+            - many
+        integration_tests:
+          proportion: "20%"
+          characteristics:
+            - test_component_interaction
+            - may_use_real_dependencies
+            - slower_acceptable
+        e2e_tests:
+          proportion: "10%"
+          characteristics:
+            - test_full_workflows
+            - expensive
+            - few_critical_paths
+      anti_pattern:
+        ice_cream_cone:
+          description: "Too many E2E, too few unit tests"
+          problem: "Slow, flaky, hard to debug"
+    severity: warning
+    rationale: |
+      Unit tests provide fast feedback; E2E tests provide
+      confidence. Balance gives best of both.
+
+  - id: coverage-requirements
+    description: Minimum test coverage by layer
+    check_type: coverage
+    details:
+      targets:
+        domain_logic: 90%
+        application_services: 80%
+        infrastructure: 60%
+        presentation: 50%
+        generated_code: 70%
+      measure:
+        - line_coverage
+        - branch_coverage
+      exclude:
+        - trivial_getters_setters
+        - dependency_injection_config
+        - auto_generated_code
+    severity: warning
+    rationale: |
+      Coverage ensures code is exercised by tests. Higher
+      coverage for core logic, lower for plumbing.
+
+  - id: test-edge-cases
+    description: Explicitly test edge cases and boundaries
+    check_type: test_completeness
+    details:
+      always_test:
+        - empty_collections
+        - null_inputs
+        - boundary_values
+        - error_conditions
+        - concurrent_access
+      boundary_examples:
+        numeric: [0, 1, -1, max_int, min_int]
+        string: ["", " ", very_long, unicode, newlines]
+        collection: [empty, single, many, duplicates]
+        date: [epoch, far_future, leap_year, timezone]
+    severity: warning
+    rationale: |
+      Most bugs occur at boundaries. Explicit edge case
+      tests catch issues before production.
+
+  # ============================================================
+  # Test Data
+  # ============================================================
+
+  - id: meaningful-test-data
+    description: Use realistic, meaningful test data
+    check_type: test_data
+    details:
+      prefer:
+        - realistic_values
+        - descriptive_names
+        - domain_appropriate
+      avoid:
+        - foo_bar_baz
+        - test123
+        - placeholder_values
+        - production_data
+      examples:
+        good: |
+          user = User(
+              name="Alice Johnson",
+              email="alice@example.com",
+              role="admin"
+          )
+        bad: |
+          user = User(
+              name="test",
+              email="a@b.c",
+              role="x"
+          )
+    severity: warning
+    rationale: |
+      Meaningful test data makes tests readable and helps
+      identify bugs that relate to real-world values.
+
+  - id: test-builders-factories
+    description: Use builders or factories for complex test data
+    check_type: test_data
+    details:
+      when_to_use:
+        - object_has_many_fields
+        - multiple_tests_need_similar_objects
+        - default_values_are_common
+      patterns:
+        builder:
+          example: "UserBuilder().with_name('Alice').with_role('admin').build()"
+        factory:
+          example: "create_user(name='Alice', role='admin')"
+        fixtures:
+          example: "@pytest.fixture def admin_user(): ..."
+    severity: warning
+    rationale: |
+      Builders reduce test setup noise and make it clear
+      which values are relevant to each test.
+
+  # ============================================================
+  # Test Assertions
+  # ============================================================
+
+  - id: specific-assertions
+    description: Use specific assertion methods
+    check_type: assertion_quality
+    details:
+      prefer:
+        - assertEqual_over_assertTrue
+        - assertIn_over_assertTrue
+        - assertRaises_over_try_catch
+        - assertIsNone_over_assertEqual_None
+      examples:
+        bad: "assertTrue(result == expected)"
+        good: "assertEqual(result, expected)"
+        bad: "assertTrue(item in collection)"
+        good: "assertIn(item, collection)"
+    severity: warning
+    rationale: |
+      Specific assertions give better error messages when
+      tests fail, making debugging faster.
+
+  - id: assertion-messages
+    description: Include context in assertion messages
+    check_type: assertion_quality
+    details:
+      when_required:
+        - complex_assertions
+        - non_obvious_failures
+        - loop_based_assertions
+      format: "Explain what was expected and why"
+      examples:
+        good: |
+          assert result.status == "active", \
+              f"Expected user {user.id} to be active after verification"
+    severity: info
+    rationale: |
+      Good assertion messages speed up debugging by
+      explaining the test's intent when it fails.
+
+  - id: no-assertions-in-loops
+    description: Avoid assertions in loops when possible
+    check_type: assertion_quality
+    details:
+      prefer:
+        - all_any_comprehensions
+        - single_collection_assertion
+        - parameterized_tests
+      examples:
+        bad: |
+          for item in items:
+              assert item.valid
+        good: |
+          assert all(item.valid for item in items)
+        better: |
+          @pytest.mark.parametrize("item", items)
+          def test_item_valid(item):
+              assert item.valid
+    severity: warning
+    rationale: |
+      Loop assertions hide which iteration failed.
+      Parameterized tests give individual failures.
+
+escalation_triggers:
+  - trigger_id: low-coverage
+    condition: Test coverage below minimum threshold
+    severity: blocking
+    prompt: |
+      Test coverage is below required threshold:
+      - Add tests for uncovered code paths
+      - Ensure edge cases are tested
+      - Check branch coverage, not just line coverage
+    rationale: |
+      Untested code is a liability. Coverage gaps
+      indicate potential bugs.
+
+  - trigger_id: test-isolation-violation
+    condition: Tests are not isolated
+    severity: blocking
+    prompt: |
+      Tests may not be isolated:
+      - Check for shared mutable state
+      - Verify tests pass when run individually
+      - Check for test order dependencies
+    rationale: |
+      Non-isolated tests are unreliable and block
+      parallel execution.
+
+  - trigger_id: missing-edge-case-tests
+    condition: Boundary conditions not tested
+    severity: advisory
+    prompt: |
+      Consider adding edge case tests for:
+      - Empty inputs
+      - Null/None handling
+      - Boundary values
+      - Error conditions
+    rationale: |
+      Edge cases are where bugs hide. Explicit tests
+      prevent regression.
+
+quality_gates:
+  - gate_id: test-quality-review
+    checks:
+      - AAA structure followed
+      - Descriptive test names
+      - No flaky patterns
+      - Proper mocking
+      - Edge cases covered
+    failure_action: advisory
+
+  - gate_id: coverage-check
+    checks:
+      - Minimum coverage met
+      - All new code covered
+      - Branch coverage adequate
+    failure_action: escalate

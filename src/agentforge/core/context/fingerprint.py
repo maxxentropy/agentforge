@@ -263,112 +263,91 @@ class FingerprintGenerator:
             content_hash=content_hash,
         )
 
-    def _detect_technical(self) -> TechnicalProfile:
-        """Detect technical characteristics."""
-        language = "unknown"
-        version: str | None = None
-        frameworks: list[str] = []
-        build_system: str | None = None
-        test_framework = "unknown"
-
-        # Python detection
+    def _detect_python(self) -> TechnicalProfile | None:
+        """Detect Python project characteristics."""
         pyproject = self.project_path / "pyproject.toml"
         if pyproject.exists():
-            language = "python"
             content = pyproject.read_text()
-
-            # Build system
-            if "hatchling" in content or "[tool.hatch" in content:
-                build_system = "hatch"
-            elif "poetry" in content or "[tool.poetry" in content:
-                build_system = "poetry"
-            elif "setuptools" in content:
-                build_system = "setuptools"
-
-            # Test framework
-            if "pytest" in content:
-                test_framework = "pytest"
-                frameworks.append("pytest")
-
-            # Frameworks
-            framework_patterns = [
-                ("pydantic", "pydantic"),
-                ("fastapi", "fastapi"),
-                ("django", "django"),
-                ("flask", "flask"),
-                ("click", "click"),
-                ("typer", "typer"),
-            ]
-            for pattern, name in framework_patterns:
-                if pattern in content.lower() and name not in frameworks:
-                    frameworks.append(name)
-
-            # Python version (matches requires-python = ">=3.11" or python_requires=">=3.11")
+            build_system = self._detect_python_build_system(content)
+            frameworks = self._detect_python_frameworks(content)
+            test_framework = "pytest" if "pytest" in content else "unknown"
             version_match = re.search(
-                r'(?:requires-python|python_requires)\s*=\s*"[><=]*(\d+\.\d+)',
-                content,
+                r'(?:requires-python|python_requires)\s*=\s*"[><=]*(\d+\.\d+)', content
             )
-            if version_match:
-                version = version_match.group(1)
+            return TechnicalProfile(
+                language="python", version=version_match.group(1) if version_match else None,
+                frameworks=frameworks, build_system=build_system, test_framework=test_framework,
+            )
+        if (self.project_path / "setup.py").exists():
+            test_framework = "pytest" if (self.project_path / "tests").exists() else "unknown"
+            return TechnicalProfile(
+                language="python", version=None, frameworks=[],
+                build_system="setuptools", test_framework=test_framework,
+            )
+        return None
 
-        # setup.py fallback
-        elif (self.project_path / "setup.py").exists():
-            language = "python"
-            build_system = "setuptools"
-            if (self.project_path / "tests").exists():
-                test_framework = "pytest"
+    def _detect_python_build_system(self, content: str) -> str | None:
+        """Detect Python build system from pyproject.toml content."""
+        if "hatchling" in content or "[tool.hatch" in content:
+            return "hatch"
+        if "poetry" in content or "[tool.poetry" in content:
+            return "poetry"
+        if "setuptools" in content:
+            return "setuptools"
+        return None
 
-        # Node.js detection
+    def _detect_python_frameworks(self, content: str) -> list[str]:
+        """Detect Python frameworks from pyproject.toml content."""
+        frameworks = []
+        if "pytest" in content:
+            frameworks.append("pytest")
+        for pattern in ("pydantic", "fastapi", "django", "flask", "click", "typer"):
+            if pattern in content.lower() and pattern not in frameworks:
+                frameworks.append(pattern)
+        return frameworks
+
+    def _detect_node(self) -> TechnicalProfile | None:
+        """Detect Node.js/TypeScript project characteristics."""
         package_json = self.project_path / "package.json"
-        if package_json.exists() and language == "unknown":
-            content = package_json.read_text()
-
-            if (self.project_path / "tsconfig.json").exists():
-                language = "typescript"
-            else:
-                language = "javascript"
-
-            build_system = "npm"
-
-            # Test framework
-            if "jest" in content:
-                test_framework = "jest"
-            elif "mocha" in content:
-                test_framework = "mocha"
-
-            # Frameworks
-            if "react" in content:
-                frameworks.append("react")
-            if "express" in content:
-                frameworks.append("express")
-            if "next" in content:
-                frameworks.append("next")
-
-        # C# detection
-        csproj_files = list(self.project_path.glob("*.csproj"))
-        if csproj_files and language == "unknown":
-            language = "csharp"
-            build_system = "dotnet"
-            test_framework = "xunit"
-
-        # Rust detection
-        if (self.project_path / "Cargo.toml").exists() and language == "unknown":
-            language = "rust"
-            build_system = "cargo"
-            test_framework = "cargo test"
-
-        # Go detection
-        if (self.project_path / "go.mod").exists() and language == "unknown":
-            language = "go"
-            build_system = "go"
-            test_framework = "go test"
-
+        if not package_json.exists():
+            return None
+        content = package_json.read_text()
+        language = "typescript" if (self.project_path / "tsconfig.json").exists() else "javascript"
+        test_framework = "jest" if "jest" in content else ("mocha" if "mocha" in content else "unknown")
+        frameworks = [f for f in ("react", "express", "next") if f in content]
         return TechnicalProfile(
-            language=language,
-            version=version,
-            frameworks=frameworks,
-            build_system=build_system,
-            test_framework=test_framework,
+            language=language, version=None, frameworks=frameworks,
+            build_system="npm", test_framework=test_framework,
+        )
+
+    def _detect_simple_language(self) -> TechnicalProfile | None:
+        """Detect C#, Rust, or Go projects."""
+        if list(self.project_path.glob("*.csproj")):
+            return TechnicalProfile(
+                language="csharp", version=None, frameworks=[],
+                build_system="dotnet", test_framework="xunit",
+            )
+        if (self.project_path / "Cargo.toml").exists():
+            return TechnicalProfile(
+                language="rust", version=None, frameworks=[],
+                build_system="cargo", test_framework="cargo test",
+            )
+        if (self.project_path / "go.mod").exists():
+            return TechnicalProfile(
+                language="go", version=None, frameworks=[],
+                build_system="go", test_framework="go test",
+            )
+        return None
+
+    def _detect_technical(self) -> TechnicalProfile:
+        """Detect technical characteristics."""
+        # Try each language detector in order
+        for detector in (self._detect_python, self._detect_node, self._detect_simple_language):
+            if profile := detector():
+                return profile
+        return TechnicalProfile(
+            language="unknown", version=None, frameworks=[],
+            build_system=None, test_framework="unknown",
         )
 
     def _detect_patterns(self) -> DetectedPatterns:

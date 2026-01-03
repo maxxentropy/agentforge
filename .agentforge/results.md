@@ -7,15 +7,15 @@
 | Mode | full |
 | Files Checked | 0 |
 | Checks Run | 158 |
-| Total Violations | 4678 |
+| Total Violations | 4680 |
 | Errors | 0 |
-| Warnings | 450 |
-| Duration | 15.30s |
+| Warnings | 447 |
+| Duration | 15.46s |
 
 ### All Violations
 
 <details>
-<summary>View all 4678 violations in 414 files</summary>
+<summary>View all 4680 violations in 414 files</summary>
 
 **`<unknown>`** (4 violations)
 
@@ -3816,31 +3816,22 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 
-**`src/agentforge/core/context/fingerprint.py`** (21 violations)
+**`src/agentforge/core/context/fingerprint.py`** (23 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L266`
-  - Function '_detect_technical' has complexity 28 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L374`
+- 🟡 **max-cyclomatic-complexity** at `L353`
   - Function '_detect_patterns' has complexity 22 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L426`
+- 🟡 **max-cyclomatic-complexity** at `L405`
   - Function '_detect_structure' has complexity 16 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-function-length** at `L266`
-  - Function '_detect_technical' has 80 lines (max: 50)
-  - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-function-length** at `L426`
+- 🟡 **max-function-length** at `L405`
   - Function '_detect_structure' has 61 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-nesting-depth** at `L374`
+- 🟡 **max-nesting-depth** at `L353`
   - Function '_detect_patterns' has nesting depth 6 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
-- 🟡 **max-file-lines** at `file`
-  - File exceeds line limit (506 lines > 500)
-  - 💡 *Consider splitting into smaller files*
 - 🔵 **single-responsibility-modules** at `L165`
-  - Class 'FingerprintGenerator' has 9 methods (max: 3)
+  - Class 'FingerprintGenerator' has 14 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -3865,12 +3856,22 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **default-result-return-types** at `L258`
   - Method '_detect_identity' returns 'ProjectIdentity', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **default-result-return-types** at `L266`
+  - Method '_detect_python' returns 'TechnicalProfile | None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L289`
+  - Method '_detect_python_build_system' returns 'str | None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L299`
+  - Method '_detect_python_frameworks' returns 'list[str]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L309`
+  - Method '_detect_node' returns 'TechnicalProfile | None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L323`
+  - Method '_detect_simple_language' returns 'TechnicalProfile | None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L342`
   - Method '_detect_technical' returns 'TechnicalProfile', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L374`
+- 🔵 **default-result-return-types** at `L353`
   - Method '_detect_patterns' returns 'DetectedPatterns', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L426`
+- 🔵 **default-result-return-types** at `L405`
   - Method '_detect_structure' returns 'ProjectStructure', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L502`
+- 🔵 **default-result-return-types** at `L481`
   - Method 'clear_cache' returns 'None', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -16725,6 +16726,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **single-responsibility-modules** at `L769`
   - Class 'TestEdgeCases' has 5 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
+- 🟡 **no-real-network-calls** at `L475`
+  - Forbidden pattern found: 'requests.get('
+  - 💡 *Use responses, httpretty, or pytest-mock to mock network calls*
+- 🟡 **no-real-network-calls** at `L896`
+  - Forbidden pattern found: 'requests.get('
+  - 💡 *Use responses, httpretty, or pytest-mock to mock network calls*
 - 🟡 **unit-tests-isolated** at `L487`
   - Forbidden pattern found: 'sqlite3'
   - 💡 *Mock database connections in unit tests*
@@ -16734,15 +16741,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **unit-tests-isolated** at `L504`
   - Forbidden pattern found: 'sqlite3'
   - 💡 *Mock database connections in unit tests*
-- 🟡 **no-real-network-calls** at `L475`
-  - Forbidden pattern found: 'requests.get('
-  - 💡 *Use responses, httpretty, or pytest-mock to mock network calls*
-- 🟡 **no-real-network-calls** at `L896`
-  - Forbidden pattern found: 'requests.get('
-  - 💡 *Use responses, httpretty, or pytest-mock to mock network calls*
-- 🔵 **no-hardcoded-test-data-paths** at `L897`
-  - Forbidden pattern found: 'open("'
-  - 💡 *Use tmp_path fixture or Path(__file__).parent for test data*
 - 🔵 **fixtures-in-conftest** at `L37`
   - Forbidden pattern found: '@pytest.fixture'
   - 💡 *Move shared fixtures to conftest.py*
@@ -16755,6 +16753,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **fixtures-in-conftest** at `L298`
   - Forbidden pattern found: '@pytest.fixture'
   - 💡 *Move shared fixtures to conftest.py*
+- 🔵 **no-hardcoded-test-data-paths** at `L897`
+  - Forbidden pattern found: 'open("'
+  - 💡 *Use tmp_path fixture or Path(__file__).parent for test data*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
   - 💡 *Add lineage header to file:
@@ -17034,5 +17035,5 @@ Or regenerate file through TDFLOW to get proper lineage.*
 </details>
 
 ---
-*Generated at 2026-01-03 18:16:56 UTC*
-*Commit: `7c37d914`*
+*Generated at 2026-01-03 18:18:21 UTC*
+*Commit: `bc3639a0`*

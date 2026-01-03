@@ -166,19 +166,6 @@
               }
             },
             {
-              "id": "no-real-network-calls",
-              "name": "no-real-network-calls",
-              "shortDescription": {
-                "text": "Check: no-real-network-calls"
-              },
-              "defaultConfiguration": {
-                "level": "warning"
-              },
-              "help": {
-                "text": "Use responses, httpretty, or pytest-mock to mock network calls"
-              }
-            },
-            {
               "id": "no-sleep-in-tests",
               "name": "no-sleep-in-tests",
               "shortDescription": {
@@ -202,6 +189,19 @@
               },
               "help": {
                 "text": "Mock database connections in unit tests"
+              }
+            },
+            {
+              "id": "no-real-network-calls",
+              "name": "no-real-network-calls",
+              "shortDescription": {
+                "text": "Check: no-real-network-calls"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "help": {
+                "text": "Use responses, httpretty, or pytest-mock to mock network calls"
               }
             },
             {
@@ -244,19 +244,6 @@
               }
             },
             {
-              "id": "main-guard-pattern",
-              "name": "main-guard-pattern",
-              "shortDescription": {
-                "text": "Check: main-guard-pattern"
-              },
-              "defaultConfiguration": {
-                "level": "warning"
-              },
-              "help": {
-                "text": "Add: if __name__ == '__main__': main()"
-              }
-            },
-            {
               "id": "cli-has-version",
               "name": "cli-has-version",
               "shortDescription": {
@@ -267,6 +254,19 @@
               },
               "help": {
                 "text": "Add @click.version_option() to main command"
+              }
+            },
+            {
+              "id": "main-guard-pattern",
+              "name": "main-guard-pattern",
+              "shortDescription": {
+                "text": "Check: main-guard-pattern"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "help": {
+                "text": "Add: if __name__ == '__main__': main()"
               }
             },
             {
@@ -2725,126 +2725,6 @@
           ],
           "partialFingerprints": {
             "primaryLocationLineHash": "a633870ec4c20a55"
-          }
-        },
-        {
-          "ruleId": "max-cyclomatic-complexity",
-          "level": "warning",
-          "message": {
-            "text": "Function '_run_single_zone_discovery' has complexity 12 (max: 10)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/cli/commands/discover.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 40
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Break complex functions into smaller, focused helper functions"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "25b8f3dea6e1416f"
-          }
-        },
-        {
-          "ruleId": "max-cyclomatic-complexity",
-          "level": "warning",
-          "message": {
-            "text": "Function '_run_multi_zone_discovery' has complexity 13 (max: 10)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/cli/commands/discover.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 99
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Break complex functions into smaller, focused helper functions"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "d1c5d91b55d32060"
-          }
-        },
-        {
-          "ruleId": "max-cyclomatic-complexity",
-          "level": "warning",
-          "message": {
-            "text": "Function '_output_multi_zone_summary' has complexity 14 (max: 10)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/cli/commands/discover.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 210
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Break complex functions into smaller, focused helper functions"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "21cbe3b68f370799"
-          }
-        },
-        {
-          "ruleId": "max-cyclomatic-complexity",
-          "level": "warning",
-          "message": {
-            "text": "Function '_output_summary' has complexity 16 (max: 10)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/cli/commands/discover.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 282
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Break complex functions into smaller, focused helper functions"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "ab25267ecead2add"
           }
         },
         {
@@ -29926,66 +29806,6 @@
           }
         },
         {
-          "ruleId": "no-real-network-calls",
-          "level": "warning",
-          "message": {
-            "text": "Forbidden pattern found: 'requests.get('"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "tests/unit/tools/test_builtin_checks_architecture.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 475
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use responses, httpretty, or pytest-mock to mock network calls"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "ebd70fb2a1592371"
-          }
-        },
-        {
-          "ruleId": "no-real-network-calls",
-          "level": "warning",
-          "message": {
-            "text": "Forbidden pattern found: 'requests.get('"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "tests/unit/tools/test_builtin_checks_architecture.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 896
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use responses, httpretty, or pytest-mock to mock network calls"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "c004d4d91c59a89d"
-          }
-        },
-        {
           "ruleId": "no-sleep-in-tests",
           "level": "warning",
           "message": {
@@ -30193,6 +30013,66 @@
           ],
           "partialFingerprints": {
             "primaryLocationLineHash": "27e929cf5548ee5e"
+          }
+        },
+        {
+          "ruleId": "no-real-network-calls",
+          "level": "warning",
+          "message": {
+            "text": "Forbidden pattern found: 'requests.get('"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "tests/unit/tools/test_builtin_checks_architecture.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 475
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use responses, httpretty, or pytest-mock to mock network calls"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "ebd70fb2a1592371"
+          }
+        },
+        {
+          "ruleId": "no-real-network-calls",
+          "level": "warning",
+          "message": {
+            "text": "Forbidden pattern found: 'requests.get('"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "tests/unit/tools/test_builtin_checks_architecture.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 896
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use responses, httpretty, or pytest-mock to mock network calls"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "c004d4d91c59a89d"
           }
         },
         {
@@ -39106,33 +38986,6 @@
           }
         },
         {
-          "ruleId": "main-guard-pattern",
-          "level": "warning",
-          "message": {
-            "text": "Required pattern not found: 'if\\s+__name__\\s*==\\s*['\"]__main__['\"]'"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/contracts/cli.py",
-                  "uriBaseId": "%SRCROOT%"
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Add: if __name__ == '__main__': main()"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "64536d4b4b15f62f"
-          }
-        },
-        {
           "ruleId": "cli-has-version",
           "level": "note",
           "message": {
@@ -39184,6 +39037,33 @@
           ],
           "partialFingerprints": {
             "primaryLocationLineHash": "a234e9b6e0783303"
+          }
+        },
+        {
+          "ruleId": "main-guard-pattern",
+          "level": "warning",
+          "message": {
+            "text": "Required pattern not found: 'if\\s+__name__\\s*==\\s*['\"]__main__['\"]'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/contracts/cli.py",
+                  "uriBaseId": "%SRCROOT%"
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Add: if __name__ == '__main__': main()"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "64536d4b4b15f62f"
           }
         },
         {
@@ -124962,14 +124842,14 @@
       "invocations": [
         {
           "executionSuccessful": true,
-          "startTimeUtc": "2026-01-03T20:34:06.081827Z",
-          "endTimeUtc": "2026-01-03T20:34:24.915190Z"
+          "startTimeUtc": "2026-01-03T20:36:42.616673Z",
+          "endTimeUtc": "2026-01-03T20:37:02.165935Z"
         }
       ],
       "versionControlProvenance": [
         {
           "repositoryUri": "",
-          "revisionId": "7d56989ebb5325c031072c591d2d90c4eaeeea1f"
+          "revisionId": "1f683b66cafb28c4073cd38eae20e65d5fba8aca"
         }
       ]
     }

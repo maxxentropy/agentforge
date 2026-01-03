@@ -8,6 +8,29 @@ import click
 import yaml
 
 
+def _handle_discovery_error(e, args):
+    """Handle discovery error and exit."""
+    click.echo(f"\nError during discovery: {e}")
+    if args.verbose:
+        import traceback
+        traceback.print_exc()
+    sys.exit(1)
+
+
+def _output_final_status(result, success_message: str):
+    """Output final status message."""
+    click.echo()
+    if result.success:
+        click.echo(click.style(f"✓ {success_message}", fg='green'))
+        if result.profile_path:
+            click.echo(f"  Profile saved to: {result.profile_path}")
+    else:
+        click.echo(click.style("✗ Discovery completed with errors", fg='red'))
+        for error in result.errors:
+            click.echo(f"  - {error}")
+        sys.exit(1)
+
+
 def run_discover(args):
     """
     Run brownfield discovery on a codebase.
@@ -37,26 +60,40 @@ def run_discover(args):
         _run_single_zone_discovery(args, root_path, progress_callback)
 
 
+def _get_discovery_phases(args):
+    """Get discovery phases based on args."""
+    from agentforge.core.discovery import DiscoveryPhase
+    if args.phase == 'all':
+        return None
+    phase_map = {
+        'language': [DiscoveryPhase.LANGUAGE],
+        'structure': [DiscoveryPhase.STRUCTURE],
+        'patterns': [DiscoveryPhase.PATTERNS],
+        'architecture': [DiscoveryPhase.ARCHITECTURE],
+    }
+    return phase_map.get(args.phase)
+
+
+def _output_by_format(args, result, summary_fn, yaml_fn, json_fn):
+    """Output result based on format argument."""
+    if args.format == 'summary':
+        summary_fn(result, args)
+    elif args.format == 'yaml':
+        yaml_fn(result)
+    elif args.format == 'json':
+        json_fn(result)
+
+
 def _run_single_zone_discovery(args, root_path, progress_callback):
     """Run traditional single-zone discovery."""
     try:
-        from agentforge.core.discovery import DiscoveryManager, DiscoveryPhase
+        from agentforge.core.discovery import DiscoveryManager
     except ImportError as e:
         click.echo(f"\nError: Could not import discovery module: {e}")
         sys.exit(1)
 
-    # Determine phases to run
-    phases = None
-    if args.phase != 'all':
-        phase_map = {
-            'language': [DiscoveryPhase.LANGUAGE],
-            'structure': [DiscoveryPhase.STRUCTURE],
-            'patterns': [DiscoveryPhase.PATTERNS],
-            'architecture': [DiscoveryPhase.ARCHITECTURE],
-        }
-        phases = phase_map.get(args.phase)
+    phases = _get_discovery_phases(args)
 
-    # Run discovery
     manager = DiscoveryManager(
         root_path=root_path,
         verbose=args.verbose,
@@ -64,36 +101,12 @@ def _run_single_zone_discovery(args, root_path, progress_callback):
     )
 
     try:
-        result = manager.discover(
-            phases=phases,
-            save_profile=not args.no_save,
-        )
+        result = manager.discover(phases=phases, save_profile=not args.no_save)
     except Exception as e:
-        click.echo(f"\nError during discovery: {e}")
-        if args.verbose:
-            import traceback
-            traceback.print_exc()
-        sys.exit(1)
+        _handle_discovery_error(e, args)
 
-    # Output results based on format
-    if args.format == 'summary':
-        _output_summary(result, args)
-    elif args.format == 'yaml':
-        _output_yaml(result)
-    elif args.format == 'json':
-        _output_json(result)
-
-    # Final status
-    click.echo()
-    if result.success:
-        click.echo(click.style("✓ Discovery completed successfully", fg='green'))
-        if result.profile_path:
-            click.echo(f"  Profile saved to: {result.profile_path}")
-    else:
-        click.echo(click.style("✗ Discovery completed with errors", fg='red'))
-        for error in result.errors:
-            click.echo(f"  - {error}")
-        sys.exit(1)
+    _output_by_format(args, result, _output_summary, _output_yaml, _output_json)
+    _output_final_status(result, "Discovery completed successfully")
 
 
 def _run_multi_zone_discovery(args, root_path, progress_callback):
@@ -111,51 +124,29 @@ def _run_multi_zone_discovery(args, root_path, progress_callback):
     )
 
     # Handle --list-zones flag
-    list_zones = getattr(args, 'list_zones', False)
-    if list_zones:
-        zones = manager.list_zones()
-        _output_zones_list(zones)
+    if getattr(args, 'list_zones', False):
+        _output_zones_list(manager.list_zones())
         return
 
     # Run full discovery
-    zone_name = getattr(args, 'zone', None)
     try:
         result = manager.discover(
-            zone_name=zone_name,
+            zone_name=getattr(args, 'zone', None),
             save_profile=not args.no_save,
         )
     except Exception as e:
-        click.echo(f"\nError during discovery: {e}")
-        if args.verbose:
-            import traceback
-            traceback.print_exc()
-        sys.exit(1)
+        _handle_discovery_error(e, args)
 
     # Handle --interactions flag
-    show_interactions = getattr(args, 'interactions', False)
-    if show_interactions:
+    if getattr(args, 'interactions', False):
         _output_interactions(result.interactions)
         return
 
-    # Output results based on format
-    if args.format == 'summary':
-        _output_multi_zone_summary(result, args)
-    elif args.format == 'yaml':
-        _output_multi_zone_yaml(result)
-    elif args.format == 'json':
-        _output_multi_zone_json(result)
-
-    # Final status
-    click.echo()
-    if result.success:
-        click.echo(click.style("✓ Multi-zone discovery completed successfully", fg='green'))
-        if result.profile_path:
-            click.echo(f"  Profile saved to: {result.profile_path}")
-    else:
-        click.echo(click.style("✗ Discovery completed with errors", fg='red'))
-        for error in result.errors:
-            click.echo(f"  - {error}")
-        sys.exit(1)
+    _output_by_format(
+        args, result,
+        _output_multi_zone_summary, _output_multi_zone_yaml, _output_multi_zone_json
+    )
+    _output_final_status(result, "Multi-zone discovery completed successfully")
 
 
 def _output_zones_list(zones):
@@ -207,6 +198,46 @@ def _output_interactions(interactions):
         click.echo()
 
 
+def _output_zone_profile(zone_name, profile):
+    """Output a single zone's profile summary."""
+    click.echo()
+    click.echo(f"\n{'='*40}")
+    click.echo(f"Zone: {zone_name}")
+    click.echo(f"{'='*40}")
+
+    for lang in profile.languages:
+        click.echo(f"\n  Language: {lang.name}")
+        click.echo(f"  Files: {lang.file_count}, Lines: {lang.line_count}")
+        if lang.frameworks:
+            click.echo(f"  Frameworks: {', '.join(lang.frameworks)}")
+
+    structure = profile.structure
+    click.echo(f"\n  Architecture: {structure.get('style', 'unknown')} ({structure.get('confidence', 0):.0%})")
+    layers = structure.get('layers', {})
+    if layers:
+        click.echo(f"  Layers: {', '.join(layers.keys())}")
+
+    patterns = profile.patterns
+    if patterns:
+        code_patterns = [k for k in patterns if not k.startswith('framework_')]
+        if code_patterns:
+            click.echo(f"  Patterns: {', '.join(code_patterns[:5])}")
+
+
+def _output_cross_zone_interactions(interactions):
+    """Output cross-zone interactions summary."""
+    if not interactions:
+        return
+    click.echo()
+    click.echo("-" * 40)
+    click.echo(f"Cross-Zone Interactions: {len(interactions)}")
+    for interaction in interactions:
+        if interaction.from_zone and interaction.to_zone:
+            click.echo(f"  • {interaction.from_zone} → {interaction.to_zone} ({interaction.interaction_type.value})")
+        elif interaction.zones:
+            click.echo(f"  • {', '.join(interaction.zones)} ({interaction.interaction_type.value})")
+
+
 def _output_multi_zone_summary(result, args):
     """Output human-readable multi-zone summary."""
     click.echo()
@@ -214,51 +245,14 @@ def _output_multi_zone_summary(result, args):
     click.echo("MULTI-ZONE DISCOVERY RESULTS")
     click.echo("-" * 60)
 
-    # Zones overview
     click.echo(f"\nZones Detected: {len(result.zones)}")
     for zone in result.zones:
         click.echo(f"  • {zone.name}: {zone.language} at {zone.path}")
 
-    # Per-zone summaries
     for zone_name, profile in result.zone_profiles.items():
-        click.echo()
-        click.echo(f"\n{'='*40}")
-        click.echo(f"Zone: {zone_name}")
-        click.echo(f"{'='*40}")
+        _output_zone_profile(zone_name, profile)
 
-        # Language info
-        for lang in profile.languages:
-            click.echo(f"\n  Language: {lang.name}")
-            click.echo(f"  Files: {lang.file_count}, Lines: {lang.line_count}")
-            if lang.frameworks:
-                click.echo(f"  Frameworks: {', '.join(lang.frameworks)}")
-
-        # Structure
-        structure = profile.structure
-        click.echo(f"\n  Architecture: {structure.get('style', 'unknown')} ({structure.get('confidence', 0):.0%})")
-        layers = structure.get('layers', {})
-        if layers:
-            click.echo(f"  Layers: {', '.join(layers.keys())}")
-
-        # Patterns
-        patterns = profile.patterns
-        if patterns:
-            code_patterns = [k for k in patterns if not k.startswith('framework_')]
-            if code_patterns:
-                click.echo(f"  Patterns: {', '.join(code_patterns[:5])}")
-
-    # Interactions
-    if result.interactions:
-        click.echo()
-        click.echo("-" * 40)
-        click.echo(f"Cross-Zone Interactions: {len(result.interactions)}")
-        for interaction in result.interactions:
-            if interaction.from_zone and interaction.to_zone:
-                click.echo(f"  • {interaction.from_zone} → {interaction.to_zone} ({interaction.interaction_type.value})")
-            elif interaction.zones:
-                click.echo(f"  • {', '.join(interaction.zones)} ({interaction.interaction_type.value})")
-
-    # Timing
+    _output_cross_zone_interactions(result.interactions)
     click.echo(f"\nDuration: {result.total_duration_seconds:.2f}s")
 
 
@@ -279,6 +273,60 @@ def _output_multi_zone_json(result):
         click.echo("{}")
 
 
+def _output_languages_section(languages):
+    """Output languages section."""
+    click.echo("\nLanguages:")
+    for lang in languages:
+        primary = " (primary)" if lang.primary else ""
+        click.echo(f"  • {lang.name}{primary}: {lang.file_count} files, {lang.line_count} lines")
+        if lang.frameworks:
+            click.echo(f"    Frameworks: {', '.join(lang.frameworks)}")
+
+
+def _output_structure_section(structure):
+    """Output structure section."""
+    click.echo("\nStructure:")
+    click.echo(f"  Architecture style: {structure.get('architecture_style', 'unknown')}")
+    click.echo(f"  Confidence: {structure.get('confidence', 0):.0%}")
+    layers = structure.get('layers', {})
+    if layers:
+        click.echo("  Layers detected:")
+        for name, layer in layers.items():
+            click.echo(f"    • {name}: {layer.get('file_count', 0)} files")
+
+
+def _output_patterns_section(patterns):
+    """Output patterns section."""
+    click.echo("\nPatterns:")
+    if not patterns:
+        click.echo("  No patterns detected")
+        return
+
+    code_patterns = {k: v for k, v in patterns.items() if not k.startswith('framework_')}
+    frameworks = {k.replace('framework_', ''): v for k, v in patterns.items() if k.startswith('framework_')}
+
+    if code_patterns:
+        click.echo("  Code patterns:")
+        for name, pattern in sorted(code_patterns.items(), key=lambda x: x[1].get('confidence', 0), reverse=True):
+            conf = pattern.get('confidence', 0)
+            click.echo(f"    • {name}: {conf:.0%} confidence")
+
+    if frameworks:
+        click.echo("  Frameworks:")
+        for name, fw in sorted(frameworks.items(), key=lambda x: x[1].get('confidence', 0), reverse=True):
+            conf = fw.get('confidence', 0)
+            fw_type = fw.get('metadata', {}).get('type', '')
+            click.echo(f"    • {name} ({fw_type}): {conf:.0%} confidence")
+
+
+def _output_dependencies_section(dependencies):
+    """Output dependencies section."""
+    if dependencies:
+        click.echo(f"\nDependencies: {len(dependencies)} packages")
+        dev_deps = sum(1 for d in dependencies if d.is_dev)
+        click.echo(f"  • {len(dependencies) - dev_deps} runtime, {dev_deps} dev")
+
+
 def _output_summary(result, args):
     """Output human-readable summary."""
     click.echo()
@@ -291,55 +339,10 @@ def _output_summary(result, args):
         click.echo("  No profile generated")
         return
 
-    # Languages
-    click.echo("\nLanguages:")
-    for lang in profile.languages:
-        primary = " (primary)" if lang.primary else ""
-        click.echo(f"  • {lang.name}{primary}: {lang.file_count} files, {lang.line_count} lines")
-        if lang.frameworks:
-            click.echo(f"    Frameworks: {', '.join(lang.frameworks)}")
-
-    # Structure
-    click.echo("\nStructure:")
-    structure = profile.structure
-    click.echo(f"  Architecture style: {structure.get('architecture_style', 'unknown')}")
-    click.echo(f"  Confidence: {structure.get('confidence', 0):.0%}")
-    layers = structure.get('layers', {})
-    if layers:
-        click.echo("  Layers detected:")
-        for name, layer in layers.items():
-            click.echo(f"    • {name}: {layer.get('file_count', 0)} files")
-
-    # Patterns
-    click.echo("\nPatterns:")
-    patterns = profile.patterns
-    if patterns:
-        # Separate patterns from frameworks
-        code_patterns = {k: v for k, v in patterns.items() if not k.startswith('framework_')}
-        frameworks = {k.replace('framework_', ''): v for k, v in patterns.items() if k.startswith('framework_')}
-
-        if code_patterns:
-            click.echo("  Code patterns:")
-            for name, pattern in sorted(code_patterns.items(), key=lambda x: x[1].get('confidence', 0), reverse=True):
-                conf = pattern.get('confidence', 0)
-                click.echo(f"    • {name}: {conf:.0%} confidence")
-
-        if frameworks:
-            click.echo("  Frameworks:")
-            for name, fw in sorted(frameworks.items(), key=lambda x: x[1].get('confidence', 0), reverse=True):
-                conf = fw.get('confidence', 0)
-                fw_type = fw.get('metadata', {}).get('type', '')
-                click.echo(f"    • {name} ({fw_type}): {conf:.0%} confidence")
-    else:
-        click.echo("  No patterns detected")
-
-    # Dependencies summary
-    if profile.dependencies:
-        click.echo(f"\nDependencies: {len(profile.dependencies)} packages")
-        dev_deps = sum(1 for d in profile.dependencies if d.is_dev)
-        click.echo(f"  • {len(profile.dependencies) - dev_deps} runtime, {dev_deps} dev")
-
-    # Timing
+    _output_languages_section(profile.languages)
+    _output_structure_section(profile.structure)
+    _output_patterns_section(profile.patterns)
+    _output_dependencies_section(profile.dependencies)
     click.echo(f"\nDuration: {result.total_duration_seconds:.2f}s")
 
 

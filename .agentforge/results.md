@@ -7,15 +7,15 @@
 | Mode | full |
 | Files Checked | 0 |
 | Checks Run | 158 |
-| Total Violations | 4714 |
+| Total Violations | 4710 |
 | Errors | 0 |
-| Warnings | 382 |
-| Duration | 18.83s |
+| Warnings | 378 |
+| Duration | 19.55s |
 
 ### All Violations
 
 <details>
-<summary>View all 4714 violations in 414 files</summary>
+<summary>View all 4710 violations in 414 files</summary>
 
 **`<unknown>`** (4 violations)
 
@@ -1468,20 +1468,8 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 
-**`src/agentforge/cli/commands/discover.py`** (6 violations)
+**`src/agentforge/cli/commands/discover.py`** (2 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L40`
-  - Function '_run_single_zone_discovery' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L99`
-  - Function '_run_multi_zone_discovery' has complexity 13 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L210`
-  - Function '_output_multi_zone_summary' has complexity 14 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L282`
-  - Function '_output_summary' has complexity 16 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
   - 💡 *Add lineage header to file:
@@ -4583,12 +4571,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-nesting-depth** at `L132`
   - Function 'review_command' has nesting depth 5 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
-- 🟡 **main-guard-pattern** at `file`
-  - Required pattern not found: 'if\s+__name__\s*==\s*['"]__main__['"]'
-  - 💡 *Add: if __name__ == '__main__': main()*
 - 🔵 **cli-has-version** at `file`
   - Required pattern not found: '@click\.version_option|--version|version_callback'
   - 💡 *Add @click.version_option() to main command*
+- 🟡 **main-guard-pattern** at `file`
+  - Required pattern not found: 'if\s+__name__\s*==\s*['"]__main__['"]'
+  - 💡 *Add: if __name__ == '__main__': main()*
 - 🔵 **cli-config-from-env** at `file`
   - Required pattern not found: '(envvar\s*=|os\.environ|getenv)'
   - 💡 *Add envvar parameter: @click.option('--api-key', envvar='API_KEY')*
@@ -16745,12 +16733,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **single-responsibility-modules** at `L769`
   - Class 'TestEdgeCases' has 5 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
-- 🟡 **no-real-network-calls** at `L475`
-  - Forbidden pattern found: 'requests.get('
-  - 💡 *Use responses, httpretty, or pytest-mock to mock network calls*
-- 🟡 **no-real-network-calls** at `L896`
-  - Forbidden pattern found: 'requests.get('
-  - 💡 *Use responses, httpretty, or pytest-mock to mock network calls*
 - 🟡 **unit-tests-isolated** at `L487`
   - Forbidden pattern found: 'sqlite3'
   - 💡 *Mock database connections in unit tests*
@@ -16760,6 +16742,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **unit-tests-isolated** at `L504`
   - Forbidden pattern found: 'sqlite3'
   - 💡 *Mock database connections in unit tests*
+- 🟡 **no-real-network-calls** at `L475`
+  - Forbidden pattern found: 'requests.get('
+  - 💡 *Use responses, httpretty, or pytest-mock to mock network calls*
+- 🟡 **no-real-network-calls** at `L896`
+  - Forbidden pattern found: 'requests.get('
+  - 💡 *Use responses, httpretty, or pytest-mock to mock network calls*
 - 🔵 **no-hardcoded-test-data-paths** at `L897`
   - Forbidden pattern found: 'open("'
   - 💡 *Use tmp_path fixture or Path(__file__).parent for test data*
@@ -17054,5 +17042,5 @@ Or regenerate file through TDFLOW to get proper lineage.*
 </details>
 
 ---
-*Generated at 2026-01-03 20:34:24 UTC*
-*Commit: `7d56989e`*
+*Generated at 2026-01-03 20:37:02 UTC*
+*Commit: `1f683b66`*

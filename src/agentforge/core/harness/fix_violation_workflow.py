@@ -224,6 +224,41 @@ class FixViolationWorkflow:
 
         return "\n".join(lines)
 
+    def _check_step_termination(
+        self, step_result: StepResult
+    ) -> tuple[bool, FixPhase | None, str | None]:
+        """Check if step indicates workflow should terminate.
+
+        Returns:
+            (should_break, new_phase, error_message)
+        """
+        if not step_result.success:
+            return True, FixPhase.FAILED, step_result.error
+
+        if step_result.action:
+            if step_result.action.action_type == ActionType.COMPLETE:
+                return True, FixPhase.COMPLETE, None
+            if step_result.action.action_type == ActionType.ESCALATE:
+                return True, FixPhase.FAILED, f"Escalated: {step_result.action.reasoning}"
+
+        return False, None, None
+
+    def _track_modified_files(self, attempt: FixAttempt, step_result: StepResult) -> None:
+        """Track files modified by edit/write tool calls."""
+        if not step_result.tool_results:
+            return
+
+        for tr in step_result.tool_results:
+            if tr.tool_name not in ("edit_file", "write_file") or not tr.success:
+                continue
+            if not (step_result.action and step_result.action.tool_calls):
+                continue
+            for tc in step_result.action.tool_calls:
+                if tc.name == tr.tool_name:
+                    file_path = tc.parameters.get("path", tc.parameters.get("file_path"))
+                    if file_path and file_path not in attempt.files_modified:
+                        attempt.files_modified.append(file_path)
+
     def fix_violation(
         self,
         violation_id: str,
@@ -289,34 +324,17 @@ class FixViolationWorkflow:
             if on_step:
                 on_step(step_result)
 
-            if not step_result.success:
-                attempt.error = step_result.error
-                attempt.phase = FixPhase.FAILED
+            # Check for termination conditions
+            should_break, new_phase, error = self._check_step_termination(step_result)
+            if should_break:
+                if new_phase:
+                    attempt.phase = new_phase
+                if error:
+                    attempt.error = error
                 break
 
-            # Check for completion or escalation
-            if step_result.action:
-                if step_result.action.action_type == ActionType.COMPLETE:
-                    attempt.phase = FixPhase.COMPLETE
-                    break
-                elif step_result.action.action_type == ActionType.ESCALATE:
-                    attempt.error = f"Escalated: {step_result.action.reasoning}"
-                    attempt.phase = FixPhase.FAILED
-                    break
-
             # Track files modified
-            if step_result.tool_results:
-                for tr in step_result.tool_results:
-                    if tr.tool_name in ("edit_file", "write_file") and tr.success:
-                        # Try to extract file path from the tool call
-                        if step_result.action and step_result.action.tool_calls:
-                            for tc in step_result.action.tool_calls:
-                                if tc.name == tr.tool_name:
-                                    file_path = tc.parameters.get(
-                                        "path", tc.parameters.get("file_path")
-                                    )
-                                    if file_path and file_path not in attempt.files_modified:
-                                        attempt.files_modified.append(file_path)
+            self._track_modified_files(attempt, step_result)
 
             # Update phase based on progress
             attempt.phase = self._determine_phase(attempt, step_result)
@@ -336,30 +354,39 @@ class FixViolationWorkflow:
         attempt.completed_at = datetime.utcnow()
         return attempt
 
+    def _update_attempt_from_verify(self, attempt: FixAttempt, step: StepResult) -> None:
+        """Update attempt with verification results."""
+        for tr in step.tool_results or []:
+            if tr.tool_name == "run_tests":
+                attempt.tests_passed = tr.success
+            elif tr.tool_name == "verify_violation_fixed":
+                attempt.conformance_passed = tr.success
+
+    def _update_attempt_from_commit(self, attempt: FixAttempt, step: StepResult) -> None:
+        """Update attempt with commit results."""
+        for tr in step.tool_results or []:
+            if tr.tool_name == "git_commit" and tr.success:
+                attempt.committed = True
+
     def _determine_phase(self, attempt: FixAttempt, step: StepResult) -> FixPhase:
         """Determine current phase based on step results."""
-        # Simple heuristic based on tools used
         if not step.tool_results:
             return attempt.phase
 
-        tool_names = [tr.tool_name for tr in step.tool_results]
+        tool_names = {tr.tool_name for tr in step.tool_results}
 
-        if "edit_file" in tool_names or "write_file" in tool_names:
+        if tool_names & {"edit_file", "write_file"}:
             return FixPhase.IMPLEMENT
-        elif "run_tests" in tool_names or "verify_violation_fixed" in tool_names:
-            # Track test results
-            for tr in step.tool_results:
-                if tr.tool_name == "run_tests":
-                    attempt.tests_passed = tr.success
-                elif tr.tool_name == "verify_violation_fixed":
-                    attempt.conformance_passed = tr.success
+
+        if tool_names & {"run_tests", "verify_violation_fixed"}:
+            self._update_attempt_from_verify(attempt, step)
             return FixPhase.VERIFY
-        elif "git_commit" in tool_names:
-            for tr in step.tool_results:
-                if tr.tool_name == "git_commit" and tr.success:
-                    attempt.committed = True
+
+        if "git_commit" in tool_names:
+            self._update_attempt_from_commit(attempt, step)
             return FixPhase.COMMIT
-        elif "read_file" in tool_names or "read_violation" in tool_names:
+
+        if tool_names & {"read_file", "read_violation"}:
             return FixPhase.ANALYZE
 
         return attempt.phase

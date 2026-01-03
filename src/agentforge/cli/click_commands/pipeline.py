@@ -324,24 +324,63 @@ def implement(ctx, request, from_spec, skip_to, delivery_mode):
 # =============================================================================
 
 
+_STATUS_COLORS = {
+    "running": "yellow",
+    "completed": "green",
+    "failed": "red",
+    "paused": "cyan",
+    "awaiting_approval": "magenta",
+    "aborted": "red",
+}
+
+
+def _display_pipeline_status(state, verbose: bool) -> None:
+    """Display pipeline status information."""
+    status_value = state.status.value if hasattr(state.status, 'value') else str(state.status)
+    color = _STATUS_COLORS.get(status_value, "white")
+
+    click.echo(f"Pipeline: {state.pipeline_id}")
+    click.echo(f"Type: {state.pipeline_type}")
+    click.echo(f"Status: {click.style(status_value.upper(), fg=color)}")
+    click.echo(f"Current Stage: {state.current_stage or 'N/A'}")
+    click.echo(f"Stages Completed: {', '.join(state.completed_stages) or 'None'}")
+
+    if state.error:
+        click.echo(f"Error: {click.style(state.error, fg='red')}")
+
+    if verbose:
+        click.echo()
+        click.echo("Request:")
+        click.echo(f"  {state.user_request}")
+        click.echo()
+        click.echo(f"Created: {state.created_at}")
+        click.echo(f"Updated: {state.updated_at}")
+        click.echo(f"Tokens Used: {state.total_tokens_used}")
+        click.echo(f"Cost: ${state.total_cost_usd:.4f}")
+
+    _display_status_actions(state, status_value)
+
+
+def _display_status_actions(state, status_value: str) -> None:
+    """Display available actions based on pipeline status."""
+    click.echo()
+    if status_value == "paused":
+        click.echo("Actions:")
+        click.echo(f"  Resume: agentforge resume {state.pipeline_id}")
+        click.echo(f"  Abort:  agentforge abort {state.pipeline_id}")
+    elif status_value == "awaiting_approval":
+        click.echo("Actions:")
+        click.echo(f"  Approve: agentforge approve {state.pipeline_id}")
+        click.echo(f"  Reject:  agentforge reject {state.pipeline_id}")
+        click.echo(f"  Abort:   agentforge abort {state.pipeline_id}")
+
+
 @click.command("status")
 @click.argument("pipeline_id", required=False)
 @click.option("--verbose", "-v", is_flag=True, help="Show detailed status")
 @click.pass_context
 def status(ctx, pipeline_id, verbose):
-    """
-    Check pipeline status.
-
-    Without PIPELINE_ID, shows most recent pipeline.
-
-    Examples:
-
-        agentforge status
-
-        agentforge status PL-20260102-abc123
-
-        agentforge status --verbose
-    """
+    """Check pipeline status."""
     project_path = Path.cwd()
 
     try:
@@ -350,7 +389,6 @@ def status(ctx, pipeline_id, verbose):
         if pipeline_id:
             state = controller.get_status(pipeline_id)
         else:
-            # Get most recent
             pipelines = controller.list_pipelines(limit=1)
             state = pipelines[0] if pipelines else None
 
@@ -358,49 +396,7 @@ def status(ctx, pipeline_id, verbose):
             click.echo("No pipeline found.")
             return
 
-        # Display status
-        status_colors = {
-            "running": "yellow",
-            "completed": "green",
-            "failed": "red",
-            "paused": "cyan",
-            "awaiting_approval": "magenta",
-            "aborted": "red",
-        }
-
-        status_value = state.status.value if hasattr(state.status, 'value') else str(state.status)
-        color = status_colors.get(status_value, "white")
-
-        click.echo(f"Pipeline: {state.pipeline_id}")
-        click.echo(f"Type: {state.pipeline_type}")
-        click.echo(f"Status: {click.style(status_value.upper(), fg=color)}")
-        click.echo(f"Current Stage: {state.current_stage or 'N/A'}")
-        click.echo(f"Stages Completed: {', '.join(state.completed_stages) or 'None'}")
-
-        if state.error:
-            click.echo(f"Error: {click.style(state.error, fg='red')}")
-
-        if verbose:
-            click.echo()
-            click.echo("Request:")
-            click.echo(f"  {state.user_request}")
-            click.echo()
-            click.echo(f"Created: {state.created_at}")
-            click.echo(f"Updated: {state.updated_at}")
-            click.echo(f"Tokens Used: {state.total_tokens_used}")
-            click.echo(f"Cost: ${state.total_cost_usd:.4f}")
-
-        # Show actions based on status
-        click.echo()
-        if status_value == "paused":
-            click.echo("Actions:")
-            click.echo(f"  Resume: agentforge resume {state.pipeline_id}")
-            click.echo(f"  Abort:  agentforge abort {state.pipeline_id}")
-        elif status_value == "awaiting_approval":
-            click.echo("Actions:")
-            click.echo(f"  Approve: agentforge approve {state.pipeline_id}")
-            click.echo(f"  Reject:  agentforge reject {state.pipeline_id}")
-            click.echo(f"  Abort:   agentforge abort {state.pipeline_id}")
+        _display_pipeline_status(state, verbose)
 
     except Exception as e:
         click.echo(click.style(f"Error: {e}", fg="red"))

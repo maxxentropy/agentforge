@@ -184,21 +184,56 @@ def run_baseline_save(args: Any) -> None:
         print(f"Commit: {commit_sha[:8]}")
 
 
+def _output_comparison_json(comparison) -> None:
+    """Output comparison results as JSON."""
+    output = {
+        "new_violations": len(comparison.new_violations),
+        "fixed_violations": len(comparison.fixed_violations),
+        "existing_violations": len(comparison.existing_violations),
+        "net_change": comparison.net_change,
+        "introduces_violations": comparison.introduces_violations,
+        "has_improvements": comparison.has_improvements,
+    }
+    print(json.dumps(output, indent=2))
+
+
+def _output_comparison_text(comparison) -> None:
+    """Output comparison results as text."""
+    print("Baseline Comparison")
+    print("=" * 40)
+    print(f"New violations: {len(comparison.new_violations)}")
+    print(f"Fixed violations: {len(comparison.fixed_violations)}")
+    print(f"Existing violations: {len(comparison.existing_violations)}")
+    print(f"Net change: {comparison.net_change:+d}")
+    print()
+
+    if comparison.new_violations:
+        print("New violations:")
+        for v in comparison.new_violations[:10]:
+            print(f"  - [{v.severity}] {v.check_id} in {v.file_path}:{v.line or 0}")
+        if len(comparison.new_violations) > 10:
+            print(f"  ...and {len(comparison.new_violations) - 10} more")
+
+    if comparison.fixed_violations:
+        print("\nFixed violations:")
+        for entry in comparison.fixed_violations[:10]:
+            print(f"  - {entry.check_id} in {entry.file_path}")
+        if len(comparison.fixed_violations) > 10:
+            print(f"  ...and {len(comparison.fixed_violations) - 10} more")
+
+
 def run_baseline_compare(args: Any) -> None:
     """Compare current violations against baseline."""
     repo_root = Path.cwd()
 
     baseline_manager = BaselineManager(str(repo_root / ".agentforge/baseline.json"))
-
     if not baseline_manager.exists():
         print("No baseline found. Run 'agentforge ci baseline save' first.")
         sys.exit(1)
 
-    # Run full check
     registry = ContractRegistry(repo_root)
     registry.discover_contracts()
     contracts = registry.get_all_contracts_data()
-
     if not contracts:
         print("No contracts found.")
         sys.exit(1)
@@ -207,7 +242,6 @@ def run_baseline_compare(args: Any) -> None:
     runner = CIRunner(repo_root, config)
     result = runner.run(contracts)
 
-    # Compare
     try:
         comparison = baseline_manager.compare(result.violations)
     except BaselineError as e:
@@ -215,37 +249,9 @@ def run_baseline_compare(args: Any) -> None:
         sys.exit(1)
 
     if args.json:
-        output = {
-            "new_violations": len(comparison.new_violations),
-            "fixed_violations": len(comparison.fixed_violations),
-            "existing_violations": len(comparison.existing_violations),
-            "net_change": comparison.net_change,
-            "introduces_violations": comparison.introduces_violations,
-            "has_improvements": comparison.has_improvements,
-        }
-        print(json.dumps(output, indent=2))
+        _output_comparison_json(comparison)
     else:
-        print("Baseline Comparison")
-        print("=" * 40)
-        print(f"New violations: {len(comparison.new_violations)}")
-        print(f"Fixed violations: {len(comparison.fixed_violations)}")
-        print(f"Existing violations: {len(comparison.existing_violations)}")
-        print(f"Net change: {comparison.net_change:+d}")
-        print()
-
-        if comparison.new_violations:
-            print("New violations:")
-            for v in comparison.new_violations[:10]:
-                print(f"  - [{v.severity}] {v.check_id} in {v.file_path}:{v.line or 0}")
-            if len(comparison.new_violations) > 10:
-                print(f"  ...and {len(comparison.new_violations) - 10} more")
-
-        if comparison.fixed_violations:
-            print("\nFixed violations:")
-            for entry in comparison.fixed_violations[:10]:
-                print(f"  - {entry.check_id} in {entry.file_path}")
-            if len(comparison.fixed_violations) > 10:
-                print(f"  ...and {len(comparison.fixed_violations) - 10} more")
+        _output_comparison_text(comparison)
 
 
 def run_baseline_stats(args: Any) -> None:

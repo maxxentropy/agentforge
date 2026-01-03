@@ -23,6 +23,61 @@ def generate():
     pass
 
 
+def _build_generation_context(spec_data: dict, phase: str, component: str | None):
+    """Build GenerationContext from spec data and options."""
+    from agentforge.core.generate.domain import GenerationContext, GenerationPhase
+
+    phase_map = {
+        "red": GenerationPhase.RED,
+        "green": GenerationPhase.GREEN,
+        "refactor": GenerationPhase.REFACTOR,
+    }
+    gen_phase = phase_map[phase]
+
+    component_name = component
+    if not component_name and spec_data.get("components"):
+        component_name = spec_data["components"][0].get("name")
+
+    existing_tests = None
+    existing_impl = None
+    if gen_phase in (GenerationPhase.GREEN, GenerationPhase.REFACTOR):
+        existing_tests = _load_existing_code(spec_data, component_name, "test_file")
+    if gen_phase == GenerationPhase.REFACTOR:
+        existing_impl = _load_existing_code(spec_data, component_name, "impl_file")
+
+    return GenerationContext(
+        spec=spec_data,
+        phase=gen_phase,
+        component_name=component_name,
+        existing_tests=existing_tests,
+        existing_impl=existing_impl,
+    ), component_name
+
+
+def _display_generation_result(result, dry_run: bool):
+    """Display generation result with appropriate formatting."""
+    if result.success:
+        click.echo(click.style("✓ Generation successful", fg="green"))
+        click.echo(f"  Files: {result.file_count}")
+        click.echo(f"  Tokens: {result.tokens_used}")
+        click.echo(f"  Duration: {result.duration_seconds:.1f}s")
+        click.echo()
+        status = "would create" if dry_run else "created"
+        for file in result.files:
+            click.echo(f"  {status}: {file.path}")
+        if result.explanation:
+            click.echo()
+            click.echo("Explanation:")
+            click.echo(result.explanation[:500])
+    else:
+        click.echo(click.style("✗ Generation failed", fg="red"))
+        click.echo(f"  Error: {result.error}")
+        if result.raw_response:
+            click.echo()
+            click.echo("Raw response (first 500 chars):")
+            click.echo(result.raw_response[:500])
+
+
 @generate.command("code")
 @click.option(
     "--spec",
@@ -61,67 +116,23 @@ def generate():
     help="Maximum tokens for response",
 )
 def code(spec: str, phase: str, component: str, model: str, dry_run: bool, max_tokens: int):
-    """Generate code from specification using LLM.
-
-    Examples:
-        agentforge generate code --spec outputs/specification.yaml --phase red
-        agentforge generate code --spec spec.yaml --phase green --dry-run
-        agentforge generate code --spec spec.yaml --phase red --component SessionManager
-    """
-    from agentforge.core.generate.domain import GenerationContext, GenerationPhase
+    """Generate code from specification using LLM."""
     from agentforge.core.generate.engine import GenerationEngine
     from agentforge.core.generate.provider import ManualProvider, get_provider
 
-    # Load specification
     spec_path = Path(spec)
     with open(spec_path) as f:
         spec_data = yaml.safe_load(f)
 
-    # Determine phase
-    phase_map = {
-        "red": GenerationPhase.RED,
-        "green": GenerationPhase.GREEN,
-        "refactor": GenerationPhase.REFACTOR,
-    }
-    gen_phase = phase_map[phase]
-
-    # Get component if specified, otherwise use first
-    component_name = component
-    if not component_name and spec_data.get("components"):
-        component_name = spec_data["components"][0].get("name")
-
-    # Get existing code for GREEN/REFACTOR phases
-    existing_tests = None
-    existing_impl = None
-
-    if gen_phase in (GenerationPhase.GREEN, GenerationPhase.REFACTOR):
-        existing_tests = _load_existing_code(spec_data, component_name, "test_file")
-
-    if gen_phase == GenerationPhase.REFACTOR:
-        existing_impl = _load_existing_code(spec_data, component_name, "impl_file")
-
-    # Build context
-    context = GenerationContext(
-        spec=spec_data,
-        phase=gen_phase,
-        component_name=component_name,
-        existing_tests=existing_tests,
-        existing_impl=existing_impl,
-    )
-
-    # Get provider
+    context, component_name = _build_generation_context(spec_data, phase, component)
     provider = get_provider(model=model)
 
-    # Check provider availability
     if isinstance(provider, ManualProvider):
         click.echo("No API key found. Using manual mode.")
         click.echo("Set ANTHROPIC_API_KEY environment variable for automatic generation.")
         click.echo()
 
-    # Create engine
     engine = GenerationEngine(provider=provider)
-
-    # Show what we're doing
     click.echo(f"Generating {phase.upper()} phase code")
     click.echo(f"  Spec: {spec_path}")
     click.echo(f"  Component: {component_name or 'all'}")
@@ -130,37 +141,13 @@ def code(spec: str, phase: str, component: str, model: str, dry_run: bool, max_t
         click.echo("  Mode: DRY RUN (no files will be written)")
     click.echo()
 
-    # Run generation
     try:
         result = asyncio.run(engine.generate(context, dry_run=dry_run, max_tokens=max_tokens))
     except KeyboardInterrupt:
         click.echo("\nGeneration cancelled.")
         return
 
-    # Display result
-    if result.success:
-        click.echo(click.style("✓ Generation successful", fg="green"))
-        click.echo(f"  Files: {result.file_count}")
-        click.echo(f"  Tokens: {result.tokens_used}")
-        click.echo(f"  Duration: {result.duration_seconds:.1f}s")
-        click.echo()
-
-        for file in result.files:
-            status = "would create" if dry_run else "created"
-            click.echo(f"  {status}: {file.path}")
-
-        if result.explanation:
-            click.echo()
-            click.echo("Explanation:")
-            click.echo(result.explanation[:500])
-    else:
-        click.echo(click.style("✗ Generation failed", fg="red"))
-        click.echo(f"  Error: {result.error}")
-
-        if result.raw_response:
-            click.echo()
-            click.echo("Raw response (first 500 chars):")
-            click.echo(result.raw_response[:500])
+    _display_generation_result(result, dry_run)
 
 
 @generate.command("parse-response")

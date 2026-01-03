@@ -566,6 +566,27 @@ class PipelineController:
 
         return None
 
+    def _update_stage_state(self, state: PipelineState, result: StageResult) -> None:
+        """Update stage state based on execution result."""
+        stage_state = state.get_stage(state.current_stage)
+        if result.is_success():
+            stage_state.mark_completed(result.artifacts)
+        elif result.is_failed():
+            stage_state.mark_failed(result.error or "Unknown error")
+            state.status = PipelineStatus.FAILED
+        elif result.status == StageStatus.SKIPPED:
+            stage_state.mark_skipped(result.artifacts.get("skip_reason"))
+
+    def _advance_to_next_stage(self, state: PipelineState, result: StageResult) -> None:
+        """Advance pipeline to next stage or mark complete."""
+        next_stage = self._get_next_stage(state, result)
+        if next_stage:
+            state.current_stage = next_stage
+        else:
+            if state.status == PipelineStatus.RUNNING:
+                state.status = PipelineStatus.COMPLETED
+            state.current_stage = None
+
     def _run(self, state: PipelineState) -> PipelineState:
         """
         Execute pipeline stages until completion or pause.
@@ -588,34 +609,16 @@ class PipelineController:
             state.current_stage = state.get_next_stage()
             self.state_store.save(state)
 
-        while (
-            state.status == PipelineStatus.RUNNING
-            and state.current_stage is not None
-        ):
+        while state.status == PipelineStatus.RUNNING and state.current_stage is not None:
             result = self._execute_stage(state, state.current_stage)
-
-            stage_state = state.get_stage(state.current_stage)
-            if result.is_success():
-                stage_state.mark_completed(result.artifacts)
-            elif result.is_failed():
-                stage_state.mark_failed(result.error or "Unknown error")
-                state.status = PipelineStatus.FAILED
-            elif result.status == StageStatus.SKIPPED:
-                stage_state.mark_skipped(result.artifacts.get("skip_reason"))
+            self._update_stage_state(state, result)
 
             if result.needs_escalation():
                 self._handle_escalation(state, result)
                 self.state_store.save(state)
                 break
 
-            next_stage = self._get_next_stage(state, result)
-            if next_stage:
-                state.current_stage = next_stage
-            else:
-                if state.status == PipelineStatus.RUNNING:
-                    state.status = PipelineStatus.COMPLETED
-                state.current_stage = None
-
+            self._advance_to_next_stage(state, result)
             self.state_store.save(state)
 
             if state.status != PipelineStatus.RUNNING:
@@ -678,6 +681,57 @@ class PipelineController:
                 )
         return None
 
+    def _validate_stage_input(
+        self, state: PipelineState, stage_name: str, executor, input_artifacts: dict
+    ) -> list[str]:
+        """Validate stage input and return list of errors."""
+        errors = executor.validate_input(input_artifacts)
+
+        if state.config.get("strict_schema_validation", False):
+            errors.extend(self.validator.validate_stage_input(stage_name, input_artifacts))
+
+        enforcer = self._get_contract_enforcer(state)
+        enforce_contracts = state.config.get("enforce_contracts", True)
+        self._validate_input_with_contracts(
+            stage_name, errors, enforcer, input_artifacts, enforce_contracts
+        )
+        return errors
+
+    def _validate_stage_output(
+        self, state: PipelineState, stage_name: str, artifacts: dict
+    ) -> None:
+        """Validate stage output against schema and contracts."""
+        if state.config.get("strict_schema_validation", False):
+            output_errors = self.validator.validate_stage_output(stage_name, artifacts)
+            language = state.config.get("primary_language")
+            if language:
+                output_errors.extend(
+                    self.validator.validate_stage_output_for_language(
+                        stage_name, artifacts, language
+                    )
+                )
+            if output_errors:
+                logger.warning(f"Output validation warnings for stage {stage_name}: {output_errors}")
+
+        enforcer = self._get_contract_enforcer(state)
+        enforce_contracts = state.config.get("enforce_contracts", True)
+        if enforce_contracts:
+            self._validate_output_with_contracts(
+                stage_name, enforcer, artifacts, enforce_contracts
+            )
+
+    def _check_output_escalation(
+        self, state: PipelineState, stage_name: str, artifacts: dict
+    ) -> StageResult | None:
+        """Check for contract escalation triggers after stage output."""
+        enforce_contracts = state.config.get("enforce_contracts", True)
+        if not enforce_contracts:
+            return None
+        enforcer = self._get_contract_enforcer(state)
+        return self._check_contract_escalation_triggers(
+            stage_name, enforcer, artifacts, state.config
+        )
+
     def _execute_stage(self, state: PipelineState, stage_name: str) -> StageResult:
         """Execute a single stage."""
         logger.info(f"Executing stage '{stage_name}' for pipeline {state.pipeline_id}")
@@ -693,16 +747,7 @@ class PipelineController:
             return StageResult.failed(str(e))
 
         input_artifacts = state.collect_artifacts()
-        errors = executor.validate_input(input_artifacts)
-
-        if state.config.get("strict_schema_validation", False):
-            errors.extend(self.validator.validate_stage_input(stage_name, input_artifacts))
-
-        enforcer = self._get_contract_enforcer(state)
-        enforce_contracts = state.config.get("enforce_contracts", True)
-        self._validate_input_with_contracts(
-            stage_name, errors, enforcer, input_artifacts, enforce_contracts
-        )
+        errors = self._validate_stage_input(state, stage_name, executor, input_artifacts)
 
         if errors:
             logger.error(f"Input validation failed for stage {stage_name}: {errors}")
@@ -724,27 +769,9 @@ class PipelineController:
             logger.exception(f"Stage {stage_name} raised exception")
             return StageResult.failed(f"Stage execution error: {e}")
 
-        # Validate output artifacts against schema (if enabled)
-        if result.is_success() and state.config.get("strict_schema_validation", False):
-            output_errors = self.validator.validate_stage_output(stage_name, result.artifacts)
-            language = state.config.get("primary_language")
-            if language:
-                output_errors.extend(
-                    self.validator.validate_stage_output_for_language(
-                        stage_name, result.artifacts, language
-                    )
-                )
-            if output_errors:
-                logger.warning(f"Output validation warnings for stage {stage_name}: {output_errors}")
-
-        # Contract-based output validation and escalation checks
-        if result.is_success() and enforce_contracts:
-            self._validate_output_with_contracts(
-                stage_name, enforcer, result.artifacts, enforce_contracts
-            )
-            escalation_result = self._check_contract_escalation_triggers(
-                stage_name, enforcer, result.artifacts, state.config
-            )
+        if result.is_success():
+            self._validate_stage_output(state, stage_name, result.artifacts)
+            escalation_result = self._check_output_escalation(state, stage_name, result.artifacts)
             if escalation_result:
                 return escalation_result
 

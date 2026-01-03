@@ -36,19 +36,6 @@
               }
             },
             {
-              "id": "max-parameter-count",
-              "name": "max-parameter-count",
-              "shortDescription": {
-                "text": "Check: max-parameter-count"
-              },
-              "defaultConfiguration": {
-                "level": "warning"
-              },
-              "help": {
-                "text": "Group related parameters into a dataclass or use **kwargs"
-              }
-            },
-            {
               "id": "max-nesting-depth",
               "name": "max-nesting-depth",
               "shortDescription": {
@@ -59,6 +46,19 @@
               },
               "help": {
                 "text": "Use early returns, guard clauses, or extract nested logic"
+              }
+            },
+            {
+              "id": "max-parameter-count",
+              "name": "max-parameter-count",
+              "shortDescription": {
+                "text": "Check: max-parameter-count"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "help": {
+                "text": "Group related parameters into a dataclass or use **kwargs"
               }
             },
             {
@@ -179,6 +179,19 @@
               }
             },
             {
+              "id": "unit-tests-isolated",
+              "name": "unit-tests-isolated",
+              "shortDescription": {
+                "text": "Check: unit-tests-isolated"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "help": {
+                "text": "Mock database connections in unit tests"
+              }
+            },
+            {
               "id": "no-real-network-calls",
               "name": "no-real-network-calls",
               "shortDescription": {
@@ -192,16 +205,16 @@
               }
             },
             {
-              "id": "unit-tests-isolated",
-              "name": "unit-tests-isolated",
+              "id": "no-hardcoded-test-data-paths",
+              "name": "no-hardcoded-test-data-paths",
               "shortDescription": {
-                "text": "Check: unit-tests-isolated"
+                "text": "Check: no-hardcoded-test-data-paths"
               },
               "defaultConfiguration": {
-                "level": "warning"
+                "level": "note"
               },
               "help": {
-                "text": "Mock database connections in unit tests"
+                "text": "Use tmp_path fixture or Path(__file__).parent for test data"
               }
             },
             {
@@ -218,16 +231,16 @@
               }
             },
             {
-              "id": "no-hardcoded-test-data-paths",
-              "name": "no-hardcoded-test-data-paths",
+              "id": "main-guard-pattern",
+              "name": "main-guard-pattern",
               "shortDescription": {
-                "text": "Check: no-hardcoded-test-data-paths"
+                "text": "Check: main-guard-pattern"
               },
               "defaultConfiguration": {
-                "level": "note"
+                "level": "warning"
               },
               "help": {
-                "text": "Use tmp_path fixture or Path(__file__).parent for test data"
+                "text": "Add: if __name__ == '__main__': main()"
               }
             },
             {
@@ -254,19 +267,6 @@
               },
               "help": {
                 "text": "Add @click.version_option() to main command"
-              }
-            },
-            {
-              "id": "main-guard-pattern",
-              "name": "main-guard-pattern",
-              "shortDescription": {
-                "text": "Check: main-guard-pattern"
-              },
-              "defaultConfiguration": {
-                "level": "warning"
-              },
-              "help": {
-                "text": "Add: if __name__ == '__main__': main()"
               }
             },
             {
@@ -991,36 +991,6 @@
           "ruleId": "max-cyclomatic-complexity",
           "level": "warning",
           "message": {
-            "text": "Function 'review_command' has complexity 21 (max: 10)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/contracts/cli.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 132
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Break complex functions into smaller, focused helper functions"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "3ed3d1d2d46fbc37"
-          }
-        },
-        {
-          "ruleId": "max-cyclomatic-complexity",
-          "level": "warning",
-          "message": {
             "text": "Function 'discover' has complexity 13 (max: 10)"
           },
           "locations": [
@@ -1105,36 +1075,6 @@
           ],
           "partialFingerprints": {
             "primaryLocationLineHash": "ecd1f1613b06b461"
-          }
-        },
-        {
-          "ruleId": "max-cyclomatic-complexity",
-          "level": "warning",
-          "message": {
-            "text": "Function '_detect_frameworks' has complexity 15 (max: 10)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/discovery/analyzers/patterns.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 716
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Break complex functions into smaller, focused helper functions"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "f8d95c78bdac5431"
           }
         },
         {
@@ -3961,36 +3901,6 @@
           "ruleId": "max-function-length",
           "level": "warning",
           "message": {
-            "text": "Function 'review_command' has 95 lines (max: 50)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/contracts/cli.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 132
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Extract logic into helper functions or use composition"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "2638dc84e094339b"
-          }
-        },
-        {
-          "ruleId": "max-function-length",
-          "level": "warning",
-          "message": {
             "text": "Function 'discover' has 80 lines (max: 50)"
           },
           "locations": [
@@ -6148,6 +6058,936 @@
           }
         },
         {
+          "ruleId": "max-nesting-depth",
+          "level": "warning",
+          "message": {
+            "text": "Function '_build_request_params' has nesting depth 5 (max: 4)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/llm/client.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 136
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use early returns, guard clauses, or extract nested logic"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "24db4198ec1ee8bb"
+          }
+        },
+        {
+          "ruleId": "max-nesting-depth",
+          "level": "warning",
+          "message": {
+            "text": "Function 'resolve_conflicts' has nesting depth 7 (max: 4)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/bridge/conflict_resolver.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 160
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use early returns, guard clauses, or extract nested logic"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "1c9e60bc2adb9b4e"
+          }
+        },
+        {
+          "ruleId": "max-nesting-depth",
+          "level": "warning",
+          "message": {
+            "text": "Function 'evolve' has nesting depth 5 (max: 4)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/contracts/registry.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 192
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use early returns, guard clauses, or extract nested logic"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "1979725b3bebdd70"
+          }
+        },
+        {
+          "ruleId": "max-nesting-depth",
+          "level": "warning",
+          "message": {
+            "text": "Function '_evaluate_trigger_condition' has nesting depth 5 (max: 4)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/contracts/enforcer.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 473
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use early returns, guard clauses, or extract nested logic"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "e542a5d908d7addd"
+          }
+        },
+        {
+          "ruleId": "max-nesting-depth",
+          "level": "warning",
+          "message": {
+            "text": "Function '_run_phase' has nesting depth 6 (max: 4)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/discovery/manager.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 231
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use early returns, guard clauses, or extract nested logic"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "56c1e4a07af60b77"
+          }
+        },
+        {
+          "ruleId": "max-nesting-depth",
+          "level": "warning",
+          "message": {
+            "text": "Function '_extract_imports' has nesting depth 5 (max: 4)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/discovery/analyzers/test_linkage.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 135
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use early returns, guard clauses, or extract nested logic"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "313682055ddc9cba"
+          }
+        },
+        {
+          "ruleId": "max-nesting-depth",
+          "level": "warning",
+          "message": {
+            "text": "Function '_check_base_class_signal' has nesting depth 5 (max: 4)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/discovery/analyzers/patterns.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 514
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use early returns, guard clauses, or extract nested logic"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "1bdc60e530922cdf"
+          }
+        },
+        {
+          "ruleId": "max-nesting-depth",
+          "level": "warning",
+          "message": {
+            "text": "Function '_detect_layer' has nesting depth 5 (max: 4)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/discovery/analyzers/structure.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 183
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use early returns, guard clauses, or extract nested logic"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "2baba114014d7a9d"
+          }
+        },
+        {
+          "ruleId": "max-nesting-depth",
+          "level": "warning",
+          "message": {
+            "text": "Function '_detect_docker_compose' has nesting depth 5 (max: 4)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/discovery/analyzers/interactions.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 52
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use early returns, guard clauses, or extract nested logic"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "3f8a0e773ac81976"
+          }
+        },
+        {
+          "ruleId": "max-nesting-depth",
+          "level": "warning",
+          "message": {
+            "text": "Function 'suggest_extractions' has nesting depth 6 (max: 4)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/discovery/providers/python_provider.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 477
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use early returns, guard clauses, or extract nested logic"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "a8c3c3d2d936a627"
+          }
+        },
+        {
+          "ruleId": "max-nesting-depth",
+          "level": "warning",
+          "message": {
+            "text": "Function '_get_complexity_suggestions' has nesting depth 5 (max: 4)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/discovery/providers/python_provider.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 666
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use early returns, guard clauses, or extract nested logic"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "9606539b3f1606f6"
+          }
+        },
+        {
+          "ruleId": "max-nesting-depth",
+          "level": "warning",
+          "message": {
+            "text": "Function '_get_length_suggestions' has nesting depth 5 (max: 4)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/discovery/providers/python_provider.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 718
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use early returns, guard clauses, or extract nested logic"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "413dbf948edfb0d9"
+          }
+        },
+        {
+          "ruleId": "max-nesting-depth",
+          "level": "warning",
+          "message": {
+            "text": "Function 'count_lines' has nesting depth 7 (max: 4)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/discovery/providers/dotnet_provider.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 572
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use early returns, guard clauses, or extract nested logic"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "adefc74608118e6b"
+          }
+        },
+        {
+          "ruleId": "max-nesting-depth",
+          "level": "warning",
+          "message": {
+            "text": "Function '_find_existing_lineage' has nesting depth 5 (max: 4)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/discovery/generators/lineage_embedder.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 227
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use early returns, guard clauses, or extract nested logic"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "049589668394a1e0"
+          }
+        },
+        {
+          "ruleId": "max-nesting-depth",
+          "level": "warning",
+          "message": {
+            "text": "Function '_match_test_methods' has nesting depth 5 (max: 4)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/discovery/generators/as_built_spec.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 323
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use early returns, guard clauses, or extract nested logic"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "80dc2098eb601867"
+          }
+        },
+        {
+          "ruleId": "max-nesting-depth",
+          "level": "warning",
+          "message": {
+            "text": "Function 'parse' has nesting depth 6 (max: 4)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/harness/action_parser.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 45
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use early returns, guard clauses, or extract nested logic"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "80036701eec662fd"
+          }
+        },
+        {
+          "ruleId": "max-nesting-depth",
+          "level": "warning",
+          "message": {
+            "text": "Function 'parse_lenient' has nesting depth 5 (max: 4)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/harness/action_parser.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 221
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use early returns, guard clauses, or extract nested logic"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "11791986775ce236"
+          }
+        },
+        {
+          "ruleId": "max-nesting-depth",
+          "level": "warning",
+          "message": {
+            "text": "Function 'execute_action' has nesting depth 8 (max: 4)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/harness/recovery_executor.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 133
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use early returns, guard clauses, or extract nested logic"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "b14db5531987a084"
+          }
+        },
+        {
+          "ruleId": "max-nesting-depth",
+          "level": "warning",
+          "message": {
+            "text": "Function 'get_tools' has nesting depth 5 (max: 4)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/harness/tool_selector.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 25
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use early returns, guard clauses, or extract nested logic"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "a4e1364d9fba3276"
+          }
+        },
+        {
+          "ruleId": "max-nesting-depth",
+          "level": "warning",
+          "message": {
+            "text": "Function 'notify' has nesting depth 6 (max: 4)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/harness/escalation_notifier.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 45
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use early returns, guard clauses, or extract nested logic"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "98a84d7973b41740"
+          }
+        },
+        {
+          "ruleId": "max-nesting-depth",
+          "level": "warning",
+          "message": {
+            "text": "Function 'fix_violation' has nesting depth 8 (max: 4)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/harness/fix_violation_workflow.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 227
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use early returns, guard clauses, or extract nested logic"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "37bcb17c8143749e"
+          }
+        },
+        {
+          "ruleId": "max-nesting-depth",
+          "level": "warning",
+          "message": {
+            "text": "Function '_determine_phase' has nesting depth 5 (max: 4)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/harness/fix_violation_workflow.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 339
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use early returns, guard clauses, or extract nested logic"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "10d073296c03553d"
+          }
+        },
+        {
+          "ruleId": "max-nesting-depth",
+          "level": "warning",
+          "message": {
+            "text": "Function 'delete_checkpoint' has nesting depth 5 (max: 4)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/harness/checkpoint_manager.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 182
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use early returns, guard clauses, or extract nested logic"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "df9e35975a2f4811"
+          }
+        },
+        {
+          "ruleId": "max-nesting-depth",
+          "level": "warning",
+          "message": {
+            "text": "Function '_get_precomputed' has nesting depth 5 (max: 4)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/harness/minimal_context/template_context_builder.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 325
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use early returns, guard clauses, or extract nested logic"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "9774952cbefb159a"
+          }
+        },
+        {
+          "ruleId": "max-nesting-depth",
+          "level": "warning",
+          "message": {
+            "text": "Function 'create_load_context_handler' has nesting depth 5 (max: 4)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/harness/minimal_context/tool_handlers/search_handlers.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 172
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use early returns, guard clauses, or extract nested logic"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "562b03075640f9b2"
+          }
+        },
+        {
+          "ruleId": "max-nesting-depth",
+          "level": "warning",
+          "message": {
+            "text": "Function 'handler' has nesting depth 5 (max: 4)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/harness/minimal_context/tool_handlers/search_handlers.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 186
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use early returns, guard clauses, or extract nested logic"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "0a6a7989a9113345"
+          }
+        },
+        {
+          "ruleId": "max-nesting-depth",
+          "level": "warning",
+          "message": {
+            "text": "Function 'validate_path_security' has nesting depth 5 (max: 4)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/harness/minimal_context/tool_handlers/types.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 33
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use early returns, guard clauses, or extract nested logic"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "1f6725e272c9271a"
+          }
+        },
+        {
+          "ruleId": "max-nesting-depth",
+          "level": "warning",
+          "message": {
+            "text": "Function 'can_extract_function' has nesting depth 5 (max: 4)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/refactoring/rope_provider.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 89
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use early returns, guard clauses, or extract nested logic"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "bc8aa733a58ec057"
+          }
+        },
+        {
+          "ruleId": "max-nesting-depth",
+          "level": "warning",
+          "message": {
+            "text": "Function 'extract_function' has nesting depth 6 (max: 4)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/refactoring/rope_provider.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 156
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use early returns, guard clauses, or extract nested logic"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "61867baa2ec92f73"
+          }
+        },
+        {
+          "ruleId": "max-nesting-depth",
+          "level": "warning",
+          "message": {
+            "text": "Function '_extract_locations_from_analysis' has nesting depth 7 (max: 4)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/cli/commands/spec.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 251
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use early returns, guard clauses, or extract nested logic"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "e444fe5b601f59d6"
+          }
+        },
+        {
+          "ruleId": "max-nesting-depth",
+          "level": "warning",
+          "message": {
+            "text": "Function '_display_result' has nesting depth 7 (max: 4)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/cli/click_commands/pipeline.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 73
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use early returns, guard clauses, or extract nested logic"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "e6f9667bf04c9a94"
+          }
+        },
+        {
           "ruleId": "max-parameter-count",
           "level": "warning",
           "message": {
@@ -6535,6 +7375,36 @@
           ],
           "partialFingerprints": {
             "primaryLocationLineHash": "415f24aff654faff"
+          }
+        },
+        {
+          "ruleId": "max-parameter-count",
+          "level": "warning",
+          "message": {
+            "text": "Function '_handle_approval' has 6 parameters (max: 5)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/contracts/cli.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 184
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Group related parameters into a dataclass or use **kwargs"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "82d1c88cd041cdf4"
           }
         },
         {
@@ -8038,996 +8908,6 @@
           }
         },
         {
-          "ruleId": "max-nesting-depth",
-          "level": "warning",
-          "message": {
-            "text": "Function '_build_request_params' has nesting depth 5 (max: 4)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/llm/client.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 136
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use early returns, guard clauses, or extract nested logic"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "24db4198ec1ee8bb"
-          }
-        },
-        {
-          "ruleId": "max-nesting-depth",
-          "level": "warning",
-          "message": {
-            "text": "Function 'resolve_conflicts' has nesting depth 7 (max: 4)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/bridge/conflict_resolver.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 160
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use early returns, guard clauses, or extract nested logic"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "1c9e60bc2adb9b4e"
-          }
-        },
-        {
-          "ruleId": "max-nesting-depth",
-          "level": "warning",
-          "message": {
-            "text": "Function 'evolve' has nesting depth 5 (max: 4)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/contracts/registry.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 192
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use early returns, guard clauses, or extract nested logic"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "1979725b3bebdd70"
-          }
-        },
-        {
-          "ruleId": "max-nesting-depth",
-          "level": "warning",
-          "message": {
-            "text": "Function '_evaluate_trigger_condition' has nesting depth 5 (max: 4)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/contracts/enforcer.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 473
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use early returns, guard clauses, or extract nested logic"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "e542a5d908d7addd"
-          }
-        },
-        {
-          "ruleId": "max-nesting-depth",
-          "level": "warning",
-          "message": {
-            "text": "Function 'review_command' has nesting depth 5 (max: 4)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/contracts/cli.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 132
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use early returns, guard clauses, or extract nested logic"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "c38b662fec8f7d3b"
-          }
-        },
-        {
-          "ruleId": "max-nesting-depth",
-          "level": "warning",
-          "message": {
-            "text": "Function '_run_phase' has nesting depth 6 (max: 4)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/discovery/manager.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 231
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use early returns, guard clauses, or extract nested logic"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "56c1e4a07af60b77"
-          }
-        },
-        {
-          "ruleId": "max-nesting-depth",
-          "level": "warning",
-          "message": {
-            "text": "Function '_extract_imports' has nesting depth 5 (max: 4)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/discovery/analyzers/test_linkage.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 135
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use early returns, guard clauses, or extract nested logic"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "313682055ddc9cba"
-          }
-        },
-        {
-          "ruleId": "max-nesting-depth",
-          "level": "warning",
-          "message": {
-            "text": "Function '_check_base_class_signal' has nesting depth 5 (max: 4)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/discovery/analyzers/patterns.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 514
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use early returns, guard clauses, or extract nested logic"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "1bdc60e530922cdf"
-          }
-        },
-        {
-          "ruleId": "max-nesting-depth",
-          "level": "warning",
-          "message": {
-            "text": "Function '_detect_frameworks' has nesting depth 5 (max: 4)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/discovery/analyzers/patterns.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 716
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use early returns, guard clauses, or extract nested logic"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "8140d86d6f8dbf31"
-          }
-        },
-        {
-          "ruleId": "max-nesting-depth",
-          "level": "warning",
-          "message": {
-            "text": "Function '_detect_layer' has nesting depth 5 (max: 4)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/discovery/analyzers/structure.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 183
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use early returns, guard clauses, or extract nested logic"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "2baba114014d7a9d"
-          }
-        },
-        {
-          "ruleId": "max-nesting-depth",
-          "level": "warning",
-          "message": {
-            "text": "Function '_detect_docker_compose' has nesting depth 5 (max: 4)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/discovery/analyzers/interactions.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 52
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use early returns, guard clauses, or extract nested logic"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "3f8a0e773ac81976"
-          }
-        },
-        {
-          "ruleId": "max-nesting-depth",
-          "level": "warning",
-          "message": {
-            "text": "Function 'suggest_extractions' has nesting depth 6 (max: 4)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/discovery/providers/python_provider.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 477
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use early returns, guard clauses, or extract nested logic"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "a8c3c3d2d936a627"
-          }
-        },
-        {
-          "ruleId": "max-nesting-depth",
-          "level": "warning",
-          "message": {
-            "text": "Function '_get_complexity_suggestions' has nesting depth 5 (max: 4)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/discovery/providers/python_provider.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 666
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use early returns, guard clauses, or extract nested logic"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "9606539b3f1606f6"
-          }
-        },
-        {
-          "ruleId": "max-nesting-depth",
-          "level": "warning",
-          "message": {
-            "text": "Function '_get_length_suggestions' has nesting depth 5 (max: 4)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/discovery/providers/python_provider.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 718
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use early returns, guard clauses, or extract nested logic"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "413dbf948edfb0d9"
-          }
-        },
-        {
-          "ruleId": "max-nesting-depth",
-          "level": "warning",
-          "message": {
-            "text": "Function 'count_lines' has nesting depth 7 (max: 4)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/discovery/providers/dotnet_provider.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 572
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use early returns, guard clauses, or extract nested logic"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "adefc74608118e6b"
-          }
-        },
-        {
-          "ruleId": "max-nesting-depth",
-          "level": "warning",
-          "message": {
-            "text": "Function '_find_existing_lineage' has nesting depth 5 (max: 4)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/discovery/generators/lineage_embedder.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 227
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use early returns, guard clauses, or extract nested logic"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "049589668394a1e0"
-          }
-        },
-        {
-          "ruleId": "max-nesting-depth",
-          "level": "warning",
-          "message": {
-            "text": "Function '_match_test_methods' has nesting depth 5 (max: 4)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/discovery/generators/as_built_spec.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 323
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use early returns, guard clauses, or extract nested logic"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "80dc2098eb601867"
-          }
-        },
-        {
-          "ruleId": "max-nesting-depth",
-          "level": "warning",
-          "message": {
-            "text": "Function 'parse' has nesting depth 6 (max: 4)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/harness/action_parser.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 45
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use early returns, guard clauses, or extract nested logic"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "80036701eec662fd"
-          }
-        },
-        {
-          "ruleId": "max-nesting-depth",
-          "level": "warning",
-          "message": {
-            "text": "Function 'parse_lenient' has nesting depth 5 (max: 4)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/harness/action_parser.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 221
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use early returns, guard clauses, or extract nested logic"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "11791986775ce236"
-          }
-        },
-        {
-          "ruleId": "max-nesting-depth",
-          "level": "warning",
-          "message": {
-            "text": "Function 'execute_action' has nesting depth 8 (max: 4)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/harness/recovery_executor.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 133
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use early returns, guard clauses, or extract nested logic"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "b14db5531987a084"
-          }
-        },
-        {
-          "ruleId": "max-nesting-depth",
-          "level": "warning",
-          "message": {
-            "text": "Function 'get_tools' has nesting depth 5 (max: 4)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/harness/tool_selector.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 25
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use early returns, guard clauses, or extract nested logic"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "a4e1364d9fba3276"
-          }
-        },
-        {
-          "ruleId": "max-nesting-depth",
-          "level": "warning",
-          "message": {
-            "text": "Function 'notify' has nesting depth 6 (max: 4)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/harness/escalation_notifier.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 45
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use early returns, guard clauses, or extract nested logic"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "98a84d7973b41740"
-          }
-        },
-        {
-          "ruleId": "max-nesting-depth",
-          "level": "warning",
-          "message": {
-            "text": "Function 'fix_violation' has nesting depth 8 (max: 4)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/harness/fix_violation_workflow.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 227
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use early returns, guard clauses, or extract nested logic"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "37bcb17c8143749e"
-          }
-        },
-        {
-          "ruleId": "max-nesting-depth",
-          "level": "warning",
-          "message": {
-            "text": "Function '_determine_phase' has nesting depth 5 (max: 4)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/harness/fix_violation_workflow.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 339
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use early returns, guard clauses, or extract nested logic"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "10d073296c03553d"
-          }
-        },
-        {
-          "ruleId": "max-nesting-depth",
-          "level": "warning",
-          "message": {
-            "text": "Function 'delete_checkpoint' has nesting depth 5 (max: 4)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/harness/checkpoint_manager.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 182
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use early returns, guard clauses, or extract nested logic"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "df9e35975a2f4811"
-          }
-        },
-        {
-          "ruleId": "max-nesting-depth",
-          "level": "warning",
-          "message": {
-            "text": "Function '_get_precomputed' has nesting depth 5 (max: 4)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/harness/minimal_context/template_context_builder.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 325
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use early returns, guard clauses, or extract nested logic"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "9774952cbefb159a"
-          }
-        },
-        {
-          "ruleId": "max-nesting-depth",
-          "level": "warning",
-          "message": {
-            "text": "Function 'create_load_context_handler' has nesting depth 5 (max: 4)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/harness/minimal_context/tool_handlers/search_handlers.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 172
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use early returns, guard clauses, or extract nested logic"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "562b03075640f9b2"
-          }
-        },
-        {
-          "ruleId": "max-nesting-depth",
-          "level": "warning",
-          "message": {
-            "text": "Function 'handler' has nesting depth 5 (max: 4)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/harness/minimal_context/tool_handlers/search_handlers.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 186
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use early returns, guard clauses, or extract nested logic"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "0a6a7989a9113345"
-          }
-        },
-        {
-          "ruleId": "max-nesting-depth",
-          "level": "warning",
-          "message": {
-            "text": "Function 'validate_path_security' has nesting depth 5 (max: 4)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/harness/minimal_context/tool_handlers/types.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 33
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use early returns, guard clauses, or extract nested logic"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "1f6725e272c9271a"
-          }
-        },
-        {
-          "ruleId": "max-nesting-depth",
-          "level": "warning",
-          "message": {
-            "text": "Function 'can_extract_function' has nesting depth 5 (max: 4)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/refactoring/rope_provider.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 89
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use early returns, guard clauses, or extract nested logic"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "bc8aa733a58ec057"
-          }
-        },
-        {
-          "ruleId": "max-nesting-depth",
-          "level": "warning",
-          "message": {
-            "text": "Function 'extract_function' has nesting depth 6 (max: 4)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/refactoring/rope_provider.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 156
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use early returns, guard clauses, or extract nested logic"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "61867baa2ec92f73"
-          }
-        },
-        {
-          "ruleId": "max-nesting-depth",
-          "level": "warning",
-          "message": {
-            "text": "Function '_extract_locations_from_analysis' has nesting depth 7 (max: 4)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/cli/commands/spec.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 251
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use early returns, guard clauses, or extract nested logic"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "e444fe5b601f59d6"
-          }
-        },
-        {
-          "ruleId": "max-nesting-depth",
-          "level": "warning",
-          "message": {
-            "text": "Function '_display_result' has nesting depth 7 (max: 4)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/cli/click_commands/pipeline.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 73
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use early returns, guard clauses, or extract nested logic"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "e6f9667bf04c9a94"
-          }
-        },
-        {
           "ruleId": "max-class-size",
           "level": "warning",
           "message": {
@@ -9718,7 +9598,7 @@
           "ruleId": "max-file-lines",
           "level": "warning",
           "message": {
-            "text": "File exceeds line limit (777 lines > 500)"
+            "text": "File exceeds line limit (789 lines > 500)"
           },
           "locations": [
             {
@@ -9738,7 +9618,7 @@
             }
           ],
           "partialFingerprints": {
-            "primaryLocationLineHash": "11b8e7106e1c26b2"
+            "primaryLocationLineHash": "5622e47246c5f31f"
           }
         },
         {
@@ -10489,7 +10369,7 @@
           "ruleId": "no-god-classes",
           "level": "warning",
           "message": {
-            "text": "Class 'PatternAnalyzer' has 16 methods (max: 15)"
+            "text": "Class 'PatternAnalyzer' has 18 methods (max: 15)"
           },
           "locations": [
             {
@@ -10512,7 +10392,7 @@
             }
           ],
           "partialFingerprints": {
-            "primaryLocationLineHash": "9b357ae2f184e1a5"
+            "primaryLocationLineHash": "4543b59d3e35c589"
           }
         },
         {
@@ -25249,7 +25129,7 @@
           "ruleId": "single-responsibility-modules",
           "level": "note",
           "message": {
-            "text": "Class 'PatternAnalyzer' has 16 methods (max: 3)"
+            "text": "Class 'PatternAnalyzer' has 18 methods (max: 3)"
           },
           "locations": [
             {
@@ -25272,7 +25152,7 @@
             }
           ],
           "partialFingerprints": {
-            "primaryLocationLineHash": "cb571741c2ef0917"
+            "primaryLocationLineHash": "7ddfe05c4611868a"
           }
         },
         {
@@ -30046,66 +29926,6 @@
           }
         },
         {
-          "ruleId": "no-real-network-calls",
-          "level": "warning",
-          "message": {
-            "text": "Forbidden pattern found: 'requests.get('"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "tests/unit/tools/test_builtin_checks_architecture.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 475
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use responses, httpretty, or pytest-mock to mock network calls"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "ebd70fb2a1592371"
-          }
-        },
-        {
-          "ruleId": "no-real-network-calls",
-          "level": "warning",
-          "message": {
-            "text": "Forbidden pattern found: 'requests.get('"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "tests/unit/tools/test_builtin_checks_architecture.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 896
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use responses, httpretty, or pytest-mock to mock network calls"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "c004d4d91c59a89d"
-          }
-        },
-        {
           "ruleId": "unit-tests-isolated",
           "level": "warning",
           "message": {
@@ -30193,6 +30013,96 @@
           ],
           "partialFingerprints": {
             "primaryLocationLineHash": "27e929cf5548ee5e"
+          }
+        },
+        {
+          "ruleId": "no-real-network-calls",
+          "level": "warning",
+          "message": {
+            "text": "Forbidden pattern found: 'requests.get('"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "tests/unit/tools/test_builtin_checks_architecture.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 475
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use responses, httpretty, or pytest-mock to mock network calls"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "ebd70fb2a1592371"
+          }
+        },
+        {
+          "ruleId": "no-real-network-calls",
+          "level": "warning",
+          "message": {
+            "text": "Forbidden pattern found: 'requests.get('"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "tests/unit/tools/test_builtin_checks_architecture.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 896
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use responses, httpretty, or pytest-mock to mock network calls"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "c004d4d91c59a89d"
+          }
+        },
+        {
+          "ruleId": "no-hardcoded-test-data-paths",
+          "level": "note",
+          "message": {
+            "text": "Forbidden pattern found: 'open(\"'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "tests/unit/tools/test_builtin_checks_architecture.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 897
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use tmp_path fixture or Path(__file__).parent for test data"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "4529926e487c286d"
           }
         },
         {
@@ -38716,20 +38626,17 @@
           }
         },
         {
-          "ruleId": "no-hardcoded-test-data-paths",
-          "level": "note",
+          "ruleId": "main-guard-pattern",
+          "level": "warning",
           "message": {
-            "text": "Forbidden pattern found: 'open(\"'"
+            "text": "Required pattern not found: 'if\\s+__name__\\s*==\\s*['\"]__main__['\"]'"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "tests/unit/tools/test_builtin_checks_architecture.py",
+                  "uri": "src/agentforge/core/contracts/cli.py",
                   "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 897
                 }
               }
             }
@@ -38737,12 +38644,12 @@
           "fixes": [
             {
               "description": {
-                "text": "Use tmp_path fixture or Path(__file__).parent for test data"
+                "text": "Add: if __name__ == '__main__': main()"
               }
             }
           ],
           "partialFingerprints": {
-            "primaryLocationLineHash": "4529926e487c286d"
+            "primaryLocationLineHash": "64536d4b4b15f62f"
           }
         },
         {
@@ -39157,33 +39064,6 @@
           ],
           "partialFingerprints": {
             "primaryLocationLineHash": "a234e9b6e0783303"
-          }
-        },
-        {
-          "ruleId": "main-guard-pattern",
-          "level": "warning",
-          "message": {
-            "text": "Required pattern not found: 'if\\s+__name__\\s*==\\s*['\"]__main__['\"]'"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/contracts/cli.py",
-                  "uriBaseId": "%SRCROOT%"
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Add: if __name__ == '__main__': main()"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "64536d4b4b15f62f"
           }
         },
         {
@@ -46456,6 +46336,456 @@
           ],
           "partialFingerprints": {
             "primaryLocationLineHash": "e2e446f50b8cb2b3"
+          }
+        },
+        {
+          "ruleId": "max-imports",
+          "level": "note",
+          "message": {
+            "text": "File has 35 imports (max: 30)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "tests/unit/pipeline/test_config_validator.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 1
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Consider splitting module or consolidating imports"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "7f45b74a0f262cb0"
+          }
+        },
+        {
+          "ruleId": "max-imports",
+          "level": "note",
+          "message": {
+            "text": "File has 37 imports (max: 30)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "tests/unit/pipeline/test_config.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 1
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Consider splitting module or consolidating imports"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "26ea722989877c4f"
+          }
+        },
+        {
+          "ruleId": "max-imports",
+          "level": "note",
+          "message": {
+            "text": "File has 40 imports (max: 30)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "tests/unit/pipeline/stages/test_refactor.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 1
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Consider splitting module or consolidating imports"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "620db9d240fc9627"
+          }
+        },
+        {
+          "ruleId": "max-imports",
+          "level": "note",
+          "message": {
+            "text": "File has 71 imports (max: 30)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "tests/unit/pipeline/stages/test_deliver.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 1
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Consider splitting module or consolidating imports"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "1af4449b3f9cf71b"
+          }
+        },
+        {
+          "ruleId": "max-imports",
+          "level": "note",
+          "message": {
+            "text": "File has 99 imports (max: 30)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "tests/unit/harness/test_enhanced_context.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 1
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Consider splitting module or consolidating imports"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "7536c9f1cbcda4e8"
+          }
+        },
+        {
+          "ruleId": "max-imports",
+          "level": "note",
+          "message": {
+            "text": "File has 36 imports (max: 30)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "tests/integration/cli/test_pipeline_cli_integration.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 1
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Consider splitting module or consolidating imports"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "dd2230d56131f4eb"
+          }
+        },
+        {
+          "ruleId": "max-imports",
+          "level": "note",
+          "message": {
+            "text": "File has 34 imports (max: 30)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "tests/integration/harness/test_harness_workflow.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 1
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Consider splitting module or consolidating imports"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "2524db31df44a647"
+          }
+        },
+        {
+          "ruleId": "max-imports",
+          "level": "note",
+          "message": {
+            "text": "File has 65 imports (max: 30)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/pipeline/__init__.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 1
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Consider splitting module or consolidating imports"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "f566e02b0207dd1e"
+          }
+        },
+        {
+          "ruleId": "max-imports",
+          "level": "note",
+          "message": {
+            "text": "File has 31 imports (max: 30)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/llm/__init__.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 1
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Consider splitting module or consolidating imports"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "af5ad352f738cec8"
+          }
+        },
+        {
+          "ruleId": "max-imports",
+          "level": "note",
+          "message": {
+            "text": "File has 33 imports (max: 30)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/contracts/__init__.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 1
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Consider splitting module or consolidating imports"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "d249f8d185d2aee1"
+          }
+        },
+        {
+          "ruleId": "max-imports",
+          "level": "note",
+          "message": {
+            "text": "File has 36 imports (max: 30)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/discovery/manager.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 1
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Consider splitting module or consolidating imports"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "006453e13ae39e36"
+          }
+        },
+        {
+          "ruleId": "max-imports",
+          "level": "note",
+          "message": {
+            "text": "File has 102 imports (max: 30)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/harness/__init__.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 1
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Consider splitting module or consolidating imports"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "930a34f5e57ebde1"
+          }
+        },
+        {
+          "ruleId": "max-imports",
+          "level": "note",
+          "message": {
+            "text": "File has 44 imports (max: 30)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/harness/minimal_context/__init__.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 1
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Consider splitting module or consolidating imports"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "8a62777a83ffdbe6"
+          }
+        },
+        {
+          "ruleId": "max-imports",
+          "level": "note",
+          "message": {
+            "text": "File has 40 imports (max: 30)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/harness/minimal_context/executor.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 1
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Consider splitting module or consolidating imports"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "141036dcd6d179f1"
+          }
+        },
+        {
+          "ruleId": "max-imports",
+          "level": "note",
+          "message": {
+            "text": "File has 38 imports (max: 30)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/cli/main.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 1
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Consider splitting module or consolidating imports"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "28235aee60ae1ea2"
           }
         },
         {
@@ -57886,456 +58216,6 @@
           ],
           "partialFingerprints": {
             "primaryLocationLineHash": "6b28d1903491205f"
-          }
-        },
-        {
-          "ruleId": "max-imports",
-          "level": "note",
-          "message": {
-            "text": "File has 35 imports (max: 30)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "tests/unit/pipeline/test_config_validator.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 1
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Consider splitting module or consolidating imports"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "7f45b74a0f262cb0"
-          }
-        },
-        {
-          "ruleId": "max-imports",
-          "level": "note",
-          "message": {
-            "text": "File has 37 imports (max: 30)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "tests/unit/pipeline/test_config.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 1
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Consider splitting module or consolidating imports"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "26ea722989877c4f"
-          }
-        },
-        {
-          "ruleId": "max-imports",
-          "level": "note",
-          "message": {
-            "text": "File has 40 imports (max: 30)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "tests/unit/pipeline/stages/test_refactor.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 1
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Consider splitting module or consolidating imports"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "620db9d240fc9627"
-          }
-        },
-        {
-          "ruleId": "max-imports",
-          "level": "note",
-          "message": {
-            "text": "File has 71 imports (max: 30)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "tests/unit/pipeline/stages/test_deliver.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 1
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Consider splitting module or consolidating imports"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "1af4449b3f9cf71b"
-          }
-        },
-        {
-          "ruleId": "max-imports",
-          "level": "note",
-          "message": {
-            "text": "File has 99 imports (max: 30)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "tests/unit/harness/test_enhanced_context.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 1
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Consider splitting module or consolidating imports"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "7536c9f1cbcda4e8"
-          }
-        },
-        {
-          "ruleId": "max-imports",
-          "level": "note",
-          "message": {
-            "text": "File has 36 imports (max: 30)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "tests/integration/cli/test_pipeline_cli_integration.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 1
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Consider splitting module or consolidating imports"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "dd2230d56131f4eb"
-          }
-        },
-        {
-          "ruleId": "max-imports",
-          "level": "note",
-          "message": {
-            "text": "File has 34 imports (max: 30)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "tests/integration/harness/test_harness_workflow.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 1
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Consider splitting module or consolidating imports"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "2524db31df44a647"
-          }
-        },
-        {
-          "ruleId": "max-imports",
-          "level": "note",
-          "message": {
-            "text": "File has 65 imports (max: 30)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/pipeline/__init__.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 1
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Consider splitting module or consolidating imports"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "f566e02b0207dd1e"
-          }
-        },
-        {
-          "ruleId": "max-imports",
-          "level": "note",
-          "message": {
-            "text": "File has 31 imports (max: 30)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/llm/__init__.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 1
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Consider splitting module or consolidating imports"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "af5ad352f738cec8"
-          }
-        },
-        {
-          "ruleId": "max-imports",
-          "level": "note",
-          "message": {
-            "text": "File has 33 imports (max: 30)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/contracts/__init__.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 1
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Consider splitting module or consolidating imports"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "d249f8d185d2aee1"
-          }
-        },
-        {
-          "ruleId": "max-imports",
-          "level": "note",
-          "message": {
-            "text": "File has 36 imports (max: 30)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/discovery/manager.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 1
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Consider splitting module or consolidating imports"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "006453e13ae39e36"
-          }
-        },
-        {
-          "ruleId": "max-imports",
-          "level": "note",
-          "message": {
-            "text": "File has 102 imports (max: 30)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/harness/__init__.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 1
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Consider splitting module or consolidating imports"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "930a34f5e57ebde1"
-          }
-        },
-        {
-          "ruleId": "max-imports",
-          "level": "note",
-          "message": {
-            "text": "File has 44 imports (max: 30)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/harness/minimal_context/__init__.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 1
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Consider splitting module or consolidating imports"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "8a62777a83ffdbe6"
-          }
-        },
-        {
-          "ruleId": "max-imports",
-          "level": "note",
-          "message": {
-            "text": "File has 40 imports (max: 30)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/harness/minimal_context/executor.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 1
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Consider splitting module or consolidating imports"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "141036dcd6d179f1"
-          }
-        },
-        {
-          "ruleId": "max-imports",
-          "level": "note",
-          "message": {
-            "text": "File has 38 imports (max: 30)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/cli/main.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 1
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Consider splitting module or consolidating imports"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "28235aee60ae1ea2"
           }
         },
         {
@@ -81925,6 +81805,98 @@
           "ruleId": "default-result-return-types",
           "level": "note",
           "message": {
+            "text": "Method '_review_stage' returns 'StageDecision | None', expected pattern 'Result|Either|Success|Failure'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/contracts/cli.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 127
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "9c920b33b38d93d9"
+          }
+        },
+        {
+          "ruleId": "default-result-return-types",
+          "level": "note",
+          "message": {
+            "text": "Method '_review_open_questions' returns 'dict', expected pattern 'Result|Either|Success|Failure'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/contracts/cli.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 151
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "8c0c0bd5ad42c935"
+          }
+        },
+        {
+          "ruleId": "default-result-return-types",
+          "level": "note",
+          "message": {
+            "text": "Method '_review_assumptions' returns 'dict', expected pattern 'Result|Either|Success|Failure'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/contracts/cli.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 169
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "de43cbb9b5865e9f"
+          }
+        },
+        {
+          "ruleId": "default-result-return-types",
+          "level": "note",
+          "message": {
+            "text": "Method '_handle_approval' returns 'None', expected pattern 'Result|Either|Success|Failure'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/contracts/cli.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 184
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "b99ec34005b62ced"
+          }
+        },
+        {
+          "ruleId": "default-result-return-types",
+          "level": "note",
+          "message": {
             "text": "Method 'get_stage_decision' returns 'StageDecision | None', expected pattern 'Result|Either|Success|Failure'"
           },
           "locations": [
@@ -85306,7 +85278,7 @@
           "ruleId": "default-result-return-types",
           "level": "note",
           "message": {
-            "text": "Method '_detect_frameworks' returns 'dict[str, Detection]', expected pattern 'Result|Either|Success|Failure'"
+            "text": "Method '_check_framework_signal' returns 'tuple[str | None, float]', expected pattern 'Result|Either|Success|Failure'"
           },
           "locations": [
             {
@@ -85322,7 +85294,53 @@
             }
           ],
           "partialFingerprints": {
-            "primaryLocationLineHash": "9d3a30905a9666ce"
+            "primaryLocationLineHash": "fd7003ae6c5c5148"
+          }
+        },
+        {
+          "ruleId": "default-result-return-types",
+          "level": "note",
+          "message": {
+            "text": "Method '_scan_file_for_framework' returns 'tuple[list[str], float]', expected pattern 'Result|Either|Success|Failure'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/discovery/analyzers/patterns.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 725
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "ed0b4ea351ef06ef"
+          }
+        },
+        {
+          "ruleId": "default-result-return-types",
+          "level": "note",
+          "message": {
+            "text": "Method '_detect_frameworks' returns 'dict[str, Detection]', expected pattern 'Result|Either|Success|Failure'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/discovery/analyzers/patterns.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 753
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "73eab3297c1ac5ab"
           }
         },
         {
@@ -85339,13 +85357,13 @@
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 766
+                  "startLine": 778
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "primaryLocationLineHash": "676e5e76887c4c97"
+            "primaryLocationLineHash": "0564b822aba44aab"
           }
         },
         {
@@ -125215,14 +125233,14 @@
       "invocations": [
         {
           "executionSuccessful": true,
-          "startTimeUtc": "2026-01-03T21:02:15.211839Z",
-          "endTimeUtc": "2026-01-03T21:02:33.768324Z"
+          "startTimeUtc": "2026-01-03T21:16:16.875992Z",
+          "endTimeUtc": "2026-01-03T21:16:35.717326Z"
         }
       ],
       "versionControlProvenance": [
         {
           "repositoryUri": "",
-          "revisionId": "7202f983b74be8c424d68369d6beef620b4800cb"
+          "revisionId": "822a230a97da4e073cb1763ab609f5a0007296b7"
         }
       ]
     }

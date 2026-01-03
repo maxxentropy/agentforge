@@ -124,6 +124,85 @@ def draft_command(ctx, request: str, project: str | None, save: bool):
         click.echo(f"Review with: agentforge contract review {draft_id}")
 
 
+def _review_stage(stage, reviewer) -> StageDecision | None:
+    """Review a single stage interactively."""
+    click.echo()
+    click.echo(reviewer.format_stage_for_review(stage))
+    click.echo()
+
+    while True:
+        choice = click.prompt(
+            f"[A]pprove [M]odify [S]kip for {stage.stage_name}",
+            type=click.Choice(["A", "M", "S", "a", "m", "s"], case_sensitive=False),
+            default="A",
+        )
+        if choice.upper() == "A":
+            click.echo(f"  {stage.stage_name}: Approved")
+            return StageDecision(stage.stage_name, ReviewDecision.APPROVE)
+        if choice.upper() == "M":
+            notes = click.prompt("Notes for modification", default="")
+            click.echo(f"  {stage.stage_name}: Marked for modification")
+            return StageDecision(stage.stage_name, ReviewDecision.MODIFY, notes=notes)
+        if choice.upper() == "S":
+            click.echo(f"  {stage.stage_name}: Skipped")
+            return None
+
+
+def _review_open_questions(questions) -> dict:
+    """Review open questions and collect answers."""
+    if not questions:
+        return {}
+    click.echo()
+    click.echo("OPEN QUESTIONS:")
+    answered = {}
+    for q in questions:
+        click.echo(f"  {q.question}")
+        if q.suggested_answers:
+            for i, ans in enumerate(q.suggested_answers, 1):
+                click.echo(f"    {i}. {ans}")
+        answer = click.prompt("Your answer (or press Enter to skip)", default="")
+        if answer:
+            answered[q.question_id] = answer
+    return answered
+
+
+def _review_assumptions(assumptions) -> dict:
+    """Review assumptions and collect validation."""
+    if not assumptions:
+        return {}
+    click.echo()
+    click.echo("ASSUMPTIONS TO VALIDATE:")
+    validated = {}
+    for a in assumptions:
+        click.echo(f"  [{a.confidence:.0%}] {a.statement}")
+        if a.impact_if_wrong:
+            click.echo(f"      Impact if wrong: {a.impact_if_wrong}")
+        validated[a.assumption_id] = click.confirm("Is this assumption correct?", default=True)
+    return validated
+
+
+def _handle_approval(
+    feedback, reviewer, session, registry, draft_id, request_id
+) -> None:
+    """Handle the approval flow."""
+    feedback.overall_decision = OverallDecision.APPROVE
+    session = reviewer.apply_feedback(session, feedback)
+
+    if not request_id:
+        from datetime import UTC, datetime
+        request_id = f"REQ-{datetime.now(UTC).strftime('%Y%m%d-%H%M%S')}"
+
+    approved = reviewer.finalize(session, request_id)
+    if approved:
+        contract_id = registry.register(approved)
+        registry.delete_draft(draft_id)
+        click.echo()
+        click.echo(f"Contracts approved and registered: {contract_id}")
+        click.echo(f"Request ID: {request_id}")
+    else:
+        click.echo("Could not finalize approval", err=True)
+
+
 @task_contracts.command("review")
 @click.argument("draft_id", type=str)
 @click.option("--project", "-p", type=click.Path(exists=True), help="Project path")
@@ -140,81 +219,25 @@ def review_command(ctx, draft_id: str, project: str | None, request_id: str | No
     project_path = Path(project) if project else ctx.obj.get("project_path", Path.cwd())
     registry = ContractRegistry(project_path)
 
-    # Load draft
     draft = registry.get_draft(draft_id)
     if draft is None:
         click.echo(f"Draft not found: {draft_id}", err=True)
         sys.exit(1)
 
-    # Start interactive review
     reviewer = ContractReviewer()
     session = reviewer.create_session(draft)
-
-    # Display draft
     click.echo(reviewer.format_for_display(draft))
 
-    # Interactive review loop
+    # Collect stage decisions
     feedback = ReviewFeedback()
-    stage_decisions = []
+    feedback.stage_decisions = [
+        decision for stage in draft.stage_contracts
+        if (decision := _review_stage(stage, reviewer)) is not None
+    ]
 
-    for stage in draft.stage_contracts:
-        click.echo()
-        click.echo(reviewer.format_stage_for_review(stage))
-        click.echo()
-
-        while True:
-            choice = click.prompt(
-                f"[A]pprove [M]odify [S]kip for {stage.stage_name}",
-                type=click.Choice(["A", "M", "S", "a", "m", "s"], case_sensitive=False),
-                default="A",
-            )
-
-            if choice.upper() == "A":
-                stage_decisions.append(
-                    StageDecision(stage.stage_name, ReviewDecision.APPROVE)
-                )
-                click.echo(f"  {stage.stage_name}: Approved")
-                break
-            elif choice.upper() == "M":
-                notes = click.prompt("Notes for modification", default="")
-                stage_decisions.append(
-                    StageDecision(stage.stage_name, ReviewDecision.MODIFY, notes=notes)
-                )
-                click.echo(f"  {stage.stage_name}: Marked for modification")
-                break
-            elif choice.upper() == "S":
-                click.echo(f"  {stage.stage_name}: Skipped")
-                break
-
-    feedback.stage_decisions = stage_decisions
-
-    # Handle open questions
-    if draft.open_questions:
-        click.echo()
-        click.echo("OPEN QUESTIONS:")
-        answered = {}
-        for q in draft.open_questions:
-            click.echo(f"  {q.question}")
-            if q.suggested_answers:
-                for i, ans in enumerate(q.suggested_answers, 1):
-                    click.echo(f"    {i}. {ans}")
-            answer = click.prompt("Your answer (or press Enter to skip)", default="")
-            if answer:
-                answered[q.question_id] = answer
-        feedback.answered_questions = answered
-
-    # Handle assumptions
-    if draft.assumptions:
-        click.echo()
-        click.echo("ASSUMPTIONS TO VALIDATE:")
-        validated = {}
-        for a in draft.assumptions:
-            click.echo(f"  [{a.confidence:.0%}] {a.statement}")
-            if a.impact_if_wrong:
-                click.echo(f"      Impact if wrong: {a.impact_if_wrong}")
-            valid = click.confirm("Is this assumption correct?", default=True)
-            validated[a.assumption_id] = valid
-        feedback.validated_assumptions = validated
+    # Collect answers and validations
+    feedback.answered_questions = _review_open_questions(draft.open_questions)
+    feedback.validated_assumptions = _review_assumptions(draft.assumptions)
 
     # Final decision
     click.echo()
@@ -226,28 +249,10 @@ def review_command(ctx, draft_id: str, project: str | None, request_id: str | No
     )
 
     if choice.upper() == "A":
-        feedback.overall_decision = OverallDecision.APPROVE
-        session = reviewer.apply_feedback(session, feedback)
-
-        # Generate request ID if not provided
-        if not request_id:
-            from datetime import UTC, datetime
-            request_id = f"REQ-{datetime.now(UTC).strftime('%Y%m%d-%H%M%S')}"
-
-        approved = reviewer.finalize(session, request_id)
-        if approved:
-            contract_id = registry.register(approved)
-            registry.delete_draft(draft_id)
-            click.echo()
-            click.echo(f"Contracts approved and registered: {contract_id}")
-            click.echo(f"Request ID: {request_id}")
-        else:
-            click.echo("Could not finalize approval", err=True)
-
+        _handle_approval(feedback, reviewer, session, registry, draft_id, request_id)
     elif choice.upper() == "R":
         feedback.overall_decision = OverallDecision.REFINE
         click.echo("Draft marked for refinement. Re-run draft with feedback.")
-
     else:
         click.echo("Review cancelled.")
 

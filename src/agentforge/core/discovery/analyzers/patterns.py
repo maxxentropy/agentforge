@@ -713,51 +713,63 @@ class PatternAnalyzer:
 
         return patterns
 
+    def _check_framework_signal(
+        self, patterns: list, content: str, signal_name: str, score: float
+    ) -> tuple[str | None, float]:
+        """Check if any pattern matches content for a framework signal."""
+        for pattern in patterns:
+            if re.search(pattern, content):
+                return signal_name, score
+        return None, 0.0
+
+    def _scan_file_for_framework(
+        self, file_path: Path, fw_config: dict
+    ) -> tuple[list[str], float]:
+        """Scan a single file for framework signals."""
+        signals = fw_config.get("signals", {})
+        try:
+            content = file_path.read_text(encoding='utf-8')
+        except Exception:
+            return [], 0.0
+
+        found_signals = []
+        total_score = 0.0
+
+        signal_checks = [
+            ("import", signals.get("import", []), content, 1.0),
+            ("decorator", signals.get("decorator", []), content, 0.8),
+            ("file_pattern", signals.get("file_pattern", []), str(file_path), 0.5),
+        ]
+
+        for signal_name, patterns, text, score in signal_checks:
+            if patterns:
+                sig, sc = self._check_framework_signal(patterns, text, signal_name, score)
+                if sig:
+                    found_signals.append(sig)
+                    total_score += sc
+
+        return found_signals, total_score
+
     def _detect_frameworks(self, source_files: list[Path]) -> dict[str, Detection]:
         """Detect frameworks used in the codebase."""
         frameworks = {}
 
         for fw_name, fw_config in FRAMEWORK_PATTERNS.items():
-            signals_found = []
+            all_signals = []
             total_score = 0.0
 
             for file_path in source_files:
-                try:
-                    content = file_path.read_text(encoding='utf-8')
-                except Exception:
-                    continue
-
-                # Check import signals
-                if "import" in fw_config["signals"]:
-                    for pattern in fw_config["signals"]["import"]:
-                        if re.search(pattern, content):
-                            signals_found.append("import")
-                            total_score += 1.0
-                            break
-
-                # Check decorator signals
-                if "decorator" in fw_config["signals"]:
-                    for pattern in fw_config["signals"]["decorator"]:
-                        if re.search(pattern, content):
-                            signals_found.append("decorator")
-                            total_score += 0.8
-                            break
-
-                # Check file patterns
-                if "file_pattern" in fw_config["signals"]:
-                    for pattern in fw_config["signals"]["file_pattern"]:
-                        if re.search(pattern, str(file_path)):
-                            signals_found.append("file_pattern")
-                            total_score += 0.5
-                            break
+                signals, score = self._scan_file_for_framework(file_path, fw_config)
+                all_signals.extend(signals)
+                total_score += score
 
             if total_score > 0:
-                confidence = min(total_score / 5, 1.0)  # Cap at 1.0
+                confidence = min(total_score / 5, 1.0)
                 frameworks[fw_name] = Detection(
                     value=fw_name,
                     confidence=confidence,
-                    source=DetectionSource.EXPLICIT if "import" in signals_found else DetectionSource.NAMING,
-                    signals=list(set(signals_found)),
+                    source=DetectionSource.EXPLICIT if "import" in all_signals else DetectionSource.NAMING,
+                    signals=list(set(all_signals)),
                     metadata={"type": fw_config.get("type", "unknown")},
                 )
 

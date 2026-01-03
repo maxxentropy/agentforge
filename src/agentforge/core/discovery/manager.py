@@ -48,6 +48,30 @@ except ImportError:
     yaml = None  # type: ignore
 
 
+# Helper functions to reduce complexity in manager methods
+def _get_frameworks_list(project_info: dict[str, Any]) -> list[str]:
+    """Extract and normalize frameworks list from project info."""
+    frameworks = project_info.get("frameworks", [])
+    primary_framework = project_info.get("framework")
+    if primary_framework:
+        # Ensure primary framework is first, avoid duplicates
+        return [primary_framework] + [f for f in frameworks if f != primary_framework]
+    return frameworks
+
+
+def _collect_unique_dependencies(zone_profiles: dict) -> list[DependencyInfo]:
+    """Collect unique dependencies across all zone profiles."""
+    all_deps: list[DependencyInfo] = []
+    seen: set[str] = set()
+    for profile in zone_profiles.values():
+        for dep in profile.dependencies:
+            if dep.name not in seen:
+                all_deps.append(dep)
+                seen.add(dep.name)
+    return all_deps
+
+
+
 class DiscoveryPhaseStatus(Enum):
     """Status of a discovery phase."""
     NOT_STARTED = "not_started"
@@ -271,9 +295,7 @@ class DiscoveryManager:
                     ))
 
                 # Create language info
-                frameworks = project_info.get("frameworks", [])
-                if project_info.get("framework"):
-                    frameworks = [project_info["framework"]] + [f for f in frameworks if f != project_info["framework"]]
+                frameworks = _get_frameworks_list(project_info)
 
                 lang_info = LanguageInfo(
                     name=lang_name,
@@ -745,9 +767,7 @@ class MultiZoneDiscoveryManager:
 
         # Get project info for frameworks
         project_info = provider.detect_project(zone_path) or {}
-        frameworks = project_info.get("frameworks", [])
-        if project_info.get("framework"):
-            frameworks = [project_info["framework"]] + [f for f in frameworks if f != project_info["framework"]]
+        frameworks = _get_frameworks_list(project_info)
 
         # Create language info
         lang_info = LanguageInfo(
@@ -850,14 +870,8 @@ class MultiZoneDiscoveryManager:
         for profile in self._zone_profiles.values():
             all_languages.extend(profile.languages)
 
-        # Aggregate dependencies
-        all_dependencies: list[DependencyInfo] = []
-        seen_deps: set[str] = set()
-        for profile in self._zone_profiles.values():
-            for dep in profile.dependencies:
-                if dep.name not in seen_deps:
-                    all_dependencies.append(dep)
-                    seen_deps.add(dep.name)
+        # Aggregate dependencies using helper
+        all_dependencies = _collect_unique_dependencies(self._zone_profiles)
 
         # Calculate totals
         total_files = sum(p.file_count for p in self._zone_profiles.values())

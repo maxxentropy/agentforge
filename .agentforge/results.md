@@ -7,24 +7,24 @@
 | Mode | full |
 | Files Checked | 0 |
 | Checks Run | 158 |
-| Total Violations | 4705 |
+| Total Violations | 4706 |
 | Errors | 0 |
-| Warnings | 392 |
-| Duration | 18.78s |
+| Warnings | 391 |
+| Duration | 18.82s |
 
 ### All Violations
 
 <details>
-<summary>View all 4705 violations in 414 files</summary>
+<summary>View all 4706 violations in 414 files</summary>
 
 **`<unknown>`** (4 violations)
 
-- 🟡 **require-package-json** at `file`
-  - Required file not found: 'package.json'
-  - 💡 *Run 'npm init' to create package.json*
 - 🟡 **require-csproj** at `file`
   - Required file not found: '**/*.csproj'
   - 💡 *Create a .csproj file for the project*
+- 🟡 **require-package-json** at `file`
+  - Required file not found: 'package.json'
+  - 💡 *Run 'npm init' to create package.json*
 - 🟡 **require-csproj** at `file`
   - Required file not found: '**/*.csproj'
   - 💡 *Create a .csproj file for the project*
@@ -1829,6 +1829,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **max-imports** at `L1`
   - File has 38 imports (max: 30)
   - 💡 *Consider splitting module or consolidating imports*
+- 🔵 **max-imports** at `L1`
+  - File has 38 imports (max: 30)
+  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
   - 💡 *Add lineage header to file:
@@ -1837,9 +1840,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
-- 🔵 **max-imports** at `L1`
-  - File has 38 imports (max: 30)
-  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
   - 💡 *Add lineage header to file:
@@ -5820,41 +5820,41 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 
-**`src/agentforge/core/discovery/manager.py`** (34 violations)
+**`src/agentforge/core/discovery/manager.py`** (35 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L246`
-  - Function '_detect_languages' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L600`
+- 🟡 **max-cyclomatic-complexity** at `L622`
   - Function 'discover' has complexity 13 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L719`
-  - Function '_analyze_zone' has complexity 14 (max: 10)
+- 🟡 **max-cyclomatic-complexity** at `L741`
+  - Function '_analyze_zone' has complexity 12 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L844`
-  - Function '_generate_multi_zone_profile' has complexity 16 (max: 10)
+- 🟡 **max-cyclomatic-complexity** at `L864`
+  - Function '_generate_multi_zone_profile' has complexity 13 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-function-length** at `L600`
+- 🟡 **max-function-length** at `L622`
   - Function 'discover' has 80 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-function-length** at `L719`
-  - Function '_analyze_zone' has 87 lines (max: 50)
+- 🟡 **max-function-length** at `L741`
+  - Function '_analyze_zone' has 85 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-function-length** at `L844`
-  - Function '_generate_multi_zone_profile' has 61 lines (max: 50)
+- 🟡 **max-function-length** at `L864`
+  - Function '_generate_multi_zone_profile' has 55 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-nesting-depth** at `L207`
+- 🟡 **max-nesting-depth** at `L231`
   - Function '_run_phase' has nesting depth 6 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🟡 **max-file-lines** at `file`
-  - File exceeds line limit (959 lines > 500)
+  - File exceeds line limit (973 lines > 500)
   - 💡 *Consider splitting into smaller files*
-- 🔵 **single-responsibility-modules** at `L84`
+- 🔵 **single-responsibility-modules** at `L108`
   - Class 'DiscoveryManager' has 14 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
-- 🔵 **single-responsibility-modules** at `L546`
+- 🔵 **single-responsibility-modules** at `L568`
   - Class 'MultiZoneDiscoveryManager' has 11 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
+- 🔵 **max-imports** at `L1`
+  - File has 36 imports (max: 30)
+  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **max-imports** at `L1`
   - File has 36 imports (max: 30)
   - 💡 *Consider splitting module or consolidating imports*
@@ -5872,42 +5872,43 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
-- 🔵 **max-imports** at `L1`
-  - File has 36 imports (max: 30)
-  - 💡 *Consider splitting module or consolidating imports*
-- 🔵 **default-result-return-types** at `L129`
+- 🔵 **default-result-return-types** at `L52`
+  - Method '_get_frameworks_list' returns 'list[str]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L62`
+  - Method '_collect_unique_dependencies' returns 'list[DependencyInfo]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L153`
   - Method '_default_phases' returns 'list[DiscoveryPhase]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L139`
+- 🔵 **default-result-return-types** at `L163`
   - Method '_execute_phase' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L246`
+- 🔵 **default-result-return-types** at `L270`
   - Method '_detect_languages' returns 'list[LanguageInfo]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L360`
+- 🔵 **default-result-return-types** at `L382`
   - Method '_map_architecture' returns 'dict[str, Any]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L379`
+- 🔵 **default-result-return-types** at `L401`
   - Method '_analyze_tests' returns 'CoverageGapAnalysis', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L409`
+- 🔵 **default-result-return-types** at `L431`
   - Method '_has_minimum_results' returns 'bool', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L417`
+- 🔵 **default-result-return-types** at `L439`
   - Method '_generate_profile' returns 'tuple[CodebaseProfile, Path | None]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L473`
+- 🔵 **default-result-return-types** at `L495`
   - Method '_generate_as_built_specs' returns 'tuple[list[Path], int]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L525`
+- 🔵 **default-result-return-types** at `L547`
   - Method '_report_progress' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L590`
+- 🔵 **default-result-return-types** at `L612`
   - Method '_load_config' returns 'dict[str, Any]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L700`
+- 🔵 **default-result-return-types** at `L722`
   - Method 'list_zones' returns 'list[Zone]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L709`
+- 🔵 **default-result-return-types** at `L731`
   - Method '_detect_zones' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L719`
+- 🔵 **default-result-return-types** at `L741`
   - Method '_analyze_zone' returns 'ZoneProfile', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L828`
+- 🔵 **default-result-return-types** at `L848`
   - Method '_detect_interactions' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L844`
+- 🔵 **default-result-return-types** at `L864`
   - Method '_generate_multi_zone_profile' returns 'Path', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L923`
+- 🔵 **default-result-return-types** at `L937`
   - Method '_get_detection_mode' returns 'str', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L953`
+- 🔵 **default-result-return-types** at `L967`
   - Method '_report_progress' returns 'None', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -7574,6 +7575,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **max-imports** at `L1`
   - File has 40 imports (max: 30)
   - 💡 *Consider splitting module or consolidating imports*
+- 🔵 **max-imports** at `L1`
+  - File has 40 imports (max: 30)
+  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
   - 💡 *Add lineage header to file:
@@ -7582,9 +7586,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
-- 🔵 **max-imports** at `L1`
-  - File has 40 imports (max: 30)
-  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **default-result-return-types** at `L196`
   - Method 'register_action' returns 'None', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **default-result-return-types** at `L202`
@@ -11805,6 +11806,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **cli-proper-exit-codes** at `file`
   - Required pattern not found: 'sys\.exit\s*\(\s*[012]\s*\)|raise\s+(SystemExit|click\.Abort|typer\.Abort)'
   - 💡 *Use sys.exit(0) for success, sys.exit(1) for errors*
+- 🔵 **max-imports** at `L1`
+  - File has 36 imports (max: 30)
+  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
   - 💡 *Add lineage header to file:
@@ -11813,9 +11817,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @impl_path: path/to/implementation.py
 Or regenerate file through TDFLOW to get proper lineage.*
-- 🔵 **max-imports** at `L1`
-  - File has 36 imports (max: 30)
-  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
   - 💡 *Add lineage header to file:
@@ -11945,6 +11946,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **fixtures-in-conftest** at `L528`
   - Forbidden pattern found: '@pytest.fixture'
   - 💡 *Move shared fixtures to conftest.py*
+- 🔵 **max-imports** at `L1`
+  - File has 34 imports (max: 30)
+  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
   - 💡 *Add lineage header to file:
@@ -11953,9 +11957,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @impl_path: path/to/implementation.py
 Or regenerate file through TDFLOW to get proper lineage.*
-- 🔵 **max-imports** at `L1`
-  - File has 34 imports (max: 30)
-  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
   - 💡 *Add lineage header to file:
@@ -13580,6 +13581,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **max-imports** at `L1`
   - File has 99 imports (max: 30)
   - 💡 *Consider splitting module or consolidating imports*
+- 🔵 **max-imports** at `L1`
+  - File has 99 imports (max: 30)
+  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
   - 💡 *Add lineage header to file:
@@ -13588,9 +13592,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @impl_path: path/to/implementation.py
 Or regenerate file through TDFLOW to get proper lineage.*
-- 🔵 **max-imports** at `L1`
-  - File has 99 imports (max: 30)
-  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
   - 💡 *Add lineage header to file:
@@ -15071,6 +15072,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **max-imports** at `L1`
   - File has 71 imports (max: 30)
   - 💡 *Consider splitting module or consolidating imports*
+- 🔵 **max-imports** at `L1`
+  - File has 71 imports (max: 30)
+  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
   - 💡 *Add lineage header to file:
@@ -15079,9 +15083,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @impl_path: path/to/implementation.py
 Or regenerate file through TDFLOW to get proper lineage.*
-- 🔵 **max-imports** at `L1`
-  - File has 71 imports (max: 30)
-  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
   - 💡 *Add lineage header to file:
@@ -15198,6 +15199,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **max-imports** at `L1`
   - File has 40 imports (max: 30)
   - 💡 *Consider splitting module or consolidating imports*
+- 🔵 **max-imports** at `L1`
+  - File has 40 imports (max: 30)
+  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
   - 💡 *Add lineage header to file:
@@ -15206,9 +15210,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @impl_path: path/to/implementation.py
 Or regenerate file through TDFLOW to get proper lineage.*
-- 🔵 **max-imports** at `L1`
-  - File has 40 imports (max: 30)
-  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
   - 💡 *Add lineage header to file:
@@ -15310,6 +15311,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **max-imports** at `L1`
   - File has 37 imports (max: 30)
   - 💡 *Consider splitting module or consolidating imports*
+- 🔵 **max-imports** at `L1`
+  - File has 37 imports (max: 30)
+  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
   - 💡 *Add lineage header to file:
@@ -15318,9 +15322,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @impl_path: path/to/implementation.py
 Or regenerate file through TDFLOW to get proper lineage.*
-- 🔵 **max-imports** at `L1`
-  - File has 37 imports (max: 30)
-  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
   - 💡 *Add lineage header to file:
@@ -15347,6 +15348,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **max-imports** at `L1`
   - File has 35 imports (max: 30)
   - 💡 *Consider splitting module or consolidating imports*
+- 🔵 **max-imports** at `L1`
+  - File has 35 imports (max: 30)
+  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
   - 💡 *Add lineage header to file:
@@ -15355,9 +15359,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @impl_path: path/to/implementation.py
 Or regenerate file through TDFLOW to get proper lineage.*
-- 🔵 **max-imports** at `L1`
-  - File has 35 imports (max: 30)
-  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
   - 💡 *Add lineage header to file:
@@ -17046,5 +17047,5 @@ Or regenerate file through TDFLOW to get proper lineage.*
 </details>
 
 ---
-*Generated at 2026-01-03 20:22:54 UTC*
-*Commit: `914daaad`*
+*Generated at 2026-01-03 20:25:45 UTC*
+*Commit: `f336d1e6`*

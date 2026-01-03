@@ -300,30 +300,47 @@ reasoning: brief explanation
         if section.name in domain_context:
             return domain_context[section.name]
 
-        # Special handling for specific sources
-        if section.source == "fact_store":
-            understanding = getattr(state_spec, "understanding", None)
-            if understanding and hasattr(understanding, "get_high_confidence"):
-                facts = understanding.get_high_confidence(0.7)
-                if facts:
-                    return [
-                        {"statement": f.statement, "confidence": f.confidence}
-                        for f in facts[:10]
-                    ]
+        # Source-specific handlers
+        return self._get_source_value(section.source, state_spec)
 
-        elif section.source == "recent_actions":
-            recent_actions = getattr(state_spec, "recent_actions", None)
-            if recent_actions:
-                return [
-                    {
-                        "action": a.action,
-                        "result": a.result.value if a.result else "unknown",
-                        "summary": getattr(a, "summary", ""),
-                    }
-                    for a in recent_actions[-3:]
-                ]
+    def _get_source_value(self, source: str, state_spec: Any) -> Any | None:
+        """Get value from a specific source."""
+        handlers = {
+            "fact_store": self._get_fact_store_value,
+            "recent_actions": self._get_recent_actions_value,
+        }
+        handler = handlers.get(source)
+        return handler(state_spec) if handler else None
 
-        return None
+    def _get_fact_store_value(self, state_spec: Any) -> list[dict] | None:
+        """Get high-confidence facts from the fact store."""
+        understanding = getattr(state_spec, "understanding", None)
+        if not understanding or not hasattr(understanding, "get_high_confidence"):
+            return None
+
+        facts = understanding.get_high_confidence(0.7)
+        if not facts:
+            return None
+
+        return [
+            {"statement": f.statement, "confidence": f.confidence}
+            for f in facts[:10]
+        ]
+
+    def _get_recent_actions_value(self, state_spec: Any) -> list[dict] | None:
+        """Get recent actions formatted for context."""
+        recent_actions = getattr(state_spec, "recent_actions", None)
+        if not recent_actions:
+            return None
+
+        return [
+            {
+                "action": a.action,
+                "result": a.result.value if a.result else "unknown",
+                "summary": getattr(a, "summary", ""),
+            }
+            for a in recent_actions[-3:]
+        ]
 
     def _truncate_to_budget(self, value: Any, max_tokens: int) -> Any:
         """Truncate a value to fit within token budget."""

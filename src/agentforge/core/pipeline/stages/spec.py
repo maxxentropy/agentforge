@@ -300,46 +300,50 @@ performance_requirements:
         if artifact is None:
             return OutputValidation(valid=False, errors=["No artifact"])
 
-        errors = []
-        warnings = []
+        errors: list[str] = []
+        warnings: list[str] = []
 
-        # Required fields
+        self._validate_required_fields(artifact, errors)
+        self._validate_components(artifact.get("components", []), errors, warnings)
+        self._validate_test_cases(artifact.get("test_cases", []), warnings)
+
+        if not artifact.get("acceptance_criteria"):
+            warnings.append("No acceptance criteria defined")
+
+        return OutputValidation(valid=len(errors) == 0, errors=errors, warnings=warnings)
+
+    def _validate_required_fields(
+        self, artifact: dict[str, Any], errors: list[str]
+    ) -> None:
+        """Validate required top-level fields."""
         if not artifact.get("spec_id"):
             errors.append("Missing spec_id")
 
-        # Must have components
-        components = artifact.get("components", [])
+    def _validate_components(
+        self, components: list[dict], errors: list[str], warnings: list[str]
+    ) -> None:
+        """Validate components have required fields."""
         if not components:
             errors.append("Specification must define at least one component")
+            return
 
-        # Validate components have required fields
         for i, comp in enumerate(components):
             if not comp.get("name"):
                 errors.append(f"Component {i} missing name")
             if not comp.get("file_path") and not comp.get("files"):
                 warnings.append(f"Component {comp.get('name', i)} has no file path")
 
-        # Must have test cases
-        test_cases = artifact.get("test_cases", [])
+    def _validate_test_cases(self, test_cases: list[dict], warnings: list[str]) -> None:
+        """Validate test cases have required fields."""
         if not test_cases:
             warnings.append("No test cases defined")
+            return
 
-        # Validate test cases
         for i, tc in enumerate(test_cases):
             if not tc.get("id"):
                 warnings.append(f"Test case {i} missing id")
             if not tc.get("description"):
                 warnings.append(f"Test case {tc.get('id', i)} missing description")
-
-        # Must have acceptance criteria
-        if not artifact.get("acceptance_criteria"):
-            warnings.append("No acceptance criteria defined")
-
-        return OutputValidation(
-            valid=len(errors) == 0,
-            errors=errors,
-            warnings=warnings,
-        )
 
     def finalize(self, context: StageContext, result: StageResult) -> None:
         """Save spec to standard location."""

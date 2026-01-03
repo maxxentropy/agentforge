@@ -205,19 +205,6 @@
               }
             },
             {
-              "id": "no-hardcoded-test-data-paths",
-              "name": "no-hardcoded-test-data-paths",
-              "shortDescription": {
-                "text": "Check: no-hardcoded-test-data-paths"
-              },
-              "defaultConfiguration": {
-                "level": "note"
-              },
-              "help": {
-                "text": "Use tmp_path fixture or Path(__file__).parent for test data"
-              }
-            },
-            {
               "id": "fixtures-in-conftest",
               "name": "fixtures-in-conftest",
               "shortDescription": {
@@ -228,6 +215,19 @@
               },
               "help": {
                 "text": "Move shared fixtures to conftest.py"
+              }
+            },
+            {
+              "id": "no-hardcoded-test-data-paths",
+              "name": "no-hardcoded-test-data-paths",
+              "shortDescription": {
+                "text": "Check: no-hardcoded-test-data-paths"
+              },
+              "defaultConfiguration": {
+                "level": "note"
+              },
+              "help": {
+                "text": "Use tmp_path fixture or Path(__file__).parent for test data"
               }
             },
             {
@@ -335,19 +335,6 @@
               }
             },
             {
-              "id": "require-csproj",
-              "name": "require-csproj",
-              "shortDescription": {
-                "text": "Check: require-csproj"
-              },
-              "defaultConfiguration": {
-                "level": "warning"
-              },
-              "help": {
-                "text": "Create a .csproj file for the project"
-              }
-            },
-            {
               "id": "require-package-json",
               "name": "require-package-json",
               "shortDescription": {
@@ -358,6 +345,19 @@
               },
               "help": {
                 "text": "Run 'npm init' to create package.json"
+              }
+            },
+            {
+              "id": "require-csproj",
+              "name": "require-csproj",
+              "shortDescription": {
+                "text": "Check: require-csproj"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "help": {
+                "text": "Create a .csproj file for the project"
               }
             },
             {
@@ -721,66 +721,6 @@
           "ruleId": "max-cyclomatic-complexity",
           "level": "warning",
           "message": {
-            "text": "Function 'validate_output' has complexity 13 (max: 10)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/pipeline/stages/spec.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 298
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Break complex functions into smaller, focused helper functions"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "c935a8e7878874ca"
-          }
-        },
-        {
-          "ruleId": "max-cyclomatic-complexity",
-          "level": "warning",
-          "message": {
-            "text": "Function '_get_section_value' has complexity 12 (max: 10)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/context/templates/base.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 287
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Break complex functions into smaller, focused helper functions"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "f34f1a9f3f3229e4"
-          }
-        },
-        {
-          "ruleId": "max-cyclomatic-complexity",
-          "level": "warning",
-          "message": {
             "text": "Function 'evolve' has complexity 12 (max: 10)"
           },
           "locations": [
@@ -1015,36 +955,6 @@
           ],
           "partialFingerprints": {
             "primaryLocationLineHash": "54bc20f42b2c1923"
-          }
-        },
-        {
-          "ruleId": "max-cyclomatic-complexity",
-          "level": "warning",
-          "message": {
-            "text": "Function 'get_tools' has complexity 12 (max: 10)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/harness/tool_selector.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 25
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Break complex functions into smaller, focused helper functions"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "3457f41cca7aa366"
           }
         },
         {
@@ -5395,36 +5305,6 @@
           ],
           "partialFingerprints": {
             "primaryLocationLineHash": "b14db5531987a084"
-          }
-        },
-        {
-          "ruleId": "max-nesting-depth",
-          "level": "warning",
-          "message": {
-            "text": "Function 'get_tools' has nesting depth 5 (max: 4)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/harness/tool_selector.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 25
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use early returns, guard clauses, or extract nested logic"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "a4e1364d9fba3276"
           }
         },
         {
@@ -22849,7 +22729,7 @@
           "ruleId": "single-responsibility-modules",
           "level": "note",
           "message": {
-            "text": "Class 'SpecExecutor' has 7 methods (max: 3)"
+            "text": "Class 'SpecExecutor' has 10 methods (max: 3)"
           },
           "locations": [
             {
@@ -22872,7 +22752,7 @@
             }
           ],
           "partialFingerprints": {
-            "primaryLocationLineHash": "2381be5fbd4dcde5"
+            "primaryLocationLineHash": "e5948cc5e3292329"
           }
         },
         {
@@ -23509,7 +23389,7 @@
           "ruleId": "single-responsibility-modules",
           "level": "note",
           "message": {
-            "text": "Class 'BaseContextTemplate' has 12 methods (max: 3)"
+            "text": "Class 'BaseContextTemplate' has 15 methods (max: 3)"
           },
           "locations": [
             {
@@ -23532,7 +23412,7 @@
             }
           ],
           "partialFingerprints": {
-            "primaryLocationLineHash": "4d16c51616b8aed4"
+            "primaryLocationLineHash": "afdde85ca6ba2eb8"
           }
         },
         {
@@ -25459,7 +25339,7 @@
           "ruleId": "single-responsibility-modules",
           "level": "note",
           "message": {
-            "text": "Class 'ToolSelector' has 8 methods (max: 3)"
+            "text": "Class 'ToolSelector' has 11 methods (max: 3)"
           },
           "locations": [
             {
@@ -25482,7 +25362,7 @@
             }
           ],
           "partialFingerprints": {
-            "primaryLocationLineHash": "d7de8bf554dc9329"
+            "primaryLocationLineHash": "719e3d98ba385719"
           }
         },
         {
@@ -29233,36 +29113,6 @@
           ],
           "partialFingerprints": {
             "primaryLocationLineHash": "27e929cf5548ee5e"
-          }
-        },
-        {
-          "ruleId": "no-hardcoded-test-data-paths",
-          "level": "note",
-          "message": {
-            "text": "Forbidden pattern found: 'open(\"'"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "tests/unit/tools/test_builtin_checks_architecture.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 897
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use tmp_path fixture or Path(__file__).parent for test data"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "4529926e487c286d"
           }
         },
         {
@@ -37786,6 +37636,36 @@
           }
         },
         {
+          "ruleId": "no-hardcoded-test-data-paths",
+          "level": "note",
+          "message": {
+            "text": "Forbidden pattern found: 'open(\"'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "tests/unit/tools/test_builtin_checks_architecture.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 897
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use tmp_path fixture or Path(__file__).parent for test data"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "4529926e487c286d"
+          }
+        },
+        {
           "ruleId": "no-assert-true-false",
           "level": "warning",
           "message": {
@@ -45496,456 +45376,6 @@
           ],
           "partialFingerprints": {
             "primaryLocationLineHash": "e2e446f50b8cb2b3"
-          }
-        },
-        {
-          "ruleId": "max-imports",
-          "level": "note",
-          "message": {
-            "text": "File has 35 imports (max: 30)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "tests/unit/pipeline/test_config_validator.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 1
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Consider splitting module or consolidating imports"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "7f45b74a0f262cb0"
-          }
-        },
-        {
-          "ruleId": "max-imports",
-          "level": "note",
-          "message": {
-            "text": "File has 37 imports (max: 30)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "tests/unit/pipeline/test_config.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 1
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Consider splitting module or consolidating imports"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "26ea722989877c4f"
-          }
-        },
-        {
-          "ruleId": "max-imports",
-          "level": "note",
-          "message": {
-            "text": "File has 40 imports (max: 30)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "tests/unit/pipeline/stages/test_refactor.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 1
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Consider splitting module or consolidating imports"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "620db9d240fc9627"
-          }
-        },
-        {
-          "ruleId": "max-imports",
-          "level": "note",
-          "message": {
-            "text": "File has 71 imports (max: 30)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "tests/unit/pipeline/stages/test_deliver.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 1
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Consider splitting module or consolidating imports"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "1af4449b3f9cf71b"
-          }
-        },
-        {
-          "ruleId": "max-imports",
-          "level": "note",
-          "message": {
-            "text": "File has 99 imports (max: 30)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "tests/unit/harness/test_enhanced_context.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 1
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Consider splitting module or consolidating imports"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "7536c9f1cbcda4e8"
-          }
-        },
-        {
-          "ruleId": "max-imports",
-          "level": "note",
-          "message": {
-            "text": "File has 36 imports (max: 30)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "tests/integration/cli/test_pipeline_cli_integration.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 1
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Consider splitting module or consolidating imports"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "dd2230d56131f4eb"
-          }
-        },
-        {
-          "ruleId": "max-imports",
-          "level": "note",
-          "message": {
-            "text": "File has 34 imports (max: 30)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "tests/integration/harness/test_harness_workflow.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 1
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Consider splitting module or consolidating imports"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "2524db31df44a647"
-          }
-        },
-        {
-          "ruleId": "max-imports",
-          "level": "note",
-          "message": {
-            "text": "File has 65 imports (max: 30)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/pipeline/__init__.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 1
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Consider splitting module or consolidating imports"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "f566e02b0207dd1e"
-          }
-        },
-        {
-          "ruleId": "max-imports",
-          "level": "note",
-          "message": {
-            "text": "File has 31 imports (max: 30)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/llm/__init__.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 1
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Consider splitting module or consolidating imports"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "af5ad352f738cec8"
-          }
-        },
-        {
-          "ruleId": "max-imports",
-          "level": "note",
-          "message": {
-            "text": "File has 33 imports (max: 30)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/contracts/__init__.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 1
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Consider splitting module or consolidating imports"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "d249f8d185d2aee1"
-          }
-        },
-        {
-          "ruleId": "max-imports",
-          "level": "note",
-          "message": {
-            "text": "File has 37 imports (max: 30)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/discovery/manager.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 1
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Consider splitting module or consolidating imports"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "3bb6814fce01e326"
-          }
-        },
-        {
-          "ruleId": "max-imports",
-          "level": "note",
-          "message": {
-            "text": "File has 102 imports (max: 30)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/harness/__init__.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 1
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Consider splitting module or consolidating imports"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "930a34f5e57ebde1"
-          }
-        },
-        {
-          "ruleId": "max-imports",
-          "level": "note",
-          "message": {
-            "text": "File has 44 imports (max: 30)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/harness/minimal_context/__init__.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 1
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Consider splitting module or consolidating imports"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "8a62777a83ffdbe6"
-          }
-        },
-        {
-          "ruleId": "max-imports",
-          "level": "note",
-          "message": {
-            "text": "File has 40 imports (max: 30)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/harness/minimal_context/executor.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 1
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Consider splitting module or consolidating imports"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "141036dcd6d179f1"
-          }
-        },
-        {
-          "ruleId": "max-imports",
-          "level": "note",
-          "message": {
-            "text": "File has 38 imports (max: 30)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/cli/main.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 1
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Consider splitting module or consolidating imports"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "28235aee60ae1ea2"
           }
         },
         {
@@ -57379,17 +56809,20 @@
           }
         },
         {
-          "ruleId": "require-csproj",
-          "level": "warning",
+          "ruleId": "max-imports",
+          "level": "note",
           "message": {
-            "text": "Required file not found: '**/*.csproj'"
+            "text": "File has 35 imports (max: 30)"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "<unknown>",
+                  "uri": "tests/unit/pipeline/test_config_validator.py",
                   "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 1
                 }
               }
             }
@@ -57397,12 +56830,432 @@
           "fixes": [
             {
               "description": {
-                "text": "Create a .csproj file for the project"
+                "text": "Consider splitting module or consolidating imports"
               }
             }
           ],
           "partialFingerprints": {
-            "primaryLocationLineHash": "acf00a01feadc84f"
+            "primaryLocationLineHash": "7f45b74a0f262cb0"
+          }
+        },
+        {
+          "ruleId": "max-imports",
+          "level": "note",
+          "message": {
+            "text": "File has 37 imports (max: 30)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "tests/unit/pipeline/test_config.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 1
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Consider splitting module or consolidating imports"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "26ea722989877c4f"
+          }
+        },
+        {
+          "ruleId": "max-imports",
+          "level": "note",
+          "message": {
+            "text": "File has 40 imports (max: 30)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "tests/unit/pipeline/stages/test_refactor.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 1
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Consider splitting module or consolidating imports"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "620db9d240fc9627"
+          }
+        },
+        {
+          "ruleId": "max-imports",
+          "level": "note",
+          "message": {
+            "text": "File has 71 imports (max: 30)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "tests/unit/pipeline/stages/test_deliver.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 1
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Consider splitting module or consolidating imports"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "1af4449b3f9cf71b"
+          }
+        },
+        {
+          "ruleId": "max-imports",
+          "level": "note",
+          "message": {
+            "text": "File has 99 imports (max: 30)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "tests/unit/harness/test_enhanced_context.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 1
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Consider splitting module or consolidating imports"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "7536c9f1cbcda4e8"
+          }
+        },
+        {
+          "ruleId": "max-imports",
+          "level": "note",
+          "message": {
+            "text": "File has 36 imports (max: 30)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "tests/integration/cli/test_pipeline_cli_integration.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 1
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Consider splitting module or consolidating imports"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "dd2230d56131f4eb"
+          }
+        },
+        {
+          "ruleId": "max-imports",
+          "level": "note",
+          "message": {
+            "text": "File has 34 imports (max: 30)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "tests/integration/harness/test_harness_workflow.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 1
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Consider splitting module or consolidating imports"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "2524db31df44a647"
+          }
+        },
+        {
+          "ruleId": "max-imports",
+          "level": "note",
+          "message": {
+            "text": "File has 65 imports (max: 30)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/pipeline/__init__.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 1
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Consider splitting module or consolidating imports"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "f566e02b0207dd1e"
+          }
+        },
+        {
+          "ruleId": "max-imports",
+          "level": "note",
+          "message": {
+            "text": "File has 31 imports (max: 30)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/llm/__init__.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 1
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Consider splitting module or consolidating imports"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "af5ad352f738cec8"
+          }
+        },
+        {
+          "ruleId": "max-imports",
+          "level": "note",
+          "message": {
+            "text": "File has 33 imports (max: 30)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/contracts/__init__.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 1
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Consider splitting module or consolidating imports"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "d249f8d185d2aee1"
+          }
+        },
+        {
+          "ruleId": "max-imports",
+          "level": "note",
+          "message": {
+            "text": "File has 37 imports (max: 30)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/discovery/manager.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 1
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Consider splitting module or consolidating imports"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "3bb6814fce01e326"
+          }
+        },
+        {
+          "ruleId": "max-imports",
+          "level": "note",
+          "message": {
+            "text": "File has 102 imports (max: 30)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/harness/__init__.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 1
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Consider splitting module or consolidating imports"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "930a34f5e57ebde1"
+          }
+        },
+        {
+          "ruleId": "max-imports",
+          "level": "note",
+          "message": {
+            "text": "File has 44 imports (max: 30)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/harness/minimal_context/__init__.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 1
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Consider splitting module or consolidating imports"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "8a62777a83ffdbe6"
+          }
+        },
+        {
+          "ruleId": "max-imports",
+          "level": "note",
+          "message": {
+            "text": "File has 40 imports (max: 30)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/harness/minimal_context/executor.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 1
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Consider splitting module or consolidating imports"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "141036dcd6d179f1"
+          }
+        },
+        {
+          "ruleId": "max-imports",
+          "level": "note",
+          "message": {
+            "text": "File has 38 imports (max: 30)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/cli/main.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 1
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Consider splitting module or consolidating imports"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "28235aee60ae1ea2"
           }
         },
         {
@@ -57430,6 +57283,33 @@
           ],
           "partialFingerprints": {
             "primaryLocationLineHash": "d6b8da53f924bda9"
+          }
+        },
+        {
+          "ruleId": "require-csproj",
+          "level": "warning",
+          "message": {
+            "text": "Required file not found: '**/*.csproj'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "<unknown>",
+                  "uriBaseId": "%SRCROOT%"
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Create a .csproj file for the project"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "acf00a01feadc84f"
           }
         },
         {
@@ -72823,6 +72703,75 @@
           "ruleId": "default-result-return-types",
           "level": "note",
           "message": {
+            "text": "Method '_validate_required_fields' returns 'None', expected pattern 'Result|Either|Success|Failure'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/pipeline/stages/spec.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 315
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "eac68174f66cf2fa"
+          }
+        },
+        {
+          "ruleId": "default-result-return-types",
+          "level": "note",
+          "message": {
+            "text": "Method '_validate_components' returns 'None', expected pattern 'Result|Either|Success|Failure'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/pipeline/stages/spec.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 322
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "215b7ef678126c8d"
+          }
+        },
+        {
+          "ruleId": "default-result-return-types",
+          "level": "note",
+          "message": {
+            "text": "Method '_validate_test_cases' returns 'None', expected pattern 'Result|Either|Success|Failure'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/pipeline/stages/spec.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 336
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "d5128baf59d08b1a"
+          }
+        },
+        {
+          "ruleId": "default-result-return-types",
+          "level": "note",
+          "message": {
             "text": "Method 'finalize' returns 'None', expected pattern 'Result|Either|Success|Failure'"
           },
           "locations": [
@@ -72833,13 +72782,13 @@
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 344
+                  "startLine": 348
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "primaryLocationLineHash": "cad8ac627b741bef"
+            "primaryLocationLineHash": "e15da0d593049cda"
           }
         },
         {
@@ -72856,13 +72805,13 @@
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 364
+                  "startLine": 368
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "primaryLocationLineHash": "ce466c7a23f0ac1f"
+            "primaryLocationLineHash": "0c685bb7c53aa5bc"
           }
         },
         {
@@ -72879,13 +72828,13 @@
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 369
+                  "startLine": 373
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "primaryLocationLineHash": "5146eb41f0400c28"
+            "primaryLocationLineHash": "75e0a207dffb8e7e"
           }
         },
         {
@@ -77538,6 +77487,75 @@
           "ruleId": "default-result-return-types",
           "level": "note",
           "message": {
+            "text": "Method '_get_source_value' returns 'Any | None', expected pattern 'Result|Either|Success|Failure'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/context/templates/base.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 306
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "f2e5e4a349224bcb"
+          }
+        },
+        {
+          "ruleId": "default-result-return-types",
+          "level": "note",
+          "message": {
+            "text": "Method '_get_fact_store_value' returns 'list[dict] | None', expected pattern 'Result|Either|Success|Failure'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/context/templates/base.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 315
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "cfbdcf956719dd2f"
+          }
+        },
+        {
+          "ruleId": "default-result-return-types",
+          "level": "note",
+          "message": {
+            "text": "Method '_get_recent_actions_value' returns 'list[dict] | None', expected pattern 'Result|Either|Success|Failure'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/context/templates/base.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 330
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "a2c13fdb854e3b6b"
+          }
+        },
+        {
+          "ruleId": "default-result-return-types",
+          "level": "note",
+          "message": {
             "text": "Method '_truncate_to_budget' returns 'Any', expected pattern 'Result|Either|Success|Failure'"
           },
           "locations": [
@@ -77548,13 +77566,13 @@
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 328
+                  "startLine": 345
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "primaryLocationLineHash": "fa7d483f9e951fe7"
+            "primaryLocationLineHash": "83ffc0ae7e71f903"
           }
         },
         {
@@ -77571,13 +77589,13 @@
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 345
+                  "startLine": 362
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "primaryLocationLineHash": "b5bd0edfe762321d"
+            "primaryLocationLineHash": "bed4724a95b132ac"
           }
         },
         {
@@ -93592,6 +93610,75 @@
           "ruleId": "default-result-return-types",
           "level": "note",
           "message": {
+            "text": "Method '_add_base_tools' returns 'None', expected pattern 'Result|Either|Success|Failure'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/harness/tool_selector.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 43
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "68db21791b168384"
+          }
+        },
+        {
+          "ruleId": "default-result-return-types",
+          "level": "note",
+          "message": {
+            "text": "Method '_add_phase_tools' returns 'None', expected pattern 'Result|Either|Success|Failure'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/harness/tool_selector.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 49
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "0dfdcede7e08676c"
+          }
+        },
+        {
+          "ruleId": "default-result-return-types",
+          "level": "note",
+          "message": {
+            "text": "Method '_add_domain_tools' returns 'None', expected pattern 'Result|Either|Success|Failure'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/harness/tool_selector.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 66
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "d6ace223b40a81bf"
+          }
+        },
+        {
+          "ruleId": "default-result-return-types",
+          "level": "note",
+          "message": {
             "text": "Method '_detect_python' returns 'bool', expected pattern 'Result|Either|Success|Failure'"
           },
           "locations": [
@@ -93602,13 +93689,13 @@
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 69
+                  "startLine": 81
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "primaryLocationLineHash": "88ee4bb95519644d"
+            "primaryLocationLineHash": "6b70671a4df718fc"
           }
         },
         {
@@ -93625,13 +93712,13 @@
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 80
+                  "startLine": 92
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "primaryLocationLineHash": "9110e748382ed9f3"
+            "primaryLocationLineHash": "cafd1327cc248773"
           }
         },
         {
@@ -93648,13 +93735,13 @@
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 84
+                  "startLine": 96
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "primaryLocationLineHash": "05013720dad24a80"
+            "primaryLocationLineHash": "a75ff65777407ce0"
           }
         },
         {
@@ -93671,13 +93758,13 @@
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 105
+                  "startLine": 117
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "primaryLocationLineHash": "4ff816ca8a52689c"
+            "primaryLocationLineHash": "d95c28ae31184548"
           }
         },
         {
@@ -93694,13 +93781,13 @@
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 119
+                  "startLine": 131
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "primaryLocationLineHash": "aa0edd3391b06d9c"
+            "primaryLocationLineHash": "c19a5323c8d566b6"
           }
         },
         {
@@ -93717,13 +93804,13 @@
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 124
+                  "startLine": 136
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "primaryLocationLineHash": "0b2a3d6a44824a47"
+            "primaryLocationLineHash": "2bf01cdbbab44f9d"
           }
         },
         {
@@ -126440,14 +126527,14 @@
       "invocations": [
         {
           "executionSuccessful": true,
-          "startTimeUtc": "2026-01-03T22:27:00.831566Z",
-          "endTimeUtc": "2026-01-03T22:27:20.405253Z"
+          "startTimeUtc": "2026-01-03T22:29:43.048752Z",
+          "endTimeUtc": "2026-01-03T22:30:01.976541Z"
         }
       ],
       "versionControlProvenance": [
         {
           "repositoryUri": "",
-          "revisionId": "03835904b856295193b716991601bae821bc299f"
+          "revisionId": "fdfdb4e1e89f1ab47a277400b10febf1a794a969"
         }
       ]
     }

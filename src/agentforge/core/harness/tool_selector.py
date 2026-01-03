@@ -26,45 +26,57 @@ class ToolSelector:
         """Get tools for a workflow/phase/domain combination.
 
         1. Get base tools (always available)
-        2. Get phase tools from profile
-        3. Get domain tools if domain specified
-        4. Get custom tools if any registered
-        5. Deduplicate by name (phase overrides base)
-        6. Return combined list
+        2. Get phase tools from profile (override base)
+        3. Get domain tools if domain specified (no override)
+        4. Return combined list
         """
-        tool_names = set()
-        tools = []
+        tool_names: set[str] = set()
+        tools: list[ToolDefinition] = []
 
-        # 1. Get base tools (always available)
-        base_tools = self.registry.get_base_tools()
-        for tool in base_tools:
+        self._add_base_tools(tool_names, tools)
+        self._add_phase_tools(workflow, phase, tool_names, tools)
+        if domain:
+            self._add_domain_tools(domain, tool_names, tools)
+
+        return tools
+
+    def _add_base_tools(self, tool_names: set[str], tools: list[ToolDefinition]) -> None:
+        """Add base tools that are always available."""
+        for tool in self.registry.get_base_tools():
             tool_names.add(tool.name)
             tools.append(tool)
 
-        # 2. Get phase tools from profile
+    def _add_phase_tools(
+        self, workflow: str, phase: str, tool_names: set[str], tools: list[ToolDefinition]
+    ) -> None:
+        """Add phase-specific tools (overrides base tools with same name)."""
         profile = self.registry.get_profile(workflow, phase)
-        if profile:
-            for tool_name in profile.tools:
+        if not profile:
+            return
+
+        for tool_name in profile.tools:
+            tool = self.registry.get_tool(tool_name)
+            if tool:
+                if tool_name in tool_names:
+                    # Phase overrides base - remove base tool first
+                    tools[:] = [t for t in tools if t.name != tool_name]
+                tool_names.add(tool_name)
+                tools.append(tool)
+
+    def _add_domain_tools(
+        self, domain: str, tool_names: set[str], tools: list[ToolDefinition]
+    ) -> None:
+        """Add domain-specific tools (no override)."""
+        domain_tools = self.registry.get_domain_tools(domain)
+        if not domain_tools:
+            return
+
+        for tool_name in domain_tools.tools:
+            if tool_name not in tool_names:
                 tool = self.registry.get_tool(tool_name)
                 if tool:
-                    if tool_name in tool_names:
-                        # Phase overrides base - remove base tool first
-                        tools = [t for t in tools if t.name != tool_name]
                     tool_names.add(tool_name)
                     tools.append(tool)
-
-        # 3. Get domain tools if domain specified
-        if domain:
-            domain_tools = self.registry.get_domain_tools(domain)
-            if domain_tools:
-                for tool_name in domain_tools.tools:
-                    if tool_name not in tool_names:
-                        tool = self.registry.get_tool(tool_name)
-                        if tool:
-                            tool_names.add(tool_name)
-                            tools.append(tool)
-
-        return tools
 
     def _detect_python(self, project_path: Path) -> bool:
         """Check for Python project indicators."""

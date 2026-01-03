@@ -248,23 +248,32 @@ def _save_draft_failure(result):
     click.echo("Try re-running the draft step.")
 
 
+_LOCATION_KEYS = ['affected_files', 'implementation_locations', 'files', 'locations']
+_PATH_DICT_KEYS = ['path', 'location', 'file']
+
+
+def _extract_path_from_item(item) -> str | None:
+    """Extract a src/ path from a string or dict item."""
+    if isinstance(item, str) and item.startswith('src/'):
+        return item
+    if isinstance(item, dict):
+        for key in _PATH_DICT_KEYS:
+            path = item.get(key)
+            if path and path.startswith('src/'):
+                return path
+    return None
+
+
 def _extract_locations_from_analysis(analysis_report: dict) -> list:
     """Extract target file locations from analysis report."""
     locations = []
-
-    # Look for affected_files, implementation_locations, etc.
-    for key in ['affected_files', 'implementation_locations', 'files', 'locations']:
-        if key in analysis_report:
-            items = analysis_report[key]
-            if isinstance(items, list):
-                for item in items:
-                    if isinstance(item, str) and item.startswith('src/'):
-                        locations.append(item)
-                    elif isinstance(item, dict):
-                        path = item.get('path') or item.get('location') or item.get('file')
-                        if path and path.startswith('src/'):
-                            locations.append(path)
-
+    for key in _LOCATION_KEYS:
+        items = analysis_report.get(key, [])
+        if isinstance(items, list):
+            for item in items:
+                path = _extract_path_from_item(item)
+                if path:
+                    locations.append(path)
     return locations
 
 

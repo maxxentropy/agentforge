@@ -210,39 +210,47 @@ def run_interactive_revision(session: dict, args):
     click.echo("\nAll issues addressed! Apply with: python execute.py revise --apply")
 
 
-def _handle_issue_interactive(issue: dict, idx: int, total: int, session: dict) -> bool:
-    """Handle a single issue interactively. Returns False if user quit."""
-    _display_issue(issue, idx, total)
-
+def _get_user_choice(issue: dict, session: dict):
+    """Get user choice for an issue. Returns (selected_option, False) or (None, True) on quit."""
     while True:
         try:
             choice = input("Your choice (or 'q' to save & quit): ").strip()
             if choice.lower() == 'q':
                 save_revision_session(session)
                 click.echo("\nSession saved. Resume with: python execute.py revise --continue")
-                return False
-
+                return None, True
             selected = next((o for o in issue['options'] if o['id'] == choice), None)
             if selected:
-                break
+                return selected, False
             click.echo(f"Invalid choice. Enter one of: {', '.join(o['id'] for o in issue['options'])}")
         except (EOFError, KeyboardInterrupt):
             save_revision_session(session)
             click.echo("\nSession saved. Resume with: python execute.py revise --continue")
-            return False
+            return None, True
 
+
+def _build_decision(selected: dict) -> dict:
+    """Build decision dict from selected option."""
     resolution = selected['resolution']
     if selected['id'] == 'custom':
         click.echo("\nEnter your custom resolution:")
         resolution = input().strip()
-
     rationale = input("\nBrief rationale (optional): ").strip() or f"Selected: {selected['label']}"
-
-    issue['decision'] = {
+    return {
         'selected_option': selected['id'], 'decided_by': 'human', 'rationale': rationale,
         'custom_resolution': resolution if selected['id'] == 'custom' else None,
         'requires_human': False, 'timestamp': datetime.utcnow().isoformat() + 'Z',
     }
+
+
+def _handle_issue_interactive(issue: dict, idx: int, total: int, session: dict) -> bool:
+    """Handle a single issue interactively. Returns False if user quit."""
+    _display_issue(issue, idx, total)
+    selected, quit_requested = _get_user_choice(issue, session)
+    if quit_requested:
+        return False
+
+    issue['decision'] = _build_decision(selected)
     click.echo(f"\n  Recorded: {selected['label']}")
     save_revision_session(session)
     return True

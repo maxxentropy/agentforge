@@ -619,6 +619,42 @@ class MultiZoneDiscoveryManager:
                 pass
         return {}
 
+    def _filter_zones(self, zone_name: str | None) -> tuple[list, str | None]:
+        """Filter zones by name, return (zones_to_analyze, error_message)."""
+        if not zone_name:
+            return self._zones, None
+        filtered = [z for z in self._zones if z.name == zone_name]
+        if not filtered:
+            return [], f"Zone '{zone_name}' not found"
+        return filtered, None
+
+    def _analyze_zones(
+        self, zones: list, errors: list, warnings: list
+    ) -> None:
+        """Analyze each zone and populate profiles."""
+        for i, zone in enumerate(zones):
+            progress = 10 + (i / len(zones)) * 70
+            self._report_progress(f"Analyzing zone: {zone.name}...", progress)
+            try:
+                self._zone_profiles[zone.name] = self._analyze_zone(zone)
+            except Exception as e:
+                errors.append(f"Zone {zone.name}: {str(e)}")
+                warnings.append(f"Zone {zone.name} analysis failed, skipping")
+
+    def _create_error_result(
+        self, errors: list, start_time: float
+    ) -> MultiZoneDiscoveryResult:
+        """Create error result for discovery."""
+        return MultiZoneDiscoveryResult(
+            success=False,
+            zones=self._zones,
+            zone_profiles={},
+            interactions=[],
+            profile_path=None,
+            total_duration_seconds=time.time() - start_time,
+            errors=errors,
+        )
+
     def discover(
         self,
         zone_name: str | None = None,
@@ -644,7 +680,6 @@ class MultiZoneDiscoveryManager:
             self._detect_zones()
 
             if not self._zones:
-                # Fallback to single-zone discovery
                 self._report_progress("No zones detected, using single-zone mode", 10)
                 return self._fallback_single_zone(save_profile)
 
@@ -654,32 +689,13 @@ class MultiZoneDiscoveryManager:
                     print(f"    - {zone.name}: {zone.language} at {zone.path}")
 
             # Filter to specific zone if requested
-            zones_to_analyze = self._zones
-            if zone_name:
-                zones_to_analyze = [z for z in self._zones if z.name == zone_name]
-                if not zones_to_analyze:
-                    errors.append(f"Zone '{zone_name}' not found")
-                    return MultiZoneDiscoveryResult(
-                        success=False,
-                        zones=self._zones,
-                        zone_profiles={},
-                        interactions=[],
-                        profile_path=None,
-                        total_duration_seconds=time.time() - start_time,
-                        errors=errors,
-                    )
+            zones_to_analyze, filter_error = self._filter_zones(zone_name)
+            if filter_error:
+                errors.append(filter_error)
+                return self._create_error_result(errors, start_time)
 
             # Phase 2: Analyze each zone
-            for i, zone in enumerate(zones_to_analyze):
-                progress = 10 + (i / len(zones_to_analyze)) * 70
-                self._report_progress(f"Analyzing zone: {zone.name}...", progress)
-
-                try:
-                    profile = self._analyze_zone(zone)
-                    self._zone_profiles[zone.name] = profile
-                except Exception as e:
-                    errors.append(f"Zone {zone.name}: {str(e)}")
-                    warnings.append(f"Zone {zone.name} analysis failed, skipping")
+            self._analyze_zones(zones_to_analyze, errors, warnings)
 
             # Phase 3: Detect interactions
             self._report_progress("Detecting cross-zone interactions...", 85)
@@ -694,7 +710,6 @@ class MultiZoneDiscoveryManager:
             if save_profile and self._zone_profiles:
                 profile_path = self._generate_multi_zone_profile()
 
-            total_duration = time.time() - start_time
             self._report_progress("Discovery complete", 100)
 
             return MultiZoneDiscoveryResult(
@@ -703,7 +718,7 @@ class MultiZoneDiscoveryManager:
                 zone_profiles=self._zone_profiles,
                 interactions=self._interactions,
                 profile_path=profile_path,
-                total_duration_seconds=total_duration,
+                total_duration_seconds=time.time() - start_time,
                 errors=errors,
                 warnings=warnings,
             )
@@ -861,66 +876,67 @@ class MultiZoneDiscoveryManager:
                 elif interaction.zones:
                     print(f"    - {', '.join(interaction.zones)}: {interaction.interaction_type.value}")
 
+    def _build_discovery_metadata(self, total_files: int) -> dict:
+        """Build discovery metadata section."""
+        from datetime import datetime
+        return {
+            "discovery_version": "1.0",
+            "run_date": datetime.now().isoformat(),
+            "root_path": str(self.root_path),
+            "zones_discovered": len(self._zones),
+            "detection_mode": self._get_detection_mode(),
+            "total_files_analyzed": total_files,
+        }
+
+    def _build_languages_list(self, all_languages: list, total_files: int) -> list:
+        """Build languages list for profile."""
+        return [
+            {
+                "name": lang.name,
+                "percentage": round((lang.file_count / total_files * 100) if total_files else 0, 1),
+                "zones": [z.name for z in self._zones if z.language == lang.name],
+            }
+            for lang in all_languages
+        ]
+
+    def _build_dependencies_list(self, all_dependencies: list) -> list:
+        """Build dependencies list for profile."""
+        return [
+            {
+                "name": d.name,
+                "version": d.version,
+                "source": d.source,
+                "is_dev": d.is_dev,
+                "category": d.category,
+            }
+            for d in all_dependencies
+        ]
+
     def _generate_multi_zone_profile(self) -> Path:
         """Generate and save multi-zone profile."""
         from datetime import datetime
 
-        # Aggregate languages across zones
         all_languages: list[LanguageInfo] = []
         for profile in self._zone_profiles.values():
             all_languages.extend(profile.languages)
 
-        # Aggregate dependencies using helper
         all_dependencies = _collect_unique_dependencies(self._zone_profiles)
-
-        # Calculate totals
         total_files = sum(p.file_count for p in self._zone_profiles.values())
-        sum(p.line_count for p in self._zone_profiles.values())
 
-        # Build profile dict
         profile_data = {
             "schema_version": "1.1",
             "generated_at": datetime.now().isoformat(),
-            "discovery_metadata": {
-                "discovery_version": "1.0",
-                "run_date": datetime.now().isoformat(),
-                "root_path": str(self.root_path),
-                "zones_discovered": len(self._zones),
-                "detection_mode": self._get_detection_mode(),
-                "total_files_analyzed": total_files,
-            },
-            "languages": [
-                {
-                    "name": lang.name,
-                    "percentage": round((lang.file_count / total_files * 100) if total_files else 0, 1),
-                    "zones": [z.name for z in self._zones if z.language == lang.name],
-                }
-                for lang in all_languages
-            ],
-            "zones": {
-                name: profile.to_dict()
-                for name, profile in self._zone_profiles.items()
-            },
+            "discovery_metadata": self._build_discovery_metadata(total_files),
+            "languages": self._build_languages_list(all_languages, total_files),
+            "zones": {name: profile.to_dict() for name, profile in self._zone_profiles.items()},
         }
 
-        # Add interactions
         if self._interactions:
             profile_data["interactions"] = [i.to_dict() for i in self._interactions]
 
-        # Add dependencies
         if all_dependencies:
-            profile_data["dependencies"] = [
-                {
-                    "name": d.name,
-                    "version": d.version,
-                    "source": d.source,
-                    "is_dev": d.is_dev,
-                    "category": d.category,
-                }
-                for d in all_dependencies
-            ]
+            profile_data["dependencies"] = self._build_dependencies_list(all_dependencies)
 
-        # Save to file
         output_dir = self.root_path / ".agentforge"
         output_dir.mkdir(parents=True, exist_ok=True)
         output_path = output_dir / "codebase_profile.yaml"
@@ -928,7 +944,6 @@ class MultiZoneDiscoveryManager:
         if yaml:
             output_path.write_text(yaml.dump(profile_data, default_flow_style=False, sort_keys=False))
         else:
-            # Fallback: write as simple YAML-like format
             import json
             output_path.write_text(json.dumps(profile_data, indent=2))
 

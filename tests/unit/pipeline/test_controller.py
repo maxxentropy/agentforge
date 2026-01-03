@@ -465,3 +465,159 @@ class TestControllerProvideFeedback:
         state = controller.get_status(result.pipeline_id)
         assert state.config.get("feedback") == "Second feedback"
         assert state.config.get("feedback_history") == ["First feedback", "Second feedback"]
+
+
+class TestContractEnforcement:
+    """Tests for contract enforcement integration."""
+
+    def test_controller_has_operation_manager(self, controller):
+        """Controller initializes with operation contract manager."""
+        assert controller.operation_manager is not None
+
+    def test_controller_has_contract_registry(self, controller):
+        """Controller initializes with contract registry."""
+        assert controller.contract_registry is not None
+
+    def test_get_contract_enforcer_with_no_contracts(self, controller):
+        """_get_contract_enforcer returns minimal enforcer for operation contracts."""
+        from agentforge.core.pipeline import create_pipeline_state
+
+        state = create_pipeline_state(
+            request="Test request",
+            project_path=controller.project_path,
+            template="implement",
+        )
+
+        enforcer = controller._get_contract_enforcer(state)
+
+        # Should return an enforcer even without task contracts
+        # (for operation contract enforcement)
+        assert enforcer is not None
+        assert enforcer.contracts.contract_set_id == "operation-only"
+
+    def test_enforcer_disabled_via_config(self, temp_project, full_registry):
+        """Contract enforcement can be disabled via config."""
+        from agentforge.core.pipeline import create_pipeline_state
+
+        controller = PipelineController(
+            project_path=temp_project,
+            registry=full_registry,
+        )
+
+        state = create_pipeline_state(
+            request="Test",
+            project_path=temp_project,
+            template="implement",
+            config={"enforce_operation_contracts": False},
+        )
+
+        enforcer = controller._get_contract_enforcer(state)
+        assert enforcer is None
+
+    def test_operation_contracts_loaded(self, controller):
+        """Operation contract manager loads built-in contracts."""
+        rules = controller.operation_manager.get_all_rules()
+
+        # Should have loaded tool-usage, git-operations, safety-rules
+        assert len(rules) > 0
+
+        # Check for a known rule
+        rule_ids = [r.rule_id for r in rules]
+        assert "read-before-edit" in rule_ids
+
+    def test_lsp_preference_rules_loaded(self, controller):
+        """LSP preference rules are loaded from tool-usage contract."""
+        rules = controller.operation_manager.get_all_rules()
+        rule_ids = [r.rule_id for r in rules]
+
+        # Check for LSP rules we added
+        assert "lsp-for-definitions" in rule_ids
+        assert "lsp-for-references" in rule_ids
+        assert "lsp-for-symbols" in rule_ids
+
+    def test_enforce_contracts_config_flag(self, temp_project, full_registry):
+        """enforce_contracts config flag controls contract validation."""
+        controller = PipelineController(
+            project_path=temp_project,
+            registry=full_registry,
+        )
+
+        # Run with contract enforcement disabled
+        result = controller.execute(
+            "Test request",
+            config={"enforce_contracts": False}
+        )
+
+        # Should still succeed - contracts not enforced
+        assert result.success is True
+
+    def test_execute_with_contract_enforcement(self, controller):
+        """Pipeline executes successfully with contract enforcement enabled."""
+        result = controller.execute(
+            "Test request",
+            config={"enforce_contracts": True}
+        )
+
+        assert result.success is True
+
+
+class TestContractEscalationTriggers:
+    """Tests for contract-triggered escalations."""
+
+    def test_escalation_trigger_from_contract(self, temp_project, fresh_registry):
+        """Contract escalation triggers can pause pipeline."""
+        from agentforge.core.contracts.draft import (
+            ApprovedContracts,
+            EscalationTrigger,
+            StageContract,
+        )
+        from agentforge.core.contracts.registry import ContractRegistry
+
+        # Register stages
+        fresh_registry.register("intake", lambda: PassthroughExecutor("intake"))
+        fresh_registry.register("clarify", lambda: PassthroughExecutor("clarify"))
+        fresh_registry.register("analyze", lambda: PassthroughExecutor("analyze"))
+        fresh_registry.register("spec", lambda: PassthroughExecutor("spec"))
+
+        # Create a contract with an escalation trigger
+        contracts = ApprovedContracts(
+            contract_set_id="TEST-CONTRACT-001",
+            draft_id="DRAFT-TEST",
+            request_id="REQ-TEST",
+            stage_contracts=[
+                StageContract(stage_name="intake"),
+                StageContract(stage_name="clarify"),
+            ],
+            escalation_triggers=[
+                EscalationTrigger(
+                    trigger_id="test-trigger",
+                    condition="Confidence below 0.5",
+                    severity="blocking",
+                    prompt="Low confidence - please review",
+                    rationale="Test trigger",
+                ),
+            ],
+        )
+
+        # Register the contract
+        registry = ContractRegistry(temp_project)
+        registry.register(contracts)
+
+        controller = PipelineController(
+            project_path=temp_project,
+            registry=fresh_registry,
+        )
+
+        # Execute with contract reference
+        result = controller.execute(
+            "Test request",
+            template="design",
+            config={
+                "request_id": "REQ-TEST",
+                "enforce_contracts": True,
+            }
+        )
+
+        # Pipeline should complete (trigger condition not met)
+        # since confidence is not explicitly low
+        assert result.success is True

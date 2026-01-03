@@ -81,6 +81,138 @@ rules:
       Edit tool provides atomic, reversible changes with proper
       context matching. Sed can corrupt files on partial matches.
 
+  # LSP Preference Rules
+  # These rules encourage using Language Server Protocol services
+  # for code analysis tasks where they provide compiler-accurate information.
+
+  - id: lsp-for-definitions
+    description: Use LSP go-to-definition for finding symbol definitions
+    check_type: tool_preference
+    details:
+      preferred: lsp_get_definition
+      preferred_tools:
+        - LSP.goToDefinition
+        - lsp_adapter.get_definition
+      discouraged_patterns:
+        - grep_for_class_definition
+        - regex_find_function
+        - ast_only_definition_search
+      for_operation: find_definition
+      languages: ["python", "typescript", "csharp", "javascript"]
+    severity: warning
+    rationale: |
+      LSP provides compiler-accurate definition locations, handling:
+      - Overloaded methods and polymorphism
+      - Type inference and generic instantiation
+      - Cross-module imports and re-exports
+      Grep/regex may find false positives or miss definitions entirely.
+
+  - id: lsp-for-references
+    description: Use LSP find-references for tracing symbol usage
+    check_type: tool_preference
+    details:
+      preferred: lsp_get_references
+      preferred_tools:
+        - LSP.findReferences
+        - lsp_adapter.get_references
+      discouraged_patterns:
+        - grep_symbol_name
+        - text_search_for_usages
+      for_operation: find_references
+      languages: ["python", "typescript", "csharp", "javascript"]
+    severity: warning
+    rationale: |
+      LSP find-references understands semantic context:
+      - Distinguishes variable 'foo' from method 'foo' from type 'Foo'
+      - Handles renamed imports and aliased symbols
+      - Excludes false positives like comments and strings
+      Text search may include irrelevant matches or miss renamed references.
+
+  - id: lsp-for-symbols
+    description: Use LSP for document/workspace symbol queries
+    check_type: tool_preference
+    details:
+      preferred: lsp_get_symbols
+      preferred_tools:
+        - LSP.documentSymbol
+        - LSP.workspaceSymbol
+        - lsp_adapter.get_symbols
+        - lsp_adapter.get_workspace_symbols
+      discouraged_patterns:
+        - grep_class_or_function
+        - regex_extract_symbols
+        - ast_only_symbol_extraction
+      for_operation: list_symbols
+      languages: ["python", "typescript", "csharp", "javascript"]
+    severity: warning
+    rationale: |
+      LSP provides structured symbol information including:
+      - Symbol kind (class, method, property, enum, etc.)
+      - Visibility modifiers and access levels
+      - Container hierarchy and nesting
+      - Accurate position ranges
+      Regex extraction misses nuances and can't handle all syntax variations.
+
+  - id: lsp-for-hover
+    description: Use LSP hover for type and documentation info
+    check_type: tool_preference
+    details:
+      preferred: lsp_get_hover
+      preferred_tools:
+        - LSP.hover
+        - lsp_adapter.get_hover
+      discouraged_patterns:
+        - grep_for_docstring
+        - parse_comments_manually
+      for_operation: get_type_info
+      languages: ["python", "typescript", "csharp", "javascript"]
+    severity: warning
+    rationale: |
+      LSP hover provides compiler-resolved type information:
+      - Inferred types for variables and expressions
+      - Full signature with parameter types
+      - Documentation from docstrings/JSDoc/XML comments
+      - Resolved generic type parameters
+      Manual parsing cannot infer types or resolve generics.
+
+  - id: lsp-for-diagnostics
+    description: Use LSP diagnostics for error detection
+    check_type: tool_preference
+    details:
+      preferred: lsp_get_diagnostics
+      preferred_tools:
+        - LSP.diagnostics
+        - lsp_adapter.get_diagnostics
+      discouraged_patterns:
+        - grep_for_error_patterns
+        - manual_syntax_check
+      for_operation: check_errors
+      languages: ["python", "typescript", "csharp", "javascript"]
+    severity: warning
+    rationale: |
+      LSP diagnostics come from the actual compiler/type checker:
+      - Real type errors, not pattern guesses
+      - Accurate error locations and messages
+      - Includes warnings and hints
+      Manual error detection can't match compiler accuracy.
+
+  - id: lsp-availability-check
+    description: Check LSP availability before falling back to alternatives
+    check_type: conditional_preference
+    details:
+      check_first: lsp_is_available
+      if_available: prefer_lsp_methods
+      if_unavailable: allow_fallback_methods
+      fallback_order:
+        - ast_parsing
+        - grep_patterns
+        - regex_extraction
+    severity: info
+    rationale: |
+      LSP may not be available for all languages or projects.
+      When unavailable, gracefully fall back to alternatives in order
+      of accuracy: AST parsing > grep patterns > regex.
+
 escalation_triggers:
   - trigger_id: tool-repeated-failure
     condition: Same tool call fails 3 times consecutively
@@ -102,6 +234,19 @@ escalation_triggers:
       - Escalate for investigation?
     rationale: Unknown errors may indicate edge cases not handled by automation
 
+  - trigger_id: lsp-unavailable-for-analysis
+    condition: LSP unavailable for language requiring semantic analysis
+    severity: advisory
+    prompt: |
+      LSP services are not available for this language, but semantic
+      analysis is needed. Options:
+      - Continue with AST/grep-based analysis (reduced accuracy)
+      - Install the appropriate language server
+      - Proceed with caution noting analysis limitations
+    rationale: |
+      When LSP is unavailable, code analysis accuracy is reduced.
+      Human should decide if the fallback accuracy is acceptable.
+
 quality_gates:
   - gate_id: tool-usage-review
     checks:
@@ -109,3 +254,10 @@ quality_gates:
       - No discouraged shell commands used
       - Tool errors have been addressed
     failure_action: escalate
+
+  - gate_id: lsp-analysis-quality
+    checks:
+      - LSP used for definition lookups when available
+      - LSP used for reference finding when available
+      - Fallback methods documented when LSP unavailable
+    failure_action: advisory

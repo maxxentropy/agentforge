@@ -48,6 +48,16 @@ from .state import (
 from .state_store import PipelineStateStore
 from .validator import ArtifactValidator
 
+# Contract enforcement imports
+from agentforge.core.contracts.enforcer import (
+    ContractEnforcer,
+    ValidationResult,
+    ViolationSeverity,
+)
+from agentforge.core.contracts.operations.loader import OperationContractManager
+from agentforge.core.contracts.registry import ContractRegistry
+from agentforge.core.contracts.draft import ApprovedContracts
+
 logger = logging.getLogger(__name__)
 
 
@@ -133,6 +143,7 @@ class PipelineController:
         registry: StageExecutorRegistry | None = None,
         escalation_handler: EscalationHandler | None = None,
         config: dict[str, Any] | None = None,
+        operation_manager: OperationContractManager | None = None,
     ):
         """
         Initialize pipeline controller.
@@ -143,6 +154,7 @@ class PipelineController:
             registry: Optional custom registry (uses global if None)
             escalation_handler: Optional custom escalation handler
             config: Optional default configuration for pipelines
+            operation_manager: Optional operation contract manager
         """
         self.project_path = Path(project_path)
         self.state_store = state_store or PipelineStateStore(self.project_path)
@@ -152,6 +164,11 @@ class PipelineController:
         )
         self.validator = ArtifactValidator()
         self.config = config or {}
+
+        # Contract enforcement
+        self.operation_manager = operation_manager or OperationContractManager()
+        self.contract_registry = ContractRegistry(self.project_path)
+        self._contract_enforcer: ContractEnforcer | None = None
 
     # =========================================================================
     # Public API
@@ -493,6 +510,62 @@ class PipelineController:
             raise PipelineNotFoundError(f"Pipeline not found: {pipeline_id}")
         return state
 
+    def _get_contract_enforcer(
+        self, state: PipelineState
+    ) -> ContractEnforcer | None:
+        """Get or create contract enforcer for a pipeline.
+
+        Looks up approved contracts for the pipeline's request_id and
+        creates an enforcer if contracts exist.
+
+        Args:
+            state: Pipeline state
+
+        Returns:
+            ContractEnforcer if contracts exist, None otherwise
+        """
+        # Check if we already have a cached enforcer
+        if self._contract_enforcer is not None:
+            return self._contract_enforcer
+
+        # Look for contracts associated with this pipeline
+        request_id = state.config.get("request_id") or state.config.get("contract_id")
+        if request_id:
+            contracts = self.contract_registry.get_for_request(request_id)
+            if contracts:
+                self._contract_enforcer = ContractEnforcer(
+                    contracts, self.operation_manager
+                )
+                return self._contract_enforcer
+
+        # Check if explicit contracts were provided in config
+        contract_set_id = state.config.get("contract_set_id")
+        if contract_set_id:
+            contracts = self.contract_registry.get(contract_set_id)
+            if contracts:
+                self._contract_enforcer = ContractEnforcer(
+                    contracts, self.operation_manager
+                )
+                return self._contract_enforcer
+
+        # No approved contracts - create a minimal enforcer for operation rules only
+        # This allows operation contracts to be enforced even without task contracts
+        if state.config.get("enforce_operation_contracts", True):
+            # Create a minimal ApprovedContracts with no stage contracts
+            # but still use operation manager for tool usage rules
+            minimal_contracts = ApprovedContracts(
+                contract_set_id="operation-only",
+                draft_id="none",
+                request_id="none",
+                stage_contracts=[],
+            )
+            self._contract_enforcer = ContractEnforcer(
+                minimal_contracts, self.operation_manager
+            )
+            return self._contract_enforcer
+
+        return None
+
     def _run(self, state: PipelineState) -> PipelineState:
         """
         Execute pipeline stages until completion or pause.
@@ -577,6 +650,21 @@ class PipelineController:
         if state.config.get("strict_schema_validation", False):
             errors.extend(self.validator.validate_stage_input(stage_name, input_artifacts))
 
+        # Contract-based input validation
+        enforcer = self._get_contract_enforcer(state)
+        if enforcer and state.config.get("enforce_contracts", True):
+            contract_result = enforcer.validate_stage_input(stage_name, input_artifacts)
+            if not contract_result.valid:
+                for violation in contract_result.violations:
+                    if violation.severity == ViolationSeverity.ERROR:
+                        errors.append(
+                            f"[{violation.rule_id}] {violation.message}"
+                        )
+                    else:
+                        logger.warning(
+                            f"Contract warning for {stage_name}: {violation.message}"
+                        )
+
         if errors:
             logger.error(f"Input validation failed for stage {stage_name}: {errors}")
             return StageResult.failed(f"Input validation failed: {'; '.join(errors)}")
@@ -616,6 +704,48 @@ class PipelineController:
                     f"{output_errors}"
                 )
                 # Note: We log warnings but don't fail - output validation is advisory
+
+        # Contract-based output validation
+        if result.is_success() and enforcer and state.config.get("enforce_contracts", True):
+            contract_result = enforcer.validate_stage_output(stage_name, result.artifacts)
+            if not contract_result.valid:
+                for violation in contract_result.violations:
+                    if violation.severity == ViolationSeverity.ERROR:
+                        logger.error(
+                            f"Contract violation in {stage_name}: {violation.message}"
+                        )
+                        # For now, log errors but don't fail - can be made stricter
+                    else:
+                        logger.warning(
+                            f"Contract warning for {stage_name}: {violation.message}"
+                        )
+
+            # Check escalation triggers from contracts
+            escalation_context = {
+                "artifacts": result.artifacts,
+                "stage_name": stage_name,
+                **state.config,
+            }
+            triggers = enforcer.check_escalation_triggers(stage_name, escalation_context)
+            for check in triggers:
+                if check.triggered and check.trigger:
+                    logger.info(
+                        f"Contract escalation trigger fired: {check.trigger.trigger_id}"
+                    )
+                    if check.trigger.severity == "blocking":
+                        # Create escalation from contract trigger
+                        return StageResult(
+                            status=StageStatus.PENDING,
+                            artifacts=result.artifacts,
+                            escalation={
+                                "type": "contract_escalation",
+                                "message": check.trigger.prompt or check.trigger.condition,
+                                "context": {
+                                    "trigger_id": check.trigger.trigger_id,
+                                    "rationale": check.trigger.rationale,
+                                },
+                            },
+                        )
 
         logger.info(f"Stage '{stage_name}' completed with status: {result.status.value}")
         return result

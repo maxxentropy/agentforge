@@ -233,34 +233,106 @@ def _is_single_line_assert(line: str, col_offset: int) -> bool:
 
 def _add_message_to_assert(line: str, message: str) -> str:
     """Add a message to an assert statement on a single line."""
-    # Match assert statement and capture the test expression
-    # This is a simple regex-based approach for single-line asserts
-    pattern = r"^(\s*)(assert\s+)(.+?)(\s*(?:#.*)?)$"
-    match = re.match(pattern, line)
-
-    if not match:
+    # Find the assert keyword
+    assert_match = re.match(r"^(\s*)(assert\s+)", line)
+    if not assert_match:
         return line
 
-    indent = match.group(1)
-    assert_kw = match.group(2)
-    test_expr = match.group(3).rstrip()
-    trailing = match.group(4)
+    indent = assert_match.group(1)
+    assert_kw = assert_match.group(2)
+    rest = line[len(assert_match.group(0)):]
 
-    # Don't add message if one already exists (has comma outside of parens)
+    # Parse the test expression, being careful about strings and comments
+    # Find the end of the test expression (respecting string literals)
+    test_end = _find_expression_end(rest)
+    test_expr = rest[:test_end].rstrip()
+    trailing = rest[test_end:]
+
+    # Don't add message if one already exists (has comma outside of parens/strings)
+    if _has_message_already(test_expr):
+        return line
+
+    # Generate a safe message using double quotes to avoid escaping issues
+    safe_message = message.replace('"', '\\"')
+
+    return f'{indent}{assert_kw}{test_expr}, "{safe_message}"{trailing}'
+
+
+def _find_expression_end(text: str) -> int:
+    """Find where the expression ends (accounting for strings and parens)."""
+    i = 0
     paren_depth = 0
-    for i, char in enumerate(test_expr):
-        if char in "([{":
-            paren_depth += 1
-        elif char in ")]}":
-            paren_depth -= 1
-        elif char == "," and paren_depth == 0:
-            # Already has a message
-            return line
+    in_string = None  # None, "'", or '"'
 
-    # Escape quotes in message
-    safe_message = message.replace("'", "\\'")
+    while i < len(text):
+        char = text[i]
 
-    return f"{indent}{assert_kw}{test_expr}, '{safe_message}'{trailing}"
+        # Handle string literals
+        if char in ('"', "'") and not (i > 0 and text[i - 1] == "\\"):
+            if in_string is None:
+                # Check for triple quotes
+                if text[i:i+3] in ('"""', "'''"):
+                    in_string = text[i:i+3]
+                    i += 3
+                    continue
+                in_string = char
+            elif in_string == char:
+                in_string = None
+            elif len(in_string) == 3 and text[i:i+3] == in_string:
+                in_string = None
+                i += 3
+                continue
+
+        elif in_string is None:
+            # Only process these when not in a string
+            if char in "([{":
+                paren_depth += 1
+            elif char in ")]}":
+                paren_depth -= 1
+            elif char == "#" and paren_depth == 0:
+                # Start of comment outside strings
+                return i
+
+        i += 1
+
+    return len(text)
+
+
+def _has_message_already(test_expr: str) -> bool:
+    """Check if assert already has a message (comma at depth 0 outside strings)."""
+    paren_depth = 0
+    in_string = None
+
+    i = 0
+    while i < len(test_expr):
+        char = test_expr[i]
+
+        # Handle string literals
+        if char in ('"', "'") and not (i > 0 and test_expr[i - 1] == "\\"):
+            if in_string is None:
+                if test_expr[i:i+3] in ('"""', "'''"):
+                    in_string = test_expr[i:i+3]
+                    i += 3
+                    continue
+                in_string = char
+            elif in_string == char:
+                in_string = None
+            elif len(in_string) == 3 and test_expr[i:i+3] == in_string:
+                in_string = None
+                i += 3
+                continue
+
+        elif in_string is None:
+            if char in "([{":
+                paren_depth += 1
+            elif char in ")]}":
+                paren_depth -= 1
+            elif char == "," and paren_depth == 0:
+                return True
+
+        i += 1
+
+    return False
 
 
 @register_fixer("no-print-statements")

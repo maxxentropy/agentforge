@@ -13,8 +13,10 @@ Coordinates between verification engine, stores, and CLI.
 
 import fnmatch
 import uuid
+from collections.abc import Callable
 from datetime import date, datetime
 from pathlib import Path
+from typing import Any
 
 from .domain import (
     ConformanceReport,
@@ -210,6 +212,39 @@ class ConformanceManager:
                     violation.mark_stale()
                 self.violation_store.save(violation)
 
+    def _categorize_violations(
+        self, all_violations: list[Violation]
+    ) -> tuple[list[Violation], list[Violation], list[Violation], list[Violation]]:
+        """Categorize violations by status. Returns (open, exempted, failed, stale)."""
+        open_violations = [v for v in all_violations if v.status == ViolationStatus.OPEN]
+        exempted = [v for v in open_violations if v.exemption_id]
+        failed = [v for v in open_violations if not v.exemption_id]
+        stale = [v for v in all_violations if v.status == ViolationStatus.STALE]
+        return open_violations, exempted, failed, stale
+
+    def _count_by_attribute(
+        self, violations: list[Violation], attr: str
+    ) -> dict[str, int]:
+        """Count violations by a given attribute."""
+        counts: dict[str, int] = {}
+        for v in violations:
+            value = getattr(v, attr)
+            key = value.value if hasattr(value, 'value') else str(value)
+            counts[key] = counts.get(key, 0) + 1
+        return counts
+
+    def _calculate_trend(self, summary: ConformanceSummary) -> dict[str, Any] | None:
+        """Calculate trend from previous report if available."""
+        if not self._previous_report:
+            return None
+        prev = self._previous_report.summary
+        return {
+            "passed_delta": summary.passed - prev.passed,
+            "failed_delta": summary.failed - prev.failed,
+            "exempted_delta": summary.exempted - prev.exempted,
+            "previous_run_id": self._previous_report.run_id,
+        }
+
     def _generate_report(
         self,
         contracts_checked: list[str],
@@ -218,42 +253,15 @@ class ConformanceManager:
     ) -> ConformanceReport:
         """Generate conformance report from current state."""
         all_violations = self.violation_store.load_all()
-
-        # Count by status
-        open_violations = [v for v in all_violations if v.status == ViolationStatus.OPEN]
-        exempted_violations = [v for v in open_violations if v.exemption_id]
-        failed_violations = [v for v in open_violations if not v.exemption_id]
-        stale_violations = [v for v in all_violations if v.status == ViolationStatus.STALE]
-
-        # Count by severity (only failed, non-exempted)
-        by_severity: dict[str, int] = {}
-        for v in failed_violations:
-            severity_name = v.severity.value
-            by_severity[severity_name] = by_severity.get(severity_name, 0) + 1
-
-        # Count by contract (only failed, non-exempted)
-        by_contract: dict[str, int] = {}
-        for v in failed_violations:
-            by_contract[v.contract_id] = by_contract.get(v.contract_id, 0) + 1
+        open_violations, exempted, failed, stale = self._categorize_violations(all_violations)
 
         summary = ConformanceSummary(
-            total=len(open_violations) + len(stale_violations),
-            passed=0,  # Would need check count from verification
-            failed=len(failed_violations),
-            exempted=len(exempted_violations),
-            stale=len(stale_violations),
+            total=len(open_violations) + len(stale),
+            passed=0,
+            failed=len(failed),
+            exempted=len(exempted),
+            stale=len(stale),
         )
-
-        # Calculate trend
-        trend = None
-        if self._previous_report:
-            prev = self._previous_report.summary
-            trend = {
-                "passed_delta": summary.passed - prev.passed,
-                "failed_delta": summary.failed - prev.failed,
-                "exempted_delta": summary.exempted - prev.exempted,
-                "previous_run_id": self._previous_report.run_id,
-            }
 
         return ConformanceReport(
             schema_version="1.0",
@@ -261,16 +269,35 @@ class ConformanceManager:
             run_id=str(uuid.uuid4()),
             run_type="full" if is_full_run else "incremental",
             summary=summary,
-            by_severity=by_severity,
-            by_contract=by_contract,
+            by_severity=self._count_by_attribute(failed, "severity"),
+            by_contract=self._count_by_attribute(failed, "contract_id"),
             contracts_checked=contracts_checked,
             files_checked=files_checked,
-            trend=trend,
+            trend=self._calculate_trend(summary),
         )
 
     def get_report(self) -> ConformanceReport | None:
         """Get current conformance report."""
         return self.report_store.load()
+
+    def _build_violation_filters(
+        self,
+        status: ViolationStatus | None,
+        severity: Severity | None,
+        contract_id: str | None,
+        file_pattern: str | None,
+    ) -> list[Callable[[Violation], bool]]:
+        """Build list of filter functions for violations."""
+        filters: list[Callable[[Violation], bool]] = []
+        if status:
+            filters.append(lambda v, s=status: v.status == s)
+        if severity:
+            filters.append(lambda v, s=severity: v.severity == s)
+        if contract_id:
+            filters.append(lambda v, c=contract_id: v.contract_id == c)
+        if file_pattern:
+            filters.append(lambda v, p=file_pattern: fnmatch.fnmatch(v.file_path, p))
+        return filters
 
     def list_violations(
         self,
@@ -282,19 +309,13 @@ class ConformanceManager:
     ) -> list[Violation]:
         """List violations with optional filters."""
         violations = self.violation_store.load_all()
+        filters = self._build_violation_filters(status, severity, contract_id, file_pattern)
 
-        if status:
-            violations = [v for v in violations if v.status == status]
-        if severity:
-            violations = [v for v in violations if v.severity == severity]
-        if contract_id:
-            violations = [v for v in violations if v.contract_id == contract_id]
-        if file_pattern:
-            violations = [v for v in violations if fnmatch.fnmatch(v.file_path, file_pattern)]
+        for filt in filters:
+            violations = [v for v in violations if filt(v)]
 
         # Sort by severity (most severe first), then by file
         violations.sort(key=lambda v: (-v.severity.weight, v.file_path))
-
         return violations[:limit]
 
     def get_violation(self, violation_id: str) -> Violation | None:

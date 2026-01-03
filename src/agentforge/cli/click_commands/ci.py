@@ -161,3 +161,21 @@ def hooks_uninstall(ctx):
 
     args = Args()
     run_hooks_uninstall(args)
+
+
+@ci.command('warnings', help='List warnings from SARIF results')
+@click.option('--file', '-f', 'file_pattern', help='Filter by file path pattern')
+@click.option('--rule', '-r', 'rule_pattern', help='Filter by rule ID pattern (e.g., complexity)')
+@click.option('--sarif-path', default='.agentforge/results.sarif', help='SARIF file path')
+@click.option('--summary', '-s', is_flag=True, help='Show summary by file')
+@click.pass_context
+def ci_warnings(ctx, file_pattern, rule_pattern, sarif_path, summary):
+    """List warnings from SARIF results with optional filtering."""
+    from agentforge.cli.commands.ci import run_warnings_list
+
+    args = Args()
+    args.file_pattern = file_pattern
+    args.rule_pattern = rule_pattern
+    args.sarif_path = sarif_path
+    args.summary = summary
+    run_warnings_list(args)

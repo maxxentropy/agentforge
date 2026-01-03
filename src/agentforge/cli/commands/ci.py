@@ -454,3 +454,66 @@ def run_hooks_uninstall(args: Any) -> None:
 
     hook_file.unlink()
     print("✅ Pre-commit hook removed.")
+
+
+def run_warnings_list(args: Any) -> None:
+    """List warnings from SARIF results with optional filtering."""
+    from collections import Counter
+
+    sarif_path = Path.cwd() / args.sarif_path
+    if not sarif_path.exists():
+        print(f"SARIF file not found: {sarif_path}")
+        print("Run 'agentforge ci run' first to generate results.")
+        sys.exit(1)
+
+    with open(sarif_path) as f:
+        sarif = json.load(f)
+
+    warnings = []
+    for run in sarif.get("runs", []):
+        for result in run.get("results", []):
+            rule_id = result.get("ruleId", "")
+            level = result.get("level", "warning")
+
+            # Apply rule filter
+            if args.rule_pattern and args.rule_pattern.lower() not in rule_id.lower():
+                continue
+
+            for loc in result.get("locations", []):
+                path = loc.get("physicalLocation", {}).get("artifactLocation", {}).get("uri", "")
+                region = loc.get("physicalLocation", {}).get("region", {})
+                line = region.get("startLine", 0)
+                msg = result.get("message", {}).get("text", "")
+
+                # Apply file filter
+                if args.file_pattern and args.file_pattern.lower() not in path.lower():
+                    continue
+
+                warnings.append({
+                    "file": path,
+                    "line": line,
+                    "rule": rule_id,
+                    "level": level,
+                    "message": msg,
+                })
+
+    if args.summary:
+        # Show summary by file
+        file_counts = Counter(w["file"] for w in warnings)
+        print(f"Total: {len(warnings)} warnings\n")
+        print("By file:")
+        for path, count in file_counts.most_common():
+            print(f"  {count:3d}: {path}")
+    else:
+        # Show individual warnings
+        if not warnings:
+            print("No warnings found matching filters.")
+            return
+
+        # Group by file
+        from itertools import groupby
+        warnings.sort(key=lambda w: (w["file"], w["line"]))
+        for path, group in groupby(warnings, key=lambda w: w["file"]):
+            print(f"\n{path}:")
+            for w in group:
+                print(f"  Line {w['line']:4d}: {w['message']}")

@@ -7,15 +7,15 @@
 | Mode | full |
 | Files Checked | 0 |
 | Checks Run | 158 |
-| Total Violations | 4710 |
+| Total Violations | 4724 |
 | Errors | 0 |
-| Warnings | 378 |
-| Duration | 19.55s |
+| Warnings | 384 |
+| Duration | 19.32s |
 
 ### All Violations
 
 <details>
-<summary>View all 4710 violations in 414 files</summary>
+<summary>View all 4724 violations in 414 files</summary>
 
 **`<unknown>`** (4 violations)
 
@@ -4571,12 +4571,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-nesting-depth** at `L132`
   - Function 'review_command' has nesting depth 5 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
-- 🔵 **cli-has-version** at `file`
-  - Required pattern not found: '@click\.version_option|--version|version_callback'
-  - 💡 *Add @click.version_option() to main command*
 - 🟡 **main-guard-pattern** at `file`
   - Required pattern not found: 'if\s+__name__\s*==\s*['"]__main__['"]'
   - 💡 *Add: if __name__ == '__main__': main()*
+- 🔵 **cli-has-version** at `file`
+  - Required pattern not found: '@click\.version_option|--version|version_callback'
+  - 💡 *Add @click.version_option() to main command*
 - 🔵 **cli-config-from-env** at `file`
   - Required pattern not found: '(envvar\s*=|os\.environ|getenv)'
   - 💡 *Add envvar parameter: @click.option('--api-key', envvar='API_KEY')*
@@ -5445,34 +5445,52 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 
-**`src/agentforge/core/discovery/analyzers/patterns.py`** (17 violations)
+**`src/agentforge/core/discovery/analyzers/patterns.py`** (31 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L484`
-  - Function '_check_signal' has complexity 43 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L654`
+- 🟡 **max-cyclomatic-complexity** at `L716`
   - Function '_detect_frameworks' has complexity 15 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-function-length** at `L484`
-  - Function '_check_signal' has 88 lines (max: 50)
-  - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-nesting-depth** at `L484`
-  - Function '_check_signal' has nesting depth 11 (max: 4)
+- 🟡 **max-nesting-depth** at `L514`
+  - Function '_check_base_class_signal' has nesting depth 5 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
-- 🟡 **max-nesting-depth** at `L654`
+- 🟡 **max-nesting-depth** at `L716`
   - Function '_detect_frameworks' has nesting depth 5 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🟡 **max-parameter-count** at `L484`
+  - Function '_check_class_name_signal' has 6 parameters (max: 5)
+  - 💡 *Group related parameters into a dataclass or use **kwargs*
+- 🟡 **max-parameter-count** at `L499`
+  - Function '_check_method_name_signal' has 6 parameters (max: 5)
+  - 💡 *Group related parameters into a dataclass or use **kwargs*
+- 🟡 **max-parameter-count** at `L514`
+  - Function '_check_base_class_signal' has 6 parameters (max: 5)
+  - 💡 *Group related parameters into a dataclass or use **kwargs*
+- 🟡 **max-parameter-count** at `L530`
+  - Function '_check_decorator_signal' has 6 parameters (max: 5)
+  - 💡 *Group related parameters into a dataclass or use **kwargs*
+- 🟡 **max-parameter-count** at `L545`
+  - Function '_check_directory_signal' has 6 parameters (max: 5)
+  - 💡 *Group related parameters into a dataclass or use **kwargs*
+- 🟡 **max-parameter-count** at `L555`
+  - Function '_check_import_signal' has 6 parameters (max: 5)
+  - 💡 *Group related parameters into a dataclass or use **kwargs*
+- 🟡 **max-parameter-count** at `L570`
+  - Function '_check_return_type_signal' has 6 parameters (max: 5)
+  - 💡 *Group related parameters into a dataclass or use **kwargs*
+- 🟡 **max-parameter-count** at `L598`
   - Function '_check_signal' has 8 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
-- 🟡 **max-parameter-count** at `L583`
+- 🟡 **max-parameter-count** at `L645`
   - Function '_add_match' has 6 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
 - 🟡 **max-file-lines** at `file`
-  - File exceeds line limit (715 lines > 500)
+  - File exceeds line limit (777 lines > 500)
   - 💡 *Consider splitting into smaller files*
+- 🟡 **no-god-classes** at `L398`
+  - Class 'PatternAnalyzer' has 16 methods (max: 15)
+  - 💡 *Split large classes using composition or inheritance*
 - 🔵 **single-responsibility-modules** at `L398`
-  - Class 'PatternAnalyzer' has 8 methods (max: 3)
+  - Class 'PatternAnalyzer' has 16 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -5485,14 +5503,30 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **default-result-return-types** at `L444`
   - Method '_analyze_file' returns 'None', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **default-result-return-types** at `L484`
+  - Method '_check_class_name_signal' returns 'float', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L499`
+  - Method '_check_method_name_signal' returns 'float', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L514`
+  - Method '_check_base_class_signal' returns 'float', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L530`
+  - Method '_check_decorator_signal' returns 'float', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L545`
+  - Method '_check_directory_signal' returns 'float', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L555`
+  - Method '_check_import_signal' returns 'float', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L570`
+  - Method '_check_return_type_signal' returns 'float', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L585`
+  - Method '_check_method_names_signal' returns 'float', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L598`
   - Method '_check_signal' returns 'float', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L583`
+- 🔵 **default-result-return-types** at `L645`
   - Method '_add_match' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L602`
+- 🔵 **default-result-return-types** at `L664`
   - Method '_aggregate_patterns' returns 'dict[str, PatternDetection]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L654`
+- 🔵 **default-result-return-types** at `L716`
   - Method '_detect_frameworks' returns 'dict[str, Detection]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L704`
+- 🔵 **default-result-return-types** at `L766`
   - Method 'get_patterns_by_confidence' returns 'list[PatternDetection]', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -16733,6 +16767,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **single-responsibility-modules** at `L769`
   - Class 'TestEdgeCases' has 5 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
+- 🟡 **no-real-network-calls** at `L475`
+  - Forbidden pattern found: 'requests.get('
+  - 💡 *Use responses, httpretty, or pytest-mock to mock network calls*
+- 🟡 **no-real-network-calls** at `L896`
+  - Forbidden pattern found: 'requests.get('
+  - 💡 *Use responses, httpretty, or pytest-mock to mock network calls*
 - 🟡 **unit-tests-isolated** at `L487`
   - Forbidden pattern found: 'sqlite3'
   - 💡 *Mock database connections in unit tests*
@@ -16742,12 +16782,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **unit-tests-isolated** at `L504`
   - Forbidden pattern found: 'sqlite3'
   - 💡 *Mock database connections in unit tests*
-- 🟡 **no-real-network-calls** at `L475`
-  - Forbidden pattern found: 'requests.get('
-  - 💡 *Use responses, httpretty, or pytest-mock to mock network calls*
-- 🟡 **no-real-network-calls** at `L896`
-  - Forbidden pattern found: 'requests.get('
-  - 💡 *Use responses, httpretty, or pytest-mock to mock network calls*
 - 🔵 **no-hardcoded-test-data-paths** at `L897`
   - Forbidden pattern found: 'open("'
   - 💡 *Use tmp_path fixture or Path(__file__).parent for test data*
@@ -17042,5 +17076,5 @@ Or regenerate file through TDFLOW to get proper lineage.*
 </details>
 
 ---
-*Generated at 2026-01-03 20:37:02 UTC*
-*Commit: `1f683b66`*
+*Generated at 2026-01-03 20:39:40 UTC*
+*Commit: `b00bb348`*

@@ -481,6 +481,120 @@ class PatternAnalyzer:
                     self._pattern_scores[pattern_name][file_key] = 0.0
                 self._pattern_scores[pattern_name][file_key] += score
 
+    def _check_class_name_signal(
+        self, patterns, weight, symbols, file_path, pattern_name, signal_type
+    ) -> float:
+        """Check class name/suffix signal."""
+        score = 0.0
+        for symbol in symbols:
+            if symbol.kind == "class":
+                for regex in patterns:
+                    if re.search(regex, symbol.name, re.IGNORECASE):
+                        self._add_match(pattern_name, file_path, symbol.line_number,
+                                      signal_type, symbol.name, weight)
+                        score += weight
+                        break
+        return score
+
+    def _check_method_name_signal(
+        self, patterns, weight, symbols, file_path, pattern_name, signal_type
+    ) -> float:
+        """Check method name/prefix signal."""
+        score = 0.0
+        for symbol in symbols:
+            if symbol.kind in ("method", "function"):
+                for regex in patterns:
+                    if re.search(regex, symbol.name, re.IGNORECASE):
+                        self._add_match(pattern_name, file_path, symbol.line_number,
+                                      signal_type, symbol.name, weight)
+                        score += weight * 0.5
+                        break
+        return score
+
+    def _check_base_class_signal(
+        self, patterns, weight, symbols, file_path, pattern_name, signal_type
+    ) -> float:
+        """Check base class signal."""
+        score = 0.0
+        for symbol in symbols:
+            if symbol.kind == "class" and symbol.base_classes:
+                for base in symbol.base_classes:
+                    for regex in patterns:
+                        if re.search(regex, base, re.IGNORECASE):
+                            self._add_match(pattern_name, file_path, symbol.line_number,
+                                          signal_type, f"{symbol.name}({base})", weight)
+                            score += weight
+                            break
+        return score
+
+    def _check_decorator_signal(
+        self, patterns, weight, symbols, file_path, pattern_name, signal_type
+    ) -> float:
+        """Check decorator signal."""
+        score = 0.0
+        for symbol in symbols:
+            for decorator in symbol.decorators:
+                for regex in patterns:
+                    if re.search(regex, decorator, re.IGNORECASE):
+                        self._add_match(pattern_name, file_path, symbol.line_number,
+                                      signal_type, f"@{decorator}", weight)
+                        score += weight
+                        break
+        return score
+
+    def _check_directory_signal(
+        self, patterns, weight, relative_path, file_path, pattern_name, signal_type
+    ) -> float:
+        """Check directory signal."""
+        for regex in patterns:
+            if re.search(regex, relative_path, re.IGNORECASE):
+                self._add_match(pattern_name, file_path, 0, signal_type, relative_path, weight)
+                return weight
+        return 0.0
+
+    def _check_import_signal(
+        self, patterns, weight, imports, file_path, pattern_name, signal_type
+    ) -> float:
+        """Check import signal."""
+        score = 0.0
+        for imp in imports:
+            imp_str = f"from {imp.module} import {', '.join(imp.names)}"
+            for regex in patterns:
+                if re.search(regex, imp_str, re.IGNORECASE):
+                    self._add_match(pattern_name, file_path, imp.line_number,
+                                  signal_type, imp_str, weight)
+                    score += weight
+                    break
+        return score
+
+    def _check_return_type_signal(
+        self, patterns, weight, symbols, file_path, pattern_name, signal_type
+    ) -> float:
+        """Check return type signal."""
+        score = 0.0
+        for symbol in symbols:
+            if symbol.return_type:
+                for regex in patterns:
+                    if re.search(regex, symbol.return_type, re.IGNORECASE):
+                        self._add_match(pattern_name, file_path, symbol.line_number,
+                                      signal_type, f"-> {symbol.return_type}", weight)
+                        score += weight
+                        break
+        return score
+
+    def _check_method_names_signal(self, patterns, weight, symbols) -> float:
+        """Check multiple method names signal."""
+        method_symbols = [s for s in symbols if s.kind in ("method", "function")]
+        matched_methods = 0
+        for symbol in method_symbols:
+            for regex in patterns:
+                if re.search(regex, symbol.name, re.IGNORECASE):
+                    matched_methods += 1
+                    break
+        if matched_methods >= 2:
+            return weight * min(matched_methods / 4, 1.0)
+        return 0.0
+
     def _check_signal(
         self,
         signal_type: str,
@@ -495,90 +609,38 @@ class PatternAnalyzer:
         """Check for a specific signal type and return weighted score."""
         patterns = signal_config["patterns"]
         weight = signal_config["weight"]
-        score = 0.0
 
-        if signal_type == "class_name" or signal_type == "class_suffix":
-            for symbol in symbols:
-                if symbol.kind == "class":
-                    for regex in patterns:
-                        if re.search(regex, symbol.name, re.IGNORECASE):
-                            self._add_match(pattern_name, file_path, symbol.line_number,
-                                          signal_type, symbol.name, weight)
-                            score += weight
-                            break
-
-        elif signal_type == "method_name" or signal_type == "method_prefix":
-            for symbol in symbols:
-                if symbol.kind in ("method", "function"):
-                    for regex in patterns:
-                        if re.search(regex, symbol.name, re.IGNORECASE):
-                            self._add_match(pattern_name, file_path, symbol.line_number,
-                                          signal_type, symbol.name, weight)
-                            score += weight * 0.5  # Lower weight per method
-                            break
-
-        elif signal_type == "base_class":
-            for symbol in symbols:
-                if symbol.kind == "class" and symbol.base_classes:
-                    for base in symbol.base_classes:
-                        for regex in patterns:
-                            if re.search(regex, base, re.IGNORECASE):
-                                self._add_match(pattern_name, file_path, symbol.line_number,
-                                              signal_type, f"{symbol.name}({base})", weight)
-                                score += weight
-                                break
-
-        elif signal_type == "decorator":
-            for symbol in symbols:
-                for decorator in symbol.decorators:
-                    for regex in patterns:
-                        if re.search(regex, decorator, re.IGNORECASE):
-                            self._add_match(pattern_name, file_path, symbol.line_number,
-                                          signal_type, f"@{decorator}", weight)
-                            score += weight
-                            break
-
-        elif signal_type == "directory":
-            for regex in patterns:
-                if re.search(regex, relative_path, re.IGNORECASE):
-                    self._add_match(pattern_name, file_path, 0, signal_type,
-                                  relative_path, weight)
-                    score += weight
-                    break
-
-        elif signal_type == "import":
-            for imp in imports:
-                imp_str = f"from {imp.module} import {', '.join(imp.names)}"
-                for regex in patterns:
-                    if re.search(regex, imp_str, re.IGNORECASE):
-                        self._add_match(pattern_name, file_path, imp.line_number,
-                                      signal_type, imp_str, weight)
-                        score += weight
-                        break
-
-        elif signal_type == "return_type":
-            for symbol in symbols:
-                if symbol.return_type:
-                    for regex in patterns:
-                        if re.search(regex, symbol.return_type, re.IGNORECASE):
-                            self._add_match(pattern_name, file_path, symbol.line_number,
-                                          signal_type, f"-> {symbol.return_type}", weight)
-                            score += weight
-                            break
-
-        elif signal_type == "method_names":
-            # Check for specific method name patterns
-            method_symbols = [s for s in symbols if s.kind in ("method", "function")]
-            matched_methods = 0
-            for symbol in method_symbols:
-                for regex in patterns:
-                    if re.search(regex, symbol.name, re.IGNORECASE):
-                        matched_methods += 1
-                        break
-            if matched_methods >= 2:  # Need multiple method matches
-                score += weight * min(matched_methods / 4, 1.0)
-
-        return score
+        if signal_type in ("class_name", "class_suffix"):
+            return self._check_class_name_signal(
+                patterns, weight, symbols, file_path, pattern_name, signal_type
+            )
+        if signal_type in ("method_name", "method_prefix"):
+            return self._check_method_name_signal(
+                patterns, weight, symbols, file_path, pattern_name, signal_type
+            )
+        if signal_type == "base_class":
+            return self._check_base_class_signal(
+                patterns, weight, symbols, file_path, pattern_name, signal_type
+            )
+        if signal_type == "decorator":
+            return self._check_decorator_signal(
+                patterns, weight, symbols, file_path, pattern_name, signal_type
+            )
+        if signal_type == "directory":
+            return self._check_directory_signal(
+                patterns, weight, relative_path, file_path, pattern_name, signal_type
+            )
+        if signal_type == "import":
+            return self._check_import_signal(
+                patterns, weight, imports, file_path, pattern_name, signal_type
+            )
+        if signal_type == "return_type":
+            return self._check_return_type_signal(
+                patterns, weight, symbols, file_path, pattern_name, signal_type
+            )
+        if signal_type == "method_names":
+            return self._check_method_names_signal(patterns, weight, symbols)
+        return 0.0
 
     def _add_match(
         self,

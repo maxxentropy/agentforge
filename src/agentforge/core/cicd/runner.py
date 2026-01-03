@@ -9,6 +9,10 @@ CI Runner
 
 Main orchestrator for CI/CD conformance checking.
 Handles parallel execution, caching, and mode-specific logic.
+
+Runs two types of checks:
+1. User-defined contracts (from .agentforge/contracts/)
+2. Operation contracts (built-in code generation rules)
 """
 
 import hashlib
@@ -78,6 +82,10 @@ class CIRunner:
 
             # Execute checks
             violations = self._execute_checks(applicable_contracts, files_to_check)
+
+            # Execute operation contract checks
+            operation_violations = self._execute_operation_contracts(files_to_check)
+            violations.extend(operation_violations)
 
             # Handle baseline comparison for PR mode
             comparison = None
@@ -288,6 +296,76 @@ class CIRunner:
 
         return violations
 
+    def _execute_operation_contracts(
+        self,
+        files_to_check: set[str] | None
+    ) -> list[CIViolation]:
+        """
+        Execute operation contract checks.
+
+        Operation contracts are built-in rules for code generation quality
+        (e.g., function size limits, naming conventions, complexity limits).
+
+        Args:
+            files_to_check: Optional set of files to limit checking
+
+        Returns:
+            List of violations found
+        """
+        try:
+            from agentforge.core.contracts.operations import OperationContractVerifier
+        except ImportError:
+            # Operation contracts not available
+            return []
+
+        violations: list[CIViolation] = []
+
+        try:
+            verifier = OperationContractVerifier(repo_root=self.repo_root)
+
+            # Determine path to verify
+            if files_to_check:
+                # Verify specific files by verifying the repo root with filtering
+                # Note: Operation verifier always scans .py files in path
+                report = verifier.verify(self.repo_root)
+                # Filter to only files in files_to_check
+                for v in report.violations:
+                    if v.file_path in files_to_check or any(
+                        v.file_path.endswith(f) for f in files_to_check
+                    ):
+                        violations.append(self._op_violation_to_ci(v))
+            else:
+                # Full check - verify entire repo
+                report = verifier.verify(self.repo_root)
+                for v in report.violations:
+                    violations.append(self._op_violation_to_ci(v))
+
+        except Exception as e:
+            # Log error but don't fail the entire CI run
+            violations.append(CIViolation(
+                check_id="operation-contracts",
+                file_path="<runtime>",
+                line=None,
+                message=f"Operation contract check failed: {e}",
+                severity="error",
+                contract_id="operation.code-generation",
+            ))
+
+        return violations
+
+    def _op_violation_to_ci(self, v) -> CIViolation:
+        """Convert operation contract Violation to CIViolation."""
+        return CIViolation(
+            check_id=v.rule_id,
+            file_path=v.file_path,
+            line=v.line_number,
+            message=v.message,
+            severity=v.severity,
+            rule_id=v.rule_id,
+            contract_id=v.contract_id,
+            fix_hint=v.fix_hint,
+        )
+
     def _run_single_check(
         self,
         contract_id: str,
@@ -330,11 +408,11 @@ class CIRunner:
             if not result.passed:
                 violations.append(CIViolation(
                     check_id=result.check_id,
-                    file_path=result.file or "<unknown>",
-                    line=result.line,
+                    file_path=result.file_path or "<unknown>",
+                    line=result.line_number,
                     message=result.message,
                     severity=result.severity,
-                    rule_id=result.rule_id,
+                    rule_id=result.check_id,  # Use check_id as rule_id
                     contract_id=contract_id,
                     fix_hint=result.fix_hint,
                 ))

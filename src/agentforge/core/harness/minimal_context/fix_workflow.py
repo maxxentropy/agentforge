@@ -803,6 +803,63 @@ except Exception as e:
         except Exception as e:
             return {"status": "failure", "error": str(e)}
 
+    def _check_tests_worsened(self, baseline_result, after_result) -> bool:
+        """Check if tests got worse after an operation."""
+        if baseline_result.success and not after_result.success:
+            return True
+        if not baseline_result.success and not after_result.success:
+            baseline_failures = self._count_test_failures(baseline_result.output)
+            after_failures = self._count_test_failures(after_result.output)
+            return after_failures > baseline_failures
+        return False
+
+    def _build_revert_result(
+        self, file_path: str, original_content: str | None, result, after_result
+    ) -> dict[str, Any]:
+        """Revert file and build failure result."""
+        if original_content is not None:
+            full_path = self.project_path / file_path
+            full_path.write_text(original_content)
+
+        return {
+            "status": "failure",
+            "error": "Extraction broke tests - REVERTED",
+            "output": (
+                f"{result.output}\n\n"
+                f"--- CORRECTNESS CHECK FAILED ---\n"
+                f"✗ Extraction introduced new test failures - changes REVERTED\n"
+                f"Test output: {after_result.output[:500] if after_result.output else 'No output'}\n"
+                f"The extraction was syntactically valid but broke behavior.\n"
+                f"Try a different extraction range or approach."
+            ),
+            "summary": "✗ REVERTED - new test failures",
+        }
+
+    def _update_verification_and_context(
+        self, state: TaskState, file_path: str, params: dict,
+        check_result, after_result, baseline_passed: bool
+    ) -> None:
+        """Update verification status and refresh context."""
+        checks_passing = check_result.success
+        self.state_store.update_verification(
+            state.task_id,
+            checks_passing=1 if checks_passing else 0,
+            checks_failing=0 if checks_passing else 1,
+            tests_passing=after_result.success,
+            details={
+                "last_check": check_result.output[:500] if check_result.output else "",
+                "tests_verified": True,
+                "baseline_passed": baseline_passed,
+            },
+        )
+
+        source_function = params.get("source_function")
+        if source_function:
+            new_context = self._refresh_precomputed_context(file_path, source_function, state)
+            if new_context:
+                state.context_data["precomputed"] = new_context
+                self.state_store.update_context_data(state.task_id, "precomputed", new_context)
+
     def _wrap_extract_function(self, tool_executor: Callable) -> Callable:
         """
         Wrap extract_function to enforce CORRECTNESS FIRST:
@@ -815,10 +872,7 @@ except Exception as e:
         """
         def wrapper(action_name: str, params: dict[str, Any], state: TaskState):
             file_path = params.get("file_path") or state.context_data.get("file_path")
-
-            # CORRECTNESS FIRST: Run tests BEFORE to establish baseline
             baseline_result = self.test_tools.run_tests("run_tests", {})
-            baseline_passed = baseline_result.success
 
             # Save original content before any changes
             original_content = None
@@ -827,9 +881,7 @@ except Exception as e:
                 if full_path.exists():
                     original_content = full_path.read_text()
 
-            # Execute the extraction (tool validates syntax with ast.parse)
             result = tool_executor(action_name, params)
-
             base_result = {
                 "status": "success" if result.success else "failure",
                 "summary": result.output[:200] if result.output else "",
@@ -837,92 +889,38 @@ except Exception as e:
                 "output": result.output,
             }
 
-            # If extraction succeeded syntactically, VERIFY WITH TESTS
-            if result.success and file_path:
-                # CORRECTNESS FIRST: Run tests AFTER extraction
-                after_result = self.test_tools.run_tests("run_tests", {})
+            if not (result.success and file_path):
+                return base_result
 
-                # Compare: did extraction make things WORSE?
-                extraction_broke_tests = False
-                if baseline_passed and not after_result.success:
-                    # Tests were passing, now failing - extraction broke something
-                    extraction_broke_tests = True
-                elif not baseline_passed and not after_result.success:
-                    # Tests were already failing - check if we made it worse
-                    # Extract failure counts from output if possible
-                    baseline_failures = self._count_test_failures(baseline_result.output)
-                    after_failures = self._count_test_failures(after_result.output)
-                    if after_failures > baseline_failures:
-                        extraction_broke_tests = True
+            after_result = self.test_tools.run_tests("run_tests", {})
+            if self._check_tests_worsened(baseline_result, after_result):
+                return self._build_revert_result(file_path, original_content, result, after_result)
 
-                if extraction_broke_tests:
-                    # Extraction made things worse - REVERT
-                    if original_content is not None:
-                        full_path = self.project_path / file_path
-                        full_path.write_text(original_content)
+            check_id = state.context_data.get("check_id")
+            if not check_id:
+                return base_result
 
-                    base_result["status"] = "failure"
-                    base_result["error"] = "Extraction broke tests - REVERTED"
-                    base_result["output"] = (
-                        f"{result.output}\n\n"
-                        f"--- CORRECTNESS CHECK FAILED ---\n"
-                        f"✗ Extraction introduced new test failures - changes REVERTED\n"
-                        f"Test output: {after_result.output[:500] if after_result.output else 'No output'}\n"
-                        f"The extraction was syntactically valid but broke behavior.\n"
-                        f"Try a different extraction range or approach."
-                    )
-                    base_result["summary"] = "✗ REVERTED - new test failures"
-                    return base_result
+            check_result = self.conformance_tools.run_conformance_check(
+                "run_conformance_check", {"check_id": check_id, "file_path": file_path}
+            )
+            self._update_verification_and_context(
+                state, file_path, params, check_result, after_result, baseline_result.success
+            )
 
-                # Tests didn't get worse - run conformance check
-                check_id = state.context_data.get("check_id")
-                if check_id:
-                    check_result = self.conformance_tools.run_conformance_check(
-                        "run_conformance_check",
-                        {"check_id": check_id, "file_path": file_path}
-                    )
+            checks_passing = check_result.success
+            check_status = "✓ Check PASSED" if checks_passing else "○ Check still failing"
+            check_summary = check_result.output[:300] if check_result.output else ""
+            base_result["output"] = (
+                f"{base_result['output']}\n\n"
+                f"--- CORRECTNESS VERIFIED ---\n"
+                f"✓ No new failures\n\n"
+                f"--- Conformance Check ---\n"
+                f"{check_status}\n{check_summary}"
+            )
+            base_result["summary"] = f"{base_result['summary']} | ✓ No new failures | {check_status}"
 
-                    # Update verification status
-                    checks_passing = check_result.success
-                    self.state_store.update_verification(
-                        state.task_id,
-                        checks_passing=1 if checks_passing else 0,
-                        checks_failing=0 if checks_passing else 1,
-                        tests_passing=after_result.success,
-                        details={
-                            "last_check": check_result.output[:500] if check_result.output else "",
-                            "tests_verified": True,
-                            "baseline_passed": baseline_passed,
-                        },
-                    )
-
-                    # Refresh context to get updated line numbers and suggestions
-                    source_function = params.get("source_function")
-                    if source_function:
-                        new_context = self._refresh_precomputed_context(
-                            file_path, source_function, state
-                        )
-                        if new_context:
-                            state.context_data["precomputed"] = new_context
-                            self.state_store.update_context_data(
-                                state.task_id, "precomputed", new_context
-                            )
-
-                    # Build result with verification info
-                    check_status = "✓ Check PASSED" if checks_passing else "○ Check still failing"
-                    check_summary = check_result.output[:300] if check_result.output else ""
-                    test_status = "✓ No new failures" if not extraction_broke_tests else "○ Pre-existing failures"
-                    base_result["output"] = (
-                        f"{base_result['output']}\n\n"
-                        f"--- CORRECTNESS VERIFIED ---\n"
-                        f"{test_status}\n\n"
-                        f"--- Conformance Check ---\n"
-                        f"{check_status}\n{check_summary}"
-                    )
-                    base_result["summary"] = f"{base_result['summary']} | {test_status} | {check_status}"
-
-                    if checks_passing:
-                        base_result["hint"] = "All checks passed! You can now use 'complete' action."
+            if checks_passing:
+                base_result["hint"] = "All checks passed! You can now use 'complete' action."
 
             return base_result
         return wrapper
@@ -1151,6 +1149,107 @@ except Exception as e:
             "summary": f"Plan recorded: {approach[:100]}",
         }
 
+    def _read_source_file(self, full_path: Path) -> tuple[str, list[str]] | None:
+        """Read source file and return (source, lines) or None on error."""
+        try:
+            source = full_path.read_text()
+            return source, source.split('\n')
+        except Exception:
+            return None
+
+    def _find_violating_function(
+        self, tree, line_number: int | None, num_lines: int
+    ) -> str | None:
+        """Find the function containing the violation line."""
+        import ast
+        for node in ast.walk(tree):
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                if line_number and node.lineno <= line_number <= (node.end_lineno or num_lines):
+                    return node.name
+        return None
+
+    def _add_provider_context(
+        self, precomputed: dict, provider: PythonProvider,
+        full_path: Path, func_name: str, check_id: str,
+    ) -> None:
+        """Add violation context from provider (location, metrics, suggestions)."""
+        violation_context = provider.get_violation_context(full_path, func_name, check_id)
+        if "error" in violation_context:
+            return
+
+        if violation_context.get("location"):
+            loc = violation_context["location"]
+            precomputed["function_lines"] = f"{loc['start']}-{loc['end']}"
+
+        if violation_context.get("metrics"):
+            precomputed["analysis"] = violation_context["metrics"]
+
+        self._add_extraction_suggestions(precomputed, full_path, violation_context)
+
+        if violation_context.get("strategy"):
+            precomputed["fix_strategy"] = violation_context["strategy"]
+
+    def _add_extraction_suggestions(
+        self, precomputed: dict, full_path: Path, violation_context: dict
+    ) -> None:
+        """Add validated extraction suggestions or explanation if not possible."""
+        raw_suggestions = violation_context.get("suggestions")
+        if not raw_suggestions:
+            return
+
+        validated = self._validate_extraction_suggestions(full_path, raw_suggestions)
+        if validated:
+            precomputed["extraction_suggestions"] = validated
+        else:
+            precomputed["extraction_not_possible"] = (
+                "All suggested extractions were rejected by the refactoring "
+                "tool. The code contains early returns, break/continue statements, "
+                "or other control flow that makes simple extraction unsafe. "
+                "Consider restructuring the code (e.g., using result variables "
+                "instead of early returns) before extracting."
+            )
+
+    def _add_class_context(
+        self, precomputed: dict, tree, func_name: str
+    ) -> None:
+        """Add class context if function is a method."""
+        import ast
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.ClassDef):
+                continue
+            for item in node.body:
+                if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)) and item.name == func_name:
+                    precomputed["parent_class"] = node.name
+                    precomputed["class_methods"] = [
+                        {"name": m.name, "line": m.lineno, "end_line": m.end_lineno}
+                        for m in node.body
+                        if isinstance(m, (ast.FunctionDef, ast.AsyncFunctionDef))
+                    ]
+                    return
+
+    def _add_check_definition(self, precomputed: dict, check_id: str) -> None:
+        """Add check definition from conformance tools."""
+        try:
+            result = self.conformance_tools.get_check_definition(
+                "get_check_definition", {"check_id": check_id}
+            )
+            if result.success:
+                precomputed["check_definition"] = result.output
+        except Exception:
+            pass
+
+    def _add_file_context(
+        self, precomputed: dict, lines: list[str], line_number: int
+    ) -> None:
+        """Add file context around violation line."""
+        start = max(0, line_number - 10)
+        end = min(len(lines), line_number + 10)
+        context_lines = [
+            f"{'>>> ' if i + 1 == line_number else '    '}{i + 1:4d}: {lines[i]}"
+            for i in range(start, end)
+        ]
+        precomputed["file_context"] = "\n".join(context_lines)
+
     def _precompute_violation_context(
         self,
         violation_data: dict[str, Any],
@@ -1160,16 +1259,8 @@ except Exception as e:
 
         This runs BEFORE the agent starts, using code-based analysis (not LLM).
         Uses PythonProvider as the single source of truth for AST analysis.
-
-        Returns:
-            Dict with pre-computed context including:
-            - function_source: Full source of the violating function
-            - analysis: Complexity metrics, branches, nesting
-            - extraction_suggestions: Where to extract helpers
-            - check_definition: What the check requires
-            - surrounding_context: Related code (imports, class context)
         """
-        precomputed = {}
+        precomputed: dict[str, Any] = {}
 
         file_path = violation_data.get("file_path")
         line_number = violation_data.get("line_number")
@@ -1182,122 +1273,48 @@ except Exception as e:
         if not full_path.exists():
             return precomputed
 
-        # Read the full file
-        try:
-            source = full_path.read_text()
-            lines = source.split('\n')
-        except Exception:
+        result = self._read_source_file(full_path)
+        if result is None:
             return precomputed
+        source, lines = result
 
         # For Python files, use the PythonProvider for unified AST analysis
         if file_path.endswith('.py'):
-            provider = PythonProvider()
+            self._add_python_context(precomputed, full_path, lines, line_number, check_id or "")
 
-            # Find which function contains the violation line using provider's AST
-            try:
-                import ast
-                tree = provider.parse_file(full_path)
-                if tree is None:
-                    return precomputed
-
-                violating_function = None
-                for node in ast.walk(tree):
-                    if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                        if line_number and node.lineno <= line_number <= (node.end_lineno or len(lines)):
-                            violating_function = node.name
-                            break
-
-                if violating_function:
-                    precomputed["violating_function"] = violating_function
-
-                    # Get violation-type-specific context from provider
-                    # This tailors suggestions to the specific violation type
-                    violation_context = provider.get_violation_context(
-                        full_path, violating_function, check_id or ""
-                    )
-
-                    if "error" not in violation_context:
-                        # Include location
-                        if violation_context.get("location"):
-                            loc = violation_context["location"]
-                            precomputed["function_lines"] = f"{loc['start']}-{loc['end']}"
-
-                        # Include metrics
-                        if violation_context.get("metrics"):
-                            precomputed["analysis"] = violation_context["metrics"]
-
-                        # Include violation-specific suggestions and strategy
-                        if violation_context.get("suggestions"):
-                            # Validate suggestions with refactoring provider
-                            # Only include suggestions that can actually be extracted
-                            raw_suggestions = violation_context["suggestions"]
-                            validated_suggestions = self._validate_extraction_suggestions(
-                                full_path, raw_suggestions
-                            )
-                            if validated_suggestions:
-                                precomputed["extraction_suggestions"] = validated_suggestions
-                            elif raw_suggestions:
-                                # All suggestions were rejected - explain why
-                                precomputed["extraction_not_possible"] = (
-                                    "All suggested extractions were rejected by the refactoring "
-                                    "tool. The code contains early returns, break/continue statements, "
-                                    "or other control flow that makes simple extraction unsafe. "
-                                    "Consider restructuring the code (e.g., using result variables "
-                                    "instead of early returns) before extracting."
-                                )
-                        if violation_context.get("strategy"):
-                            precomputed["fix_strategy"] = violation_context["strategy"]
-
-                    # Include the full function source - this is critical
-                    func_source = provider.get_function_source(full_path, violating_function)
-                    if func_source:
-                        precomputed["function_source"] = func_source
-
-                    # Include surrounding context (class definition if method)
-                    for node in ast.walk(tree):
-                        if isinstance(node, ast.ClassDef):
-                            for item in node.body:
-                                if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                                    if item.name == violating_function:
-                                        precomputed["parent_class"] = node.name
-                                        # Include class header and other method signatures
-                                        class_methods = []
-                                        for m in node.body:
-                                            if isinstance(m, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                                                class_methods.append({
-                                                    "name": m.name,
-                                                    "line": m.lineno,
-                                                    "end_line": m.end_lineno,
-                                                })
-                                        precomputed["class_methods"] = class_methods
-                                        break
-
-            except SyntaxError:
-                pass  # File has syntax errors, skip AST analysis
-
-        # Get check definition using conformance tools
         if check_id:
-            try:
-                check_result = self.conformance_tools.get_check_definition(
-                    "get_check_definition",
-                    {"check_id": check_id}
-                )
-                if check_result.success:
-                    precomputed["check_definition"] = check_result.output
-            except Exception:
-                pass
+            self._add_check_definition(precomputed, check_id)
 
-        # Include file context around violation
         if line_number and lines:
-            start = max(0, line_number - 10)
-            end = min(len(lines), line_number + 10)
-            context_lines = []
-            for i in range(start, end):
-                marker = ">>> " if i + 1 == line_number else "    "
-                context_lines.append(f"{marker}{i + 1:4d}: {lines[i]}")
-            precomputed["file_context"] = "\n".join(context_lines)
+            self._add_file_context(precomputed, lines, line_number)
 
         return precomputed
+
+    def _add_python_context(
+        self, precomputed: dict, full_path: Path, lines: list[str],
+        line_number: int | None, check_id: str
+    ) -> None:
+        """Add Python-specific context using AST analysis."""
+        provider = PythonProvider()
+        try:
+            tree = provider.parse_file(full_path)
+            if tree is None:
+                return
+
+            func_name = self._find_violating_function(tree, line_number, len(lines))
+            if not func_name:
+                return
+
+            precomputed["violating_function"] = func_name
+            self._add_provider_context(precomputed, provider, full_path, func_name, check_id)
+
+            func_source = provider.get_function_source(full_path, func_name)
+            if func_source:
+                precomputed["function_source"] = func_source
+
+            self._add_class_context(precomputed, tree, func_name)
+        except SyntaxError:
+            pass  # File has syntax errors, skip AST analysis
 
     def _validate_extraction_suggestions(
         self,

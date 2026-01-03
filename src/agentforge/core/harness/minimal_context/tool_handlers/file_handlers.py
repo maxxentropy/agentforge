@@ -28,6 +28,114 @@ from .types import ActionHandler, validate_path_security
 logger = logging.getLogger(__name__)
 
 
+def _detect_line_indent(line: str) -> int:
+    """Detect indentation level of a line."""
+    if line.strip():
+        return len(line) - len(line.lstrip())
+    return 0
+
+
+def _detect_content_indent(content_lines: list[str]) -> int:
+    """Detect indentation of first non-empty line in content."""
+    for line in content_lines:
+        if line.strip():
+            return len(line) - len(line.lstrip())
+    return 0
+
+
+def _adjust_lines_indentation(
+    content_lines: list[str], target_indent: int, source_indent: int
+) -> list[str]:
+    """Adjust content lines to match target indentation."""
+    indent_delta = target_indent - source_indent
+    result = []
+    for line in content_lines:
+        if line.strip():
+            current_indent = len(line) - len(line.lstrip())
+            new_indent = max(0, current_indent + indent_delta)
+            result.append(" " * new_indent + line.lstrip())
+        else:
+            result.append("")
+    return result
+
+
+def _process_insert_content(content: str, indent_str: str) -> list[str]:
+    """Process content for insertion, adding indentation."""
+    new_lines = []
+    for line in content.split("\n"):
+        if line.strip():
+            stripped = line.lstrip()
+            line_indent = len(line) - len(stripped)
+            if line_indent:
+                new_lines.append(indent_str + " " * line_indent + stripped)
+            else:
+                new_lines.append(indent_str + stripped)
+        else:
+            new_lines.append("")
+    if new_lines and new_lines[-1].strip():
+        new_lines.append("")
+    return new_lines
+
+
+def _validate_edit_params(
+    path: str, start_line: int, end_line: int
+) -> str | None:
+    """Validate edit operation parameters. Returns error message or None."""
+    if not path:
+        return "ERROR: path parameter required"
+    if start_line < 1:
+        return "ERROR: start_line must be >= 1"
+    if end_line < start_line:
+        return "ERROR: end_line must be >= start_line"
+    return None
+
+
+def _validate_replace_params(
+    path: str | None, start_line: int | None, end_line: int | None, new_content: str | None
+) -> str | None:
+    """Validate replace_lines parameters. Returns error message or None."""
+    if not path:
+        return "ERROR: path parameter required"
+    if start_line is None or end_line is None:
+        return "ERROR: start_line and end_line required"
+    if new_content is None:
+        return "ERROR: new_content required"
+    return None
+
+
+def _validate_insert_params(
+    path: str | None, line_number: int | None, new_content: str | None
+) -> str | None:
+    """Validate insert_lines parameters. Returns error message or None."""
+    if not path:
+        return "ERROR: path parameter required"
+    if line_number is None:
+        return "ERROR: line_number parameter required"
+    if not new_content:
+        return "ERROR: new_content parameter required"
+    return None
+
+
+def _validate_line_range(start_line: int, end_line: int, total_lines: int) -> str | None:
+    """Validate line range against file length. Returns error message or None."""
+    if start_line < 1 or end_line > total_lines or start_line > end_line:
+        return (
+            f"ERROR: Invalid line range {start_line}-{end_line} "
+            f"(file has {total_lines} lines)"
+        )
+    return None
+
+
+def _validate_line_number(line_number: int, total_lines: int) -> str | None:
+    """Validate line number for insertion. Returns error message or None."""
+    if line_number < 1 or line_number > total_lines + 1:
+        return (
+            f"ERROR: Invalid line number {line_number} "
+            f"(file has {total_lines} lines)"
+        )
+    return None
+
+
 def create_read_file_handler(project_path: Path | None = None) -> ActionHandler:
     """
     Create a read_file action handler.
@@ -154,12 +262,8 @@ def create_edit_file_handler(project_path: Path | None = None) -> ActionHandler:
         logger.debug("edit_file: path=%s, lines=%d-%d", path, start_line, end_line)
 
         # Validate parameters
-        if not path:
-            return "ERROR: path parameter required"
-        if start_line < 1:
-            return "ERROR: start_line must be >= 1"
-        if end_line < start_line:
-            return "ERROR: end_line must be >= start_line"
+        if error := _validate_edit_params(path, start_line, end_line):
+            return error
 
         # Validate path security
         file_path, error = validate_path_security(path, base_path)
@@ -176,10 +280,7 @@ def create_edit_file_handler(project_path: Path | None = None) -> ActionHandler:
 
             # Validate line numbers against file
             if start_line > original_line_count:
-                return (
-                    f"ERROR: start_line {start_line} exceeds file length "
-                    f"{original_line_count}"
-                )
+                return f"ERROR: start_line {start_line} exceeds file length {original_line_count}"
 
             # Adjust end_line if beyond file (allow appending)
             effective_end = min(end_line, original_line_count)
@@ -239,12 +340,9 @@ def create_replace_lines_handler(project_path: Path | None = None) -> ActionHand
         end_line = params.get("end_line")
         new_content = params.get("new_content")
 
-        if not path:
-            return "ERROR: path parameter required"
-        if start_line is None or end_line is None:
-            return "ERROR: start_line and end_line required"
-        if new_content is None:
-            return "ERROR: new_content required"
+        # Validate parameters
+        if error := _validate_replace_params(path, start_line, end_line, new_content):
+            return error
 
         # Validate path security
         full_path, error = validate_path_security(path, base_path)
@@ -256,36 +354,17 @@ def create_replace_lines_handler(project_path: Path | None = None) -> ActionHand
             lines = original_content.split("\n")
 
             # Validate line range
-            if start_line < 1 or end_line > len(lines) or start_line > end_line:
-                return (
-                    f"ERROR: Invalid line range {start_line}-{end_line} "
-                    f"(file has {len(lines)} lines)"
-                )
+            if error := _validate_line_range(start_line, end_line, len(lines)):
+                return error
 
             # Detect indentation from the first line being replaced
             original_line = lines[start_line - 1]
-            target_indent = len(original_line) - len(original_line.lstrip())
+            target_indent = _detect_line_indent(original_line)
 
-            # Detect indentation of the new content (first non-empty line)
+            # Detect indentation of the new content and adjust
             content_lines = new_content.split("\n")
-            source_indent = 0
-            for line in content_lines:
-                if line.strip():
-                    source_indent = len(line) - len(line.lstrip())
-                    break
-
-            # Calculate indent adjustment
-            indent_delta = target_indent - source_indent
-
-            # Process new content - adjust indentation while preserving relative nesting
-            new_lines = []
-            for line in content_lines:
-                if line.strip():
-                    current_indent = len(line) - len(line.lstrip())
-                    new_indent = max(0, current_indent + indent_delta)
-                    new_lines.append(" " * new_indent + line.lstrip())
-                else:
-                    new_lines.append("")
+            source_indent = _detect_content_indent(content_lines)
+            new_lines = _adjust_lines_indentation(content_lines, target_indent, source_indent)
 
             # Replace lines
             result_lines = lines[: start_line - 1] + new_lines + lines[end_line:]
@@ -325,12 +404,9 @@ def create_insert_lines_handler(project_path: Path | None = None) -> ActionHandl
         new_content = params.get("new_content") or params.get("content")
         indent_level = params.get("indent_level")
 
-        if not path:
-            return "ERROR: path parameter required"
-        if line_number is None:
-            return "ERROR: line_number parameter required"
-        if not new_content:
-            return "ERROR: new_content parameter required"
+        # Validate parameters
+        if error := _validate_insert_params(path, line_number, new_content):
+            return error
 
         # Validate path security
         full_path, error = validate_path_security(path, base_path)
@@ -341,38 +417,18 @@ def create_insert_lines_handler(project_path: Path | None = None) -> ActionHandl
             lines = full_path.read_text().split("\n")
 
             # Validate line number
-            if line_number < 1 or line_number > len(lines) + 1:
-                return (
-                    f"ERROR: Invalid line number {line_number} "
-                    f"(file has {len(lines)} lines)"
-                )
+            if error := _validate_line_number(line_number, len(lines)):
+                return error
 
             # Detect indentation from context
             if indent_level is None:
                 context_line = lines[line_number - 1] if line_number <= len(lines) else ""
-                if context_line.strip():
-                    indent_level = len(context_line) - len(context_line.lstrip())
-                else:
-                    indent_level = 0
+                indent_level = _detect_line_indent(context_line)
 
             indent_str = " " * indent_level
 
-            # Process new content
-            new_lines = []
-            for line in new_content.split("\n"):
-                if line.strip():
-                    stripped = line.lstrip()
-                    line_indent = len(line) - len(stripped)
-                    if line_indent:
-                        new_lines.append(indent_str + " " * line_indent + stripped)
-                    else:
-                        new_lines.append(indent_str + stripped)
-                else:
-                    new_lines.append("")
-
-            # Add blank line after for separation
-            if new_lines and new_lines[-1].strip():
-                new_lines.append("")
+            # Process new content with indentation
+            new_lines = _process_insert_content(new_content, indent_str)
 
             # Insert lines
             insert_index = line_number - 1

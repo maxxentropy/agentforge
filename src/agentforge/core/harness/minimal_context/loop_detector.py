@@ -285,6 +285,46 @@ class LoopDetector:
 
         return LoopDetection(detected=False)
 
+    def _check_same_error_category(
+        self, signatures: list[ActionSignature]
+    ) -> LoopDetection | None:
+        """Check if all recent failures have same error category."""
+        if not all(s.outcome == ActionResult.FAILURE for s in signatures):
+            return None
+
+        error_cats = {s.error_category for s in signatures if s.error_category}
+        if len(error_cats) != 1:
+            return None
+
+        return LoopDetection(
+            detected=True,
+            loop_type=LoopType.SEMANTIC_LOOP,
+            confidence=0.85,
+            description=f"Multiple different approaches all failing with '{error_cats.pop()}' error",
+            suggestions=[
+                "The underlying issue persists across approaches",
+                "Re-examine the root cause before trying more variations",
+                "Consider if the violation is fixable automatically",
+            ],
+            evidence=[f"{s.action_type}: {s.error_category}" for s in signatures],
+        )
+
+    def _check_repeated_error_facts(self, facts: list[Fact]) -> LoopDetection | None:
+        """Check for repeated identical error statements in facts."""
+        recent_facts = [f for f in facts if f.category == FactCategory.ERROR]
+        error_statements = [f.statement for f in recent_facts[-5:]]
+
+        if len(set(error_statements)) == 1 and len(error_statements) >= 3:
+            return LoopDetection(
+                detected=True,
+                loop_type=LoopType.SEMANTIC_LOOP,
+                confidence=0.8,
+                description="Different actions producing identical error outcome",
+                suggestions=["Address the common error before continuing"],
+                evidence=error_statements[:3],
+            )
+        return None
+
     def _check_semantic_loop(
         self,
         signatures: list[ActionSignature],
@@ -301,37 +341,16 @@ class LoopDetector:
         if len(action_types) < 2:
             return LoopDetection(detected=False)  # Handled by identical check
 
-        # All failures with same error category
-        if all(s.outcome == ActionResult.FAILURE for s in recent):
-            error_cats = {s.error_category for s in recent if s.error_category}
-            if len(error_cats) == 1:
-                return LoopDetection(
-                    detected=True,
-                    loop_type=LoopType.SEMANTIC_LOOP,
-                    confidence=0.85,
-                    description=f"Multiple different approaches all failing with '{error_cats.pop()}' error",
-                    suggestions=[
-                        "The underlying issue persists across approaches",
-                        "Re-examine the root cause before trying more variations",
-                        "Consider if the violation is fixable automatically",
-                    ],
-                    evidence=[f"{s.action_type}: {s.error_category}" for s in recent],
-                )
+        # Check for same error category across failures
+        result = self._check_same_error_category(recent)
+        if result:
+            return result
 
         # Check facts for repeated outcomes
         if facts:
-            recent_facts = [f for f in facts if f.category == FactCategory.ERROR]
-            error_statements = [f.statement for f in recent_facts[-5:]]
-            # Check for similar error messages
-            if len(set(error_statements)) == 1 and len(error_statements) >= 3:
-                return LoopDetection(
-                    detected=True,
-                    loop_type=LoopType.SEMANTIC_LOOP,
-                    confidence=0.8,
-                    description="Different actions producing identical error outcome",
-                    suggestions=["Address the common error before continuing"],
-                    evidence=error_statements[:3],
-                )
+            result = self._check_repeated_error_facts(facts)
+            if result:
+                return result
 
         return LoopDetection(detected=False)
 

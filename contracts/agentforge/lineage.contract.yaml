@@ -1,0 +1,153 @@
+schema_version: "1.0"
+
+contract:
+  name: "agentforge-lineage"
+  type: patterns
+  description: |
+    Lineage traceability contract for AgentForge.
+
+    Language-agnostic audit trail verification:
+    - Every source file has lineage metadata (@spec_file, @spec_id, @component_id)
+    - Every test file references its implementation (@impl_path)
+    - Every implementation references its test (@test_path)
+    - Bidirectional links are consistent
+
+    Supports: Python, C#, TypeScript, JavaScript
+
+    The lineage chain: Spec -> Test -> Implementation
+    This enables tracing any code back to its requirements.
+  version: "1.1.0"
+  enabled: true
+  tags:
+    - agentforge
+    - lineage
+    - traceability
+    - multi-language
+
+# Language-specific file patterns
+language_patterns:
+  python:
+    source: "**/*.py"
+    test: "**/test_*.py"
+    exclude:
+      - "**/__init__.py"
+      - "**/conftest.py"
+  csharp:
+    source: "**/*.cs"
+    test: "**/*Tests.cs"
+    exclude:
+      - "**/obj/**"
+      - "**/bin/**"
+  typescript:
+    source: "**/*.ts"
+    test: "**/*.spec.ts"
+    exclude:
+      - "**/node_modules/**"
+      - "**/dist/**"
+  javascript:
+    source: "**/*.js"
+    test: "**/*.test.js"
+    exclude:
+      - "**/node_modules/**"
+      - "**/dist/**"
+
+checks:
+  # Lineage metadata presence - Python
+  - id: require-lineage-metadata-python
+    name: "Require Lineage Metadata (Python)"
+    description: "Python source and test files should have lineage metadata"
+    type: custom
+    severity: info
+    config:
+      module: builtin_checks
+      function: check_lineage_metadata
+    applies_to:
+      languages:
+        - python
+      paths:
+        - "src/**/*.py"
+        - "tests/**/*.py"
+      exclude_paths:
+        - "**/__init__.py"
+        - "**/conftest.py"
+        - "**/__pycache__/**"
+    fix_hint: |
+      Add lineage header (Python comment syntax):
+      # @spec_file: .agentforge/specs/your-spec-v1.yaml
+      # @spec_id: your-spec-v1
+      # @component_id: component-name
+
+  # Lineage metadata presence - C#
+  - id: require-lineage-metadata-csharp
+    name: "Require Lineage Metadata (C#)"
+    description: "C# source and test files should have lineage metadata"
+    type: custom
+    severity: info
+    config:
+      module: builtin_checks
+      function: check_lineage_metadata
+    applies_to:
+      languages:
+        - csharp
+      paths:
+        - "src/**/*.cs"
+        - "tests/**/*.cs"
+      exclude_paths:
+        - "**/obj/**"
+        - "**/bin/**"
+    fix_hint: |
+      Add lineage header (C# comment syntax):
+      // @spec_file: .agentforge/specs/your-spec-v1.yaml
+      // @spec_id: your-spec-v1
+      // @component_id: component-name
+
+  # Lineage metadata presence - TypeScript
+  - id: require-lineage-metadata-typescript
+    name: "Require Lineage Metadata (TypeScript)"
+    description: "TypeScript source and test files should have lineage metadata"
+    type: custom
+    severity: info
+    config:
+      module: builtin_checks
+      function: check_lineage_metadata
+    applies_to:
+      languages:
+        - typescript
+      paths:
+        - "src/**/*.ts"
+        - "tests/**/*.ts"
+      exclude_paths:
+        - "**/node_modules/**"
+        - "**/dist/**"
+        - "**/*.d.ts"
+    fix_hint: |
+      Add lineage header (TypeScript comment syntax):
+      // @spec_file: .agentforge/specs/your-spec-v1.yaml
+      // @spec_id: your-spec-v1
+      // @component_id: component-name
+
+  # Bidirectional link verification - All languages
+  - id: verify-bidirectional-links
+    name: "Verify Bidirectional Links"
+    description: "Spec references must point to existing files that reference back correctly"
+    type: custom
+    severity: error
+    config:
+      module: builtin_checks
+      function: check_bidirectional_links
+    applies_to:
+      paths:
+        - ".agentforge/specs/**/*.yaml"
+        - "src/**/*.py"
+        - "src/**/*.cs"
+        - "src/**/*.ts"
+        - "tests/**/*.py"
+        - "tests/**/*.cs"
+        - "tests/**/*.ts"
+      exclude_paths:
+        - "**/__pycache__/**"
+        - "**/node_modules/**"
+        - "**/obj/**"
+        - "**/bin/**"
+    fix_hint: "Ensure spec->file->spec references form a consistent chain"
+

@@ -128,6 +128,29 @@ from .validator import (
     validate_artifacts,
 )
 
+# Phase transition schemas
+from .schemas import (
+    STAGE_INPUT_REQUIREMENTS,
+    STAGE_OUTPUT_SCHEMAS,
+    STAGE_TRANSITIONS,
+    get_input_schema,
+    get_next_stages,
+    get_output_schema,
+    get_produced_artifacts_by_stage,
+    get_required_artifacts_for_stage,
+    validate_transition,
+)
+
+# Brownfield discovery integration
+from .discovery_integration import (
+    DiscoveredContext,
+    create_pipeline_context_from_discovery,
+    extract_context_from_profile,
+    get_contracts_for_language,
+    resolve_test_path,
+    validate_stage_output_for_language,
+)
+
 __all__ = [
     # State
     "PipelineState",
@@ -189,4 +212,21 @@ __all__ = [
     "expand_env_vars",
     "ConfigValidator",
     "ConfigValidationError",
+    # Phase transition schemas
+    "STAGE_INPUT_REQUIREMENTS",
+    "STAGE_OUTPUT_SCHEMAS",
+    "STAGE_TRANSITIONS",
+    "get_input_schema",
+    "get_output_schema",
+    "get_next_stages",
+    "get_required_artifacts_for_stage",
+    "get_produced_artifacts_by_stage",
+    "validate_transition",
+    # Brownfield discovery integration
+    "DiscoveredContext",
+    "extract_context_from_profile",
+    "create_pipeline_context_from_discovery",
+    "get_contracts_for_language",
+    "validate_stage_output_for_language",
+    "resolve_test_path",
 ]

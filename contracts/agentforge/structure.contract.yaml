@@ -1,0 +1,175 @@
+schema_version: "1.0"
+
+contract:
+  name: "agentforge-structure"
+  type: patterns
+  description: |
+    Repository structure contract for AgentForge.
+
+    Language-agnostic structure validation:
+    - Source code in language-appropriate directories
+    - Tests in tests/ (mirroring src structure)
+    - Specs in .agentforge/specs/
+    - Contracts in contracts/
+
+    Supports: Python, C#, TypeScript, JavaScript
+
+    Consistent structure enables tooling to work reliably.
+  version: "1.1.0"
+  enabled: true
+  tags:
+    - agentforge
+    - structure
+    - layout
+    - multi-language
+
+# Language-specific structure expectations
+language_structures:
+  python:
+    source_dirs: ["src/", "lib/"]
+    test_dirs: ["tests/"]
+    config_files: ["pyproject.toml", "setup.py", "requirements.txt"]
+  csharp:
+    source_dirs: ["src/", "Source/"]
+    test_dirs: ["tests/", "Tests/"]
+    config_files: ["*.csproj", "*.sln"]
+  typescript:
+    source_dirs: ["src/", "lib/"]
+    test_dirs: ["tests/", "__tests__/"]
+    config_files: ["package.json", "tsconfig.json"]
+
+checks:
+  # File structure validation - All languages
+  - id: file-structure
+    name: "File Structure Validation"
+    description: "Files should be in expected directories based on their type"
+    type: custom
+    severity: warning
+    config:
+      module: builtin_checks
+      function: check_file_structure
+    applies_to:
+      paths:
+        - "**/*.py"
+        - "**/*.cs"
+        - "**/*.ts"
+        - "**/*.js"
+        - "**/*.yaml"
+        - "**/*.yml"
+      exclude_paths:
+        - "**/__pycache__/**"
+        - "**/node_modules/**"
+        - "**/obj/**"
+        - "**/bin/**"
+        - ".git/**"
+        - "*.egg-info/**"
+        - ".agentforge/violations/**"
+        - ".agentforge/bridge/**"
+    fix_hint: "Move files to their canonical locations"
+
+  # Required project files
+  - id: require-readme
+    name: "README Required"
+    description: "Repository should have a README file"
+    type: file_exists
+    severity: warning
+    config:
+      required_files:
+        - "README.md"
+    fix_hint: "Create a README.md describing your project"
+
+  # Python project structure
+  - id: require-pyproject
+    name: "pyproject.toml Required (Python)"
+    description: "Python projects should have pyproject.toml"
+    type: file_exists
+    severity: warning
+    applies_to:
+      languages:
+        - python
+    config:
+      required_files:
+        - "pyproject.toml"
+    fix_hint: "Create pyproject.toml for project configuration"
+
+  # C# project structure
+  - id: require-csproj
+    name: "Project File Required (C#)"
+    description: "C# projects should have a .csproj or .sln file"
+    type: file_exists
+    severity: warning
+    applies_to:
+      languages:
+        - csharp
+    config:
+      required_files:
+        - "**/*.csproj"
+    fix_hint: "Create a .csproj file for the project"
+
+  # TypeScript/JavaScript project structure
+  - id: require-package-json
+    name: "package.json Required (TypeScript/JavaScript)"
+    description: "TypeScript/JavaScript projects should have package.json"
+    type: file_exists
+    severity: warning
+    applies_to:
+      languages:
+        - typescript
+        - javascript
+    config:
+      required_files:
+        - "package.json"
+    fix_hint: "Run 'npm init' to create package.json"
+
+  # Forbidden files check - All languages
+  - id: no-env-files-committed
+    name: "No .env Files Committed"
+    description: ".env files with secrets should not be tracked in git"
+    type: file_exists
+    severity: error
+    enabled: false  # Disabled - .env is typically gitignored
+    config:
+      forbidden_files:
+        - ".env"
+        - ".env.local"
+        - ".env.production"
+    fix_hint: "Add .env to .gitignore (use .env.example for templates)"
+
+  - id: no-private-keys
+    name: "No Private Key Files"
+    description: "Private key files should not be in the repository"
+    type: file_exists
+    severity: error
+    config:
+      forbidden_files:
+        - "**/*.pem"
+        - "**/*.key"
+        - "**/id_rsa"
+        - "**/id_ed25519"
+      exclude_paths:
+        - ".git/**"
+    fix_hint: "Remove private keys and add patterns to .gitignore"
+
+  # No build artifacts committed
+  - id: no-build-artifacts
+    name: "No Build Artifacts"
+    description: "Build artifacts should not be committed"
+    type: file_exists
+    severity: warning
+    config:
+      forbidden_files:
+        # Python
+        - "**/__pycache__/**"
+        - "**/*.pyc"
+        - "**/*.pyo"
+        - "**/*.egg-info/**"
+        # C#
+        - "**/bin/**"
+        - "**/obj/**"
+        # TypeScript/JavaScript
+        - "**/dist/**"
+        - "**/node_modules/**"
+      exclude_paths:
+        - ".git/**"
+    fix_hint: "Add build directories to .gitignore"
+

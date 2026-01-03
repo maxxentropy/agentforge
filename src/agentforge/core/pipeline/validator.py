@@ -13,10 +13,25 @@ Provides validation for:
 - Required fields
 - Type checking
 - JSON schema validation
+- Language-specific validation (Python, C#, TypeScript)
+- Phase transition schema validation
+
+The validation chain ensures artifacts flow correctly:
+  INTAKE → CLARIFY → ANALYZE → SPEC → RED → GREEN → REFACTOR → DELIVER
 """
 
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+from .schemas import (
+    STAGE_INPUT_REQUIREMENTS,
+    get_input_schema,
+    get_output_schema,
+    validate_transition,
+)
+
+if TYPE_CHECKING:
+    from .discovery_integration import DiscoveredContext
 
 logger = logging.getLogger(__name__)
 
@@ -197,6 +212,110 @@ class ArtifactValidator:
 
         if errors:
             raise ValidationError(errors)
+
+    # =========================================================================
+    # Schema-based Stage Validation
+    # =========================================================================
+
+    def validate_stage_input(
+        self,
+        stage_name: str,
+        artifacts: dict[str, Any],
+    ) -> list[str]:
+        """
+        Validate input artifacts for a stage using schema definitions.
+
+        Args:
+            stage_name: Name of the stage (intake, clarify, analyze, etc.)
+            artifacts: Input artifacts to validate
+
+        Returns:
+            List of validation error messages (empty if valid)
+        """
+        requirements = STAGE_INPUT_REQUIREMENTS.get(stage_name, {})
+        required = requirements.get("required", [])
+        return self.validate_required(artifacts, required)
+
+    def validate_stage_output(
+        self,
+        stage_name: str,
+        artifacts: dict[str, Any],
+    ) -> list[str]:
+        """
+        Validate output artifacts from a stage using schema definitions.
+
+        Args:
+            stage_name: Name of the stage
+            artifacts: Output artifacts to validate
+
+        Returns:
+            List of validation error messages (empty if valid)
+        """
+        schema = get_output_schema(stage_name)
+        if not schema:
+            return []
+        return self.validate(artifacts, schema)
+
+    def validate_transition(
+        self,
+        from_stage: str,
+        to_stage: str,
+        artifacts: dict[str, Any],
+    ) -> list[str]:
+        """
+        Validate a stage transition with artifact flow.
+
+        Checks that:
+        1. The transition is valid
+        2. Output from from_stage is valid
+        3. Input requirements for to_stage are satisfied
+
+        Args:
+            from_stage: Stage we're transitioning from
+            to_stage: Stage we're transitioning to
+            artifacts: Accumulated artifacts
+
+        Returns:
+            List of validation error messages (empty if valid)
+        """
+        errors = []
+
+        # Check valid transition
+        if not validate_transition(from_stage, to_stage):
+            errors.append(
+                f"Invalid transition: {from_stage} → {to_stage}"
+            )
+            return errors  # Don't continue if transition is invalid
+
+        # Validate output schema of from_stage
+        errors.extend(self.validate_stage_output(from_stage, artifacts))
+
+        # Validate input requirements of to_stage
+        errors.extend(self.validate_stage_input(to_stage, artifacts))
+
+        return errors
+
+    def validate_stage_output_for_language(
+        self,
+        stage_name: str,
+        artifacts: dict[str, Any],
+        language: str,
+    ) -> list[str]:
+        """
+        Validate stage output with language-specific rules.
+
+        Args:
+            stage_name: Name of the stage
+            artifacts: Stage output artifacts
+            language: Primary language (python, csharp, typescript)
+
+        Returns:
+            List of validation error messages (empty if valid)
+        """
+        # Import here to avoid circular imports
+        from .discovery_integration import validate_stage_output_for_language
+
+        return validate_stage_output_for_language(stage_name, artifacts, language)
 
 
 # Module-level validator instance for convenience

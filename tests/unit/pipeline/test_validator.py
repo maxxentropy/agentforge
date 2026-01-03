@@ -268,3 +268,224 @@ class TestValidateArtifactsFunction:
         }
         errors = validate_artifacts({}, schema=schema)
         assert len(errors) == 1
+
+
+# =============================================================================
+# Schema-based Stage Validation Tests
+# =============================================================================
+
+
+class TestStageInputValidation:
+    """Tests for schema-based stage input validation."""
+
+    @pytest.fixture
+    def validator(self):
+        return ArtifactValidator()
+
+    def test_intake_stage_no_requirements(self, validator):
+        """Intake stage has no required inputs (first stage)."""
+        errors = validator.validate_stage_input("intake", {})
+        assert len(errors) == 0
+
+    def test_clarify_stage_requires_request_id(self, validator):
+        """Clarify stage requires request_id and detected_scope."""
+        errors = validator.validate_stage_input("clarify", {})
+        assert len(errors) == 2
+        assert any("request_id" in e for e in errors)
+        assert any("detected_scope" in e for e in errors)
+
+        errors = validator.validate_stage_input("clarify", {
+            "request_id": "req-123",
+            "detected_scope": "feature",
+        })
+        assert len(errors) == 0
+
+    def test_spec_stage_requires_analysis(self, validator):
+        """Spec stage requires request_id, analysis, and components."""
+        errors = validator.validate_stage_input("spec", {})
+        assert len(errors) == 3
+
+        errors = validator.validate_stage_input("spec", {
+            "request_id": "req-123",
+            "analysis": {"summary": "test", "impact": "low"},
+            "components": [{"name": "comp1", "path": "/src/comp.py"}],
+        })
+        assert len(errors) == 0
+
+    def test_red_stage_requires_spec_and_test_cases(self, validator):
+        """Red stage requires spec_id, components, and test_cases."""
+        errors = validator.validate_stage_input("red", {})
+        assert len(errors) == 3
+
+        errors = validator.validate_stage_input("red", {
+            "spec_id": "spec-123",
+            "components": [],
+            "test_cases": [],
+        })
+        assert len(errors) == 0
+
+    def test_green_stage_requires_tests(self, validator):
+        """Green stage requires spec_id, test_files, and failing_tests."""
+        errors = validator.validate_stage_input("green", {})
+        assert len(errors) == 3
+
+        errors = validator.validate_stage_input("green", {
+            "spec_id": "spec-123",
+            "test_files": [],
+            "failing_tests": ["test_1"],
+        })
+        assert len(errors) == 0
+
+
+class TestStageOutputValidation:
+    """Tests for schema-based stage output validation."""
+
+    @pytest.fixture
+    def validator(self):
+        return ArtifactValidator()
+
+    def test_intake_output_requires_request_id(self, validator):
+        """Intake output requires request_id, detected_scope, original_request."""
+        errors = validator.validate_stage_output("intake", {})
+        assert len(errors) == 3
+
+        errors = validator.validate_stage_output("intake", {
+            "request_id": "req-123",
+            "detected_scope": "feature",
+            "original_request": "Add a logout button",
+        })
+        assert len(errors) == 0
+
+    def test_red_output_requires_test_files(self, validator):
+        """Red output requires spec_id, test_files, and test_results."""
+        errors = validator.validate_stage_output("red", {})
+        assert len(errors) == 3
+
+        errors = validator.validate_stage_output("red", {
+            "spec_id": "spec-123",
+            "test_files": [{"path": "test_foo.py", "content": "def test..."}],
+            "test_results": {"passed": 0, "failed": 1, "total": 1},
+        })
+        assert len(errors) == 0
+
+    def test_green_output_requires_implementation(self, validator):
+        """Green output requires spec_id, implementation_files, test_results."""
+        errors = validator.validate_stage_output("green", {})
+        assert len(errors) == 3
+
+        errors = validator.validate_stage_output("green", {
+            "spec_id": "spec-123",
+            "implementation_files": [{"path": "foo.py", "content": "class..."}],
+            "test_results": {"passed": 1, "failed": 0, "total": 1},
+        })
+        assert len(errors) == 0
+
+
+class TestTransitionValidation:
+    """Tests for stage transition validation."""
+
+    @pytest.fixture
+    def validator(self):
+        return ArtifactValidator()
+
+    def test_valid_intake_to_clarify(self, validator):
+        """Valid intake→clarify transition."""
+        artifacts = {
+            "request_id": "req-123",
+            "detected_scope": "feature",
+            "original_request": "Add feature",
+        }
+        errors = validator.validate_transition("intake", "clarify", artifacts)
+        assert len(errors) == 0
+
+    def test_invalid_intake_to_spec(self, validator):
+        """Invalid intake→spec transition (skipping clarify)."""
+        artifacts = {
+            "request_id": "req-123",
+            "detected_scope": "feature",
+            "original_request": "Add feature",
+        }
+        errors = validator.validate_transition("intake", "spec", artifacts)
+        assert len(errors) == 1
+        assert "Invalid transition" in errors[0]
+
+    def test_valid_red_to_green(self, validator):
+        """Valid red→green transition."""
+        artifacts = {
+            "spec_id": "spec-123",
+            "test_files": [{"path": "test_foo.py", "content": "..."}],
+            "test_results": {"passed": 0, "failed": 1, "total": 1},
+            "failing_tests": ["test_foo"],
+        }
+        errors = validator.validate_transition("red", "green", artifacts)
+        assert len(errors) == 0
+
+    def test_transition_missing_required_for_next(self, validator):
+        """Transition fails when missing required artifacts for next stage."""
+        # Has intake output but missing clarify requirements
+        artifacts = {
+            "request_id": "req-123",
+            "detected_scope": "feature",
+            "original_request": "Add feature",
+            # Missing clarified_requirements for analyze stage
+        }
+        errors = validator.validate_transition("clarify", "analyze", artifacts)
+        # Should have error for missing clarified_requirements
+        assert any("clarified_requirements" in str(e) for e in errors)
+
+
+class TestLanguageSpecificValidation:
+    """Tests for language-specific output validation."""
+
+    @pytest.fixture
+    def validator(self):
+        return ArtifactValidator()
+
+    def test_python_test_file_extension(self, validator):
+        """Python test files should have .py extension."""
+        artifacts = {
+            "test_files": [{"path": "tests/test_foo.py", "content": "..."}],
+        }
+        errors = validator.validate_stage_output_for_language(
+            "red", artifacts, "python"
+        )
+        assert len(errors) == 0
+
+        # Wrong extension
+        artifacts = {
+            "test_files": [{"path": "tests/test_foo.ts", "content": "..."}],
+        }
+        errors = validator.validate_stage_output_for_language(
+            "red", artifacts, "python"
+        )
+        assert len(errors) == 1
+        assert "unexpected extension" in errors[0]
+
+    def test_typescript_test_file_extension(self, validator):
+        """TypeScript test files should have .ts or .tsx extension."""
+        artifacts = {
+            "test_files": [{"path": "tests/foo.spec.ts", "content": "..."}],
+        }
+        errors = validator.validate_stage_output_for_language(
+            "red", artifacts, "typescript"
+        )
+        assert len(errors) == 0
+
+    def test_csharp_implementation_extension(self, validator):
+        """C# implementation files should have .cs extension."""
+        artifacts = {
+            "implementation_files": [{"path": "src/Foo.cs", "content": "..."}],
+        }
+        errors = validator.validate_stage_output_for_language(
+            "green", artifacts, "csharp"
+        )
+        assert len(errors) == 0
+
+        # Wrong extension
+        artifacts = {
+            "implementation_files": [{"path": "src/foo.py", "content": "..."}],
+        }
+        errors = validator.validate_stage_output_for_language(
+            "green", artifacts, "csharp"
+        )
+        assert len(errors) == 1

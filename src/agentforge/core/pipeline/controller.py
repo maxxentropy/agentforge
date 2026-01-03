@@ -157,6 +157,52 @@ class PipelineController:
     # Public API
     # =========================================================================
 
+    def execute_with_discovery(
+        self,
+        request: str,
+        profile: Any,  # CodebaseProfile from discovery
+        template: str = "implement",
+        config: dict[str, Any] | None = None,
+    ) -> PipelineResult:
+        """
+        Create and execute a pipeline with brownfield discovery context.
+
+        This connects the brownfield discovery system to pipeline execution,
+        providing language-aware validation and codebase context.
+
+        Args:
+            request: User request describing what to build
+            profile: CodebaseProfile from brownfield discovery
+            template: Pipeline template (implement, design, test, fix)
+            config: Optional configuration overrides
+
+        Returns:
+            PipelineResult with execution outcome
+        """
+        from .discovery_integration import create_pipeline_context_from_discovery
+
+        # Create pipeline context from discovery
+        discovery_context = create_pipeline_context_from_discovery(
+            profile, self.project_path
+        )
+
+        # Merge discovery context with provided config
+        # Enable strict schema validation when using discovery (we have full context)
+        merged_config = {
+            **self.config,
+            **(config or {}),
+            **discovery_context,
+            "strict_schema_validation": True,  # Enable with discovery
+        }
+
+        logger.info(
+            f"Executing pipeline with discovery context: "
+            f"language={discovery_context.get('primary_language')}, "
+            f"frameworks={discovery_context.get('frameworks')}"
+        )
+
+        return self.execute(request, template, merged_config)
+
     def execute(
         self,
         request: str,
@@ -524,7 +570,13 @@ class PipelineController:
 
         input_artifacts = state.collect_artifacts()
 
+        # Run executor's custom validation first
         errors = executor.validate_input(input_artifacts)
+
+        # Schema-based input validation (if enabled in config)
+        if state.config.get("strict_schema_validation", False):
+            errors.extend(self.validator.validate_stage_input(stage_name, input_artifacts))
+
         if errors:
             logger.error(f"Input validation failed for stage {stage_name}: {errors}")
             return StageResult.failed(f"Input validation failed: {'; '.join(errors)}")
@@ -544,6 +596,26 @@ class PipelineController:
         except Exception as e:
             logger.exception(f"Stage {stage_name} raised exception")
             return StageResult.failed(f"Stage execution error: {e}")
+
+        # Validate output artifacts against schema (if enabled)
+        if result.is_success() and state.config.get("strict_schema_validation", False):
+            output_errors = self.validator.validate_stage_output(
+                stage_name, result.artifacts
+            )
+            # Add language-specific validation if available
+            language = state.config.get("primary_language")
+            if language:
+                output_errors.extend(
+                    self.validator.validate_stage_output_for_language(
+                        stage_name, result.artifacts, language
+                    )
+                )
+            if output_errors:
+                logger.warning(
+                    f"Output validation warnings for stage {stage_name}: "
+                    f"{output_errors}"
+                )
+                # Note: We log warnings but don't fail - output validation is advisory
 
         logger.info(f"Stage '{stage_name}' completed with status: {result.status.value}")
         return result

@@ -297,6 +297,56 @@ class LineageEmbedder:
 
         return "\n".join(new_lines)
 
+    def _is_standard_header_comment(self, stripped: str) -> bool:
+        """Check if line is a standard header comment (copyright, license, author)."""
+        return any(s in stripped.lower() for s in ["copyright", "license", "author"])
+
+    def _should_skip_python_line(self, i: int, stripped: str) -> tuple[bool, bool]:
+        """Check if Python line should be skipped when finding insert position.
+
+        Returns:
+            (should_skip, should_break) - skip means continue, break means stop
+        """
+        # Skip shebang
+        if i == 0 and stripped.startswith("#!"):
+            return True, False
+        # Skip encoding declaration
+        if i <= 1 and (stripped.startswith("# -*-") or "coding" in stripped):
+            return True, False
+        # Skip empty lines at start
+        if not stripped:
+            return True, False
+        # Stop at module docstring
+        if stripped.startswith('"""') or stripped.startswith("'''"):
+            return False, True
+        # Stop at first non-comment line
+        if not stripped.startswith("#"):
+            return False, True
+        # Stop at non-standard-header comments
+        if not self._is_standard_header_comment(stripped):
+            return False, True
+        return True, False
+
+    def _find_python_insert_position(self, lines: list[str]) -> int:
+        """Find the correct insert position for Python files."""
+        insert_position = 0
+        for i, line in enumerate(lines):
+            stripped = line.strip()
+            should_skip, should_break = self._should_skip_python_line(i, stripped)
+            if should_break:
+                break
+            if should_skip:
+                insert_position = i + 1
+        return insert_position
+
+    def _add_spacing(self, lineage_block: str, lines: list[str], position: int) -> str:
+        """Add spacing around lineage block as needed."""
+        if position > 0 and lines[position - 1].strip():
+            lineage_block = "\n" + lineage_block
+        if position < len(lines) and lines[position].strip():
+            lineage_block = lineage_block + "\n"
+        return lineage_block
+
     def _insert_lineage_block(
         self,
         content: str,
@@ -305,49 +355,15 @@ class LineageEmbedder:
     ) -> str:
         """Insert lineage block at the appropriate location."""
         lines = content.split("\n")
+
+        # For Python files, find the right position after headers
         insert_position = 0
-
-        # For Python files, preserve shebang and encoding declarations
         if comment_prefix == "#":
-            for i, line in enumerate(lines):
-                stripped = line.strip()
-                # Skip shebang
-                if i == 0 and stripped.startswith("#!"):
-                    insert_position = 1
-                    continue
-                # Skip encoding declaration
-                if i <= 1 and stripped.startswith("# -*-") or "coding" in stripped:
-                    insert_position = i + 1
-                    continue
-                # Skip empty lines at the start
-                if not stripped:
-                    insert_position = i + 1
-                    continue
-                # Stop at first real content
-                if stripped.startswith('"""') or stripped.startswith("'''"):
-                    # Insert before module docstring
-                    break
-                if not stripped.startswith("#"):
-                    # Insert before first non-comment line
-                    break
-                # If it's a comment that's not part of standard headers, insert before it
-                if not any(s in stripped.lower() for s in ["copyright", "license", "author"]):
-                    break
-                insert_position = i + 1
+            insert_position = self._find_python_insert_position(lines)
 
-        # Insert the lineage block with appropriate spacing
-        if insert_position > 0 and lines[insert_position - 1].strip():
-            lineage_block = "\n" + lineage_block
-
-        if insert_position < len(lines) and lines[insert_position].strip():
-            lineage_block = lineage_block + "\n"
-
-        new_lines = (
-            lines[:insert_position] +
-            [lineage_block] +
-            lines[insert_position:]
-        )
-
+        # Add spacing and insert
+        lineage_block = self._add_spacing(lineage_block, lines, insert_position)
+        new_lines = lines[:insert_position] + [lineage_block] + lines[insert_position:]
         return "\n".join(new_lines)
 
     @property

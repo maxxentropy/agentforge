@@ -67,6 +67,78 @@ class PythonTools:
             except Exception:
                 pass  # Pyright not available
 
+    def _validate_file_param(
+        self, tool_name: str, params: dict[str, Any], extra_param: str | None = None
+    ) -> tuple[Path | None, ToolResult | None]:
+        """Validate file_path parameter and optional extra parameter.
+
+        Returns:
+            (full_path, None) on success, (None, error_result) on failure
+        """
+        file_path = params.get("file_path")
+        if not file_path:
+            return None, ToolResult.failure_result(
+                tool_name, "Missing required parameter: file_path"
+            )
+
+        if extra_param:
+            if not params.get(extra_param):
+                return None, ToolResult.failure_result(
+                    tool_name, f"Missing required parameter: {extra_param}"
+                )
+
+        full_path = self.project_path / file_path
+        if not full_path.exists():
+            return None, ToolResult.failure_result(
+                tool_name, f"File not found: {file_path}"
+            )
+
+        return full_path, None
+
+    def _format_suggestions(self, suggestions: list[dict] | None) -> str:
+        """Format extraction suggestions for output."""
+        if not suggestions:
+            return ""
+
+        output = "\nEXTRACTION SUGGESTIONS:\n"
+        for i, s in enumerate(suggestions[:5], 1):
+            extractable = "✓" if s.get('extractable', True) else "✗"
+            output += f"  {i}. [{extractable}] {s['description']}\n"
+            output += f"     Lines {s['start_line']}-{s['end_line']}, reduces complexity by ~{s['estimated_complexity_reduction']}\n"
+            if s.get('reason'):
+                output += f"     Note: {s['reason']}\n"
+        return output
+
+    def _format_analysis_output(
+        self,
+        function_name: str,
+        file_path: str,
+        location: tuple[int, int],
+        metrics: Any,
+        suggestions: list[dict] | None,
+        func_source: str | None,
+    ) -> str:
+        """Format function analysis output."""
+        output = f"""
+=== Function Analysis: {function_name} ===
+File: {file_path}
+Lines: {location[0]}-{location[1]}
+
+METRICS:
+  Cyclomatic Complexity: {metrics.cyclomatic_complexity if metrics else 'N/A'} (threshold: 10)
+  Cognitive Complexity: {metrics.cognitive_complexity if metrics else 'N/A'}
+  Nesting Depth: {metrics.nesting_depth if metrics else 'N/A'} (threshold: 4)
+  Line Count: {metrics.line_count if metrics else 'N/A'}
+  Branches: {metrics.branch_count if metrics else 'N/A'}
+  Loops: {metrics.loop_count if metrics else 'N/A'}
+"""
+        output += self._format_suggestions(suggestions)
+
+        if func_source:
+            output += f"\nFUNCTION SOURCE:\n```python\n{func_source[:2000]}\n```"
+
+        return output
+
     def analyze_function(self, name: str, params: dict[str, Any]) -> ToolResult:
         """
         Analyze a Python function's structure and complexity.
@@ -82,26 +154,14 @@ class PythonTools:
             - Branch and loop counts
             - Extraction suggestions
         """
+        full_path, error = self._validate_file_param("analyze_function", params, "function_name")
+        if error:
+            return error
+
         file_path = params.get("file_path")
         function_name = params.get("function_name")
 
-        if not file_path:
-            return ToolResult.failure_result(
-                "analyze_function", "Missing required parameter: file_path"
-            )
-        if not function_name:
-            return ToolResult.failure_result(
-                "analyze_function", "Missing required parameter: function_name"
-            )
-
-        full_path = self.project_path / file_path
-        if not full_path.exists():
-            return ToolResult.failure_result(
-                "analyze_function", f"File not found: {file_path}"
-            )
-
         try:
-            # Use PythonProvider for all analysis
             location = self.provider.get_function_location(full_path, function_name)
             if not location:
                 return ToolResult.failure_result(
@@ -109,42 +169,13 @@ class PythonTools:
                     f"Function '{function_name}' not found in {file_path}"
                 )
 
-            # Get complexity metrics
             metrics = self.provider.analyze_complexity(full_path, function_name)
-
-            # Get extraction suggestions
             suggestions = self.provider.get_extractable_ranges(full_path, function_name)
-
-            # Get function source
             func_source = self.provider.get_function_source(full_path, function_name)
 
-            # Format output
-            output = f"""
-=== Function Analysis: {function_name} ===
-File: {file_path}
-Lines: {location[0]}-{location[1]}
-
-METRICS:
-  Cyclomatic Complexity: {metrics.cyclomatic_complexity if metrics else 'N/A'} (threshold: 10)
-  Cognitive Complexity: {metrics.cognitive_complexity if metrics else 'N/A'}
-  Nesting Depth: {metrics.nesting_depth if metrics else 'N/A'} (threshold: 4)
-  Line Count: {metrics.line_count if metrics else 'N/A'}
-  Branches: {metrics.branch_count if metrics else 'N/A'}
-  Loops: {metrics.loop_count if metrics else 'N/A'}
-"""
-
-            if suggestions:
-                output += "\nEXTRACTION SUGGESTIONS:\n"
-                for i, s in enumerate(suggestions[:5], 1):
-                    extractable = "✓" if s.get('extractable', True) else "✗"
-                    output += f"  {i}. [{extractable}] {s['description']}\n"
-                    output += f"     Lines {s['start_line']}-{s['end_line']}, reduces complexity by ~{s['estimated_complexity_reduction']}\n"
-                    if s.get('reason'):
-                        output += f"     Note: {s['reason']}\n"
-
-            if func_source:
-                output += f"\nFUNCTION SOURCE:\n```python\n{func_source[:2000]}\n```"
-
+            output = self._format_analysis_output(
+                function_name, file_path, location, metrics, suggestions, func_source
+            )
             return ToolResult.success_result("analyze_function", output)
 
         except Exception as e:

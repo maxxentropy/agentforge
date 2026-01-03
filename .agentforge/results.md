@@ -7,15 +7,15 @@
 | Mode | full |
 | Files Checked | 0 |
 | Checks Run | 158 |
-| Total Violations | 4680 |
+| Total Violations | 4685 |
 | Errors | 0 |
-| Warnings | 447 |
-| Duration | 15.46s |
+| Warnings | 445 |
+| Duration | 14.62s |
 
 ### All Violations
 
 <details>
-<summary>View all 4680 violations in 414 files</summary>
+<summary>View all 4685 violations in 414 files</summary>
 
 **`<unknown>`** (4 violations)
 
@@ -413,12 +413,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-function-length** at `L331`
   - Function 'status' has 59 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-nesting-depth** at `L73`
-  - Function '_display_result' has nesting depth 7 (max: 4)
-  - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🟡 **max-parameter-count** at `L154`
   - Function 'start' has 7 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
+- 🟡 **max-nesting-depth** at `L73`
+  - Function '_display_result' has nesting depth 7 (max: 4)
+  - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🟡 **max-file-lines** at `file`
   - File exceeds line limit (682 lines > 500)
   - 💡 *Consider splitting into smaller files*
@@ -3816,22 +3816,16 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 
-**`src/agentforge/core/context/fingerprint.py`** (23 violations)
+**`src/agentforge/core/context/fingerprint.py`** (28 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L353`
-  - Function '_detect_patterns' has complexity 22 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L405`
-  - Function '_detect_structure' has complexity 16 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-function-length** at `L405`
-  - Function '_detect_structure' has 61 lines (max: 50)
-  - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-nesting-depth** at `L353`
-  - Function '_detect_patterns' has nesting depth 6 (max: 4)
-  - 💡 *Use early returns, guard clauses, or extract nested logic*
+- 🟡 **max-class-size** at `L165`
+  - Class 'FingerprintGenerator' has 21 methods (max: 20)
+  - 💡 *Consider splitting into multiple classes with single responsibilities*
+- 🟡 **no-god-classes** at `L165`
+  - Class 'FingerprintGenerator' has 21 methods (max: 15)
+  - 💡 *Split large classes using composition or inheritance*
 - 🔵 **single-responsibility-modules** at `L165`
-  - Class 'FingerprintGenerator' has 14 methods (max: 3)
+  - Class 'FingerprintGenerator' has 21 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -3868,10 +3862,24 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **default-result-return-types** at `L342`
   - Method '_detect_technical' returns 'TechnicalProfile', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **default-result-return-types** at `L353`
+  - Method '_detect_architecture' returns 'str | None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L363`
+  - Method '_detect_import_style' returns 'str | None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L371`
+  - Method '_detect_docstring_style' returns 'str | None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L383`
+  - Method '_detect_error_handling' returns 'str | None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L391`
   - Method '_detect_patterns' returns 'DetectedPatterns', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L405`
+- 🔵 **default-result-return-types** at `L414`
+  - Method '_find_first_existing_dir' returns 'str', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L421`
+  - Method '_find_config_files' returns 'list[str]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L431`
+  - Method '_find_entry_points' returns 'list[str]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L449`
   - Method '_detect_structure' returns 'ProjectStructure', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L481`
+- 🔵 **default-result-return-types** at `L472`
   - Method 'clear_cache' returns 'None', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -5409,18 +5417,18 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-function-length** at `L484`
   - Function '_check_signal' has 88 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-nesting-depth** at `L484`
-  - Function '_check_signal' has nesting depth 11 (max: 4)
-  - 💡 *Use early returns, guard clauses, or extract nested logic*
-- 🟡 **max-nesting-depth** at `L654`
-  - Function '_detect_frameworks' has nesting depth 5 (max: 4)
-  - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🟡 **max-parameter-count** at `L484`
   - Function '_check_signal' has 8 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
 - 🟡 **max-parameter-count** at `L583`
   - Function '_add_match' has 6 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
+- 🟡 **max-nesting-depth** at `L484`
+  - Function '_check_signal' has nesting depth 11 (max: 4)
+  - 💡 *Use early returns, guard clauses, or extract nested logic*
+- 🟡 **max-nesting-depth** at `L654`
+  - Function '_detect_frameworks' has nesting depth 5 (max: 4)
+  - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🟡 **max-file-lines** at `file`
   - File exceeds line limit (715 lines > 500)
   - 💡 *Consider splitting into smaller files*
@@ -5790,18 +5798,18 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-file-lines** at `file`
   - File exceeds line limit (959 lines > 500)
   - 💡 *Consider splitting into smaller files*
+- 🔵 **max-imports** at `L1`
+  - File has 36 imports (max: 30)
+  - 💡 *Consider splitting module or consolidating imports*
+- 🔵 **max-imports** at `L1`
+  - File has 36 imports (max: 30)
+  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **single-responsibility-modules** at `L84`
   - Class 'DiscoveryManager' has 14 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
 - 🔵 **single-responsibility-modules** at `L546`
   - Class 'MultiZoneDiscoveryManager' has 11 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
-- 🔵 **max-imports** at `L1`
-  - File has 36 imports (max: 30)
-  - 💡 *Consider splitting module or consolidating imports*
-- 🔵 **max-imports** at `L1`
-  - File has 36 imports (max: 30)
-  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **max-imports** at `L1`
   - File has 36 imports (max: 30)
   - 💡 *Consider splitting module or consolidating imports*
@@ -7485,15 +7493,15 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-function-length** at `L894`
   - Function 'run_task_native' has 107 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
+- 🟡 **max-parameter-count** at `L103`
+  - Function '__init__' has 11 parameters (max: 5)
+  - 💡 *Group related parameters into a dataclass or use **kwargs*
 - 🟡 **max-nesting-depth** at `L255`
   - Function '_handle_phase_transition' has nesting depth 5 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🟡 **max-nesting-depth** at `L741`
   - Function 'run_until_complete' has nesting depth 5 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
-- 🟡 **max-parameter-count** at `L103`
-  - Function '__init__' has 11 parameters (max: 5)
-  - 💡 *Group related parameters into a dataclass or use **kwargs*
 - 🟡 **max-class-size** at `L80`
   - Class 'MinimalContextExecutor' has 21 methods (max: 20)
   - 💡 *Consider splitting into multiple classes with single responsibilities*
@@ -7503,15 +7511,15 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **no-god-classes** at `L80`
   - Class 'MinimalContextExecutor' has 21 methods (max: 15)
   - 💡 *Split large classes using composition or inheritance*
+- 🔵 **max-imports** at `L1`
+  - File has 40 imports (max: 30)
+  - 💡 *Consider splitting module or consolidating imports*
+- 🔵 **max-imports** at `L1`
+  - File has 40 imports (max: 30)
+  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **single-responsibility-modules** at `L80`
   - Class 'MinimalContextExecutor' has 21 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
-- 🔵 **max-imports** at `L1`
-  - File has 40 imports (max: 30)
-  - 💡 *Consider splitting module or consolidating imports*
-- 🔵 **max-imports** at `L1`
-  - File has 40 imports (max: 30)
-  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **max-imports** at `L1`
   - File has 40 imports (max: 30)
   - 💡 *Consider splitting module or consolidating imports*
@@ -9248,15 +9256,15 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/llm/client.py`** (12 violations)
 
-- 🟡 **max-nesting-depth** at `L136`
-  - Function '_build_request_params' has nesting depth 5 (max: 4)
-  - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🟡 **max-parameter-count** at `L95`
   - Function 'complete' has 6 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
 - 🟡 **max-parameter-count** at `L136`
   - Function '_build_request_params' has 6 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
+- 🟡 **max-nesting-depth** at `L136`
+  - Function '_build_request_params' has nesting depth 5 (max: 4)
+  - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🔵 **single-responsibility-modules** at `L46`
   - Class 'AnthropicLLMClient' has 7 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -11776,18 +11784,18 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-cyclomatic-complexity** at `L27`
   - Function 'test_cli_has_all_pipeline_commands' has complexity 12 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
+- 🔵 **max-imports** at `L1`
+  - File has 36 imports (max: 30)
+  - 💡 *Consider splitting module or consolidating imports*
+- 🔵 **max-imports** at `L1`
+  - File has 36 imports (max: 30)
+  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **single-responsibility-modules** at `L24`
   - Class 'TestCLICommandIntegration' has 7 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
 - 🔵 **single-responsibility-modules** at `L448`
   - Class 'TestCLIErrorHandling' has 4 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
-- 🔵 **max-imports** at `L1`
-  - File has 36 imports (max: 30)
-  - 💡 *Consider splitting module or consolidating imports*
-- 🔵 **max-imports** at `L1`
-  - File has 36 imports (max: 30)
-  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **max-imports** at `L1`
   - File has 36 imports (max: 30)
   - 💡 *Consider splitting module or consolidating imports*
@@ -11862,6 +11870,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`tests/integration/harness/test_harness_workflow.py`** (27 violations)
 
+- 🔵 **max-imports** at `L1`
+  - File has 34 imports (max: 30)
+  - 💡 *Consider splitting module or consolidating imports*
+- 🔵 **max-imports** at `L1`
+  - File has 34 imports (max: 30)
+  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **single-responsibility-modules** at `L55`
   - Class 'TestSessionLifecycle' has 4 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -11877,12 +11891,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **single-responsibility-modules** at `L419`
   - Class 'TestExecutionContextPersistence' has 4 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
-- 🔵 **max-imports** at `L1`
-  - File has 34 imports (max: 30)
-  - 💡 *Consider splitting module or consolidating imports*
-- 🔵 **max-imports** at `L1`
-  - File has 34 imports (max: 30)
-  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **max-imports** at `L1`
   - File has 34 imports (max: 30)
   - 💡 *Consider splitting module or consolidating imports*
@@ -13524,6 +13532,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-cyclomatic-complexity** at `L1760`
   - Function 'test_migrate_v1_to_v2' has complexity 11 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
+- 🔵 **max-imports** at `L1`
+  - File has 99 imports (max: 30)
+  - 💡 *Consider splitting module or consolidating imports*
+- 🔵 **max-imports** at `L1`
+  - File has 99 imports (max: 30)
+  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **single-responsibility-modules** at `L49`
   - Class 'TestFact' has 4 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -13560,12 +13574,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **single-responsibility-modules** at `L1891`
   - Class 'TestFactCompaction' has 4 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
-- 🔵 **max-imports** at `L1`
-  - File has 99 imports (max: 30)
-  - 💡 *Consider splitting module or consolidating imports*
-- 🔵 **max-imports** at `L1`
-  - File has 99 imports (max: 30)
-  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **max-imports** at `L1`
   - File has 99 imports (max: 30)
   - 💡 *Consider splitting module or consolidating imports*
@@ -15030,6 +15038,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`tests/unit/pipeline/stages/test_deliver.py`** (13 violations)
 
+- 🔵 **max-imports** at `L1`
+  - File has 71 imports (max: 30)
+  - 💡 *Consider splitting module or consolidating imports*
+- 🔵 **max-imports** at `L1`
+  - File has 71 imports (max: 30)
+  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **single-responsibility-modules** at `L14`
   - Class 'TestDeliveryMode' has 4 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -15051,12 +15065,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **single-responsibility-modules** at `L601`
   - Class 'TestDeliverPhaseSummaryGeneration' has 4 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
-- 🔵 **max-imports** at `L1`
-  - File has 71 imports (max: 30)
-  - 💡 *Consider splitting module or consolidating imports*
-- 🔵 **max-imports** at `L1`
-  - File has 71 imports (max: 30)
-  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **max-imports** at `L1`
   - File has 71 imports (max: 30)
   - 💡 *Consider splitting module or consolidating imports*
@@ -15172,18 +15180,18 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`tests/unit/pipeline/stages/test_refactor.py`** (8 violations)
 
+- 🔵 **max-imports** at `L1`
+  - File has 40 imports (max: 30)
+  - 💡 *Consider splitting module or consolidating imports*
+- 🔵 **max-imports** at `L1`
+  - File has 40 imports (max: 30)
+  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **single-responsibility-modules** at `L13`
   - Class 'TestRefactorPhaseExecutor' has 6 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
 - 🔵 **single-responsibility-modules** at `L127`
   - Class 'TestRefactorPhaseExecution' has 4 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
-- 🔵 **max-imports** at `L1`
-  - File has 40 imports (max: 30)
-  - 💡 *Consider splitting module or consolidating imports*
-- 🔵 **max-imports** at `L1`
-  - File has 40 imports (max: 30)
-  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **max-imports** at `L1`
   - File has 40 imports (max: 30)
   - 💡 *Consider splitting module or consolidating imports*
@@ -15278,6 +15286,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`tests/unit/pipeline/test_config.py`** (10 violations)
 
+- 🔵 **max-imports** at `L1`
+  - File has 37 imports (max: 30)
+  - 💡 *Consider splitting module or consolidating imports*
+- 🔵 **max-imports** at `L1`
+  - File has 37 imports (max: 30)
+  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **single-responsibility-modules** at `L125`
   - Class 'TestConfigurationLoader' has 12 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -15290,12 +15304,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **single-responsibility-modules** at `L438`
   - Class 'TestPipelineTemplateLoader' has 5 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
-- 🔵 **max-imports** at `L1`
-  - File has 37 imports (max: 30)
-  - 💡 *Consider splitting module or consolidating imports*
-- 🔵 **max-imports** at `L1`
-  - File has 37 imports (max: 30)
-  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **max-imports** at `L1`
   - File has 37 imports (max: 30)
   - 💡 *Consider splitting module or consolidating imports*
@@ -15321,18 +15329,18 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`tests/unit/pipeline/test_config_validator.py`** (8 violations)
 
+- 🔵 **max-imports** at `L1`
+  - File has 35 imports (max: 30)
+  - 💡 *Consider splitting module or consolidating imports*
+- 🔵 **max-imports** at `L1`
+  - File has 35 imports (max: 30)
+  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **single-responsibility-modules** at `L36`
   - Class 'TestConfigValidator' has 13 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
 - 🔵 **single-responsibility-modules** at `L263`
   - Class 'TestConfigValidatorIntegration' has 4 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
-- 🔵 **max-imports** at `L1`
-  - File has 35 imports (max: 30)
-  - 💡 *Consider splitting module or consolidating imports*
-- 🔵 **max-imports** at `L1`
-  - File has 35 imports (max: 30)
-  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **max-imports** at `L1`
   - File has 35 imports (max: 30)
   - 💡 *Consider splitting module or consolidating imports*
@@ -17035,5 +17043,5 @@ Or regenerate file through TDFLOW to get proper lineage.*
 </details>
 
 ---
-*Generated at 2026-01-03 18:18:21 UTC*
-*Commit: `bc3639a0`*
+*Generated at 2026-01-03 18:22:17 UTC*
+*Commit: `3a2cd313`*

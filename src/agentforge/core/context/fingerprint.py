@@ -350,131 +350,122 @@ class FingerprintGenerator:
             build_system=None, test_framework="unknown",
         )
 
+    def _detect_architecture(self, subdirs: list[str]) -> str | None:
+        """Detect architecture pattern from subdirectory names."""
+        if "domain" in subdirs and "infrastructure" in subdirs:
+            return "clean_architecture"
+        if "models" in subdirs and "views" in subdirs:
+            return "mvc"
+        if "handlers" in subdirs and "services" in subdirs:
+            return "hexagonal"
+        return None
+
+    def _detect_import_style(self, content: str) -> str | None:
+        """Detect import style from file content."""
+        if re.search(r"from\s+src\.", content) or re.search(r"from\s+\w+\.", content):
+            return "absolute"
+        if re.search(r"from\s+\.", content):
+            return "relative"
+        return None
+
+    def _detect_docstring_style(self, content: str) -> str | None:
+        """Detect docstring style from file content."""
+        if '"""' not in content:
+            return None
+        if re.search(r"Args:\s*\n", content):
+            return "google"
+        if re.search(r"Parameters\s*\n\s*-+", content):
+            return "numpy"
+        if re.search(r":param\s+", content):
+            return "sphinx"
+        return None
+
+    def _detect_error_handling(self, content: str) -> str | None:
+        """Detect error handling style from file content."""
+        if "raise " in content:
+            return "exceptions"
+        if "Result[" in content or "Either[" in content:
+            return "result_types"
+        return None
+
     def _detect_patterns(self) -> DetectedPatterns:
         """Detect code patterns from source files."""
         patterns = DetectedPatterns()
 
-        # Check for architecture patterns
         src_dir = self.project_path / "src"
         if src_dir.exists():
             subdirs = [d.name for d in src_dir.iterdir() if d.is_dir()]
+            patterns.architecture = self._detect_architecture(subdirs)
 
-            if "domain" in subdirs and "infrastructure" in subdirs:
-                patterns.architecture = "clean_architecture"
-            elif "models" in subdirs and "views" in subdirs:
-                patterns.architecture = "mvc"
-            elif "handlers" in subdirs and "services" in subdirs:
-                patterns.architecture = "hexagonal"
-
-        # Sample source files for code patterns
         py_files = list(self.project_path.glob("src/**/*.py"))[:10]
         if py_files:
-            patterns.naming = "snake_case"  # Python convention
-
+            patterns.naming = "snake_case"
             for py_file in py_files:
                 try:
                     content = py_file.read_text(encoding="utf-8")
                 except Exception:
                     continue
-
-                # Import style
-                if re.search(r"from\s+src\.", content) or re.search(
-                    r"from\s+\w+\.", content
-                ):
-                    patterns.imports = "absolute"
-                elif re.search(r"from\s+\.", content):
-                    patterns.imports = "relative"
-
-                # Docstring style
-                if '"""' in content:
-                    if re.search(r"Args:\s*\n", content):
-                        patterns.docstrings = "google"
-                    elif re.search(r"Parameters\s*\n\s*-+", content):
-                        patterns.docstrings = "numpy"
-                    elif re.search(r":param\s+", content):
-                        patterns.docstrings = "sphinx"
-
-                # Error handling
-                if "raise " in content:
-                    patterns.error_handling = "exceptions"
-                elif "Result[" in content or "Either[" in content:
-                    patterns.error_handling = "result_types"
+                patterns.imports = patterns.imports or self._detect_import_style(content)
+                patterns.docstrings = patterns.docstrings or self._detect_docstring_style(content)
+                patterns.error_handling = patterns.error_handling or self._detect_error_handling(content)
 
         return patterns
 
-    def _detect_structure(self) -> ProjectStructure:
-        """Detect project directory structure."""
-        source_root = "src"
-        test_root = "tests"
+    def _find_first_existing_dir(self, candidates: list[str], default: str) -> str:
+        """Find first existing directory from candidates."""
+        for candidate in candidates:
+            if (self.project_path / candidate).is_dir():
+                return candidate
+        return default
+
+    def _find_config_files(self, patterns: list[str]) -> list[str]:
+        """Find config files matching patterns."""
         config_files: list[str] = []
-        entry_points: list[str] = []
-
-        # Find source root
-        for candidate in ["src", "lib", "app", "source"]:
-            if (self.project_path / candidate).is_dir():
-                source_root = candidate
-                break
-
-        # Find test root
-        for candidate in ["tests", "test", "spec", "specs"]:
-            if (self.project_path / candidate).is_dir():
-                test_root = candidate
-                break
-
-        # Find config files
-        config_patterns = [
-            "pyproject.toml",
-            "setup.py",
-            "setup.cfg",
-            "package.json",
-            "tsconfig.json",
-            "Cargo.toml",
-            "go.mod",
-            ".agentforge/*.yaml",
-            ".agentforge/*.md",
-        ]
-        for pattern in config_patterns:
+        for pattern in patterns:
             for f in self.project_path.glob(pattern):
                 rel_path = str(f.relative_to(self.project_path))
                 if rel_path not in config_files:
                     config_files.append(rel_path)
+        return config_files[:10]
 
-        # Find entry points (check root and common locations)
-        entry_patterns = [
-            "main.py",
-            "__main__.py",
-            "cli.py",
-            "app.py",
-            "index.js",
-            "index.ts",
-            "main.go",
-            "main.rs",
-        ]
-
-        # Search locations: root, source_root, and common directories
-        search_dirs = [
-            self.project_path,
-            self.project_path / source_root,
-        ]
-
+    def _find_entry_points(self, source_root: str, patterns: list[str]) -> list[str]:
+        """Find entry point files."""
+        entry_points: list[str] = []
+        search_dirs = [self.project_path, self.project_path / source_root]
         for search_dir in search_dirs:
             if not search_dir.exists():
                 continue
-            for pattern in entry_patterns:
+            for pattern in patterns:
                 entry_file = search_dir / pattern
-                if entry_file.exists():
-                    rel_path = str(entry_file.relative_to(self.project_path))
-                    # Skip files in test directories (but not files that just have "test" in path)
-                    if rel_path.startswith("test") or "/test" in rel_path:
-                        continue
-                    if rel_path not in entry_points and len(entry_points) < 5:
-                        entry_points.append(rel_path)
+                if not entry_file.exists():
+                    continue
+                rel_path = str(entry_file.relative_to(self.project_path))
+                if rel_path.startswith("test") or "/test" in rel_path:
+                    continue
+                if rel_path not in entry_points and len(entry_points) < 5:
+                    entry_points.append(rel_path)
+        return entry_points
+
+    def _detect_structure(self) -> ProjectStructure:
+        """Detect project directory structure."""
+        source_root = self._find_first_existing_dir(["src", "lib", "app", "source"], "src")
+        test_root = self._find_first_existing_dir(["tests", "test", "spec", "specs"], "tests")
+
+        config_patterns = [
+            "pyproject.toml", "setup.py", "setup.cfg", "package.json",
+            "tsconfig.json", "Cargo.toml", "go.mod",
+            ".agentforge/*.yaml", ".agentforge/*.md",
+        ]
+        entry_patterns = [
+            "main.py", "__main__.py", "cli.py", "app.py",
+            "index.js", "index.ts", "main.go", "main.rs",
+        ]
 
         return ProjectStructure(
             source_root=source_root,
             test_root=test_root,
-            config_files=config_files[:10],  # Limit
-            entry_points=entry_points[:5],  # Limit
+            config_files=self._find_config_files(config_patterns),
+            entry_points=self._find_entry_points(source_root, entry_patterns),
         )
 
     @classmethod

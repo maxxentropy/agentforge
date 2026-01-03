@@ -126,6 +126,32 @@ class DiscoveryManager:
         self._pattern_result: PatternAnalysisResult | None = None
         self._test_analysis: CoverageGapAnalysis | None = None  # type: ignore
 
+    def _default_phases(self) -> list[DiscoveryPhase]:
+        """Return default discovery phases."""
+        return [
+            DiscoveryPhase.LANGUAGE,
+            DiscoveryPhase.STRUCTURE,
+            DiscoveryPhase.PATTERNS,
+            DiscoveryPhase.ARCHITECTURE,
+            DiscoveryPhase.TESTS,
+        ]
+
+    def _execute_phase(self, phase: DiscoveryPhase, errors: list[str]) -> None:
+        """Execute a single phase and collect errors."""
+        try:
+            result = self._run_phase(phase)
+            self._phase_results[phase] = result
+            if result.status == DiscoveryPhaseStatus.FAILED:
+                errors.append(f"{phase.value}: {result.error}")
+        except Exception as e:
+            errors.append(f"{phase.value}: {str(e)}")
+            self._phase_results[phase] = PhaseResult(
+                phase=phase,
+                status=DiscoveryPhaseStatus.FAILED,
+                duration_seconds=0,
+                error=str(e),
+            )
+
     def discover(
         self,
         phases: list[DiscoveryPhase] | None = None,
@@ -133,57 +159,19 @@ class DiscoveryManager:
         generate_specs: bool = False,
         embed_lineage: bool = False,
     ) -> DiscoveryResult:
-        """
-        Run discovery process.
-
-        Args:
-            phases: Specific phases to run, or None for all phases
-            save_profile: Whether to save profile to disk
-            generate_specs: Whether to generate as-built specs (Artifact Parity)
-            embed_lineage: Whether to embed lineage metadata in source files
-
-        Returns:
-            DiscoveryResult with profile and phase results
-        """
+        """Run discovery process."""
         start_time = time.time()
-
-        # Default to all implemented phases
-        if phases is None:
-            phases = [
-                DiscoveryPhase.LANGUAGE,
-                DiscoveryPhase.STRUCTURE,
-                DiscoveryPhase.PATTERNS,
-                DiscoveryPhase.ARCHITECTURE,
-                DiscoveryPhase.TESTS,
-            ]
-
-        errors = []
-        warnings = []
+        phases = phases or self._default_phases()
+        errors: list[str] = []
+        warnings: list[str] = []
 
         # Run each phase
         for i, phase in enumerate(phases):
-            progress = (i / len(phases)) * 100
-            self._report_progress(f"Running {phase.value}...", progress)
-
-            try:
-                result = self._run_phase(phase)
-                self._phase_results[phase] = result
-
-                if result.status == DiscoveryPhaseStatus.FAILED:
-                    errors.append(f"{phase.value}: {result.error}")
-            except Exception as e:
-                errors.append(f"{phase.value}: {str(e)}")
-                self._phase_results[phase] = PhaseResult(
-                    phase=phase,
-                    status=DiscoveryPhaseStatus.FAILED,
-                    duration_seconds=0,
-                    error=str(e),
-                )
+            self._report_progress(f"Running {phase.value}...", (i / len(phases)) * 100)
+            self._execute_phase(phase, errors)
 
         # Generate profile
-        profile = None
-        profile_path = None
-
+        profile, profile_path = None, None
         if not errors or self._has_minimum_results():
             try:
                 self._report_progress("Generating profile...", 85)
@@ -191,10 +179,9 @@ class DiscoveryManager:
             except Exception as e:
                 errors.append(f"Profile generation: {str(e)}")
 
-        # Generate as-built specs (Artifact Parity)
+        # Generate as-built specs
         spec_paths: list[Path] = []
         lineage_embedded = 0
-
         if generate_specs and self._test_analysis:
             try:
                 self._report_progress("Generating as-built specs...", 92)
@@ -204,15 +191,13 @@ class DiscoveryManager:
             except Exception as e:
                 warnings.append(f"As-built spec generation: {str(e)}")
 
-        total_duration = time.time() - start_time
         self._report_progress("Discovery complete", 100)
-
         return DiscoveryResult(
             success=len(errors) == 0,
             profile=profile,
             profile_path=profile_path,
             phases=self._phase_results,
-            total_duration_seconds=total_duration,
+            total_duration_seconds=time.time() - start_time,
             errors=errors,
             warnings=warnings,
             spec_paths=spec_paths,

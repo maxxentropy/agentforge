@@ -157,54 +157,59 @@ Requirements:
         """Get test generation system prompt."""
         return self.SYSTEM_PROMPT
 
+    def _format_component(self, comp: dict) -> str:
+        """Format a single component with its interface."""
+        result = f"\n### {comp.get('name', 'Unknown')}\n"
+        result += f"Type: {comp.get('type', 'unknown')}\n"
+        result += f"File: {comp.get('file_path', 'unknown')}\n"
+        result += f"Description: {comp.get('description', 'N/A')}\n"
+
+        interface = comp.get("interface", {})
+        if interface.get("methods"):
+            result += "Methods:\n"
+            for method in interface["methods"]:
+                result += f"  - {method.get('signature', 'N/A')}\n"
+                result += f"    {method.get('description', '')}\n"
+        return result
+
+    def _format_test_case(self, tc: dict) -> str:
+        """Format a single test case."""
+        result = f"\n### {tc.get('id', 'TC-?')}: {tc.get('description', 'N/A')}\n"
+        result += f"Component: {tc.get('component', 'unknown')}\n"
+        result += f"Type: {tc.get('type', 'unit')}\n"
+        result += f"Given: {tc.get('given', 'N/A')}\n"
+        result += f"When: {tc.get('when', 'N/A')}\n"
+        result += f"Then: {tc.get('then', 'N/A')}\n"
+        return result
+
+    def _format_acceptance_criteria(self, criteria: list | Any) -> str:
+        """Format acceptance criteria list."""
+        if not isinstance(criteria, list):
+            return "- No specific criteria"
+        if not criteria:
+            return "- No specific criteria"
+        return "\n".join([
+            f"- {c.get('criterion', c) if isinstance(c, dict) else c}"
+            for c in criteria
+        ])
+
     def get_user_message(self, context: StageContext) -> str:
         """Build user message for test generation."""
         spec = context.input_artifacts
 
-        # Format components detail
-        components = spec.get("components", [])
-        components_detail = ""
-        for comp in components:
-            components_detail += f"\n### {comp.get('name', 'Unknown')}\n"
-            components_detail += f"Type: {comp.get('type', 'unknown')}\n"
-            components_detail += f"File: {comp.get('file_path', 'unknown')}\n"
-            components_detail += f"Description: {comp.get('description', 'N/A')}\n"
-
-            # Include interface if present
-            interface = comp.get("interface", {})
-            if interface.get("methods"):
-                components_detail += "Methods:\n"
-                for method in interface["methods"]:
-                    components_detail += f"  - {method.get('signature', 'N/A')}\n"
-                    components_detail += f"    {method.get('description', '')}\n"
-
-        # Format test cases
-        test_cases = spec.get("test_cases", [])
-        test_cases_detail = ""
-        for tc in test_cases:
-            test_cases_detail += f"\n### {tc.get('id', 'TC-?')}: {tc.get('description', 'N/A')}\n"
-            test_cases_detail += f"Component: {tc.get('component', 'unknown')}\n"
-            test_cases_detail += f"Type: {tc.get('type', 'unit')}\n"
-            test_cases_detail += f"Given: {tc.get('given', 'N/A')}\n"
-            test_cases_detail += f"When: {tc.get('when', 'N/A')}\n"
-            test_cases_detail += f"Then: {tc.get('then', 'N/A')}\n"
-
-        # Format acceptance criteria
-        criteria = spec.get("acceptance_criteria", [])
-        if isinstance(criteria, list):
-            criteria_detail = "\n".join([
-                f"- {c.get('criterion', c) if isinstance(c, dict) else c}"
-                for c in criteria
-            ]) or "- No specific criteria"
-        else:
-            criteria_detail = "- No specific criteria"
+        components_detail = "".join(
+            self._format_component(comp) for comp in spec.get("components", [])
+        )
+        test_cases_detail = "".join(
+            self._format_test_case(tc) for tc in spec.get("test_cases", [])
+        )
 
         return self.USER_MESSAGE_TEMPLATE.format(
             spec_id=spec.get("spec_id", "SPEC-UNKNOWN"),
             title=spec.get("title", "Unknown Feature"),
             components_detail=components_detail or "(No components defined)",
             test_cases_detail=test_cases_detail or "(No test cases defined)",
-            acceptance_criteria=criteria_detail,
+            acceptance_criteria=self._format_acceptance_criteria(spec.get("acceptance_criteria", [])),
         )
 
     def parse_response(

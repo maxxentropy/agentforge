@@ -153,30 +153,41 @@ class BridgeOrchestrator:
 
         return self._contracts, report
 
+    def _log(self, message: str) -> None:
+        """Print message if verbose mode is enabled."""
+        if self.verbose:
+            print(message)
+
+    def _create_zone_context(self, zone_name: str):
+        """Create mapping context for a zone."""
+        return self.loader.create_context(
+            zone_name if zone_name != "default" else None
+        )
+
+    def _handle_conflicts(self, contract: GeneratedContract) -> GeneratedContract:
+        """Detect and resolve conflicts in a contract."""
+        conflicts = self.resolver.detect_conflicts(contract)
+        if not conflicts:
+            return contract
+        self._log(f"    Detected {len(conflicts)} conflict(s)")
+        self._all_conflicts.extend(conflicts)
+        return self.resolver.resolve_conflicts(conflicts, contract)
+
     def _generate_zone_contract(
         self,
         zone_name: str
     ) -> GeneratedContract | None:
         """Generate contract for a single zone."""
-        if self.verbose:
-            print(f"  Generating checks for zone: {zone_name}...")
+        self._log(f"  Generating checks for zone: {zone_name}...")
 
-        # Create mapping context
-        if zone_name == "default":
-            context = self.loader.create_context()
-        else:
-            context = self.loader.create_context(zone_name)
-
-        # Generate checks using all applicable mappings
+        context = self._create_zone_context(zone_name)
         checks = MappingRegistry.generate_checks(context)
 
-        if self.verbose:
-            print(f"    Generated {len(checks)} checks from mappings")
+        self._log(f"    Generated {len(checks)} checks from mappings")
 
         if not checks:
             return None
 
-        # Build contract
         contract = self.builder.build_contract(
             zone_name=zone_name if zone_name != "default" else None,
             language=context.language,
@@ -186,16 +197,8 @@ class BridgeOrchestrator:
             confidence_threshold=self.confidence_threshold,
         )
 
-        # Detect and resolve conflicts
-        conflicts = self.resolver.detect_conflicts(contract)
-        if conflicts:
-            if self.verbose:
-                print(f"    Detected {len(conflicts)} conflict(s)")
-            self._all_conflicts.extend(conflicts)
-            contract = self.resolver.resolve_conflicts(conflicts, contract)
-
-        if self.verbose:
-            print(f"    Final: {contract.enabled_count} enabled, {contract.disabled_count} disabled")
+        contract = self._handle_conflicts(contract)
+        self._log(f"    Final: {contract.enabled_count} enabled, {contract.disabled_count} disabled")
 
         return contract
 

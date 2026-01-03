@@ -425,53 +425,44 @@ class PhaseMachine:
 
         return issues
 
+    # Standard phase progression order
+    _PHASE_ORDER = [
+        Phase.INIT, Phase.ANALYZE, Phase.PLAN,
+        Phase.IMPLEMENT, Phase.VERIFY, Phase.COMPLETE,
+    ]
+
+    def _find_forward_transition(self, context: PhaseContext) -> Phase | None:
+        """Find next forward phase transition if available."""
+        available = self.get_available_transitions(context)
+        current_idx = (
+            self._PHASE_ORDER.index(self._current_phase)
+            if self._current_phase in self._PHASE_ORDER
+            else 0
+        )
+        for t in available:
+            if t.to_phase in self._PHASE_ORDER:
+                if self._PHASE_ORDER.index(t.to_phase) > current_idx:
+                    return t.to_phase
+        return None
+
     def should_auto_transition(self, context: PhaseContext) -> Phase | None:
-        """
-        Check if we should automatically transition based on conditions.
-
-        Returns target phase if auto-transition should occur, None otherwise.
-        """
+        """Check if we should automatically transition based on conditions."""
         config = self._phase_configs.get(self._current_phase)
-
         if not config:
             return None
 
-        # Check for max steps exceeded
+        # Max steps exceeded - try any transition, else escalate
         if self._steps_in_phase >= config.max_steps:
-            # Look for any valid transition
             available = self.get_available_transitions(context)
-            if available:
-                return available[0].to_phase
-            # If no valid transitions and max steps hit, consider escalation
-            return Phase.ESCALATED
+            return available[0].to_phase if available else Phase.ESCALATED
 
-        # Check for phase failure condition
+        # Failure condition met
         if config.failure_condition and config.failure_condition(context):
             return Phase.FAILED
 
-        # Check for phase success - should we advance?
+        # Success condition met - find forward transition
         if config.success_condition(context):
-            available = self.get_available_transitions(context)
-            # Return the "forward" transition (not back to same or earlier phase)
-            phase_order = [
-                Phase.INIT,
-                Phase.ANALYZE,
-                Phase.PLAN,
-                Phase.IMPLEMENT,
-                Phase.VERIFY,
-                Phase.COMPLETE,
-            ]
-            current_idx = (
-                phase_order.index(self._current_phase)
-                if self._current_phase in phase_order
-                else 0
-            )
-
-            for t in available:
-                if t.to_phase in phase_order:
-                    target_idx = phase_order.index(t.to_phase)
-                    if target_idx > current_idx:
-                        return t.to_phase
+            return self._find_forward_transition(context)
 
         return None
 

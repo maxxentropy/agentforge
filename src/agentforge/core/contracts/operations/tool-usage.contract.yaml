@@ -1,0 +1,111 @@
+# Operation Contract: Tool Usage
+# Governs when and how tools should be used across all requests.
+#
+# These rules encode best practices that apply universally,
+# preventing common mistakes and ensuring consistent tool usage.
+
+id: operation.tool-usage.v1
+version: "1.0"
+description: Governs when and how tools should be used
+
+rules:
+  - id: read-before-edit
+    description: Must read a file before editing it
+    check_type: sequence_constraint
+    details:
+      for_tool: Edit
+      requires_prior: Read
+      same_field: file_path
+    severity: error
+    rationale: |
+      Editing without reading leads to incorrect assumptions about
+      file content, indentation, and context. Always read first.
+
+  - id: glob-for-discovery
+    description: Use Glob for file discovery by pattern
+    check_type: tool_preference
+    details:
+      preferred: Glob
+      discouraged_bash: ["find", "ls -R"]
+      for_operation: file_discovery
+    severity: warning
+    rationale: |
+      Glob is optimized for pattern matching and returns structured
+      results. Shell commands are harder to parse and less reliable.
+
+  - id: grep-for-content
+    description: Use Grep for content search, not shell grep
+    check_type: tool_preference
+    details:
+      preferred: Grep
+      discouraged_bash: ["grep", "rg", "ag"]
+      for_operation: content_search
+    severity: warning
+    rationale: |
+      The Grep tool handles permissions, encoding, and output formatting
+      consistently. Shell grep can have unexpected behaviors.
+
+  - id: read-not-cat
+    description: Use Read tool, not cat/head/tail commands
+    check_type: tool_preference
+    details:
+      preferred: Read
+      discouraged_bash: ["cat", "head", "tail", "less", "more"]
+      for_operation: file_reading
+    severity: warning
+    rationale: |
+      Read tool provides proper line numbers, handles encoding,
+      and truncates appropriately. Shell commands may misbehave.
+
+  - id: write-not-echo
+    description: Use Write tool, not echo redirection
+    check_type: tool_preference
+    details:
+      preferred: Write
+      discouraged_bash: ["echo >", "cat >", "printf >"]
+      for_operation: file_creation
+    severity: warning
+    rationale: |
+      Write tool handles encoding and permissions consistently.
+      Shell redirection can corrupt files or fail silently.
+
+  - id: edit-not-sed
+    description: Use Edit tool, not sed/awk for modifications
+    check_type: tool_preference
+    details:
+      preferred: Edit
+      discouraged_bash: ["sed -i", "awk", "perl -i"]
+      for_operation: file_modification
+    severity: warning
+    rationale: |
+      Edit tool provides atomic, reversible changes with proper
+      context matching. Sed can corrupt files on partial matches.
+
+escalation_triggers:
+  - trigger_id: tool-repeated-failure
+    condition: Same tool call fails 3 times consecutively
+    severity: blocking
+    prompt: |
+      Tool is repeatedly failing. Please review:
+      - Is this the right tool for this task?
+      - Are the parameters correct?
+      - Is there a permissions or access issue?
+    rationale: Repeated failures indicate systemic issue requiring human judgment
+
+  - trigger_id: tool-unknown-error
+    condition: Tool returns an unexpected error type
+    severity: advisory
+    prompt: |
+      Tool returned an unexpected error. Should we:
+      - Retry with different parameters?
+      - Try an alternative approach?
+      - Escalate for investigation?
+    rationale: Unknown errors may indicate edge cases not handled by automation
+
+quality_gates:
+  - gate_id: tool-usage-review
+    checks:
+      - All file reads completed before edits
+      - No discouraged shell commands used
+      - Tool errors have been addressed
+    failure_action: escalate

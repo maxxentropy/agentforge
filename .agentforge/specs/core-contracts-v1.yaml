@@ -1,0 +1,176 @@
+# Specification: Contract Authoring System
+# Version: 1.0
+# Status: Active
+
+id: core-contracts-v1
+version: "1.0"
+status: active
+title: Contract Authoring System
+description: |
+  LLM-assisted contract authoring for trusted autonomous execution.
+  Contracts encode human judgment in machine-verifiable form,
+  enabling agents to operate autonomously within pre-approved bounds.
+
+# Dependencies on other specifications
+dependencies:
+  - core-llm-v1  # For LLM client interface
+
+# Components in this specification
+components:
+  # Core data structures
+  - id: contract-draft
+    name: Contract Draft Data Structures
+    type: module
+    path: src/agentforge/core/contracts/draft.py
+    test_path: tests/unit/contracts/test_draft.py
+    description: |
+      Dataclasses for contract drafts and related structures.
+      ContractDraft, StageContract, ValidationRule, etc.
+
+  - id: contract-registry
+    name: Contract Registry
+    type: module
+    path: src/agentforge/core/contracts/registry.py
+    test_path: tests/unit/contracts/test_registry.py
+    description: |
+      Storage and retrieval of approved contracts.
+      Handles persistence, versioning, and evolution.
+
+  - id: contract-drafter
+    name: Contract Drafter
+    type: module
+    path: src/agentforge/core/contracts/drafter.py
+    test_path: tests/unit/contracts/test_drafter.py
+    description: |
+      LLM-powered contract generation from natural language.
+      Uses specialized prompts to draft comprehensive contracts.
+
+  - id: contract-reviewer
+    name: Contract Reviewer
+    type: module
+    path: src/agentforge/core/contracts/reviewer.py
+    test_path: tests/unit/contracts/test_reviewer.py
+    description: |
+      Human review workflow for contract approval.
+      Handles feedback, modifications, and finalization.
+
+  - id: contract-enforcer
+    name: Contract Enforcer
+    type: module
+    path: src/agentforge/core/contracts/enforcer.py
+    test_path: tests/unit/contracts/test_enforcer.py
+    description: |
+      Runtime enforcement of approved contracts.
+      Validates stages, checks triggers, evaluates gates.
+
+  - id: contract-evolution
+    name: Contract Evolution Handler
+    type: module
+    path: src/agentforge/core/contracts/evolution.py
+    test_path: tests/unit/contracts/test_evolution.py
+    description: |
+      Handles contract evolution during execution.
+      Detects assumption violations, creates escalations.
+
+  - id: contract-cli
+    name: Contract CLI Commands
+    type: module
+    path: src/agentforge/core/contracts/cli.py
+    test_path: tests/unit/contracts/test_cli.py
+    description: |
+      CLI commands for contract management.
+      draft, review, list, show, approve, delete
+
+  - id: operation-contracts
+    name: Operation Contracts
+    type: templates
+    path: src/agentforge/core/contracts/operations/
+    test_path: tests/unit/contracts/test_operations.py
+    description: |
+      Pre-defined contracts for common operations.
+      Tool usage, git operations, safety rules.
+
+  - id: operation-contract-loader
+    name: Operation Contract Loader
+    type: module
+    path: src/agentforge/core/contracts/operations/loader.py
+    test_path: tests/unit/contracts/test_operations.py
+    description: |
+      Loads and validates operation contracts from YAML.
+      Provides unified access to all operation rules.
+
+  - id: contracts-module
+    name: Contracts Module
+    type: package
+    path: src/agentforge/core/contracts/__init__.py
+    description: |
+      Package initialization and exports.
+      Exposes all public contract authoring APIs.
+
+  - id: contracts-tests
+    name: Contracts Tests
+    type: test-package
+    path: tests/unit/contracts/__init__.py
+    description: |
+      Test package initialization for contract tests.
+
+  - id: contract-draft-tests
+    name: Contract Draft Tests
+    type: tests
+    path: tests/unit/contracts/test_draft.py
+    description: Tests for draft data structures.
+
+# Contract Types
+contract_types:
+  operation:
+    description: Universal rules that apply to all requests
+    templates:
+      - tool-usage.contract.yaml
+      - git-operations.contract.yaml
+      - safety-rules.contract.yaml
+
+  task:
+    description: Per-request contracts drafted by LLM
+    stages:
+      - intake
+      - clarify
+      - analyze
+      - spec
+      - implement
+      - validate
+      - complete
+
+# Workflows
+workflows:
+  contract_authoring:
+    description: End-to-end contract authoring workflow
+    steps:
+      - User provides natural language request
+      - ContractDrafter analyzes and drafts contracts
+      - Human reviews via ContractReviewer
+      - ApprovedContracts registered in ContractRegistry
+      - ContractEnforcer validates during execution
+      - ContractEvolutionHandler handles assumption violations
+
+  contract_review:
+    description: Human review workflow
+    modes:
+      - cli_prompts: Interactive CLI review
+      - yaml_editing: Direct YAML file editing (future)
+      - web_ui: Rich web interface (future)
+
+# Quality Requirements
+quality:
+  test_coverage:
+    target: 90%
+    current: ~100%  # 175 tests for contracts module
+
+  documentation:
+    - All public APIs have docstrings
+    - System prompts include rationale
+    - Operation contracts explain "why"
+
+  patterns:
+    - Dataclasses for data structures
+    - Factory pattern for client creation
+    - Strategy pattern for response handling

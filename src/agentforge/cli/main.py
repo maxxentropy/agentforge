@@ -125,6 +125,7 @@ from agentforge.cli.click_commands.spec import (
 from agentforge.cli.click_commands.tdflow import tdflow
 from agentforge.cli.click_commands.utility import context, render_spec, verify
 from agentforge.cli.click_commands.workspace import workspace
+from agentforge.core.contracts.cli import task_contracts
 
 # Register spec workflow commands
 cli.add_command(intake)
@@ -152,6 +153,7 @@ cli.add_command(tdflow)
 cli.add_command(ci)
 cli.add_command(generate)
 cli.add_command(agent)
+cli.add_command(task_contracts)
 
 # Register pipeline commands
 cli.add_command(start)

@@ -231,59 +231,99 @@ def _print_adaptation_summary(result: dict[str, Any], input_file: str):
     click.echo(f"  Non-Functional Requirements: {len(requirements.get('non_functional', []))}")
 
 
-def run_adapt(args):
-    """
-    Execute ADAPT phase - transform external spec to AgentForge format.
+def _handle_placement_decision(decision: PlacementDecision) -> str | None:
+    """Handle placement decision and return target_spec_id or None."""
+    if decision.action == PlacementAction.EXTEND:
+        click.echo("\n  Decision: EXTEND existing spec")
+        click.echo(f"  Spec: {decision.spec_id}")
+        click.echo(f"  Reason: {decision.reason}")
+        return decision.spec_id
 
-    This is the ON-RAMP for external specifications. It:
-    - Takes a rich external spec as PRIMARY INPUT
-    - Analyzes spec space to prevent fragmentation
-    - Uses SA agent (via contract) to map concepts to codebase reality
-    - Produces a canonical draft compatible with VALIDATE/REVISE/TDFLOW
-    """
+    if decision.action == PlacementAction.CREATE:
+        click.echo("\n  Decision: CREATE new spec")
+        if decision.suggested_spec_id:
+            click.echo(f"  Suggested ID: {decision.suggested_spec_id}")
+        click.echo(f"  Reason: {decision.reason}")
+        return None
+
+    # ESCALATE - ask user
+    selected = _handle_escalation(decision)
+    if selected:
+        click.echo(f"\n  User selected: EXTEND {selected}")
+        return selected
+    click.echo("\n  User selected: CREATE new spec")
+    return None
+
+
+def _build_inputs_with_options(inputs: dict, target_spec_id: str | None, args) -> None:
+    """Add placement and override options to inputs dict."""
+    if target_spec_id:
+        inputs['extend_spec_id'] = target_spec_id
+        inputs['placement_action'] = 'extend'
+        click.echo(f"\n  Mode: Extending {target_spec_id}")
+    else:
+        inputs['placement_action'] = 'create'
+
+    if args.spec_id:
+        inputs['override_spec_id'] = args.spec_id
+        click.echo(f"\n  Using override spec_id: {args.spec_id}")
+
+    if args.skip_review:
+        click.echo("\n  Note: SA review skipped (--skip-review flag)")
+        inputs['skip_review'] = True
+
+
+def _output_success(output_path: Path, result: dict, input_file: str, target_spec_id: str | None) -> None:
+    """Output success message with next steps."""
+    click.echo(f"\nAdapted specification saved to: {output_path}")
+    _print_adaptation_summary(result, input_file)
+
+    if target_spec_id:
+        click.echo()
+        click.echo("-" * 60)
+        click.echo("SPEC EXTENSION")
+        click.echo("-" * 60)
+        click.echo(f"  This feature will extend: {target_spec_id}")
+        click.echo("  Components should be added to the existing spec")
+        click.echo("  after validation and approval.")
+
+    click.echo()
+    click.echo("-" * 60)
+    click.echo("NEXT STEPS")
+    click.echo("-" * 60)
+    click.echo("  1. Review the adapted spec:")
+    click.echo(f"     cat {output_path}")
+    click.echo()
+    click.echo("  2. Validate the spec:")
+    click.echo(f"     agentforge validate --spec-file {output_path}")
+    click.echo()
+    click.echo("  3. Revise if needed:")
+    click.echo(f"     agentforge revise --spec-file {output_path}")
+    click.echo()
+    click.echo("  4. Implement with TDFLOW:")
+    click.echo(f"     agentforge tdflow start --spec {output_path}")
+
+
+def run_adapt(args):
+    """Execute ADAPT phase - transform external spec to AgentForge format."""
     click.echo()
     click.echo("=" * 60)
     click.echo("ADAPT - External Spec On-Ramp")
     click.echo("=" * 60)
 
-    # Load inputs
     click.echo(f"\n  Loading external spec: {args.input_file}")
     external_spec = _load_external_spec(args.input_file)
     click.echo(f"  Spec size: {len(external_spec)} characters")
 
-    # === SPEC PLACEMENT ANALYSIS ===
     click.echo("\n" + "-" * 60)
     click.echo("SPEC PLACEMENT ANALYSIS")
     click.echo("-" * 60)
 
     extend_spec = getattr(args, 'extend_spec', None)
     new_spec = getattr(args, 'new_spec', False)
-
     decision = _analyze_placement(external_spec, extend_spec, new_spec)
+    target_spec_id = _handle_placement_decision(decision)
 
-    target_spec_id = None
-    if decision.action == PlacementAction.EXTEND:
-        click.echo("\n  Decision: EXTEND existing spec")
-        click.echo(f"  Spec: {decision.spec_id}")
-        click.echo(f"  Reason: {decision.reason}")
-        target_spec_id = decision.spec_id
-
-    elif decision.action == PlacementAction.CREATE:
-        click.echo("\n  Decision: CREATE new spec")
-        if decision.suggested_spec_id:
-            click.echo(f"  Suggested ID: {decision.suggested_spec_id}")
-        click.echo(f"  Reason: {decision.reason}")
-
-    elif decision.action == PlacementAction.ESCALATE:
-        # Ask user to decide
-        selected = _handle_escalation(decision)
-        if selected:
-            target_spec_id = selected
-            click.echo(f"\n  User selected: EXTEND {target_spec_id}")
-        else:
-            click.echo("\n  User selected: CREATE new spec")
-
-    # === LOAD CONTEXT ===
     click.echo(f"\n  Loading codebase profile: {args.profile}")
     profile = _load_codebase_profile(args.profile)
     if profile:
@@ -293,71 +333,23 @@ def run_adapt(args):
     existing_spec_ids = _get_existing_spec_ids()
     click.echo(f"  Found {len(existing_spec_ids)} existing specs")
 
-    # Build contract inputs
     inputs = _build_adapt_inputs(
         external_spec=external_spec,
         profile=profile,
         existing_spec_ids=existing_spec_ids,
         original_file=args.input_file,
     )
+    _build_inputs_with_options(inputs, target_spec_id, args)
 
-    # Pass placement decision to contract
-    if target_spec_id:
-        inputs['extend_spec_id'] = target_spec_id
-        inputs['placement_action'] = 'extend'
-        click.echo(f"\n  Mode: Extending {target_spec_id}")
-    else:
-        inputs['placement_action'] = 'create'
-
-    # Override spec_id if provided via old flag (backwards compat)
-    if args.spec_id:
-        inputs['override_spec_id'] = args.spec_id
-        click.echo(f"\n  Using override spec_id: {args.spec_id}")
-
-    # Skip review note
-    if args.skip_review:
-        click.echo("\n  Note: SA review skipped (--skip-review flag)")
-        inputs['skip_review'] = True
-
-    # === EXECUTE ADAPTATION ===
     click.echo("\n" + "-" * 60)
     click.echo("Adapting external spec to AgentForge format...")
     click.echo("-" * 60)
 
     result = execute_contract('spec.adapt.v1', inputs, args.use_api)
 
-    # Save output
     output_path = Path(args.output)
     if _save_adapted_spec(result, output_path):
-        click.echo(f"\nAdapted specification saved to: {output_path}")
-        _print_adaptation_summary(result, args.input_file)
-
-        # Show placement info
-        if target_spec_id:
-            click.echo()
-            click.echo("-" * 60)
-            click.echo("SPEC EXTENSION")
-            click.echo("-" * 60)
-            click.echo(f"  This feature will extend: {target_spec_id}")
-            click.echo("  Components should be added to the existing spec")
-            click.echo("  after validation and approval.")
-
-        # Show next steps
-        click.echo()
-        click.echo("-" * 60)
-        click.echo("NEXT STEPS")
-        click.echo("-" * 60)
-        click.echo("  1. Review the adapted spec:")
-        click.echo(f"     cat {output_path}")
-        click.echo()
-        click.echo("  2. Validate the spec:")
-        click.echo(f"     agentforge validate --spec-file {output_path}")
-        click.echo()
-        click.echo("  3. Revise if needed:")
-        click.echo(f"     agentforge revise --spec-file {output_path}")
-        click.echo()
-        click.echo("  4. Implement with TDFLOW:")
-        click.echo(f"     agentforge tdflow start --spec {output_path}")
+        _output_success(output_path, result, args.input_file, target_spec_id)
     else:
         click.echo("\nAdaptation failed. Check the raw output for details.")
         raise SystemExit(1)

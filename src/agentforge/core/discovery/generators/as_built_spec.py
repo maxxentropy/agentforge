@@ -256,41 +256,47 @@ class AsBuiltSpecGenerator:
 
         return component
 
+    def _extract_class_entity(self, node: ast.ClassDef) -> DiscoveredEntity:
+        """Extract entity from class definition."""
+        entity_type = self._classify_class(node)
+        methods = [
+            m.name for m in node.body
+            if isinstance(m, ast.FunctionDef) and not m.name.startswith("_")
+        ]
+        return DiscoveredEntity(
+            name=node.name,
+            entity_type=entity_type,
+            line_number=node.lineno,
+            description=ast.get_docstring(node) or "",
+            methods=methods,
+        )
+
+    def _extract_function_entity(self, node: ast.FunctionDef) -> DiscoveredEntity | None:
+        """Extract entity from public function definition."""
+        if node.name.startswith("_"):
+            return None
+        return DiscoveredEntity(
+            name=node.name,
+            entity_type="function",
+            line_number=node.lineno,
+            description=ast.get_docstring(node) or "",
+        )
+
     def _extract_entities(self, content: str) -> list[DiscoveredEntity]:
         """Extract classes, functions, and enums from Python source."""
-        entities = []
-
         try:
             tree = ast.parse(content)
         except SyntaxError:
-            return entities
+            return []
 
+        entities = []
         for node in ast.iter_child_nodes(tree):
             if isinstance(node, ast.ClassDef):
-                entity_type = self._classify_class(node)
-                methods = [
-                    m.name for m in node.body
-                    if isinstance(m, ast.FunctionDef) and not m.name.startswith("_")
-                ]
-
-                entities.append(DiscoveredEntity(
-                    name=node.name,
-                    entity_type=entity_type,
-                    line_number=node.lineno,
-                    description=ast.get_docstring(node) or "",
-                    methods=methods,
-                ))
-
+                entities.append(self._extract_class_entity(node))
             elif isinstance(node, ast.FunctionDef):
-                # Only top-level functions (not methods)
-                if not node.name.startswith("_"):
-                    entities.append(DiscoveredEntity(
-                        name=node.name,
-                        entity_type="function",
-                        line_number=node.lineno,
-                        description=ast.get_docstring(node) or "",
-                    ))
-
+                entity = self._extract_function_entity(node)
+                if entity:
+                    entities.append(entity)
         return entities
 
     def _classify_class(self, node: ast.ClassDef) -> str:

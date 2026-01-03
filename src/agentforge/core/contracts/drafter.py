@@ -132,43 +132,53 @@ class ContractDrafter:
         self.config = config or DrafterConfig()
         self.system_prompt = self._load_system_prompt(system_prompt_path)
 
+    # Section formatters: (key, header, is_list, custom_formatter)
+    _PROMPT_SECTION_KEYS = [
+        ("role", "Role", False),
+        ("responsibilities", "Responsibilities", True),
+        ("principles", "Principles", True),
+        ("output_format", "Output Format", False),
+    ]
+
+    def _format_prompt_section(self, key: str, header: str, data: dict, is_list: bool) -> str | None:
+        """Format a single prompt section if present."""
+        if key not in data:
+            return None
+        value = data[key]
+        if is_list:
+            return f"# {header}\n" + "\n".join(f"- {item}" for item in value)
+        return f"# {header}\n{value}"
+
+    def _format_stages_section(self, data: dict) -> str | None:
+        """Format stages section if present."""
+        if "stages" not in data:
+            return None
+        lines = []
+        for stage in data["stages"]:
+            outputs = ", ".join(stage.get("typical_outputs", []))
+            lines.append(f"- {stage['name']}: {stage['purpose']} (outputs: {outputs})")
+        return f"# Pipeline Stages\n" + "\n".join(lines)
+
     def _load_system_prompt(self, path: Path | None = None) -> str:
         """Load the system prompt for contract drafting."""
         if path is None:
             path = Path(__file__).parent / "prompts" / "drafter_system.yaml"
 
         if not path.exists():
-            # Fallback to inline prompt
             return self._get_default_system_prompt()
 
         with open(path, encoding="utf-8") as f:
             prompt_data = yaml.safe_load(f)
 
-        # Construct prompt from YAML structure
         sections = []
+        for key, header, is_list in self._PROMPT_SECTION_KEYS:
+            section = self._format_prompt_section(key, header, prompt_data, is_list)
+            if section:
+                sections.append(section)
 
-        if "role" in prompt_data:
-            sections.append(f"# Role\n{prompt_data['role']}")
-
-        if "responsibilities" in prompt_data:
-            resp = "\n".join(f"- {r}" for r in prompt_data["responsibilities"])
-            sections.append(f"# Responsibilities\n{resp}")
-
-        if "principles" in prompt_data:
-            princ = "\n".join(f"- {p}" for p in prompt_data["principles"])
-            sections.append(f"# Principles\n{princ}")
-
-        if "stages" in prompt_data:
-            stages_text = []
-            for stage in prompt_data["stages"]:
-                outputs = ", ".join(stage.get("typical_outputs", []))
-                stages_text.append(
-                    f"- {stage['name']}: {stage['purpose']} (outputs: {outputs})"
-                )
-            sections.append(f"# Pipeline Stages\n" + "\n".join(stages_text))
-
-        if "output_format" in prompt_data:
-            sections.append(f"# Output Format\n{prompt_data['output_format']}")
+        stages = self._format_stages_section(prompt_data)
+        if stages:
+            sections.insert(3, stages)  # Insert before output_format
 
         return "\n\n".join(sections)
 

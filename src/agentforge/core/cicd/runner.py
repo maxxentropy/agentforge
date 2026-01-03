@@ -84,9 +84,9 @@ class CIRunner:
             # Execute checks (unified - includes operation contracts via ContractRegistry)
             violations = self._execute_checks(applicable_contracts, files_to_check)
 
-            # Handle baseline comparison for PR mode
+            # Handle baseline comparison for PR mode or ratchet mode
             comparison = None
-            if self.config.mode == CIMode.PR:
+            if self.config.mode == CIMode.PR or self.config.ratchet_enabled:
                 comparison = self._compare_baseline(violations)
 
             # Determine exit code
@@ -384,6 +384,12 @@ class CIRunner:
             error_count = sum(1 for v in violations if v.severity == "error")
             if error_count > self.config.total_errors_threshold:
                 return ExitCode.VIOLATIONS_FOUND
+
+        # Ratchet mode: only fail if violations INCREASED from baseline
+        if self.config.ratchet_enabled and comparison:
+            if comparison.should_fail_ratchet():
+                return ExitCode.VIOLATIONS_FOUND
+            return ExitCode.SUCCESS
 
         # For PR mode, use baseline comparison
         if comparison:

@@ -352,6 +352,18 @@ class BaselineComparison:
             return True
         return bool(fail_on_new_warnings and len(self.new_warnings) > 0)
 
+    def should_fail_ratchet(self) -> bool:
+        """
+        Determine if check should fail in ratchet mode.
+
+        Ratchet mode only fails if there are MORE violations than before.
+        This allows gradual improvement without blocking on existing tech debt.
+
+        Returns:
+            True if total violations increased (regression)
+        """
+        return self.net_change > 0
+
     @classmethod
     def compare(cls, violations: list[CIViolation], baseline: Baseline) -> "BaselineComparison":
         """
@@ -499,6 +511,7 @@ class CIConfig:
     fail_on_new_errors: bool = True
     fail_on_new_warnings: bool = False
     total_errors_threshold: int | None = None  # Absolute cap
+    ratchet_enabled: bool = False  # Only fail if violations increase from baseline
     baseline_path: str = ".agentforge/baseline.json"
     output_sarif: bool = True
     output_junit: bool = False
@@ -526,6 +539,7 @@ class CIConfig:
                 "new_warnings": self.fail_on_new_warnings,
                 "total_errors_exceed": self.total_errors_threshold,
             },
+            "ratchet_enabled": self.ratchet_enabled,
             "baseline_path": self.baseline_path,
             "output": {
                 "sarif": {"enabled": self.output_sarif, "path": self.sarif_path},
@@ -557,6 +571,7 @@ class CIConfig:
             fail_on_new_errors=fail_on.get("new_errors", True),
             fail_on_new_warnings=fail_on.get("new_warnings", False),
             total_errors_threshold=fail_on.get("total_errors_exceed"),
+            ratchet_enabled=data.get("ratchet_enabled", False),
             baseline_path=data.get("baseline_path", ".agentforge/baseline.json"),
             output_sarif=output.get("sarif", {}).get("enabled", True),
             output_junit=output.get("junit", {}).get("enabled", False),

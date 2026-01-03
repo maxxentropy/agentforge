@@ -34,18 +34,20 @@ def ci(ctx):
 @click.option('--parallel/--no-parallel', default=True, help='Enable parallel execution')
 @click.option('--workers', '-w', type=click.IntRange(1, 16), default=4,
               help='Number of parallel workers')
-@click.option('--output-sarif', is_flag=True, default=True, help='Generate SARIF output')
-@click.option('--output-junit', is_flag=True, default=False, help='Generate JUnit output')
-@click.option('--output-markdown', is_flag=True, default=True, help='Generate Markdown output')
+@click.option('--output-sarif/--no-output-sarif', default=True, help='Generate SARIF output')
+@click.option('--output-junit/--no-output-junit', default=False, help='Generate JUnit output')
+@click.option('--output-markdown/--no-output-markdown', default=True, help='Generate Markdown output')
 @click.option('--sarif-path', default='.agentforge/results.sarif', help='SARIF output path')
 @click.option('--junit-path', default='.agentforge/results.xml', help='JUnit output path')
 @click.option('--markdown-path', default='.agentforge/results.md', help='Markdown output path')
 @click.option('--fail-on-warnings', is_flag=True, default=False,
               help='Fail on new warnings (not just errors)')
+@click.option('--ratchet', is_flag=True, default=False,
+              help='Ratchet mode: only fail if violations increase from baseline')
 @click.option('--json', 'output_json', is_flag=True, help='Output result as JSON')
 @click.pass_context
 def ci_run(ctx, mode, base_ref, head_ref, parallel, workers, output_sarif, output_junit,
-           output_markdown, sarif_path, junit_path, markdown_path, fail_on_warnings, output_json):
+           output_markdown, sarif_path, junit_path, markdown_path, fail_on_warnings, ratchet, output_json):
     """Run conformance checks in CI mode."""
     from agentforge.cli.commands.ci import run_ci_check
 
@@ -62,6 +64,7 @@ def ci_run(ctx, mode, base_ref, head_ref, parallel, workers, output_sarif, outpu
     args.junit_path = junit_path
     args.markdown_path = markdown_path
     args.fail_on_warnings = fail_on_warnings
+    args.ratchet = ratchet
     args.json = output_json
 
     exit_code = run_ci_check(args)
@@ -122,3 +125,35 @@ def ci_init(ctx, platform, force):
     args.platform = platform
     args.force = force
     run_ci_init(args)
+
+
+@ci.group('hooks', help='Git hook management commands')
+@click.pass_context
+def ci_hooks(ctx):
+    """Manage git hooks for local development."""
+    pass
+
+
+@ci_hooks.command('install', help='Install pre-commit hook for local ratcheting')
+@click.option('--force', '-f', is_flag=True, help='Overwrite existing hook')
+@click.option('--mode', '-m', type=click.Choice(['ratchet', 'strict']),
+              default='ratchet', help='Hook mode: ratchet (default) or strict')
+@click.pass_context
+def hooks_install(ctx, force, mode):
+    """Install pre-commit hook for local conformance checking."""
+    from agentforge.cli.commands.ci import run_hooks_install
+
+    args = Args()
+    args.force = force
+    args.mode = mode
+    run_hooks_install(args)
+
+
+@ci_hooks.command('uninstall', help='Remove pre-commit hook')
+@click.pass_context
+def hooks_uninstall(ctx):
+    """Remove the pre-commit hook."""
+    from agentforge.cli.commands.ci import run_hooks_uninstall
+
+    args = Args()
+    run_hooks_uninstall(args)

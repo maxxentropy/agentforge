@@ -66,35 +66,28 @@ class ToolSelector:
 
         return tools
 
-    def detect_domain(self, project_path: Path) -> str | None:
-        """Auto-detect project domain from codebase.
-
-        Check for domain indicators:
-        - Python: pyproject.toml, requirements.txt, setup.py
-        - .NET: *.csproj, *.sln
-        - TypeScript: package.json with typescript dependency
-        """
-        if not project_path.exists() or not project_path.is_dir():
-            return None
-
-        # Check for Python indicators
+    def _detect_python(self, project_path: Path) -> bool:
+        """Check for Python project indicators."""
         python_files = [
             project_path / "pyproject.toml",
             project_path / "requirements.txt",
             project_path / "setup.py"
         ]
         if any(f.exists() for f in python_files):
-            return "python"
+            return True
+        return any(project_path.glob("**/*.py"))
 
-        # Check for .py files
-        if any(project_path.glob("**/*.py")):
-            return "python"
+    def _detect_dotnet(self, project_path: Path) -> bool:
+        """Check for .NET project indicators."""
+        return any(project_path.glob("**/*.csproj")) or any(project_path.glob("**/*.sln"))
 
-        # Check for .NET indicators
-        if any(project_path.glob("**/*.csproj")) or any(project_path.glob("**/*.sln")):
-            return "dotnet"
+    def _detect_typescript(self, project_path: Path) -> bool:
+        """Check for TypeScript project indicators."""
+        if (project_path / "tsconfig.json").exists():
+            return True
+        if any(project_path.glob("**/*.ts")) or any(project_path.glob("**/*.tsx")):
+            return True
 
-        # Check for TypeScript indicators
         package_json = project_path / "package.json"
         if package_json.exists():
             try:
@@ -104,15 +97,21 @@ class ToolSelector:
                     deps = data.get("dependencies", {})
                     dev_deps = data.get("devDependencies", {})
                     if "typescript" in deps or "typescript" in dev_deps:
-                        return "typescript"
+                        return True
             except (OSError, json.JSONDecodeError):
                 pass
+        return False
 
-        # Check for TypeScript files
-        if (project_path / "tsconfig.json").exists():
-            return "typescript"
+    def detect_domain(self, project_path: Path) -> str | None:
+        """Auto-detect project domain from codebase."""
+        if not project_path.exists() or not project_path.is_dir():
+            return None
 
-        if any(project_path.glob("**/*.ts")) or any(project_path.glob("**/*.tsx")):
+        if self._detect_python(project_path):
+            return "python"
+        if self._detect_dotnet(project_path):
+            return "dotnet"
+        if self._detect_typescript(project_path):
             return "typescript"
 
         return None

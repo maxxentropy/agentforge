@@ -40,6 +40,18 @@ class ToolCategory(Enum):
     MEMORY = "memory"  # Memory operations
 
 
+# Keyword mappings for category inference
+_CATEGORY_KEYWORDS: dict[ToolCategory, list[str]] = {
+    ToolCategory.FILE: ["read", "write", "edit", "file"],
+    ToolCategory.SEARCH: ["grep", "glob", "search", "find"],
+    ToolCategory.SHELL: ["bash", "shell", "command"],
+    ToolCategory.TEST: ["test", "pytest"],
+    ToolCategory.GIT: ["git", "commit", "push"],
+    ToolCategory.ANALYSIS: ["analyze", "lint", "check"],
+    ToolCategory.MEMORY: ["memory", "remember", "recall"],
+}
+
+
 @dataclass
 class ToolCall:
     """A request to execute a specific tool."""
@@ -54,23 +66,12 @@ class ToolCall:
             self.category = self._infer_category()
 
     def _infer_category(self) -> ToolCategory:
-        """Infer tool category from name."""
+        """Infer tool category from name using keyword lookup."""
         name_lower = self.name.lower()
 
-        if any(x in name_lower for x in ["read", "write", "edit", "file"]):
-            return ToolCategory.FILE
-        if any(x in name_lower for x in ["grep", "glob", "search", "find"]):
-            return ToolCategory.SEARCH
-        if any(x in name_lower for x in ["bash", "shell", "command"]):
-            return ToolCategory.SHELL
-        if any(x in name_lower for x in ["test", "pytest"]):
-            return ToolCategory.TEST
-        if any(x in name_lower for x in ["git", "commit", "push"]):
-            return ToolCategory.GIT
-        if any(x in name_lower for x in ["analyze", "lint", "check"]):
-            return ToolCategory.ANALYSIS
-        if any(x in name_lower for x in ["memory", "remember", "recall"]):
-            return ToolCategory.MEMORY
+        for category, keywords in _CATEGORY_KEYWORDS.items():
+            if any(kw in name_lower for kw in keywords):
+                return category
 
         return ToolCategory.SHELL  # Default
 

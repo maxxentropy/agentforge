@@ -317,8 +317,10 @@ class CIRunner:
         """
         check_id = check.get("id", "unknown")
 
-        # Check cache first
-        if self.cache:
+        # Check cache first (only for incremental mode where we have specific files)
+        # In FULL mode (files_to_check is None), skip cache to ensure fresh results
+        use_cache = self.cache and files_to_check is not None
+        if use_cache:
             cache_key = self._get_cache_key(check_id, files_to_check)
             cached = self.cache.get(cache_key)
             if cached is not None:
@@ -347,20 +349,21 @@ class CIRunner:
                     fix_hint=result.fix_hint,
                 ))
 
-        # Store in cache
-        if self.cache:
+        # Store in cache (only for incremental mode)
+        if use_cache:
             cache_key = self._get_cache_key(check_id, files_to_check)
             self.cache.set(cache_key, violations)
 
         return violations
 
-    def _get_cache_key(self, check_id: str, files: set[str] | None) -> str:
-        """Generate cache key for a check."""
-        if files is None:
-            # For full mode, hash based on check_id only (files may change)
-            return f"{check_id}_full"
+    def _get_cache_key(self, check_id: str, files: set[str]) -> str:
+        """
+        Generate cache key for a check.
 
-        # For incremental, include file hashes
+        Note: Only called for incremental mode where files is not None.
+        FULL mode skips caching entirely to ensure fresh results.
+        """
+        # Include file content hashes for cache invalidation
         file_hashes = []
         for f in sorted(files):
             file_path = self.repo_root / f

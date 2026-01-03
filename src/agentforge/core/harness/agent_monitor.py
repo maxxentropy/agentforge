@@ -179,55 +179,41 @@ class AgentMonitor:
 
         return LoopDetection(detected=False)
 
+    def _extract_keywords(self, text: str) -> set[str]:
+        """Extract keywords, splitting on underscores and filtering short words."""
+        normalized = text.lower().replace('_', ' ')
+        words = re.findall(r'\b\w+\b', normalized)
+        return {word for word in words if len(word) > 2}
+
+    def _get_recent_keywords(self) -> set[str]:
+        """Extract keywords from recent observations."""
+        keywords: set[str] = set()
+        for obs in list(self.observations)[-20:]:
+            if obs.type == ObservationType.ACTION:
+                keywords.update(self._extract_keywords(obs.data.get("action", "")))
+            elif obs.type == ObservationType.OUTPUT:
+                keywords.update(self._extract_keywords(obs.data.get("output", "")))
+        return keywords
+
     def detect_drift(self, original_task: str) -> float:
-        """Calculate drift score from original task"""
+        """Calculate drift score from original task."""
         if not original_task:
             return 0.0
 
-        def extract_keywords(text: str) -> set:
-            """Extract keywords, splitting on underscores and filtering short words."""
-            # First replace underscores with spaces, then extract words
-            normalized = text.lower().replace('_', ' ')
-            words = re.findall(r'\b\w+\b', normalized)
-            return {word for word in words if len(word) > 2}
-
-        # Extract keywords from original task
-        original_keywords = extract_keywords(original_task)
-
+        original_keywords = self._extract_keywords(original_task)
         if not original_keywords:
             return 0.0
 
-        # Extract keywords from recent observations
-        recent_text = []
-        for obs in list(self.observations)[-20:]:  # Look at recent observations
-            if obs.type == ObservationType.ACTION:
-                recent_text.append(obs.data.get("action", ""))
-            elif obs.type == ObservationType.OUTPUT:
-                recent_text.append(obs.data.get("output", ""))
-
-        if not recent_text:
+        recent_keywords = self._get_recent_keywords()
+        if not recent_keywords:
             return 0.0
 
-        recent_keywords = set()
-        for text in recent_text:
-            recent_keywords.update(extract_keywords(text))
-
-        if not recent_keywords:
-            return 1.0  # Complete drift if no keywords found
-
-        # Calculate overlap ratio (how much of original task is covered)
-        # Using overlap coefficient: |A ∩ B| / min(|A|, |B|)
-        # This is more lenient than Jaccard for unequal set sizes
         intersection = len(original_keywords & recent_keywords)
-
         if intersection == 0:
-            return 1.0  # No overlap means complete drift
+            return 1.0  # Complete drift
 
-        # Use overlap coefficient normalized by original keywords
-        overlap_ratio = intersection / len(original_keywords)
-        drift_score = 1.0 - overlap_ratio
-
-        return min(1.0, max(0.0, drift_score))
+        # Overlap coefficient normalized by original keywords
+        return max(0.0, min(1.0, 1.0 - (intersection / len(original_keywords))))
 
     def detect_thrashing(self) -> ThrashingDetection | None:
         """Check for back-and-forth patterns"""

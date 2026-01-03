@@ -238,41 +238,47 @@ class InteractionDetector:
             return "protobuf"
         return None
 
+    def _find_referenced_zone(
+        self, ref_resolved: Path, project_zones: dict, current_zone: str
+    ) -> tuple[Path, str] | None:
+        """Find which zone owns a referenced project."""
+        for ref_proj, ref_zone in project_zones.items():
+            if ref_resolved == ref_proj.resolve() and ref_zone != current_zone:
+                return ref_proj, ref_zone
+        return None
+
+    def _get_zone_path(self, zone) -> Path:
+        """Get absolute path for a zone."""
+        return zone.path if zone.path.is_absolute() else (self.repo_root / zone.path)
+
     def _detect_shared_packages(self) -> list[Interaction]:
         """Detect shared library/package references between zones."""
         interactions: list[Interaction] = []
-
-        # Find .NET project references across zones
+        seen_ids: set[str] = set()
         project_zones = self._map_projects_to_zones()
 
         for zone in self.zones:
             if zone.language != "csharp":
                 continue
 
-            zone_path = zone.path if zone.path.is_absolute() else (self.repo_root / zone.path)
-            for csproj in zone_path.rglob("*.csproj"):
-                references = self._get_project_references(csproj)
-
-                for ref_path in references:
-                    # Find which zone owns the referenced project
+            for csproj in self._get_zone_path(zone).rglob("*.csproj"):
+                for ref_path in self._get_project_references(csproj):
                     ref_resolved = (csproj.parent / ref_path).resolve()
-                    for ref_proj, ref_zone in project_zones.items():
-                        if ref_resolved == ref_proj.resolve() and ref_zone != zone.name:
-                            interaction_id = f"{zone.name}-refs-{ref_zone}"
-                            # Avoid duplicates
-                            if not any(i.id == interaction_id for i in interactions):
-                                interactions.append(Interaction(
-                                    id=interaction_id,
-                                    interaction_type=InteractionType.SHARED_LIBRARY,
-                                    from_zone=zone.name,
-                                    to_zone=ref_zone,
-                                    details={
-                                        "reference_type": "project_reference",
-                                        "from_project": str(csproj.name),
-                                        "to_project": str(ref_proj.name),
-                                    },
-                                ))
-                            break
+                    result = self._find_referenced_zone(ref_resolved, project_zones, zone.name)
+
+                    if result and (interaction_id := f"{zone.name}-refs-{result[1]}") not in seen_ids:
+                        seen_ids.add(interaction_id)
+                        interactions.append(Interaction(
+                            id=interaction_id,
+                            interaction_type=InteractionType.SHARED_LIBRARY,
+                            from_zone=zone.name,
+                            to_zone=result[1],
+                            details={
+                                "reference_type": "project_reference",
+                                "from_project": str(csproj.name),
+                                "to_project": str(result[0].name),
+                            },
+                        ))
 
         return interactions
 

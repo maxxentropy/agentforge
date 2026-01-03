@@ -265,67 +265,58 @@ class StructureAnalyzer:
 
         return layers
 
+    def _calculate_style_score(
+        self, style_config: dict, detected_layer_names: set[str]
+    ) -> tuple[float, list[str]]:
+        """Calculate score for a single architecture style."""
+        required = set(style_config.get("required_layers", []))
+        optional = set(style_config.get("optional_layers", []))
+        min_layers = style_config.get("min_layers", 0)
+
+        score = 0.0
+        signals = []
+
+        # Required layers contribution
+        if required:
+            matched = required & detected_layer_names
+            score += 0.5 * (len(matched) / len(required))
+            signals.append(f"required_layers:{matched}")
+
+        # Optional layers contribution
+        if optional:
+            optional_present = optional & detected_layer_names
+            score += 0.3 * (len(optional_present) / len(optional))
+            if optional_present:
+                signals.append(f"optional_layers:{optional_present}")
+
+        # Layer count bonus
+        if len(detected_layer_names) >= min_layers:
+            score += 0.2
+
+        return score, signals
+
     def _detect_architecture_style(
         self, layers: dict[str, LayerInfo]
     ) -> tuple[str, float, list[str]]:
         """Detect the overall architecture style from detected layers."""
         detected_layer_names = set(layers.keys())
-        signals = []
-
-        best_style = "unknown"
-        best_score = 0.0
+        best_style, best_score, signals = "unknown", 0.0, []
 
         for style_name, style_config in STRUCTURE_PATTERNS.items():
             required = set(style_config.get("required_layers", []))
-            optional = set(style_config.get("optional_layers", []))
-            markers = set(style_config.get("markers", []))
-            min_layers = style_config.get("min_layers", 0)
-
-            # Check required layers
             if not required.issubset(detected_layer_names):
                 continue
 
-            # Calculate score
-            score = 0.0
-            style_signals = []
-
-            # Required layers matched
-            if required:
-                score += 0.5 * (len(required & detected_layer_names) / len(required))
-                style_signals.append(f"required_layers:{required & detected_layer_names}")
-
-            # Optional layers present
-            if optional:
-                optional_present = optional & detected_layer_names
-                score += 0.3 * (len(optional_present) / len(optional))
-                if optional_present:
-                    style_signals.append(f"optional_layers:{optional_present}")
-
-            # Marker directories (for hexagonal)
-            if markers:
-                # Would need to scan for these specifically
-                pass
-
-            # Layer count bonus
-            if len(detected_layer_names) >= min_layers:
-                score += 0.2
-
+            score, style_signals = self._calculate_style_score(style_config, detected_layer_names)
             if score > best_score:
-                best_score = score
-                best_style = style_name
-                signals = style_signals
+                best_score, best_style, signals = score, style_name, style_signals
 
-        # Confidence based on how many layers we detected
-        if detected_layer_names:
-            avg_layer_confidence = sum(
-                layer.detection.confidence for layer in layers.values()
-            ) / len(layers)
-            final_confidence = (best_score + avg_layer_confidence) / 2
-        else:
-            final_confidence = 0.0
-            best_style = "flat"
+        # Calculate final confidence
+        if not detected_layer_names:
+            return "flat", 0.0, signals
 
-        return best_style, final_confidence, signals
+        avg_confidence = sum(l.detection.confidence for l in layers.values()) / len(layers)
+        return best_style, (best_score + avg_confidence) / 2, signals
 
     def _find_entry_points(self, root: Path) -> list[Path]:
         """Find application entry points."""

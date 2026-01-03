@@ -126,6 +126,31 @@ def contracts_validate(ctx, contract_file):
     run_contracts_validate(args)
 
 
+@contracts.command('fix', help='Auto-fix contract violations')
+@click.option('--check', '-c', 'check_id', required=True,
+              help='Check ID to fix (e.g., no-bare-assert)')
+@click.option('--dry-run', '-n', is_flag=True, help='Show what would be fixed without making changes')
+@click.option('--verbose', '-v', is_flag=True, help='Show details of each fix')
+@click.argument('files', nargs=-1, type=click.Path(exists=True))
+@click.pass_context
+def contracts_fix(ctx, check_id, dry_run, verbose, files):
+    """Auto-fix violations for a specific check.
+
+    Examples:
+        agentforge contracts fix --check no-bare-assert
+        agentforge contracts fix --check no-bare-assert --dry-run tests/
+        agentforge contracts fix -c no-print-statements src/
+    """
+    from agentforge.cli.commands.contracts import run_contracts_fix
+
+    args = Args()
+    args.check_id = check_id
+    args.dry_run = dry_run
+    args.verbose = verbose
+    args.files = files if files else None
+    run_contracts_fix(args)
+
+
 @contracts.command('verify-ops', help='Verify code against operation contracts')
 @click.argument('path', type=click.Path(exists=True), default='.')
 @click.option('--contract', '-c', 'contract_ids', multiple=True,

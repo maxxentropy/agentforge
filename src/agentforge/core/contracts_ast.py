@@ -108,8 +108,25 @@ def _get_node_complexity(child: ast.AST) -> int:
 
 
 def _calculate_complexity(node: ast.AST) -> int:
-    """Calculate cyclomatic complexity for a function node."""
-    return 1 + sum(_get_node_complexity(child) for child in ast.walk(node))
+    """
+    Calculate cyclomatic complexity for a function node.
+
+    Only counts complexity nodes directly in this function,
+    excluding nested function definitions (they're counted separately).
+    """
+    complexity = 1
+
+    def visit(n: ast.AST) -> None:
+        nonlocal complexity
+        for child in ast.iter_child_nodes(n):
+            # Skip nested functions - they're counted as separate functions
+            if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                continue
+            complexity += _get_node_complexity(child)
+            visit(child)
+
+    visit(node)
+    return complexity
 
 
 def check_function_length(tree: ast.AST, content: str, threshold: int) -> list[dict]:

@@ -42,59 +42,72 @@ class ActionParser:
         re.DOTALL | re.IGNORECASE
     )
 
+    def _handle_tool_call(
+        self, action_content: str, reasoning: str, response: str
+    ) -> AgentAction:
+        """Handle TOOL_CALL action type."""
+        tool_calls = self._parse_tool_calls(action_content)
+        return AgentAction.tool_action(tool_calls, reasoning)
+
+    def _handle_complete(
+        self, action_content: str, reasoning: str, response: str
+    ) -> AgentAction:
+        """Handle COMPLETE action type."""
+        summary = self._extract_element(action_content, "summary")
+        return AgentAction.complete_action(summary or action_content.strip(), reasoning)
+
+    def _handle_ask_user(
+        self, action_content: str, reasoning: str, response: str
+    ) -> AgentAction:
+        """Handle ASK_USER action type."""
+        question = self._extract_element(action_content, "question")
+        return AgentAction(
+            action_type=ActionType.ASK_USER,
+            reasoning=reasoning,
+            response=question or action_content.strip(),
+        )
+
+    def _handle_escalate(
+        self, action_content: str, reasoning: str, response: str
+    ) -> AgentAction:
+        """Handle ESCALATE action type."""
+        reason = self._extract_element(action_content, "reason")
+        return AgentAction.escalate_action(reason or action_content.strip())
+
+    def _handle_think(
+        self, action_content: str, reasoning: str, response: str
+    ) -> AgentAction:
+        """Handle THINK action type."""
+        return AgentAction.think_action(reasoning or action_content.strip())
+
+    def _handle_respond(
+        self, action_content: str, reasoning: str, response: str
+    ) -> AgentAction:
+        """Handle RESPOND action type."""
+        return AgentAction.respond_action(action_content.strip(), reasoning)
+
     def parse(self, response: str) -> AgentAction:
-        """Parse LLM response into an AgentAction.
-
-        Args:
-            response: Raw LLM response text
-
-        Returns:
-            Parsed AgentAction
-
-        Raises:
-            ActionParseError: If response cannot be parsed
-        """
+        """Parse LLM response into an AgentAction."""
         if not response or not response.strip():
             raise ActionParseError("Empty response", raw_response=response)
 
-        # Extract thinking section
         reasoning = self._extract_thinking(response)
-
-        # Extract action section
         action_type, action_content = self._extract_action(response)
 
-        # Parse based on action type
-        if action_type == ActionType.TOOL_CALL:
-            tool_calls = self._parse_tool_calls(action_content)
-            return AgentAction.tool_action(tool_calls, reasoning)
+        handlers = {
+            ActionType.TOOL_CALL: self._handle_tool_call,
+            ActionType.COMPLETE: self._handle_complete,
+            ActionType.ASK_USER: self._handle_ask_user,
+            ActionType.ESCALATE: self._handle_escalate,
+            ActionType.THINK: self._handle_think,
+            ActionType.RESPOND: self._handle_respond,
+        }
 
-        elif action_type == ActionType.COMPLETE:
-            summary = self._extract_element(action_content, "summary")
-            return AgentAction.complete_action(summary or action_content.strip(), reasoning)
+        handler = handlers.get(action_type)
+        if handler:
+            return handler(action_content, reasoning, response)
 
-        elif action_type == ActionType.ASK_USER:
-            question = self._extract_element(action_content, "question")
-            return AgentAction(
-                action_type=ActionType.ASK_USER,
-                reasoning=reasoning,
-                response=question or action_content.strip(),
-            )
-
-        elif action_type == ActionType.ESCALATE:
-            reason = self._extract_element(action_content, "reason")
-            return AgentAction.escalate_action(reason or action_content.strip())
-
-        elif action_type == ActionType.THINK:
-            return AgentAction.think_action(reasoning or action_content.strip())
-
-        elif action_type == ActionType.RESPOND:
-            return AgentAction.respond_action(action_content.strip(), reasoning)
-
-        else:
-            raise ActionParseError(
-                f"Unknown action type: {action_type}",
-                raw_response=response
-            )
+        raise ActionParseError(f"Unknown action type: {action_type}", raw_response=response)
 
     def _extract_thinking(self, response: str) -> str:
         """Extract thinking section from response."""

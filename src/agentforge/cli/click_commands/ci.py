@@ -42,12 +42,15 @@ def ci(ctx):
 @click.option('--markdown-path', default='.agentforge/results.md', help='Markdown output path')
 @click.option('--fail-on-warnings', is_flag=True, default=False,
               help='Fail on new warnings (not just errors)')
+@click.option('--min-severity', type=click.Choice(['error', 'warning', 'info']),
+              default='error', help='Minimum severity to fail on')
 @click.option('--ratchet', is_flag=True, default=False,
               help='Ratchet mode: only fail if violations increase from baseline')
 @click.option('--json', 'output_json', is_flag=True, help='Output result as JSON')
 @click.pass_context
 def ci_run(ctx, mode, base_ref, head_ref, parallel, workers, output_sarif, output_junit,
-           output_markdown, sarif_path, junit_path, markdown_path, fail_on_warnings, ratchet, output_json):
+           output_markdown, sarif_path, junit_path, markdown_path, fail_on_warnings,
+           min_severity, ratchet, output_json):
     """Run conformance checks in CI mode."""
     from agentforge.cli.commands.ci import run_ci_check
 
@@ -64,6 +67,7 @@ def ci_run(ctx, mode, base_ref, head_ref, parallel, workers, output_sarif, outpu
     args.junit_path = junit_path
     args.markdown_path = markdown_path
     args.fail_on_warnings = fail_on_warnings
+    args.min_severity = min_severity
     args.ratchet = ratchet
     args.json = output_json
 

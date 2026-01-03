@@ -510,6 +510,7 @@ class CIConfig:
     max_workers: int = 4
     fail_on_new_errors: bool = True
     fail_on_new_warnings: bool = False
+    min_severity: str = "error"  # Minimum severity to fail on (error, warning, info)
     total_errors_threshold: int | None = None  # Absolute cap
     ratchet_enabled: bool = False  # Only fail if violations increase from baseline
     baseline_path: str = ".agentforge/baseline.json"

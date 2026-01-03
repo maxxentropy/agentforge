@@ -400,13 +400,12 @@ class CIRunner:
                 return ExitCode.VIOLATIONS_FOUND
             return ExitCode.SUCCESS
 
-        # For non-PR mode, check violations directly
-        if self.config.fail_on_new_errors:
-            if any(v.severity == "error" for v in violations):
-                return ExitCode.VIOLATIONS_FOUND
+        # For non-PR mode, check violations based on min_severity
+        severity_order = ['info', 'warning', 'error']
+        min_idx = severity_order.index(self.config.min_severity)
 
-        if self.config.fail_on_new_warnings:
-            if any(v.severity == "warning" for v in violations):
+        for severity in severity_order[min_idx:]:
+            if any(v.severity == severity for v in violations):
                 return ExitCode.VIOLATIONS_FOUND
 
         return ExitCode.SUCCESS

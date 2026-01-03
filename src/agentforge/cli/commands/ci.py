@@ -41,12 +41,20 @@ def run_ci_check(args: Any) -> int:
         "incremental": CIMode.INCREMENTAL,
         "pr": CIMode.PR,
     }
+    # Determine fail conditions from min_severity
+    min_severity = getattr(args, 'min_severity', 'error')
+    severity_order = ['info', 'warning', 'error']
+    min_idx = severity_order.index(min_severity)
+
+    # fail_on_new_errors if min_severity is error or lower
+    # fail_on_new_warnings if min_severity is warning or lower
     config = CIConfig(
         mode=mode_map.get(args.mode, CIMode.FULL),
         parallel_enabled=args.parallel,
         max_workers=args.workers,
-        fail_on_new_errors=True,
-        fail_on_new_warnings=args.fail_on_warnings,
+        fail_on_new_errors=(min_idx <= severity_order.index('error')),
+        fail_on_new_warnings=(min_idx <= severity_order.index('warning')) or args.fail_on_warnings,
+        min_severity=min_severity,
         ratchet_enabled=getattr(args, 'ratchet', False),
         output_sarif=args.output_sarif,
         output_junit=args.output_junit,
@@ -88,18 +96,20 @@ def run_ci_check(args: Any) -> int:
     if args.json:
         print(json.dumps(result.to_summary_dict(), indent=2))
     else:
-        _print_ci_summary(result, config.ratchet_enabled)
+        _print_ci_summary(result, config.ratchet_enabled, config.min_severity)
 
     return result.exit_code.value
 
 
-def _print_ci_summary(result, ratchet_enabled: bool = False):
+def _print_ci_summary(result, ratchet_enabled: bool = False, min_severity: str = "error"):
     """Print human-readable CI result summary."""
     status = "✅ PASSED" if result.is_success else "❌ FAILED"
     print(f"\n{status}")
     mode_str = result.mode.value
     if ratchet_enabled:
         mode_str += " (ratchet)"
+    if min_severity != "error":
+        mode_str += f" [min-severity: {min_severity}]"
     print(f"Mode: {mode_str}")
     print(f"Duration: {result.duration_seconds:.2f}s")
     print(f"Files checked: {result.files_checked}")

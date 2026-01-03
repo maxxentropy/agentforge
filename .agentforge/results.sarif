@@ -231,19 +231,6 @@
               }
             },
             {
-              "id": "main-guard-pattern",
-              "name": "main-guard-pattern",
-              "shortDescription": {
-                "text": "Check: main-guard-pattern"
-              },
-              "defaultConfiguration": {
-                "level": "warning"
-              },
-              "help": {
-                "text": "Add: if __name__ == '__main__': main()"
-              }
-            },
-            {
               "id": "no-assert-true-false",
               "name": "no-assert-true-false",
               "shortDescription": {
@@ -254,6 +241,19 @@
               },
               "help": {
                 "text": "Use specific assertions: assert result == expected"
+              }
+            },
+            {
+              "id": "main-guard-pattern",
+              "name": "main-guard-pattern",
+              "shortDescription": {
+                "text": "Check: main-guard-pattern"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "help": {
+                "text": "Add: if __name__ == '__main__': main()"
               }
             },
             {
@@ -721,36 +721,6 @@
           "ruleId": "max-cyclomatic-complexity",
           "level": "warning",
           "message": {
-            "text": "Function '_run_command_check' has complexity 14 (max: 10)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/verification_checks.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 48
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Break complex functions into smaller, focused helper functions"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "910872d40a7e14f8"
-          }
-        },
-        {
-          "ruleId": "max-cyclomatic-complexity",
-          "level": "warning",
-          "message": {
             "text": "Function '_run' has complexity 13 (max: 10)"
           },
           "locations": [
@@ -895,36 +865,6 @@
           ],
           "partialFingerprints": {
             "primaryLocationLineHash": "f34f1a9f3f3229e4"
-          }
-        },
-        {
-          "ruleId": "max-cyclomatic-complexity",
-          "level": "warning",
-          "message": {
-            "text": "Function '_generate_report' has complexity 14 (max: 10)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/bridge/orchestrator.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 200
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Break complex functions into smaller, focused helper functions"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "ef17e3d117be05ef"
           }
         },
         {
@@ -3685,36 +3625,6 @@
           ],
           "partialFingerprints": {
             "primaryLocationLineHash": "e416a71a950203a6"
-          }
-        },
-        {
-          "ruleId": "max-function-length",
-          "level": "warning",
-          "message": {
-            "text": "Function '_generate_report' has 65 lines (max: 50)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/agentforge/core/bridge/orchestrator.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 200
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Extract logic into helper functions or use composition"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "05cbfefb882826dd"
           }
         },
         {
@@ -10219,6 +10129,36 @@
           "ruleId": "no-god-classes",
           "level": "warning",
           "message": {
+            "text": "Class 'CheckRunner' has 17 methods (max: 15)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/verification_checks.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 35
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Split large classes using composition or inheritance"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "ee48715e69892334"
+          }
+        },
+        {
+          "ruleId": "no-god-classes",
+          "level": "warning",
+          "message": {
             "text": "Class 'PipelineStateStore' has 26 methods (max: 15)"
           },
           "locations": [
@@ -10333,6 +10273,36 @@
           ],
           "partialFingerprints": {
             "primaryLocationLineHash": "a53f9620d44150eb"
+          }
+        },
+        {
+          "ruleId": "no-god-classes",
+          "level": "warning",
+          "message": {
+            "text": "Class 'BridgeOrchestrator' has 18 methods (max: 15)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/bridge/orchestrator.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 31
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Split large classes using composition or inheritance"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "aea2fce0fa46ddf5"
           }
         },
         {
@@ -23119,7 +23089,7 @@
           "ruleId": "single-responsibility-modules",
           "level": "note",
           "message": {
-            "text": "Class 'CheckRunner' has 15 methods (max: 3)"
+            "text": "Class 'CheckRunner' has 17 methods (max: 3)"
           },
           "locations": [
             {
@@ -23142,7 +23112,7 @@
             }
           ],
           "partialFingerprints": {
-            "primaryLocationLineHash": "4b25361e42d4de05"
+            "primaryLocationLineHash": "90a512c074f44420"
           }
         },
         {
@@ -24589,7 +24559,7 @@
           "ruleId": "single-responsibility-modules",
           "level": "note",
           "message": {
-            "text": "Class 'BridgeOrchestrator' has 14 methods (max: 3)"
+            "text": "Class 'BridgeOrchestrator' has 18 methods (max: 3)"
           },
           "locations": [
             {
@@ -24612,7 +24582,7 @@
             }
           ],
           "partialFingerprints": {
-            "primaryLocationLineHash": "f3625af5e015e31b"
+            "primaryLocationLineHash": "1706553a50dda71c"
           }
         },
         {
@@ -38626,6 +38596,366 @@
           }
         },
         {
+          "ruleId": "no-assert-true-false",
+          "level": "warning",
+          "message": {
+            "text": "Forbidden pattern found: 'assert True'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "tests/unit/pipeline/stages/test_red.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 95
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use specific assertions: assert result == expected"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "105f329cba056f46"
+          }
+        },
+        {
+          "ruleId": "no-assert-true-false",
+          "level": "warning",
+          "message": {
+            "text": "Forbidden pattern found: 'assert True'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "tests/unit/pipeline/stages/test_red.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 202
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use specific assertions: assert result == expected"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "9e0638dfbdd5a8d5"
+          }
+        },
+        {
+          "ruleId": "no-assert-true-false",
+          "level": "warning",
+          "message": {
+            "text": "Forbidden pattern found: 'assert False'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "tests/unit/tools/generate/test_prompt_builder.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 293
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use specific assertions: assert result == expected"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "4232d2ef940d325b"
+          }
+        },
+        {
+          "ruleId": "no-assert-true-false",
+          "level": "warning",
+          "message": {
+            "text": "Forbidden pattern found: 'assert True'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "tests/unit/harness/test_selfhosting_tools.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 389
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use specific assertions: assert result == expected"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "eb0fcece0b134903"
+          }
+        },
+        {
+          "ruleId": "no-assert-true-false",
+          "level": "warning",
+          "message": {
+            "text": "Forbidden pattern found: 'assert False'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "tests/unit/harness/test_selfhosting_tools.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 400
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use specific assertions: assert result == expected"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "6fc1d258e2a168cb"
+          }
+        },
+        {
+          "ruleId": "no-assert-true-false",
+          "level": "warning",
+          "message": {
+            "text": "Forbidden pattern found: 'assert True'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "tests/integration/context/test_context_v2_integration.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 73
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use specific assertions: assert result == expected"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "2d6c59524d2afd1b"
+          }
+        },
+        {
+          "ruleId": "no-assert-true-false",
+          "level": "warning",
+          "message": {
+            "text": "Forbidden pattern found: 'assert True'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "tests/unit/pipeline/stages/test_red.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 95
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use specific assertions: assert result == expected"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "105f329cba056f46"
+          }
+        },
+        {
+          "ruleId": "no-assert-true-false",
+          "level": "warning",
+          "message": {
+            "text": "Forbidden pattern found: 'assert True'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "tests/unit/pipeline/stages/test_red.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 202
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use specific assertions: assert result == expected"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "9e0638dfbdd5a8d5"
+          }
+        },
+        {
+          "ruleId": "no-assert-true-false",
+          "level": "warning",
+          "message": {
+            "text": "Forbidden pattern found: 'assert False'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "tests/unit/tools/generate/test_prompt_builder.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 293
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use specific assertions: assert result == expected"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "4232d2ef940d325b"
+          }
+        },
+        {
+          "ruleId": "no-assert-true-false",
+          "level": "warning",
+          "message": {
+            "text": "Forbidden pattern found: 'assert True'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "tests/unit/harness/test_selfhosting_tools.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 389
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use specific assertions: assert result == expected"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "eb0fcece0b134903"
+          }
+        },
+        {
+          "ruleId": "no-assert-true-false",
+          "level": "warning",
+          "message": {
+            "text": "Forbidden pattern found: 'assert False'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "tests/unit/harness/test_selfhosting_tools.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 400
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use specific assertions: assert result == expected"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "6fc1d258e2a168cb"
+          }
+        },
+        {
+          "ruleId": "no-assert-true-false",
+          "level": "warning",
+          "message": {
+            "text": "Forbidden pattern found: 'assert True'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "tests/integration/context/test_context_v2_integration.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 73
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Use specific assertions: assert result == expected"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "2d6c59524d2afd1b"
+          }
+        },
+        {
           "ruleId": "main-guard-pattern",
           "level": "warning",
           "message": {
@@ -38650,366 +38980,6 @@
           ],
           "partialFingerprints": {
             "primaryLocationLineHash": "64536d4b4b15f62f"
-          }
-        },
-        {
-          "ruleId": "no-assert-true-false",
-          "level": "warning",
-          "message": {
-            "text": "Forbidden pattern found: 'assert True'"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "tests/unit/pipeline/stages/test_red.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 95
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use specific assertions: assert result == expected"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "105f329cba056f46"
-          }
-        },
-        {
-          "ruleId": "no-assert-true-false",
-          "level": "warning",
-          "message": {
-            "text": "Forbidden pattern found: 'assert True'"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "tests/unit/pipeline/stages/test_red.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 202
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use specific assertions: assert result == expected"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "9e0638dfbdd5a8d5"
-          }
-        },
-        {
-          "ruleId": "no-assert-true-false",
-          "level": "warning",
-          "message": {
-            "text": "Forbidden pattern found: 'assert False'"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "tests/unit/tools/generate/test_prompt_builder.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 293
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use specific assertions: assert result == expected"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "4232d2ef940d325b"
-          }
-        },
-        {
-          "ruleId": "no-assert-true-false",
-          "level": "warning",
-          "message": {
-            "text": "Forbidden pattern found: 'assert True'"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "tests/unit/harness/test_selfhosting_tools.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 389
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use specific assertions: assert result == expected"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "eb0fcece0b134903"
-          }
-        },
-        {
-          "ruleId": "no-assert-true-false",
-          "level": "warning",
-          "message": {
-            "text": "Forbidden pattern found: 'assert False'"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "tests/unit/harness/test_selfhosting_tools.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 400
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use specific assertions: assert result == expected"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "6fc1d258e2a168cb"
-          }
-        },
-        {
-          "ruleId": "no-assert-true-false",
-          "level": "warning",
-          "message": {
-            "text": "Forbidden pattern found: 'assert True'"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "tests/integration/context/test_context_v2_integration.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 73
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use specific assertions: assert result == expected"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "2d6c59524d2afd1b"
-          }
-        },
-        {
-          "ruleId": "no-assert-true-false",
-          "level": "warning",
-          "message": {
-            "text": "Forbidden pattern found: 'assert True'"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "tests/unit/pipeline/stages/test_red.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 95
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use specific assertions: assert result == expected"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "105f329cba056f46"
-          }
-        },
-        {
-          "ruleId": "no-assert-true-false",
-          "level": "warning",
-          "message": {
-            "text": "Forbidden pattern found: 'assert True'"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "tests/unit/pipeline/stages/test_red.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 202
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use specific assertions: assert result == expected"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "9e0638dfbdd5a8d5"
-          }
-        },
-        {
-          "ruleId": "no-assert-true-false",
-          "level": "warning",
-          "message": {
-            "text": "Forbidden pattern found: 'assert False'"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "tests/unit/tools/generate/test_prompt_builder.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 293
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use specific assertions: assert result == expected"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "4232d2ef940d325b"
-          }
-        },
-        {
-          "ruleId": "no-assert-true-false",
-          "level": "warning",
-          "message": {
-            "text": "Forbidden pattern found: 'assert True'"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "tests/unit/harness/test_selfhosting_tools.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 389
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use specific assertions: assert result == expected"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "eb0fcece0b134903"
-          }
-        },
-        {
-          "ruleId": "no-assert-true-false",
-          "level": "warning",
-          "message": {
-            "text": "Forbidden pattern found: 'assert False'"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "tests/unit/harness/test_selfhosting_tools.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 400
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use specific assertions: assert result == expected"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "6fc1d258e2a168cb"
-          }
-        },
-        {
-          "ruleId": "no-assert-true-false",
-          "level": "warning",
-          "message": {
-            "text": "Forbidden pattern found: 'assert True'"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "tests/integration/context/test_context_v2_integration.py",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 73
-                }
-              }
-            }
-          ],
-          "fixes": [
-            {
-              "description": {
-                "text": "Use specific assertions: assert result == expected"
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "primaryLocationLineHash": "2d6c59524d2afd1b"
           }
         },
         {
@@ -68212,6 +68182,52 @@
           "ruleId": "default-result-return-types",
           "level": "note",
           "message": {
+            "text": "Method '_check_indicators' returns 'bool', expected pattern 'Result|Either|Success|Failure'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/verification_checks.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 48
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "785d246e49bff60f"
+          }
+        },
+        {
+          "ruleId": "default-result-return-types",
+          "level": "note",
+          "message": {
+            "text": "Method '_parse_command_errors' returns 'list', expected pattern 'Result|Either|Success|Failure'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/verification_checks.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 57
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "627386830464d761"
+          }
+        },
+        {
+          "ruleId": "default-result-return-types",
+          "level": "note",
+          "message": {
             "text": "Method '_collect_files_for_check' returns 'list', expected pattern 'Result|Either|Success|Failure'"
           },
           "locations": [
@@ -68222,13 +68238,13 @@
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 77
+                  "startLine": 95
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "primaryLocationLineHash": "bb9e8bdf9388404a"
+            "primaryLocationLineHash": "202846882155f12d"
           }
         },
         {
@@ -68245,13 +68261,13 @@
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 96
+                  "startLine": 114
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "primaryLocationLineHash": "0a62a93f34bb7b29"
+            "primaryLocationLineHash": "4bdc8a14a97362cc"
           }
         },
         {
@@ -68268,13 +68284,13 @@
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 179
+                  "startLine": 197
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "primaryLocationLineHash": "04b8005d35e65f9c"
+            "primaryLocationLineHash": "058aeb4fc2052a3f"
           }
         },
         {
@@ -68291,13 +68307,13 @@
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 235
+                  "startLine": 253
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "primaryLocationLineHash": "18401600a924fa6b"
+            "primaryLocationLineHash": "658305075148cd13"
           }
         },
         {
@@ -68314,13 +68330,13 @@
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 401
+                  "startLine": 419
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "primaryLocationLineHash": "0fa9e63c70b80783"
+            "primaryLocationLineHash": "ca9e38bca04f9f3d"
           }
         },
         {
@@ -79551,7 +79567,7 @@
           "ruleId": "default-result-return-types",
           "level": "note",
           "message": {
-            "text": "Method '_generate_report' returns 'GenerationReport', expected pattern 'Result|Either|Success|Failure'"
+            "text": "Method '_build_patterns_mapped' returns 'dict', expected pattern 'Result|Either|Success|Failure'"
           },
           "locations": [
             {
@@ -79567,7 +79583,99 @@
             }
           ],
           "partialFingerprints": {
-            "primaryLocationLineHash": "a6766ffe29f92d54"
+            "primaryLocationLineHash": "699632e8d9dceaaf"
+          }
+        },
+        {
+          "ruleId": "default-result-return-types",
+          "level": "note",
+          "message": {
+            "text": "Method '_build_contract_summary' returns 'ContractSummary', expected pattern 'Result|Either|Success|Failure'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/bridge/orchestrator.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 216
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "4c016a4307de5866"
+          }
+        },
+        {
+          "ruleId": "default-result-return-types",
+          "level": "note",
+          "message": {
+            "text": "Method '_build_review_items' returns 'list', expected pattern 'Result|Either|Success|Failure'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/bridge/orchestrator.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 228
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "0fef28d8dcedaeca"
+          }
+        },
+        {
+          "ruleId": "default-result-return-types",
+          "level": "note",
+          "message": {
+            "text": "Method '_add_next_steps' returns 'None', expected pattern 'Result|Either|Success|Failure'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/bridge/orchestrator.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 241
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "5c7f4a4f5abbd45a"
+          }
+        },
+        {
+          "ruleId": "default-result-return-types",
+          "level": "note",
+          "message": {
+            "text": "Method '_generate_report' returns 'GenerationReport', expected pattern 'Result|Either|Success|Failure'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/agentforge/core/bridge/orchestrator.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 250
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "primaryLocationLineHash": "e9137ab2da21d186"
           }
         },
         {
@@ -79584,13 +79692,13 @@
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 278
+                  "startLine": 286
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "primaryLocationLineHash": "94e13cf33f928bfe"
+            "primaryLocationLineHash": "2e3bda5f5afe484f"
           }
         },
         {
@@ -79607,13 +79715,13 @@
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 308
+                  "startLine": 316
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "primaryLocationLineHash": "e605f8c4b79cde1d"
+            "primaryLocationLineHash": "0438ae3097152da8"
           }
         },
         {
@@ -79630,13 +79738,13 @@
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 325
+                  "startLine": 333
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "primaryLocationLineHash": "923cf41a4536cad5"
+            "primaryLocationLineHash": "40db56d9d2235803"
           }
         },
         {
@@ -79653,13 +79761,13 @@
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 342
+                  "startLine": 350
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "primaryLocationLineHash": "283e391220600742"
+            "primaryLocationLineHash": "976ecb15c2f39f58"
           }
         },
         {
@@ -125233,14 +125341,14 @@
       "invocations": [
         {
           "executionSuccessful": true,
-          "startTimeUtc": "2026-01-03T21:16:16.875992Z",
-          "endTimeUtc": "2026-01-03T21:16:35.717326Z"
+          "startTimeUtc": "2026-01-03T21:18:15.758813Z",
+          "endTimeUtc": "2026-01-03T21:18:34.767722Z"
         }
       ],
       "versionControlProvenance": [
         {
           "repositoryUri": "",
-          "revisionId": "822a230a97da4e073cb1763ab609f5a0007296b7"
+          "revisionId": "fad5143c384cb605ee26dda3356dd91e799be4b8"
         }
       ]
     }

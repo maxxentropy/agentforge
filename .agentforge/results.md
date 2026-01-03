@@ -7,15 +7,15 @@
 | Mode | full |
 | Files Checked | 0 |
 | Checks Run | 158 |
-| Total Violations | 4727 |
+| Total Violations | 4732 |
 | Errors | 0 |
-| Warnings | 378 |
-| Duration | 18.84s |
+| Warnings | 377 |
+| Duration | 19.01s |
 
 ### All Violations
 
 <details>
-<summary>View all 4727 violations in 414 files</summary>
+<summary>View all 4732 violations in 414 files</summary>
 
 **`<unknown>`** (4 violations)
 
@@ -2784,16 +2784,13 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 
-**`src/agentforge/core/bridge/orchestrator.py`** (17 violations)
+**`src/agentforge/core/bridge/orchestrator.py`** (20 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L200`
-  - Function '_generate_report' has complexity 14 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-function-length** at `L200`
-  - Function '_generate_report' has 65 lines (max: 50)
-  - 💡 *Extract logic into helper functions or use composition*
+- 🟡 **no-god-classes** at `L31`
+  - Class 'BridgeOrchestrator' has 18 methods (max: 15)
+  - 💡 *Split large classes using composition or inheritance*
 - 🔵 **single-responsibility-modules** at `L31`
-  - Class 'BridgeOrchestrator' has 14 methods (max: 3)
+  - Class 'BridgeOrchestrator' has 18 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -2818,14 +2815,22 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **default-result-return-types** at `L171`
   - Method '_generate_zone_contract' returns 'GeneratedContract | None', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **default-result-return-types** at `L200`
+  - Method '_build_patterns_mapped' returns 'dict', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L216`
+  - Method '_build_contract_summary' returns 'ContractSummary', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L228`
+  - Method '_build_review_items' returns 'list', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L241`
+  - Method '_add_next_steps' returns 'None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L250`
   - Method '_generate_report' returns 'GenerationReport', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L278`
+- 🔵 **default-result-return-types** at `L286`
   - Method 'preview' returns 'str', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L308`
+- 🔵 **default-result-return-types** at `L316`
   - Method 'list_mappings' returns 'list[dict]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L325`
+- 🔵 **default-result-return-types** at `L333`
   - Method 'refresh' returns 'tuple[list[GeneratedContract], GenerationReport]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L342`
+- 🔵 **default-result-return-types** at `L350`
   - Method 'write_report' returns 'Path', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -11451,13 +11456,13 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 
-**`src/agentforge/core/verification_checks.py`** (10 violations)
+**`src/agentforge/core/verification_checks.py`** (12 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L48`
-  - Function '_run_command_check' has complexity 14 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **no-god-classes** at `L35`
+  - Class 'CheckRunner' has 17 methods (max: 15)
+  - 💡 *Split large classes using composition or inheritance*
 - 🔵 **single-responsibility-modules** at `L35`
-  - Class 'CheckRunner' has 15 methods (max: 3)
+  - Class 'CheckRunner' has 17 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -11469,15 +11474,19 @@ Or regenerate file through TDFLOW to get proper lineage.*
 Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **default-result-return-types** at `L42`
   - Method '_substitute_variables' returns 'str', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L77`
+- 🔵 **default-result-return-types** at `L48`
+  - Method '_check_indicators' returns 'bool', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L57`
+  - Method '_parse_command_errors' returns 'list', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L95`
   - Method '_collect_files_for_check' returns 'list', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L96`
+- 🔵 **default-result-return-types** at `L114`
   - Method '_search_patterns_in_file' returns 'list', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L179`
+- 🔵 **default-result-return-types** at `L197`
   - Method '_find_forbidden_import_violations' returns 'list', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L235`
+- 🔵 **default-result-return-types** at `L253`
   - Method '_load_custom_function' returns 'Callable', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L401`
+- 🔵 **default-result-return-types** at `L419`
   - Method '_collect_ast_violations' returns 'list', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -17076,5 +17085,5 @@ Or regenerate file through TDFLOW to get proper lineage.*
 </details>
 
 ---
-*Generated at 2026-01-03 21:16:35 UTC*
-*Commit: `822a230a`*
+*Generated at 2026-01-03 21:18:34 UTC*
+*Commit: `fad5143c`*

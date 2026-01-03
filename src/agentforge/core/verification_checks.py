@@ -45,32 +45,50 @@ class CheckRunner:
 
     # --- Command Check ---
 
+    def _check_indicators(self, output: str, check: dict, initial_ok: bool) -> bool:
+        """Check failure/success indicators against output."""
+        ok = initial_ok
+        for ind in check.get("failure_indicators", []):
+            ok = ok and ind not in output
+        for ind in check.get("success_indicators", []):
+            ok = ok or ind in output
+        return ok
+
+    def _parse_command_errors(self, output: str, check: dict) -> list:
+        """Parse errors from command output using error_parser pattern."""
+        pattern = check.get("error_parser", {}).get("pattern", "")
+        if not pattern:
+            return []
+        return [m.groupdict() for m in re.finditer(pattern, output)][:50]
+
     def _run_command_check(self, check: dict, settings: dict) -> CheckResult:
         """Run a shell command check."""
         check_id, severity = check["id"], Severity(check.get("severity", "required"))
-        check_name, timeout = check.get("name", check_id), check.get("timeout", settings.get("default_timeout", 300))
+        check_name = check.get("name", check_id)
+        timeout = check.get("timeout", settings.get("default_timeout", 300))
         command = self._substitute_variables(check["command"])
         wd = self._substitute_variables(check.get("working_dir", settings.get("working_dir", ".")))
         cwd = wd if os.path.isabs(wd) else str(self.project_root / wd)
 
         try:
             r = subprocess.run(shlex.split(command), capture_output=True, text=True, timeout=timeout, cwd=cwd)
-            output, ok = r.stdout + r.stderr, r.returncode == 0
-            # Indicators override exit code
-            for ind in check.get("failure_indicators", []):
-                ok = ok and ind not in output
-            for ind in check.get("success_indicators", []):
-                ok = ok or ind in output
+            output = r.stdout + r.stderr
+            ok = self._check_indicators(output, check, r.returncode == 0)
+            errors = self._parse_command_errors(output, check) if not ok else []
 
-            pattern = check.get("error_parser", {}).get("pattern", "")
-            errors = [m.groupdict() for m in re.finditer(pattern, output)][:50] if pattern else []
-            return CheckResult(check_id=check_id, check_name=check_name, severity=severity, errors=errors if not ok else [],
-                               status=CheckStatus.PASSED if ok else CheckStatus.FAILED, output=output[:5000],
-                               message=check.get("message") or f"Command {'succeeded' if ok else 'failed'}",
-                               details=f"Exit code: {r.returncode}")
+            return CheckResult(
+                check_id=check_id, check_name=check_name, severity=severity,
+                errors=errors, status=CheckStatus.PASSED if ok else CheckStatus.FAILED,
+                output=output[:5000],
+                message=check.get("message") or f"Command {'succeeded' if ok else 'failed'}",
+                details=f"Exit code: {r.returncode}",
+            )
         except Exception as e:
-            return CheckResult(check_id=check_id, check_name=check_name, status=CheckStatus.ERROR, severity=severity,
-                               message=f"Command timed out after {timeout}s" if "TimeoutExpired" in type(e).__name__ else str(e))
+            msg = f"Command timed out after {timeout}s" if "TimeoutExpired" in type(e).__name__ else str(e)
+            return CheckResult(
+                check_id=check_id, check_name=check_name, status=CheckStatus.ERROR,
+                severity=severity, message=msg,
+            )
 
     # --- Regex Check ---
 

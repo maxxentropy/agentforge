@@ -197,6 +197,56 @@ class BridgeOrchestrator:
 
         return contract
 
+    def _build_patterns_mapped(self, contract) -> dict:
+        """Build patterns mapped dictionary for a contract."""
+        patterns_mapped = {}
+        for check in contract.checks:
+            pattern = check.source_pattern
+            if pattern not in patterns_mapped:
+                patterns_mapped[pattern] = {
+                    "confidence": check.source_confidence,
+                    "checks_generated": 0,
+                    "review_required": False,
+                }
+            patterns_mapped[pattern]["checks_generated"] += 1
+            if check.review_required:
+                patterns_mapped[pattern]["review_required"] = True
+        return patterns_mapped
+
+    def _build_contract_summary(self, contract) -> ContractSummary:
+        """Build contract summary for report."""
+        return ContractSummary(
+            path=str(self.builder.get_output_path(contract.name)),
+            zone=contract.zone,
+            language=contract.language,
+            total_checks=len(contract.checks),
+            enabled_checks=contract.enabled_count,
+            disabled_checks=contract.disabled_count,
+            patterns_mapped=self._build_patterns_mapped(contract),
+        )
+
+    def _build_review_items(self, contract) -> list:
+        """Build review items for a contract."""
+        return [
+            ReviewItem(
+                contract=contract.name,
+                check_id=check.id,
+                reason=check.review_reason or "Review required",
+                action="Review and enable if pattern is intentional",
+            )
+            for check in contract.checks
+            if check.review_required
+        ]
+
+    def _add_next_steps(self, report: "GenerationReport") -> None:
+        """Add next steps to report based on state."""
+        if report.checks_disabled > 0:
+            report.next_steps.append("Review disabled checks in generated contracts")
+            report.next_steps.append("Enable checks after verification")
+        if report.contracts_generated > 0:
+            report.next_steps.append("Run: agentforge conformance check")
+        report.next_steps.append("Re-run: agentforge bridge refresh after profile updates")
+
     def _generate_report(
         self,
         zones_processed: int,
@@ -216,63 +266,21 @@ class BridgeOrchestrator:
             contracts_generated=len(self._contracts),
         )
 
-        # Calculate totals
         for contract in self._contracts:
             report.total_checks += len(contract.checks)
             report.checks_enabled += contract.enabled_count
             report.checks_disabled += contract.disabled_count
+            report.contracts.append(self._build_contract_summary(contract))
 
-            # Build contract summary
-            patterns_mapped = {}
-            for check in contract.checks:
-                pattern = check.source_pattern
-                if pattern not in patterns_mapped:
-                    patterns_mapped[pattern] = {
-                        "confidence": check.source_confidence,
-                        "checks_generated": 0,
-                        "review_required": False,
-                    }
-                patterns_mapped[pattern]["checks_generated"] += 1
-                if check.review_required:
-                    patterns_mapped[pattern]["review_required"] = True
-
-            summary = ContractSummary(
-                path=str(self.builder.get_output_path(contract.name)),
-                zone=contract.zone,
-                language=contract.language,
-                total_checks=len(contract.checks),
-                enabled_checks=contract.enabled_count,
-                disabled_checks=contract.disabled_count,
-                patterns_mapped=patterns_mapped,
-            )
-            report.contracts.append(summary)
-
-            # Build review items
-            review_items = []
-            for check in contract.checks:
-                if check.review_required:
-                    review_items.append(ReviewItem(
-                        contract=contract.name,
-                        check_id=check.id,
-                        reason=check.review_reason or "Review required",
-                        action="Review and enable if pattern is intentional",
-                    ))
+            review_items = self._build_review_items(contract)
             if review_items:
                 report.review_required[contract.name] = review_items
 
-        # Add conflicts
         report.conflicts = self._all_conflicts
         report.conflicts_detected = len(self._all_conflicts)
         report.conflicts_resolved = len([c for c in self._all_conflicts if c.new_id])
 
-        # Add next steps
-        if report.checks_disabled > 0:
-            report.next_steps.append("Review disabled checks in generated contracts")
-            report.next_steps.append("Enable checks after verification")
-        if report.contracts_generated > 0:
-            report.next_steps.append("Run: agentforge conformance check")
-        report.next_steps.append("Re-run: agentforge bridge refresh after profile updates")
-
+        self._add_next_steps(report)
         return report
 
     def preview(self) -> str:

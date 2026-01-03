@@ -10,7 +10,7 @@
 | Total Violations | 10121 |
 | Errors | 129 |
 | Warnings | 3431 |
-| Duration | 11.30s |
+| Duration | 0.15s |
 
 ### All Violations
 
@@ -52,19 +52,19 @@
 
 **`<runtime>`** (3 violations)
 
+- 🔴 **test-docstrings** at `file`
+  - Check execution failed: cannot import name 'CheckResult' from 'agentforge.core.contracts' (/Users/sean/source/tools/agentforge/src/agentforge/core/contracts/__init__.py)
 - 🔴 **public-functions-typed** at `file`
   - Check execution failed: cannot import name 'CheckResult' from 'agentforge.core.contracts' (/Users/sean/source/tools/agentforge/src/agentforge/core/contracts/__init__.py)
 - 🔴 **no-any-return** at `file`
   - Check execution failed: cannot import name 'CheckResult' from 'agentforge.core.contracts' (/Users/sean/source/tools/agentforge/src/agentforge/core/contracts/__init__.py)
-- 🔴 **test-docstrings** at `file`
-  - Check execution failed: cannot import name 'CheckResult' from 'agentforge.core.contracts' (/Users/sean/source/tools/agentforge/src/agentforge/core/contracts/__init__.py)
 
 **`<unknown>`** (139 violations)
 
-- 🔴 **layer-dependency-violations** at `file`
-  - Function 'layer_imports' not found in builtin_checks
 - 🔴 **domain-purity** at `file`
   - Function 'domain_purity' not found in builtin_checks
+- 🔴 **layer-dependency-violations** at `file`
+  - Function 'layer_imports' not found in builtin_checks
 - 🔴 **no-circular-imports** at `file`
   - Function 'circular_imports' not found in builtin_checks
 - 🔴 **constructor-injection-required** at `file`
@@ -75,6 +75,365 @@
   - Unknown check type: None
 - 🔴 **missing-lineage** at `file`
   - Unknown check type: None
+- 🟡 **mypy-standard** at `file`
+  - Command not found: mypy
+- 🟡 **bandit-scan** at `file`
+  - Command failed with exit code 1: [main]	INFO	profile include tests: None
+[main]	INFO	profile exclude tests: None
+[main]	INFO	cli include tests: None
+[main]	INFO	cli exclude tests: None
+[main]	INFO	running on Python 3.11.14
+
+  - 💡 *Fix security issues identified by bandit*
+- 🔵 **ruff-format** at `file`
+  - Command failed with exit code 1: Would reformat: execute.py
+Would reformat: run_contract.py
+Would reformat: run_contract_commands.py
+Would reformat: src/agentforge/cli/click_commands/__init__.py
+Would reformat: src/agentforge/cli/click_commands/agent.py
+Would reformat: src/agentforge/cli/click_commands/bridge.py
+Would reformat: src/agentforge/cli/click_commands/ci.py
+Would reformat: src/agentforge/cli/click_commands/config.py
+Would reformat: src/agentforge/cli/click_commands/conformance.py
+Would reformat: src/agentforge/cli/click_commands/contracts.py
+Would reformat: src/agentforge/cli/click_commands/discover.py
+Would reformat: src/agentforge/cli/click_commands/generate.py
+Would reformat: src/agentforge/cli/click_commands/pipeline.py
+Would reformat: src/agentforge/cli/click_commands/spec.py
+Would reformat: src/agentforge/cli/click_commands/tdflow.py
+Would reformat: src/agentforge/cli/click_commands/utility.py
+Would reformat: src/agentforge/cli/click_commands/workspace.py
+Would reformat: src/agentforge/cli/commands/agent.py
+Would reformat: src/agentforge/cli/commands/bridge.py
+Would reformat: src/agentforge/cli/commands/ci.py
+Would reformat: src/agentforge/cli/commands/config.py
+Would reformat: src/agentforge/cli/commands/conformance.py
+Would reformat: src/agentforge/cli/commands/conformance_formatters.py
+Would reformat: src/agentforge/cli/commands/context.py
+Would reformat: src/agentforge/cli/commands/contracts.py
+Would reformat: src/agentforge/cli/commands/discover.py
+Would reformat: src/agentforge/cli/commands/revision.py
+Would reformat: src/agentforge/cli/commands/revision_apply.py
+Would reformat: src/agentforge/cli/commands/spec.py
+Would reformat: src/agentforge/cli/commands/spec_adapt.py
+Would reformat: src/agentforge/cli/commands/tdflow.py
+Would reformat: src/agentforge/cli/commands/verify.py
+Would reformat: src/agentforge/cli/commands/workspace.py
+Would reformat: src/agentforge/cli/core.py
+Would reformat: src/agentforge/cli/helpers.py
+Would reformat: src/agentforge/cli/main.py
+Would reformat: src/agentforge/cli/parser.py
+Would reformat: src/agentforge/cli/render.py
+Would reformat: src/agentforge/core/analyze_structure.py
+Would reformat: src/agentforge/core/audit/context_frame.py
+Would reformat: src/agentforge/core/audit/conversation_archive.py
+Would reformat: src/agentforge/core/audit/frame_logger.py
+Would reformat: src/agentforge/core/audit/integrity_chain.py
+Would reformat: src/agentforge/core/audit/thread_correlator.py
+Would reformat: src/agentforge/core/bridge/conflict_resolver.py
+Would reformat: src/agentforge/core/bridge/contract_builder.py
+Would reformat: src/agentforge/core/bridge/domain.py
+Would reformat: src/agentforge/core/bridge/mappings/architecture.py
+Would reformat: src/agentforge/core/bridge/mappings/base.py
+Would reformat: src/agentforge/core/bridge/mappings/conventions.py
+Would reformat: src/agentforge/core/bridge/mappings/cqrs.py
+Would reformat: src/agentforge/core/bridge/mappings/registry.py
+Would reformat: src/agentforge/core/bridge/mappings/repository.py
+Would reformat: src/agentforge/core/bridge/orchestrator.py
+Would reformat: src/agentforge/core/bridge/profile_loader.py
+Would reformat: src/agentforge/core/builtin_checks.py
+Would reformat: src/agentforge/core/builtin_checks_architecture.py
+Would reformat: src/agentforge/core/builtin_checks_architecture_helpers.py
+Would reformat: src/agentforge/core/cicd/baseline.py
+Would reformat: src/agentforge/core/cicd/domain.py
+Would reformat: src/agentforge/core/cicd/platforms/azure.py
+Would reformat: src/agentforge/core/cicd/platforms/github.py
+Would reformat: src/agentforge/core/cicd/runner.py
+Would reformat: src/agentforge/core/code_chunker.py
+Would reformat: src/agentforge/core/command_runner.py
+Would reformat: src/agentforge/core/conformance/domain.py
+Would reformat: src/agentforge/core/conformance/history_store.py
+Would reformat: src/agentforge/core/conformance/manager.py
+Would reformat: src/agentforge/core/conformance/stores.py
+Would reformat: src/agentforge/core/context/agent_config.py
+Would reformat: src/agentforge/core/context/audit.py
+Would reformat: src/agentforge/core/context/compaction.py
+Would reformat: src/agentforge/core/context/fingerprint.py
+Would reformat: src/agentforge/core/context/templates/__init__.py
+Would reformat: src/agentforge/core/context/templates/base.py
+Would reformat: src/agentforge/core/context/templates/bridge.py
+Would reformat: src/agentforge/core/context/templates/code_review.py
+Would reformat: src/agentforge/core/context/templates/discovery.py
+Would reformat: src/agentforge/core/context/templates/fix_violation.py
+Would reformat: src/agentforge/core/context/templates/implement_feature.py
+Would reformat: src/agentforge/core/context/templates/refactor.py
+Would reformat: src/agentforge/core/context/templates/write_tests.py
+Would reformat: src/agentforge/core/context_assembler.py
+Would reformat: src/agentforge/core/context_assembler_types.py
+Would reformat: src/agentforge/core/context_retrieval.py
+Would reformat: src/agentforge/core/context_retrieval_cli.py
+Would reformat: src/agentforge/core/contract_runner.py
+Would reformat: src/agentforge/core/contract_validator.py
+Would reformat: src/agentforge/core/contract_validator_types.py
+Would reformat: src/agentforge/core/contracts/cli.py
+Would reformat: src/agentforge/core/contracts/draft.py
+Would reformat: src/agentforge/core/contracts/drafter.py
+Would reformat: src/agentforge/core/contracts/enforcer.py
+Would reformat: src/agentforge/core/contracts/evolution.py
+Would reformat: src/agentforge/core/contracts/operations/loader.py
+Would reformat: src/agentforge/core/contracts/operations/verifier.py
+Would reformat: src/agentforge/core/contracts/registry.py
+Would reformat: src/agentforge/core/contracts/reviewer.py
+Would reformat: src/agentforge/core/contracts.py
+Would reformat: src/agentforge/core/contracts_ast.py
+Would reformat: src/agentforge/core/contracts_execution.py
+Would reformat: src/agentforge/core/contracts_lsp.py
+Would reformat: src/agentforge/core/contracts_registry.py
+Would reformat: src/agentforge/core/contracts_types.py
+Would reformat: src/agentforge/core/discovery/analyzers/interactions.py
+Would reformat: src/agentforge/core/discovery/analyzers/patterns.py
+Would reformat: src/agentforge/core/discovery/analyzers/structure.py
+Would reformat: src/agentforge/core/discovery/analyzers/test_linkage.py
+Would reformat: src/agentforge/core/discovery/domain.py
+Would reformat: src/agentforge/core/discovery/generators/as_built_spec.py
+Would reformat: src/agentforge/core/discovery/generators/lineage_embedder.py
+Would reformat: src/agentforge/core/discovery/generators/profile.py
+Would reformat: src/agentforge/core/discovery/manager.py
+Would reformat: src/agentforge/core/discovery/providers/__init__.py
+Would reformat: src/agentforge/core/discovery/providers/base.py
+Would reformat: src/agentforge/core/discovery/providers/dotnet_provider.py
+Would reformat: src/agentforge/core/discovery/providers/python_provider.py
+Would reformat: src/agentforge/core/discovery/zones/detector.py
+Would reformat: src/agentforge/core/discovery/zones/merger.py
+Would reformat: src/agentforge/core/embedding_providers.py
+Would reformat: src/agentforge/core/generate/__init__.py
+Would reformat: src/agentforge/core/generate/parser.py
+Would reformat: src/agentforge/core/generate/prompt_builder.py
+Would reformat: src/agentforge/core/generate/provider.py
+Would reformat: src/agentforge/core/generate/writer.py
+Would reformat: src/agentforge/core/harness/action_parser.py
+Would reformat: src/agentforge/core/harness/agent_monitor.py
+Would reformat: src/agentforge/core/harness/agent_orchestrator.py
+Would reformat: src/agentforge/core/harness/agent_prompt_builder.py
+Would reformat: src/agentforge/core/harness/auto_fix_daemon.py
+Would reformat: src/agentforge/core/harness/checkpoint_manager.py
+Would reformat: src/agentforge/core/harness/conformance_tools.py
+Would reformat: src/agentforge/core/harness/escalation_domain.py
+Would reformat: src/agentforge/core/harness/escalation_manager.py
+Would reformat: src/agentforge/core/harness/escalation_notifier.py
+Would reformat: src/agentforge/core/harness/execution_context_store.py
+Would reformat: src/agentforge/core/harness/fix_violation_workflow.py
+Would reformat: src/agentforge/core/harness/git_tools.py
+Would reformat: src/agentforge/core/harness/llm_executor.py
+Would reformat: src/agentforge/core/harness/llm_executor_domain.py
+Would reformat: src/agentforge/core/harness/memory_domain.py
+Would reformat: src/agentforge/core/harness/memory_manager.py
+Would reformat: src/agentforge/core/harness/memory_store.py
+Would reformat: src/agentforge/core/harness/minimal_context/adaptive_budget.py
+Would reformat: src/agentforge/core/harness/minimal_context/context_models.py
+Would reformat: src/agentforge/core/harness/minimal_context/executor.py
+Would reformat: src/agentforge/core/harness/minimal_context/fix_workflow.py
+Would reformat: src/agentforge/core/harness/minimal_context/loop_detector.py
+Would reformat: src/agentforge/core/harness/minimal_context/native_tool_executor.py
+Would reformat: src/agentforge/core/harness/minimal_context/phase_machine.py
+Would reformat: src/agentforge/core/harness/minimal_context/state_store.py
+Would reformat: src/agentforge/core/harness/minimal_context/step_outcome.py
+Would reformat: src/agentforge/core/harness/minimal_context/template_context_builder.py
+Would reformat: src/agentforge/core/harness/minimal_context/tool_handlers/__init__.py
+Would reformat: src/agentforge/core/harness/minimal_context/tool_handlers/file_handlers.py
+Would reformat: src/agentforge/core/harness/minimal_context/tool_handlers/search_handlers.py
+Would reformat: src/agentforge/core/harness/minimal_context/tool_handlers/terminal_handlers.py
+Would reformat: src/agentforge/core/harness/minimal_context/tool_handlers/verify_handlers.py
+Would reformat: src/agentforge/core/harness/minimal_context/understanding.py
+Would reformat: src/agentforge/core/harness/minimal_context/working_memory.py
+Would reformat: src/agentforge/core/harness/orchestrator_domain.py
+Would reformat: src/agentforge/core/harness/python_tools.py
+Would reformat: src/agentforge/core/harness/recovery_domain.py
+Would reformat: src/agentforge/core/harness/recovery_executor.py
+Would reformat: src/agentforge/core/harness/refactoring_tools.py
+Would reformat: src/agentforge/core/harness/rollback_manager.py
+Would reformat: src/agentforge/core/harness/session_manager.py
+Would reformat: src/agentforge/core/harness/test_runner_tools.py
+Would reformat: src/agentforge/core/harness/tool_domain.py
+Would reformat: src/agentforge/core/harness/tool_executor_bridge.py
+Would reformat: src/agentforge/core/harness/tool_registry.py
+Would reformat: src/agentforge/core/harness/tool_selector.py
+Would reformat: src/agentforge/core/harness/violation_tools.py
+Would reformat: src/agentforge/core/init.py
+Would reformat: src/agentforge/core/llm/factory.py
+Would reformat: src/agentforge/core/llm/interface.py
+Would reformat: src/agentforge/core/llm/recording.py
+Would reformat: src/agentforge/core/llm/simulated.py
+Would reformat: src/agentforge/core/llm/tools.py
+Would reformat: src/agentforge/core/lsp_adapter.py
+Would reformat: src/agentforge/core/lsp_adapter_cli.py
+Would reformat: src/agentforge/core/lsp_adapters.py
+Would reformat: src/agentforge/core/lsp_client.py
+Would reformat: src/agentforge/core/lsp_types.py
+Would reformat: src/agentforge/core/output_validator.py
+Would reformat: src/agentforge/core/pipeline/config.py
+Would reformat: src/agentforge/core/pipeline/controller.py
+Would reformat: src/agentforge/core/pipeline/discovery_integration.py
+Would reformat: src/agentforge/core/pipeline/escalation.py
+Would reformat: src/agentforge/core/pipeline/registry.py
+Would reformat: src/agentforge/core/pipeline/schemas.py
+Would reformat: src/agentforge/core/pipeline/stages/analyze.py
+Would reformat: src/agentforge/core/pipeline/stages/clarify.py
+Would reformat: src/agentforge/core/pipeline/stages/deliver.py
+Would reformat: src/agentforge/core/pipeline/stages/green.py
+Would reformat: src/agentforge/core/pipeline/stages/intake.py
+Would reformat: src/agentforge/core/pipeline/stages/red.py
+Would reformat: src/agentforge/core/pipeline/stages/refactor.py
+Would reformat: src/agentforge/core/pipeline/stages/spec.py
+Would reformat: src/agentforge/core/pipeline/state.py
+Would reformat: src/agentforge/core/pipeline/validator.py
+Would reformat: src/agentforge/core/pyright_runner.py
+Would reformat: src/agentforge/core/refactoring/base.py
+Would reformat: src/agentforge/core/refactoring/rope_provider.py
+Would reformat: src/agentforge/core/spec/__init__.py
+Would reformat: src/agentforge/core/spec/placement.py
+Would reformat: src/agentforge/core/tdflow/phases/green.py
+Would reformat: src/agentforge/core/tdflow/phases/red.py
+Would reformat: src/agentforge/core/tdflow/session.py
+Would reformat: src/agentforge/core/validate_schema.py
+Would reformat: src/agentforge/core/vector_search.py
+Would reformat: src/agentforge/core/vector_types.py
+Would reformat: src/agentforge/core/verification_ast.py
+Would reformat: src/agentforge/core/verification_checks.py
+Would reformat: src/agentforge/core/verification_contracts_check.py
+Would reformat: src/agentforge/core/verification_reports.py
+Would reformat: src/agentforge/core/verification_runner.py
+Would reformat: src/agentforge/core/verification_types.py
+Would reformat: src/agentforge/core/workspace.py
+Would reformat: src/agentforge/core/workspace_config.py
+Would reformat: src/agentforge/core/workspace_types.py
+Would reformat: test.py
+Would reformat: tests/conftest.py
+Would reformat: tests/integration/cli/conftest.py
+Would reformat: tests/integration/cli/test_pipeline_cli_integration.py
+Would reformat: tests/integration/context/test_context_v2_integration.py
+Would reformat: tests/integration/harness/test_harness_workflow.py
+Would reformat: tests/integration/pipeline/conftest.py
+Would reformat: tests/integration/pipeline/stages/conftest.py
+Would reformat: tests/integration/pipeline/stages/test_design_pipeline.py
+Would reformat: tests/integration/pipeline/stages/test_refactor_deliver_pipeline.py
+Would reformat: tests/integration/pipeline/stages/test_tdd_pipeline.py
+Would reformat: tests/integration/pipeline/test_config_integration.py
+Would reformat: tests/integration/pipeline/test_pipeline_execution.py
+Would reformat: tests/integration/tool_handlers/test_context_injection.py
+Would reformat: tests/integration/workflows/conftest.py
+Would reformat: tests/integration/workflows/test_fix_violation_workflow.py
+Would reformat: tests/test_python_checks.py
+Would reformat: tests/unit/audit/test_conversation_archive.py
+Would reformat: tests/unit/audit/test_frame_logger.py
+Would reformat: tests/unit/audit/test_thread_correlator.py
+Would reformat: tests/unit/audit/test_transaction_logger.py
+Would reformat: tests/unit/cli/conftest.py
+Would reformat: tests/unit/cli/test_pipeline_commands.py
+Would reformat: tests/unit/cli/test_spec_adapt.py
+Would reformat: tests/unit/context/test_compaction.py
+Would reformat: tests/unit/contracts/test_drafter.py
+Would reformat: tests/unit/contracts/test_enforcer.py
+Would reformat: tests/unit/contracts/test_evolution.py
+Would reformat: tests/unit/contracts/test_operations.py
+Would reformat: tests/unit/contracts/test_registry.py
+Would reformat: tests/unit/core/discovery/test_domain.py
+Would reformat: tests/unit/core/discovery/test_zone_detector.py
+Would reformat: tests/unit/core/lineage/test_metadata.py
+Would reformat: tests/unit/core/spec/test_init.py
+Would reformat: tests/unit/core/spec/test_placement.py
+Would reformat: tests/unit/core/test_contract_runner.py
+Would reformat: tests/unit/core/test_verification_contracts_check.py
+Would reformat: tests/unit/harness/test_agent_monitor.py
+Would reformat: tests/unit/harness/test_agent_orchestrator.py
+Would reformat: tests/unit/harness/test_checkpoint_manager.py
+Would reformat: tests/unit/harness/test_enhanced_context.py
+Would reformat: tests/unit/harness/test_escalation_domain.py
+Would reformat: tests/unit/harness/test_escalation_manager.py
+Would reformat: tests/unit/harness/test_escalation_notifier.py
+Would reformat: tests/unit/harness/test_execution_context_store.py
+Would reformat: tests/unit/harness/test_executor.py
+Would reformat: tests/unit/harness/test_executor_edge_cases.py
+Would reformat: tests/unit/harness/test_llm_executor.py
+Would reformat: tests/unit/harness/test_memory_domain.py
+Would reformat: tests/unit/harness/test_memory_manager.py
+Would reformat: tests/unit/harness/test_memory_store.py
+Would reformat: tests/unit/harness/test_minimal_context.py
+Would reformat: tests/unit/harness/test_monitor_domain.py
+Would reformat: tests/unit/harness/test_native_tool_executor.py
+Would reformat: tests/unit/harness/test_orchestrator_domain.py
+Would reformat: tests/unit/harness/test_recovery_domain.py
+Would reformat: tests/unit/harness/test_recovery_executor.py
+Would reformat: tests/unit/harness/test_selfhosting_tools.py
+Would reformat: tests/unit/harness/test_session_domain.py
+Would reformat: tests/unit/harness/test_session_manager.py
+Would reformat: tests/unit/harness/test_session_store.py
+Would reformat: tests/unit/harness/test_template_context_builder.py
+Would reformat: tests/unit/harness/test_tool_domain.py
+Would reformat: tests/unit/harness/test_tool_executor_bridge.py
+Would reformat: tests/unit/harness/test_tool_registry.py
+Would reformat: tests/unit/harness/test_tool_selector.py
+Would reformat: tests/unit/harness/tool_handlers/test_constants.py
+Would reformat: tests/unit/harness/tool_handlers/test_file_handlers.py
+Would reformat: tests/unit/harness/tool_handlers/test_registry.py
+Would reformat: tests/unit/harness/tool_handlers/test_search_handlers.py
+Would reformat: tests/unit/harness/tool_handlers/test_terminal_handlers.py
+Would reformat: tests/unit/harness/tool_handlers/test_types.py
+Would reformat: tests/unit/harness/tool_handlers/test_verify_handlers.py
+Would reformat: tests/unit/llm/test_client.py
+Would reformat: tests/unit/llm/test_factory.py
+Would reformat: tests/unit/llm/test_interface.py
+Would reformat: tests/unit/llm/test_recording.py
+Would reformat: tests/unit/llm/test_simulated.py
+Would reformat: tests/unit/llm/test_tools.py
+Would reformat: tests/unit/pipeline/conftest.py
+Would reformat: tests/unit/pipeline/stages/conftest.py
+Would reformat: tests/unit/pipeline/stages/test_analyze.py
+Would reformat: tests/unit/pipeline/stages/test_clarify.py
+Would reformat: tests/unit/pipeline/stages/test_deliver.py
+Would reformat: tests/unit/pipeline/stages/test_green.py
+Would reformat: tests/unit/pipeline/stages/test_intake.py
+Would reformat: tests/unit/pipeline/stages/test_red.py
+Would reformat: tests/unit/pipeline/stages/test_spec.py
+Would reformat: tests/unit/pipeline/stages/test_stages_init.py
+Would reformat: tests/unit/pipeline/test_config.py
+Would reformat: tests/unit/pipeline/test_config_validator.py
+Would reformat: tests/unit/pipeline/test_controller.py
+Would reformat: tests/unit/pipeline/test_discovery_integration.py
+Would reformat: tests/unit/pipeline/test_escalation.py
+Would reformat: tests/unit/pipeline/test_module_exports.py
+Would reformat: tests/unit/pipeline/test_registry.py
+Would reformat: tests/unit/pipeline/test_stage_executor.py
+Would reformat: tests/unit/pipeline/test_state.py
+Would reformat: tests/unit/pipeline/test_state_machine_properties.py
+Would reformat: tests/unit/pipeline/test_state_store.py
+Would reformat: tests/unit/pipeline/test_validator.py
+Would reformat: tests/unit/tools/bridge/test_contract_builder.py
+Would reformat: tests/unit/tools/bridge/test_profile_loader.py
+Would reformat: tests/unit/tools/bridge/test_registry.py
+Would reformat: tests/unit/tools/cicd/test_baseline.py
+Would reformat: tests/unit/tools/cicd/test_domain.py
+Would reformat: tests/unit/tools/cicd/test_runner.py
+Would reformat: tests/unit/tools/conformance/test_domain.py
+Would reformat: tests/unit/tools/conformance/test_manager.py
+Would reformat: tests/unit/tools/conformance/test_stores.py
+Would reformat: tests/unit/tools/generate/test_engine.py
+Would reformat: tests/unit/tools/generate/test_parser.py
+Would reformat: tests/unit/tools/generate/test_prompt_builder.py
+Would reformat: tests/unit/tools/generate/test_provider.py
+Would reformat: tests/unit/tools/generate/test_writer.py
+Would reformat: tests/unit/tools/tdflow/runners/test_dotnet.py
+Would reformat: tests/unit/tools/tdflow/test_domain.py
+Would reformat: tests/unit/tools/tdflow/test_orchestrator.py
+Would reformat: tests/unit/tools/test_builtin_checks_architecture.py
+Would reformat: tests/unit/tools/test_context_assembler.py
+Would reformat: tests/unit/tools/test_context_retrieval.py
+Would reformat: tests/unit/tools/test_contracts_execution_naming.py
+Would reformat: tests/unit/tools/test_verification_checks.py
+Would reformat: tests/unit/tools/test_verification_runner.py
+345 files would be reformatted, 103 files already formatted
+
+  - 💡 *Run 'ruff format .' to format code*
 - 🟡 **ruff-lint** at `file`
   - Command failed with exit code 1: I001 [*] Import block is un-sorted or un-formatted
   --> run_contract.py:14:1
@@ -6276,365 +6635,6 @@ Found 513 errors.
 [*] 113 fixable with the `--fix` option (15 hidden fixes can be enabled with the `--unsafe-fixes` option).
 
   - 💡 *Run 'ruff check --fix .' to auto-fix issues*
-- 🔵 **ruff-format** at `file`
-  - Command failed with exit code 1: Would reformat: execute.py
-Would reformat: run_contract.py
-Would reformat: run_contract_commands.py
-Would reformat: src/agentforge/cli/click_commands/__init__.py
-Would reformat: src/agentforge/cli/click_commands/agent.py
-Would reformat: src/agentforge/cli/click_commands/bridge.py
-Would reformat: src/agentforge/cli/click_commands/ci.py
-Would reformat: src/agentforge/cli/click_commands/config.py
-Would reformat: src/agentforge/cli/click_commands/conformance.py
-Would reformat: src/agentforge/cli/click_commands/contracts.py
-Would reformat: src/agentforge/cli/click_commands/discover.py
-Would reformat: src/agentforge/cli/click_commands/generate.py
-Would reformat: src/agentforge/cli/click_commands/pipeline.py
-Would reformat: src/agentforge/cli/click_commands/spec.py
-Would reformat: src/agentforge/cli/click_commands/tdflow.py
-Would reformat: src/agentforge/cli/click_commands/utility.py
-Would reformat: src/agentforge/cli/click_commands/workspace.py
-Would reformat: src/agentforge/cli/commands/agent.py
-Would reformat: src/agentforge/cli/commands/bridge.py
-Would reformat: src/agentforge/cli/commands/ci.py
-Would reformat: src/agentforge/cli/commands/config.py
-Would reformat: src/agentforge/cli/commands/conformance.py
-Would reformat: src/agentforge/cli/commands/conformance_formatters.py
-Would reformat: src/agentforge/cli/commands/context.py
-Would reformat: src/agentforge/cli/commands/contracts.py
-Would reformat: src/agentforge/cli/commands/discover.py
-Would reformat: src/agentforge/cli/commands/revision.py
-Would reformat: src/agentforge/cli/commands/revision_apply.py
-Would reformat: src/agentforge/cli/commands/spec.py
-Would reformat: src/agentforge/cli/commands/spec_adapt.py
-Would reformat: src/agentforge/cli/commands/tdflow.py
-Would reformat: src/agentforge/cli/commands/verify.py
-Would reformat: src/agentforge/cli/commands/workspace.py
-Would reformat: src/agentforge/cli/core.py
-Would reformat: src/agentforge/cli/helpers.py
-Would reformat: src/agentforge/cli/main.py
-Would reformat: src/agentforge/cli/parser.py
-Would reformat: src/agentforge/cli/render.py
-Would reformat: src/agentforge/core/analyze_structure.py
-Would reformat: src/agentforge/core/audit/context_frame.py
-Would reformat: src/agentforge/core/audit/conversation_archive.py
-Would reformat: src/agentforge/core/audit/frame_logger.py
-Would reformat: src/agentforge/core/audit/integrity_chain.py
-Would reformat: src/agentforge/core/audit/thread_correlator.py
-Would reformat: src/agentforge/core/bridge/conflict_resolver.py
-Would reformat: src/agentforge/core/bridge/contract_builder.py
-Would reformat: src/agentforge/core/bridge/domain.py
-Would reformat: src/agentforge/core/bridge/mappings/architecture.py
-Would reformat: src/agentforge/core/bridge/mappings/base.py
-Would reformat: src/agentforge/core/bridge/mappings/conventions.py
-Would reformat: src/agentforge/core/bridge/mappings/cqrs.py
-Would reformat: src/agentforge/core/bridge/mappings/registry.py
-Would reformat: src/agentforge/core/bridge/mappings/repository.py
-Would reformat: src/agentforge/core/bridge/orchestrator.py
-Would reformat: src/agentforge/core/bridge/profile_loader.py
-Would reformat: src/agentforge/core/builtin_checks.py
-Would reformat: src/agentforge/core/builtin_checks_architecture.py
-Would reformat: src/agentforge/core/builtin_checks_architecture_helpers.py
-Would reformat: src/agentforge/core/cicd/baseline.py
-Would reformat: src/agentforge/core/cicd/domain.py
-Would reformat: src/agentforge/core/cicd/platforms/azure.py
-Would reformat: src/agentforge/core/cicd/platforms/github.py
-Would reformat: src/agentforge/core/cicd/runner.py
-Would reformat: src/agentforge/core/code_chunker.py
-Would reformat: src/agentforge/core/command_runner.py
-Would reformat: src/agentforge/core/conformance/domain.py
-Would reformat: src/agentforge/core/conformance/history_store.py
-Would reformat: src/agentforge/core/conformance/manager.py
-Would reformat: src/agentforge/core/conformance/stores.py
-Would reformat: src/agentforge/core/context/agent_config.py
-Would reformat: src/agentforge/core/context/audit.py
-Would reformat: src/agentforge/core/context/compaction.py
-Would reformat: src/agentforge/core/context/fingerprint.py
-Would reformat: src/agentforge/core/context/templates/__init__.py
-Would reformat: src/agentforge/core/context/templates/base.py
-Would reformat: src/agentforge/core/context/templates/bridge.py
-Would reformat: src/agentforge/core/context/templates/code_review.py
-Would reformat: src/agentforge/core/context/templates/discovery.py
-Would reformat: src/agentforge/core/context/templates/fix_violation.py
-Would reformat: src/agentforge/core/context/templates/implement_feature.py
-Would reformat: src/agentforge/core/context/templates/refactor.py
-Would reformat: src/agentforge/core/context/templates/write_tests.py
-Would reformat: src/agentforge/core/context_assembler.py
-Would reformat: src/agentforge/core/context_assembler_types.py
-Would reformat: src/agentforge/core/context_retrieval.py
-Would reformat: src/agentforge/core/context_retrieval_cli.py
-Would reformat: src/agentforge/core/contract_runner.py
-Would reformat: src/agentforge/core/contract_validator.py
-Would reformat: src/agentforge/core/contract_validator_types.py
-Would reformat: src/agentforge/core/contracts/cli.py
-Would reformat: src/agentforge/core/contracts/draft.py
-Would reformat: src/agentforge/core/contracts/drafter.py
-Would reformat: src/agentforge/core/contracts/enforcer.py
-Would reformat: src/agentforge/core/contracts/evolution.py
-Would reformat: src/agentforge/core/contracts/operations/loader.py
-Would reformat: src/agentforge/core/contracts/operations/verifier.py
-Would reformat: src/agentforge/core/contracts/registry.py
-Would reformat: src/agentforge/core/contracts/reviewer.py
-Would reformat: src/agentforge/core/contracts.py
-Would reformat: src/agentforge/core/contracts_ast.py
-Would reformat: src/agentforge/core/contracts_execution.py
-Would reformat: src/agentforge/core/contracts_lsp.py
-Would reformat: src/agentforge/core/contracts_registry.py
-Would reformat: src/agentforge/core/contracts_types.py
-Would reformat: src/agentforge/core/discovery/analyzers/interactions.py
-Would reformat: src/agentforge/core/discovery/analyzers/patterns.py
-Would reformat: src/agentforge/core/discovery/analyzers/structure.py
-Would reformat: src/agentforge/core/discovery/analyzers/test_linkage.py
-Would reformat: src/agentforge/core/discovery/domain.py
-Would reformat: src/agentforge/core/discovery/generators/as_built_spec.py
-Would reformat: src/agentforge/core/discovery/generators/lineage_embedder.py
-Would reformat: src/agentforge/core/discovery/generators/profile.py
-Would reformat: src/agentforge/core/discovery/manager.py
-Would reformat: src/agentforge/core/discovery/providers/__init__.py
-Would reformat: src/agentforge/core/discovery/providers/base.py
-Would reformat: src/agentforge/core/discovery/providers/dotnet_provider.py
-Would reformat: src/agentforge/core/discovery/providers/python_provider.py
-Would reformat: src/agentforge/core/discovery/zones/detector.py
-Would reformat: src/agentforge/core/discovery/zones/merger.py
-Would reformat: src/agentforge/core/embedding_providers.py
-Would reformat: src/agentforge/core/generate/__init__.py
-Would reformat: src/agentforge/core/generate/parser.py
-Would reformat: src/agentforge/core/generate/prompt_builder.py
-Would reformat: src/agentforge/core/generate/provider.py
-Would reformat: src/agentforge/core/generate/writer.py
-Would reformat: src/agentforge/core/harness/action_parser.py
-Would reformat: src/agentforge/core/harness/agent_monitor.py
-Would reformat: src/agentforge/core/harness/agent_orchestrator.py
-Would reformat: src/agentforge/core/harness/agent_prompt_builder.py
-Would reformat: src/agentforge/core/harness/auto_fix_daemon.py
-Would reformat: src/agentforge/core/harness/checkpoint_manager.py
-Would reformat: src/agentforge/core/harness/conformance_tools.py
-Would reformat: src/agentforge/core/harness/escalation_domain.py
-Would reformat: src/agentforge/core/harness/escalation_manager.py
-Would reformat: src/agentforge/core/harness/escalation_notifier.py
-Would reformat: src/agentforge/core/harness/execution_context_store.py
-Would reformat: src/agentforge/core/harness/fix_violation_workflow.py
-Would reformat: src/agentforge/core/harness/git_tools.py
-Would reformat: src/agentforge/core/harness/llm_executor.py
-Would reformat: src/agentforge/core/harness/llm_executor_domain.py
-Would reformat: src/agentforge/core/harness/memory_domain.py
-Would reformat: src/agentforge/core/harness/memory_manager.py
-Would reformat: src/agentforge/core/harness/memory_store.py
-Would reformat: src/agentforge/core/harness/minimal_context/adaptive_budget.py
-Would reformat: src/agentforge/core/harness/minimal_context/context_models.py
-Would reformat: src/agentforge/core/harness/minimal_context/executor.py
-Would reformat: src/agentforge/core/harness/minimal_context/fix_workflow.py
-Would reformat: src/agentforge/core/harness/minimal_context/loop_detector.py
-Would reformat: src/agentforge/core/harness/minimal_context/native_tool_executor.py
-Would reformat: src/agentforge/core/harness/minimal_context/phase_machine.py
-Would reformat: src/agentforge/core/harness/minimal_context/state_store.py
-Would reformat: src/agentforge/core/harness/minimal_context/step_outcome.py
-Would reformat: src/agentforge/core/harness/minimal_context/template_context_builder.py
-Would reformat: src/agentforge/core/harness/minimal_context/tool_handlers/__init__.py
-Would reformat: src/agentforge/core/harness/minimal_context/tool_handlers/file_handlers.py
-Would reformat: src/agentforge/core/harness/minimal_context/tool_handlers/search_handlers.py
-Would reformat: src/agentforge/core/harness/minimal_context/tool_handlers/terminal_handlers.py
-Would reformat: src/agentforge/core/harness/minimal_context/tool_handlers/verify_handlers.py
-Would reformat: src/agentforge/core/harness/minimal_context/understanding.py
-Would reformat: src/agentforge/core/harness/minimal_context/working_memory.py
-Would reformat: src/agentforge/core/harness/orchestrator_domain.py
-Would reformat: src/agentforge/core/harness/python_tools.py
-Would reformat: src/agentforge/core/harness/recovery_domain.py
-Would reformat: src/agentforge/core/harness/recovery_executor.py
-Would reformat: src/agentforge/core/harness/refactoring_tools.py
-Would reformat: src/agentforge/core/harness/rollback_manager.py
-Would reformat: src/agentforge/core/harness/session_manager.py
-Would reformat: src/agentforge/core/harness/test_runner_tools.py
-Would reformat: src/agentforge/core/harness/tool_domain.py
-Would reformat: src/agentforge/core/harness/tool_executor_bridge.py
-Would reformat: src/agentforge/core/harness/tool_registry.py
-Would reformat: src/agentforge/core/harness/tool_selector.py
-Would reformat: src/agentforge/core/harness/violation_tools.py
-Would reformat: src/agentforge/core/init.py
-Would reformat: src/agentforge/core/llm/factory.py
-Would reformat: src/agentforge/core/llm/interface.py
-Would reformat: src/agentforge/core/llm/recording.py
-Would reformat: src/agentforge/core/llm/simulated.py
-Would reformat: src/agentforge/core/llm/tools.py
-Would reformat: src/agentforge/core/lsp_adapter.py
-Would reformat: src/agentforge/core/lsp_adapter_cli.py
-Would reformat: src/agentforge/core/lsp_adapters.py
-Would reformat: src/agentforge/core/lsp_client.py
-Would reformat: src/agentforge/core/lsp_types.py
-Would reformat: src/agentforge/core/output_validator.py
-Would reformat: src/agentforge/core/pipeline/config.py
-Would reformat: src/agentforge/core/pipeline/controller.py
-Would reformat: src/agentforge/core/pipeline/discovery_integration.py
-Would reformat: src/agentforge/core/pipeline/escalation.py
-Would reformat: src/agentforge/core/pipeline/registry.py
-Would reformat: src/agentforge/core/pipeline/schemas.py
-Would reformat: src/agentforge/core/pipeline/stages/analyze.py
-Would reformat: src/agentforge/core/pipeline/stages/clarify.py
-Would reformat: src/agentforge/core/pipeline/stages/deliver.py
-Would reformat: src/agentforge/core/pipeline/stages/green.py
-Would reformat: src/agentforge/core/pipeline/stages/intake.py
-Would reformat: src/agentforge/core/pipeline/stages/red.py
-Would reformat: src/agentforge/core/pipeline/stages/refactor.py
-Would reformat: src/agentforge/core/pipeline/stages/spec.py
-Would reformat: src/agentforge/core/pipeline/state.py
-Would reformat: src/agentforge/core/pipeline/validator.py
-Would reformat: src/agentforge/core/pyright_runner.py
-Would reformat: src/agentforge/core/refactoring/base.py
-Would reformat: src/agentforge/core/refactoring/rope_provider.py
-Would reformat: src/agentforge/core/spec/__init__.py
-Would reformat: src/agentforge/core/spec/placement.py
-Would reformat: src/agentforge/core/tdflow/phases/green.py
-Would reformat: src/agentforge/core/tdflow/phases/red.py
-Would reformat: src/agentforge/core/tdflow/session.py
-Would reformat: src/agentforge/core/validate_schema.py
-Would reformat: src/agentforge/core/vector_search.py
-Would reformat: src/agentforge/core/vector_types.py
-Would reformat: src/agentforge/core/verification_ast.py
-Would reformat: src/agentforge/core/verification_checks.py
-Would reformat: src/agentforge/core/verification_contracts_check.py
-Would reformat: src/agentforge/core/verification_reports.py
-Would reformat: src/agentforge/core/verification_runner.py
-Would reformat: src/agentforge/core/verification_types.py
-Would reformat: src/agentforge/core/workspace.py
-Would reformat: src/agentforge/core/workspace_config.py
-Would reformat: src/agentforge/core/workspace_types.py
-Would reformat: test.py
-Would reformat: tests/conftest.py
-Would reformat: tests/integration/cli/conftest.py
-Would reformat: tests/integration/cli/test_pipeline_cli_integration.py
-Would reformat: tests/integration/context/test_context_v2_integration.py
-Would reformat: tests/integration/harness/test_harness_workflow.py
-Would reformat: tests/integration/pipeline/conftest.py
-Would reformat: tests/integration/pipeline/stages/conftest.py
-Would reformat: tests/integration/pipeline/stages/test_design_pipeline.py
-Would reformat: tests/integration/pipeline/stages/test_refactor_deliver_pipeline.py
-Would reformat: tests/integration/pipeline/stages/test_tdd_pipeline.py
-Would reformat: tests/integration/pipeline/test_config_integration.py
-Would reformat: tests/integration/pipeline/test_pipeline_execution.py
-Would reformat: tests/integration/tool_handlers/test_context_injection.py
-Would reformat: tests/integration/workflows/conftest.py
-Would reformat: tests/integration/workflows/test_fix_violation_workflow.py
-Would reformat: tests/test_python_checks.py
-Would reformat: tests/unit/audit/test_conversation_archive.py
-Would reformat: tests/unit/audit/test_frame_logger.py
-Would reformat: tests/unit/audit/test_thread_correlator.py
-Would reformat: tests/unit/audit/test_transaction_logger.py
-Would reformat: tests/unit/cli/conftest.py
-Would reformat: tests/unit/cli/test_pipeline_commands.py
-Would reformat: tests/unit/cli/test_spec_adapt.py
-Would reformat: tests/unit/context/test_compaction.py
-Would reformat: tests/unit/contracts/test_drafter.py
-Would reformat: tests/unit/contracts/test_enforcer.py
-Would reformat: tests/unit/contracts/test_evolution.py
-Would reformat: tests/unit/contracts/test_operations.py
-Would reformat: tests/unit/contracts/test_registry.py
-Would reformat: tests/unit/core/discovery/test_domain.py
-Would reformat: tests/unit/core/discovery/test_zone_detector.py
-Would reformat: tests/unit/core/lineage/test_metadata.py
-Would reformat: tests/unit/core/spec/test_init.py
-Would reformat: tests/unit/core/spec/test_placement.py
-Would reformat: tests/unit/core/test_contract_runner.py
-Would reformat: tests/unit/core/test_verification_contracts_check.py
-Would reformat: tests/unit/harness/test_agent_monitor.py
-Would reformat: tests/unit/harness/test_agent_orchestrator.py
-Would reformat: tests/unit/harness/test_checkpoint_manager.py
-Would reformat: tests/unit/harness/test_enhanced_context.py
-Would reformat: tests/unit/harness/test_escalation_domain.py
-Would reformat: tests/unit/harness/test_escalation_manager.py
-Would reformat: tests/unit/harness/test_escalation_notifier.py
-Would reformat: tests/unit/harness/test_execution_context_store.py
-Would reformat: tests/unit/harness/test_executor.py
-Would reformat: tests/unit/harness/test_executor_edge_cases.py
-Would reformat: tests/unit/harness/test_llm_executor.py
-Would reformat: tests/unit/harness/test_memory_domain.py
-Would reformat: tests/unit/harness/test_memory_manager.py
-Would reformat: tests/unit/harness/test_memory_store.py
-Would reformat: tests/unit/harness/test_minimal_context.py
-Would reformat: tests/unit/harness/test_monitor_domain.py
-Would reformat: tests/unit/harness/test_native_tool_executor.py
-Would reformat: tests/unit/harness/test_orchestrator_domain.py
-Would reformat: tests/unit/harness/test_recovery_domain.py
-Would reformat: tests/unit/harness/test_recovery_executor.py
-Would reformat: tests/unit/harness/test_selfhosting_tools.py
-Would reformat: tests/unit/harness/test_session_domain.py
-Would reformat: tests/unit/harness/test_session_manager.py
-Would reformat: tests/unit/harness/test_session_store.py
-Would reformat: tests/unit/harness/test_template_context_builder.py
-Would reformat: tests/unit/harness/test_tool_domain.py
-Would reformat: tests/unit/harness/test_tool_executor_bridge.py
-Would reformat: tests/unit/harness/test_tool_registry.py
-Would reformat: tests/unit/harness/test_tool_selector.py
-Would reformat: tests/unit/harness/tool_handlers/test_constants.py
-Would reformat: tests/unit/harness/tool_handlers/test_file_handlers.py
-Would reformat: tests/unit/harness/tool_handlers/test_registry.py
-Would reformat: tests/unit/harness/tool_handlers/test_search_handlers.py
-Would reformat: tests/unit/harness/tool_handlers/test_terminal_handlers.py
-Would reformat: tests/unit/harness/tool_handlers/test_types.py
-Would reformat: tests/unit/harness/tool_handlers/test_verify_handlers.py
-Would reformat: tests/unit/llm/test_client.py
-Would reformat: tests/unit/llm/test_factory.py
-Would reformat: tests/unit/llm/test_interface.py
-Would reformat: tests/unit/llm/test_recording.py
-Would reformat: tests/unit/llm/test_simulated.py
-Would reformat: tests/unit/llm/test_tools.py
-Would reformat: tests/unit/pipeline/conftest.py
-Would reformat: tests/unit/pipeline/stages/conftest.py
-Would reformat: tests/unit/pipeline/stages/test_analyze.py
-Would reformat: tests/unit/pipeline/stages/test_clarify.py
-Would reformat: tests/unit/pipeline/stages/test_deliver.py
-Would reformat: tests/unit/pipeline/stages/test_green.py
-Would reformat: tests/unit/pipeline/stages/test_intake.py
-Would reformat: tests/unit/pipeline/stages/test_red.py
-Would reformat: tests/unit/pipeline/stages/test_spec.py
-Would reformat: tests/unit/pipeline/stages/test_stages_init.py
-Would reformat: tests/unit/pipeline/test_config.py
-Would reformat: tests/unit/pipeline/test_config_validator.py
-Would reformat: tests/unit/pipeline/test_controller.py
-Would reformat: tests/unit/pipeline/test_discovery_integration.py
-Would reformat: tests/unit/pipeline/test_escalation.py
-Would reformat: tests/unit/pipeline/test_module_exports.py
-Would reformat: tests/unit/pipeline/test_registry.py
-Would reformat: tests/unit/pipeline/test_stage_executor.py
-Would reformat: tests/unit/pipeline/test_state.py
-Would reformat: tests/unit/pipeline/test_state_machine_properties.py
-Would reformat: tests/unit/pipeline/test_state_store.py
-Would reformat: tests/unit/pipeline/test_validator.py
-Would reformat: tests/unit/tools/bridge/test_contract_builder.py
-Would reformat: tests/unit/tools/bridge/test_profile_loader.py
-Would reformat: tests/unit/tools/bridge/test_registry.py
-Would reformat: tests/unit/tools/cicd/test_baseline.py
-Would reformat: tests/unit/tools/cicd/test_domain.py
-Would reformat: tests/unit/tools/cicd/test_runner.py
-Would reformat: tests/unit/tools/conformance/test_domain.py
-Would reformat: tests/unit/tools/conformance/test_manager.py
-Would reformat: tests/unit/tools/conformance/test_stores.py
-Would reformat: tests/unit/tools/generate/test_engine.py
-Would reformat: tests/unit/tools/generate/test_parser.py
-Would reformat: tests/unit/tools/generate/test_prompt_builder.py
-Would reformat: tests/unit/tools/generate/test_provider.py
-Would reformat: tests/unit/tools/generate/test_writer.py
-Would reformat: tests/unit/tools/tdflow/runners/test_dotnet.py
-Would reformat: tests/unit/tools/tdflow/test_domain.py
-Would reformat: tests/unit/tools/tdflow/test_orchestrator.py
-Would reformat: tests/unit/tools/test_builtin_checks_architecture.py
-Would reformat: tests/unit/tools/test_context_assembler.py
-Would reformat: tests/unit/tools/test_context_retrieval.py
-Would reformat: tests/unit/tools/test_contracts_execution_naming.py
-Would reformat: tests/unit/tools/test_verification_checks.py
-Would reformat: tests/unit/tools/test_verification_runner.py
-345 files would be reformatted, 103 files already formatted
-
-  - 💡 *Run 'ruff format .' to format code*
-- 🟡 **mypy-standard** at `file`
-  - Command not found: mypy
-- 🟡 **bandit-scan** at `file`
-  - Command failed with exit code 1: [main]	INFO	profile include tests: None
-[main]	INFO	profile exclude tests: None
-[main]	INFO	cli include tests: None
-[main]	INFO	cli exclude tests: None
-[main]	INFO	running on Python 3.11.14
-
-  - 💡 *Fix security issues identified by bandit*
 - 🟡 **require-main-entry** at `file`
   - Required file not found: '__main__.py'
   - 💡 *Create __main__.py with 'if __name__ == "__main__"' block*
@@ -6644,8 +6644,6 @@ Would reformat: tests/unit/tools/test_verification_runner.py
 - 🔵 **repository-pattern** at `file`
   - Required file not found: '**/interfaces/repositories.py'
   - 💡 *Create repository interfaces and implementations for data access*
-- 🔴 **mypy-strict** at `file`
-  - Command not found: mypy
 - 🟡 **pyright-check** at `file`
   - Command failed with exit code 1: /Users/sean/source/tools/agentforge/execute.py
   /Users/sean/source/tools/agentforge/execute.py:9:6 - error: Import "cli.main" could not be resolved (reportMissingImports)
@@ -8230,6 +8228,8 @@ Would reformat: tests/unit/tools/test_verification_runner.py
 815 errors, 15 warnings, 0 informations
 
   - 💡 *Fix type errors reported by pyright*
+- 🔴 **mypy-strict** at `file`
+  - Command not found: mypy
 - 🔵 **require-py-typed** at `file`
   - Required file not found: 'src/**/py.typed'
   - 💡 *Create an empty py.typed file in your package root*
@@ -8909,26 +8909,26 @@ FAILED tests/unit/tools/generate/test_provider.py::TestClaudeProvider::test_gene
   - Unknown check type: api_pattern
 - 🔴 **query-parameters** at `file`
   - Unknown check type: api_pattern
-- 🔴 **request-body-format** at `file`
-  - Unknown check type: api_pattern
 - 🔴 **response-envelope** at `file`
+  - Unknown check type: api_pattern
+- 🔴 **request-body-format** at `file`
   - Unknown check type: api_pattern
 - 🔴 **error-response-format** at `file`
   - Unknown check type: api_pattern
 - 🔴 **hateoas-links** at `file`
   - Unknown check type: api_pattern
-- 🔴 **api-versioning** at `file`
-  - Unknown check type: api_pattern
 - 🔴 **breaking-change-policy** at `file`
+  - Unknown check type: api_pattern
+- 🔴 **api-versioning** at `file`
   - Unknown check type: api_pattern
 - 🔴 **authentication-pattern** at `file`
   - Unknown check type: security_pattern
 - 🔴 **authorization-response** at `file`
   - Unknown check type: security_pattern
-- 🔴 **rate-limiting-headers** at `file`
-  - Unknown check type: api_pattern
 - 🔴 **openapi-documentation** at `file`
   - Unknown check type: documentation
+- 🔴 **rate-limiting-headers** at `file`
+  - Unknown check type: api_pattern
 - 🔴 **api-changelog** at `file`
   - Unknown check type: documentation
 - 🔵 **repository-pattern** at `file`
@@ -10726,22 +10726,22 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
-- 🟡 **function-size-limit** at `L32`
-  - Function 'discover' has 31 lines (max: 30)
 - 🟡 **parameter-count-limit** at `L32`
   - Function 'discover' has 11 parameters (max: 5)
+- 🟡 **function-size-limit** at `L32`
+  - Function 'discover' has 31 lines (max: 30)
 
 **`src/agentforge/cli/click_commands/generate.py`** (13 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L63`
-  - Function 'code' has complexity 15 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L63`
   - Function 'code' has 73 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
 - 🟡 **max-parameter-count** at `L63`
   - Function 'code' has 6 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
+- 🟡 **max-cyclomatic-complexity** at `L63`
+  - Function 'code' has complexity 15 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🔵 **consistent-type-imports** at `file`
   - Required pattern not found: 'if TYPE_CHECKING:'
   - 💡 *Use 'if TYPE_CHECKING:' for type-only imports to avoid circular imports*
@@ -10764,14 +10764,14 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **parameter-count-limit** at `L63`
+  - Function 'code' has 6 parameters (max: 5)
 - 🟡 **function-size-limit** at `L63`
   - Function 'code' has 73 lines (max: 30)
 - 🟡 **function-size-limit** at `L184`
   - Function 'parse_response' has 47 lines (max: 30)
 - 🟡 **function-size-limit** at `L272`
   - Function 'prompt' has 43 lines (max: 30)
-- 🟡 **parameter-count-limit** at `L63`
-  - Function 'code' has 6 parameters (max: 5)
 - 🟡 **cyclomatic-complexity-limit** at `L63`
   - Function 'code' has complexity 15 (max: 10)
 - 🔵 **descriptive-naming** at `L135`
@@ -10780,9 +10780,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/cli/click_commands/pipeline.py`** (28 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L331`
-  - Function 'status' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L331`
   - Function 'status' has 59 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -10792,6 +10789,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-parameter-count** at `L154`
   - Function 'start' has 7 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
+- 🟡 **max-cyclomatic-complexity** at `L331`
+  - Function 'status' has complexity 12 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-file-lines** at `file`
   - File exceeds line limit (682 lines > 500)
   - 💡 *Consider splitting into smaller files*
@@ -10835,6 +10835,8 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **parameter-count-limit** at `L154`
+  - Function 'start' has 7 parameters (max: 5)
 - 🟡 **function-size-limit** at `L200`
   - Function 'design' has 33 lines (max: 30)
 - 🟡 **function-size-limit** at `L263`
@@ -10845,8 +10847,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
   - Function 'pipelines' has 35 lines (max: 30)
 - 🟡 **function-size-limit** at `L636`
   - Function 'artifacts' has 34 lines (max: 30)
-- 🟡 **parameter-count-limit** at `L154`
-  - Function 'start' has 7 parameters (max: 5)
 - 🟡 **nesting-depth-limit** at `L73`
   - Function '_display_result' has nesting depth 7 (max: 4)
 - 🟡 **cyclomatic-complexity-limit** at `L331`
@@ -10900,14 +10900,14 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
-- 🟡 **function-size-limit** at `L159`
-  - Function 'adapt' has 36 lines (max: 30)
 - 🟡 **parameter-count-limit** at `L79`
   - Function 'draft' has 6 parameters (max: 5)
 - 🟡 **parameter-count-limit** at `L131`
   - Function 'revise' has 8 parameters (max: 5)
 - 🟡 **parameter-count-limit** at `L159`
   - Function 'adapt' has 8 parameters (max: 5)
+- 🟡 **function-size-limit** at `L159`
+  - Function 'adapt' has 36 lines (max: 30)
 
 **`src/agentforge/cli/click_commands/tdflow.py`** (4 violations)
 
@@ -11114,18 +11114,18 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/cli/commands/agent.py`** (26 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L116`
-  - Function 'run_status' has complexity 14 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L374`
-  - Function 'run_fix_violation' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L374`
   - Function 'run_fix_violation' has 87 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
 - 🟡 **max-function-length** at `L491`
   - Function 'run_fix_violations_batch' has 71 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
+- 🟡 **max-cyclomatic-complexity** at `L116`
+  - Function 'run_status' has complexity 14 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L374`
+  - Function 'run_fix_violation' has complexity 12 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-file-lines** at `file`
   - File exceeds line limit (627 lines > 500)
   - 💡 *Consider splitting into smaller files*
@@ -11200,18 +11200,18 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/cli/commands/bridge.py`** (13 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L17`
-  - Function 'run_bridge_generate' has complexity 13 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L145`
-  - Function 'run_bridge_mappings' has complexity 11 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L17`
   - Function 'run_bridge_generate' has 65 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
 - 🟡 **max-parameter-count** at `L17`
   - Function 'run_bridge_generate' has 8 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
+- 🟡 **max-cyclomatic-complexity** at `L17`
+  - Function 'run_bridge_generate' has complexity 13 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L145`
+  - Function 'run_bridge_mappings' has complexity 11 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🔵 **consistent-type-imports** at `file`
   - Required pattern not found: 'if TYPE_CHECKING:'
   - 💡 *Use 'if TYPE_CHECKING:' for type-only imports to avoid circular imports*
@@ -11231,14 +11231,14 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **parameter-count-limit** at `L17`
+  - Function 'run_bridge_generate' has 8 parameters (max: 5)
 - 🟡 **function-size-limit** at `L17`
   - Function 'run_bridge_generate' has 65 lines (max: 30)
 - 🟡 **function-size-limit** at `L145`
   - Function 'run_bridge_mappings' has 41 lines (max: 30)
 - 🟡 **function-size-limit** at `L213`
   - Function 'run_bridge_diff' has 33 lines (max: 30)
-- 🟡 **parameter-count-limit** at `L17`
-  - Function 'run_bridge_generate' has 8 parameters (max: 5)
 - 🟡 **cyclomatic-complexity-limit** at `L17`
   - Function 'run_bridge_generate' has complexity 13 (max: 10)
 - 🟡 **cyclomatic-complexity-limit** at `L145`
@@ -11246,12 +11246,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/cli/commands/ci.py`** (163 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L164`
-  - Function 'run_baseline_compare' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L164`
   - Function 'run_baseline_compare' has 51 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
+- 🟡 **max-cyclomatic-complexity** at `L164`
+  - Function 'run_baseline_compare' has complexity 12 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🔵 **consistent-type-imports** at `file`
   - Required pattern not found: 'if TYPE_CHECKING:'
   - 💡 *Use 'if TYPE_CHECKING:' for type-only imports to avoid circular imports*
@@ -12143,15 +12143,15 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/cli/commands/spec.py`** (47 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L251`
-  - Function '_extract_locations_from_analysis' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L334`
   - Function 'run_draft' has 62 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
 - 🟡 **max-nesting-depth** at `L251`
   - Function '_extract_locations_from_analysis' has nesting depth 7 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
+- 🟡 **max-cyclomatic-complexity** at `L251`
+  - Function '_extract_locations_from_analysis' has complexity 12 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-line-length** at `L144`
   - Line exceeds 120 characters (148 chars)
   - 💡 *Break long lines for better readability*
@@ -12292,12 +12292,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/cli/commands/spec_adapt.py`** (15 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L234`
-  - Function 'run_adapt' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L234`
   - Function 'run_adapt' has 99 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
+- 🟡 **max-cyclomatic-complexity** at `L234`
+  - Function 'run_adapt' has complexity 12 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-line-length** at `L81`
   - Line exceeds 120 characters (122 chars)
   - 💡 *Break long lines for better readability*
@@ -12566,12 +12566,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **max-imports** at `L1`
   - File has 38 imports (max: 30)
   - 💡 *Consider splitting module or consolidating imports*
-- 🔵 **consistent-type-imports** at `file`
-  - Required pattern not found: 'if TYPE_CHECKING:'
-  - 💡 *Use 'if TYPE_CHECKING:' for type-only imports to avoid circular imports*
 - 🔵 **max-imports** at `L1`
   - File has 38 imports (max: 30)
   - 💡 *Consider splitting module or consolidating imports*
+- 🔵 **consistent-type-imports** at `file`
+  - Required pattern not found: 'if TYPE_CHECKING:'
+  - 💡 *Use 'if TYPE_CHECKING:' for type-only imports to avoid circular imports*
 - 🔵 **colored-output-optional** at `file`
   - Required pattern not found: '(NO_COLOR|--no-color|color\s*=)'
   - 💡 *Add --no-color flag or check NO_COLOR environment variable*
@@ -13208,6 +13208,10 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **parameter-count-limit** at `L139`
+  - Function 'spawn_child_thread' has 9 parameters (max: 5)
+- 🟡 **parameter-count-limit** at `L247`
+  - Function 'log_llm_interaction' has 17 parameters (max: 5)
 - 🟡 **function-size-limit** at `L139`
   - Function 'spawn_child_thread' has 51 lines (max: 30)
 - 🟡 **function-size-limit** at `L199`
@@ -13216,10 +13220,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
   - Function 'log_llm_interaction' has 104 lines (max: 30)
 - 🟡 **function-size-limit** at `L396`
   - Function 'complete_thread' has 34 lines (max: 30)
-- 🟡 **parameter-count-limit** at `L139`
-  - Function 'spawn_child_thread' has 9 parameters (max: 5)
-- 🟡 **parameter-count-limit** at `L247`
-  - Function 'log_llm_interaction' has 17 parameters (max: 5)
 - 🟡 **class-size-limit** at `L76`
   - Class 'AuditManager' has 21 methods (max: 15)
 - 🔵 **descriptive-naming** at `L496`
@@ -13228,12 +13228,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/audit/context_frame.py`** (17 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L313`
-  - Function 'to_dict' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-parameter-count** at `L438`
   - Function 'with_llm_interaction' has 10 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
+- 🟡 **max-cyclomatic-complexity** at `L313`
+  - Function 'to_dict' has complexity 12 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-file-lines** at `file`
   - File exceeds line limit (600 lines > 500)
   - 💡 *Consider splitting into smaller files*
@@ -13259,14 +13259,14 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **parameter-count-limit** at `L438`
+  - Function 'with_llm_interaction' has 10 parameters (max: 5)
 - 🟡 **function-size-limit** at `L313`
   - Function 'to_dict' has 33 lines (max: 30)
 - 🟡 **function-size-limit** at `L400`
   - Function 'with_input_context' has 31 lines (max: 30)
 - 🟡 **function-size-limit** at `L466`
   - Function 'with_parsed_artifact' has 40 lines (max: 30)
-- 🟡 **parameter-count-limit** at `L438`
-  - Function 'with_llm_interaction' has 10 parameters (max: 5)
 - 🟡 **cyclomatic-complexity-limit** at `L313`
   - Function 'to_dict' has complexity 12 (max: 10)
 - 🔵 **descriptive-naming** at `L74`
@@ -13287,9 +13287,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/audit/conversation_archive.py`** (16 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L134`
-  - Function 'to_markdown' has complexity 11 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L134`
   - Function 'to_markdown' has 54 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -13299,6 +13296,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-parameter-count** at `L224`
   - Function 'archive_turn' has 14 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
+- 🟡 **max-cyclomatic-complexity** at `L134`
+  - Function 'to_markdown' has complexity 11 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🔵 **single-responsibility-modules** at `L199`
   - Class 'ConversationArchive' has 10 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -13321,14 +13321,14 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **parameter-count-limit** at `L224`
+  - Function 'archive_turn' has 14 parameters (max: 5)
 - 🟡 **function-size-limit** at `L97`
   - Function 'to_dict' has 31 lines (max: 30)
 - 🟡 **function-size-limit** at `L134`
   - Function 'to_markdown' has 54 lines (max: 30)
 - 🟡 **function-size-limit** at `L224`
   - Function 'archive_turn' has 63 lines (max: 30)
-- 🟡 **parameter-count-limit** at `L224`
-  - Function 'archive_turn' has 14 parameters (max: 5)
 - 🟡 **cyclomatic-complexity-limit** at `L134`
   - Function 'to_markdown' has complexity 11 (max: 10)
 - 🔵 **descriptive-naming** at `L47`
@@ -13383,6 +13383,10 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **parameter-count-limit** at `L104`
+  - Function 'log_stage_frame' has 17 parameters (max: 5)
+- 🟡 **parameter-count-limit** at `L197`
+  - Function 'log_agent_step' has 12 parameters (max: 5)
 - 🟡 **function-size-limit** at `L104`
   - Function 'log_stage_frame' has 75 lines (max: 30)
 - 🟡 **function-size-limit** at `L197`
@@ -13391,10 +13395,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
   - Function 'log_human_interaction' has 37 lines (max: 30)
 - 🟡 **function-size-limit** at `L379`
   - Function 'get_validation_summary' has 34 lines (max: 30)
-- 🟡 **parameter-count-limit** at `L104`
-  - Function 'log_stage_frame' has 17 parameters (max: 5)
-- 🟡 **parameter-count-limit** at `L197`
-  - Function 'log_agent_step' has 12 parameters (max: 5)
 - 🟡 **class-size-limit** at `L61`
   - Class 'FrameLogger' has 19 methods (max: 15)
 - 🔵 **descriptive-naming** at `L362`
@@ -13442,9 +13442,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/audit/thread_correlator.py`** (25 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L136`
-  - Function 'to_dict' has complexity 11 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L210`
   - Function 'create_thread' has 61 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -13454,6 +13451,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-parameter-count** at `L290`
   - Function 'complete_thread' has 6 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
+- 🟡 **max-cyclomatic-complexity** at `L136`
+  - Function 'to_dict' has complexity 11 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-file-lines** at `file`
   - File exceeds line limit (562 lines > 500)
   - 💡 *Consider splitting into smaller files*
@@ -13482,6 +13482,10 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **parameter-count-limit** at `L210`
+  - Function 'create_thread' has 9 parameters (max: 5)
+- 🟡 **parameter-count-limit** at `L290`
+  - Function 'complete_thread' has 6 parameters (max: 5)
 - 🟡 **function-size-limit** at `L136`
   - Function 'to_dict' has 41 lines (max: 30)
 - 🟡 **function-size-limit** at `L210`
@@ -13490,10 +13494,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
   - Function 'complete_thread' has 34 lines (max: 30)
 - 🟡 **function-size-limit** at `L375`
   - Function 'create_parallel_group' has 37 lines (max: 30)
-- 🟡 **parameter-count-limit** at `L210`
-  - Function 'create_thread' has 9 parameters (max: 5)
-- 🟡 **parameter-count-limit** at `L290`
-  - Function 'complete_thread' has 6 parameters (max: 5)
 - 🟡 **cyclomatic-complexity-limit** at `L136`
   - Function 'to_dict' has complexity 11 (max: 10)
 - 🟡 **class-size-limit** at `L181`
@@ -13522,9 +13522,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/audit/transaction_logger.py`** (17 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L114`
-  - Function 'to_dict' has complexity 16 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L114`
   - Function 'to_dict' has 62 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -13534,6 +13531,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-parameter-count** at `L279`
   - Function 'log_llm_call' has 13 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
+- 🟡 **max-cyclomatic-complexity** at `L114`
+  - Function 'to_dict' has complexity 16 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-file-lines** at `file`
   - File exceeds line limit (524 lines > 500)
   - 💡 *Consider splitting into smaller files*
@@ -13559,6 +13559,8 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **parameter-count-limit** at `L279`
+  - Function 'log_llm_call' has 13 parameters (max: 5)
 - 🟡 **function-size-limit** at `L114`
   - Function 'to_dict' has 62 lines (max: 30)
 - 🟡 **function-size-limit** at `L228`
@@ -13567,8 +13569,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
   - Function 'log_llm_call' has 53 lines (max: 30)
 - 🟡 **function-size-limit** at `L472`
   - Function '_dict_to_record' has 42 lines (max: 30)
-- 🟡 **parameter-count-limit** at `L279`
-  - Function 'log_llm_call' has 13 parameters (max: 5)
 - 🟡 **cyclomatic-complexity-limit** at `L114`
   - Function 'to_dict' has complexity 16 (max: 10)
 - 🔵 **descriptive-naming** at `L116`
@@ -13661,12 +13661,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **no-type-ignore-without-code** at `L22`
   - Forbidden pattern found: '# type: ignore'
   - 💡 *Use '# type: ignore[error-code]' instead*
-- 🔵 **consistent-type-imports** at `file`
-  - Required pattern not found: 'if TYPE_CHECKING:'
-  - 💡 *Use 'if TYPE_CHECKING:' for type-only imports to avoid circular imports*
 - 🔵 **no-type-ignore-without-code** at `L22`
   - Forbidden pattern found: '# type: ignore'
   - 💡 *Use '# type: ignore[error-code]' instead*
+- 🔵 **consistent-type-imports** at `file`
+  - Required pattern not found: 'if TYPE_CHECKING:'
+  - 💡 *Use 'if TYPE_CHECKING:' for type-only imports to avoid circular imports*
 - 🔵 **no-type-ignore-without-code** at `L22`
   - Forbidden pattern found: '# type: ignore'
   - 💡 *Use '# type: ignore[error-code]' instead*
@@ -13708,15 +13708,15 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **no-type-ignore-without-code** at `L25`
   - Forbidden pattern found: '# type: ignore'
   - 💡 *Use '# type: ignore[error-code]' instead*
+- 🔵 **no-type-ignore-without-code** at `L25`
+  - Forbidden pattern found: '# type: ignore'
+  - 💡 *Use '# type: ignore[error-code]' instead*
 - 🔵 **consistent-type-imports** at `file`
   - Required pattern not found: 'if TYPE_CHECKING:'
   - 💡 *Use 'if TYPE_CHECKING:' for type-only imports to avoid circular imports*
 - 🔵 **no-type-ignore-without-code** at `L25`
   - Forbidden pattern found: '# type: ignore'
   - 💡 *Use '# type: ignore[error-code]' instead*
-- 🔵 **no-type-ignore-without-code** at `L25`
-  - Forbidden pattern found: '# type: ignore'
-  - 💡 *Use '# type: ignore[error-code]' instead*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
   - 💡 *Add lineage header to file:
@@ -13733,12 +13733,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **parameter-count-limit** at `L71`
+  - Function 'build_contract' has 6 parameters (max: 5)
 - 🟡 **function-size-limit** at `L71`
   - Function 'build_contract' has 53 lines (max: 30)
 - 🟡 **function-size-limit** at `L183`
   - Function '_build_yaml_content' has 33 lines (max: 30)
-- 🟡 **parameter-count-limit** at `L71`
-  - Function 'build_contract' has 6 parameters (max: 5)
 - 🟡 **boolean-naming** at `L252`
   - Boolean function 'contract_exists' should start with is_/has_/can_/should_
   - 💡 *Rename to express a yes/no question*
@@ -14064,6 +14064,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/bridge/orchestrator.py`** (25 violations)
 
+- 🟡 **max-function-length** at `L84`
+  - Function 'generate' has 53 lines (max: 50)
+  - 💡 *Extract logic into helper functions or use composition*
+- 🟡 **max-function-length** at `L202`
+  - Function '_generate_report' has 65 lines (max: 50)
+  - 💡 *Extract logic into helper functions or use composition*
 - 🟡 **max-cyclomatic-complexity** at `L84`
   - Function 'generate' has complexity 17 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
@@ -14073,12 +14079,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-cyclomatic-complexity** at `L202`
   - Function '_generate_report' has complexity 14 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-function-length** at `L84`
-  - Function 'generate' has 53 lines (max: 50)
-  - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-function-length** at `L202`
-  - Function '_generate_report' has 65 lines (max: 50)
-  - 💡 *Extract logic into helper functions or use composition*
 - 🟡 **no-print-statements** at `L47`
   - Forbidden pattern found: 'print('
   - 💡 *Use logging module instead: import logging; logger = logging.getLogger(__name__)*
@@ -14155,12 +14155,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **no-type-ignore-without-code** at `L23`
   - Forbidden pattern found: '# type: ignore'
   - 💡 *Use '# type: ignore[error-code]' instead*
-- 🔵 **consistent-type-imports** at `file`
-  - Required pattern not found: 'if TYPE_CHECKING:'
-  - 💡 *Use 'if TYPE_CHECKING:' for type-only imports to avoid circular imports*
 - 🔵 **no-type-ignore-without-code** at `L23`
   - Forbidden pattern found: '# type: ignore'
   - 💡 *Use '# type: ignore[error-code]' instead*
+- 🔵 **consistent-type-imports** at `file`
+  - Required pattern not found: 'if TYPE_CHECKING:'
+  - 💡 *Use 'if TYPE_CHECKING:' for type-only imports to avoid circular imports*
 - 🔵 **no-type-ignore-without-code** at `L23`
   - Forbidden pattern found: '# type: ignore'
   - 💡 *Use '# type: ignore[error-code]' instead*
@@ -14860,12 +14860,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/conformance/domain.py`** (16 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L170`
-  - Function 'compute_test_path' has complexity 23 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L170`
   - Function 'compute_test_path' has 62 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
+- 🟡 **max-cyclomatic-complexity** at `L170`
+  - Function 'compute_test_path' has complexity 23 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🔵 **single-responsibility-modules** at `L113`
   - Class 'Violation' has 6 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -15177,26 +15177,26 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
-- 🟡 **function-size-limit** at `L93`
-  - Function 'log_step' has 45 lines (max: 30)
-- 🟡 **function-size-limit** at `L148`
-  - Function 'log_task_summary' has 36 lines (max: 30)
 - 🟡 **parameter-count-limit** at `L93`
   - Function 'log_step' has 6 parameters (max: 5)
 - 🟡 **parameter-count-limit** at `L148`
   - Function 'log_task_summary' has 6 parameters (max: 5)
+- 🟡 **function-size-limit** at `L93`
+  - Function 'log_step' has 45 lines (max: 30)
+- 🟡 **function-size-limit** at `L148`
+  - Function 'log_task_summary' has 36 lines (max: 30)
 
 **`src/agentforge/core/context/compaction.py`** (18 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L245`
-  - Function '_apply_rule' has complexity 35 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L245`
   - Function '_apply_rule' has 75 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
 - 🟡 **max-nesting-depth** at `L245`
   - Function '_apply_rule' has nesting depth 10 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
+- 🟡 **max-cyclomatic-complexity** at `L245`
+  - Function '_apply_rule' has complexity 35 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🔵 **single-responsibility-modules** at `L133`
   - Class 'CompactionManager' has 12 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -15251,15 +15251,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/context/fingerprint.py`** (18 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L266`
-  - Function '_detect_technical' has complexity 28 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L374`
-  - Function '_detect_patterns' has complexity 22 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L426`
-  - Function '_detect_structure' has complexity 16 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L266`
   - Function '_detect_technical' has 80 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -15269,6 +15260,15 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-nesting-depth** at `L374`
   - Function '_detect_patterns' has nesting depth 6 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
+- 🟡 **max-cyclomatic-complexity** at `L266`
+  - Function '_detect_technical' has complexity 28 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L374`
+  - Function '_detect_patterns' has complexity 22 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L426`
+  - Function '_detect_structure' has complexity 16 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-file-lines** at `file`
   - File exceeds line limit (506 lines > 500)
   - 💡 *Consider splitting into smaller files*
@@ -15410,15 +15410,15 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/context/templates/base.py`** (13 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L287`
-  - Function '_get_section_value' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L213`
   - Function 'build_context_dict' has 63 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
 - 🟡 **max-parameter-count** at `L213`
   - Function 'build_context_dict' has 6 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
+- 🟡 **max-cyclomatic-complexity** at `L287`
+  - Function '_get_section_value' has complexity 12 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🔵 **single-responsibility-modules** at `L46`
   - Class 'BaseContextTemplate' has 12 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -15441,12 +15441,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **parameter-count-limit** at `L213`
+  - Function 'build_context_dict' has 6 parameters (max: 5)
 - 🟡 **function-size-limit** at `L213`
   - Function 'build_context_dict' has 63 lines (max: 30)
 - 🟡 **function-size-limit** at `L287`
   - Function '_get_section_value' has 33 lines (max: 30)
-- 🟡 **parameter-count-limit** at `L213`
-  - Function 'build_context_dict' has 6 parameters (max: 5)
 - 🟡 **cyclomatic-complexity-limit** at `L287`
   - Function '_get_section_value' has complexity 12 (max: 10)
 - 🔵 **descriptive-naming** at `L259`
@@ -16213,15 +16213,15 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/contracts/cli.py`** (18 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L132`
-  - Function 'review_command' has complexity 21 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L132`
   - Function 'review_command' has 95 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
 - 🟡 **max-nesting-depth** at `L132`
   - Function 'review_command' has nesting depth 5 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
+- 🟡 **max-cyclomatic-complexity** at `L132`
+  - Function 'review_command' has complexity 21 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🔵 **consistent-type-imports** at `file`
   - Required pattern not found: 'if TYPE_CHECKING:'
   - 💡 *Use 'if TYPE_CHECKING:' for type-only imports to avoid circular imports*
@@ -16352,12 +16352,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/contracts/enforcer.py`** (33 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L336`
-  - Function '_apply_validation_rule' has complexity 11 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L490`
-  - Function 'check_quality_gate' has complexity 16 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L255`
   - Function '_validate_schema' has 55 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -16373,6 +16367,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-nesting-depth** at `L490`
   - Function 'check_quality_gate' has nesting depth 5 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
+- 🟡 **max-cyclomatic-complexity** at `L336`
+  - Function '_apply_validation_rule' has complexity 11 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L490`
+  - Function 'check_quality_gate' has complexity 16 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-file-lines** at `file`
   - File exceeds line limit (641 lines > 500)
   - 💡 *Consider splitting into smaller files*
@@ -16609,15 +16609,15 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/contracts/registry.py`** (11 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L192`
-  - Function 'evolve' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L192`
   - Function 'evolve' has 53 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
 - 🟡 **max-nesting-depth** at `L192`
   - Function 'evolve' has nesting depth 5 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
+- 🟡 **max-cyclomatic-complexity** at `L192`
+  - Function 'evolve' has complexity 12 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🔵 **single-responsibility-modules** at `L28`
   - Class 'ContractRegistry' has 13 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -16652,15 +16652,15 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/contracts/reviewer.py`** (12 violations)
 
+- 🟡 **max-function-length** at `L126`
+  - Function 'format_for_display' has 53 lines (max: 50)
+  - 💡 *Extract logic into helper functions or use composition*
 - 🟡 **max-cyclomatic-complexity** at `L126`
   - Function 'format_for_display' has complexity 18 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-cyclomatic-complexity** at `L200`
   - Function 'format_stage_for_review' has complexity 14 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-function-length** at `L126`
-  - Function 'format_for_display' has 53 lines (max: 50)
-  - 💡 *Extract logic into helper functions or use composition*
 - 🔵 **single-responsibility-modules** at `L106`
   - Class 'ContractReviewer' has 6 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -17009,18 +17009,18 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/discovery/analyzers/interactions.py`** (18 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L52`
-  - Function '_detect_docker_compose' has complexity 13 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L241`
-  - Function '_detect_shared_packages' has complexity 11 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-nesting-depth** at `L52`
   - Function '_detect_docker_compose' has nesting depth 5 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🟡 **max-nesting-depth** at `L241`
   - Function '_detect_shared_packages' has nesting depth 6 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
+- 🟡 **max-cyclomatic-complexity** at `L52`
+  - Function '_detect_docker_compose' has complexity 13 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L241`
+  - Function '_detect_shared_packages' has complexity 11 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **no-print-statements** at `L324`
   - Forbidden pattern found: 'print('
   - 💡 *Use logging module instead: import logging; logger = logging.getLogger(__name__)*
@@ -17033,12 +17033,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **no-type-ignore-without-code** at `L21`
   - Forbidden pattern found: '# type: ignore'
   - 💡 *Use '# type: ignore[error-code]' instead*
-- 🔵 **consistent-type-imports** at `file`
-  - Required pattern not found: 'if TYPE_CHECKING:'
-  - 💡 *Use 'if TYPE_CHECKING:' for type-only imports to avoid circular imports*
 - 🔵 **no-type-ignore-without-code** at `L21`
   - Forbidden pattern found: '# type: ignore'
   - 💡 *Use '# type: ignore[error-code]' instead*
+- 🔵 **consistent-type-imports** at `file`
+  - Required pattern not found: 'if TYPE_CHECKING:'
+  - 💡 *Use 'if TYPE_CHECKING:' for type-only imports to avoid circular imports*
 - 🔵 **no-type-ignore-without-code** at `L21`
   - Forbidden pattern found: '# type: ignore'
   - 💡 *Use '# type: ignore[error-code]' instead*
@@ -17071,12 +17071,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/discovery/analyzers/patterns.py`** (28 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L484`
-  - Function '_check_signal' has complexity 43 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L654`
-  - Function '_detect_frameworks' has complexity 15 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L484`
   - Function '_check_signal' has 88 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -17092,6 +17086,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-parameter-count** at `L583`
   - Function '_add_match' has 6 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
+- 🟡 **max-cyclomatic-complexity** at `L484`
+  - Function '_check_signal' has complexity 43 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L654`
+  - Function '_detect_frameworks' has complexity 15 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-file-lines** at `file`
   - File exceeds line limit (715 lines > 500)
   - 💡 *Consider splitting into smaller files*
@@ -17135,6 +17135,10 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **parameter-count-limit** at `L484`
+  - Function '_check_signal' has 8 parameters (max: 5)
+- 🟡 **parameter-count-limit** at `L583`
+  - Function '_add_match' has 6 parameters (max: 5)
 - 🟡 **function-size-limit** at `L444`
   - Function '_analyze_file' has 31 lines (max: 30)
 - 🟡 **function-size-limit** at `L484`
@@ -17143,10 +17147,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
   - Function '_aggregate_patterns' has 35 lines (max: 30)
 - 🟡 **function-size-limit** at `L654`
   - Function '_detect_frameworks' has 39 lines (max: 30)
-- 🟡 **parameter-count-limit** at `L484`
-  - Function '_check_signal' has 8 parameters (max: 5)
-- 🟡 **parameter-count-limit** at `L583`
-  - Function '_add_match' has 6 parameters (max: 5)
 - 🟡 **nesting-depth-limit** at `L484`
   - Function '_check_signal' has nesting depth 11 (max: 4)
 - 🟡 **nesting-depth-limit** at `L654`
@@ -17158,15 +17158,15 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/discovery/analyzers/structure.py`** (17 violations)
 
+- 🟡 **max-nesting-depth** at `L183`
+  - Function '_detect_layer' has nesting depth 5 (max: 4)
+  - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🟡 **max-cyclomatic-complexity** at `L183`
   - Function '_detect_layer' has complexity 12 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-cyclomatic-complexity** at `L268`
   - Function '_detect_architecture_style' has complexity 11 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-nesting-depth** at `L183`
-  - Function '_detect_layer' has nesting depth 5 (max: 4)
-  - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🟡 **max-file-lines** at `file`
   - File exceeds line limit (549 lines > 500)
   - 💡 *Consider splitting into smaller files*
@@ -17340,12 +17340,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/discovery/generators/as_built_spec.py`** (14 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L296`
-  - Function '_classify_class' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-nesting-depth** at `L323`
   - Function '_match_test_methods' has nesting depth 5 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
+- 🟡 **max-cyclomatic-complexity** at `L296`
+  - Function '_classify_class' has complexity 12 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🔵 **single-responsibility-modules** at `L107`
   - Class 'AsBuiltSpecGenerator' has 11 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -17391,15 +17391,15 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/discovery/generators/lineage_embedder.py`** (12 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L300`
-  - Function '_insert_lineage_block' has complexity 18 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L122`
   - Function 'embed_file' has 68 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
 - 🟡 **max-nesting-depth** at `L227`
   - Function '_find_existing_lineage' has nesting depth 5 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
+- 🟡 **max-cyclomatic-complexity** at `L300`
+  - Function '_insert_lineage_block' has complexity 18 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🔵 **single-responsibility-modules** at `L50`
   - Class 'LineageEmbedder' has 11 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -17479,14 +17479,14 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **parameter-count-limit** at `L46`
+  - Function 'generate' has 7 parameters (max: 5)
 - 🟡 **function-size-limit** at `L46`
   - Function 'generate' has 47 lines (max: 30)
 - 🟡 **function-size-limit** at `L194`
   - Function '_profile_to_dict' has 40 lines (max: 30)
 - 🟡 **function-size-limit** at `L251`
   - Function '_dict_to_profile' has 45 lines (max: 30)
-- 🟡 **parameter-count-limit** at `L46`
-  - Function 'generate' has 7 parameters (max: 5)
 - 🔵 **descriptive-naming** at `L168`
   - Variable name 'data' is generic
   - 💡 *Name should describe what the variable contains*
@@ -17496,21 +17496,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/discovery/manager.py`** (79 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L129`
-  - Function 'discover' has complexity 11 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L261`
-  - Function '_detect_languages' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L615`
-  - Function 'discover' has complexity 13 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L734`
-  - Function '_analyze_zone' has complexity 14 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L859`
-  - Function '_generate_multi_zone_profile' has complexity 16 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L129`
   - Function 'discover' has 75 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -17526,6 +17511,21 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-nesting-depth** at `L222`
   - Function '_run_phase' has nesting depth 6 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
+- 🟡 **max-cyclomatic-complexity** at `L129`
+  - Function 'discover' has complexity 11 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L261`
+  - Function '_detect_languages' has complexity 12 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L615`
+  - Function 'discover' has complexity 13 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L734`
+  - Function '_analyze_zone' has complexity 14 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L859`
+  - Function '_generate_multi_zone_profile' has complexity 16 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-file-lines** at `file`
   - File exceeds line limit (974 lines > 500)
   - 💡 *Consider splitting into smaller files*
@@ -17616,9 +17616,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **no-type-ignore-without-code** at `L127`
   - Forbidden pattern found: '# type: ignore'
   - 💡 *Use '# type: ignore[error-code]' instead*
-- 🟡 **max-line-length** at `L855`
-  - Line exceeds 120 characters (122 chars)
-  - 💡 *Break long lines for better readability*
 - 🔵 **max-imports** at `L1`
   - File has 36 imports (max: 30)
   - 💡 *Consider splitting module or consolidating imports*
@@ -17631,18 +17628,21 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-line-length** at `L855`
   - Line exceeds 120 characters (122 chars)
   - 💡 *Break long lines for better readability*
+- 🟡 **max-line-length** at `L855`
+  - Line exceeds 120 characters (122 chars)
+  - 💡 *Break long lines for better readability*
+- 🔵 **max-imports** at `L1`
+  - File has 36 imports (max: 30)
+  - 💡 *Consider splitting module or consolidating imports*
+- 🔵 **no-type-ignore-without-code** at `L48`
+  - Forbidden pattern found: '# type: ignore'
+  - 💡 *Use '# type: ignore[error-code]' instead*
+- 🔵 **no-type-ignore-without-code** at `L127`
+  - Forbidden pattern found: '# type: ignore'
+  - 💡 *Use '# type: ignore[error-code]' instead*
 - 🔵 **consistent-type-imports** at `file`
   - Required pattern not found: 'if TYPE_CHECKING:'
   - 💡 *Use 'if TYPE_CHECKING:' for type-only imports to avoid circular imports*
-- 🔵 **max-imports** at `L1`
-  - File has 36 imports (max: 30)
-  - 💡 *Consider splitting module or consolidating imports*
-- 🔵 **no-type-ignore-without-code** at `L48`
-  - Forbidden pattern found: '# type: ignore'
-  - 💡 *Use '# type: ignore[error-code]' instead*
-- 🔵 **no-type-ignore-without-code** at `L127`
-  - Forbidden pattern found: '# type: ignore'
-  - 💡 *Use '# type: ignore[error-code]' instead*
 - 🟡 **max-line-length** at `L855`
   - Line exceeds 120 characters (122 chars)
   - 💡 *Break long lines for better readability*
@@ -17802,6 +17802,15 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/discovery/providers/dotnet_provider.py`** (26 violations)
 
+- 🟡 **max-function-length** at `L104`
+  - Function '_parse_csproj' has 57 lines (max: 50)
+  - 💡 *Extract logic into helper functions or use composition*
+- 🟡 **max-function-length** at `L304`
+  - Function '_extract_symbols_regex' has 82 lines (max: 50)
+  - 💡 *Extract logic into helper functions or use composition*
+- 🟡 **max-nesting-depth** at `L549`
+  - Function 'count_lines' has nesting depth 7 (max: 4)
+  - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🟡 **max-cyclomatic-complexity** at `L104`
   - Function '_parse_csproj' has complexity 19 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
@@ -17814,15 +17823,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-cyclomatic-complexity** at `L549`
   - Function 'count_lines' has complexity 11 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-function-length** at `L104`
-  - Function '_parse_csproj' has 57 lines (max: 50)
-  - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-function-length** at `L304`
-  - Function '_extract_symbols_regex' has 82 lines (max: 50)
-  - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-nesting-depth** at `L549`
-  - Function 'count_lines' has nesting depth 7 (max: 4)
-  - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🟡 **max-class-size** at `L19`
   - Class 'DotNetProvider' has 21 methods (max: 20)
   - 💡 *Consider splitting into multiple classes with single responsibilities*
@@ -17884,15 +17884,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/discovery/providers/python_provider.py`** (32 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L477`
-  - Function 'suggest_extractions' has complexity 11 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L609`
-  - Function 'get_violation_context' has complexity 14 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L786`
-  - Function '_get_parameter_suggestions' has complexity 19 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L786`
   - Function '_get_parameter_suggestions' has 51 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -17905,6 +17896,15 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-nesting-depth** at `L718`
   - Function '_get_length_suggestions' has nesting depth 5 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
+- 🟡 **max-cyclomatic-complexity** at `L477`
+  - Function 'suggest_extractions' has complexity 11 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L609`
+  - Function 'get_violation_context' has complexity 14 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L786`
+  - Function '_get_parameter_suggestions' has complexity 19 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-class-size** at `L111`
   - Class 'PythonProvider' has 38 methods (max: 20)
   - 💡 *Consider splitting into multiple classes with single responsibilities*
@@ -18332,12 +18332,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/generate/provider.py`** (19 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L138`
-  - Function 'generate' has complexity 11 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L138`
   - Function 'generate' has 61 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
+- 🟡 **max-cyclomatic-complexity** at `L138`
+  - Function 'generate' has complexity 11 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **no-print-statements** at `L281`
   - Forbidden pattern found: 'print('
   - 💡 *Use logging module instead: import logging; logger = logging.getLogger(__name__)*
@@ -18775,15 +18775,15 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/harness/action_parser.py`** (11 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L45`
-  - Function 'parse' has complexity 13 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-nesting-depth** at `L45`
   - Function 'parse' has nesting depth 6 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🟡 **max-nesting-depth** at `L221`
   - Function 'parse_lenient' has nesting depth 5 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
+- 🟡 **max-cyclomatic-complexity** at `L45`
+  - Function 'parse' has complexity 13 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🔵 **single-responsibility-modules** at `L24`
   - Class 'ActionParser' has 8 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -18817,6 +18817,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/harness/agent_monitor.py`** (20 violations)
 
+- 🟡 **max-function-length** at `L114`
+  - Function 'detect_loop' has 53 lines (max: 50)
+  - 💡 *Extract logic into helper functions or use composition*
+- 🟡 **max-function-length** at `L310`
+  - Function 'get_health' has 76 lines (max: 50)
+  - 💡 *Extract logic into helper functions or use composition*
 - 🟡 **max-cyclomatic-complexity** at `L114`
   - Function 'detect_loop' has complexity 20 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
@@ -18829,12 +18835,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-cyclomatic-complexity** at `L310`
   - Function 'get_health' has complexity 23 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-function-length** at `L114`
-  - Function 'detect_loop' has 53 lines (max: 50)
-  - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-function-length** at `L310`
-  - Function 'get_health' has 76 lines (max: 50)
-  - 💡 *Extract logic into helper functions or use composition*
 - 🔵 **single-responsibility-modules** at `L42`
   - Class 'AgentMonitor' has 14 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -18922,6 +18922,10 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **parameter-count-limit** at `L45`
+  - Function '__init__' has 10 parameters (max: 5)
+- 🟡 **parameter-count-limit** at `L98`
+  - Function 'start_session' has 6 parameters (max: 5)
 - 🟡 **function-size-limit** at `L45`
   - Function '__init__' has 45 lines (max: 30)
 - 🟡 **function-size-limit** at `L98`
@@ -18932,10 +18936,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
   - Function '_execute_llm_step' has 65 lines (max: 30)
 - 🟡 **function-size-limit** at `L396`
   - Function 'run_until_complete' has 31 lines (max: 30)
-- 🟡 **parameter-count-limit** at `L45`
-  - Function '__init__' has 10 parameters (max: 5)
-- 🟡 **parameter-count-limit** at `L98`
-  - Function 'start_session' has 6 parameters (max: 5)
 - 🟡 **class-size-limit** at `L34`
   - Class 'AgentOrchestrator' has 17 methods (max: 15)
 - 🔵 **descriptive-naming** at `L295`
@@ -19085,15 +19085,15 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/harness/conformance_tools.py`** (16 violations)
 
+- 🟡 **max-function-length** at `L243`
+  - Function 'run_conformance_check' has 69 lines (max: 50)
+  - 💡 *Extract logic into helper functions or use composition*
 - 🟡 **max-cyclomatic-complexity** at `L243`
   - Function 'run_conformance_check' has complexity 12 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-cyclomatic-complexity** at `L330`
   - Function 'get_check_definition' has complexity 11 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-function-length** at `L243`
-  - Function 'run_conformance_check' has 69 lines (max: 50)
-  - 💡 *Extract logic into helper functions or use composition*
 - 🔵 **single-responsibility-modules** at `L37`
   - Class 'ConformanceTools' has 9 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -19187,12 +19187,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **parameter-count-limit** at `L49`
+  - Function 'create_escalation' has 6 parameters (max: 5)
 - 🟡 **function-size-limit** at `L49`
   - Function 'create_escalation' has 34 lines (max: 30)
 - 🟡 **function-size-limit** at `L111`
   - Function 'resolve_escalation' has 34 lines (max: 30)
-- 🟡 **parameter-count-limit** at `L49`
-  - Function 'create_escalation' has 6 parameters (max: 5)
 - 🔵 **descriptive-naming** at `L270`
   - Variable name 'data' is generic
   - 💡 *Name should describe what the variable contains*
@@ -19342,12 +19342,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/harness/fix_violation_workflow.py`** (14 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L227`
-  - Function 'fix_violation' has complexity 19 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L339`
-  - Function '_determine_phase' has complexity 16 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L227`
   - Function 'fix_violation' has 83 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -19357,6 +19351,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-nesting-depth** at `L339`
   - Function '_determine_phase' has nesting depth 5 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
+- 🟡 **max-cyclomatic-complexity** at `L227`
+  - Function 'fix_violation' has complexity 19 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L339`
+  - Function '_determine_phase' has complexity 16 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🔵 **single-responsibility-modules** at `L150`
   - Class 'FixViolationWorkflow' has 6 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -19462,12 +19462,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **parameter-count-limit** at `L45`
+  - Function '__init__' has 6 parameters (max: 5)
 - 🟡 **function-size-limit** at `L138`
   - Function '_call_llm' has 35 lines (max: 30)
 - 🟡 **function-size-limit** at `L230`
   - Function '_execute_single_tool' has 31 lines (max: 30)
-- 🟡 **parameter-count-limit** at `L45`
-  - Function '__init__' has 6 parameters (max: 5)
 - 🔵 **descriptive-naming** at `L155`
   - Variable name 'result' is generic
   - 💡 *Name should describe what the variable contains*
@@ -19867,15 +19867,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/harness/minimal_context/executor.py`** (48 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L255`
-  - Function '_handle_phase_transition' has complexity 17 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L704`
-  - Function 'run_until_complete' has complexity 30 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L857`
-  - Function 'run_task_native' has complexity 20 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L103`
   - Function '__init__' has 71 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -19903,6 +19894,15 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-parameter-count** at `L103`
   - Function '__init__' has 11 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
+- 🟡 **max-cyclomatic-complexity** at `L255`
+  - Function '_handle_phase_transition' has complexity 17 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L704`
+  - Function 'run_until_complete' has complexity 30 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L857`
+  - Function 'run_task_native' has complexity 20 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-file-lines** at `file`
   - File exceeds line limit (1105 lines > 500)
   - 💡 *Consider splitting into smaller files*
@@ -19933,15 +19933,15 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **max-imports** at `L1`
   - File has 40 imports (max: 30)
   - 💡 *Consider splitting module or consolidating imports*
+- 🔵 **max-imports** at `L1`
+  - File has 40 imports (max: 30)
+  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **consistent-type-imports** at `file`
   - Required pattern not found: 'if TYPE_CHECKING:'
   - 💡 *Use 'if TYPE_CHECKING:' for type-only imports to avoid circular imports*
 - 🔵 **max-imports** at `L1`
   - File has 40 imports (max: 30)
   - 💡 *Consider splitting module or consolidating imports*
-- 🔵 **max-imports** at `L1`
-  - File has 40 imports (max: 30)
-  - 💡 *Consider splitting module or consolidating imports*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
   - 💡 *Add lineage header to file:
@@ -19958,6 +19958,8 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **parameter-count-limit** at `L103`
+  - Function '__init__' has 11 parameters (max: 5)
 - 🟡 **function-size-limit** at `L103`
   - Function '__init__' has 71 lines (max: 30)
 - 🟡 **function-size-limit** at `L219`
@@ -19978,8 +19980,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
   - Function 'run_task_native' has 107 lines (max: 30)
 - 🟡 **function-size-limit** at `L992`
   - Function '_process_native_response' has 46 lines (max: 30)
-- 🟡 **parameter-count-limit** at `L103`
-  - Function '__init__' has 11 parameters (max: 5)
 - 🟡 **nesting-depth-limit** at `L255`
   - Function '_handle_phase_transition' has nesting depth 5 (max: 4)
 - 🟡 **nesting-depth-limit** at `L704`
@@ -20007,39 +20007,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/harness/minimal_context/fix_workflow.py`** (108 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L124`
-  - Function '_build_action_executors' has complexity 11 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L177`
-  - Function '_with_test_verification' has complexity 20 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L366`
-  - Function '_action_read_file' has complexity 11 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L431`
-  - Function '_action_edit_file' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L561`
-  - Function '_action_replace_lines' has complexity 19 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L665`
-  - Function '_action_insert_lines' has complexity 22 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L806`
-  - Function '_wrap_extract_function' has complexity 27 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L941`
-  - Function '_action_run_check' has complexity 17 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L1154`
-  - Function '_precompute_violation_context' has complexity 36 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L195`
-  - Function 'wrapper' has complexity 20 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L816`
-  - Function 'wrapper' has complexity 27 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L177`
   - Function '_with_test_verification' has 80 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -20073,6 +20040,39 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-nesting-depth** at `L1154`
   - Function '_precompute_violation_context' has nesting depth 10 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
+- 🟡 **max-cyclomatic-complexity** at `L124`
+  - Function '_build_action_executors' has complexity 11 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L177`
+  - Function '_with_test_verification' has complexity 20 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L366`
+  - Function '_action_read_file' has complexity 11 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L431`
+  - Function '_action_edit_file' has complexity 12 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L561`
+  - Function '_action_replace_lines' has complexity 19 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L665`
+  - Function '_action_insert_lines' has complexity 22 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L806`
+  - Function '_wrap_extract_function' has complexity 27 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L941`
+  - Function '_action_run_check' has complexity 17 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L1154`
+  - Function '_precompute_violation_context' has complexity 36 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L195`
+  - Function 'wrapper' has complexity 20 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L816`
+  - Function 'wrapper' has complexity 27 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-class-size** at `L50`
   - Class 'MinimalContextFixWorkflow' has 21 methods (max: 20)
   - 💡 *Consider splitting into multiple classes with single responsibilities*
@@ -20396,12 +20396,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/harness/minimal_context/phase_machine.py`** (14 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L428`
-  - Function 'should_auto_transition' has complexity 11 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L150`
   - Function '_setup_default_transitions' has 104 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
+- 🟡 **max-cyclomatic-complexity** at `L428`
+  - Function 'should_auto_transition' has complexity 11 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-file-lines** at `file`
   - File exceeds line limit (511 lines > 500)
   - 💡 *Consider splitting into smaller files*
@@ -20480,16 +20480,16 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **parameter-count-limit** at `L211`
+  - Function 'create_task' has 6 parameters (max: 5)
+- 🟡 **parameter-count-limit** at `L385`
+  - Function 'record_action' has 8 parameters (max: 5)
 - 🟡 **function-size-limit** at `L211`
   - Function 'create_task' has 43 lines (max: 30)
 - 🟡 **function-size-limit** at `L269`
   - Function 'load' has 35 lines (max: 30)
 - 🟡 **function-size-limit** at `L385`
   - Function 'record_action' has 45 lines (max: 30)
-- 🟡 **parameter-count-limit** at `L211`
-  - Function 'create_task' has 6 parameters (max: 5)
-- 🟡 **parameter-count-limit** at `L385`
-  - Function 'record_action' has 8 parameters (max: 5)
 - 🟡 **class-size-limit** at `L196`
   - Class 'TaskStateStore' has 18 methods (max: 15)
 - 🔵 **descriptive-naming** at `L430`
@@ -20529,6 +20529,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/harness/minimal_context/template_context_builder.py`** (24 violations)
 
+- 🟡 **max-nesting-depth** at `L325`
+  - Function '_get_precomputed' has nesting depth 5 (max: 4)
+  - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🟡 **max-cyclomatic-complexity** at `L325`
   - Function '_get_precomputed' has complexity 11 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
@@ -20538,9 +20541,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-cyclomatic-complexity** at `L404`
   - Function '_format_user_message' has complexity 11 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-nesting-depth** at `L325`
-  - Function '_get_precomputed' has nesting depth 5 (max: 4)
-  - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🟡 **max-file-lines** at `file`
   - File exceeds line limit (521 lines > 500)
   - 💡 *Consider splitting into smaller files*
@@ -20701,6 +20701,18 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/harness/minimal_context/tool_handlers/file_handlers.py`** (27 violations)
 
+- 🟡 **max-function-length** at `L134`
+  - Function 'create_edit_file_handler' has 57 lines (max: 50)
+  - 💡 *Extract logic into helper functions or use composition*
+- 🟡 **max-function-length** at `L222`
+  - Function 'create_replace_lines_handler' has 60 lines (max: 50)
+  - 💡 *Extract logic into helper functions or use composition*
+- 🟡 **max-function-length** at `L308`
+  - Function 'create_insert_lines_handler' has 62 lines (max: 50)
+  - 💡 *Extract logic into helper functions or use composition*
+- 🟡 **max-function-length** at `L322`
+  - Function 'handler' has 51 lines (max: 50)
+  - 💡 *Extract logic into helper functions or use composition*
 - 🟡 **max-cyclomatic-complexity** at `L134`
   - Function 'create_edit_file_handler' has complexity 12 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
@@ -20719,18 +20731,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-cyclomatic-complexity** at `L322`
   - Function 'handler' has complexity 19 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-function-length** at `L134`
-  - Function 'create_edit_file_handler' has 57 lines (max: 50)
-  - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-function-length** at `L222`
-  - Function 'create_replace_lines_handler' has 60 lines (max: 50)
-  - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-function-length** at `L308`
-  - Function 'create_insert_lines_handler' has 62 lines (max: 50)
-  - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-function-length** at `L322`
-  - Function 'handler' has 51 lines (max: 50)
-  - 💡 *Extract logic into helper functions or use composition*
 - 🔵 **consistent-type-imports** at `file`
   - Required pattern not found: 'if TYPE_CHECKING:'
   - 💡 *Use 'if TYPE_CHECKING:' for type-only imports to avoid circular imports*
@@ -20781,24 +20781,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/harness/minimal_context/tool_handlers/search_handlers.py`** (41 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L50`
-  - Function 'create_search_code_handler' has complexity 26 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L188`
-  - Function 'create_load_context_handler' has complexity 14 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L281`
-  - Function 'create_find_related_handler' has complexity 27 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L84`
-  - Function '_regex_search' has complexity 17 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L202`
-  - Function 'handler' has complexity 13 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L296`
-  - Function 'handler' has complexity 26 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L50`
   - Function 'create_search_code_handler' has 104 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -20832,6 +20814,24 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-nesting-depth** at `L296`
   - Function 'handler' has nesting depth 6 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
+- 🟡 **max-cyclomatic-complexity** at `L50`
+  - Function 'create_search_code_handler' has complexity 26 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L188`
+  - Function 'create_load_context_handler' has complexity 14 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L281`
+  - Function 'create_find_related_handler' has complexity 27 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L84`
+  - Function '_regex_search' has complexity 17 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L202`
+  - Function 'handler' has complexity 13 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L296`
+  - Function 'handler' has complexity 26 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🔵 **consistent-type-imports** at `file`
   - Required pattern not found: 'if TYPE_CHECKING:'
   - 💡 *Use 'if TYPE_CHECKING:' for type-only imports to avoid circular imports*
@@ -20898,18 +20898,18 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/harness/minimal_context/tool_handlers/terminal_handlers.py`** (27 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L88`
-  - Function 'create_cannot_fix_handler' has complexity 16 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L103`
-  - Function 'handler' has complexity 11 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L88`
   - Function 'create_cannot_fix_handler' has 85 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
 - 🟡 **max-function-length** at `L103`
   - Function 'handler' has 57 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
+- 🟡 **max-cyclomatic-complexity** at `L88`
+  - Function 'create_cannot_fix_handler' has complexity 16 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L103`
+  - Function 'handler' has complexity 11 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-line-length** at `L317`
   - Line exceeds 120 characters (146 chars)
   - 💡 *Break long lines for better readability*
@@ -21019,6 +21019,21 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/harness/minimal_context/tool_handlers/verify_handlers.py`** (56 violations)
 
+- 🟡 **max-function-length** at `L35`
+  - Function 'create_run_check_handler' has 82 lines (max: 50)
+  - 💡 *Extract logic into helper functions or use composition*
+- 🟡 **max-function-length** at `L146`
+  - Function 'create_run_check_handler_v2' has 89 lines (max: 50)
+  - 💡 *Extract logic into helper functions or use composition*
+- 🟡 **max-function-length** at `L268`
+  - Function 'create_run_tests_handler' has 75 lines (max: 50)
+  - 💡 *Extract logic into helper functions or use composition*
+- 🟡 **max-function-length** at `L370`
+  - Function 'create_validate_python_handler' has 70 lines (max: 50)
+  - 💡 *Extract logic into helper functions or use composition*
+- 🟡 **max-function-length** at `L385`
+  - Function 'handler' has 58 lines (max: 50)
+  - 💡 *Extract logic into helper functions or use composition*
 - 🟡 **max-cyclomatic-complexity** at `L35`
   - Function 'create_run_check_handler' has complexity 25 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
@@ -21037,21 +21052,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-cyclomatic-complexity** at `L385`
   - Function 'handler' has complexity 11 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-function-length** at `L35`
-  - Function 'create_run_check_handler' has 82 lines (max: 50)
-  - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-function-length** at `L146`
-  - Function 'create_run_check_handler_v2' has 89 lines (max: 50)
-  - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-function-length** at `L268`
-  - Function 'create_run_tests_handler' has 75 lines (max: 50)
-  - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-function-length** at `L370`
-  - Function 'create_validate_python_handler' has 70 lines (max: 50)
-  - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-function-length** at `L385`
-  - Function 'handler' has 58 lines (max: 50)
-  - 💡 *Extract logic into helper functions or use composition*
 - 🟡 **no-print-statements** at `L421`
   - Forbidden pattern found: 'print('
   - 💡 *Use logging module instead: import logging; logger = logging.getLogger(__name__)*
@@ -21279,16 +21279,16 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **parameter-count-limit** at `L118`
+  - Function 'add' has 6 parameters (max: 5)
+- 🟡 **parameter-count-limit** at `L395`
+  - Function 'add_fact' has 7 parameters (max: 5)
 - 🟡 **function-size-limit** at `L118`
   - Function 'add' has 32 lines (max: 30)
 - 🟡 **function-size-limit** at `L395`
   - Function 'add_fact' has 38 lines (max: 30)
 - 🟡 **function-size-limit** at `L456`
   - Function 'get_facts' has 39 lines (max: 30)
-- 🟡 **parameter-count-limit** at `L118`
-  - Function 'add' has 6 parameters (max: 5)
-- 🟡 **parameter-count-limit** at `L395`
-  - Function 'add_fact' has 7 parameters (max: 5)
 - 🟡 **class-size-limit** at `L74`
   - Class 'WorkingMemoryManager' has 21 methods (max: 15)
 - 🔵 **descriptive-naming** at `L110`
@@ -21353,12 +21353,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/harness/python_tools.py`** (17 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L70`
-  - Function 'analyze_function' has complexity 17 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L70`
   - Function 'analyze_function' has 65 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
+- 🟡 **max-cyclomatic-complexity** at `L70`
+  - Function 'analyze_function' has complexity 17 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🔵 **single-responsibility-modules** at `L37`
   - Class 'PythonTools' has 5 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -21481,15 +21481,15 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/harness/refactoring_tools.py`** (11 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L130`
-  - Function 'simplify_conditional' has complexity 16 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L50`
   - Function 'extract_function' has 63 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
 - 🟡 **max-function-length** at `L130`
   - Function 'simplify_conditional' has 100 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
+- 🟡 **max-cyclomatic-complexity** at `L130`
+  - Function 'simplify_conditional' has complexity 16 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🔵 **single-responsibility-modules** at `L23`
   - Class 'RefactoringTools' has 5 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -21813,15 +21813,15 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/harness/tool_selector.py`** (14 violations)
 
+- 🟡 **max-nesting-depth** at `L25`
+  - Function 'get_tools' has nesting depth 5 (max: 4)
+  - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🟡 **max-cyclomatic-complexity** at `L25`
   - Function 'get_tools' has complexity 12 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-cyclomatic-complexity** at `L69`
   - Function 'detect_domain' has complexity 16 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-nesting-depth** at `L25`
-  - Function 'get_tools' has nesting depth 5 (max: 4)
-  - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🔵 **single-responsibility-modules** at `L17`
   - Class 'ToolSelector' has 5 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -21863,12 +21863,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/harness/violation_tools.py`** (14 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L135`
-  - Function 'list_violations' has complexity 14 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L135`
   - Function 'list_violations' has 60 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
+- 🟡 **max-cyclomatic-complexity** at `L135`
+  - Function 'list_violations' has complexity 14 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🔵 **single-responsibility-modules** at `L77`
   - Class 'ViolationTools' has 5 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -21966,12 +21966,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/lineage/metadata.py`** (9 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L99`
-  - Function 'parse_lineage_from_file' has complexity 11 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-parameter-count** at `L164`
   - Function 'generate_lineage_header' has 9 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
+- 🟡 **max-cyclomatic-complexity** at `L99`
+  - Function 'parse_lineage_from_file' has complexity 11 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🔵 **consistent-type-imports** at `file`
   - Required pattern not found: 'if TYPE_CHECKING:'
   - 💡 *Use 'if TYPE_CHECKING:' for type-only imports to avoid circular imports*
@@ -21991,12 +21991,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **parameter-count-limit** at `L164`
+  - Function 'generate_lineage_header' has 9 parameters (max: 5)
 - 🟡 **function-size-limit** at `L99`
   - Function 'parse_lineage_from_file' has 46 lines (max: 30)
 - 🟡 **function-size-limit** at `L164`
   - Function 'generate_lineage_header' has 38 lines (max: 30)
-- 🟡 **parameter-count-limit** at `L164`
-  - Function 'generate_lineage_header' has 9 parameters (max: 5)
 - 🟡 **cyclomatic-complexity-limit** at `L99`
   - Function 'parse_lineage_from_file' has complexity 11 (max: 10)
 
@@ -22120,14 +22120,14 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
-- 🟡 **function-size-limit** at `L95`
-  - Function 'complete' has 32 lines (max: 30)
-- 🟡 **function-size-limit** at `L177`
-  - Function '_parse_response' has 35 lines (max: 30)
 - 🟡 **parameter-count-limit** at `L95`
   - Function 'complete' has 6 parameters (max: 5)
 - 🟡 **parameter-count-limit** at `L136`
   - Function '_build_request_params' has 6 parameters (max: 5)
+- 🟡 **function-size-limit** at `L95`
+  - Function 'complete' has 32 lines (max: 30)
+- 🟡 **function-size-limit** at `L177`
+  - Function '_parse_response' has 35 lines (max: 30)
 - 🟡 **nesting-depth-limit** at `L136`
   - Function '_build_request_params' has nesting depth 5 (max: 4)
 
@@ -22190,12 +22190,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
-- 🟡 **function-size-limit** at `L229`
-  - Function 'complete_with_tools' has 50 lines (max: 30)
 - 🟡 **parameter-count-limit** at `L188`
   - Function 'complete' has 6 parameters (max: 5)
 - 🟡 **parameter-count-limit** at `L229`
   - Function 'complete_with_tools' has 6 parameters (max: 5)
+- 🟡 **function-size-limit** at `L229`
+  - Function 'complete_with_tools' has 50 lines (max: 30)
 - 🔵 **descriptive-naming** at `L284`
   - Variable name 'result' is generic
   - 💡 *Name should describe what the variable contains*
@@ -22230,14 +22230,14 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
-- 🟡 **function-size-limit** at `L98`
-  - Function 'complete' has 35 lines (max: 30)
-- 🟡 **function-size-limit** at `L141`
-  - Function '_record_exchange' has 32 lines (max: 30)
 - 🟡 **parameter-count-limit** at `L98`
   - Function 'complete' has 6 parameters (max: 5)
 - 🟡 **parameter-count-limit** at `L141`
   - Function '_record_exchange' has 7 parameters (max: 5)
+- 🟡 **function-size-limit** at `L98`
+  - Function 'complete' has 35 lines (max: 30)
+- 🟡 **function-size-limit** at `L141`
+  - Function '_record_exchange' has 32 lines (max: 30)
 
 **`src/agentforge/core/llm/simulated.py`** (10 violations)
 
@@ -22275,10 +22275,10 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
-- 🟡 **function-size-limit** at `L393`
-  - Function 'complete' has 35 lines (max: 30)
 - 🟡 **parameter-count-limit** at `L393`
   - Function 'complete' has 6 parameters (max: 5)
+- 🟡 **function-size-limit** at `L393`
+  - Function 'complete' has 35 lines (max: 30)
 
 **`src/agentforge/core/llm/tools.py`** (4 violations)
 
@@ -22832,18 +22832,18 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/pipeline/controller.py`** (25 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L569`
-  - Function '_run' has complexity 13 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L630`
-  - Function '_execute_stage' has complexity 25 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L630`
   - Function '_execute_stage' has 99 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
 - 🟡 **max-parameter-count** at `L139`
   - Function '__init__' has 6 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
+- 🟡 **max-cyclomatic-complexity** at `L569`
+  - Function '_run' has complexity 13 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
+- 🟡 **max-cyclomatic-complexity** at `L630`
+  - Function '_execute_stage' has complexity 25 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-file-lines** at `file`
   - File exceeds line limit (788 lines > 500)
   - 💡 *Consider splitting into smaller files*
@@ -22872,6 +22872,8 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
+- 🟡 **parameter-count-limit** at `L139`
+  - Function '__init__' has 6 parameters (max: 5)
 - 🟡 **function-size-limit** at `L177`
   - Function 'execute_with_discovery' has 35 lines (max: 30)
 - 🟡 **function-size-limit** at `L287`
@@ -22882,8 +22884,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
   - Function '_run' has 49 lines (max: 30)
 - 🟡 **function-size-limit** at `L630`
   - Function '_execute_stage' has 99 lines (max: 30)
-- 🟡 **parameter-count-limit** at `L139`
-  - Function '__init__' has 6 parameters (max: 5)
 - 🟡 **cyclomatic-complexity-limit** at `L569`
   - Function '_run' has complexity 13 (max: 10)
 - 🟡 **cyclomatic-complexity-limit** at `L630`
@@ -22911,15 +22911,15 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/pipeline/discovery_integration.py`** (12 violations)
 
+- 🟡 **max-nesting-depth** at `L352`
+  - Function 'resolve_test_path' has nesting depth 5 (max: 4)
+  - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🟡 **max-cyclomatic-complexity** at `L112`
   - Function 'extract_context_from_profile' has complexity 19 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-cyclomatic-complexity** at `L352`
   - Function 'resolve_test_path' has complexity 17 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-nesting-depth** at `L352`
-  - Function 'resolve_test_path' has nesting depth 5 (max: 4)
-  - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🔵 **single-responsibility-modules** at `L37`
   - Class 'DiscoveredContext' has 4 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -23302,6 +23302,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/pipeline/stages/green.py`** (25 violations)
 
+- 🟡 **max-function-length** at `L227`
+  - Function 'execute' has 69 lines (max: 50)
+  - 💡 *Extract logic into helper functions or use composition*
+- 🟡 **max-function-length** at `L409`
+  - Function '_register_implementation_tools' has 65 lines (max: 50)
+  - 💡 *Extract logic into helper functions or use composition*
 - 🟡 **max-cyclomatic-complexity** at `L227`
   - Function 'execute' has complexity 13 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
@@ -23311,12 +23317,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-cyclomatic-complexity** at `L409`
   - Function '_register_implementation_tools' has complexity 11 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-function-length** at `L227`
-  - Function 'execute' has 69 lines (max: 50)
-  - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-function-length** at `L409`
-  - Function '_register_implementation_tools' has 65 lines (max: 50)
-  - 💡 *Extract logic into helper functions or use composition*
 - 🟡 **max-file-lines** at `file`
   - File exceeds line limit (620 lines > 500)
   - 💡 *Consider splitting into smaller files*
@@ -23823,9 +23823,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/refactoring/rope_provider.py`** (20 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L156`
-  - Function 'extract_function' has complexity 12 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L89`
   - Function 'can_extract_function' has 53 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
@@ -23838,6 +23835,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-nesting-depth** at `L156`
   - Function 'extract_function' has nesting depth 6 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
+- 🟡 **max-cyclomatic-complexity** at `L156`
+  - Function 'extract_function' has complexity 12 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🔵 **single-responsibility-modules** at `L26`
   - Class 'RopeRefactoringProvider' has 8 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -23918,12 +23918,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/spec/placement.py`** (13 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L242`
-  - Function 'analyze' has complexity 13 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L242`
   - Function 'analyze' has 94 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
+- 🟡 **max-cyclomatic-complexity** at `L242`
+  - Function 'analyze' has complexity 13 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **no-print-statements** at `L21`
   - Forbidden pattern found: 'print('
   - 💡 *Use logging module instead: import logging; logger = logging.getLogger(__name__)*
@@ -24047,12 +24047,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/tdflow/orchestrator.py`** (14 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L257`
-  - Function 'verify' has complexity 14 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L257`
   - Function 'verify' has 69 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
+- 🟡 **max-cyclomatic-complexity** at `L257`
+  - Function 'verify' has complexity 14 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🔵 **single-responsibility-modules** at `L38`
   - Class 'TDFlowOrchestrator' has 13 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -25530,12 +25530,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **max-imports** at `L1`
   - File has 36 imports (max: 30)
   - 💡 *Consider splitting module or consolidating imports*
-- 🔵 **consistent-type-imports** at `file`
-  - Required pattern not found: 'if TYPE_CHECKING:'
-  - 💡 *Use 'if TYPE_CHECKING:' for type-only imports to avoid circular imports*
 - 🔵 **max-imports** at `L1`
   - File has 36 imports (max: 30)
   - 💡 *Consider splitting module or consolidating imports*
+- 🔵 **consistent-type-imports** at `file`
+  - Required pattern not found: 'if TYPE_CHECKING:'
+  - 💡 *Use 'if TYPE_CHECKING:' for type-only imports to avoid circular imports*
 - 🔵 **no-bare-assert** at `L32`
   - Forbidden pattern found: '
         assert result.exit_code == 0
@@ -25962,12 +25962,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`tests/integration/context/test_context_v2_integration.py`** (29 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L197`
-  - Function 'test_audit_captures_full_workflow' has complexity 14 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L44`
   - Function 'realistic_project' has 67 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
+- 🟡 **max-cyclomatic-complexity** at `L197`
+  - Function 'test_audit_captures_full_workflow' has complexity 14 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🔵 **single-responsibility-modules** at `L40`
   - Class 'TestFullContextStack' has 7 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -26230,12 +26230,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **max-imports** at `L1`
   - File has 34 imports (max: 30)
   - 💡 *Consider splitting module or consolidating imports*
-- 🔵 **consistent-type-imports** at `file`
-  - Required pattern not found: 'if TYPE_CHECKING:'
-  - 💡 *Use 'if TYPE_CHECKING:' for type-only imports to avoid circular imports*
 - 🔵 **max-imports** at `L1`
   - File has 34 imports (max: 30)
   - 💡 *Consider splitting module or consolidating imports*
+- 🔵 **consistent-type-imports** at `file`
+  - Required pattern not found: 'if TYPE_CHECKING:'
+  - 💡 *Use 'if TYPE_CHECKING:' for type-only imports to avoid circular imports*
 - 🔵 **no-bare-assert** at `L79`
   - Forbidden pattern found: '        assert session is not None
         assert session.state == SessionState.ACTIVE
@@ -26716,15 +26716,15 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`tests/integration/pipeline/stages/test_design_pipeline.py`** (26 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L280`
-  - Function 'test_full_design_pipeline_with_mocked_llm' has complexity 14 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L214`
   - Function 'test_spec_generates_test_cases' has 57 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
 - 🟡 **max-function-length** at `L280`
   - Function 'test_full_design_pipeline_with_mocked_llm' has 100 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
+- 🟡 **max-cyclomatic-complexity** at `L280`
+  - Function 'test_full_design_pipeline_with_mocked_llm' has complexity 14 (max: 10)
+  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🔵 **single-responsibility-modules** at `L26`
   - Class 'TestDesignPipelineFlow' has 6 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -27159,6 +27159,31 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **consistent-type-imports** at `file`
   - Required pattern not found: 'if TYPE_CHECKING:'
   - 💡 *Use 'if TYPE_CHECKING:' for type-only imports to avoid circular imports*
+- 🔵 **prefer-pytest-raises** at `L361`
+  - Forbidden pattern found: 'try:
+            settings = loader.load_settings()
+            # If it doesn't raise, should have loaded defaults
+            assert settings.project_name == ""
+        except Exception as e:
+            # If it raises, should be a clear error
+            assert "yaml" in str(e).lower() or "parse" in str(e).lower()
+
+    def test_missing_directory_handled(self, tmp_path):
+        """Missing config directory is handled gracefully."""
+        from agentforge.core.pipeline.config import ConfigurationLoader
+
+        # Don't create any directories
+        loader = ConfigurationLoader(tmp_path)
+
+        # Should fall back to defaults
+        settings = loader.load_settings()
+        assert settings.project_name == ""
+        assert settings.language == "python"
+
+        # Listing pipelines should still work
+        pipelines = loader.list_available_pipelines()
+        assert'
+  - 💡 *Use: with pytest.raises(ExceptionType):*
 - 🔵 **no-bare-assert** at `L61`
   - Forbidden pattern found: '        assert loaded_settings.project_name == "IntegrationTest"
         assert loaded_settings.llm_model == "claude-opus-4-20250514"
@@ -27289,31 +27314,6 @@ class TestConfigErrorHandling:
         assert "implement" in pipelines
 '
   - 💡 *Add assertion message: assert x == y, 'Expected x to equal y'*
-- 🔵 **prefer-pytest-raises** at `L361`
-  - Forbidden pattern found: 'try:
-            settings = loader.load_settings()
-            # If it doesn't raise, should have loaded defaults
-            assert settings.project_name == ""
-        except Exception as e:
-            # If it raises, should be a clear error
-            assert "yaml" in str(e).lower() or "parse" in str(e).lower()
-
-    def test_missing_directory_handled(self, tmp_path):
-        """Missing config directory is handled gracefully."""
-        from agentforge.core.pipeline.config import ConfigurationLoader
-
-        # Don't create any directories
-        loader = ConfigurationLoader(tmp_path)
-
-        # Should fall back to defaults
-        settings = loader.load_settings()
-        assert settings.project_name == ""
-        assert settings.language == "python"
-
-        # Listing pipelines should still work
-        pipelines = loader.list_available_pipelines()
-        assert'
-  - 💡 *Use: with pytest.raises(ExceptionType):*
 - 🔵 **parametrize-similar-tests** at `file`
   - Required pattern not found: '@pytest\.mark\.parametrize'
   - 💡 *Use @pytest.mark.parametrize for data-driven tests*
@@ -37853,10 +37853,10 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @component_id: component-name
 # @impl_path: path/to/implementation.py
 Or regenerate file through TDFLOW to get proper lineage.*
-- 🟡 **function-size-limit** at `L829`
-  - Function 'test_full_session_lifecycle' has 35 lines (max: 30)
 - 🟡 **parameter-count-limit** at `L42`
   - Function 'create_mock_session' has 6 parameters (max: 5)
+- 🟡 **function-size-limit** at `L829`
+  - Function 'test_full_session_lifecycle' has 35 lines (max: 30)
 - 🔵 **descriptive-naming** at `L230`
   - Variable name 'result' is generic
   - 💡 *Name should describe what the variable contains*
@@ -38558,12 +38558,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **max-imports** at `L1`
   - File has 99 imports (max: 30)
   - 💡 *Consider splitting module or consolidating imports*
-- 🔵 **consistent-type-imports** at `file`
-  - Required pattern not found: 'if TYPE_CHECKING:'
-  - 💡 *Use 'if TYPE_CHECKING:' for type-only imports to avoid circular imports*
 - 🔵 **max-imports** at `L1`
   - File has 99 imports (max: 30)
   - 💡 *Consider splitting module or consolidating imports*
+- 🔵 **consistent-type-imports** at `file`
+  - Required pattern not found: 'if TYPE_CHECKING:'
+  - 💡 *Use 'if TYPE_CHECKING:' for type-only imports to avoid circular imports*
 - 🔵 **no-bare-assert** at `L62`
   - Forbidden pattern found: '        assert fact.id == "fact_001"
         assert fact.category == FactCategory.VERIFICATION
@@ -47359,6 +47359,64 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **consistent-type-imports** at `file`
   - Required pattern not found: 'if TYPE_CHECKING:'
   - 💡 *Use 'if TYPE_CHECKING:' for type-only imports to avoid circular imports*
+- 🔵 **prefer-pytest-raises** at `L92`
+  - Forbidden pattern found: 'try:
+            symlink.symlink_to(outside_dir)
+        except OSError:
+            pytest.skip("Cannot create symlinks on this platform")
+
+        resolved, error = validate_path_security("escape/secret.txt", tmp_path)
+
+        assert error is not None
+        assert "escapes project directory" in error
+
+    def test_absolute_path_outside_allowed(self, tmp_path):
+        """Absolute path outside base directory is allowed (explicit paths trusted).
+
+        Note: Absolute paths are trusted since the caller explicitly provided
+        them. The security protection is primarily for relative paths that
+        could use .. to escape the project directory.
+        """
+        # /etc/passwd exists on most Unix systems
+        resolved, error = validate_path_security("/etc/passwd", tmp_path)
+
+        # Allowed but file may not exist on all systems
+        # If file exists, no error; if not, "not found" error
+        if resolved.exists():
+            assert error is None
+        else:
+            assert error is not None
+            assert "not found" in error.lower()
+
+    def test_path_with_valid_dots(self, tmp_path):
+        """Path with .. that stays inside is allowed."""
+        (tmp_path / "src").mkdir()
+        (tmp_path / "lib").mkdir()
+        test_file = tmp_path / "lib" / "module.py"
+        test_file.write_text("# test")
+
+        resolved, error = validate_path_security("src/../lib/module.py", tmp_path)
+
+        assert error is None
+        assert resolved == test_file
+
+
+class TestActionHandler:
+    """Tests for ActionHandler type."""
+
+    def test_handler_is_callable_type(self):
+        """ActionHandler is a callable type."""
+        from typing import Any
+
+        # ActionHandler should accept Dict[str, Any] and return str
+        def my_handler(params: dict[str, Any]) -> str:
+            return "result"
+
+        # This is a type check - the function should be compatible
+        handler: ActionHandler = my_handler
+        assert callable(handler)
+        assert'
+  - 💡 *Use: with pytest.raises(ExceptionType):*
 - 🔵 **no-bare-assert** at `L29`
   - Forbidden pattern found: '
         assert error is None
@@ -47433,64 +47491,6 @@ class TestActionHandler:
         assert handler({"key": "value"}) == "result"
 '
   - 💡 *Add assertion message: assert x == y, 'Expected x to equal y'*
-- 🔵 **prefer-pytest-raises** at `L92`
-  - Forbidden pattern found: 'try:
-            symlink.symlink_to(outside_dir)
-        except OSError:
-            pytest.skip("Cannot create symlinks on this platform")
-
-        resolved, error = validate_path_security("escape/secret.txt", tmp_path)
-
-        assert error is not None
-        assert "escapes project directory" in error
-
-    def test_absolute_path_outside_allowed(self, tmp_path):
-        """Absolute path outside base directory is allowed (explicit paths trusted).
-
-        Note: Absolute paths are trusted since the caller explicitly provided
-        them. The security protection is primarily for relative paths that
-        could use .. to escape the project directory.
-        """
-        # /etc/passwd exists on most Unix systems
-        resolved, error = validate_path_security("/etc/passwd", tmp_path)
-
-        # Allowed but file may not exist on all systems
-        # If file exists, no error; if not, "not found" error
-        if resolved.exists():
-            assert error is None
-        else:
-            assert error is not None
-            assert "not found" in error.lower()
-
-    def test_path_with_valid_dots(self, tmp_path):
-        """Path with .. that stays inside is allowed."""
-        (tmp_path / "src").mkdir()
-        (tmp_path / "lib").mkdir()
-        test_file = tmp_path / "lib" / "module.py"
-        test_file.write_text("# test")
-
-        resolved, error = validate_path_security("src/../lib/module.py", tmp_path)
-
-        assert error is None
-        assert resolved == test_file
-
-
-class TestActionHandler:
-    """Tests for ActionHandler type."""
-
-    def test_handler_is_callable_type(self):
-        """ActionHandler is a callable type."""
-        from typing import Any
-
-        # ActionHandler should accept Dict[str, Any] and return str
-        def my_handler(params: dict[str, Any]) -> str:
-            return "result"
-
-        # This is a type check - the function should be compatible
-        handler: ActionHandler = my_handler
-        assert callable(handler)
-        assert'
-  - 💡 *Use: with pytest.raises(ExceptionType):*
 - 🔵 **parametrize-similar-tests** at `file`
   - Required pattern not found: '@pytest\.mark\.parametrize'
   - 💡 *Use @pytest.mark.parametrize for data-driven tests*
@@ -49420,12 +49420,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **max-imports** at `L1`
   - File has 71 imports (max: 30)
   - 💡 *Consider splitting module or consolidating imports*
-- 🔵 **consistent-type-imports** at `file`
-  - Required pattern not found: 'if TYPE_CHECKING:'
-  - 💡 *Use 'if TYPE_CHECKING:' for type-only imports to avoid circular imports*
 - 🔵 **max-imports** at `L1`
   - File has 71 imports (max: 30)
   - 💡 *Consider splitting module or consolidating imports*
+- 🔵 **consistent-type-imports** at `file`
+  - Required pattern not found: 'if TYPE_CHECKING:'
+  - 💡 *Use 'if TYPE_CHECKING:' for type-only imports to avoid circular imports*
 - 🔵 **no-bare-assert** at `L20`
   - Forbidden pattern found: '
         assert DeliveryMode.COMMIT == "commit"
@@ -50620,12 +50620,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **max-imports** at `L1`
   - File has 40 imports (max: 30)
   - 💡 *Consider splitting module or consolidating imports*
-- 🔵 **consistent-type-imports** at `file`
-  - Required pattern not found: 'if TYPE_CHECKING:'
-  - 💡 *Use 'if TYPE_CHECKING:' for type-only imports to avoid circular imports*
 - 🔵 **max-imports** at `L1`
   - File has 40 imports (max: 30)
   - 💡 *Consider splitting module or consolidating imports*
+- 🔵 **consistent-type-imports** at `file`
+  - Required pattern not found: 'if TYPE_CHECKING:'
+  - 💡 *Use 'if TYPE_CHECKING:' for type-only imports to avoid circular imports*
 - 🔵 **no-bare-assert** at `L21`
   - Forbidden pattern found: '        assert executor.stage_name == "refactor"
 
@@ -51437,12 +51437,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **max-imports** at `L1`
   - File has 37 imports (max: 30)
   - 💡 *Consider splitting module or consolidating imports*
-- 🔵 **consistent-type-imports** at `file`
-  - Required pattern not found: 'if TYPE_CHECKING:'
-  - 💡 *Use 'if TYPE_CHECKING:' for type-only imports to avoid circular imports*
 - 🔵 **max-imports** at `L1`
   - File has 37 imports (max: 30)
   - 💡 *Consider splitting module or consolidating imports*
+- 🔵 **consistent-type-imports** at `file`
+  - Required pattern not found: 'if TYPE_CHECKING:'
+  - 💡 *Use 'if TYPE_CHECKING:' for type-only imports to avoid circular imports*
 - 🔵 **no-bare-assert** at `L22`
   - Forbidden pattern found: '        assert config.name == "test"
         assert config.enabled is True
@@ -51771,12 +51771,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **max-imports** at `L1`
   - File has 35 imports (max: 30)
   - 💡 *Consider splitting module or consolidating imports*
-- 🔵 **consistent-type-imports** at `file`
-  - Required pattern not found: 'if TYPE_CHECKING:'
-  - 💡 *Use 'if TYPE_CHECKING:' for type-only imports to avoid circular imports*
 - 🔵 **max-imports** at `L1`
   - File has 35 imports (max: 30)
   - 💡 *Consider splitting module or consolidating imports*
+- 🔵 **consistent-type-imports** at `file`
+  - Required pattern not found: 'if TYPE_CHECKING:'
+  - 💡 *Use 'if TYPE_CHECKING:' for type-only imports to avoid circular imports*
 - 🔵 **no-bare-assert** at `L21`
   - Forbidden pattern found: '        assert error.path == "stages.unknown"
         assert error.message == "Unknown stage: unknown"
@@ -53317,6 +53317,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **consistent-type-imports** at `file`
   - Required pattern not found: 'if TYPE_CHECKING:'
   - 💡 *Use 'if TYPE_CHECKING:' for type-only imports to avoid circular imports*
+- 🟡 **no-sleep-in-tests** at `L244`
+  - Forbidden pattern found: 'time.sleep('
+  - 💡 *Use pytest-timeout, mocking, or async waiting instead*
 - 🔵 **no-bare-assert** at `L42`
   - Forbidden pattern found: '        assert date_part == today
 
@@ -53478,9 +53481,6 @@ class TestPipelineState:
   - Forbidden pattern found: '        assert state.updated_at > original
 '
   - 💡 *Add assertion message: assert x == y, 'Expected x to equal y'*
-- 🟡 **no-sleep-in-tests** at `L244`
-  - Forbidden pattern found: 'time.sleep('
-  - 💡 *Use pytest-timeout, mocking, or async waiting instead*
 - 🔵 **parametrize-similar-tests** at `file`
   - Required pattern not found: '@pytest\.mark\.parametrize'
   - 💡 *Use @pytest.mark.parametrize for data-driven tests*
@@ -53803,6 +53803,122 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **consistent-type-imports** at `file`
   - Required pattern not found: 'if TYPE_CHECKING:'
   - 💡 *Use 'if TYPE_CHECKING:' for type-only imports to avoid circular imports*
+- 🔵 **prefer-pytest-raises** at `L197`
+  - Forbidden pattern found: 'try:
+                # Retry load if we hit a race condition with concurrent write
+                for _attempt in range(3):
+                    loaded = store.load(state.pipeline_id)
+                    if loaded is not None:
+                        break
+                    time.sleep(0.01)
+
+                if loaded is not None:
+                    loaded.config[f"update_{n}"] = n
+                    store.save(loaded)
+            except Exception as e:
+                errors.append(e)
+
+        threads = [threading.Thread(target=update_state, args=(i,)) for i in range(5)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        assert len(errors) == 0
+
+        # State should have some updates (order depends on timing)
+        final = store.load(state.pipeline_id)
+        assert final is not None
+
+
+class TestStateStoreList:
+    """Tests for unified list() method - Phase 6 API Integration."""
+
+    def test_list_all_pipelines(self, state_store, temp_project):
+        """list() returns all pipelines when no filter."""
+        # Create pipelines with various statuses
+        for i, status in enumerate([
+            PipelineStatus.PENDING,
+            PipelineStatus.RUNNING,
+            PipelineStatus.COMPLETED,
+            PipelineStatus.FAILED,
+        ]):
+            state = create_pipeline_state(f"req{i}", temp_project)
+            state.status = status
+            state_store.save(state)
+
+        all_pipelines = state_store.list()
+        assert len(all_pipelines) == 4
+
+    def test_list_filtered_by_status(self, state_store, temp_project):
+        """list(status=...) filters correctly."""
+        state1 = create_pipeline_state("req1", temp_project)
+        state2 = create_pipeline_state("req2", temp_project)
+        state3 = create_pipeline_state("req3", temp_project)
+
+        state1.status = PipelineStatus.RUNNING
+        state2.status = PipelineStatus.RUNNING
+        state3.status = PipelineStatus.COMPLETED
+
+        state_store.save(state1)
+        state_store.save(state2)
+        state_store.save(state3)
+
+        running = state_store.list(status=PipelineStatus.RUNNING)
+        assert len(running) == 2
+
+        completed = state_store.list(status=PipelineStatus.COMPLETED)
+        assert len(completed) == 1
+
+    def test_list_respects_limit(self, state_store, temp_project):
+        """list(limit=N) returns at most N results."""
+        for i in range(10):
+            state = create_pipeline_state(f"req{i}", temp_project)
+            state_store.save(state)
+
+        limited = state_store.list(limit=5)
+        assert len(limited) == 5
+
+    def test_list_ordered_by_date_newest_first(self, state_store, temp_project):
+        """list() returns results ordered by created_at descending."""
+        import time
+
+        states = []
+        for i in range(3):
+            state = create_pipeline_state(f"req{i}", temp_project)
+            state_store.save(state)
+            states.append(state)
+            time.sleep(0.01)  # Ensure different timestamps
+
+        result = state_store.list()
+
+        # Newest (last created) should be first
+        assert result[0].pipeline_id == states[2].pipeline_id
+        assert result[2].pipeline_id == states[0].pipeline_id
+
+    def test_list_empty_store(self, state_store):
+        """list() returns empty list when no pipelines."""
+        result = state_store.list()
+        assert result == []
+
+    def test_list_with_status_and_limit(self, state_store, temp_project):
+        """list() combines status filter and limit."""
+        for i in range(10):
+            state = create_pipeline_state(f"req{i}", temp_project)
+            state.status = PipelineStatus.RUNNING if i < 7 else PipelineStatus.COMPLETED
+            state_store.save(state)
+
+        running = state_store.list(status=PipelineStatus.RUNNING, limit=3)
+        assert len(running) == 3
+        for s in running:
+            assert'
+  - 💡 *Use: with pytest.raises(ExceptionType):*
+- 🟡 **no-sleep-in-tests** at `L203`
+  - Forbidden pattern found: 'time.sleep('
+  - 💡 *Use pytest-timeout, mocking, or async waiting instead*
+- 🟡 **no-sleep-in-tests** at `L281`
+  - Forbidden pattern found: 'time.sleep('
+  - 💡 *Use pytest-timeout, mocking, or async waiting instead*
 - 🔵 **no-bare-assert** at `L27`
   - Forbidden pattern found: '
         assert loaded is not None
@@ -53940,122 +54056,6 @@ class TestStateStoreList:
             assert s.status == PipelineStatus.RUNNING
 '
   - 💡 *Add assertion message: assert x == y, 'Expected x to equal y'*
-- 🔵 **prefer-pytest-raises** at `L197`
-  - Forbidden pattern found: 'try:
-                # Retry load if we hit a race condition with concurrent write
-                for _attempt in range(3):
-                    loaded = store.load(state.pipeline_id)
-                    if loaded is not None:
-                        break
-                    time.sleep(0.01)
-
-                if loaded is not None:
-                    loaded.config[f"update_{n}"] = n
-                    store.save(loaded)
-            except Exception as e:
-                errors.append(e)
-
-        threads = [threading.Thread(target=update_state, args=(i,)) for i in range(5)]
-        for t in threads:
-            t.start()
-        for t in threads:
-            t.join()
-
-        assert len(errors) == 0
-
-        # State should have some updates (order depends on timing)
-        final = store.load(state.pipeline_id)
-        assert final is not None
-
-
-class TestStateStoreList:
-    """Tests for unified list() method - Phase 6 API Integration."""
-
-    def test_list_all_pipelines(self, state_store, temp_project):
-        """list() returns all pipelines when no filter."""
-        # Create pipelines with various statuses
-        for i, status in enumerate([
-            PipelineStatus.PENDING,
-            PipelineStatus.RUNNING,
-            PipelineStatus.COMPLETED,
-            PipelineStatus.FAILED,
-        ]):
-            state = create_pipeline_state(f"req{i}", temp_project)
-            state.status = status
-            state_store.save(state)
-
-        all_pipelines = state_store.list()
-        assert len(all_pipelines) == 4
-
-    def test_list_filtered_by_status(self, state_store, temp_project):
-        """list(status=...) filters correctly."""
-        state1 = create_pipeline_state("req1", temp_project)
-        state2 = create_pipeline_state("req2", temp_project)
-        state3 = create_pipeline_state("req3", temp_project)
-
-        state1.status = PipelineStatus.RUNNING
-        state2.status = PipelineStatus.RUNNING
-        state3.status = PipelineStatus.COMPLETED
-
-        state_store.save(state1)
-        state_store.save(state2)
-        state_store.save(state3)
-
-        running = state_store.list(status=PipelineStatus.RUNNING)
-        assert len(running) == 2
-
-        completed = state_store.list(status=PipelineStatus.COMPLETED)
-        assert len(completed) == 1
-
-    def test_list_respects_limit(self, state_store, temp_project):
-        """list(limit=N) returns at most N results."""
-        for i in range(10):
-            state = create_pipeline_state(f"req{i}", temp_project)
-            state_store.save(state)
-
-        limited = state_store.list(limit=5)
-        assert len(limited) == 5
-
-    def test_list_ordered_by_date_newest_first(self, state_store, temp_project):
-        """list() returns results ordered by created_at descending."""
-        import time
-
-        states = []
-        for i in range(3):
-            state = create_pipeline_state(f"req{i}", temp_project)
-            state_store.save(state)
-            states.append(state)
-            time.sleep(0.01)  # Ensure different timestamps
-
-        result = state_store.list()
-
-        # Newest (last created) should be first
-        assert result[0].pipeline_id == states[2].pipeline_id
-        assert result[2].pipeline_id == states[0].pipeline_id
-
-    def test_list_empty_store(self, state_store):
-        """list() returns empty list when no pipelines."""
-        result = state_store.list()
-        assert result == []
-
-    def test_list_with_status_and_limit(self, state_store, temp_project):
-        """list() combines status filter and limit."""
-        for i in range(10):
-            state = create_pipeline_state(f"req{i}", temp_project)
-            state.status = PipelineStatus.RUNNING if i < 7 else PipelineStatus.COMPLETED
-            state_store.save(state)
-
-        running = state_store.list(status=PipelineStatus.RUNNING, limit=3)
-        assert len(running) == 3
-        for s in running:
-            assert'
-  - 💡 *Use: with pytest.raises(ExceptionType):*
-- 🟡 **no-sleep-in-tests** at `L203`
-  - Forbidden pattern found: 'time.sleep('
-  - 💡 *Use pytest-timeout, mocking, or async waiting instead*
-- 🟡 **no-sleep-in-tests** at `L281`
-  - Forbidden pattern found: 'time.sleep('
-  - 💡 *Use pytest-timeout, mocking, or async waiting instead*
 - 🔵 **parametrize-similar-tests** at `file`
   - Required pattern not found: '@pytest\.mark\.parametrize'
   - 💡 *Use @pytest.mark.parametrize for data-driven tests*
@@ -59605,6 +59605,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **consistent-type-imports** at `file`
   - Required pattern not found: 'if TYPE_CHECKING:'
   - 💡 *Use 'if TYPE_CHECKING:' for type-only imports to avoid circular imports*
+- 🟡 **no-sleep-in-tests** at `L110`
+  - Forbidden pattern found: 'time.sleep('
+  - 💡 *Use pytest-timeout, mocking, or async waiting instead*
 - 🔵 **no-bare-assert** at `L56`
   - Forbidden pattern found: '
         assert session.session_id.startswith("tdflow_")
@@ -59659,9 +59662,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
         assert loaded.components[0].coverage == 85.5
 '
   - 💡 *Add assertion message: assert x == y, 'Expected x to equal y'*
-- 🟡 **no-sleep-in-tests** at `L110`
-  - Forbidden pattern found: 'time.sleep('
-  - 💡 *Use pytest-timeout, mocking, or async waiting instead*
 - 🔵 **fixtures-in-conftest** at `L23`
   - Forbidden pattern found: '@pytest.fixture'
   - 💡 *Move shared fixtures to conftest.py*
@@ -59717,6 +59717,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **single-responsibility-modules** at `L763`
   - Class 'TestEdgeCases' has 5 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
+- 🟡 **no-real-network-calls** at `L469`
+  - Forbidden pattern found: 'requests.get('
+  - 💡 *Use responses, httpretty, or pytest-mock to mock network calls*
+- 🟡 **no-real-network-calls** at `L890`
+  - Forbidden pattern found: 'requests.get('
+  - 💡 *Use responses, httpretty, or pytest-mock to mock network calls*
 - 🔵 **no-bare-assert** at `L106`
   - Forbidden pattern found: '
         assert len(violations) == 1
@@ -59963,12 +59969,6 @@ class TestIntegration:
 
 if __name__ == "__main__":'
   - 💡 *Add assertion message: assert x == y, 'Expected x to equal y'*
-- 🟡 **no-real-network-calls** at `L469`
-  - Forbidden pattern found: 'requests.get('
-  - 💡 *Use responses, httpretty, or pytest-mock to mock network calls*
-- 🟡 **no-real-network-calls** at `L890`
-  - Forbidden pattern found: 'requests.get('
-  - 💡 *Use responses, httpretty, or pytest-mock to mock network calls*
 - 🟡 **unit-tests-isolated** at `L481`
   - Forbidden pattern found: 'sqlite3'
   - 💡 *Mock database connections in unit tests*
@@ -61807,5 +61807,5 @@ Or regenerate file through TDFLOW to get proper lineage.*
 </details>
 
 ---
-*Generated at 2026-01-03 15:28:50 UTC*
-*Commit: `c985a2ff`*
+*Generated at 2026-01-03 16:05:42 UTC*
+*Commit: `30351a21`*

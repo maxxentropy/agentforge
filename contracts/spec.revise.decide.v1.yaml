@@ -1,3 +1,5 @@
+schema_version: "1.0"
+
 # SPEC.REVISE.DECIDE Prompt Contract
 # Version: 1.0.0
 # Purpose: Agent evaluates issues and makes/recommends decisions

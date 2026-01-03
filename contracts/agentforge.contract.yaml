@@ -226,15 +226,18 @@ checks:
 
   # DI pattern - DISABLED (check override doesn't merge type from parent)
   - id: constructor-injection-required
+    type: custom  # DI pattern check - disabled
     enabled: false  # Inheritance issue - disabled until fixed
     severity: warning
 
   # File structure - ENABLED
   # NOTE: Structure checks are now handled by agentforge/structure contract
   - id: require-tools-init
+    type: file_exists  # Legacy check - disabled
     enabled: false  # Legacy - code is now in src/agentforge/
 
   - id: require-schemas-dir
+    type: file_exists  # Legacy check - disabled
     enabled: false  # Handled by agentforge/structure contract
 
   - id: require-builtin-contracts
@@ -276,12 +279,13 @@ checks:
     severity: error
     enabled: true
     config:
-      pattern: "^schema_version:\\s*['\"]?1\\.0['\"]?"
+      pattern: "^schema_version:\\s*['\"]?[12]\\.0['\"]?"
       mode: require
+      multiline: true  # Match start of any line, not just file start
     applies_to:
       paths:
         - "contracts/**/*.contract.yaml"
-    fix_hint: "Add 'schema_version: \"1.0\"' at the top of the contract file"
+    fix_hint: "Add 'schema_version: \"1.0\"' or '\"2.0\"' at the top of the contract file"
 
   - id: contract-has-name
     name: "Contracts Have Name"
@@ -332,12 +336,7 @@ checks:
   # ===========================================================================
   # LINEAGE AUDIT TRAIL - Enforces traceability
   # ===========================================================================
-
-  # Files should have lineage metadata linking them to specs
-  # NOTE: This is now handled by agentforge/lineage contract
-  - id: missing-lineage
-    enabled: false  # Handled by agentforge/lineage contract
-    severity: info
+  # NOTE: Lineage checks are now handled by agentforge/lineage contract
 
   # ===========================================================================
   # TIER 3: TOOL-DEPENDENT - Disabled until tools available

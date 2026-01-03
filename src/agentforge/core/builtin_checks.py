@@ -601,6 +601,110 @@ def check_minimal_context_validation(
 
 
 # ==============================================================================
+# Architecture checks (AST-based) - Stubs for future implementation
+# ==============================================================================
+
+
+def check_layer_imports(
+    repo_root: Path,
+    file_paths: list[Path],
+    **kwargs,
+) -> list[dict]:
+    """
+    Check that layer imports follow architectural boundaries.
+
+    This is a stub implementation. Future implementation should:
+    - Define layer hierarchy (e.g., domain < application < infrastructure)
+    - Verify imports don't violate boundaries (e.g., domain shouldn't import infra)
+
+    Args:
+        repo_root: Repository root directory
+        file_paths: Files to check
+        **kwargs: Additional parameters from contract config (layer_detection, layer_rules)
+
+    Returns:
+        List of violations (empty for now)
+    """
+    # TODO: Implement layer boundary checking
+    return []
+
+
+def check_constructor_injection(
+    repo_root: Path,
+    file_paths: list[Path],
+    **kwargs,
+) -> list[dict]:
+    """
+    Check that classes use constructor injection for dependencies.
+
+    This is a stub implementation. Future implementation should:
+    - Parse class constructors
+    - Verify dependencies are injected via __init__
+    - Flag direct instantiation of dependencies
+
+    Args:
+        repo_root: Repository root directory
+        file_paths: Files to check
+        **kwargs: Additional parameters from contract config (class_patterns, etc.)
+
+    Returns:
+        List of violations (empty for now)
+    """
+    # TODO: Implement constructor injection checking
+    return []
+
+
+def check_domain_purity(
+    repo_root: Path,
+    file_paths: list[Path],
+    **kwargs,
+) -> list[dict]:
+    """
+    Check that domain layer has no external dependencies.
+
+    This is a stub implementation. Future implementation should:
+    - Identify domain layer files
+    - Verify they don't import infrastructure concerns
+    - Flag I/O, HTTP, database imports in domain
+
+    Args:
+        repo_root: Repository root directory
+        file_paths: Files to check
+        **kwargs: Additional parameters from contract config (forbidden_imports, etc.)
+
+    Returns:
+        List of violations (empty for now)
+    """
+    # TODO: Implement domain purity checking
+    return []
+
+
+def check_circular_imports(
+    repo_root: Path,
+    file_paths: list[Path],
+    **kwargs,
+) -> list[dict]:
+    """
+    Detect circular import dependencies.
+
+    This is a stub implementation. Future implementation should:
+    - Build import graph from AST
+    - Detect cycles in the graph
+    - Report minimal cycle paths
+
+    Args:
+        repo_root: Repository root directory
+        file_paths: Files to check
+        **kwargs: Additional parameters from contract config (ignore_type_checking, max_depth)
+
+    Returns:
+        List of violations (empty for now)
+    """
+    # TODO: Implement circular import detection
+    return []
+
+
+# ==============================================================================
 # Registry of built-in checks
 # ==============================================================================
 

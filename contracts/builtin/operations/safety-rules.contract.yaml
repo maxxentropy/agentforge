@@ -4,7 +4,7 @@ contract:
   type: operations
   description: Safety constraints that always apply
   version: 1.0.0
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   tags:
   - builtin
   - operations
@@ -15,7 +15,7 @@ checks:
   description: Never commit secrets or credentials
   type: content_constraint
   severity: error
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     patterns:
     - api[_-]?key\s*[:=]\s*['"][^'"]{10,}
@@ -47,7 +47,7 @@ checks:
   description: Avoid destructive shell commands
   type: command_constraint
   severity: error
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     forbidden_patterns:
     - rm -rf /
@@ -83,7 +83,7 @@ checks:
   description: Don't grant excessive permissions
   type: command_constraint
   severity: error
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     forbidden_patterns:
     - chmod 777
@@ -106,7 +106,7 @@ checks:
   description: Sudo requires explicit approval
   type: command_constraint
   severity: error
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     pattern: ^sudo
     unless: explicitly_approved
@@ -127,7 +127,7 @@ checks:
   description: Don't delete tests without explanation
   type: deletion_constraint
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     protected_patterns:
     - test_*.py
@@ -155,7 +155,7 @@ checks:
   description: Don't disable security features
   type: content_constraint
   severity: error
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     patterns:
     - verify\s*=\s*False
@@ -182,7 +182,7 @@ checks:
   description: Don't eval untrusted input
   type: code_pattern
   severity: error
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     dangerous_patterns:
     - eval\(.*request
@@ -209,7 +209,7 @@ checks:
   description: Backup before bulk destructive operations
   type: operation_guard
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     operations:
     - DELETE FROM .* WHERE

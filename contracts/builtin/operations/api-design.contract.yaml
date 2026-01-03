@@ -8,7 +8,7 @@ contract:
 
     '
   version: 1.0.0
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   tags:
   - builtin
   - operations
@@ -19,7 +19,7 @@ checks:
   description: Use noun-based, plural resource names
   type: naming_convention
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     patterns:
       resources: plural_nouns
@@ -62,7 +62,7 @@ checks:
   description: Use HTTP methods according to their semantics
   type: api_pattern
   severity: error
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     methods:
       GET:
@@ -111,7 +111,7 @@ checks:
   description: Use appropriate HTTP status codes
   type: api_pattern
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     categories:
       2xx_success:
@@ -153,7 +153,7 @@ checks:
   description: Validate all request inputs
   type: api_pattern
   severity: error
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     validate:
     - path_parameters
@@ -185,7 +185,7 @@ checks:
   description: Design query parameters for filtering and pagination
   type: api_pattern
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     filtering:
       pattern: ?field=value&field2=value2
@@ -237,7 +237,7 @@ checks:
   description: Request bodies should be consistent and typed
   type: api_pattern
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     format:
       prefer: application/json
@@ -269,7 +269,7 @@ checks:
   description: Use consistent response structure
   type: api_pattern
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     success_response:
       single_resource:
@@ -305,7 +305,7 @@ checks:
   description: Error responses must be informative and consistent
   type: api_pattern
   severity: error
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     structure:
       error:
@@ -341,7 +341,7 @@ checks:
   description: Include hypermedia links where appropriate
   type: api_pattern
   severity: info
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     when_to_use:
     - pagination_navigation
@@ -371,7 +371,7 @@ checks:
   description: Version APIs to enable evolution
   type: api_pattern
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     strategies:
       url_path:
@@ -420,7 +420,7 @@ checks:
   description: Define what constitutes breaking changes
   type: api_pattern
   severity: error
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     breaking_changes:
     - removing_field
@@ -456,7 +456,7 @@ checks:
   description: Implement standard authentication patterns
   type: security_pattern
   severity: error
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     methods:
       bearer_token:
@@ -497,7 +497,7 @@ checks:
   description: Return appropriate authorization errors
   type: security_pattern
   severity: error
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     responses:
       unauthenticated:
@@ -531,7 +531,7 @@ checks:
   description: Communicate rate limits clearly
   type: api_pattern
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     headers:
       X-RateLimit-Limit: Requests allowed per window
@@ -562,7 +562,7 @@ checks:
   description: Document APIs with OpenAPI/Swagger
   type: documentation
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     required:
     - operation_summary
@@ -593,7 +593,7 @@ checks:
   description: Maintain API changelog
   type: documentation
   severity: info
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     include:
     - version_number

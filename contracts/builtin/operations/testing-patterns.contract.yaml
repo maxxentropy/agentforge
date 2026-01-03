@@ -8,7 +8,7 @@ contract:
 
     '
   version: 1.0.0
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   tags:
   - builtin
   - operations
@@ -19,7 +19,7 @@ checks:
   description: Tests should follow Arrange-Act-Assert structure
   type: test_structure
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     sections:
       arrange:
@@ -65,7 +65,7 @@ checks:
   description: Each test should verify one logical concept
   type: test_structure
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     allow:
     - multiple_assertions_same_concept
@@ -109,7 +109,7 @@ checks:
   description: Test names should describe behavior and expectation
   type: naming_convention
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     patterns:
       method_scenario_expected:
@@ -143,7 +143,7 @@ checks:
   description: Organize test classes by unit under test
   type: test_organization
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     patterns:
       one_class_per_unit:
@@ -174,7 +174,7 @@ checks:
   description: Tests must be independent and isolated
   type: test_quality
   severity: error
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     require:
     - no_shared_mutable_state
@@ -203,7 +203,7 @@ checks:
   description: Tests must be deterministic
   type: test_quality
   severity: error
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     avoid:
     - random_without_seed
@@ -233,7 +233,7 @@ checks:
   description: Mock external dependencies, not internal code
   type: test_quality
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     should_mock:
     - external_apis
@@ -268,7 +268,7 @@ checks:
   description: Follow the testing pyramid
   type: test_strategy
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     pyramid:
       unit_tests:
@@ -311,7 +311,7 @@ checks:
   description: Minimum test coverage by layer
   type: coverage
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     targets:
       domain_logic: 90%
@@ -343,7 +343,7 @@ checks:
   description: Explicitly test edge cases and boundaries
   type: test_completeness
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     always_test:
     - empty_collections
@@ -391,7 +391,7 @@ checks:
   description: Use realistic, meaningful test data
   type: test_data
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     prefer:
     - realistic_values
@@ -423,7 +423,7 @@ checks:
   description: Use builders or factories for complex test data
   type: test_data
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     when_to_use:
     - object_has_many_fields
@@ -453,7 +453,7 @@ checks:
   description: Use specific assertion methods
   type: assertion_quality
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     prefer:
     - assertEqual_over_assertTrue
@@ -480,7 +480,7 @@ checks:
   description: Include context in assertion messages
   type: assertion_quality
   severity: info
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     when_required:
     - complex_assertions
@@ -507,7 +507,7 @@ checks:
   description: Avoid assertions in loops when possible
   type: assertion_quality
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     prefer:
     - all_any_comprehensions

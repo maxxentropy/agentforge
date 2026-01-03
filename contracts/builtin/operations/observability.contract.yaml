@@ -8,7 +8,7 @@ contract:
 
     '
   version: 1.0.0
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   tags:
   - builtin
   - operations
@@ -19,7 +19,7 @@ checks:
   description: Use structured logging, not string formatting
   type: logging_pattern
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     prefer:
       structured:
@@ -53,7 +53,7 @@ checks:
   description: Use appropriate log levels consistently
   type: logging_pattern
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     levels:
       DEBUG:
@@ -112,7 +112,7 @@ checks:
   description: Include correlation context in all logs
   type: logging_pattern
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     always_include:
     - request_id
@@ -143,7 +143,7 @@ checks:
   description: Never log sensitive data
   type: security_pattern
   severity: error
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     never_log:
     - passwords
@@ -177,7 +177,7 @@ checks:
   description: Log errors with full context
   type: logging_pattern
   severity: error
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     include:
     - exception_type
@@ -206,7 +206,7 @@ checks:
   description: Use consistent metric naming conventions
   type: metrics_pattern
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     format:
       pattern: '{namespace}_{subsystem}_{name}_{unit}'
@@ -242,7 +242,7 @@ checks:
   description: Track the four golden signals for all services
   type: metrics_pattern
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     signals:
       latency:
@@ -291,7 +291,7 @@ checks:
   description: Use histograms for latency, not averages
   type: metrics_pattern
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     problem_with_averages: 'Averages hide distribution. A 100ms average could mean
 
@@ -343,7 +343,7 @@ checks:
   description: Control metric label cardinality
   type: metrics_pattern
   severity: error
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     cardinality_limits:
       safe: < 100 unique label combinations
@@ -385,7 +385,7 @@ checks:
   description: Generate traces for all incoming requests
   type: tracing_pattern
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     at_entry_points:
     - http_requests
@@ -417,7 +417,7 @@ checks:
   description: Name spans descriptively and consistently
   type: tracing_pattern
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     format:
       http: HTTP {method} {route}
@@ -453,7 +453,7 @@ checks:
   description: Add meaningful attributes to spans
   type: tracing_pattern
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     standard_attributes:
       http:
@@ -494,7 +494,7 @@ checks:
   description: Mark error spans correctly
   type: tracing_pattern
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     on_error:
       set_status: ERROR
@@ -523,7 +523,7 @@ checks:
   description: Configure appropriate trace sampling
   type: tracing_pattern
   severity: info
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     strategies:
       always_on:
@@ -559,7 +559,7 @@ checks:
   description: Include trace IDs in all log messages
   type: observability_pattern
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     pattern: '# Automatically include trace context in logs
 
@@ -596,7 +596,7 @@ checks:
   description: Propagate request IDs across all calls
   type: observability_pattern
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     at_entry:
       generate: If not present in incoming request
@@ -627,7 +627,7 @@ checks:
   description: Alerts should be actionable
   type: alerting_pattern
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     good_alert_properties:
     - clear_condition
@@ -658,7 +658,7 @@ checks:
   description: Alert based on SLO burn rate
   type: alerting_pattern
   severity: info
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     concept: 'Instead of alerting on every error, alert when you''re
 

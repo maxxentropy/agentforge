@@ -53,6 +53,5 @@ checks:
   # Valid YAML syntax for YAML spec files only
   # NOTE: YAML syntax validation for general files should be done by linters
   # This check is specifically for spec file structure
-  - id: valid-yaml-syntax
-    enabled: false  # Disabled - spec-integrity already checks specs, other YAMLs use linters
+  # REMOVED: Disabled legacy check - merged into spec-integrity
 

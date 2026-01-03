@@ -52,7 +52,7 @@ checks:
     enabled: true
     severity: info
     config:
-      return_type_pattern: Result|Either|Success|Failure
+      return_pattern: Result|Either|Success|Failure
     applies_to:
       paths:
       - '**/*.py'

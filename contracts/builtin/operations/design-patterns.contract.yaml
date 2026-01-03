@@ -10,7 +10,7 @@ contract:
 
     '
   version: 1.0.0
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   tags:
   - builtin
   - operations
@@ -21,7 +21,7 @@ checks:
   description: Define interface for creating objects, let subclasses decide which class
   type: design_pattern
   severity: info
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     intent: 'Defer instantiation to subclasses. Useful when a class can''t
 
@@ -66,7 +66,7 @@ checks:
   description: Create families of related objects without specifying concrete classes
   type: design_pattern
   severity: info
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     intent: 'Provide interface for creating families of related or dependent
 
@@ -111,7 +111,7 @@ checks:
   description: Construct complex objects step by step
   type: design_pattern
   severity: info
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     intent: 'Separate the construction of a complex object from its
 
@@ -164,7 +164,7 @@ checks:
   description: Ensure class has only one instance with global access point
   type: design_pattern
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     intent: 'Ensure a class has only one instance and provide a global
 
@@ -216,7 +216,7 @@ checks:
   description: Create objects by cloning existing instances
   type: design_pattern
   severity: info
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     intent: 'Specify kinds of objects to create using a prototypical instance,
 
@@ -258,7 +258,7 @@ checks:
   description: Convert interface of a class into another interface clients expect
   type: design_pattern
   severity: info
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     intent: 'Convert the interface of a class into another interface clients
 
@@ -304,7 +304,7 @@ checks:
   description: Attach additional responsibilities to object dynamically
   type: design_pattern
   severity: info
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     intent: 'Attach additional responsibilities to an object dynamically.
 
@@ -356,7 +356,7 @@ checks:
   description: Provide unified interface to set of interfaces in subsystem
   type: design_pattern
   severity: info
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     intent: 'Provide a unified interface to a set of interfaces in a
 
@@ -403,7 +403,7 @@ checks:
   description: Provide surrogate or placeholder for another object
   type: design_pattern
   severity: info
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     intent: 'Provide a surrogate or placeholder for another object to control
 
@@ -452,7 +452,7 @@ checks:
   description: Compose objects into tree structures representing part-whole hierarchies
   type: design_pattern
   severity: info
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     intent: 'Compose objects into tree structures to represent part-whole
 
@@ -504,7 +504,7 @@ checks:
   description: Decouple abstraction from implementation so both can vary independently
   type: design_pattern
   severity: info
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     intent: 'Decouple an abstraction from its implementation so that the
 
@@ -551,7 +551,7 @@ checks:
   description: Use sharing to support large numbers of fine-grained objects efficiently
   type: design_pattern
   severity: info
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     intent: 'Use sharing to support large numbers of fine-grained objects
 
@@ -609,7 +609,7 @@ checks:
   description: Define family of algorithms, encapsulate each, make them interchangeable
   type: design_pattern
   severity: info
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     intent: 'Define a family of algorithms, encapsulate each one, and make
 
@@ -660,7 +660,7 @@ checks:
   description: Define one-to-many dependency so dependents are notified of state changes
   type: design_pattern
   severity: info
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     intent: 'Define a one-to-many dependency between objects so that when
 
@@ -711,7 +711,7 @@ checks:
   description: Encapsulate request as object to parameterize clients
   type: design_pattern
   severity: info
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     intent: 'Encapsulate a request as an object, thereby letting you
 
@@ -764,7 +764,7 @@ checks:
   description: Define skeleton of algorithm, defer steps to subclasses
   type: design_pattern
   severity: info
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     intent: 'Define the skeleton of an algorithm in an operation, deferring
 
@@ -814,7 +814,7 @@ checks:
   description: Allow object to alter behavior when internal state changes
   type: design_pattern
   severity: info
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     intent: 'Allow an object to alter its behavior when its internal state
 
@@ -861,7 +861,7 @@ checks:
   description: Pass request along chain of handlers until one handles it
   type: design_pattern
   severity: info
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     intent: 'Avoid coupling sender to receiver by giving more than one object
 
@@ -913,7 +913,7 @@ checks:
   description: Define object that encapsulates how objects interact
   type: design_pattern
   severity: info
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     intent: 'Define an object that encapsulates how a set of objects interact.
 
@@ -965,7 +965,7 @@ checks:
   description: Access elements of aggregate sequentially without exposing representation
   type: design_pattern
   severity: info
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     intent: 'Provide a way to access elements of an aggregate object sequentially
 
@@ -1016,7 +1016,7 @@ checks:
   description: Define new operation without changing classes of elements it operates on
   type: design_pattern
   severity: info
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     intent: 'Represent an operation to be performed on elements of an object
 
@@ -1076,7 +1076,7 @@ checks:
   description: Capture and restore object's internal state
   type: design_pattern
   severity: info
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     intent: 'Without violating encapsulation, capture and externalize an object''s
 
@@ -1122,7 +1122,7 @@ checks:
   description: Mediate between domain and data mapping layers
   type: architectural_pattern
   severity: info
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     intent: 'Mediates between the domain and data mapping layers using a
 
@@ -1171,7 +1171,7 @@ checks:
   description: Maintain list of objects affected by business transaction
   type: architectural_pattern
   severity: info
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     intent: 'Maintain a list of objects affected by a business transaction
 
@@ -1219,7 +1219,7 @@ checks:
   description: Separate read and write models
   type: architectural_pattern
   severity: info
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     intent: 'Command Query Responsibility Segregation - separate models for
 
@@ -1270,7 +1270,7 @@ checks:
   description: Store state as sequence of events
   type: architectural_pattern
   severity: info
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     intent: 'Store the state of an entity as a sequence of state-changing events.
 
@@ -1328,7 +1328,7 @@ checks:
   description: Centralized dependency management and lifetime control
   type: architectural_pattern
   severity: info
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     intent: 'Centralize object creation and dependency resolution.
 
@@ -1371,7 +1371,7 @@ checks:
   description: Prevent cascading failures by failing fast
   type: resilience_pattern
   severity: info
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     intent: 'Prevent an application from repeatedly trying to execute an
 
@@ -1423,7 +1423,7 @@ checks:
   description: Manage distributed transactions through compensating actions
   type: architectural_pattern
   severity: info
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     intent: 'Manage data consistency across microservices in distributed
 
@@ -1479,7 +1479,7 @@ checks:
   description: Encapsulate business rules as combinable, reusable objects
   type: design_pattern
   severity: info
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     intent: 'Encapsulate a business rule in a reusable, combinable object.
 

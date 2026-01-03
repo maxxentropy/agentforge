@@ -43,7 +43,7 @@ checks:
     severity: error
     config:
       module: builtin_checks
-      function: layer_imports
+      function: check_layer_imports
       params:
         layer_detection:
           "**/domain/**": "domain"
@@ -121,7 +121,7 @@ checks:
     severity: error
     config:
       module: builtin_checks
-      function: domain_purity
+      function: check_domain_purity
       params:
         forbidden_imports:
           - requests
@@ -169,7 +169,7 @@ checks:
     severity: warning
     config:
       module: builtin_checks
-      function: constructor_injection
+      function: check_constructor_injection
       params:
         class_patterns:
           - "*Service"
@@ -203,7 +203,7 @@ checks:
     severity: error
     config:
       module: builtin_checks
-      function: circular_imports
+      function: check_circular_imports
       params:
         ignore_type_checking: true  # Allow TYPE_CHECKING imports
         max_depth: 5

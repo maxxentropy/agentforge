@@ -10,7 +10,7 @@ contract:
 
     '
   version: 1.0.0
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   tags:
   - builtin
   - operations
@@ -21,7 +21,7 @@ checks:
   description: Each class/module should have one reason to change
   type: design_principle
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     principle: single_responsibility
     indicators:
@@ -51,7 +51,7 @@ checks:
   description: Open for extension, closed for modification
   type: design_principle
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     principle: open_closed
     prefer:
@@ -79,7 +79,7 @@ checks:
   description: Subtypes must be substitutable for base types
   type: design_principle
   severity: error
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     principle: liskov_substitution
     violations:
@@ -104,7 +104,7 @@ checks:
   description: Clients should not depend on unused interfaces
   type: design_principle
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     principle: interface_segregation
     max_interface_methods: 5
@@ -129,7 +129,7 @@ checks:
   description: Depend on abstractions, not concretions
   type: design_principle
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     principle: dependency_inversion
     require:
@@ -156,7 +156,7 @@ checks:
   description: Functions should be small and focused
   type: code_metric
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     metric: function_length
     threshold: 30
@@ -178,7 +178,7 @@ checks:
   description: Limit function parameter count
   type: code_metric
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     metric: parameter_count
     threshold: 5
@@ -200,7 +200,7 @@ checks:
   description: Limit nesting depth for readability
   type: code_metric
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     metric: nesting_depth
     threshold: 4
@@ -222,7 +222,7 @@ checks:
   description: Limit branch complexity
   type: code_metric
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     metric: cyclomatic_complexity
     threshold: 10
@@ -244,7 +244,7 @@ checks:
   description: Classes should be focused and manageable
   type: code_metric
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     metric: class_size
     threshold: 15
@@ -266,7 +266,7 @@ checks:
   description: Names should reveal intent
   type: naming_convention
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     rules:
     - names_reveal_intent
@@ -301,7 +301,7 @@ checks:
   description: Boolean variables/methods should be questions
   type: naming_convention
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     prefixes:
     - is
@@ -337,7 +337,7 @@ checks:
   description: Functions should be verbs describing action
   type: naming_convention
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     patterns:
     - verb_noun:
@@ -382,7 +382,7 @@ checks:
   description: Favor composition over inheritance
   type: design_pattern
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     prefer:
     - interface_implementation
@@ -411,7 +411,7 @@ checks:
   description: Prefer immutable data structures
   type: design_pattern
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     prefer:
     - readonly_fields
@@ -444,7 +444,7 @@ checks:
   description: Handle null/None explicitly
   type: safety_pattern
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     prefer:
     - optional_types
@@ -476,7 +476,7 @@ checks:
   description: No magic numbers or strings
   type: code_smell
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     require:
     - named_constants
@@ -506,7 +506,7 @@ checks:
   description: Don't Repeat Yourself
   type: code_smell
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     threshold:
       duplicate_lines: 6
@@ -536,7 +536,7 @@ checks:
   description: Follow patterns already established in codebase
   type: consistency
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     analyze:
     - existing_file_structure
@@ -566,7 +566,7 @@ checks:
   description: Make smallest possible change to achieve goal
   type: change_scope
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     avoid:
     - reformatting_unrelated_code
@@ -594,7 +594,7 @@ checks:
   description: Preserve backward compatibility when possible
   type: api_stability
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     for_public_apis:
     - add_dont_remove

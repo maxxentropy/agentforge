@@ -214,11 +214,14 @@ class CIRunner:
         # Lazy import to avoid circular imports
         from agentforge.core.contracts_execution import execute_check
 
-        # Flatten to (contract_id, check) pairs
+        # Flatten to (contract_id, check) pairs, skipping disabled checks
         check_tasks: list[tuple] = []
         for contract in contracts:
             contract_id = contract.get("id", "unknown")
             for check in contract.get("checks", []):
+                # Skip disabled checks
+                if not check.get("enabled", True):
+                    continue
                 check_tasks.append((contract_id, check))
 
         violations: list[CIViolation] = []

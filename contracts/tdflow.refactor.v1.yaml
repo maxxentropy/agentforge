@@ -1,3 +1,5 @@
+schema_version: "1.0"
+
 # TDFLOW.REFACTOR Prompt Contract
 # Version: 1.0.0
 # Purpose: Refactor implementation while keeping tests green

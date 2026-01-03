@@ -8,7 +8,7 @@ contract:
 
     '
   version: 1.0.0
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   tags:
   - builtin
   - operations
@@ -19,7 +19,7 @@ checks:
   description: Async should propagate through the call stack
   type: async_pattern
   severity: error
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     principle: 'Once you go async, stay async. Don''t block on async
 
@@ -57,7 +57,7 @@ checks:
   description: Don't start tasks without awaiting or tracking
   type: async_pattern
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     violations:
     - calling_async_without_await
@@ -90,7 +90,7 @@ checks:
   description: Use structured concurrency patterns
   type: async_pattern
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     principle: 'Child tasks should not outlive their parent scope.
 
@@ -123,7 +123,7 @@ checks:
   description: Async operations should support cancellation
   type: async_pattern
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     require:
     - accept_cancellation_token
@@ -159,7 +159,7 @@ checks:
   description: Clean up resources when cancelled
   type: async_pattern
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     principle: 'Cancellation is not an error to swallow. Clean up
 
@@ -189,7 +189,7 @@ checks:
   description: All I/O operations should have timeouts
   type: async_pattern
   severity: error
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     require_timeout_for:
     - network_requests
@@ -231,7 +231,7 @@ checks:
   description: Timeouts should be configurable
   type: async_pattern
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     principle: 'Don''t hardcode timeouts. Make them configurable
 
@@ -261,7 +261,7 @@ checks:
   description: Limit concurrent operations to prevent overload
   type: async_pattern
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     mechanisms:
       semaphore: "semaphore = asyncio.Semaphore(10)\nasync with semaphore:\n    await operation()\n"
@@ -289,7 +289,7 @@ checks:
   description: Prefer message queues over shared state locks
   type: async_pattern
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     principle: 'Instead of locking shared state, use message passing
 
@@ -326,7 +326,7 @@ checks:
   description: Errors should propagate correctly in async code
   type: async_pattern
   severity: error
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     principle: 'Async errors must be caught at await point or
 
@@ -358,7 +358,7 @@ checks:
   description: Preserve context across async boundaries
   type: async_pattern
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     context_to_preserve:
     - request_id
@@ -389,7 +389,7 @@ checks:
   description: Run independent operations in parallel
   type: async_pattern
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     recognize:
     - no_data_dependency
@@ -433,7 +433,7 @@ checks:
   description: Batch multiple operations when possible
   type: async_pattern
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     scenarios:
       database: Use bulk insert instead of loop
@@ -465,7 +465,7 @@ checks:
   description: Use async context managers for resources
   type: async_pattern
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     pattern: "async with aiohttp.ClientSession() as session:\n    async with session.get(url) as response:\n\
       \        return await response.json()\n"
@@ -493,7 +493,7 @@ checks:
   description: Use connection pools for reusable connections
   type: async_pattern
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     use_pools_for:
     - database_connections

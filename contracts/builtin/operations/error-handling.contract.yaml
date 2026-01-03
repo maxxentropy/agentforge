@@ -8,7 +8,7 @@ contract:
 
     '
   version: 1.0.0
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   tags:
   - builtin
   - operations
@@ -19,7 +19,7 @@ checks:
   description: Design meaningful exception hierarchies
   type: exception_design
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     structure:
       base_exception:
@@ -59,7 +59,7 @@ checks:
   description: Exceptions must carry diagnostic information
   type: exception_design
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     required:
     - descriptive_message
@@ -95,7 +95,7 @@ checks:
   description: Catch specific exceptions, not generic ones
   type: exception_handling
   severity: error
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     avoid:
     - bare_except
@@ -129,7 +129,7 @@ checks:
   description: Never silently swallow exceptions
   type: exception_handling
   severity: error
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     violations:
     - empty_except_block
@@ -164,7 +164,7 @@ checks:
   description: Translate exceptions at layer boundaries
   type: exception_handling
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     pattern:
       infrastructure_to_domain:
@@ -206,7 +206,7 @@ checks:
   description: Use Result types for expected failures
   type: error_pattern
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     when_to_use:
     - validation_errors
@@ -241,7 +241,7 @@ checks:
   description: Don't mix Result and exceptions for same concerns
   type: error_pattern
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     principle: 'Within a module, consistently use either Result or exceptions
 
@@ -273,7 +273,7 @@ checks:
   description: Validate inputs early, fail fast
   type: validation_pattern
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     validate_at:
     - function_entry
@@ -304,7 +304,7 @@ checks:
   description: Collect all validation errors, not just first
   type: validation_pattern
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     pattern:
       collect_all: true
@@ -333,7 +333,7 @@ checks:
   description: Don't catch just to rethrow the same exception
   type: exception_handling
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     bad_pattern: "try:\n    operation()\nexcept SomeError:\n    raise  # Pointless catch\n"
     acceptable:
@@ -359,7 +359,7 @@ checks:
   description: Preserve original stack trace when wrapping exceptions
   type: exception_handling
   severity: error
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     languages:
       python:
@@ -390,7 +390,7 @@ checks:
   description: Use finally or context managers for cleanup
   type: resource_handling
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     prefer:
     - context_managers
@@ -419,7 +419,7 @@ checks:
   description: Acquire resources late, release early
   type: resource_handling
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     principles:
     - acquire_just_before_use

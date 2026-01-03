@@ -4,7 +4,7 @@ contract:
   type: operations
   description: Governs when and how tools should be used
   version: 1.0.0
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   tags:
   - builtin
   - operations
@@ -15,7 +15,7 @@ checks:
   description: Must read a file before editing it
   type: sequence_constraint
   severity: error
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     for_tool: Edit
     requires_prior: Read
@@ -37,7 +37,7 @@ checks:
   description: Use Glob for file discovery by pattern
   type: tool_preference
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     preferred: Glob
     discouraged_bash:
@@ -61,7 +61,7 @@ checks:
   description: Use Grep for content search, not shell grep
   type: tool_preference
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     preferred: Grep
     discouraged_bash:
@@ -86,7 +86,7 @@ checks:
   description: Use Read tool, not cat/head/tail commands
   type: tool_preference
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     preferred: Read
     discouraged_bash:
@@ -113,7 +113,7 @@ checks:
   description: Use Write tool, not echo redirection
   type: tool_preference
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     preferred: Write
     discouraged_bash:
@@ -138,7 +138,7 @@ checks:
   description: Use Edit tool, not sed/awk for modifications
   type: tool_preference
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     preferred: Edit
     discouraged_bash:
@@ -163,7 +163,7 @@ checks:
   description: Use LSP go-to-definition for finding symbol definitions
   type: tool_preference
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     preferred: lsp_get_definition
     preferred_tools:
@@ -202,7 +202,7 @@ checks:
   description: Use LSP find-references for tracing symbol usage
   type: tool_preference
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     preferred: lsp_get_references
     preferred_tools:
@@ -240,7 +240,7 @@ checks:
   description: Use LSP for document/workspace symbol queries
   type: tool_preference
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     preferred: lsp_get_symbols
     preferred_tools:
@@ -283,7 +283,7 @@ checks:
   description: Use LSP hover for type and documentation info
   type: tool_preference
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     preferred: lsp_get_hover
     preferred_tools:
@@ -323,7 +323,7 @@ checks:
   description: Use LSP diagnostics for error detection
   type: tool_preference
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     preferred: lsp_get_diagnostics
     preferred_tools:
@@ -361,7 +361,7 @@ checks:
   description: Check LSP availability before falling back to alternatives
   type: conditional_preference
   severity: info
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     check_first: lsp_is_available
     if_available: prefer_lsp_methods

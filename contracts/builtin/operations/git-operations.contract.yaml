@@ -4,7 +4,7 @@ contract:
   type: operations
   description: Governs git operations for safety and traceability
   version: 1.0.0
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   tags:
   - builtin
   - operations
@@ -15,7 +15,7 @@ checks:
   description: Never force push without explicit approval
   type: command_constraint
   severity: error
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     command: git push
     forbidden_flags:
@@ -40,7 +40,7 @@ checks:
   description: Don't commit directly to main/master branches
   type: branch_constraint
   severity: error
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     protected_branches:
     - main
@@ -69,7 +69,7 @@ checks:
   description: Commit messages must be descriptive
   type: message_constraint
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     max_subject_length: 72
     require_body_for:
@@ -97,7 +97,7 @@ checks:
   description: Must resolve merge conflicts before proceeding
   type: state_constraint
   severity: error
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     forbidden_states:
     - MERGING
@@ -121,7 +121,7 @@ checks:
   description: Working tree should be clean before major operations
   type: state_constraint
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     operations:
     - checkout
@@ -146,7 +146,7 @@ checks:
   description: Don't rewrite history that's been pushed
   type: history_constraint
   severity: error
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     forbidden_on_pushed:
     - rebase -i
@@ -170,7 +170,7 @@ checks:
   description: Don't bypass git hooks without explicit approval
   type: command_constraint
   severity: warning
-  enabled: true
+  enabled: false  # Disabled - check types not yet implemented
   config:
     forbidden_flags:
     - --no-verify

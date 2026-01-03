@@ -7,15 +7,15 @@
 | Mode | full |
 | Files Checked | 0 |
 | Checks Run | 158 |
-| Total Violations | 4689 |
+| Total Violations | 4688 |
 | Errors | 0 |
-| Warnings | 442 |
-| Duration | 15.20s |
+| Warnings | 437 |
+| Duration | 15.11s |
 
 ### All Violations
 
 <details>
-<summary>View all 4689 violations in 414 files</summary>
+<summary>View all 4688 violations in 414 files</summary>
 
 **`<unknown>`** (4 violations)
 
@@ -413,12 +413,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-function-length** at `L331`
   - Function 'status' has 59 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-parameter-count** at `L154`
-  - Function 'start' has 7 parameters (max: 5)
-  - 💡 *Group related parameters into a dataclass or use **kwargs*
 - 🟡 **max-nesting-depth** at `L73`
   - Function '_display_result' has nesting depth 7 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
+- 🟡 **max-parameter-count** at `L154`
+  - Function 'start' has 7 parameters (max: 5)
+  - 💡 *Group related parameters into a dataclass or use **kwargs*
 - 🟡 **max-file-lines** at `file`
   - File exceeds line limit (682 lines > 500)
   - 💡 *Consider splitting into smaller files*
@@ -2743,22 +2743,16 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 
-**`src/agentforge/core/bridge/orchestrator.py`** (16 violations)
+**`src/agentforge/core/bridge/orchestrator.py`** (17 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L84`
-  - Function 'generate' has complexity 17 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-cyclomatic-complexity** at `L205`
+- 🟡 **max-cyclomatic-complexity** at `L200`
   - Function '_generate_report' has complexity 14 (max: 10)
   - 💡 *Break complex functions into smaller, focused helper functions*
-- 🟡 **max-function-length** at `L84`
-  - Function 'generate' has 53 lines (max: 50)
-  - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-function-length** at `L205`
+- 🟡 **max-function-length** at `L200`
   - Function '_generate_report' has 65 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
 - 🔵 **single-responsibility-modules** at `L31`
-  - Class 'BridgeOrchestrator' has 11 methods (max: 3)
+  - Class 'BridgeOrchestrator' has 14 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -2769,22 +2763,28 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **default-result-return-types** at `L84`
+  - Method '_verbose' returns 'None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L89`
+  - Method '_filter_zones' returns 'list[str]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L98`
+  - Method '_process_zones' returns 'None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L110`
+  - Method '_write_contracts' returns 'list[str]', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L120`
   - Method 'generate' returns 'tuple[list[GeneratedContract], GenerationReport]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L156`
-  - Method '_log' returns 'None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L167`
+- 🔵 **default-result-return-types** at `L162`
   - Method '_handle_conflicts' returns 'GeneratedContract', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L176`
+- 🔵 **default-result-return-types** at `L171`
   - Method '_generate_zone_contract' returns 'GeneratedContract | None', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L205`
+- 🔵 **default-result-return-types** at `L200`
   - Method '_generate_report' returns 'GenerationReport', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L283`
+- 🔵 **default-result-return-types** at `L278`
   - Method 'preview' returns 'str', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L313`
+- 🔵 **default-result-return-types** at `L308`
   - Method 'list_mappings' returns 'list[dict]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L330`
+- 🔵 **default-result-return-types** at `L325`
   - Method 'refresh' returns 'tuple[list[GeneratedContract], GenerationReport]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L347`
+- 🔵 **default-result-return-types** at `L342`
   - Method 'write_report' returns 'Path', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -4687,34 +4687,25 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 
-**`src/agentforge/core/contracts/enforcer.py`** (26 violations)
+**`src/agentforge/core/contracts/enforcer.py`** (24 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L504`
-  - Function 'check_quality_gate' has complexity 16 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L255`
   - Function '_validate_schema' has 55 lines (max: 50)
-  - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-function-length** at `L504`
-  - Function 'check_quality_gate' has 54 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
 - 🟡 **max-nesting-depth** at `L473`
   - Function '_evaluate_trigger_condition' has nesting depth 5 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
-- 🟡 **max-nesting-depth** at `L504`
-  - Function 'check_quality_gate' has nesting depth 5 (max: 4)
-  - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🟡 **max-file-lines** at `file`
-  - File exceeds line limit (655 lines > 500)
+  - File exceeds line limit (644 lines > 500)
   - 💡 *Consider splitting into smaller files*
 - 🟡 **no-god-classes** at `L141`
-  - Class 'ContractEnforcer' has 18 methods (max: 15)
+  - Class 'ContractEnforcer' has 20 methods (max: 15)
   - 💡 *Split large classes using composition or inheritance*
 - 🔵 **single-responsibility-modules** at `L85`
   - Class 'ValidationResult' has 4 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
 - 🔵 **single-responsibility-modules** at `L141`
-  - Class 'ContractEnforcer' has 18 methods (max: 3)
+  - Class 'ContractEnforcer' has 20 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -4750,9 +4741,11 @@ Or regenerate file through TDFLOW to get proper lineage.*
   - Method 'check_escalation_triggers' returns 'list[EscalationCheck]', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **default-result-return-types** at `L473`
   - Method '_evaluate_trigger_condition' returns 'bool', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L613`
+- 🔵 **default-result-return-types** at `L511`
+  - Method '_evaluate_check' returns 'bool', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L602`
   - Method '_check_operation_rule' returns 'bool', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L626`
+- 🔵 **default-result-return-types** at `L615`
   - Method 'get_summary' returns 'dict[str, Any]', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -5422,18 +5415,18 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-function-length** at `L484`
   - Function '_check_signal' has 88 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-parameter-count** at `L484`
-  - Function '_check_signal' has 8 parameters (max: 5)
-  - 💡 *Group related parameters into a dataclass or use **kwargs*
-- 🟡 **max-parameter-count** at `L583`
-  - Function '_add_match' has 6 parameters (max: 5)
-  - 💡 *Group related parameters into a dataclass or use **kwargs*
 - 🟡 **max-nesting-depth** at `L484`
   - Function '_check_signal' has nesting depth 11 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🟡 **max-nesting-depth** at `L654`
   - Function '_detect_frameworks' has nesting depth 5 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
+- 🟡 **max-parameter-count** at `L484`
+  - Function '_check_signal' has 8 parameters (max: 5)
+  - 💡 *Group related parameters into a dataclass or use **kwargs*
+- 🟡 **max-parameter-count** at `L583`
+  - Function '_add_match' has 6 parameters (max: 5)
+  - 💡 *Group related parameters into a dataclass or use **kwargs*
 - 🟡 **max-file-lines** at `file`
   - File exceeds line limit (715 lines > 500)
   - 💡 *Consider splitting into smaller files*
@@ -7498,15 +7491,15 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-function-length** at `L894`
   - Function 'run_task_native' has 107 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-parameter-count** at `L103`
-  - Function '__init__' has 11 parameters (max: 5)
-  - 💡 *Group related parameters into a dataclass or use **kwargs*
 - 🟡 **max-nesting-depth** at `L255`
   - Function '_handle_phase_transition' has nesting depth 5 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🟡 **max-nesting-depth** at `L741`
   - Function 'run_until_complete' has nesting depth 5 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
+- 🟡 **max-parameter-count** at `L103`
+  - Function '__init__' has 11 parameters (max: 5)
+  - 💡 *Group related parameters into a dataclass or use **kwargs*
 - 🟡 **max-class-size** at `L80`
   - Class 'MinimalContextExecutor' has 21 methods (max: 20)
   - 💡 *Consider splitting into multiple classes with single responsibilities*
@@ -9261,15 +9254,15 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/llm/client.py`** (12 violations)
 
+- 🟡 **max-nesting-depth** at `L136`
+  - Function '_build_request_params' has nesting depth 5 (max: 4)
+  - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🟡 **max-parameter-count** at `L95`
   - Function 'complete' has 6 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
 - 🟡 **max-parameter-count** at `L136`
   - Function '_build_request_params' has 6 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
-- 🟡 **max-nesting-depth** at `L136`
-  - Function '_build_request_params' has nesting depth 5 (max: 4)
-  - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🔵 **single-responsibility-modules** at `L46`
   - Class 'AnthropicLLMClient' has 7 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -16754,6 +16747,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **unit-tests-isolated** at `L504`
   - Forbidden pattern found: 'sqlite3'
   - 💡 *Mock database connections in unit tests*
+- 🔵 **no-hardcoded-test-data-paths** at `L897`
+  - Forbidden pattern found: 'open("'
+  - 💡 *Use tmp_path fixture or Path(__file__).parent for test data*
 - 🔵 **fixtures-in-conftest** at `L37`
   - Forbidden pattern found: '@pytest.fixture'
   - 💡 *Move shared fixtures to conftest.py*
@@ -16766,9 +16762,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **fixtures-in-conftest** at `L298`
   - Forbidden pattern found: '@pytest.fixture'
   - 💡 *Move shared fixtures to conftest.py*
-- 🔵 **no-hardcoded-test-data-paths** at `L897`
-  - Forbidden pattern found: 'open("'
-  - 💡 *Use tmp_path fixture or Path(__file__).parent for test data*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
   - 💡 *Add lineage header to file:
@@ -17048,5 +17041,5 @@ Or regenerate file through TDFLOW to get proper lineage.*
 </details>
 
 ---
-*Generated at 2026-01-03 18:24:58 UTC*
-*Commit: `8be41437`*
+*Generated at 2026-01-03 18:27:21 UTC*
+*Commit: `91db55aa`*

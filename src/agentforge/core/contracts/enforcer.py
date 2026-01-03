@@ -501,6 +501,26 @@ class ContractEnforcer:
 
         return False
 
+    def _find_gate(self, gate_id: str):
+        """Find a quality gate by ID."""
+        for g in self.contracts.quality_gates:
+            if g.gate_id == gate_id:
+                return g
+        return None
+
+    def _evaluate_check(
+        self, check: str, artifacts: dict[str, Any], context: dict[str, Any]
+    ) -> bool:
+        """Evaluate a single quality gate check."""
+        check_lower = check.lower()
+        if "defined" in check_lower or "present" in check_lower:
+            return bool(artifacts)
+        if "test" in check_lower or "coverage" in check_lower:
+            return context.get("tests_passed", True)
+        if "security" in check_lower or "review" in check_lower:
+            return context.get("security_approved", False)
+        return True  # Default to passed for unrecognized checks
+
     def check_quality_gate(
         self,
         gate_id: str,
@@ -518,52 +538,21 @@ class ContractEnforcer:
             QualityGateResult
         """
         context = context or {}
-
-        # Find the gate
-        gate = None
-        for g in self.contracts.quality_gates:
-            if g.gate_id == gate_id:
-                gate = g
-                break
+        gate = self._find_gate(gate_id)
 
         if gate is None:
             return QualityGateResult(
-                passed=True,
-                gate_id=gate_id,
+                passed=True, gate_id=gate_id,
                 passed_checks=["Gate not found - passing by default"],
             )
 
         passed_checks = []
         failed_checks = []
-
         for check in gate.checks:
-            # Simple check evaluation
-            check_lower = check.lower()
-
-            if "defined" in check_lower or "present" in check_lower:
-                # Check for presence of expected fields
-                if artifacts:
-                    passed_checks.append(check)
-                else:
-                    failed_checks.append(check)
-
-            elif "test" in check_lower or "coverage" in check_lower:
-                # Check for test results
-                if context.get("tests_passed", True):
-                    passed_checks.append(check)
-                else:
-                    failed_checks.append(check)
-
-            elif "security" in check_lower or "review" in check_lower:
-                # Security checks require explicit approval
-                if context.get("security_approved", False):
-                    passed_checks.append(check)
-                else:
-                    failed_checks.append(check)
-
-            else:
-                # Default to passed for unrecognized checks
+            if self._evaluate_check(check, artifacts, context):
                 passed_checks.append(check)
+            else:
+                failed_checks.append(check)
 
         return QualityGateResult(
             passed=len(failed_checks) == 0,

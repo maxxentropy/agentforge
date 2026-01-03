@@ -81,6 +81,42 @@ class BridgeOrchestrator:
         self._contracts: list[GeneratedContract] = []
         self._all_conflicts: list[Conflict] = []
 
+    def _verbose(self, msg: str) -> None:
+        """Print message if verbose mode enabled."""
+        if self.verbose:
+            print(msg)
+
+    def _filter_zones(self, zones: list[str], zone_filter: str | None) -> list[str]:
+        """Filter zones by name if filter provided."""
+        if not zone_filter:
+            return zones
+        filtered = [z for z in zones if z == zone_filter]
+        if not filtered:
+            raise ValueError(f"Zone not found: {zone_filter}")
+        return filtered
+
+    def _process_zones(self, zones: list[str]) -> None:
+        """Generate contracts for each zone."""
+        self._contracts = []
+        self._all_conflicts = []
+        for zone_name in zones:
+            try:
+                contract = self._generate_zone_contract(zone_name)
+                if contract and contract.checks:
+                    self._contracts.append(contract)
+            except Exception as e:
+                self._verbose(f"  Warning: Failed to generate for zone {zone_name}: {e}")
+
+    def _write_contracts(self) -> list[str]:
+        """Write generated contracts to files."""
+        written_paths = []
+        for contract in self._contracts:
+            path = self.builder.write_contract(contract)
+            if path:
+                written_paths.append(path)
+                self._verbose(f"  Wrote: {path}")
+        return written_paths
+
     def generate(
         self,
         zone_filter: str | None = None,
@@ -98,65 +134,24 @@ class BridgeOrchestrator:
         Returns:
             Tuple of (list of generated contracts, generation report)
         """
-        datetime.now()
-
-        # Load profile
-        if self.verbose:
-            print(f"Loading profile from {self.profile_path or '.agentforge/codebase_profile.yaml'}...")
-
+        self._verbose(f"Loading profile from {self.profile_path or '.agentforge/codebase_profile.yaml'}...")
         self._profile = self.loader.load(self.profile_path)
 
-        # Load existing contracts for conflict detection
-        if self.verbose:
-            print("Loading existing contracts...")
+        self._verbose("Loading existing contracts...")
         self.resolver.load_existing_contracts()
 
-        # Get zones to process
-        zones = self.loader.get_zones()
-        if zone_filter:
-            zones = [z for z in zones if z == zone_filter]
-            if not zones:
-                raise ValueError(f"Zone not found: {zone_filter}")
+        zones = self._filter_zones(self.loader.get_zones(), zone_filter)
+        self._verbose(f"Processing {len(zones)} zone(s): {zones}")
 
-        if self.verbose:
-            print(f"Processing {len(zones)} zone(s): {zones}")
+        self._process_zones(zones)
+        written_paths = [] if dry_run else self._write_contracts()
 
-        # Generate contracts for each zone
-        self._contracts = []
-        self._all_conflicts = []
-
-        for zone_name in zones:
-            try:
-                contract = self._generate_zone_contract(zone_name)
-                if contract and contract.checks:
-                    self._contracts.append(contract)
-            except Exception as e:
-                if self.verbose:
-                    print(f"  Warning: Failed to generate for zone {zone_name}: {e}")
-
-        # Write contracts (unless dry run)
-        written_paths = []
-        if not dry_run:
-            for contract in self._contracts:
-                path = self.builder.write_contract(contract)
-                if path:
-                    written_paths.append(path)
-                    if self.verbose:
-                        print(f"  Wrote: {path}")
-
-        # Generate report
         report = self._generate_report(
             zones_processed=len(zones),
             dry_run=dry_run,
             written_paths=written_paths,
         )
-
         return self._contracts, report
-
-    def _log(self, message: str) -> None:
-        """Print message if verbose mode is enabled."""
-        if self.verbose:
-            print(message)
 
     def _create_zone_context(self, zone_name: str):
         """Create mapping context for a zone."""
@@ -169,7 +164,7 @@ class BridgeOrchestrator:
         conflicts = self.resolver.detect_conflicts(contract)
         if not conflicts:
             return contract
-        self._log(f"    Detected {len(conflicts)} conflict(s)")
+        self._verbose(f"    Detected {len(conflicts)} conflict(s)")
         self._all_conflicts.extend(conflicts)
         return self.resolver.resolve_conflicts(conflicts, contract)
 
@@ -178,12 +173,12 @@ class BridgeOrchestrator:
         zone_name: str
     ) -> GeneratedContract | None:
         """Generate contract for a single zone."""
-        self._log(f"  Generating checks for zone: {zone_name}...")
+        self._verbose(f"  Generating checks for zone: {zone_name}...")
 
         context = self._create_zone_context(zone_name)
         checks = MappingRegistry.generate_checks(context)
 
-        self._log(f"    Generated {len(checks)} checks from mappings")
+        self._verbose(f"    Generated {len(checks)} checks from mappings")
 
         if not checks:
             return None
@@ -198,7 +193,7 @@ class BridgeOrchestrator:
         )
 
         contract = self._handle_conflicts(contract)
-        self._log(f"    Final: {contract.enabled_count} enabled, {contract.disabled_count} disabled")
+        self._verbose(f"    Final: {contract.enabled_count} enabled, {contract.disabled_count} disabled")
 
         return contract
 

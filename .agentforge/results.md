@@ -7,15 +7,15 @@
 | Mode | full |
 | Files Checked | 0 |
 | Checks Run | 158 |
-| Total Violations | 4796 |
+| Total Violations | 4799 |
 | Errors | 0 |
-| Warnings | 343 |
-| Duration | 19.05s |
+| Warnings | 342 |
+| Duration | 19.02s |
 
 ### All Violations
 
 <details>
-<summary>View all 4796 violations in 414 files</summary>
+<summary>View all 4799 violations in 414 files</summary>
 
 **`<unknown>`** (4 violations)
 
@@ -413,12 +413,12 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-function-length** at `L331`
   - Function 'status' has 59 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
-- 🟡 **max-nesting-depth** at `L73`
-  - Function '_display_result' has nesting depth 7 (max: 4)
-  - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🟡 **max-parameter-count** at `L154`
   - Function 'start' has 7 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
+- 🟡 **max-nesting-depth** at `L73`
+  - Function '_display_result' has nesting depth 7 (max: 4)
+  - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🟡 **max-file-lines** at `file`
   - File exceeds line limit (682 lines > 500)
   - 💡 *Consider splitting into smaller files*
@@ -2431,13 +2431,10 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 
-**`src/agentforge/core/bridge/conflict_resolver.py`** (12 violations)
+**`src/agentforge/core/bridge/conflict_resolver.py`** (13 violations)
 
-- 🟡 **max-nesting-depth** at `L160`
-  - Function 'resolve_conflicts' has nesting depth 7 (max: 4)
-  - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🔵 **single-responsibility-modules** at `L25`
-  - Class 'ConflictResolver' has 9 methods (max: 3)
+  - Class 'ConflictResolver' has 11 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -2457,11 +2454,15 @@ Or regenerate file through TDFLOW to get proper lineage.*
   - Method '_determine_resolution' returns 'ResolutionStrategy', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **default-result-return-types** at `L160`
   - Method 'resolve_conflicts' returns 'GeneratedContract', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L217`
+- 🔵 **default-result-return-types** at `L190`
+  - Method '_apply_resolutions' returns 'None', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L203`
+  - Method '_apply_single_resolution' returns 'bool', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L225`
   - Method '_generate_unique_id' returns 'str', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L228`
+- 🔵 **default-result-return-types** at `L236`
   - Method 'get_existing_check_ids' returns 'set[str]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L232`
+- 🔵 **default-result-return-types** at `L240`
   - Method 'get_existing_contract_names' returns 'set[str]', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -5488,9 +5489,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/discovery/analyzers/patterns.py`** (31 violations)
 
-- 🟡 **max-nesting-depth** at `L514`
-  - Function '_check_base_class_signal' has nesting depth 5 (max: 4)
-  - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🟡 **max-parameter-count** at `L484`
   - Function '_check_class_name_signal' has 6 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
@@ -5518,6 +5516,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **max-parameter-count** at `L645`
   - Function '_add_match' has 6 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
+- 🟡 **max-nesting-depth** at `L514`
+  - Function '_check_base_class_signal' has nesting depth 5 (max: 4)
+  - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🟡 **max-file-lines** at `file`
   - File exceeds line limit (789 lines > 500)
   - 💡 *Consider splitting into smaller files*
@@ -5795,19 +5796,19 @@ Or regenerate file through TDFLOW to get proper lineage.*
 # @test_path: tests/path/to/test.py
 Or regenerate file through TDFLOW to get proper lineage.*
 
-**`src/agentforge/core/discovery/generators/lineage_embedder.py`** (17 violations)
+**`src/agentforge/core/discovery/generators/lineage_embedder.py`** (19 violations)
 
-- 🟡 **max-cyclomatic-complexity** at `L304`
-  - Function '_should_skip_python_line' has complexity 11 (max: 10)
-  - 💡 *Break complex functions into smaller, focused helper functions*
 - 🟡 **max-function-length** at `L122`
   - Function 'embed_file' has 68 lines (max: 50)
   - 💡 *Extract logic into helper functions or use composition*
 - 🟡 **max-nesting-depth** at `L227`
   - Function '_find_existing_lineage' has nesting depth 5 (max: 4)
   - 💡 *Use early returns, guard clauses, or extract nested logic*
+- 🟡 **no-god-classes** at `L50`
+  - Class 'LineageEmbedder' has 17 methods (max: 15)
+  - 💡 *Split large classes using composition or inheritance*
 - 🔵 **single-responsibility-modules** at `L50`
-  - Class 'LineageEmbedder' has 15 methods (max: 3)
+  - Class 'LineageEmbedder' has 17 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -5831,13 +5832,17 @@ Or regenerate file through TDFLOW to get proper lineage.*
   - Method '_is_standard_header_comment' returns 'bool', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **default-result-return-types** at `L304`
   - Method '_should_skip_python_line' returns 'tuple[bool, bool]', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L330`
+- 🔵 **default-result-return-types** at `L320`
+  - Method '_is_skippable_header_line' returns 'bool', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L336`
+  - Method '_is_break_point_line' returns 'bool', expected pattern 'Result|Either|Success|Failure'
+- 🔵 **default-result-return-types** at `L347`
   - Method '_find_python_insert_position' returns 'int', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L342`
+- 🔵 **default-result-return-types** at `L359`
   - Method '_add_spacing' returns 'str', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L350`
+- 🔵 **default-result-return-types** at `L367`
   - Method '_insert_lineage_block' returns 'str', expected pattern 'Result|Either|Success|Failure'
-- 🔵 **default-result-return-types** at `L374`
+- 🔵 **default-result-return-types** at `L391`
   - Method 'summary' returns 'dict[str, int]', expected pattern 'Result|Either|Success|Failure'
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
@@ -9363,15 +9368,15 @@ Or regenerate file through TDFLOW to get proper lineage.*
 
 **`src/agentforge/core/llm/client.py`** (12 violations)
 
-- 🟡 **max-nesting-depth** at `L136`
-  - Function '_build_request_params' has nesting depth 5 (max: 4)
-  - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🟡 **max-parameter-count** at `L95`
   - Function 'complete' has 6 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
 - 🟡 **max-parameter-count** at `L136`
   - Function '_build_request_params' has 6 parameters (max: 5)
   - 💡 *Group related parameters into a dataclass or use **kwargs*
+- 🟡 **max-nesting-depth** at `L136`
+  - Function '_build_request_params' has nesting depth 5 (max: 4)
+  - 💡 *Use early returns, guard clauses, or extract nested logic*
 - 🔵 **single-responsibility-modules** at `L46`
   - Class 'AnthropicLLMClient' has 7 methods (max: 3)
   - 💡 *Split modules with too many classes into focused single-class modules*
@@ -16886,9 +16891,6 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🟡 **unit-tests-isolated** at `L504`
   - Forbidden pattern found: 'sqlite3'
   - 💡 *Mock database connections in unit tests*
-- 🔵 **no-hardcoded-test-data-paths** at `L897`
-  - Forbidden pattern found: 'open("'
-  - 💡 *Use tmp_path fixture or Path(__file__).parent for test data*
 - 🔵 **fixtures-in-conftest** at `L37`
   - Forbidden pattern found: '@pytest.fixture'
   - 💡 *Move shared fixtures to conftest.py*
@@ -16901,6 +16903,9 @@ Or regenerate file through TDFLOW to get proper lineage.*
 - 🔵 **fixtures-in-conftest** at `L298`
   - Forbidden pattern found: '@pytest.fixture'
   - 💡 *Move shared fixtures to conftest.py*
+- 🔵 **no-hardcoded-test-data-paths** at `L897`
+  - Forbidden pattern found: 'open("'
+  - 💡 *Use tmp_path fixture or Path(__file__).parent for test data*
 - 🔵 **require-lineage-metadata-python** at `L1`
   - File missing lineage metadata (no audit trail)
   - 💡 *Add lineage header to file:
@@ -17180,5 +17185,5 @@ Or regenerate file through TDFLOW to get proper lineage.*
 </details>
 
 ---
-*Generated at 2026-01-03 22:31:53 UTC*
-*Commit: `0d61b7ab`*
+*Generated at 2026-01-03 22:33:52 UTC*
+*Commit: `7652bcfc`*

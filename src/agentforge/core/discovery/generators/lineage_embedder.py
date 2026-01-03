@@ -307,25 +307,42 @@ class LineageEmbedder:
         Returns:
             (should_skip, should_break) - skip means continue, break means stop
         """
+        # Check skip conditions
+        if self._is_skippable_header_line(i, stripped):
+            return True, False
+
+        # Check break conditions
+        if self._is_break_point_line(stripped):
+            return False, True
+
+        return True, False
+
+    def _is_skippable_header_line(self, i: int, stripped: str) -> bool:
+        """Check if line is a skippable header line (shebang, encoding, empty)."""
         # Skip shebang
         if i == 0 and stripped.startswith("#!"):
-            return True, False
+            return True
         # Skip encoding declaration
         if i <= 1 and (stripped.startswith("# -*-") or "coding" in stripped):
-            return True, False
+            return True
         # Skip empty lines at start
         if not stripped:
-            return True, False
+            return True
+        # Standard header comments are skippable
+        if stripped.startswith("#") and self._is_standard_header_comment(stripped):
+            return True
+        return False
+
+    def _is_break_point_line(self, stripped: str) -> bool:
+        """Check if line is a break point (docstring, code, non-header comment)."""
         # Stop at module docstring
         if stripped.startswith('"""') or stripped.startswith("'''"):
-            return False, True
+            return True
         # Stop at first non-comment line
         if not stripped.startswith("#"):
-            return False, True
-        # Stop at non-standard-header comments
-        if not self._is_standard_header_comment(stripped):
-            return False, True
-        return True, False
+            return True
+        # Non-standard-header comments are break points
+        return not self._is_standard_header_comment(stripped)
 
     def _find_python_insert_position(self, lines: list[str]) -> int:
         """Find the correct insert position for Python files."""

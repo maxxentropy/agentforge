@@ -172,47 +172,55 @@ class ConflictResolver:
         Returns:
             Modified contract with conflicts resolved
         """
-        checks_to_keep = []
+        checks_to_keep: list = []
         renamed_checks: set[str] = set()
 
         for check in generated_contract.checks:
-            # Find conflicts for this check
             check_conflicts = [c for c in conflicts if c.generated_check_id == check.id]
 
             if not check_conflicts:
                 checks_to_keep.append(check)
                 continue
 
-            # Apply resolution
-            for conflict in check_conflicts:
-                if conflict.resolution == ResolutionStrategy.SKIP:
-                    # Don't include this check
-                    continue
-
-                elif conflict.resolution == ResolutionStrategy.RENAME:
-                    # Rename the check
-                    new_id = self._generate_unique_id(check.id, renamed_checks)
-                    check.id = new_id
-                    conflict.new_id = new_id
-                    renamed_checks.add(new_id)
-                    checks_to_keep.append(check)
-
-                elif conflict.resolution == ResolutionStrategy.WARN:
-                    # Include but mark for review
-                    check.review_required = True
-                    check.review_reason = f"CONFLICT: {conflict.reason}"
-                    checks_to_keep.append(check)
-
-                elif conflict.resolution == ResolutionStrategy.OVERWRITE:
-                    # Include and overwrite existing (force mode)
-                    checks_to_keep.append(check)
-
-                elif conflict.resolution == ResolutionStrategy.MERGE:
-                    # Merge with existing (complex - skip for now)
-                    checks_to_keep.append(check)
+            self._apply_resolutions(check, check_conflicts, renamed_checks, checks_to_keep)
 
         generated_contract.checks = checks_to_keep
         return generated_contract
+
+    def _apply_resolutions(
+        self,
+        check: Any,
+        check_conflicts: list[Conflict],
+        renamed_checks: set[str],
+        checks_to_keep: list,
+    ) -> None:
+        """Apply all resolutions for a single check."""
+        for conflict in check_conflicts:
+            kept = self._apply_single_resolution(check, conflict, renamed_checks)
+            if kept:
+                checks_to_keep.append(check)
+
+    def _apply_single_resolution(
+        self, check: Any, conflict: Conflict, renamed_checks: set[str]
+    ) -> bool:
+        """Apply a single resolution strategy. Returns True if check should be kept."""
+        if conflict.resolution == ResolutionStrategy.SKIP:
+            return False
+
+        if conflict.resolution == ResolutionStrategy.RENAME:
+            new_id = self._generate_unique_id(check.id, renamed_checks)
+            check.id = new_id
+            conflict.new_id = new_id
+            renamed_checks.add(new_id)
+            return True
+
+        if conflict.resolution == ResolutionStrategy.WARN:
+            check.review_required = True
+            check.review_reason = f"CONFLICT: {conflict.reason}"
+            return True
+
+        # OVERWRITE and MERGE both keep the check
+        return True
 
     def _generate_unique_id(self, base_id: str, existing: set[str]) -> str:
         """Generate a unique check ID by adding suffix."""

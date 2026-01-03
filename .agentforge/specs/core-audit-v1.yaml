@@ -1,0 +1,108 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Specification: core_audit
+# ═══════════════════════════════════════════════════════════════════════════════
+# Generated: 2026-01-03
+# Generator: manual (contract-aware audit trail implementation)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+spec_id: core-audit-v1
+name: core_audit
+version: '1.0'
+status: as-built
+schema_version: '2.0'
+generated_at: '2026-01-03T12:00:00'
+generated_by: manual
+description: |
+  Unified Audit Trail System for autonomous agent execution.
+
+  Provides complete transparency and verifiability through:
+  - Contract-aware context frames with schema validation
+  - Full LLM conversation capture (prompts + responses)
+  - Agent delegation tracking (parent-child thread correlation)
+  - Tamper-evident SHA-256 hash chains
+  - Human-in-the-loop context recording
+
+  Key Concepts:
+  - Context Frames: Validated snapshots of execution state with schema references
+  - Validation Envelopes: Raw LLM text wrapped with parsed artifacts and validation status
+  - Integrity Chains: Immutable hash chains for tamper evidence
+  - Thread Correlation: Parent-child relationships for agent delegation
+
+  Every autonomous decision is traceable back to its origin
+  with full contract/schema compliance verification.
+
+components:
+# === Module Initialization ===
+- name: __init__
+  component_id: audit-module
+  location: src/agentforge/core/audit/__init__.py
+  test_location: tests/unit/audit/__init__.py
+  description: Audit module initialization and exports.
+
+# === Contract-Aware Frame Logging ===
+- name: context_frame
+  component_id: context-frame
+  location: src/agentforge/core/audit/context_frame.py
+  test_location: tests/unit/audit/test_context_frame.py
+  description: |
+    Core data structures for contract-aware audit frames.
+    Includes ContextFrame, ValidatedContext, ParsedArtifact,
+    SchemaReference, ValidationResult, LLMInteractionEnvelope,
+    and ContextFrameBuilder for fluent frame construction.
+
+- name: frame_logger
+  component_id: frame-logger
+  location: src/agentforge/core/audit/frame_logger.py
+  test_location: tests/unit/audit/test_frame_logger.py
+  description: |
+    Logs context frames with schema-aware validation.
+    Bridges the contract/schema system with the audit trail,
+    ensuring each frame captures governing schemas, validated
+    context, raw LLM responses, and parsed artifacts.
+
+# === Transaction Logging (Raw) ===
+- name: transaction_logger
+  component_id: transaction-logger
+  location: src/agentforge/core/audit/transaction_logger.py
+  test_location: tests/unit/audit/test_transaction_logger.py
+  description: |
+    Per-thread transaction recording for raw audit logging.
+    Records complete transaction records including tool calls,
+    human interactions, and execution context.
+
+# === Infrastructure ===
+- name: thread_correlator
+  component_id: thread-correlator
+  location: src/agentforge/core/audit/thread_correlator.py
+  test_location: tests/unit/audit/test_thread_correlator.py
+  description: |
+    Agent spawning and thread hierarchy tracking.
+    Tracks parent-child relationships between threads,
+    parallel execution groups, and root thread ancestry.
+
+- name: integrity_chain
+  component_id: integrity-chain
+  location: src/agentforge/core/audit/integrity_chain.py
+  test_location: tests/unit/audit/test_integrity_chain.py
+  description: |
+    SHA-256 hash chain for tamper-evident audit records.
+    Each block links to the previous via content hash,
+    creating an immutable, verifiable audit history.
+
+- name: conversation_archive
+  component_id: conversation-archive
+  location: src/agentforge/core/audit/conversation_archive.py
+  test_location: tests/unit/audit/test_conversation_archive.py
+  description: |
+    Full LLM conversation storage and retrieval.
+    Archives complete conversation turns including
+    system prompts, user messages, and model responses.
+
+- name: audit_manager
+  component_id: audit-manager
+  location: src/agentforge/core/audit/audit_manager.py
+  test_location: tests/unit/audit/test_audit_manager.py
+  description: |
+    Central coordinator for audit subsystem.
+    Manages thread correlator, transaction loggers,
+    conversation archives, and integrity chains.

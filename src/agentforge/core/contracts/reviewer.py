@@ -123,6 +123,63 @@ class ContractReviewer:
         session_id = f"REVIEW-{timestamp}"
         return ReviewSession(session_id=session_id, draft=draft)
 
+    def _format_header(self, draft: ContractDraft) -> list[str]:
+        """Format header section."""
+        return [
+            "=" * 70,
+            f"CONTRACT REVIEW: {draft.request_summary}",
+            "=" * 70, "",
+            f"Draft ID: {draft.draft_id}",
+            f"Scope: {draft.detected_scope}",
+            f"Confidence: {draft.confidence:.0%}", "",
+        ]
+
+    def _format_stage_summary(self, stage) -> list[str]:
+        """Format a stage summary for display."""
+        lines = [
+            f"STAGE: {stage.stage_name}",
+            f"  Input: {', '.join(stage.input_requirements) or '(none)'}",
+            f"  Output: {', '.join(stage.output_requirements) or '(none)'}",
+        ]
+        if stage.validation_rules:
+            lines.append(f"  Validation: {len(stage.validation_rules)} rule(s)")
+            lines.extend(f"    - {r.description}" for r in stage.validation_rules[:2])
+        if stage.escalation_conditions:
+            lines.append(f"  Escalation: {len(stage.escalation_conditions)} condition(s)")
+        lines.append("")
+        return lines
+
+    def _format_triggers_and_gates(self, draft: ContractDraft) -> list[str]:
+        """Format escalation triggers and quality gates."""
+        lines = []
+        if draft.escalation_triggers:
+            lines.append("ESCALATION TRIGGERS:")
+            lines.extend(f"  [{t.severity}] {t.condition}" for t in draft.escalation_triggers)
+            lines.append("")
+        if draft.quality_gates:
+            lines.append("QUALITY GATES:")
+            lines.extend(f"  After {g.stage}: {len(g.checks)} check(s)" for g in draft.quality_gates)
+            lines.append("")
+        return lines
+
+    def _format_questions_and_assumptions(self, draft: ContractDraft) -> list[str]:
+        """Format open questions and assumptions."""
+        lines = []
+        if draft.open_questions:
+            lines.append("OPEN QUESTIONS:")
+            for q in draft.open_questions:
+                lines.append(f"  [{q.priority}] {q.question}")
+                lines.extend(f"    -> {ans}" for ans in q.suggested_answers[:2])
+            lines.append("")
+        if draft.assumptions:
+            lines.append("ASSUMPTIONS:")
+            for a in draft.assumptions:
+                lines.append(f"  [{a.confidence:.0%}] {a.statement}")
+                if a.impact_if_wrong:
+                    lines.append(f"    Impact if wrong: {a.impact_if_wrong}")
+            lines.append("")
+        return lines
+
     def format_for_display(self, draft: ContractDraft) -> str:
         """Format a draft for CLI display.
 
@@ -132,70 +189,41 @@ class ContractReviewer:
         Returns:
             Formatted string for CLI display
         """
-        lines = []
-
-        # Header
-        lines.append("=" * 70)
-        lines.append(f"CONTRACT REVIEW: {draft.request_summary}")
-        lines.append("=" * 70)
-        lines.append("")
-
-        # Metadata
-        lines.append(f"Draft ID: {draft.draft_id}")
-        lines.append(f"Scope: {draft.detected_scope}")
-        lines.append(f"Confidence: {draft.confidence:.0%}")
-        lines.append("")
-
-        # Stage contracts
+        lines = self._format_header(draft)
         for stage in draft.stage_contracts:
-            lines.append(f"STAGE: {stage.stage_name}")
-            lines.append(f"  Input: {', '.join(stage.input_requirements) or '(none)'}")
-            lines.append(f"  Output: {', '.join(stage.output_requirements) or '(none)'}")
-
-            if stage.validation_rules:
-                lines.append(f"  Validation: {len(stage.validation_rules)} rule(s)")
-                for rule in stage.validation_rules[:2]:  # Show first 2
-                    lines.append(f"    - {rule.description}")
-
-            if stage.escalation_conditions:
-                lines.append(f"  Escalation: {len(stage.escalation_conditions)} condition(s)")
-
-            lines.append("")
-
-        # Escalation triggers
-        if draft.escalation_triggers:
-            lines.append("ESCALATION TRIGGERS:")
-            for trigger in draft.escalation_triggers:
-                lines.append(f"  [{trigger.severity}] {trigger.condition}")
-            lines.append("")
-
-        # Quality gates
-        if draft.quality_gates:
-            lines.append("QUALITY GATES:")
-            for gate in draft.quality_gates:
-                lines.append(f"  After {gate.stage}: {len(gate.checks)} check(s)")
-            lines.append("")
-
-        # Open questions
-        if draft.open_questions:
-            lines.append("OPEN QUESTIONS:")
-            for q in draft.open_questions:
-                lines.append(f"  [{q.priority}] {q.question}")
-                if q.suggested_answers:
-                    for ans in q.suggested_answers[:2]:
-                        lines.append(f"    -> {ans}")
-            lines.append("")
-
-        # Assumptions
-        if draft.assumptions:
-            lines.append("ASSUMPTIONS:")
-            for a in draft.assumptions:
-                lines.append(f"  [{a.confidence:.0%}] {a.statement}")
-                if a.impact_if_wrong:
-                    lines.append(f"    Impact if wrong: {a.impact_if_wrong}")
-            lines.append("")
-
+            lines.extend(self._format_stage_summary(stage))
+        lines.extend(self._format_triggers_and_gates(draft))
+        lines.extend(self._format_questions_and_assumptions(draft))
         return "\n".join(lines)
+
+    def _format_requirements_list(self, title: str, items: list[str], empty_msg: str) -> list[str]:
+        """Format a requirements list section."""
+        lines = [title]
+        if items:
+            lines.extend(f"  - {req}" for req in items)
+        else:
+            lines.append(f"  {empty_msg}")
+        return lines
+
+    def _format_schema_section(self, schema: dict | None) -> list[str]:
+        """Format output schema section."""
+        if not schema or "properties" not in schema:
+            return []
+        lines = ["", "Output Schema:"]
+        for prop, details in schema["properties"].items():
+            lines.append(f"  - {prop}: {details.get('type', 'any')}")
+        return lines
+
+    def _format_validation_rules_section(self, rules: list) -> list[str]:
+        """Format validation rules section."""
+        if not rules:
+            return []
+        lines = ["", "Validation Rules:"]
+        for rule in rules:
+            lines.append(f"  [{rule.severity}] {rule.rule_id}: {rule.description}")
+            if rule.rationale:
+                lines.append(f"    Rationale: {rule.rationale[:60]}...")
+        return lines
 
     def format_stage_for_review(self, stage: StageContract) -> str:
         """Format a single stage for detailed review.
@@ -206,51 +234,21 @@ class ContractReviewer:
         Returns:
             Formatted string for review
         """
-        lines = []
-        lines.append(f"STAGE: {stage.stage_name}")
-        lines.append("-" * 40)
-
-        lines.append("Input Requirements:")
-        if stage.input_requirements:
-            for req in stage.input_requirements:
-                lines.append(f"  - {req}")
-        else:
-            lines.append("  (none - first stage)")
-
+        lines = [f"STAGE: {stage.stage_name}", "-" * 40]
+        lines.extend(self._format_requirements_list(
+            "Input Requirements:", stage.input_requirements, "(none - first stage)"
+        ))
         lines.append("")
-        lines.append("Output Requirements:")
-        if stage.output_requirements:
-            for req in stage.output_requirements:
-                lines.append(f"  - {req}")
-        else:
-            lines.append("  (none specified)")
-
-        if stage.output_schema:
-            lines.append("")
-            lines.append("Output Schema:")
-            if "properties" in stage.output_schema:
-                for prop, details in stage.output_schema["properties"].items():
-                    type_str = details.get("type", "any")
-                    lines.append(f"  - {prop}: {type_str}")
-
-        if stage.validation_rules:
-            lines.append("")
-            lines.append("Validation Rules:")
-            for rule in stage.validation_rules:
-                lines.append(f"  [{rule.severity}] {rule.rule_id}: {rule.description}")
-                if rule.rationale:
-                    lines.append(f"    Rationale: {rule.rationale[:60]}...")
-
+        lines.extend(self._format_requirements_list(
+            "Output Requirements:", stage.output_requirements, "(none specified)"
+        ))
+        lines.extend(self._format_schema_section(stage.output_schema))
+        lines.extend(self._format_validation_rules_section(stage.validation_rules))
         if stage.escalation_conditions:
-            lines.append("")
-            lines.append("Escalation Conditions:")
-            for cond in stage.escalation_conditions:
-                lines.append(f"  - {cond}")
-
+            lines.extend(["", "Escalation Conditions:"])
+            lines.extend(f"  - {c}" for c in stage.escalation_conditions)
         if stage.rationale:
-            lines.append("")
-            lines.append(f"Rationale: {stage.rationale}")
-
+            lines.extend(["", f"Rationale: {stage.rationale}"])
         return "\n".join(lines)
 
     def apply_feedback(

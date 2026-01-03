@@ -111,71 +111,95 @@ class AgentMonitor:
         )
         self.observations.append(observation)
 
+    def _detect_consecutive_actions(self, recent_actions: list[Observation]) -> LoopDetection | None:
+        """Check for consecutive identical actions."""
+        if len(recent_actions) < self.config.loop_threshold:
+            return None
+
+        consecutive_count = 1
+        last_action = recent_actions[-1].data.get("action", "")
+        loop_observations = [recent_actions[-1]]
+
+        for i in range(len(recent_actions) - 2, -1, -1):
+            current_action = recent_actions[i].data.get("action", "")
+            if current_action == last_action:
+                consecutive_count += 1
+                loop_observations.insert(0, recent_actions[i])
+            else:
+                break
+
+        if consecutive_count >= self.config.loop_threshold:
+            return LoopDetection(
+                detected=True,
+                pattern=f"Repeated action: {last_action}",
+                count=consecutive_count,
+                observations=loop_observations
+            )
+        return None
+
+    def _detect_repeated_errors(self, recent_errors: list[Observation]) -> LoopDetection | None:
+        """Check for repeated errors of the same type."""
+        if len(recent_errors) < self.config.loop_threshold:
+            return None
+
+        error_counts: dict[str, int] = defaultdict(int)
+        for error_obs in recent_errors:
+            error_key = error_obs.data.get("error_type", "")
+            error_counts[error_key] += 1
+
+        for error_type, count in error_counts.items():
+            if count >= self.config.loop_threshold:
+                error_observations = [obs for obs in recent_errors
+                                      if obs.data.get("error_type") == error_type]
+                return LoopDetection(
+                    detected=True,
+                    pattern=f"Repeated error: {error_type}",
+                    count=count,
+                    observations=error_observations
+                )
+        return None
+
+    def _detect_state_cycles(self, recent_states: list[Observation]) -> LoopDetection | None:
+        """Check for A->B->A->B state cycling patterns."""
+        if len(recent_states) < 4:
+            return None
+
+        states = [obs.data.get("new_state", "") for obs in recent_states[-4:]]
+        is_cycle = (states[0] == states[2] and states[1] == states[3] and states[0] != states[1])
+
+        if is_cycle:
+            return LoopDetection(
+                detected=True,
+                pattern=f"State cycle: {states[0]} <-> {states[1]}",
+                count=2,
+                observations=recent_states[-4:]
+            )
+        return None
+
     def detect_loop(self) -> LoopDetection | None:
-        """Check for repetitive action patterns"""
+        """Check for repetitive action patterns."""
         if len(self.observations) < self.config.loop_threshold:
             return LoopDetection(detected=False)
 
-        # Check for consecutive identical actions
-        recent_actions = [obs for obs in list(self.observations)[-10:]
-                         if obs.type == ObservationType.ACTION]
+        recent_obs = list(self.observations)[-10:]
 
-        if len(recent_actions) >= self.config.loop_threshold:
-            # Check for consecutive identical actions
-            consecutive_count = 1
-            last_action = recent_actions[-1].data.get("action", "")
-            loop_observations = [recent_actions[-1]]
+        # Check consecutive actions
+        recent_actions = [obs for obs in recent_obs if obs.type == ObservationType.ACTION]
+        result = self._detect_consecutive_actions(recent_actions)
+        if result:
+            return result
 
-            for i in range(len(recent_actions) - 2, -1, -1):
-                current_action = recent_actions[i].data.get("action", "")
-                if current_action == last_action:
-                    consecutive_count += 1
-                    loop_observations.insert(0, recent_actions[i])
-                else:
-                    break
+        # Check repeated errors
+        recent_errors = [obs for obs in recent_obs if obs.type == ObservationType.ERROR]
+        result = self._detect_repeated_errors(recent_errors)
+        if result:
+            return result
 
-            if consecutive_count >= self.config.loop_threshold:
-                return LoopDetection(
-                    detected=True,
-                    pattern=f"Repeated action: {last_action}",
-                    count=consecutive_count,
-                    observations=loop_observations
-                )
-
-        # Check for repeated errors
-        recent_errors = [obs for obs in list(self.observations)[-10:]
-                        if obs.type == ObservationType.ERROR]
-
-        if len(recent_errors) >= self.config.loop_threshold:
-            error_counts = defaultdict(int)
-            for error_obs in recent_errors:
-                error_key = error_obs.data.get("error_type", "")
-                error_counts[error_key] += 1
-
-            for error_type, count in error_counts.items():
-                if count >= self.config.loop_threshold:
-                    error_observations = [obs for obs in recent_errors
-                                        if obs.data.get("error_type") == error_type]
-                    return LoopDetection(
-                        detected=True,
-                        pattern=f"Repeated error: {error_type}",
-                        count=count,
-                        observations=error_observations
-                    )
-
-        # Check for state cycles
-        recent_states = [obs for obs in list(self.observations)[-10:]
-                        if obs.type == ObservationType.STATE_CHANGE]
-
-        if len(recent_states) >= 4:  # Need at least A->B->A->B
-            states = [obs.data.get("new_state", "") for obs in recent_states[-4:]]
-            if len(states) >= 4 and states[0] == states[2] and states[1] == states[3] and states[0] != states[1]:
-                return LoopDetection(
-                    detected=True,
-                    pattern=f"State cycle: {states[0]} <-> {states[1]}",
-                    count=2,
-                    observations=recent_states[-4:]
-                )
+        # Check state cycles
+        recent_states = [obs for obs in recent_obs if obs.type == ObservationType.STATE_CHANGE]
+        result = self._detect_state_cycles(recent_states)
+        if result:
+            return result
 
         return LoopDetection(detected=False)
 
@@ -293,15 +317,79 @@ class AgentMonitor:
 
         return base_score
 
+    def _check_critical_conditions(
+        self,
+        loop_detection: LoopDetection,
+        thrashing_detection: ThrashingDetection,
+        drift_score: float,
+        context_pressure: float,
+        progress_score: float,
+    ) -> tuple[list[str], Recommendation | None]:
+        """Check for critical health conditions. Returns (issues, recommendation)."""
+        issues: list[str] = []
+        recommendation: Recommendation | None = None
+
+        if loop_detection.detected and loop_detection.count >= 5:
+            recommendation = Recommendation.ABORT
+            issues.append(f"Severe loop detected: {loop_detection.pattern}")
+
+        if drift_score > 0.5:
+            if recommendation is None:
+                recommendation = Recommendation.ESCALATE
+            issues.append(f"High drift from original task (score: {drift_score:.2f})")
+
+        if thrashing_detection.detected and thrashing_detection.alternation_count >= 5:
+            if recommendation is None:
+                recommendation = Recommendation.ESCALATE
+            issues.append(f"Severe thrashing detected: {thrashing_detection.pattern}")
+
+        if context_pressure > 0.95:
+            if recommendation is None:
+                recommendation = Recommendation.ESCALATE
+            issues.append(f"Critical context pressure: {context_pressure:.2f}")
+
+        if progress_score < 0.1:
+            if recommendation is None:
+                recommendation = Recommendation.ESCALATE
+            issues.append(f"Very low progress score: {progress_score:.2f}")
+
+        return issues, recommendation
+
+    def _check_degraded_conditions(
+        self,
+        loop_detection: LoopDetection,
+        thrashing_detection: ThrashingDetection,
+        drift_score: float,
+        context_pressure: float,
+        progress_score: float,
+    ) -> list[str]:
+        """Check for degraded health conditions. Returns list of issues."""
+        issues: list[str] = []
+
+        if loop_detection.detected and loop_detection.count < 5:
+            issues.append(f"Loop detected: {loop_detection.pattern}")
+
+        if 0.3 <= drift_score <= 0.5:
+            issues.append(f"Moderate drift detected (score: {drift_score:.2f})")
+
+        if thrashing_detection.detected and thrashing_detection.alternation_count < 5:
+            issues.append(f"Thrashing detected: {thrashing_detection.pattern}")
+
+        if 0.8 <= context_pressure <= 0.95:
+            issues.append(f"High context pressure: {context_pressure:.2f}")
+
+        if 0.1 <= progress_score <= 0.3:
+            issues.append(f"Low progress score: {progress_score:.2f}")
+
+        return issues
+
     def get_health(
         self,
         original_task: str | None = None,
         tokens_used: int = 0,
         token_budget: int = 100000
     ) -> AgentHealth:
-        """Complete health assessment"""
-        issues = []
-
+        """Complete health assessment."""
         # Run all detections
         loop_detection = self.detect_loop()
         thrashing_detection = self.detect_thrashing()
@@ -309,81 +397,47 @@ class AgentMonitor:
         context_pressure = self.get_context_pressure(tokens_used, token_budget)
         progress_score = self.get_progress_score()
 
-        # Collect all issues and determine worst status
-        status = HealthStatus.HEALTHY
-        recommendation = Recommendation.CONTINUE
+        # Check critical conditions first
+        critical_issues, critical_rec = self._check_critical_conditions(
+            loop_detection, thrashing_detection, drift_score, context_pressure, progress_score
+        )
 
-        # Check for critical conditions (collect ALL, don't short-circuit)
-        critical_found = False
+        if critical_issues:
+            return AgentHealth(
+                status=HealthStatus.CRITICAL,
+                issues=critical_issues,
+                recommendation=critical_rec or Recommendation.ESCALATE,
+                loop_detection=loop_detection if loop_detection.detected else None,
+                thrashing_detection=thrashing_detection if thrashing_detection.detected else None,
+                drift_score=drift_score,
+                context_pressure=context_pressure,
+                progress_score=progress_score
+            )
 
-        if loop_detection.detected and loop_detection.count >= 5:
-            status = HealthStatus.CRITICAL
-            recommendation = Recommendation.ABORT
-            issues.append(f"Severe loop detected: {loop_detection.pattern}")
-            critical_found = True
+        # Check degraded conditions
+        degraded_issues = self._check_degraded_conditions(
+            loop_detection, thrashing_detection, drift_score, context_pressure, progress_score
+        )
 
-        if drift_score > 0.5:
-            status = HealthStatus.CRITICAL
-            if recommendation != Recommendation.ABORT:
-                recommendation = Recommendation.ESCALATE
-            issues.append(f"High drift from original task (score: {drift_score:.2f})")
-            critical_found = True
+        if degraded_issues:
+            return AgentHealth(
+                status=HealthStatus.DEGRADED,
+                issues=degraded_issues,
+                recommendation=Recommendation.CHECKPOINT,
+                loop_detection=loop_detection if loop_detection.detected else None,
+                thrashing_detection=thrashing_detection if thrashing_detection.detected else None,
+                drift_score=drift_score,
+                context_pressure=context_pressure,
+                progress_score=progress_score
+            )
 
-        if thrashing_detection.detected and thrashing_detection.alternation_count >= 5:
-            status = HealthStatus.CRITICAL
-            if recommendation != Recommendation.ABORT:
-                recommendation = Recommendation.ESCALATE
-            issues.append(f"Severe thrashing detected: {thrashing_detection.pattern}")
-            critical_found = True
-
-        if context_pressure > 0.95:
-            status = HealthStatus.CRITICAL
-            if recommendation != Recommendation.ABORT:
-                recommendation = Recommendation.ESCALATE
-            issues.append(f"Critical context pressure: {context_pressure:.2f}")
-            critical_found = True
-
-        if progress_score < 0.1:
-            status = HealthStatus.CRITICAL
-            if recommendation != Recommendation.ABORT:
-                recommendation = Recommendation.ESCALATE
-            issues.append(f"Very low progress score: {progress_score:.2f}")
-            critical_found = True
-
-        # Check for degraded conditions (only if not critical)
-        if not critical_found:
-
-            if loop_detection.detected and loop_detection.count < 5:
-                status = HealthStatus.DEGRADED
-                recommendation = Recommendation.CHECKPOINT
-                issues.append(f"Loop detected: {loop_detection.pattern}")
-
-            if 0.3 <= drift_score <= 0.5:
-                status = HealthStatus.DEGRADED
-                recommendation = Recommendation.CHECKPOINT
-                issues.append(f"Moderate drift detected (score: {drift_score:.2f})")
-
-            if thrashing_detection.detected and thrashing_detection.alternation_count < 5:
-                status = HealthStatus.DEGRADED
-                recommendation = Recommendation.CHECKPOINT
-                issues.append(f"Thrashing detected: {thrashing_detection.pattern}")
-
-            if 0.8 <= context_pressure <= 0.95:
-                status = HealthStatus.DEGRADED
-                recommendation = Recommendation.CHECKPOINT
-                issues.append(f"High context pressure: {context_pressure:.2f}")
-
-            if 0.1 <= progress_score <= 0.3:
-                status = HealthStatus.DEGRADED
-                recommendation = Recommendation.CHECKPOINT
-                issues.append(f"Low progress score: {progress_score:.2f}")
-
+        # Healthy
         return AgentHealth(
-            status=status,
-            issues=issues,
-            recommendation=recommendation,
-            loop_detection=loop_detection if loop_detection.detected else None,
-            thrashing_detection=thrashing_detection if thrashing_detection.detected else None,
+            status=HealthStatus.HEALTHY,
+            issues=[],
+            recommendation=Recommendation.CONTINUE,
+            loop_detection=None,
+            thrashing_detection=None,
             drift_score=drift_score,
             context_pressure=context_pressure,
             progress_score=progress_score

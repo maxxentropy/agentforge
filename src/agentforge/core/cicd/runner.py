@@ -317,44 +317,63 @@ class CIRunner:
         """
         check_id = check.get("id", "unknown")
 
-        # Check cache first (only for incremental mode where we have specific files)
-        # In FULL mode (files_to_check is None), skip cache to ensure fresh results
-        use_cache = self.cache and files_to_check is not None
-        if use_cache:
-            cache_key = self._get_cache_key(check_id, files_to_check)
-            cached = self.cache.get(cache_key)
-            if cached is not None:
-                return cached
-
-        # Determine file paths for this check
-        file_paths = None
-        if files_to_check:
-            file_paths = [self.repo_root / f for f in files_to_check if (self.repo_root / f).exists()]
+        # Check cache first (only for incremental mode)
+        cached = self._check_cache(check_id, files_to_check)
+        if cached is not None:
+            return cached
 
         # Execute check
+        file_paths = self._resolve_file_paths(files_to_check)
         results = execute_check_fn(check, self.repo_root, file_paths)
-
-        # Convert to CIViolation
-        violations = []
-        for result in results:
-            if not result.passed:
-                violations.append(CIViolation(
-                    check_id=result.check_id,
-                    file_path=result.file_path or "<unknown>",
-                    line=result.line_number,
-                    message=result.message,
-                    severity=result.severity,
-                    rule_id=result.check_id,  # Use check_id as rule_id
-                    contract_id=contract_id,
-                    fix_hint=result.fix_hint,
-                ))
+        violations = self._convert_results_to_violations(results, contract_id)
 
         # Store in cache (only for incremental mode)
-        if use_cache:
-            cache_key = self._get_cache_key(check_id, files_to_check)
-            self.cache.set(cache_key, violations)
+        self._store_in_cache(check_id, files_to_check, violations)
 
         return violations
+
+    def _check_cache(
+        self, check_id: str, files_to_check: set[str] | None
+    ) -> list[CIViolation] | None:
+        """Check cache for previous results. Returns None if cache miss or not applicable."""
+        if not self.cache or files_to_check is None:
+            return None  # FULL mode skips cache
+        cache_key = self._get_cache_key(check_id, files_to_check)
+        return self.cache.get(cache_key)
+
+    def _resolve_file_paths(self, files_to_check: set[str] | None) -> list[Path] | None:
+        """Resolve file paths from file set."""
+        if not files_to_check:
+            return None
+        return [self.repo_root / f for f in files_to_check if (self.repo_root / f).exists()]
+
+    def _convert_results_to_violations(
+        self, results: list, contract_id: str
+    ) -> list[CIViolation]:
+        """Convert check results to CIViolation objects."""
+        return [
+            CIViolation(
+                check_id=result.check_id,
+                file_path=result.file_path or "<unknown>",
+                line=result.line_number,
+                message=result.message,
+                severity=result.severity,
+                rule_id=result.check_id,
+                contract_id=contract_id,
+                fix_hint=result.fix_hint,
+            )
+            for result in results
+            if not result.passed
+        ]
+
+    def _store_in_cache(
+        self, check_id: str, files_to_check: set[str] | None, violations: list[CIViolation]
+    ) -> None:
+        """Store results in cache (only for incremental mode)."""
+        if not self.cache or files_to_check is None:
+            return
+        cache_key = self._get_cache_key(check_id, files_to_check)
+        self.cache.set(cache_key, violations)
 
     def _get_cache_key(self, check_id: str, files: set[str]) -> str:
         """

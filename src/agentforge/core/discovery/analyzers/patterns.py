@@ -669,49 +669,58 @@ class PatternAnalyzer:
             if not file_scores:
                 continue
 
-            pattern_def = PATTERN_DEFINITIONS[pattern_name]
-            min_confidence = pattern_def.get("min_confidence", 0.5)
-
-            # Get all matches for this pattern
-            pattern_matches = [m for m in self._matches if m.pattern_name == pattern_name]
-            signals = list({m.signal_type for m in pattern_matches})
-
-            # Check required signals - if defined, at least one must be present
-            required_signals = pattern_def.get("required_signals", [])
-            if required_signals:
-                has_required = any(sig in signals for sig in required_signals)
-                if not has_required:
-                    # Skip this pattern - naming/directory alone isn't enough
-                    continue
-
-            # Calculate overall confidence
-            total_score = sum(file_scores.values())
-            file_count = len(file_scores)
-
-            # Normalize score (more files = higher confidence, but with diminishing returns)
-            confidence = min(total_score / (file_count + 2), 1.0)
-
-            if confidence < min_confidence:
-                continue
-
-            # Get file locations
-            locations = list(file_scores.keys())
-
-            patterns[pattern_name] = PatternDetection(
-                pattern_name=pattern_name,
-                description=pattern_def.get("description", ""),
-                detection=Detection(
-                    value=pattern_name,
-                    confidence=confidence,
-                    source=DetectionSource.AST if "base_class" in signals else DetectionSource.NAMING,
-                    signals=signals,
-                ),
-                locations=locations[:10],  # Limit to 10 examples
-                file_count=file_count,
-                usage_percentage=0.0,  # Would need total file count
-            )
+            detection = self._build_pattern_detection(pattern_name, file_scores)
+            if detection:
+                patterns[pattern_name] = detection
 
         return patterns
+
+    def _build_pattern_detection(
+        self, pattern_name: str, file_scores: dict[str, float]
+    ) -> PatternDetection | None:
+        """Build a pattern detection if it meets requirements."""
+        pattern_def = PATTERN_DEFINITIONS[pattern_name]
+        signals = self._get_pattern_signals(pattern_name)
+
+        if not self._meets_required_signals(pattern_def, signals):
+            return None
+
+        confidence = self._calculate_confidence(file_scores)
+        min_confidence = pattern_def.get("min_confidence", 0.5)
+        if confidence < min_confidence:
+            return None
+
+        return PatternDetection(
+            pattern_name=pattern_name,
+            description=pattern_def.get("description", ""),
+            detection=Detection(
+                value=pattern_name,
+                confidence=confidence,
+                source=DetectionSource.AST if "base_class" in signals else DetectionSource.NAMING,
+                signals=signals,
+            ),
+            locations=list(file_scores.keys())[:10],
+            file_count=len(file_scores),
+            usage_percentage=0.0,
+        )
+
+    def _get_pattern_signals(self, pattern_name: str) -> list[str]:
+        """Get unique signal types for a pattern."""
+        pattern_matches = [m for m in self._matches if m.pattern_name == pattern_name]
+        return list({m.signal_type for m in pattern_matches})
+
+    def _meets_required_signals(self, pattern_def: dict, signals: list[str]) -> bool:
+        """Check if required signals are present."""
+        required_signals = pattern_def.get("required_signals", [])
+        if not required_signals:
+            return True
+        return any(sig in signals for sig in required_signals)
+
+    def _calculate_confidence(self, file_scores: dict[str, float]) -> float:
+        """Calculate confidence from file scores."""
+        total_score = sum(file_scores.values())
+        file_count = len(file_scores)
+        return min(total_score / (file_count + 2), 1.0)
 
     def _check_framework_signal(
         self, patterns: list, content: str, signal_name: str, score: float

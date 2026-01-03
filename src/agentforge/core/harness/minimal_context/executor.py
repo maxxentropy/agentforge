@@ -77,6 +77,81 @@ from .working_memory import WorkingMemoryManager
 ActionExecutor = Callable[[str, dict[str, Any], TaskState], dict[str, Any]]
 
 
+# Helper functions to reduce complexity in executor methods
+def _determine_target_phase_legacy(
+    action_name: str, action_result: dict[str, Any]
+) -> Phase | None:
+    """Determine target phase from action (legacy mode)."""
+    if action_name == "complete" and action_result.get("status") == "success":
+        return Phase.COMPLETE
+    if action_name in ("escalate", "cannot_fix"):
+        return Phase.ESCALATED
+    if action_result.get("status") == "failure" and action_result.get("fatal"):
+        return Phase.FAILED
+    return None
+
+
+def _determine_target_phase_with_machine(
+    action_name: str, action_result: dict[str, Any], machine, context
+) -> Phase | None:
+    """Determine target phase from action with phase machine."""
+    if action_name == "complete" and action_result.get("status") == "success":
+        return Phase.COMPLETE
+    if action_name in ("escalate", "cannot_fix"):
+        return Phase.ESCALATED
+    if action_result.get("status") == "failure" and action_result.get("fatal"):
+        return Phase.FAILED
+    return machine.should_auto_transition(context)
+
+
+def _convert_actions_to_dicts(recent_actions, fallback_step: int) -> list[dict]:
+    """Convert recent actions to dict format for loop detection."""
+    return [
+        {
+            "step": a.step if hasattr(a, 'step') else fallback_step,
+            "action": a.action,
+            "target": a.target if hasattr(a, 'target') else None,
+            "parameters": a.parameters,
+            "result": a.result,
+            "summary": a.summary,
+            "error": a.error,
+        }
+        for a in recent_actions
+    ]
+
+
+def _load_facts_for_loop_detection(
+    memory_manager: "WorkingMemoryManager", current_step: int
+) -> list["Fact"]:
+    """Load facts from working memory for loop detection."""
+    fact_dicts = memory_manager.get_facts(current_step=current_step)
+    return [
+        Fact(
+            id=f.get("id", ""),
+            category=FactCategory(f.get("category", "inference")),
+            statement=f.get("statement", ""),
+            confidence=f.get("confidence", 0.5),
+            source=f.get("source", "unknown"),
+            step=f.get("step", 0),
+        )
+        for f in fact_dicts
+    ]
+
+
+def _determine_final_status(outcomes: list) -> str:
+    """Determine final task status from outcomes."""
+    if not outcomes:
+        return "no_outcomes"
+    last = outcomes[-1]
+    if last.action_name == "complete":
+        return "completed"
+    if last.action_name in ("escalate", "cannot_fix"):
+        return "escalated"
+    if last.error:
+        return "failed"
+    return "stopped"
+
+
 class MinimalContextExecutor:
     """
     Executes agent steps with minimal, stateless context.
@@ -261,57 +336,103 @@ class MinimalContextExecutor:
     ) -> None:
         """Handle phase transitions using PhaseMachine."""
         if not self.use_phase_machine:
-            # Legacy behavior
-            if action_name == "complete" and action_result.get("status") == "success":
-                self.state_store.update_phase(task_id, Phase.COMPLETE)
-            elif action_name == "escalate":
-                self.state_store.update_phase(task_id, Phase.ESCALATED)
-            elif action_name == "cannot_fix":
-                self.state_store.update_phase(task_id, Phase.ESCALATED)
-                reason = action_result.get("cannot_fix_reason", "Unknown reason")
-                self.state_store.update_context_data(task_id, "cannot_fix_reason", reason)
-            elif action_result.get("status") == "failure" and action_result.get("fatal"):
-                self.state_store.update_phase(task_id, Phase.FAILED)
-                self.state_store.set_error(task_id, action_result.get("error", "Unknown error"))
+            self._handle_legacy_phase_transition(task_id, action_name, action_result)
             return
 
         machine = state.get_phase_machine()
         context = self._build_phase_context(
-            machine=machine,
-            state=state,
-            last_action=action_name,
-            last_action_result=action_result.get("status"),
+            machine=machine, state=state,
+            last_action=action_name, last_action_result=action_result.get("status"),
         )
-
         machine.advance_step()
 
-        target_phase = None
+        # Handle cannot_fix reason storage
+        if action_name == "cannot_fix":
+            reason = action_result.get("cannot_fix_reason", "Unknown reason")
+            self.state_store.update_context_data(task_id, "cannot_fix_reason", reason)
 
-        if action_name == "complete" and action_result.get("status") == "success":
-            target_phase = Phase.COMPLETE
-        elif action_name in ("escalate", "cannot_fix"):
-            target_phase = Phase.ESCALATED
-            if action_name == "cannot_fix":
-                reason = action_result.get("cannot_fix_reason", "Unknown reason")
-                self.state_store.update_context_data(task_id, "cannot_fix_reason", reason)
-        elif action_result.get("status") == "failure" and action_result.get("fatal"):
-            target_phase = Phase.FAILED
+        # Handle fatal error storage
+        if action_result.get("status") == "failure" and action_result.get("fatal"):
             self.state_store.set_error(task_id, action_result.get("error", "Unknown error"))
-        else:
-            target_phase = machine.should_auto_transition(context)
 
+        target_phase = _determine_target_phase_with_machine(action_name, action_result, machine, context)
+        self._apply_phase_transition(task_id, machine, target_phase, context)
+
+    def _handle_legacy_phase_transition(
+        self, task_id: str, action_name: str, action_result: dict[str, Any]
+    ) -> None:
+        """Handle phase transition in legacy mode (no phase machine)."""
+        target_phase = _determine_target_phase_legacy(action_name, action_result)
         if target_phase:
-            if machine.can_transition(target_phase, context):
-                machine.transition(target_phase, context)
-                self.state_store.update_phase(task_id, target_phase)
-                self.state_store.update_phase_machine(task_id, machine)
-            elif target_phase in (Phase.COMPLETE, Phase.ESCALATED, Phase.FAILED):
-                machine._current_phase = target_phase
-                machine._steps_in_phase = 0
-                self.state_store.update_phase(task_id, target_phase)
-                self.state_store.update_phase_machine(task_id, machine)
-        else:
+            self.state_store.update_phase(task_id, target_phase)
+        if action_name == "cannot_fix":
+            reason = action_result.get("cannot_fix_reason", "Unknown reason")
+            self.state_store.update_context_data(task_id, "cannot_fix_reason", reason)
+        if action_result.get("status") == "failure" and action_result.get("fatal"):
+            self.state_store.set_error(task_id, action_result.get("error", "Unknown error"))
+
+    def _apply_phase_transition(
+        self, task_id: str, machine, target_phase: Phase | None, context
+    ) -> None:
+        """Apply phase transition to state store."""
+        if not target_phase:
             self.state_store.update_phase_machine(task_id, machine)
+            return
+
+        if machine.can_transition(target_phase, context):
+            machine.transition(target_phase, context)
+            self.state_store.update_phase(task_id, target_phase)
+        elif target_phase in (Phase.COMPLETE, Phase.ESCALATED, Phase.FAILED):
+            machine._current_phase = target_phase
+            machine._steps_in_phase = 0
+            self.state_store.update_phase(task_id, target_phase)
+        self.state_store.update_phase_machine(task_id, machine)
+
+    def _check_phase_recovery_from_loop(
+        self, task_id: str, outcome: "StepOutcome"
+    ) -> tuple[bool, str | None]:
+        """Check if phase transition should allow continuation despite loop detection."""
+        state = self.state_store.load(task_id)
+        if not state or not self.use_phase_machine:
+            return False, None
+
+        machine = state.get_phase_machine()
+        phase_context = self._build_phase_context(
+            machine=machine,
+            state=state,
+            last_action=outcome.action_name,
+            last_action_result=outcome.result,
+        )
+        target_phase = machine.should_auto_transition(phase_context)
+        if target_phase and target_phase != machine.current_phase:
+            return True, f"Phase transition to {target_phase.value} pending"
+        return False, None
+
+    def _handle_loop_stop(
+        self, outcomes: list["StepOutcome"], loop_detection
+    ) -> None:
+        """Handle loop detection stop - update outcome and print suggestions."""
+        if not loop_detection or not loop_detection.detected:
+            return
+
+        last_outcome = outcomes[-1]
+        outcomes[-1] = StepOutcome(
+            success=last_outcome.success,
+            action_name=last_outcome.action_name,
+            action_params=last_outcome.action_params,
+            result=last_outcome.result,
+            summary=last_outcome.summary,
+            should_continue=False,
+            tokens_used=last_outcome.tokens_used,
+            duration_ms=last_outcome.duration_ms,
+            error=last_outcome.error,
+            loop_detected=loop_detection,
+        )
+
+        if loop_detection.suggestions:
+            print("  Suggestions:")
+            for suggestion in loop_detection.suggestions[:3]:
+                print(f"    - {suggestion}")
 
     def _log_step(self, outcome: StepOutcome, task_id: str) -> None:
         """Log step to audit trail."""
@@ -789,18 +910,7 @@ class MinimalContextExecutor:
 
             # Check adaptive budget with enhanced loop detection
             recent = self.state_store.get_recent_actions(task_id, limit=5)
-            recent_dicts = [
-                {
-                    "step": a.step if hasattr(a, 'step') else i + 1,
-                    "action": a.action,
-                    "target": a.target if hasattr(a, 'target') else None,
-                    "parameters": a.parameters,
-                    "result": a.result,
-                    "summary": a.summary,
-                    "error": a.error,
-                }
-                for a in recent
-            ]
+            recent_dicts = _convert_actions_to_dicts(recent, fallback_step=i + 1)
 
             facts = None
             if budget.use_enhanced_loop_detection:
@@ -808,18 +918,7 @@ class MinimalContextExecutor:
                 memory_manager = WorkingMemoryManager(task_dir)
                 state = self.state_store.load(task_id)
                 if state:
-                    fact_dicts = memory_manager.get_facts(current_step=state.current_step)
-                    facts = [
-                        Fact(
-                            id=f.get("id", ""),
-                            category=FactCategory(f.get("category", "inference")),
-                            statement=f.get("statement", ""),
-                            confidence=f.get("confidence", 0.5),
-                            source=f.get("source", "unknown"),
-                            step=f.get("step", 0),
-                        )
-                        for f in fact_dicts
-                    ]
+                    facts = _load_facts_for_loop_detection(memory_manager, state.current_step)
 
             should_continue, reason, loop_detection = budget.check_continue(
                 i + 1, recent_dicts, facts
@@ -827,58 +926,20 @@ class MinimalContextExecutor:
 
             # Allow phase transition even if loop detected
             if not should_continue and loop_detection and loop_detection.detected:
-                state = self.state_store.load(task_id)
-                if state and self.use_phase_machine:
-                    machine = state.get_phase_machine()
-                    phase_context = self._build_phase_context(
-                        machine=machine,
-                        state=state,
-                        last_action=outcome.action_name,
-                        last_action_result=outcome.result,
-                    )
-                    target_phase = machine.should_auto_transition(phase_context)
-                    if target_phase and target_phase != machine.current_phase:
-                        should_continue = True
-                        reason = f"Phase transition to {target_phase.value} pending"
-                        print(f"  (Loop detected but phase transition to {target_phase.value} is possible)")
+                can_recover, recovery_reason = self._check_phase_recovery_from_loop(task_id, outcome)
+                if can_recover:
+                    should_continue = True
+                    reason = recovery_reason
+                    print(f"  (Loop detected but {recovery_reason.lower()})")
 
             if not should_continue:
                 print(f"  {reason}")
-
-                if loop_detection and loop_detection.detected:
-                    last_outcome = outcomes[-1]
-                    outcomes[-1] = StepOutcome(
-                        success=last_outcome.success,
-                        action_name=last_outcome.action_name,
-                        action_params=last_outcome.action_params,
-                        result=last_outcome.result,
-                        summary=last_outcome.summary,
-                        should_continue=False,
-                        tokens_used=last_outcome.tokens_used,
-                        duration_ms=last_outcome.duration_ms,
-                        error=last_outcome.error,
-                        loop_detected=loop_detection,
-                    )
-
-                    if loop_detection.suggestions:
-                        print("  Suggestions:")
-                        for suggestion in loop_detection.suggestions[:3]:
-                            print(f"    - {suggestion}")
-
+                self._handle_loop_stop(outcomes, loop_detection)
                 break
 
         # Log task summary
         if self.current_audit_logger and outcomes:
-            last_outcome = outcomes[-1]
-            if last_outcome.action_name == "complete":
-                final_status = "completed"
-            elif last_outcome.action_name in ("escalate", "cannot_fix"):
-                final_status = "escalated"
-            elif last_outcome.error:
-                final_status = "failed"
-            else:
-                final_status = "stopped"
-
+            final_status = _determine_final_status(outcomes)
             total_tokens = sum(o.tokens_used for o in outcomes)
             self.current_audit_logger.log_task_summary(
                 total_steps=len(outcomes),
@@ -991,18 +1052,7 @@ class MinimalContextExecutor:
             self._update_phase_from_action(task_id, outcome.action_name)
 
         # Determine final status
-        if outcomes:
-            last_outcome = outcomes[-1]
-            if last_outcome.action_name == "complete":
-                final_status = "completed"
-            elif last_outcome.action_name in ("escalate", "cannot_fix"):
-                final_status = "escalated"
-            elif last_outcome.error:
-                final_status = "failed"
-            else:
-                final_status = "stopped"
-        else:
-            final_status = "no_outcomes"
+        final_status = _determine_final_status(outcomes)
 
         # Log task summary
         if self.current_audit_logger:

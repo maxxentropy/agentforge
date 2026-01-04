@@ -149,127 +149,48 @@ class PhaseMachine:
 
     def _setup_default_transitions(self) -> None:
         """Set up default phase transitions for fix_violation tasks."""
-        # INIT -> ANALYZE: Can always analyze from init
-        self.add_transition(
-            Transition(
-                from_phase=Phase.INIT,
-                to_phase=Phase.ANALYZE,
-                guards=(),
-                description="Begin analysis",
-            )
-        )
+        # Define individual phase transitions
+        transitions = [
+            # INIT transitions
+            (Phase.INIT, Phase.ANALYZE, (), "Begin analysis"),
+            (Phase.INIT, Phase.IMPLEMENT,
+             (lambda ctx: ctx.has_fact_of_type("code_structure"),),
+             "Skip to implement when precomputed analysis available"),
+            # ANALYZE transitions
+            (Phase.ANALYZE, Phase.PLAN,
+             (lambda ctx: ctx.steps_in_phase >= 1, lambda ctx: ctx.has_fact_of_type("code_structure")),
+             "Move to planning after analysis"),
+            (Phase.ANALYZE, Phase.IMPLEMENT,
+             (lambda ctx: ctx.has_fact_of_type("code_structure"),),
+             "Skip to implement for simple cases"),
+            # PLAN -> IMPLEMENT
+            (Phase.PLAN, Phase.IMPLEMENT, (), "Begin implementation"),
+            # IMPLEMENT <-> VERIFY
+            (Phase.IMPLEMENT, Phase.VERIFY,
+             (lambda ctx: ctx.has_modifications(),),
+             "Verify changes after modification"),
+            (Phase.VERIFY, Phase.IMPLEMENT,
+             (lambda ctx: not ctx.verification_passing,),
+             "Return to implement if verification fails"),
+            # VERIFY -> COMPLETE
+            (Phase.VERIFY, Phase.COMPLETE,
+             (lambda ctx: ctx.verification_passing, lambda ctx: ctx.tests_passing),
+             "Complete when all checks pass"),
+        ]
+        for from_phase, to_phase, guards, desc in transitions:
+            self.add_transition(Transition(from_phase, to_phase, guards, desc))
 
-        # INIT -> IMPLEMENT: Can skip to implement if precomputed context is rich
-        self.add_transition(
-            Transition(
-                from_phase=Phase.INIT,
-                to_phase=Phase.IMPLEMENT,
-                guards=(lambda ctx: ctx.has_fact_of_type("code_structure"),),
-                description="Skip to implement when precomputed analysis available",
-            )
-        )
-
-        # ANALYZE -> PLAN: After sufficient understanding
-        self.add_transition(
-            Transition(
-                from_phase=Phase.ANALYZE,
-                to_phase=Phase.PLAN,
-                guards=(
-                    lambda ctx: ctx.steps_in_phase >= 1,
-                    lambda ctx: ctx.has_fact_of_type("code_structure"),
-                ),
-                description="Move to planning after analysis",
-            )
-        )
-
-        # ANALYZE -> IMPLEMENT: Can skip planning
-        self.add_transition(
-            Transition(
-                from_phase=Phase.ANALYZE,
-                to_phase=Phase.IMPLEMENT,
-                guards=(lambda ctx: ctx.has_fact_of_type("code_structure"),),
-                description="Skip to implement for simple cases",
-            )
-        )
-
-        # PLAN -> IMPLEMENT: After plan is recorded
-        self.add_transition(
-            Transition(
-                from_phase=Phase.PLAN,
-                to_phase=Phase.IMPLEMENT,
-                guards=(),
-                description="Begin implementation",
-            )
-        )
-
-        # IMPLEMENT -> VERIFY: After modifications made
-        self.add_transition(
-            Transition(
-                from_phase=Phase.IMPLEMENT,
-                to_phase=Phase.VERIFY,
-                guards=(lambda ctx: ctx.has_modifications(),),
-                description="Verify changes after modification",
-            )
-        )
-
-        # VERIFY -> IMPLEMENT: If verification fails, go back
-        self.add_transition(
-            Transition(
-                from_phase=Phase.VERIFY,
-                to_phase=Phase.IMPLEMENT,
-                guards=(lambda ctx: not ctx.verification_passing,),
-                description="Return to implement if verification fails",
-            )
-        )
-
-        # VERIFY -> COMPLETE: Success!
-        self.add_transition(
-            Transition(
-                from_phase=Phase.VERIFY,
-                to_phase=Phase.COMPLETE,
-                guards=(
-                    lambda ctx: ctx.verification_passing,
-                    lambda ctx: ctx.tests_passing,
-                ),
-                description="Complete when all checks pass",
-            )
-        )
-
-        # Any -> FAILED: On fatal error
-        for phase in [
-            Phase.INIT,
-            Phase.ANALYZE,
-            Phase.PLAN,
-            Phase.IMPLEMENT,
-            Phase.VERIFY,
-        ]:
-            self.add_transition(
-                Transition(
-                    from_phase=phase,
-                    to_phase=Phase.FAILED,
-                    guards=(lambda ctx: ctx.last_action_result == "fatal",),
-                    description="Fail on fatal error",
-                )
-            )
-
-        # Any -> ESCALATED: When agent requests escalation
-        for phase in [
-            Phase.INIT,
-            Phase.ANALYZE,
-            Phase.PLAN,
-            Phase.IMPLEMENT,
-            Phase.VERIFY,
-        ]:
-            self.add_transition(
-                Transition(
-                    from_phase=phase,
-                    to_phase=Phase.ESCALATED,
-                    guards=(
-                        lambda ctx: ctx.last_action in ("escalate", "cannot_fix"),
-                    ),
-                    description="Escalate to human",
-                )
-            )
+        # Universal transitions: any active phase -> FAILED/ESCALATED
+        active_phases = [Phase.INIT, Phase.ANALYZE, Phase.PLAN, Phase.IMPLEMENT, Phase.VERIFY]
+        for phase in active_phases:
+            self.add_transition(Transition(
+                phase, Phase.FAILED,
+                (lambda ctx: ctx.last_action_result == "fatal",),
+                "Fail on fatal error"))
+            self.add_transition(Transition(
+                phase, Phase.ESCALATED,
+                (lambda ctx: ctx.last_action in ("escalate", "cannot_fix"),),
+                "Escalate to human"))
 
     def _setup_default_phase_configs(self) -> None:
         """Set up default phase configurations."""

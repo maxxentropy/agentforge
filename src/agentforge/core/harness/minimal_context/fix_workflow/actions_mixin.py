@@ -434,15 +434,21 @@ class ActionsMixin:
         state: "TaskState",
     ) -> dict[str, Any]:
         """Run conformance check - uses targeted check when check_id available."""
-        from .utils import extract_function_name_from_output
-
-        file_path = params.get("file_path") or params.get("path") or state.context_data.get("file_path")
+        file_path = self._extract_file_path(params, state)
         check_id = params.get("check_id") or state.context_data.get("check_id")
 
-        # Run appropriate check based on available parameters
         result = self._run_conformance_check(check_id, file_path)
+        self._update_check_verification(state, result)
+        self._maybe_refresh_context_on_failure(state, result, file_path)
 
-        # Update verification status
+        return self._build_check_result(result)
+
+    def _extract_file_path(self, params: dict[str, Any], state: "TaskState") -> str | None:
+        """Extract file path from params or state context."""
+        return params.get("file_path") or params.get("path") or state.context_data.get("file_path")
+
+    def _update_check_verification(self, state: "TaskState", result) -> None:
+        """Update verification status based on check result."""
         passing = result.success
         self.state_store.update_verification(
             state.task_id,
@@ -452,17 +458,27 @@ class ActionsMixin:
             details={"last_check": result.output[:500]},
         )
 
-        # If check failed, refresh context with updated line numbers
-        if not passing and result.output and file_path:
-            new_function_name = extract_function_name_from_output(result.output)
-            if new_function_name:
-                new_context = self._refresh_precomputed_context(file_path, new_function_name, state)
-                if new_context:
-                    state.context_data["precomputed"] = new_context
-                    self.state_store.update_context_data(state.task_id, "precomputed", new_context)
+    def _maybe_refresh_context_on_failure(
+        self, state: "TaskState", result, file_path: str | None
+    ) -> None:
+        """Refresh precomputed context if check failed with actionable output."""
+        if result.success or not result.output or not file_path:
+            return
 
+        from .utils import extract_function_name_from_output
+        new_function_name = extract_function_name_from_output(result.output)
+        if not new_function_name:
+            return
+
+        new_context = self._refresh_precomputed_context(file_path, new_function_name, state)
+        if new_context:
+            state.context_data["precomputed"] = new_context
+            self.state_store.update_context_data(state.task_id, "precomputed", new_context)
+
+    def _build_check_result(self, result) -> dict[str, Any]:
+        """Build standardized check result dictionary."""
         return {
-            "status": "success" if passing else "partial",
+            "status": "success" if result.success else "partial",
             "summary": result.output[:200],
             "output": result.output,
         }

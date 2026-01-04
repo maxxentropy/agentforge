@@ -26,43 +26,57 @@ from pathlib import Path
 import yaml
 
 
+# Extension to language mapping for fallback detection
+_EXTENSION_LANGUAGE_MAP = {
+    ".py": "python", ".pyi": "python",
+    ".cs": "csharp",
+    ".ts": "typescript", ".tsx": "typescript",
+    ".js": "javascript", ".jsx": "javascript",
+    ".go": "go",
+    ".rs": "rust",
+    ".java": "java",
+}
+
+# Directories to exclude from language detection
+_EXCLUDE_DIRS = {"node_modules", "htmlcov", "dist", "build", ".git", "__pycache__", "venv", ".venv"}
+
+
+def _extract_language_name(lang_info: dict | str) -> str:
+    """Extract lowercase language name from profile entry."""
+    if isinstance(lang_info, dict):
+        return lang_info.get("name", "").lower()
+    return str(lang_info).lower()
+
+
+def _load_languages_from_profile(profile_path: Path) -> set[str]:
+    """Load languages from codebase profile YAML."""
+    if not profile_path.exists():
+        return set()
+    try:
+        with open(profile_path) as f:
+            profile = yaml.safe_load(f)
+        return {_extract_language_name(lang) for lang in profile.get("languages", [])}
+    except Exception:
+        return set()
+
+
+def _detect_languages_from_extensions(repo_root: Path) -> set[str]:
+    """Detect languages by scanning file extensions."""
+    languages = set()
+    for ext, lang in _EXTENSION_LANGUAGE_MAP.items():
+        for f in repo_root.glob(f"**/*{ext}"):
+            if not any(part in _EXCLUDE_DIRS for part in f.parts):
+                languages.add(lang)
+                break  # Found one file, move to next extension
+    return languages
+
+
 def _detect_project_languages(repo_root: Path) -> set[str]:
     """Detect project languages from codebase profile or file extensions."""
-    languages = set()
-
-    # Try codebase profile first
     profile_path = repo_root / ".agentforge" / "codebase_profile.yaml"
-    if profile_path.exists():
-        try:
-            with open(profile_path) as f:
-                profile = yaml.safe_load(f)
-            for lang_info in profile.get("languages", []):
-                if isinstance(lang_info, dict):
-                    languages.add(lang_info.get("name", "").lower())
-                elif isinstance(lang_info, str):
-                    languages.add(lang_info.lower())
-        except Exception:
-            pass  # Fall through to file-based detection
-
-    # Fallback: detect by file extensions (excluding generated/build dirs)
+    languages = _load_languages_from_profile(profile_path)
     if not languages:
-        ext_map = {
-            ".py": "python", ".pyi": "python",
-            ".cs": "csharp",
-            ".ts": "typescript", ".tsx": "typescript",
-            ".js": "javascript", ".jsx": "javascript",
-            ".go": "go",
-            ".rs": "rust",
-            ".java": "java",
-        }
-        exclude_dirs = {"node_modules", "htmlcov", "dist", "build", ".git", "__pycache__", "venv", ".venv"}
-        for ext, lang in ext_map.items():
-            for f in repo_root.glob(f"**/*{ext}"):
-                # Skip files in excluded directories
-                if not any(part in exclude_dirs for part in f.parts):
-                    languages.add(lang)
-                    break  # Found one, move to next extension
-
+        languages = _detect_languages_from_extensions(repo_root)
     return languages
 
 

@@ -54,6 +54,31 @@ class ToolCallRecord:
 
 
 @dataclass
+class TokenUsage:
+    """Token usage breakdown for an LLM interaction."""
+
+    input: int = 0
+    output: int = 0
+    thinking: int = 0
+    cached: int = 0
+
+    @property
+    def total(self) -> int:
+        """Total tokens used."""
+        return self.input + self.output + self.thinking
+
+    def to_dict(self) -> dict[str, int]:
+        """Serialize to dictionary."""
+        return {
+            "input": self.input,
+            "output": self.output,
+            "thinking": self.thinking,
+            "cached": self.cached,
+            "total": self.total,
+        }
+
+
+@dataclass
 class TransactionRecord:
     """
     Complete record of a single transaction.
@@ -320,10 +345,7 @@ class TransactionLogger:
         action_params: dict[str, Any] | None = None,
         action_result: dict[str, Any] | None = None,
         tool_calls: list[ToolCallRecord] | None = None,
-        tokens_input: int = 0,
-        tokens_output: int = 0,
-        tokens_thinking: int = 0,
-        tokens_cached: int = 0,
+        tokens: TokenUsage | None = None,
         duration_ms: int = 0,
         stage_name: str | None = None,
     ) -> TransactionRecord:
@@ -338,13 +360,14 @@ class TransactionLogger:
             action_params: Parsed action parameters
             action_result: Action execution result
             tool_calls: List of tool call records
-            tokens_*: Token usage breakdown
+            tokens: Token usage breakdown
             duration_ms: Call duration in milliseconds
             stage_name: Pipeline stage name if applicable
 
         Returns:
             The created TransactionRecord
         """
+        tokens = tokens or TokenUsage()
         record = TransactionRecord(
             transaction_id="",
             thread_id=self.thread_id,
@@ -358,10 +381,10 @@ class TransactionLogger:
             action_params=action_params,
             action_result=action_result,
             tool_calls=tool_calls or [],
-            tokens_input=tokens_input,
-            tokens_output=tokens_output,
-            tokens_thinking=tokens_thinking,
-            tokens_cached=tokens_cached,
+            tokens_input=tokens.input,
+            tokens_output=tokens.output,
+            tokens_thinking=tokens.thinking,
+            tokens_cached=tokens.cached,
             duration_ms=duration_ms,
         )
 

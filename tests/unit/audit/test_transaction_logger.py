@@ -8,6 +8,7 @@ import yaml
 import pytest
 
 from agentforge.core.audit.transaction_logger import (
+    TokenUsage,
     ToolCallRecord,
     TransactionLogger,
     TransactionRecord,
@@ -28,9 +29,7 @@ class TestTransactionLogger:
             thinking="User is greeting, I should respond politely.",
             action_name="respond",
             action_params={"message": "Hello!"},
-            tokens_input=100,
-            tokens_output=50,
-            tokens_thinking=30,
+            tokens=TokenUsage(input=100, output=50, thinking=30),
             duration_ms=1500,
             stage_name="clarify",
         )

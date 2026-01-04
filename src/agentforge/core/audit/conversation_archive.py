@@ -26,9 +26,12 @@ This enables:
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import yaml
+
+if TYPE_CHECKING:
+    from .transaction_logger import TokenUsage
 
 
 @dataclass
@@ -234,10 +237,7 @@ class ConversationArchive:
         thread_id: str,
         thinking: str | None = None,
         tool_calls: list[ToolCallDetail] | None = None,
-        tokens_input: int = 0,
-        tokens_output: int = 0,
-        tokens_thinking: int = 0,
-        tokens_cached: int = 0,
+        tokens: "TokenUsage | None" = None,
         duration_ms: int = 0,
         stage_name: str | None = None,
         pipeline_id: str | None = None,
@@ -253,7 +253,7 @@ class ConversationArchive:
             thread_id: Owning thread
             thinking: Extended thinking content
             tool_calls: Tool calls made during turn
-            tokens_*: Token usage
+            tokens: Token usage breakdown
             duration_ms: Turn duration
             stage_name: Pipeline stage if applicable
             pipeline_id: Pipeline ID if applicable
@@ -274,10 +274,10 @@ class ConversationArchive:
             model=model,
             thinking=thinking,
             tool_calls=tool_calls or [],
-            tokens_input=tokens_input,
-            tokens_output=tokens_output,
-            tokens_thinking=tokens_thinking,
-            tokens_cached=tokens_cached,
+            tokens_input=tokens.input if tokens else 0,
+            tokens_output=tokens.output if tokens else 0,
+            tokens_thinking=tokens.thinking if tokens else 0,
+            tokens_cached=tokens.cached if tokens else 0,
             duration_ms=duration_ms,
             stage_name=stage_name,
             pipeline_id=pipeline_id,

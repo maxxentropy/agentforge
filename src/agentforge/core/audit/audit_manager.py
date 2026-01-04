@@ -66,6 +66,7 @@ from .conversation_archive import ConversationArchive, ConversationTurn, ToolCal
 from .integrity_chain import ChainVerificationResult, IntegrityChain, verify_thread_integrity
 from .thread_correlator import SpawnType, ThreadCorrelator, ThreadInfo, ThreadStatus
 from .transaction_logger import (
+    TokenUsage,
     ToolCallRecord,
     TransactionLogger,
     TransactionRecord,
@@ -256,10 +257,7 @@ class AuditManager:
         action_params: dict[str, Any] | None = None,
         action_result: dict[str, Any] | None = None,
         tool_calls: list[dict[str, Any]] | None = None,
-        tokens_input: int = 0,
-        tokens_output: int = 0,
-        tokens_thinking: int = 0,
-        tokens_cached: int = 0,
+        tokens: TokenUsage | None = None,
         duration_ms: int = 0,
         stage_name: str | None = None,
         pipeline_id: str | None = None,
@@ -281,7 +279,7 @@ class AuditManager:
             action_params: Parsed action parameters
             action_result: Action execution result
             tool_calls: Tool calls made during interaction
-            tokens_*: Token usage breakdown
+            tokens: Token usage breakdown
             duration_ms: Interaction duration
             stage_name: Pipeline stage if applicable
             pipeline_id: Pipeline ID if applicable
@@ -289,6 +287,7 @@ class AuditManager:
         Returns:
             Transaction ID
         """
+        tokens = tokens or TokenUsage()
         # Convert tool_calls to ToolCallRecord
         tool_records = []
         if tool_calls:
@@ -318,10 +317,7 @@ class AuditManager:
             action_params=action_params,
             action_result=action_result,
             tool_calls=tool_records,
-            tokens_input=tokens_input,
-            tokens_output=tokens_output,
-            tokens_thinking=tokens_thinking,
-            tokens_cached=tokens_cached,
+            tokens=tokens,
             duration_ms=duration_ms,
             stage_name=stage_name,
         )
@@ -348,10 +344,7 @@ class AuditManager:
             thread_id=thread_id,
             thinking=thinking,
             tool_calls=tool_details,
-            tokens_input=tokens_input,
-            tokens_output=tokens_output,
-            tokens_thinking=tokens_thinking,
-            tokens_cached=tokens_cached,
+            tokens=tokens,
             duration_ms=duration_ms,
             stage_name=stage_name,
             pipeline_id=pipeline_id,

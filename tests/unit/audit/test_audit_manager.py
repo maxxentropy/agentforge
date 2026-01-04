@@ -8,6 +8,7 @@ import pytest
 
 from agentforge.core.audit import AuditManager
 from agentforge.core.audit.thread_correlator import SpawnType, ThreadStatus
+from agentforge.core.audit.transaction_logger import TokenUsage
 
 
 class TestAuditManagerThreads:
@@ -92,8 +93,7 @@ class TestAuditManagerThreads:
             system_prompt="You are helpful.",
             user_message="Hello",
             response="Hi there!",
-            tokens_input=100,
-            tokens_output=50,
+            tokens=TokenUsage(input=100, output=50),
         )
 
         audit.complete_thread(thread_id, outcome="success")
@@ -119,9 +119,7 @@ class TestAuditManagerLogging:
             thinking="I need to consider edge cases...",
             action_name="write_code",
             action_params={"file": "search.py"},
-            tokens_input=500,
-            tokens_output=200,
-            tokens_thinking=100,
+            tokens=TokenUsage(input=500, output=200, thinking=100),
             duration_ms=3000,
             stage_name="implement",
         )
@@ -296,8 +294,7 @@ class TestAuditManagerQueries:
             system_prompt="...",
             user_message="...",
             response="...",
-            tokens_input=100,
-            tokens_output=50,
+            tokens=TokenUsage(input=100, output=50),
         )
 
         child_id = audit.spawn_child_thread(
@@ -335,8 +332,7 @@ class TestAuditManagerEndToEnd:
             user_message="Analyze the authentication requirements.",
             response="I recommend using JWT with refresh tokens...",
             thinking="Considering stateless vs stateful auth...",
-            tokens_input=500,
-            tokens_output=200,
+            tokens=TokenUsage(input=500, output=200),
             stage_name="analyze",
         )
 
@@ -364,8 +360,7 @@ class TestAuditManagerEndToEnd:
                 system_prompt="...",
                 user_message="Implement the assigned task.",
                 response="Implementation complete.",
-                tokens_input=300,
-                tokens_output=400,
+                tokens=TokenUsage(input=300, output=400),
             )
             audit.complete_thread(child_id, outcome="success")
 

@@ -11,6 +11,7 @@ from agentforge.core.audit.conversation_archive import (
     ConversationTurn,
     ToolCallDetail,
 )
+from agentforge.core.audit.transaction_logger import TokenUsage
 
 
 class TestToolCallDetail:
@@ -146,8 +147,7 @@ class TestConversationArchive:
             response="Here is my analysis...",
             model="claude-sonnet-4-20250514",
             thread_id="thread-001",
-            tokens_input=100,
-            tokens_output=200,
+            tokens=TokenUsage(input=100, output=200),
             duration_ms=1500,
         )
 
@@ -204,8 +204,8 @@ class TestConversationArchive:
         """Get archive summary."""
         archive = ConversationArchive(tmp_path)
 
-        archive.archive_turn("...", "...", "...", "model", "thread", tokens_input=100)
-        archive.archive_turn("...", "...", "...", "model", "thread", tokens_input=200)
+        archive.archive_turn("...", "...", "...", "model", "thread", tokens=TokenUsage(input=100))
+        archive.archive_turn("...", "...", "...", "model", "thread", tokens=TokenUsage(input=200))
 
         summary = archive.get_summary()
 
@@ -218,11 +218,11 @@ class TestConversationArchive:
 
         archive.archive_turn(
             "...", "...", "...", "model", "thread",
-            tokens_input=100, tokens_output=50
+            tokens=TokenUsage(input=100, output=50)
         )
         archive.archive_turn(
             "...", "...", "...", "model", "thread",
-            tokens_input=200, tokens_output=100
+            tokens=TokenUsage(input=200, output=100)
         )
 
         totals = archive.get_total_tokens()

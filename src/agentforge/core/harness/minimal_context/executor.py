@@ -279,6 +279,16 @@ class MinimalContextExecutor:
         self.action_executors.update(executors)
         self.native_tool_executor.register_actions(executors)
 
+    def _outcome(self, success: bool, action: str, params: dict, result: str,
+                 summary: str, should_continue: bool, tokens: int,
+                 start_time: float, error: str | None = None) -> StepOutcome:
+        """Create a StepOutcome with computed duration."""
+        return StepOutcome(
+            success=success, action_name=action, action_params=params,
+            result=result, summary=summary, should_continue=should_continue,
+            tokens_used=tokens, duration_ms=int((time.time() - start_time) * 1000),
+            error=error)
+
     def get_fingerprint(
         self,
         constraints: dict[str, Any] | None = None,
@@ -464,126 +474,62 @@ class MinimalContextExecutor:
         )
 
     def execute_step(self, task_id: str) -> StepOutcome:
-        """
-        Execute one agent step.
-
-        This is stateless - all context is loaded from disk.
-
-        Args:
-            task_id: Task identifier
-
-        Returns:
-            StepOutcome with action taken and results
-        """
+        """Execute one agent step. Stateless - all context loaded from disk."""
         start_time = time.time()
         tokens_used = 0
 
         try:
-            # 1. Load current state from disk
+            # 1. Load and validate state
             state = self.state_store.load(task_id)
             if not state:
-                return StepOutcome(
-                    success=False,
-                    action_name="error",
-                    action_params={},
-                    result="failure",
-                    summary=f"Task not found: {task_id}",
-                    should_continue=False,
-                    tokens_used=0,
-                    duration_ms=int((time.time() - start_time) * 1000),
-                    error=f"Task not found: {task_id}",
-                )
-
-            # Check if task is already complete
+                return self._outcome(False, "error", {}, "failure",
+                    f"Task not found: {task_id}", False, 0, start_time, f"Task not found: {task_id}")
             if state.phase in [Phase.COMPLETE, Phase.FAILED, Phase.ESCALATED]:
-                return StepOutcome(
-                    success=True,
-                    action_name="already_complete",
-                    action_params={},
-                    result="success",
-                    summary=f"Task already in {state.phase.value} state",
-                    should_continue=False,
-                    tokens_used=0,
-                    duration_ms=int((time.time() - start_time) * 1000),
-                )
+                return self._outcome(True, "already_complete", {}, "success",
+                    f"Task already in {state.phase.value} state", False, 0, start_time)
 
-            # 2. Build minimal context (always fresh, bounded)
+            # 2. Build context and call LLM
             messages = self.context_builder.build_messages(task_id)
             self.context_builder.get_token_breakdown(task_id)
-
-            # 3. Call LLM with fresh 2-message conversation
             response_text, tokens_used = self._call_llm(messages)
 
-            # 4. Parse action from response
+            # 3. Parse and execute action
             action_name, action_params = self._parse_action(response_text)
-
-            # 5. Execute action
             action_result = self._execute_action(action_name, action_params, state)
 
-            # 6. Update state on disk
-            step = self.state_store.increment_step(task_id)
+            # 4. Record step and update memory
+            self._record_step(task_id, action_name, action_params, action_result, start_time)
 
-            # Record action
-            self.state_store.record_action(
-                task_id=task_id,
-                action=action_name,
-                target=action_params.get("path") or action_params.get("file_path"),
-                parameters=action_params,
-                result=action_result.get("status", "success"),
-                summary=action_result.get("summary", ""),
-                duration_ms=int((time.time() - start_time) * 1000),
-                error=action_result.get("error"),
-            )
-
-            # Update working memory
-            task_dir = self.state_store._task_dir(task_id)
-            memory_manager = WorkingMemoryManager(task_dir)
-            memory_manager.add_action_result(
-                action=action_name,
-                result=action_result.get("status", "success"),
-                summary=action_result.get("summary", ""),
-                step=step,
-                target=action_params.get("path") or action_params.get("file_path"),
-            )
-
-            # Extract facts from action result
-            if self.understanding_extractor:
-                self._extract_and_store_facts(
-                    action_name=action_name,
-                    action_result=action_result,
-                    step=step,
-                    memory_manager=memory_manager,
-                )
-
-            # 7. Determine if we should continue
+            # 5. Determine continuation and update phase
             should_continue = self._should_continue(action_name, action_result, state)
-
-            # Update phase using PhaseMachine
             self._handle_phase_transition(task_id, action_name, action_result, state)
 
-            return StepOutcome(
-                success=True,
-                action_name=action_name,
-                action_params=action_params,
-                result=action_result.get("status", "success"),
-                summary=action_result.get("summary", ""),
-                should_continue=should_continue,
-                tokens_used=tokens_used,
-                duration_ms=int((time.time() - start_time) * 1000),
-            )
+            return self._outcome(True, action_name, action_params,
+                action_result.get("status", "success"), action_result.get("summary", ""),
+                should_continue, tokens_used, start_time)
 
         except Exception as e:
-            return StepOutcome(
-                success=False,
-                action_name="error",
-                action_params={},
-                result="failure",
-                summary=str(e),
-                should_continue=False,
-                tokens_used=tokens_used,
-                duration_ms=int((time.time() - start_time) * 1000),
-                error=str(e),
-            )
+            return self._outcome(False, "error", {}, "failure", str(e), False, tokens_used, start_time, str(e))
+
+    def _record_step(self, task_id: str, action_name: str, action_params: dict,
+                     action_result: dict, start_time: float) -> None:
+        """Record action in state store and working memory."""
+        step = self.state_store.increment_step(task_id)
+        target = action_params.get("path") or action_params.get("file_path")
+
+        self.state_store.record_action(
+            task_id=task_id, action=action_name, target=target, parameters=action_params,
+            result=action_result.get("status", "success"), summary=action_result.get("summary", ""),
+            duration_ms=int((time.time() - start_time) * 1000), error=action_result.get("error"))
+
+        task_dir = self.state_store._task_dir(task_id)
+        memory_manager = WorkingMemoryManager(task_dir)
+        memory_manager.add_action_result(
+            action=action_name, result=action_result.get("status", "success"),
+            summary=action_result.get("summary", ""), step=step, target=target)
+
+        if self.understanding_extractor:
+            self._extract_and_store_facts(action_name, action_result, step, memory_manager)
 
     def _call_llm(self, messages: list[dict[str, str]]) -> tuple:
         """Call the LLM provider."""

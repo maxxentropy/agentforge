@@ -43,135 +43,89 @@ class RefactorPhaseExecutor:
         self.session = session
         self.runner = runner
 
+    def _fail(self, component: str, errors: list[str], start_time: float,
+              test_result: Any = None) -> PhaseResult:
+        """Create a failure PhaseResult."""
+        return PhaseResult(
+            phase=TDFlowPhase.REFACTOR, success=False, component=component,
+            errors=errors, test_result=test_result,
+            duration_seconds=time.time() - start_time)
+
+    def _success(self, component: str, artifacts: dict, start_time: float,
+                 test_result: Any = None) -> PhaseResult:
+        """Create a success PhaseResult."""
+        return PhaseResult(
+            phase=TDFlowPhase.REFACTOR, success=True, component=component,
+            artifacts=artifacts, test_result=test_result,
+            duration_seconds=time.time() - start_time)
+
     def execute(self, component: ComponentProgress) -> PhaseResult:
-        """
-        Execute REFACTOR phase for a component.
-
-        Args:
-            component: Component to refactor
-
-        Returns:
-            PhaseResult indicating success/failure
-        """
+        """Execute REFACTOR phase for a component."""
         start_time = time.time()
 
-        # 1. Verify component is in GREEN state
+        # 1. Validate preconditions
         if component.status != ComponentStatus.GREEN:
-            return PhaseResult(
-                phase=TDFlowPhase.REFACTOR,
-                success=False,
-                component=component.name,
-                errors=[f"Component must be in GREEN state, not {component.status.value}"],
-                duration_seconds=time.time() - start_time,
-            )
-
-        # 2. Verify we have implementation
+            return self._fail(component.name,
+                [f"Component must be in GREEN state, not {component.status.value}"], start_time)
         if not component.implementation:
-            return PhaseResult(
-                phase=TDFlowPhase.REFACTOR,
-                success=False,
-                component=component.name,
-                errors=["No implementation found - run GREEN phase first"],
-                duration_seconds=time.time() - start_time,
-            )
+            return self._fail(component.name,
+                ["No implementation found - run GREEN phase first"], start_time)
 
-        # 3. Run conformance checks
+        # 2. Run conformance checks
         violations = self._run_conformance_check(component)
 
-        # 4. If no violations and no obvious improvements, skip refactor
+        # 3. If already clean, skip refactor
         if not violations and self._is_clean(component):
-            # Mark as refactored without changes
             component.status = ComponentStatus.REFACTORED
             component.conformance_clean = True
+            return self._success(component.name,
+                {"implementation": component.implementation.path}, start_time)
 
-            return PhaseResult(
-                phase=TDFlowPhase.REFACTOR,
-                success=True,
-                component=component.name,
-                artifacts={"implementation": component.implementation.path},
-                duration_seconds=time.time() - start_time,
-            )
-
-        # 5. Generate refactored implementation
+        # 4. Generate refactored implementation
         impl_path = component.implementation.path
         original_content = impl_path.read_text()
-
-        refactored_content = self._refactor_implementation(
-            component,
-            original_content,
-            violations,
-        )
+        refactored_content = self._refactor_implementation(component, original_content, violations)
 
         if not refactored_content or refactored_content == original_content:
-            # No changes made - that's OK
             component.status = ComponentStatus.REFACTORED
-            return PhaseResult(
-                phase=TDFlowPhase.REFACTOR,
-                success=True,
-                component=component.name,
-                artifacts={"implementation": impl_path},
-                duration_seconds=time.time() - start_time,
-            )
+            return self._success(component.name, {"implementation": impl_path}, start_time)
 
-        # 6. Write refactored implementation
+        # 5. Apply and verify refactored implementation
         impl_path.write_text(refactored_content)
+        result = self._verify_refactoring(component, impl_path, original_content, violations)
+        if result:
+            return result  # Verification failed, already reverted
 
-        # 7. Build and verify tests still pass
-        if not self.runner.build():
-            # Revert
-            impl_path.write_text(original_content)
-            return PhaseResult(
-                phase=TDFlowPhase.REFACTOR,
-                success=False,
-                component=component.name,
-                errors=["Refactored code failed to build - reverted"],
-                duration_seconds=time.time() - start_time,
-            )
-
-        result = self.runner.run_tests(filter_pattern=component.name)
-
-        if not result.all_passed:
-            # Revert
-            impl_path.write_text(original_content)
-            return PhaseResult(
-                phase=TDFlowPhase.REFACTOR,
-                success=False,
-                component=component.name,
-                test_result=result,
-                errors=["Tests failed after refactor - reverted"],
-                duration_seconds=time.time() - start_time,
-            )
-
-        # 8. Verify no new conformance violations
-        new_violations = self._run_conformance_check(component)
-        if len(new_violations) > len(violations):
-            # Revert
-            impl_path.write_text(original_content)
-            return PhaseResult(
-                phase=TDFlowPhase.REFACTOR,
-                success=False,
-                component=component.name,
-                errors=["Refactor introduced new conformance violations - reverted"],
-                duration_seconds=time.time() - start_time,
-            )
-
-        # 9. Update component
+        # 6. Update component state
+        test_result = self.runner.run_tests(filter_pattern=component.name)
         component.status = ComponentStatus.REFACTORED
-        component.implementation = ImplementationFile(
-            path=impl_path,
-            content=refactored_content,
-        )
-        component.conformance_clean = len(new_violations) == 0
+        component.implementation = ImplementationFile(path=impl_path, content=refactored_content)
+        component.conformance_clean = len(self._run_conformance_check(component)) == 0
         component.coverage = self.runner.get_coverage()
 
-        return PhaseResult(
-            phase=TDFlowPhase.REFACTOR,
-            success=True,
-            component=component.name,
-            artifacts={"implementation": impl_path},
-            test_result=result,
-            duration_seconds=time.time() - start_time,
-        )
+        return self._success(component.name, {"implementation": impl_path}, start_time, test_result)
+
+    def _verify_refactoring(self, component: ComponentProgress, impl_path: Any,
+                            original_content: str, violations: list) -> PhaseResult | None:
+        """Verify refactoring didn't break anything. Returns failure result or None if OK."""
+        start_time = time.time()
+
+        if not self.runner.build():
+            impl_path.write_text(original_content)
+            return self._fail(component.name, ["Refactored code failed to build - reverted"], start_time)
+
+        result = self.runner.run_tests(filter_pattern=component.name)
+        if not result.all_passed:
+            impl_path.write_text(original_content)
+            return self._fail(component.name, ["Tests failed after refactor - reverted"], start_time, result)
+
+        new_violations = self._run_conformance_check(component)
+        if len(new_violations) > len(violations):
+            impl_path.write_text(original_content)
+            return self._fail(component.name,
+                ["Refactor introduced new conformance violations - reverted"], start_time)
+
+        return None  # Verification passed
 
     def _run_conformance_check(self, component: ComponentProgress) -> list[dict[str, Any]]:
         """
